@@ -793,25 +793,25 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   Set the segment IDs for table
   ```
-  SET cabon.input.segments.<database_name>.<table_name> = <list of segment IDs>
+  SET carbon.input.segments.<database_name>.<table_name> = <list of segment IDs>
   ```
   
   NOTE:
-  cabon.input.segments: Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
+  carbon.input.segments: Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
   
   If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query.
   ```
-  CarbonSession.threadSet ("cabon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
+  CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
   ```
   
   Reset the segment IDs
   ```
-  SET cabon.input.segments.<database_name>.<table_name> = *;
+  SET carbon.input.segments.<database_name>.<table_name> = *;
   ```
   
   If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query. 
   ```
-  CarbonSession.threadSet ("cabon.input.segments.<database_name>.<table_name>","*");
+  CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","*");
   ```
   
   **Examples:**
@@ -821,13 +821,13 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   SHOW SEGMENTS FOR carbontable1;
   
-  SET cabon.input.segments.db.carbontable1 = 1,3,9;
+  SET carbon.input.segments.db.carbontable1 = 1,3,9;
   ```
   
   * Example to query with segments reading in multi threading mode:
   
   ```
-  CarbonSession.threadSet ("cabon.input.segments.db.carbontable_Multi_Thread","1,3");
+  CarbonSession.threadSet ("carbon.input.segments.db.carbontable_Multi_Thread","1,3");
   ```
   
   * Example for threadset in multithread environment (following shows how it is used in Scala code):
@@ -835,8 +835,8 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   def main(args: Array[String]) {
   Future {          
-    CarbonSession.threadSet ("cabon.input.segments.db.carbontable_Multi_Thread","1")
-    spark.sql("select count(empno) from cabon.input.segments.db.carbontable_Multi_Thread").show();
+    CarbonSession.threadSet ("carbon.input.segments.db.carbontable_Multi_Thread","1")
+    spark.sql("select count(empno) from carbon.input.segments.db.carbontable_Multi_Thread").show();
      }
    }
   ```
