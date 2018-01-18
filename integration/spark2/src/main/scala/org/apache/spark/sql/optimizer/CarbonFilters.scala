@@ -23,6 +23,8 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.CastExpressionOptimization
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.CarbonContainsWith
+import org.apache.spark.sql.CarbonEndsWith
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.CarbonSessionCatalog
@@ -119,6 +121,18 @@ object CarbonFilters {
           val r = new LessThanExpression(
             getCarbonExpression(name), getCarbonLiteralExpression(name, maxValueLimit))
           Some(new AndExpression(l, r))
+        case CarbonEndsWith(expr: Expression) =>
+          Some(new SparkUnknownExpression(expr.transform {
+            case AttributeReference(name, dataType, _, _) =>
+              CarbonBoundReference(new CarbonColumnExpression(name.toString,
+                CarbonScalaUtil.convertSparkToCarbonDataType(dataType)), dataType, expr.nullable)
+          }))
+        case CarbonContainsWith(expr: Expression) =>
+          Some(new SparkUnknownExpression(expr.transform {
+            case AttributeReference(name, dataType, _, _) =>
+              CarbonBoundReference(new CarbonColumnExpression(name.toString,
+                CarbonScalaUtil.convertSparkToCarbonDataType(dataType)), dataType, expr.nullable)
+          }))
         case CastExpr(expr: Expression) =>
           Some(transformExpression(expr))
         case _ => None
@@ -249,6 +263,10 @@ object CarbonFilters {
           CastExpressionOptimization.checkIfCastCanBeRemove(c)
         case StartsWith(a: Attribute, Literal(v, t)) =>
           Some(sources.StringStartsWith(a.name, v.toString))
+        case c@EndsWith(a: Attribute, Literal(v, t)) =>
+          Some(CarbonEndsWith(c))
+        case c@Contains(a: Attribute, Literal(v, t)) =>
+          Some(CarbonContainsWith(c))
         case c@Cast(a: Attribute, _) =>
           Some(CastExpr(c))
         case others =>
