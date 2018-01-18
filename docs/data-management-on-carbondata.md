@@ -781,58 +781,38 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   DELETE FROM TABLE CarbonDatabase.CarbonTable WHERE SEGMENT.STARTTIME BEFORE '2017-06-01 12:05:06' 
   ```
-### SEGMENT READING
+
+### QUERY DATA WITH SPECIFIED SEGMENTS
 
   This command is used to read data from specified segments during CarbonScan.
   
-  
   Get the Segment ID:
-  
   ```
   SHOW SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
   ```
   
-  Set the segment IDs
-  
+  Set the segment IDs for table
   ```
-  SET cabon.input.segments.<database_name>.<table_name> = <list of segment IDs>;
+  SET cabon.input.segments.<database_name>.<table_name> = <list of segment IDs>
   ```
   
-  **Property:**
-  
-  cabon.input.segments:  Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
-  
-  ```
-  SET cabon.input.segments.<database_name>.<table_name> = <list of segment IDs>;
-  ```
+  NOTE:
+  cabon.input.segments: Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
   
   If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query.
-  
   ```
   CarbonSession.threadSet ("cabon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
   ```
   
-  Reset the segment IDs:
-  
+  Reset the segment IDs
   ```
   SET cabon.input.segments.<database_name>.<table_name> = *;
   ```
   
   If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query. 
-  
   ```
   CarbonSession.threadSet ("cabon.input.segments.<database_name>.<table_name>","*");
   ```
-  
-  Reset
-  
-  It will reset all the properties set for carbondata. It is not recommended if you do not want to reset all the properties except cabon.input.segments.
-  
-  ```
-  RESET
-  ```
-  
-  **NOTE**: It is not recommended to set this property in carbon.properties file, because all the sessions will take this segments list unless it is overwritten at session or thread level.
   
   **Examples:**
   
