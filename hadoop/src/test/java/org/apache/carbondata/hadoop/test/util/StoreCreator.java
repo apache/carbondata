@@ -396,7 +396,6 @@ public class StoreCreator {
     CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true");
     CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true");
     CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true");
-    CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000");
     CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
     CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
 

@@ -1043,7 +1043,6 @@ test("OffHeapQuery-001-TC_108", Include) {
 
   val prop = CarbonProperties.getInstance()
   val p1 = prop.getProperty("enable.unsafe.in.query.processing", CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
-  val p2 = prop.getProperty("use.offheap.in.query.processing", CarbonCommonConstants.USE_OFFHEAP_IN_QUERY_PROCSSING_DEFAULT)
 
   override protected def beforeAll() {
     // Adding new properties
@@ -1054,7 +1053,6 @@ test("OffHeapQuery-001-TC_108", Include) {
   override def afterAll: Unit = {
     //Reverting to old
     prop.addProperty("enable.unsafe.in.query.processing", p1)
-    prop.addProperty("use.offheap.in.query.processing", p2)
   }
        
 }
