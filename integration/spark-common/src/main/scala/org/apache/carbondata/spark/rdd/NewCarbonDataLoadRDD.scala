@@ -400,7 +400,6 @@ class NewDataFrameLoaderRDD[K, V](
           LOGGER.error(e)
           throw e
       } finally {
-        SparkUtil.removeInvalidListener(context)
         // clean up the folders and files created locally for data load operation
         TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
@@ -416,7 +415,6 @@ class NewDataFrameLoaderRDD[K, V](
 
       override def next(): (K, V) = {
         finished = true
-        SparkUtil.removeInvalidListener(context)
         result.getKey(uniqueLoadStatusId, (loadMetadataDetails, executionErrors))
       }
     }
