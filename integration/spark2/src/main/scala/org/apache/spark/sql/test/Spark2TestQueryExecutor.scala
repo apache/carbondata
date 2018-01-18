@@ -43,8 +43,6 @@ object Spark2TestQueryExecutor {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   LOGGER.info("use TestQueryExecutorImplV2")
   CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
-      System.getProperty("java.io.tmpdir"))
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
 
 

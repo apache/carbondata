@@ -326,7 +326,7 @@ object ConcurrencyTest {
       .addProperty("carbon.enable.vector.reader", "true")
       .addProperty("enable.unsafe.sort", "true")
       .addProperty("carbon.blockletgroup.size.in.mb", "32")
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
     import org.apache.spark.sql.CarbonSession._
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
