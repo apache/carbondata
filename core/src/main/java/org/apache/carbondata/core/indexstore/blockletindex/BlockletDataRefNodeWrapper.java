@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkRea
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 
 /**
  * wrapper for blocklet data map data
@@ -91,11 +92,25 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
     return blockInfos.get(index).getDetailInfo().getBlockletId().toString();
   }
 
-  @Override public byte[][] getColumnsMaxValue() {
+  @Override
+  public byte[][] getColumnsMaxValue() {
+    BlockletIndex blockletIndex =
+        blockInfos.get(index).getDetailInfo().getBlockletInfo().getBlockletIndex();
+    // In case of blocklet distribution this will be null
+    if (null != blockletIndex) {
+      return blockletIndex.getMinMaxIndex().getMaxValues();
+    }
     return null;
   }
 
-  @Override public byte[][] getColumnsMinValue() {
+  @Override
+  public byte[][] getColumnsMinValue() {
+    BlockletIndex blockletIndex =
+        blockInfos.get(index).getDetailInfo().getBlockletInfo().getBlockletIndex();
+    // In case of blocklet distribution this will be null
+    if (null != blockletIndex) {
+      return blockletIndex.getMinMaxIndex().getMinValues();
+    }
     return null;
   }
 

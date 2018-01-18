@@ -70,7 +70,12 @@ public class ImplicitIncludeFilterExecutorImpl
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
     String shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
-    if (dimColumnEvaluatorInfo.getFilterValues().getImplicitColumnFilterList()
+    if (uniqueBlockPath.endsWith(".carbondata")) {
+      if (dimColumnEvaluatorInfo.getFilterValues().getImplicitDriverColumnFilterList()
+          .contains(shortBlockId)) {
+        isScanRequired = true;
+      }
+    } else if (dimColumnEvaluatorInfo.getFilterValues().getImplicitColumnFilterList()
         .contains(shortBlockId)) {
       isScanRequired = true;
     }
