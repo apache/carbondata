@@ -369,7 +369,13 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        assertEquals(hdfsCarbonFile.renameForce(fileName), false);
+        new MockUp<WebHdfsFileSystem>(){
+            @Mock
+            public boolean rename(final Path src, final Path dst) throws IOException {
+                return true;
+            }
+        };
+        assertEquals(hdfsCarbonFile.renameForce(fileName), true);
     }
 
     @Test

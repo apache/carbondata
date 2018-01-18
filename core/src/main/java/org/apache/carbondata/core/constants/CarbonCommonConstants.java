@@ -168,6 +168,14 @@ public final class CarbonCommonConstants {
 
   public static final String S3A_PREFIX = "s3a://";
 
+  public static final String S3N_ACCESS_KEY = "fs.s3n.awsAccessKeyId";
+
+  public static final String S3N_SECRET_KEY = "fs.s3n.awsSecretAccessKey";
+
+  public static final String S3_ACCESS_KEY = "fs.s3.awsAccessKeyId";
+
+  public static final String S3_SECRET_KEY = "fs.s3.awsSecretAccessKey";
+
   /**
    * FS_DEFAULT_FS
    */
@@ -921,6 +929,11 @@ public final class CarbonCommonConstants {
    * HDFSLOCK TYPE
    */
   public static final String CARBON_LOCK_TYPE_HDFS = "HDFSLOCK";
+
+  /**
+   * S3LOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_S3 = "S3LOCK";
 
   /**
    * Invalid filter member log string
