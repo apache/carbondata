@@ -162,13 +162,8 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       DataType dataType) {
     Object value = DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
     for (int i = 0; i < filterValue.length; i++) {
-      // TODO handle min and max for null values.
       if (filterValue[i] == null) {
-        if (nullValue == true) {
-          return true;
-        } else {
-          return false;
-        }
+        return nullValue;
       }
       if (comparator.compare(filterValue[i], value) > 0) {
         return true;

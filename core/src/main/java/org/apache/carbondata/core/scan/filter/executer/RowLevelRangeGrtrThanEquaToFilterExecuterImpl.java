@@ -158,13 +158,8 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       DataType dataType) {
     Object value = DataTypeUtil.getMeasureObjectFromDataType(maxValue, dataType);
     for (int i = 0; i < filterValue.length; i++) {
-      // TODO handle min and max for null values.
       if (filterValue[i] == null) {
-        if (nullValue == true) {
-          return true;
-        } else {
-          return false;
-        }
+        return nullValue;
       }
       if (comparator.compare(filterValue[i], value) <= 0) {
         return true;

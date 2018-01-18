@@ -230,7 +230,10 @@ public class BlockletDataMap implements DataMap, Cacheable {
       ordinal++;
       taskMinMaxOrdinal++;
 
-      summaryRow.setByteArray(minMaxIndex.getNullValues().toByteArray(), taskMinMaxOrdinal);
+      addTaskNullValues(summaryRow, minMaxLen,
+          unsafeMemorySummaryDMStore.getSchema()[taskMinMaxOrdinal], minMaxIndex.getNullValues(),
+          TASK_NULL_VALUES_INDEX);
+
       row.setByteArray(minMaxIndex.getNullValues().toByteArray(), ordinal++);
 
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
@@ -508,6 +511,23 @@ public class BlockletDataMap implements DataMap, Cacheable {
       row.setByteArray(updatedMinMaxValues[i], minMaxOrdinal++);
     }
     taskMinMaxRow.setRow(row, ordinal);
+  }
+
+  private void addTaskNullValues(DataMapRowImpl summaryRow, int[] minMaxLen,
+      CarbonRowSchema carbonRowSchema, BitSet nullValues, int ordinal) {
+    DataMapRow row = summaryRow.getRow(ordinal);
+    BitSet updatedNullValues = nullValues;
+    if (null == row) {
+      summaryRow.setByteArray(updatedNullValues.toByteArray(), ordinal);
+    } else {
+      BitSet existingNullValues = getNullValue(summaryRow, ordinal);
+      // Compare and update the Null Values. The BitSet will have a OR operation.
+      // In case the existing blocklet will have nullValue set to 1 then the overall
+      // Bit should be set to 1.
+      updatedNullValues.or(existingNullValues);
+      // Update Null Values.
+      summaryRow.setByteArray(updatedNullValues.toByteArray(), ordinal);
+    }
   }
 
   private void createSchema(SegmentProperties segmentProperties) throws MemoryException {

@@ -484,11 +484,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < filterValue.length; i++) {
       if (filterValue[i] == null) {
         // Check if the Null Byte is set or not.
-        if (nullValue == true) {
-          return true;
-        } else {
-          return false;
-        }
+        return nullValue;
       }
       if (comparator.compare(filterValue[i], maxObject) <= 0
           && comparator.compare(filterValue[i], minObject) >= 0) {

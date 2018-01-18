@@ -161,11 +161,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
         DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
     for (int i = 0; i < filterValue.length; i++) {
       if (filterValue[i] == null) {
-        if (nullValue == true) {
-          return true;
-        } else {
-          return false;
-        }
+        return nullValue;
       }
       if (comparator.compare(filterValue[i], value) >= 0) {
         return true;
