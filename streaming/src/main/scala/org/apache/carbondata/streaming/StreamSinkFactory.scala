@@ -32,7 +32,8 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
@@ -51,15 +52,29 @@ object StreamSinkFactory {
       parameters: Map[String, String]): Sink = {
     validateParameters(parameters)
 
-    // prepare the stream segment
-    val segmentId = getStreamSegmentId(carbonTable)
     // build load model
     val carbonLoadModel = buildCarbonLoadModelForStream(
       sparkSession,
       hadoopConf,
       carbonTable,
       parameters,
-      segmentId)
+      "")
+    // fire pre event before streamin is started
+    val operationContext = new OperationContext
+    val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
+      carbonTable.getCarbonTableIdentifier,
+      carbonLoadModel,
+      carbonLoadModel.getFactFilePath,
+      false,
+      parameters.asJava,
+      null,
+      false
+    )
+    OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
+    // prepare the stream segment
+    val segmentId = getStreamSegmentId(carbonTable)
+    carbonLoadModel.setSegmentId(segmentId)
+
     // start server if necessary
     val server = startDictionaryServer(
       sparkSession,
@@ -71,13 +86,21 @@ object StreamSinkFactory {
       carbonLoadModel.setUseOnePass(false)
     }
     // default is carbon appended stream sink
-    new CarbonAppendableStreamSink(
+    val carbonAppendableStreamSink = new CarbonAppendableStreamSink(
       sparkSession,
       carbonTable,
       segmentId,
       parameters,
       carbonLoadModel,
       server)
+
+    // fire post event before streamin is started
+    val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
+      carbonTable.getCarbonTableIdentifier,
+      carbonLoadModel
+    )
+    OperationListenerBus.getInstance().fireEvent(loadTablePostExecutionEvent, operationContext)
+    carbonAppendableStreamSink
   }
 
   private def validateParameters(parameters: Map[String, String]): Unit = {
