@@ -43,8 +43,6 @@ private[sql] case class CarbonProjectForDeleteCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-      IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
-
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     val isLoadInProgress = SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)
     if (isLoadInProgress) {
@@ -53,6 +51,10 @@ private[sql] case class CarbonProjectForDeleteCommand(
       LOGGER.error(errorMessage)
       throw new ConcurrentOperationException(errorMessage)
     }
+
+    IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
+    val dataFrame = Dataset.ofRows(sparkSession, plan)
+    val dataRdd = dataFrame.rdd
 
     // trigger event for Delete from table
     val operationContext = new OperationContext
@@ -82,7 +84,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
         databaseNameOp,
         tableName,
         sparkSession,
-        Dataset.ofRows(sparkSession, plan).rdd,
+        dataRdd,
         timestamp,
         isUpdateOperation = false,
         executorErrors)
