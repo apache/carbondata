@@ -19,6 +19,8 @@ package org.apache.spark.sql.execution.datasources
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -133,6 +135,13 @@ with Serializable {
 
     new OutputWriterFactory {
 
+      /**
+       * counter used for generating task numbers. This is used to generate unique partition numbers
+       * in case of partitioning
+       */
+      val counter = new AtomicLong()
+      val taskIdMap = new ConcurrentHashMap[String, java.lang.Long]()
+
       override def newInstance(
           path: String,
           dataSchema: StructType,
@@ -141,7 +150,11 @@ with Serializable {
         var storeLocation: Array[String] = Array[String]()
         val isCarbonUseLocalDir = CarbonProperties.getInstance()
           .getProperty("carbon.use.local.dir", "false").equalsIgnoreCase("true")
-        val tmpLocationSuffix = File.separator + System.nanoTime()
+
+
+        val taskNumber = generateTaskNumber(path, context)
+        val tmpLocationSuffix =
+          File.separator + "carbon" + System.nanoTime() + File.separator + taskNumber
         if (isCarbonUseLocalDir) {
           val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
           if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
@@ -161,7 +174,24 @@ with Serializable {
             storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
         }
         CarbonTableOutputFormat.setTempStoreLocations(context.getConfiguration, storeLocation)
-        new CarbonOutputWriter(path, context, dataSchema.map(_.dataType))
+        new CarbonOutputWriter(path, context, dataSchema.map(_.dataType), taskNumber)
+      }
+
+      /**
+       * Generate taskid using the taskid of taskcontext and the path. It should be unique in case
+       * of partition tables.
+       */
+      private def generateTaskNumber(path: String,
+          context: TaskAttemptContext): String = {
+        var partitionNumber: java.lang.Long = taskIdMap.get(path)
+        if (partitionNumber == null) {
+          partitionNumber = counter.incrementAndGet()
+          // Generate taskid using the combination of taskid and partition number to make it unique.
+          taskIdMap.put(path, partitionNumber)
+        }
+        val taskID = context.getTaskAttemptID.getTaskID.getId
+        String.valueOf(Math.pow(10, 5).toInt + taskID) +
+          String.valueOf(partitionNumber + Math.pow(10, 5).toInt)
       }
 
       override def getFileExtension(context: TaskAttemptContext): String = {
@@ -202,7 +232,8 @@ private trait AbstractCarbonOutputWriter {
 
 private class CarbonOutputWriter(path: String,
     context: TaskAttemptContext,
-    fieldTypes: Seq[DataType])
+    fieldTypes: Seq[DataType],
+    taskNo : String)
   extends OutputWriter with AbstractCarbonOutputWriter {
   val partitions = getPartitionsFromPath(path, context).map(ExternalCatalogUtils.unescapePathName)
   val staticPartition: util.HashMap[String, Boolean] = {
@@ -264,7 +295,7 @@ private class CarbonOutputWriter(path: String,
   val writable = new StringArrayWritable()
 
   private val recordWriter: CarbonRecordWriter = {
-
+    context.getConfiguration.set("carbon.outputformat.taskno", taskNo)
     new CarbonTableOutputFormat() {
       override def getDefaultWorkFile(context: TaskAttemptContext, extension: String): Path = {
         new Path(path)
