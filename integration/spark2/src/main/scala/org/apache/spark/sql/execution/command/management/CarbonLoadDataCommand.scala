@@ -243,7 +243,7 @@ case class CarbonLoadDataCommand(
       } catch {
         case CausedBy(ex: NoRetryException) =>
           // update the load entry in table status file for changing the status to marked for delete
-          if (isUpdateTableStatusRequired) {
+          if (isUpdateTableStatusRequired && !table.isHivePartitionTable) {
             CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
           }
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
@@ -254,7 +254,7 @@ case class CarbonLoadDataCommand(
         case ex: Exception =>
           LOGGER.error(ex)
           // update the load entry in table status file for changing the status to marked for delete
-          if (isUpdateTableStatusRequired) {
+          if (isUpdateTableStatusRequired && !table.isHivePartitionTable) {
             CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
           }
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
@@ -521,9 +521,10 @@ case class CarbonLoadDataCommand(
     CarbonSession.threadSet(
       CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
       badRecordAction)
+    val isEmptyBadRecord = carbonLoadModel.getIsEmptyDataBadRecord.split(",")(1)
     CarbonSession.threadSet(
       CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
-      carbonLoadModel.getIsEmptyDataBadRecord.split(",")(1))
+      isEmptyBadRecord)
     try {
       val query: LogicalPlan = if (dataFrame.isDefined) {
         val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
@@ -632,7 +633,13 @@ case class CarbonLoadDataCommand(
           overwrite = false,
           ifPartitionNotExists = false)
       if (isOverwriteTable && partition.nonEmpty) {
-        overwritePartition(sparkSession, table, convertedPlan)
+        overwritePartition(
+          sparkSession,
+          table,
+          convertedPlan,
+          serializationNullFormat,
+          badRecordAction,
+          isEmptyBadRecord.toBoolean)
       } else {
         Dataset.ofRows(sparkSession, convertedPlan)
       }
@@ -754,11 +761,25 @@ case class CarbonLoadDataCommand(
   private def overwritePartition(
       sparkSession: SparkSession,
       table: CarbonTable,
-      logicalPlan: LogicalPlan): Unit = {
+      logicalPlan: LogicalPlan,
+      serializationNullFormat: String,
+      badRecordAction: String,
+      isEmptyBadRecord: Boolean): Unit = {
     val identifier = TableIdentifier(table.getTableName, Some(table.getDatabaseName))
+
+    // Update the partitions as per the datatype expect for time and datetype as we
+    // expect user provides the format in standard spark/hive formats.
+    val updatedPartitions = CarbonScalaUtil.updatePartitions(
+      partition.filter(_._2.isDefined).map(f => (f._1, f._2.get)),
+      table,
+      timeFormat = null,
+      dateFormat = null,
+      serializationNullFormat,
+      badRecordAction,
+      isEmptyBadRecord)
     val existingPartitions = sparkSession.sessionState.catalog.listPartitions(
       identifier,
-      Some(partition.filter(_._2.isDefined).map(f => (f._1, f._2.get))))
+      Some(updatedPartitions))
     val partitionNames = existingPartitions.toList.flatMap { partition =>
       partition.spec.seq.map{case (column, value) => column + "=" + value}
     }.toSet

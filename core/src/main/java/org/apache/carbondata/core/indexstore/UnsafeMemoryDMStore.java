@@ -36,7 +36,7 @@ public class UnsafeMemoryDMStore {
 
   private MemoryBlock memoryBlock;
 
-  private static int capacity = 8 * 1024 * 1024;
+  private static int capacity = 8 * 1024;
 
   private int allocatedSize;
 
