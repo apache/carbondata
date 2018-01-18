@@ -37,7 +37,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datamap.C2DataMapFactory
 
-class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
   var df: DataFrame = _
 
@@ -125,6 +125,24 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll with BeforeAndA
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains("Cannot run data loading and update on same table concurrently"))
+  }
+
+  test("delete should fail if insert overwrite is in progress") {
+    val future = runSqlAsync("insert overWrite table orders select * from orders_overwrite")
+    val ex = intercept[Exception] {
+      sql("delete from orders where o_country='china'").show
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains("Cannot run data loading and delete on same table concurrently"))
+  }
+
+  test("drop table should fail if insert overwrite is in progress") {
+    val future = runSqlAsync("insert overWrite table orders select * from orders_overwrite")
+    val ex = intercept[Exception] {
+      sql("drop table if exists orders")
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains("Data loading is in progress for table orders, drop table operation is not allowed"))
   }
 
   class QueryTask(query: String) extends Callable[String] {

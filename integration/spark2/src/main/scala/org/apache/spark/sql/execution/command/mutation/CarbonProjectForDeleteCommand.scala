@@ -17,15 +17,18 @@
 
 package org.apache.spark.sql.execution.command.mutation
 
-import org.apache.spark.sql.{CarbonEnv, Dataset, Row, SparkSession}
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.spark.exception.ConcurrentOperationException
 
 /**
  * IUD update delete and compaction framework.
@@ -40,11 +43,18 @@ private[sql] case class CarbonProjectForDeleteCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-      IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
+    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    val isLoadInProgress = SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)
+    if (isLoadInProgress) {
+      val errorMessage = "Cannot run data loading and delete on same table concurrently. Please " +
+                         "wait for load to finish"
+      LOGGER.error(errorMessage)
+      throw new ConcurrentOperationException(errorMessage)
+    }
+
+    IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
     val dataFrame = Dataset.ofRows(sparkSession, plan)
     val dataRdd = dataFrame.rdd
-
-    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
 
     // trigger event for Delete from table
     val operationContext = new OperationContext
