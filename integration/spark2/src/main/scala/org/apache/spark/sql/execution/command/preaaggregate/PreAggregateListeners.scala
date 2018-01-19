@@ -62,17 +62,18 @@ object LoadPostAggregateListener extends OperationEventListener {
         } else {
           // for timeseries rollup policy
           val tableSelectedForRollup = PreAggregateUtil.getRollupDataMapNameForTimeSeries(list,
-            dataMapSchema)
+              dataMapSchema)
+          list += dataMapSchema
           // if non of the rollup data map is selected hit the maintable and prepare query
           if (tableSelectedForRollup.isEmpty) {
             PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMapSchema.getChildSchema,
-              parentTableName,
-              databasename)
+                parentTableName,
+                databasename)
           } else {
             // otherwise hit the select rollup datamap schema
             PreAggregateUtil.createTimeseriesSelectQueryForRollup(dataMapSchema.getChildSchema,
-              tableSelectedForRollup.get,
-              databasename)
+                tableSelectedForRollup.get,
+                databasename)
           }
         }
         val isOverwrite =
