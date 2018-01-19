@@ -122,10 +122,10 @@ case class CarbonCreateTableCommand(
             CarbonEnv.getInstance(sparkSession).carbonMetastore
               .dropTable(tableIdentifier)(sparkSession)
 
-            val msg = s"Create table'$tableName' in database '$dbName' failed."
-            LOGGER.audit(msg)
+            val msg = s"Create table'$tableName' in database '$dbName' failed"
+            LOGGER.audit(msg.concat(", ").concat(e.getMessage))
             LOGGER.error(e, msg)
-            CarbonException.analysisException(msg)
+            CarbonException.analysisException(msg.concat(", ").concat(e.getMessage))
         }
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =

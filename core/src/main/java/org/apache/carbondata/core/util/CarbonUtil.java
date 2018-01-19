@@ -2260,15 +2260,17 @@ public final class CarbonUtil {
       case S3:
         Path path = new Path(segmentPath);
         FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-        FileStatus[] fileStatuses = fs.listStatus(path);
-        if (null != fileStatuses) {
-          for (FileStatus dataAndIndexStatus : fileStatuses) {
-            String pathName = dataAndIndexStatus.getPath().getName();
-            if (pathName.endsWith(CarbonTablePath.getCarbonIndexExtension()) || pathName
-                .endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
-              carbonIndexSize += dataAndIndexStatus.getLen();
-            } else if (pathName.endsWith(CarbonTablePath.getCarbonDataExtension())) {
-              carbonDataSize += dataAndIndexStatus.getLen();
+        if (fs.exists(path)) {
+          FileStatus[] fileStatuses = fs.listStatus(path);
+          if (null != fileStatuses) {
+            for (FileStatus dataAndIndexStatus : fileStatuses) {
+              String pathName = dataAndIndexStatus.getPath().getName();
+              if (pathName.endsWith(CarbonTablePath.getCarbonIndexExtension()) || pathName
+                  .endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
+                carbonIndexSize += dataAndIndexStatus.getLen();
+              } else if (pathName.endsWith(CarbonTablePath.getCarbonDataExtension())) {
+                carbonDataSize += dataAndIndexStatus.getLen();
+              }
             }
           }
         }

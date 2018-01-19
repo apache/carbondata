@@ -69,6 +69,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
     CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet);
+    CarbonLoaderUtil.checkAndCreateCarbonDataLocation(loadModel.getSegmentId(),
+        loadModel.getCarbonDataLoadSchema().getCarbonTable());
     CarbonTableOutputFormat.setLoadModel(context.getConfiguration(), loadModel);
   }
 
@@ -103,7 +105,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     long segmentSize = CarbonLoaderUtil
         .addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
-    if (segmentSize > 0) {
+    if (segmentSize > 0 || overwriteSet) {
       String operationContextStr =
           context.getConfiguration().get(
               CarbonTableOutputFormat.OPERATION_CONTEXT,

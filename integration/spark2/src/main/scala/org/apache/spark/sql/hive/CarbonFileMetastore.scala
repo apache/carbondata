@@ -17,9 +17,9 @@
 
 package org.apache.spark.sql.hive
 
+import java.io.IOException
 import java.net.URI
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -344,7 +344,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
     val fileType = FileFactory.getFileType(schemaMetadataPath)
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      FileFactory.mkdirs(schemaMetadataPath, fileType)
+      val isDirCreated = FileFactory.mkdirs(schemaMetadataPath, fileType)
+      if (!isDirCreated) {
+        throw new IOException(s"Failed to create the metadata directory $schemaMetadataPath")
+      }
     }
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
     thriftWriter.open(FileWriteOperation.OVERWRITE)
