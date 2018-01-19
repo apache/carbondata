@@ -268,39 +268,43 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
         val carbonTable = getCarbonTable(l)
-        val list = scala.collection.mutable.HashSet.empty[QueryColumn]
-        val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
-        val isValidPlan = extractQueryColumnsFromAggExpression(
-          grExp,
-          aggExp,
-          carbonTable,
-          list,
-          aggregateExpressions)
-        if(isValidPlan) {
-          val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
-            aggregateExpressions,
+        if(isSpecificSegmentNotPresent(carbonTable)) {
+          val list = scala.collection.mutable.HashSet.empty[QueryColumn]
+          val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
+          val isValidPlan = extractQueryColumnsFromAggExpression(
+            grExp,
+            aggExp,
             carbonTable,
-            agg)
-          if(null != aggDataMapSchema && null!= childPlan) {
-            val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
-            val (updatedGroupExp, updatedAggExp, newChild, None) =
-              getUpdatedExpressions(grExp,
-                aggExp,
-                child,
-                None,
-                aggDataMapSchema,
-                attributes,
-                childPlan,
-                carbonTable,
-                agg)
-            Aggregate(updatedGroupExp,
-              updatedAggExp,
-              CarbonReflectionUtils
-                .getSubqueryAlias(sparkSession,
-                  Some(alias1),
-                  CarbonReflectionUtils
-                    .getSubqueryAlias(sparkSession, Some(alias2), newChild, None),
-                  None))
+            list,
+            aggregateExpressions)
+          if (isValidPlan) {
+            val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
+              aggregateExpressions,
+              carbonTable,
+              agg)
+            if (null != aggDataMapSchema && null != childPlan) {
+              val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
+              val (updatedGroupExp, updatedAggExp, newChild, None) =
+                getUpdatedExpressions(grExp,
+                  aggExp,
+                  child,
+                  None,
+                  aggDataMapSchema,
+                  attributes,
+                  childPlan,
+                  carbonTable,
+                  agg)
+              Aggregate(updatedGroupExp,
+                updatedAggExp,
+                CarbonReflectionUtils
+                  .getSubqueryAlias(sparkSession,
+                    Some(alias1),
+                    CarbonReflectionUtils
+                      .getSubqueryAlias(sparkSession, Some(alias2), newChild, None),
+                    None))
+            } else {
+              agg
+            }
           } else {
             agg
           }
@@ -316,35 +320,39 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
         val carbonTable = getCarbonTable(l)
-        val list = scala.collection.mutable.HashSet.empty[QueryColumn]
-        val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
-        val isValidPlan = extractQueryColumnsFromAggExpression(
-          grExp,
-          aggExp,
-          carbonTable,
-          list,
-          aggregateExpressions)
-        if(isValidPlan) {
-          val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
-            aggregateExpressions,
+        if(isSpecificSegmentNotPresent(carbonTable)) {
+          val list = scala.collection.mutable.HashSet.empty[QueryColumn]
+          val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
+          val isValidPlan = extractQueryColumnsFromAggExpression(
+            grExp,
+            aggExp,
             carbonTable,
-            agg)
-          if(null != aggDataMapSchema && null!= childPlan) {
-            val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
-            val (updatedGroupExp, updatedAggExp, newChild, None) =
-              getUpdatedExpressions(grExp,
-                aggExp,
-                child,
-                None,
-                aggDataMapSchema,
-                attributes,
-                childPlan,
-                carbonTable,
-                agg)
-            Aggregate(updatedGroupExp,
-              updatedAggExp,
-              CarbonReflectionUtils
-                .getSubqueryAlias(sparkSession, Some(alias), newChild, None))
+            list,
+            aggregateExpressions)
+          if (isValidPlan) {
+            val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
+              aggregateExpressions,
+              carbonTable,
+              agg)
+            if (null != aggDataMapSchema && null != childPlan) {
+              val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
+              val (updatedGroupExp, updatedAggExp, newChild, None) =
+                getUpdatedExpressions(grExp,
+                  aggExp,
+                  child,
+                  None,
+                  aggDataMapSchema,
+                  attributes,
+                  childPlan,
+                  carbonTable,
+                  agg)
+              Aggregate(updatedGroupExp,
+                updatedAggExp,
+                CarbonReflectionUtils
+                  .getSubqueryAlias(sparkSession, Some(alias), newChild, None))
+            } else {
+              agg
+            }
           } else {
             agg
           }
@@ -360,45 +368,47 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
         val carbonTable = getCarbonTable(l)
-        val list = scala.collection.mutable.HashSet.empty[QueryColumn]
-        val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
-        var isValidPlan = extractQueryColumnsFromAggExpression(
-          grExp,
-          aggExp,
-          carbonTable,
-          list,
-          aggregateExpressions)
-
-        if (isValidPlan) {
-          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(expression)
-        }
-
-        // getting the columns from filter expression
-        if (isValidPlan) {
-          extractColumnFromExpression(expression, list, carbonTable, true)
-        }
-        if (isValidPlan) {
-          val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
-            aggregateExpressions,
+        if(isSpecificSegmentNotPresent(carbonTable)) {
+          val list = scala.collection.mutable.HashSet.empty[QueryColumn]
+          val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
+          var isValidPlan = extractQueryColumnsFromAggExpression(
+            grExp,
+            aggExp,
             carbonTable,
-            agg)
-          if (null != aggDataMapSchema && null != childPlan) {
-            val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
-            val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
-              getUpdatedExpressions(grExp,
-                aggExp,
-                child,
-                Some(expression),
-                aggDataMapSchema,
-                attributes,
-                childPlan,
-                carbonTable,
-                agg)
-            Aggregate(updatedGroupExp,
-              updatedAggExp,
-              Filter(updatedFilterExpression.get,
-                CarbonReflectionUtils
-                  .getSubqueryAlias(sparkSession, Some(alias), newChild, None)))
+            list,
+            aggregateExpressions)
+          if (isValidPlan) {
+            isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(expression)
+          }
+          // getting the columns from filter expression
+          if (isValidPlan) {
+            extractColumnFromExpression(expression, list, carbonTable, true)
+          }
+          if (isValidPlan) {
+            val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
+              aggregateExpressions,
+              carbonTable,
+              agg)
+            if (null != aggDataMapSchema && null != childPlan) {
+              val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
+              val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
+                getUpdatedExpressions(grExp,
+                  aggExp,
+                  child,
+                  Some(expression),
+                  aggDataMapSchema,
+                  attributes,
+                  childPlan,
+                  carbonTable,
+                  agg)
+              Aggregate(updatedGroupExp,
+                updatedAggExp,
+                Filter(updatedFilterExpression.get,
+                  CarbonReflectionUtils
+                    .getSubqueryAlias(sparkSession, Some(alias), newChild, None)))
+            } else {
+              agg
+            }
           } else {
             agg
           }
@@ -415,49 +425,54 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
         val carbonTable = getCarbonTable(l)
-        val list = scala.collection.mutable.HashSet.empty[QueryColumn]
-        val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
-        var isValidPlan = extractQueryColumnsFromAggExpression(
-          grExp,
-          aggExp,
-          carbonTable,
-          list,
-          aggregateExpressions)
-
-        if (isValidPlan) {
-          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(expression)
-        }
-
-        // getting the columns from filter expression
-        if (isValidPlan) {
-          extractColumnFromExpression(expression, list, carbonTable, true)
-        }
-        if (isValidPlan) {
-          val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
-            aggregateExpressions,
+        if(isSpecificSegmentNotPresent(carbonTable)) {
+          val list = scala.collection.mutable.HashSet.empty[QueryColumn]
+          val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
+          var isValidPlan = extractQueryColumnsFromAggExpression(
+            grExp,
+            aggExp,
             carbonTable,
-            agg)
-          if (null != aggDataMapSchema && null != childPlan) {
-            val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
-            val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
-              getUpdatedExpressions(grExp,
-                aggExp,
-                child,
-                Some(expression),
-                aggDataMapSchema,
-                attributes,
-                childPlan,
-                carbonTable,
-                agg)
-            Aggregate(updatedGroupExp,
-              updatedAggExp,
-              Filter(updatedFilterExpression.get,
-                CarbonReflectionUtils
-                  .getSubqueryAlias(sparkSession,
-                    Some(alias1),
-                    CarbonReflectionUtils
-                      .getSubqueryAlias(sparkSession, Some(alias2), newChild, None),
-                    None)))
+            list,
+            aggregateExpressions)
+
+          if (isValidPlan) {
+            isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(expression)
+          }
+
+          // getting the columns from filter expression
+          if (isValidPlan) {
+            extractColumnFromExpression(expression, list, carbonTable, true)
+          }
+
+          if (isValidPlan) {
+            val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
+              aggregateExpressions,
+              carbonTable,
+              agg)
+            if (null != aggDataMapSchema && null != childPlan) {
+              val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
+              val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
+                getUpdatedExpressions(grExp,
+                  aggExp,
+                  child,
+                  Some(expression),
+                  aggDataMapSchema,
+                  attributes,
+                  childPlan,
+                  carbonTable,
+                  agg)
+              Aggregate(updatedGroupExp,
+                updatedAggExp,
+                Filter(updatedFilterExpression.get,
+                  CarbonReflectionUtils
+                    .getSubqueryAlias(sparkSession,
+                      Some(alias1),
+                      CarbonReflectionUtils
+                        .getSubqueryAlias(sparkSession, Some(alias2), newChild, None),
+                      None)))
+            } else {
+              agg
+            }
           } else {
             agg
           }
@@ -652,7 +667,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * @param carbonTable parent table
    * @return is specific segment is present in session params
    */
-  def isSpecificSegmentPresent(carbonTable: CarbonTable) : Boolean = {
+  def isSpecificSegmentNotPresent(carbonTable: CarbonTable) : Boolean = {
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (carbonSessionInfo != null) {
       carbonSessionInfo.getSessionParams
