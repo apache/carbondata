@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.datamap
 
-import java.io.File
+import java.io.{File, FilenameFilter}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
@@ -26,6 +26,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
@@ -210,24 +211,28 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("create pre-agg table with path") {
-    sql("drop table if exists maintbl_preagg")
-    sql("drop table if exists maintbl ")
+    sql("drop table if exists main_preagg")
+    sql("drop table if exists main ")
     val path = "./_pre-agg_test"
-    try {
-      sql("create table maintbl(year int,month int,name string,salary int) stored by 'carbondata' tblproperties('sort_columns'='month,year,name')")
-      sql("insert into maintbl select 10,11,'amy',12")
-      sql("insert into maintbl select 10,11,'amy',12")
-      sql("create datamap preagg on table maintbl " +
-          "using 'preaggregate' " +
-          s"dmproperties ('path'='$path') " +
-          "as select name,avg(salary) from maintbl group by name")
-      assertResult(true)(new File(path).exists())
-      checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("amy", 12.0))
-      sql("drop datamap preagg on table maintbl")
-    } finally {
-      assertResult(false)(new File(path).exists())
-      sql("drop table maintbl")
-    }
+    sql("create table main(year int,month int,name string,salary int) stored by 'carbondata' tblproperties('sort_columns'='month,year,name')")
+    sql("insert into main select 10,11,'amy',12")
+    sql("insert into main select 10,11,'amy',14")
+    sql("create datamap preagg on table main " +
+        "using 'preaggregate' " +
+        s"dmproperties ('path'='$path') " +
+        "as select name,avg(salary) from main group by name")
+    assertResult(true)(new File(path).exists())
+    assertResult(true)(new File(s"${CarbonTablePath.getSegmentPath(path, "0")}")
+                         .list(new FilenameFilter {
+                           override def accept(dir: File, name: String): Boolean = {
+                             name.contains(CarbonCommonConstants.FACT_FILE_EXT)
+                           }
+                         }).length > 0)
+    checkAnswer(sql("select name,avg(salary) from main group by name"), Row("amy", 13.0))
+    checkAnswer(sql("select * from main_preagg"), Row("amy", 26, 2))
+    sql("drop datamap preagg on table main")
+    assertResult(false)(new File(path).exists())
+    sql("drop table main")
   }
 
   override def afterAll {
