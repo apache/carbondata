@@ -105,8 +105,11 @@ case class CreatePreAggregateTableCommand(
     }
     tableModel.parentTable = Some(parentTable)
     tableModel.dataMapRelation = Some(fieldRelationMap)
-    val tablePath =
+    val tablePath = if (dmProperties.contains("path")) {
+      dmProperties("path")
+    } else {
       CarbonEnv.getTablePath(tableModel.databaseNameOp, tableModel.tableName)(sparkSession)
+    }
     CarbonCreateTableCommand(TableNewProcessor(tableModel),
       tableModel.ifNotExistsSet, Some(tablePath)).run(sparkSession)
 
