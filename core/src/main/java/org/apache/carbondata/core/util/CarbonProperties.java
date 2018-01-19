@@ -35,25 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.BLOCKLET_SIZE;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_COMBINE_SMALL_INPUT_FILES;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DATA_FILE_VERSION;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DATE_FORMAT;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_EXECUTOR_STARTUP_TIMEOUT;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CSV_READ_BUFFER_SIZE;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_AUTO_HANDOFF;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_VECTOR_READER;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.HANDOFF_SIZE;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.LOCK_TYPE;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES_BLOCK_SORT;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.*;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO;
 
@@ -151,8 +133,8 @@ public final class CarbonProperties {
       case HANDOFF_SIZE:
         validateHandoffSize();
         break;
-      case CARBON_COMBINE_SMALL_INPUT_FILES:
-        validateCombineSmallInputFiles();
+      case CARBON_TASK_DISTRIBUTION:
+        validateCarbonTaskDistribution();
         break;
       // The method validate the validity of configured carbon.timestamp.format value
       // and reset to default value if validation fail
@@ -199,7 +181,7 @@ public final class CarbonProperties {
     validateLockType();
     validateCarbonCSVReadBufferSizeByte();
     validateHandoffSize();
-    validateCombineSmallInputFiles();
+    validateCarbonTaskDistribution();
     // The method validate the validity of configured carbon.timestamp.format value
     // and reset to default value if validation fail
     validateTimeFormatKey(CARBON_TIMESTAMP_FORMAT,
@@ -361,22 +343,24 @@ public final class CarbonProperties {
     if (!isValidBooleanValue) {
       LOGGER.warn("The custom block distribution value \"" + customBlockDistributionStr
           + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT);
-      carbonProperties.setProperty(CARBON_CUSTOM_BLOCK_DISTRIBUTION,
-          CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT);
+          + false);
+      carbonProperties.setProperty(CARBON_CUSTOM_BLOCK_DISTRIBUTION, "false");
     }
   }
 
-  private void validateCombineSmallInputFiles() {
-    String combineSmallInputFilesStr =
-        carbonProperties.getProperty(CARBON_COMBINE_SMALL_INPUT_FILES);
-    boolean isValidBooleanValue = CarbonUtil.validateBoolean(combineSmallInputFilesStr);
-    if (!isValidBooleanValue) {
-      LOGGER.warn("The combine small files value \"" + combineSmallInputFilesStr
+  private void validateCarbonTaskDistribution() {
+    String carbonTaskDistribution = carbonProperties.getProperty(CARBON_TASK_DISTRIBUTION);
+    boolean isValid = carbonTaskDistribution != null && (
+        carbonTaskDistribution.equalsIgnoreCase(CARBON_TASK_DISTRIBUTION_MERGE_FILES)
+            || carbonTaskDistribution.equalsIgnoreCase(CARBON_TASK_DISTRIBUTION_BLOCKLET)
+            || carbonTaskDistribution.equalsIgnoreCase(CARBON_TASK_DISTRIBUTION_BLOCK)
+            || carbonTaskDistribution.equalsIgnoreCase(CARBON_TASK_DISTRIBUTION_CUSTOM));
+    if (!isValid) {
+      LOGGER.warn("The carbon task distribution value \"" + carbonTaskDistribution
           + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.CARBON_COMBINE_SMALL_INPUT_FILES_DEFAULT);
-      carbonProperties.setProperty(CARBON_COMBINE_SMALL_INPUT_FILES,
-          CarbonCommonConstants.CARBON_COMBINE_SMALL_INPUT_FILES_DEFAULT);
+          + CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT);
+      carbonProperties.setProperty(CARBON_TASK_DISTRIBUTION,
+          CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT);
     }
   }
 

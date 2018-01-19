@@ -177,9 +177,9 @@ object CarbonScalaUtil {
       return null
     }
     dataType match {
-      case TimestampType =>
+      case TimestampType if timeStampFormat != null =>
         DateTimeUtils.timestampToString(timeStampFormat.parse(value).getTime * 1000)
-      case DateType =>
+      case DateType if dateFormat != null =>
         DateTimeUtils.dateToString(
           (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt)
       case ShortType => value.toShort.toString
@@ -233,16 +233,18 @@ object CarbonScalaUtil {
       serializationNullFormat: String,
       badRecordAction: String,
       isEmptyBadRecord: Boolean): Map[String, String] = {
+    val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
     partitionSpec.map{ case (col, pvalue) =>
       // replace special string with empty value.
-      val value = if (pvalue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+      val value = if (pvalue == null) {
+        hivedefaultpartition
+      } else if (pvalue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
         ""
       } else {
         pvalue
       }
       val carbonColumn = table.getColumnByName(table.getTableName, col.toLowerCase)
       val dataType = CarbonScalaUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
-      val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
       try {
         if (isEmptyBadRecord && value.length == 0 &&
             badRecordAction.equalsIgnoreCase(LoggerAction.IGNORE.toString) &&
