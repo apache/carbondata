@@ -102,9 +102,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private static int BLOCK_FOOTER_OFFSET = 10;
 
-  private static int LOCATIONS = 10;
+  private static int LOCATIONS = 11;
 
-  private static int BLOCKLET_ID_INDEX = 11;
+  private static int BLOCKLET_ID_INDEX = 12;
 
   private static int TASK_MIN_VALUES_INDEX = 0;
 
