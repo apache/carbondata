@@ -167,19 +167,25 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
+
     val property = Map(
       "SORT_COLUMNS" -> options.sortColumns,
       "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
       "DICTIONARY_EXCLUDE" -> options.dictionaryExclude,
-      "TABLE_BLOCKSIZE" -> options.tableBlockSize
-    ).filter(_._2.isDefined).map(p => s"'${p._1}' = '${p._2.get}'").mkString(",")
+      "TABLE_BLOCKSIZE" -> options.tableBlockSize,
+      "STREAMING" -> Option(options.isStreaming.toString)
+    ).filter(_._2.isDefined)
+      .map(property => s"'${property._1}' = '${property._2.get}'").mkString(",")
+
     val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
+
     s"""
        | CREATE TABLE IF NOT EXISTS $dbName.${options.tableName}
        | (${ carbonSchema.mkString(", ") })
        | STORED BY 'carbondata'
-       | ${ if (property.nonEmpty) "TBLPROPERTIES (" + property + ")" else "" }
        | ${ if (options.tablePath.nonEmpty) s"LOCATION '${options.tablePath.get}'" else ""}
+       |  ${ if (property.nonEmpty) "TBLPROPERTIES (" + property + ")" else "" }
+       |
      """.stripMargin
   }
 
