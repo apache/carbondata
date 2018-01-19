@@ -319,4 +319,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   public String getFileName() {
     return fileName;
   }
+
+  public void setHasException(boolean hasException) {
+    this.hasException = hasException;
+  }
 }

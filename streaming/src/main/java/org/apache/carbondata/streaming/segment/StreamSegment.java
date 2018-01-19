@@ -248,6 +248,7 @@ public class StreamSegment {
       if (writer != null) {
         LOGGER.error(ex, "Failed to append batch data to stream segment: " +
             writer.getSegmentDir());
+        writer.setHasException(true);
       }
       throw ex;
     } finally {
