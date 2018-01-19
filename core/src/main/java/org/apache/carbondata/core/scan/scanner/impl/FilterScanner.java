@@ -113,7 +113,7 @@ public class FilterScanner extends AbstractBlockletScanner {
           new BlockletStatistics(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
               blocksChunkHolder.getDataBlock().getColumnsMinValue(),
               blocksChunkHolder.getDataBlock().getColumnsNullValue());
-      
+
       BitSet bitSet = null;
       // check for implicit include filter instance
       if (filterExecuter instanceof ImplicitColumnFilterExecutor) {

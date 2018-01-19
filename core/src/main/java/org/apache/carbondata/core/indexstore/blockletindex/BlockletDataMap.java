@@ -700,12 +700,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
         String filePath = new String(safeRow.getByteArray(FILE_PATH_INDEX),
             CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
         BlockletStatistics blockletStatistics =
-            new BlockletStatistics(getMinMaxValue(unsafeRow, MAX_VALUES_INDEX),
-                getMinMaxValue(unsafeRow, MIN_VALUES_INDEX),
-                getNullValue(unsafeRow, NULL_VALUES_INDEX));
+            new BlockletStatistics(getMinMaxValue(safeRow, MAX_VALUES_INDEX),
+                getMinMaxValue(safeRow, MIN_VALUES_INDEX),
+                getNullValue(safeRow, NULL_VALUES_INDEX));
         boolean isValid =
-            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(safeRow, MAX_VALUES_INDEX),
-                getMinMaxValue(safeRow, MIN_VALUES_INDEX), filePath, blockletId);
+            addBlockBasedOnMinMaxValue(filterExecuter, blockletStatistics, filePath, blockletId);
         if (isValid) {
           blocklets.add(createBlocklet(safeRow, blockletId));
         }
