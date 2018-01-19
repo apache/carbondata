@@ -84,15 +84,15 @@ case class CarbonLoadDataCommand(
     options: scala.collection.immutable.Map[String, String],
     isOverwriteTable: Boolean,
     var inputSqlString: String = null,
-    dataFrame: Option[DataFrame] = None,
+    var dataFrame: Option[DataFrame] = None,
     updateModel: Option[UpdateTableModel] = None,
     var tableInfoOp: Option[TableInfo] = None,
-    internalOptions: Map[String, String] = Map.empty,
-    partition: Map[String, Option[String]] = Map.empty) extends AtomicRunnableCommand {
+    var internalOptions: Map[String, String] = Map.empty,
+    partition: Map[String, Option[String]] = Map.empty,
+    logicalPlan: Option[LogicalPlan] = None,
+    var operationContext: OperationContext = new OperationContext) extends AtomicRunnableCommand {
 
   var table: CarbonTable = _
-
-  val operationContext = new OperationContext
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -113,9 +113,9 @@ case class CarbonLoadDataCommand(
         relation.carbonTable
       }
     operationContext.setProperty("isOverwrite", isOverwriteTable)
-    if (CarbonUtil.hasAggregationDataMap(table)) {
-        val loadMetadataEvent = new LoadMetadataEvent(table)
-        OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
+    if(CarbonUtil.hasAggregationDataMap(table)) {
+      val loadMetadataEvent = new LoadMetadataEvent(table, false)
+      OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
     }
     Seq.empty
   }
@@ -658,7 +658,7 @@ case class CarbonLoadDataCommand(
       CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT)
       CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)
       CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD)
-      CarbonSession.threadUnset("partition.opeartioncontext")
+      CarbonSession.threadUnset("partition.operationcontext")
     }
     try {
       // Trigger auto compaction

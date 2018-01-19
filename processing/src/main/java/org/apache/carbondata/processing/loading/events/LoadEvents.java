@@ -129,10 +129,19 @@ public class LoadEvents {
     }
   }
 
+  /**
+   * Load Even class will be fired from the Load and compaction class
+   * to creating all the load commands for all preaggregate data map
+   */
   public static class LoadMetadataEvent extends Event {
     private CarbonTable carbonTable;
-    public LoadMetadataEvent(CarbonTable carbonTable) {
+    private boolean isCompaction;
+    public LoadMetadataEvent(CarbonTable carbonTable, boolean isCompaction) {
       this.carbonTable = carbonTable;
+      this.isCompaction = isCompaction;
+    }
+    public boolean isCompaction() {
+      return isCompaction;
     }
     public CarbonTable getCarbonTable() {
       return carbonTable;

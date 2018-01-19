@@ -51,6 +51,10 @@ case class CarbonInsertIntoCommand(
     loadCommand.processMetadata(sparkSession)
   }
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    loadCommand.processData(sparkSession)
+    if (null != loadCommand) {
+      loadCommand.processData(sparkSession)
+    } else {
+      Seq.empty
+    }
   }
 }

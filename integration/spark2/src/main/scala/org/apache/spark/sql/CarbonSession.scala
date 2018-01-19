@@ -238,7 +238,7 @@ object CarbonSession {
     }
   }
 
-  private[spark] def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
+  def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
     val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
     val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfoOrig != null) {

@@ -144,6 +144,7 @@ object CarbonEnv {
       .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
         AlterPreAggregateTableCompactionPostListener)
       .addListener(classOf[LoadMetadataEvent], LoadProcessMetaListener)
+      .addListener(classOf[LoadMetadataEvent], CompactionProcessMetaListener)
   }
 
   /**

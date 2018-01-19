@@ -24,11 +24,11 @@ import org.apache.spark.sql.{CarbonSession, SQLContext}
 import org.apache.spark.sql.execution.command.CompactionModel
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
-import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 
@@ -39,7 +39,8 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
     compactionModel: CompactionModel,
     executor: ExecutorService,
     sqlContext: SQLContext,
-    storeLocation: String)
+    storeLocation: String,
+    operationContext: OperationContext)
   extends Compactor(carbonLoadModel, compactionModel, executor, sqlContext, storeLocation) {
 
   override def executeCompaction(): Unit = {
@@ -57,30 +58,17 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
         carbonLoadModel.getDatabaseName + "." +
         carbonLoadModel.getTableName, "false")
-      val headers = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
-        .map(_.getColumnName).mkString(",")
-      // Creating a new query string to insert data into pre-aggregate table from that same table.
-      // For example: To compact preaggtable1 we can fire a query like insert into preaggtable1
-      // select * from preaggtable1
-      // The following code will generate the select query with a load UDF that will be used to
-      // apply DataLoadingRules
-      val childDataFrame = sqlContext.sparkSession.sql(new CarbonSpark2SqlParser()
-        // adding the aggregation load UDF
-        .addPreAggLoadFunction(
-        // creating the select query on the bases on table schema
-        PreAggregateUtil.createChildSelectQuery(
-          carbonTable.getTableInfo.getFactTable, carbonTable.getDatabaseName))).drop("preAggLoad")
+      CarbonSession.updateSessionInfoToCurrentThread(sqlContext.sparkSession)
+      val loadCommand = operationContext.getProperty(carbonTable.getTableName + "_Compaction")
+        .asInstanceOf[CarbonLoadDataCommand]
       try {
-        CarbonLoadDataCommand(
-          Some(carbonTable.getDatabaseName),
-          carbonTable.getTableName,
-          null,
-          Nil,
-          Map("fileheader" -> headers),
-          isOverwriteTable = false,
-          dataFrame = Some(childDataFrame),
-          internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true",
-            "mergedSegmentName" -> mergedLoadName)).run(sqlContext.sparkSession)
+        val newInternalOptions = loadCommand.internalOptions ++
+                                 Map("mergedSegmentName" -> mergedLoadName)
+        loadCommand.internalOptions = newInternalOptions
+        loadCommand.dataFrame =
+                  Some(PreAggregateUtil.getDataFrame(
+                    sqlContext.sparkSession, loadCommand.logicalPlan.get))
+        loadCommand.processData(sqlContext.sparkSession)
         val newLoadMetaDataDetails = SegmentStatusManager.readLoadMetadata(
           carbonTable.getMetaDataFilepath)
         val updatedLoadMetaDataDetails = newLoadMetaDataDetails collect {
@@ -103,6 +91,7 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         // For example: after 8.1 creation 0.1, 4.1, 8.1 have to be merged to 0.2 if threshhold
         // allows it.
         if (!compactionModel.compactionType.equals(CompactionType.MAJOR)) {
+
           executeCompaction()
         }
         CarbonSession

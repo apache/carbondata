@@ -152,11 +152,16 @@ case class CreatePreAggregateTableCommand(
     }
     val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
       updatedLoadQuery)).drop("preAggLoad")
-    loadCommand = PreAggregateUtil.createLoadCommandForChild(parentTable,
+    val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
+      .filter(dataMap => dataMap.getDataMapName.equalsIgnoreCase(dataMapName)).head
+      .asInstanceOf[AggregationDataMapSchema]
+    loadCommand = PreAggregateUtil.createLoadCommandForChild(
+      dataMap.getChildSchema.getListOfColumns,
       tableIdentifier,
       dataFrame,
       false,
       sparkSession = sparkSession)
+    loadCommand.processMetadata(sparkSession)
     Seq.empty
   }
 
@@ -180,6 +185,8 @@ case class CreatePreAggregateTableCommand(
     if (loadAvailable) {
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.
+      loadCommand.dataFrame = Some(PreAggregateUtil
+        .getDataFrame(sparkSession, loadCommand.logicalPlan.get))
       PreAggregateUtil.startDataLoadForDataMap(
         parentTable,
         segmentToLoad = "*",

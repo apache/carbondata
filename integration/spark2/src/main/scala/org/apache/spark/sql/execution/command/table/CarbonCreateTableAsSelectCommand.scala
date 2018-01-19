@@ -43,6 +43,7 @@ case class CarbonCreateTableAsSelectCommand(
     tableLocation: Option[String] = None) extends AtomicRunnableCommand {
 
   var loadCommand: CarbonInsertIntoCommand = _
+
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = tableInfo.getFactTable.getTableName
