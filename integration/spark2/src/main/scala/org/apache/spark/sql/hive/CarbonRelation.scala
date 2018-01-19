@@ -34,7 +34,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 
 /**
  * Represents logical plan for one carbon table
@@ -204,7 +204,6 @@ case class CarbonRelation(
   def sizeInBytes: Long = {
     val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
       carbonTable.getAbsoluteTableIdentifier)
-
     if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
       if (new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
         .getValidAndInvalidSegments.getValidSegments.isEmpty) {
@@ -215,8 +214,19 @@ case class CarbonRelation(
           carbonTable.getCarbonTableIdentifier).getPath
         val fileType = FileFactory.getFileType(tablePath)
         if (FileFactory.isFileExist(tablePath, fileType)) {
+          // get the valid segments
+          val segments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+            .getValidAndInvalidSegments.getValidSegments.asScala
+          var size = 0L
+          // for each segment calculate the size
+          segments.foreach {validSeg =>
+            size = size + FileFactory.getDirectorySize(
+              CarbonTablePath.getSegmentPath(tablePath, validSeg))
+          }
+          // update the new table status time
           tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
-          sizeInBytesLocalValue = FileFactory.getDirectorySize(tablePath)
+          // update the new size
+          sizeInBytesLocalValue = size
         }
       }
     }

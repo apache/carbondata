@@ -52,10 +52,19 @@ public class SessionParams implements Serializable {
 
   private Map<String, String> sProps;
   private Map<String, String> addedProps;
-
+  private Map<String, Object> extraInfo;
   public SessionParams() {
     sProps = new HashMap<>();
     addedProps = new HashMap<>();
+    extraInfo = new HashMap<>();
+  }
+
+  public void setExtraInfo(String key, Object value) {
+    this.extraInfo.put(key, value);
+  }
+
+  public Object getExtraInfo(String key) {
+    return this.extraInfo.get(key);
   }
 
   /**
@@ -198,6 +207,9 @@ public class SessionParams implements Serializable {
     sProps.remove(property);
   }
 
+  public void removeExtraInfo(String key) {
+    extraInfo.remove(key);
+  }
   /**
    * clear the set properties
    */
