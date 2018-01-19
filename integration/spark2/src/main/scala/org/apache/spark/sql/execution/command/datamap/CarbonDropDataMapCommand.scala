@@ -36,7 +36,6 @@ import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverte
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.events._
 
-
 /**
  * Drops the datamap and any related tables associated with the datamap
  * @param dataMapName
@@ -80,7 +79,6 @@ case class CarbonDropDataMapCommand(
         val dataMapSchema = carbonTable.get.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
           find(_._1.getDataMapName.equalsIgnoreCase(dataMapName))
         if (dataMapSchema.isDefined) {
-
           val operationContext = new OperationContext
           val dropDataMapPreEvent =
             DropDataMapPreEvent(
@@ -97,16 +95,13 @@ case class CarbonDropDataMapCommand(
               carbonTable.get.getTableInfo,
               dbName,
               tableName))(sparkSession)
-          if (dataMapSchema.isDefined) {
-            if (dataMapSchema.get._1.getRelationIdentifier != null) {
-              commandToRun = CarbonDropTableCommand(
-                ifExistsSet = true,
-                Some(dataMapSchema.get._1.getRelationIdentifier.getDatabaseName),
-                dataMapSchema.get._1.getRelationIdentifier.getTableName,
-                dropChildTable = true)
-              commandToRun.processMetadata(sparkSession)
-            }
-          }
+          commandToRun = CarbonDropTableCommand(
+            ifExistsSet = true,
+            Some(dataMapSchema.get._1.getRelationIdentifier.getDatabaseName),
+            dataMapSchema.get._1.getRelationIdentifier.getTableName,
+            dropChildTable = true
+          )
+          commandToRun.processMetadata(sparkSession)
           // fires the event after dropping datamap from main table schema
           val dropDataMapPostEvent =
             DropDataMapPostEvent(
