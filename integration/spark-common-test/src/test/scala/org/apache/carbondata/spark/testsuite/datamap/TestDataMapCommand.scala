@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.datamap
 
+import java.io.File
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -207,6 +209,26 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
   }
 
+  test("create pre-agg table with path") {
+    sql("drop table if exists maintbl_preagg")
+    sql("drop table if exists maintbl ")
+    val path = "./_pre-agg_test"
+    try {
+      sql("create table maintbl(year int,month int,name string,salary int) stored by 'carbondata' tblproperties('sort_columns'='month,year,name')")
+      sql("insert into maintbl select 10,11,'amy',12")
+      sql("insert into maintbl select 10,11,'amy',12")
+      sql("create datamap preagg on table maintbl " +
+          "using 'preaggregate' " +
+          s"dmproperties ('path'='$path') " +
+          "as select name,avg(salary) from maintbl group by name")
+      assertResult(true)(new File(path).exists())
+      checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("amy", 12.0))
+      sql("drop datamap preagg on table maintbl")
+    } finally {
+      assertResult(false)(new File(path).exists())
+      sql("drop table maintbl")
+    }
+  }
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS maintable")
