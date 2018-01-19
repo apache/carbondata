@@ -77,7 +77,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION);
     assertTrue(valueBeforeValidation.equals(valueAfterValidation));
-    assertTrue(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT
+    assertTrue("false"
         .equalsIgnoreCase(valueAfterValidation));
   }
 

@@ -41,11 +41,11 @@ class CarbonSQLConf(sparkSession: SparkSession) {
           CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT).toBoolean)
     val CARBON_CUSTOM_BLOCK_DISTRIBUTION =
       buildConf(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION)
-        .doc("To enable/ disable carbon custom block distribution.")
-        .booleanConf
+        .doc("To set carbon task distribution.")
+        .stringConf
         .createWithDefault(carbonProperties
-          .getProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
-            CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT).toBoolean)
+          .getProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
+            CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT))
     val BAD_RECORDS_LOGGER_ENABLE =
       buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE)
         .doc("To enable/ disable carbon bad record logger.")
@@ -116,8 +116,8 @@ class CarbonSQLConf(sparkSession: SparkSession) {
         CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT).toBoolean)
     sparkSession.conf.set(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
       carbonProperties
-        .getProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
-          CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT).toBoolean)
+        .getProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
+          CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT))
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
       CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT.toBoolean)
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,

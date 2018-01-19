@@ -176,7 +176,7 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
 
 
   override def afterAll = {
-//    dropTable
+    dropTable
   }
 
   def dropTable = {

@@ -243,7 +243,7 @@ case class CarbonLoadDataCommand(
       } catch {
         case CausedBy(ex: NoRetryException) =>
           // update the load entry in table status file for changing the status to marked for delete
-          if (isUpdateTableStatusRequired && !table.isHivePartitionTable) {
+          if (isUpdateTableStatusRequired) {
             CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
           }
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
@@ -254,7 +254,7 @@ case class CarbonLoadDataCommand(
         case ex: Exception =>
           LOGGER.error(ex)
           // update the load entry in table status file for changing the status to marked for delete
-          if (isUpdateTableStatusRequired && !table.isHivePartitionTable) {
+          if (isUpdateTableStatusRequired) {
             CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
           }
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
