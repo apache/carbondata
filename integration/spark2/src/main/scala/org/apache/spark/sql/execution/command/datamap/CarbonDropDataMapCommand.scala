@@ -51,10 +51,11 @@ case class CarbonDropDataMapCommand(
     tableName: String)
   extends AtomicRunnableCommand {
 
+  var commandToRun: CarbonDropTableCommand = _
+
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
-    val identifier = TableIdentifier(tableName, Option(dbName))
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK)
     val carbonEnv = CarbonEnv.getInstance(sparkSession)
     val catalog = carbonEnv.carbonMetastore
@@ -68,18 +69,12 @@ case class CarbonDropDataMapCommand(
         lock => carbonLocks += CarbonLockUtil.getLockObject(tableIdentifier, lock)
       }
       LOGGER.audit(s"Deleting datamap [$dataMapName] under table [$tableName]")
-      var carbonTable: Option[CarbonTable] =
-        catalog.getTableFromMetadataCache(dbName, tableName)
-      if (carbonTable.isEmpty) {
-        try {
-          carbonTable = Some(catalog.lookupRelation(identifier)(sparkSession)
-            .asInstanceOf[CarbonRelation].metaData.carbonTable)
-        } catch {
-          case ex: NoSuchTableException =>
-            if (!ifExistsSet) {
-              throw ex
-            }
-        }
+      val carbonTable: Option[CarbonTable] = try {
+        Some(CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession))
+      } catch {
+        case ex: NoSuchTableException =>
+          if (!ifExistsSet) throw ex
+          else None
       }
       if (carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList.size() > 0) {
         val dataMapSchema = carbonTable.get.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
@@ -104,12 +99,12 @@ case class CarbonDropDataMapCommand(
               tableName))(sparkSession)
           if (dataMapSchema.isDefined) {
             if (dataMapSchema.get._1.getRelationIdentifier != null) {
-              CarbonDropTableCommand(
+              commandToRun = CarbonDropTableCommand(
                 ifExistsSet = true,
                 Some(dataMapSchema.get._1.getRelationIdentifier.getDatabaseName),
                 dataMapSchema.get._1.getRelationIdentifier.getTableName,
-                dropChildTable = true
-              ).processMetadata(sparkSession)
+                dropChildTable = true)
+              commandToRun.processMetadata(sparkSession)
             }
           }
           // fires the event after dropping datamap from main table schema
@@ -143,14 +138,11 @@ case class CarbonDropDataMapCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     // delete the table folder
-    val tableIdentifier = CarbonEnv.getIdentifier(databaseNameOp, tableName)(sparkSession)
-    DataMapStoreManager.getInstance().clearDataMap(tableIdentifier, dataMapName)
-    CarbonDropTableCommand(
-      ifExistsSet = true,
-      databaseNameOp,
-      dataMapName,
-      dropChildTable = true
-    ).processData(sparkSession)
+    if (commandToRun != null) {
+      DataMapStoreManager.getInstance().clearDataMap(
+        commandToRun.carbonTable.getAbsoluteTableIdentifier, dataMapName)
+      commandToRun.processData(sparkSession)
+    }
     Seq.empty
   }
 
