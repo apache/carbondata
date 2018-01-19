@@ -20,6 +20,7 @@ package org.apache.carbondata.processing.loading.events;
 import java.util.Map;
 
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.events.Event;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
@@ -128,6 +129,15 @@ public class LoadEvents {
     }
   }
 
+  public static class LoadMetadataEvent extends Event {
+    private CarbonTable carbonTable;
+    public LoadMetadataEvent(CarbonTable carbonTable) {
+      this.carbonTable = carbonTable;
+    }
+    public CarbonTable getCarbonTable() {
+      return carbonTable;
+    }
+  }
   /**
    * Class for handling clean up in case of any failure and abort the operation.
    */

@@ -30,6 +30,8 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 import org.apache.carbondata.events.OperationContext;
@@ -106,18 +108,13 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     long segmentSize = CarbonLoaderUtil
         .addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
     if (segmentSize > 0 || overwriteSet) {
-      String operationContextStr =
-          context.getConfiguration().get(
-              CarbonTableOutputFormat.OPERATION_CONTEXT,
-              null);
-      if (operationContextStr != null) {
-        OperationContext operationContext =
-            (OperationContext) ObjectSerializationUtil.convertStringToObject(operationContextStr);
+      Object operationContext = getOperationContext();
+      if (operationContext != null) {
         LoadEvents.LoadTablePreStatusUpdateEvent event =
             new LoadEvents.LoadTablePreStatusUpdateEvent(carbonTable.getCarbonTableIdentifier(),
                 loadModel);
         try {
-          OperationListenerBus.getInstance().fireEvent(event, operationContext);
+          OperationListenerBus.getInstance().fireEvent(event, (OperationContext) operationContext);
         } catch (Exception e) {
           throw new IOException(e);
         }
@@ -143,6 +140,15 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     } else {
       CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
     }
+  }
+
+  private Object getOperationContext() {
+    // when validate segments is disabled in thread local update it to CarbonTableInputFormat
+    CarbonSessionInfo carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
+    if (carbonSessionInfo != null) {
+      return carbonSessionInfo.getThreadParams().getExtraInfo("partition.operationcontext");
+    }
+    return null;
   }
 
   /**

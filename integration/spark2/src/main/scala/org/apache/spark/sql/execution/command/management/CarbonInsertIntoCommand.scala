@@ -19,7 +19,7 @@ package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.DataCommand
+import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataCommand}
 
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -28,12 +28,14 @@ case class CarbonInsertIntoCommand(
     child: LogicalPlan,
     overwrite: Boolean,
     partition: Map[String, Option[String]])
-  extends DataCommand {
+  extends AtomicRunnableCommand {
 
-  override def processData(sparkSession: SparkSession): Seq[Row] = {
+  var loadCommand: CarbonLoadDataCommand = _
+
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val df = Dataset.ofRows(sparkSession, child)
     val header = relation.tableSchema.get.fields.map(_.name).mkString(",")
-    val load = CarbonLoadDataCommand(
+    loadCommand = CarbonLoadDataCommand(
       databaseNameOp = Some(relation.carbonRelation.databaseName),
       tableName = relation.carbonRelation.tableName,
       factPathFromUser = null,
@@ -45,10 +47,10 @@ case class CarbonInsertIntoCommand(
       updateModel = None,
       tableInfoOp = None,
       internalOptions = Map.empty,
-      partition = partition).run(sparkSession)
-    // updating relation metadata. This is in case of auto detect high cardinality
-    relation.carbonRelation.metaData =
-      CarbonSparkUtil.createSparkMeta(relation.carbonRelation.carbonTable)
-    load
+      partition = partition)
+    loadCommand.processMetadata(sparkSession)
+  }
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
+    loadCommand.processData(sparkSession)
   }
 }

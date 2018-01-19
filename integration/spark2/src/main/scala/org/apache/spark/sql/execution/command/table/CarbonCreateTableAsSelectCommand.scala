@@ -42,15 +42,11 @@ case class CarbonCreateTableAsSelectCommand(
     ifNotExistsSet: Boolean = false,
     tableLocation: Option[String] = None) extends AtomicRunnableCommand {
 
-  /**
-   * variable to be used for insert into command for checking whether the
-   * table is created newly or already existed
-   */
-  var isTableCreated: Boolean = false
-
+  var loadCommand: CarbonInsertIntoCommand = _
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = tableInfo.getFactTable.getTableName
+    var isTableCreated = false
     var databaseOpt: Option[String] = None
     if (tableInfo.getDatabaseName != null) {
       databaseOpt = Some(tableInfo.getDatabaseName)
@@ -71,10 +67,7 @@ case class CarbonCreateTableAsSelectCommand(
       CarbonCreateTableCommand(tableInfo, ifNotExistsSet, tableLocation).run(sparkSession)
       isTableCreated = true
     }
-    Seq.empty
-  }
 
-  override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (isTableCreated) {
       val tableName = tableInfo.getFactTable.getTableName
       var databaseOpt: Option[String] = None
@@ -87,12 +80,23 @@ case class CarbonCreateTableAsSelectCommand(
         .createCarbonDataSourceHadoopRelation(sparkSession,
           TableIdentifier(tableName, Option(dbName)))
       // execute command to load data into carbon table
-      CarbonInsertIntoCommand(
+      loadCommand = CarbonInsertIntoCommand(
         carbonDataSourceHadoopRelation,
         query,
         overwrite = false,
-        partition = Map.empty).run(sparkSession)
-      LOGGER.audit(s"CTAS operation completed successfully for $dbName.$tableName")
+        partition = Map.empty)
+      loadCommand.processMetadata(sparkSession)
+    }
+    Seq.empty
+  }
+
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
+    if (null != loadCommand) {
+      val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+      loadCommand.processData(sparkSession)
+      val carbonTable = loadCommand.relation.carbonTable
+      LOGGER.audit(s"CTAS operation completed successfully for " +
+                   s"${carbonTable.getDatabaseName}.${carbonTable.getTableName}")
     }
     Seq.empty
   }

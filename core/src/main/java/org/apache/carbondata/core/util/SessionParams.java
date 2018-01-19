@@ -28,6 +28,8 @@ import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
+import org.apache.commons.collections.map.HashedMap;
+
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION;
@@ -52,10 +54,19 @@ public class SessionParams implements Serializable {
 
   private Map<String, String> sProps;
   private Map<String, String> addedProps;
-
+  private Map<String, Object> extraInfo;
   public SessionParams() {
     sProps = new HashMap<>();
     addedProps = new HashMap<>();
+    extraInfo = new HashMap<>();
+  }
+
+  public void setExtraInfo(String key, Object value) {
+    this.extraInfo.put(key, value);
+  }
+
+  public Object getExtraInfo(String key) {
+    return this.extraInfo.get(key);
   }
 
   /**
@@ -198,6 +209,9 @@ public class SessionParams implements Serializable {
     sProps.remove(property);
   }
 
+  public void removeExtraInfo(String key) {
+    extraInfo.remove(key);
+  }
   /**
    * clear the set properties
    */

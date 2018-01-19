@@ -20,18 +20,78 @@ package org.apache.spark.sql.execution.command.preaaggregate
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.apache.spark.sql.CarbonEnv
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonSession, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.AlterTableModel
-import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
+import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonLoadDataCommand}
+import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 
+object LoadProcessMetaListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override protected def onEvent(event: Event,
+      operationContext: OperationContext): Unit = {
+    val sparkSession = SparkSession.getActiveSession.get
+    val tableEvent = event.asInstanceOf[LoadMetadataEvent]
+    val table = tableEvent.getCarbonTable
+    if (CarbonUtil.hasAggregationDataMap(table)) {
+      // getting all the aggergate datamap schema
+      val aggregationDataMapList = table.getTableInfo.getDataMapSchemaList.asScala
+        .filter(_.isInstanceOf[AggregationDataMapSchema])
+        .asInstanceOf[mutable.ArrayBuffer[AggregationDataMapSchema]]
+      // sorting the datamap for timeseries rollup
+      val sortedList = aggregationDataMapList.sortBy(_.getOrdinal)
+      val parentTableName = table.getTableName
+      val databaseName = table.getDatabaseName
+      val list = scala.collection.mutable.ListBuffer.empty[AggregationDataMapSchema]
+      for (dataMapSchema: AggregationDataMapSchema <- sortedList) {
+        val childTableName = dataMapSchema.getRelationIdentifier.getTableName
+        val childDatabaseName = dataMapSchema.getRelationIdentifier.getDatabaseName
+        val childSelectQuery = if (!dataMapSchema.isTimeseriesDataMap) {
+          PreAggregateUtil.getChildQuery(dataMapSchema)
+        } else {
+          // for timeseries rollup policy
+          val tableSelectedForRollup = PreAggregateUtil.getRollupDataMapNameForTimeSeries(list,
+            dataMapSchema)
+          list += dataMapSchema
+          // if non of the rollup data map is selected hit the maintable and prepare query
+          if (tableSelectedForRollup.isEmpty) {
+            PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMapSchema.getChildSchema,
+              parentTableName,
+              databaseName)
+          } else {
+            // otherwise hit the select rollup datamap schema
+            PreAggregateUtil.createTimeseriesSelectQueryForRollup(dataMapSchema.getChildSchema,
+              tableSelectedForRollup.get,
+              databaseName)
+          }
+        }
+        val childDataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
+          childSelectQuery)).drop("preAggLoad")
+        val isOverwrite =
+          operationContext.getProperty("isOverwrite").asInstanceOf[Boolean]
+        val loadCommand = PreAggregateUtil.createLoadCommandForChild(
+          table,
+          TableIdentifier(childTableName, Some(childDatabaseName)),
+          childDataFrame,
+          isOverwrite,
+          sparkSession)
+        operationContext.setProperty(dataMapSchema.getDataMapName, loadCommand)
+      }
+    }
+    print("")
+  }
+}
 object LoadPostAggregateListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
@@ -42,8 +102,7 @@ object LoadPostAggregateListener extends OperationEventListener {
     val loadEvent = event.asInstanceOf[LoadTablePreStatusUpdateEvent]
     val sparkSession = SparkSession.getActiveSession.get
     val carbonLoadModel = loadEvent.getCarbonLoadModel
-    val table = CarbonEnv.getCarbonTable(Option(carbonLoadModel.getDatabaseName),
-      carbonLoadModel.getTableName)(sparkSession)
+    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     if (CarbonUtil.hasAggregationDataMap(table)) {
       // getting all the aggergate datamap schema
       val aggregationDataMapList = table.getTableInfo.getDataMapSchemaList.asScala
@@ -51,41 +110,15 @@ object LoadPostAggregateListener extends OperationEventListener {
         .asInstanceOf[mutable.ArrayBuffer[AggregationDataMapSchema]]
       // sorting the datamap for timeseries rollup
       val sortedList = aggregationDataMapList.sortBy(_.getOrdinal)
-      val parentTableName = table.getTableName
-      val databasename = table.getDatabaseName
-      val list = scala.collection.mutable.ListBuffer.empty[AggregationDataMapSchema]
       for (dataMapSchema: AggregationDataMapSchema <- sortedList) {
-        val childTableName = dataMapSchema.getRelationIdentifier.getTableName
-        val childDatabaseName = dataMapSchema.getRelationIdentifier.getDatabaseName
-        val childSelectQuery = if (!dataMapSchema.isTimeseriesDataMap) {
-          PreAggregateUtil.getChildQuery(dataMapSchema)
-        } else {
-          // for timeseries rollup policy
-          val tableSelectedForRollup = PreAggregateUtil.getRollupDataMapNameForTimeSeries(list,
-              dataMapSchema)
-          list += dataMapSchema
-          // if non of the rollup data map is selected hit the maintable and prepare query
-          if (tableSelectedForRollup.isEmpty) {
-            PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMapSchema.getChildSchema,
-                parentTableName,
-                databasename)
-          } else {
-            // otherwise hit the select rollup datamap schema
-            PreAggregateUtil.createTimeseriesSelectQueryForRollup(dataMapSchema.getChildSchema,
-                tableSelectedForRollup.get,
-                databasename)
-          }
-        }
-        val isOverwrite =
-          operationContext.getProperty("isOverwrite").asInstanceOf[Boolean]
+        val childDataFrame = operationContext.getProperty(dataMapSchema.getDataMapName)
+          .asInstanceOf[CarbonLoadDataCommand]
         PreAggregateUtil.startDataLoadForDataMap(
             table,
-            TableIdentifier(childTableName, Some(childDatabaseName)),
-            childSelectQuery,
             carbonLoadModel.getSegmentId,
             validateSegments = false,
-            isOverwrite,
-            sparkSession)
+            sparkSession,
+            childDataFrame)
         }
       }
     }
