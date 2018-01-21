@@ -29,7 +29,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 
 /**
- * This example introduces how to use CarbonData batch load to integrate 
+ * This example introduces how to use CarbonData batch load to integrate
  * with Spark Streaming(it's DStream, not Spark Structured Streaming)
  */
 // scalastyle:off println
@@ -37,16 +37,16 @@ import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 case class DStreamData(id: Int, name: String, city: String, salary: Float)
 
 object DStreamWithBatchTableExample {
-  
+
   def main(args: Array[String]): Unit = {
-    
+
     // setup paths
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metastoredb = s"$rootPath/examples/spark2/target"
-    val checkpointPath = 
+    val checkpointPath =
       s"$rootPath/examples/spark2/target/spark_streaming_cp_" +
       System.currentTimeMillis().toString()
     val streamTableName = s"dstream_batch_table"
@@ -61,7 +61,7 @@ object DStreamWithBatchTableExample {
       .appName("DStreamWithBatchTableExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .getOrCreateCarbonSession(storeLocation, metastoredb)
-    
+
     spark.sparkContext.setLogLevel("WARN")
 
     val requireCreateTable = true
@@ -70,7 +70,7 @@ object DStreamWithBatchTableExample {
       // drop table if exists previously
       spark.sql(s"DROP TABLE IF EXISTS ${ streamTableName }")
       // Create target carbon table and populate with initial data
-      // set AUTO_LOAD_MERGE to true to compact segment automatically 
+      // set AUTO_LOAD_MERGE to true to compact segment automatically
       spark.sql(
         s"""
            | CREATE TABLE ${ streamTableName }(
@@ -98,7 +98,7 @@ object DStreamWithBatchTableExample {
            | INTO TABLE $streamTableName
            | OPTIONS('HEADER'='true')
          """.stripMargin)
-         
+
       // streaming ingest
       val serverSocket = new ServerSocket(7071)
       val thread1 = writeSocket(serverSocket)
@@ -106,7 +106,7 @@ object DStreamWithBatchTableExample {
       val ssc = startStreaming(spark, streamTableName, tablePath, checkpointPath)
       // wait for stop signal to stop Spark Streaming App
       waitForStopSignal(ssc)
-      // it need to start Spark Streaming App in main thread 
+      // it need to start Spark Streaming App in main thread
       // otherwise it will encounter an not-serializable exception.
       ssc.start()
       ssc.awaitTermination()
@@ -114,7 +114,7 @@ object DStreamWithBatchTableExample {
       thread2.interrupt()
       serverSocket.close()
     }
-    
+
     spark.sql(s"select count(*) from ${ streamTableName }").show(100, truncate = false)
 
     spark.sql(s"select * from ${ streamTableName }").show(100, truncate = false)
@@ -129,14 +129,14 @@ object DStreamWithBatchTableExample {
     spark.sql(s"select * " +
               s"from ${ streamTableName } " +
               s"where id < 10 limit 100").show(100, truncate = false)
-    
+
     // show segments
     spark.sql(s"SHOW SEGMENTS FOR TABLE ${streamTableName}").show(false)
-    
+
     spark.stop()
     System.out.println("streaming finished")
   }
-  
+
   def showTableCount(spark: SparkSession, tableName: String): Thread = {
     val thread = new Thread() {
       override def run(): Unit = {
@@ -150,7 +150,7 @@ object DStreamWithBatchTableExample {
     thread.start()
     thread
   }
-  
+
   def waitForStopSignal(ssc: StreamingContext): Thread = {
     val thread = new Thread() {
       override def run(): Unit = {
@@ -168,16 +168,16 @@ object DStreamWithBatchTableExample {
       tablePath: CarbonTablePath, checkpointPath: String): StreamingContext = {
     var ssc: StreamingContext = null
     try {
-      // recommend: the batch interval must set larger, such as 30s, 1min.  
+      // recommend: the batch interval must set larger, such as 30s, 1min.
       ssc = new StreamingContext(spark.sparkContext, Seconds(15))
       ssc.checkpoint(checkpointPath)
-      
+
       val readSocketDF = ssc.socketTextStream("localhost", 7071)
-      
+
       val batchData = readSocketDF
         .map(_.split(","))
         .map(fields => DStreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat))
-      
+
       batchData.foreachRDD { (rdd: RDD[DStreamData], time: Time) => {
         val df = SparkSession.getActiveSession.get
           .createDataFrame(rdd).toDF("id", "name", "city", "salary")
@@ -187,7 +187,7 @@ object DStreamWithBatchTableExample {
           .option("tableName", tableName)
           .option("tempCSV", "false")
           .option("compress", "true")
-          .option("single_pass", "true") 
+          .option("single_pass", "true")
           .mode(SaveMode.Append)
           .save()
       }}
