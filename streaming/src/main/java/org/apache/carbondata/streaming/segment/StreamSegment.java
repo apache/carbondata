@@ -361,7 +361,7 @@ public class StreamSegment {
   }
 
   /**
-   * update carbonindex file after after a stream batch.
+   * update carbonindex file after a stream batch.
    */
   public static void updateIndexFile(String segmentDir) throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);

@@ -32,11 +32,12 @@ object ExampleUtils {
       .getCanonicalPath
   val storeLocation: String = currentPath + "/target/store"
 
-  def createCarbonSession(appName: String): SparkSession = {
+  def createCarbonSession(appName: String, workThreadNum: Int = 1): SparkSession = {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
+    val metastoredb = s"$rootPath/examples/spark2/target"
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
@@ -44,14 +45,18 @@ object ExampleUtils {
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
       .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "")
 
+    val masterUrl = if (workThreadNum <= 1) {
+      "local"
+    } else {
+      "local[" + workThreadNum.toString() + "]"
+    }
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
       .builder()
-      .master("local")
-      .appName("CarbonSessionExample")
+      .master(masterUrl)
+      .appName(appName)
       .config("spark.sql.warehouse.dir", warehouse)
-      .config("spark.driver.host", "localhost")
-      .getOrCreateCarbonSession(storeLocation)
+      .getOrCreateCarbonSession(storeLocation, metastoredb)
     spark.sparkContext.setLogLevel("WARN")
     spark
   }
