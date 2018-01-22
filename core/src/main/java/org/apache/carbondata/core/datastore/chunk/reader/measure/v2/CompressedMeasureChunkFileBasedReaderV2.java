@@ -110,7 +110,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
 
   public ColumnPage convertToColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber) throws IOException, MemoryException {
-    int copyPoint = measureRawColumnChunk.getOffSet();
+    int copyPoint = (int) measureRawColumnChunk.getOffSet();
     int blockIndex = measureRawColumnChunk.getColumnIndex();
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
     DataChunk2 measureColumnChunk = CarbonUtil.readDataChunk(rawData, copyPoint,

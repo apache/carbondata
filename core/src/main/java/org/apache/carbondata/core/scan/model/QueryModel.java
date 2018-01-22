@@ -112,6 +112,11 @@ public class QueryModel implements Serializable {
   private boolean[] isFilterDimensions;
   private boolean[] isFilterMeasures;
 
+  /**
+   * Read the data from carbondata file page by page instead of whole blocklet.
+   */
+  private boolean readPageByPage;
+
   public QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     queryDimension = new ArrayList<QueryDimension>();
@@ -416,5 +421,13 @@ public class QueryModel implements Serializable {
 
   public void setIsFilterMeasures(boolean[] isFilterMeasures) {
     this.isFilterMeasures = isFilterMeasures;
+  }
+
+  public boolean isReadPageByPage() {
+    return readPageByPage;
+  }
+
+  public void setReadPageByPage(boolean readPageByPage) {
+    this.readPageByPage = readPageByPage;
   }
 }
