@@ -20,25 +20,16 @@ package org.apache.carbondata.examples
 import java.io.{File, PrintWriter}
 import java.net.ServerSocket
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonEnv, SaveMode, SparkSession}
-import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 
-/**
- * This example introduces how to use CarbonData batch load to integrate
- * with Spark Streaming(it's DStream, not Spark Structured Streaming)
- */
 // scalastyle:off println
-
-case class DStreamData(id: Int, name: String, city: String, salary: Float)
-
-object DStreamWithBatchTableExample {
-
-  def main(args: Array[String]): Unit = {
+object CarbonStructuredStreamingExample {
+  def main(args: Array[String]) {
 
     // setup paths
     val rootPath = new File(this.getClass.getResource("/").getPath
@@ -46,10 +37,7 @@ object DStreamWithBatchTableExample {
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metastoredb = s"$rootPath/examples/spark2/target"
-    val checkpointPath =
-      s"$rootPath/examples/spark2/target/spark_streaming_cp_" +
-      System.currentTimeMillis().toString()
-    val streamTableName = s"dstream_batch_table"
+    val streamTableName = s"stream_table"
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
@@ -57,36 +45,48 @@ object DStreamWithBatchTableExample {
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
       .builder()
-      .master("local[4]")
-      .appName("DStreamWithBatchTableExample")
+      .master("local")
+      .appName("CarbonStructuredStreamingExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
-    spark.sparkContext.setLogLevel("WARN")
+    spark.sparkContext.setLogLevel("ERROR")
 
     val requireCreateTable = true
+    val useComplexDataType = false
 
     if (requireCreateTable) {
       // drop table if exists previously
       spark.sql(s"DROP TABLE IF EXISTS ${ streamTableName }")
       // Create target carbon table and populate with initial data
-      // set AUTO_LOAD_MERGE to true to compact segment automatically
-      spark.sql(
-        s"""
-           | CREATE TABLE ${ streamTableName }(
-           | id INT,
-           | name STRING,
-           | city STRING,
-           | salary FLOAT
-           | )
-           | STORED BY 'carbondata'
-           | TBLPROPERTIES(
-           | 'sort_columns'='name',
-           | 'dictionary_include'='city',
-           | 'MAJOR_COMPACTION_SIZE'='64',
-           | 'AUTO_LOAD_MERGE'='true',
-           | 'COMPACTION_LEVEL_THRESHOLD'='4,10')
-           | """.stripMargin)
+      if (useComplexDataType) {
+        spark.sql(
+          s"""
+             | CREATE TABLE ${ streamTableName }(
+             | id INT,
+             | name STRING,
+             | city STRING,
+             | salary FLOAT,
+             | file struct<school:array<string>, age:int>
+             | )
+             | STORED BY 'carbondata'
+             | TBLPROPERTIES(
+             | 'streaming'='true', 'sort_columns'='name', 'dictionary_include'='city')
+             | """.stripMargin)
+      } else {
+        spark.sql(
+          s"""
+             | CREATE TABLE ${ streamTableName }(
+             | id INT,
+             | name STRING,
+             | city STRING,
+             | salary FLOAT
+             | )
+             | STORED BY 'carbondata'
+             | TBLPROPERTIES(
+             | 'streaming'='true', 'sort_columns'='name')
+             | """.stripMargin)
+      }
 
       val carbonTable = CarbonEnv.getCarbonTable(Some("default"), streamTableName)(spark)
       val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
@@ -101,17 +101,15 @@ object DStreamWithBatchTableExample {
 
       // streaming ingest
       val serverSocket = new ServerSocket(7071)
-      val thread1 = writeSocket(serverSocket)
-      val thread2 = showTableCount(spark, streamTableName)
-      val ssc = startStreaming(spark, streamTableName, tablePath, checkpointPath)
-      // wait for stop signal to stop Spark Streaming App
-      waitForStopSignal(ssc)
-      // it need to start Spark Streaming App in main thread
-      // otherwise it will encounter an not-serializable exception.
-      ssc.start()
-      ssc.awaitTermination()
+      val thread1 = startStreaming(spark, tablePath)
+      val thread2 = writeSocket(serverSocket)
+      val thread3 = showTableCount(spark, streamTableName)
+
+      System.out.println("type enter to interrupt streaming")
+      System.in.read()
       thread1.interrupt()
       thread2.interrupt()
+      thread3.interrupt()
       serverSocket.close()
     }
 
@@ -130,8 +128,12 @@ object DStreamWithBatchTableExample {
               s"from ${ streamTableName } " +
               s"where id < 10 limit 100").show(100, truncate = false)
 
-    // show segments
-    spark.sql(s"SHOW SEGMENTS FOR TABLE ${streamTableName}").show(false)
+    if (useComplexDataType) {
+      // complex
+      spark.sql(s"select file.age, file.school " +
+                s"from ${ streamTableName } " +
+                s"where where file.age = 30 ").show(100, truncate = false)
+    }
 
     spark.stop()
     System.out.println("streaming finished")
@@ -142,8 +144,7 @@ object DStreamWithBatchTableExample {
       override def run(): Unit = {
         for (_ <- 0 to 1000) {
           spark.sql(s"select count(*) from $tableName").show(truncate = false)
-          spark.sql(s"SHOW SEGMENTS FOR TABLE ${tableName}").show(false)
-          Thread.sleep(1000 * 5)
+          Thread.sleep(1000 * 3)
         }
       }
     }
@@ -151,52 +152,38 @@ object DStreamWithBatchTableExample {
     thread
   }
 
-  def waitForStopSignal(ssc: StreamingContext): Thread = {
+  def startStreaming(spark: SparkSession, tablePath: CarbonTablePath): Thread = {
     val thread = new Thread() {
       override def run(): Unit = {
-        // use command 'nc 127.0.0.1 7072' to stop Spark Streaming App
-        new ServerSocket(7072).accept()
-        // don't stop SparkContext here
-        ssc.stop(false, true)
+        var qry: StreamingQuery = null
+        try {
+          val readSocketDF = spark.readStream
+            .format("socket")
+            .option("host", "localhost")
+            .option("port", 7071)
+            .load()
+
+          // Write data from socket stream to carbondata file
+          qry = readSocketDF.writeStream
+            .format("carbondata")
+            .trigger(ProcessingTime("5 seconds"))
+            .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
+            .option("dbName", "default")
+            .option("tableName", "stream_table")
+            .start()
+
+          qry.awaitTermination()
+        } catch {
+          case ex: Exception =>
+            ex.printStackTrace()
+            println("Done reading and writing streaming data")
+        } finally {
+          qry.stop()
+        }
       }
     }
     thread.start()
     thread
-  }
-
-  def startStreaming(spark: SparkSession, tableName: String,
-      tablePath: CarbonTablePath, checkpointPath: String): StreamingContext = {
-    var ssc: StreamingContext = null
-    try {
-      // recommend: the batch interval must set larger, such as 30s, 1min.
-      ssc = new StreamingContext(spark.sparkContext, Seconds(15))
-      ssc.checkpoint(checkpointPath)
-
-      val readSocketDF = ssc.socketTextStream("localhost", 7071)
-
-      val batchData = readSocketDF
-        .map(_.split(","))
-        .map(fields => DStreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat))
-
-      batchData.foreachRDD { (rdd: RDD[DStreamData], time: Time) => {
-        val df = SparkSession.builder().getOrCreate()
-          .createDataFrame(rdd).toDF("id", "name", "city", "salary")
-        println("at time: " + time.toString() + " the count of received data: " + df.count())
-        df.write
-          .format("carbondata")
-          .option("tableName", tableName)
-          .option("tempCSV", "false")
-          .option("compress", "true")
-          .option("single_pass", "true")
-          .mode(SaveMode.Append)
-          .save()
-      }}
-    } catch {
-      case ex: Exception =>
-        ex.printStackTrace()
-        println("Done reading and writing streaming data")
-    }
-    ssc
   }
 
   def writeSocket(serverSocket: ServerSocket): Thread = {
