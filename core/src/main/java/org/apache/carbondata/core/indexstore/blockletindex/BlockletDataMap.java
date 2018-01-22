@@ -515,10 +515,15 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private void addTaskNullValues(DataMapRowImpl summaryRow, int[] minMaxLen,
       CarbonRowSchema carbonRowSchema, BitSet nullValues, int ordinal) {
-    DataMapRow row = summaryRow.getRow(ordinal);
+    byte[] row = summaryRow.getByteArray(ordinal);
     BitSet updatedNullValues = nullValues;
     if (null == row) {
-      summaryRow.setByteArray(updatedNullValues.toByteArray(), ordinal);
+      if (updatedNullValues.length() == 0) {
+        byte[] nullArray = new byte[1];
+        summaryRow.setByteArray(nullArray, ordinal);
+      } else {
+        summaryRow.setByteArray(updatedNullValues.toByteArray(), ordinal);
+      }
     } else {
       BitSet existingNullValues = getNullValue(summaryRow, ordinal);
       // Compare and update the Null Values. The BitSet will have a OR operation.
