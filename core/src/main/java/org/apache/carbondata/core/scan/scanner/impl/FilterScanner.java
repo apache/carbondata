@@ -309,7 +309,8 @@ public class FilterScanner extends AbstractBlockletScanner {
     scannedResult.setDimensionChunks(dimensionColumnDataChunks);
     scannedResult.setIndexes(indexesGroup);
     scannedResult.setMeasureChunks(columnPages);
-    scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
+    scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
+    scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     scannedResult.setNumberOfRows(rowCount);
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()

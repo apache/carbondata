@@ -1556,6 +1556,17 @@ public final class CarbonCommonConstants {
   // the maximum characters that can be supported should be less than Short max value
   public static final int MAX_CHARS_PER_COLUMN_DEFAULT = 32000;
 
+  /**
+   * Enabling page level reader for compaction reduces the memory usage while compacting more
+   * number of segments. It allows reading only page by page instead of reaing whole blocklet to
+   * memory.
+   */
+  @CarbonProperty
+  public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION =
+      "carbon.enable.page.level.reader.in.compaction";
+
+  public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT = "true";
+
   private CarbonCommonConstants() {
   }
 }

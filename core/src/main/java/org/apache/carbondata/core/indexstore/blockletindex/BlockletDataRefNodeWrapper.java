@@ -117,46 +117,56 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
   @Override
   public DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
       throws IOException {
-    DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader();
+    DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader(fileReader);
     return dimensionChunksReader.readRawDimensionChunks(fileReader, blockIndexes);
   }
 
   @Override
   public DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader, int blockIndexes)
       throws IOException {
-    DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader();
+    DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader(fileReader);
     return dimensionChunksReader.readRawDimensionChunk(fileReader, blockIndexes);
   }
 
   @Override
   public MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
       throws IOException {
-    MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader();
+    MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
     return measureColumnChunkReader.readRawMeasureChunks(fileReader, blockIndexes);
   }
 
   @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
-    MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader();
+    MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
     return measureColumnChunkReader.readRawMeasureChunk(fileReader, blockIndex);
   }
 
-  private DimensionColumnChunkReader getDimensionColumnChunkReader() throws IOException {
+  private DimensionColumnChunkReader getDimensionColumnChunkReader(FileHolder fileReader) {
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
-    return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(
-        version,
-        blockInfos.get(index).getDetailInfo().getBlockletInfo(),
-        dimensionLens,
-        blockInfos.get(index).getFilePath());
+    if (fileReader.isReadPageByPage()) {
+      return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(version,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
+          blockInfos.get(index).getFilePath(), true);
+    } else {
+      return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(version,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
+          blockInfos.get(index).getFilePath(), false);
+    }
   }
 
-  private MeasureColumnChunkReader getMeasureColumnChunkReader() throws IOException {
+  private MeasureColumnChunkReader getMeasureColumnChunkReader(FileHolder fileReader) {
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
-    return CarbonDataReaderFactory.getInstance().getMeasureColumnChunkReader(version,
-        blockInfos.get(index).getDetailInfo().getBlockletInfo(),
-        blockInfos.get(index).getFilePath());
+    if (fileReader.isReadPageByPage()) {
+      return CarbonDataReaderFactory.getInstance().getMeasureColumnChunkReader(version,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(),
+          blockInfos.get(index).getFilePath(), true);
+    } else {
+      return CarbonDataReaderFactory.getInstance().getMeasureColumnChunkReader(version,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(),
+          blockInfos.get(index).getFilePath(), false);
+    }
   }
 
   @Override
