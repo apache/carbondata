@@ -143,7 +143,7 @@ case class CarbonLoadDataCommand(
     // update the property with new value
     carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING, numCoresLoading)
 
-    val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
+    val dbName = table.getDatabaseName
     val hadoopConf = sparkSession.sessionState.newHadoopConf()
     val carbonLoadModel = new CarbonLoadModel()
     try {

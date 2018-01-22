@@ -25,6 +25,7 @@ import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.test.TestQueryExecutor
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -33,6 +34,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 
 class QueryTest extends PlanTest {
+
+  QueryTest.enableHiveMetastoreMock()
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -107,9 +110,31 @@ class QueryTest extends PlanTest {
   val metastoredb = TestQueryExecutor.metastoredb
   val integrationPath = TestQueryExecutor.integrationPath
   val dblocation = TestQueryExecutor.location
+
 }
 
 object QueryTest {
+
+  var enabledMock = false
+
+  def enableHiveMetastoreMock(): Unit = {
+    if (!enabledMock) {
+      val readSchemaFromHive = {
+        if (System.getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE) !=
+                   null) {
+          System.getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
+        } else {
+          CarbonProperties.getInstance().
+            getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
+              CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
+        }
+      }
+      if (readSchemaFromHive.toBoolean) {
+        CarbonReflectionUtils.createObject("org.apache.spark.sql.hive.test.MockUtil")
+      }
+      enabledMock = true
+    }
+  }
 
   def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]): String = {
     checkAnswer(df, expectedAnswer.asScala) match {
