@@ -69,7 +69,6 @@ object CarbonBatchSparkStreamingExample {
            | TBLPROPERTIES(
            | 'sort_columns'='name',
            | 'dictionary_include'='city',
-           | 'MAJOR_COMPACTION_SIZE'='64',
            | 'AUTO_LOAD_MERGE'='true',
            | 'COMPACTION_LEVEL_THRESHOLD'='4,10')
            | """.stripMargin)
