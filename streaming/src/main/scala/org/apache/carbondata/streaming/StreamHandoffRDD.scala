@@ -46,6 +46,8 @@ import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, C
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.{HandoffResult, HandoffResultImpl}
 import org.apache.carbondata.spark.rdd.CarbonRDD
+import org.apache.carbondata.spark.util.CommonUtil
+
 
 /**
  * partition of the handoff segment
@@ -111,6 +113,8 @@ class StreamHandoffRDD[K, V](
     CarbonMetadata.getInstance().addCarbonTable(carbonTable)
     // the input iterator is using raw row
     val iteratorList = prepareInputIterator(split, carbonTable)
+
+    CommonUtil.setTempStoreLocation(split.index, carbonLoadModel, true, false)
     // use CompactionResultSortProcessor to sort data dan write to columnar files
     val processor = prepareHandoffProcessor(carbonTable)
     val status = processor.execute(iteratorList)

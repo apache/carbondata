@@ -24,11 +24,12 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
+import scala.util.Random
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.sql.{Row, RowFactory}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
@@ -53,8 +54,9 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil}
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+
 
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -888,6 +890,44 @@ object CommonUtil {
     val matchedString: String = m.group(1)
     val scaleAndPrecision = matchedString.split(",")
     (Integer.parseInt(scaleAndPrecision(0).trim), Integer.parseInt(scaleAndPrecision(1).trim))
+  }
+
+
+  def setTempStoreLocation(
+      index: Int,
+      carbonLoadModel: CarbonLoadModel,
+      isCompactionFlow: Boolean,
+      isAltPartitionFlow: Boolean) : Unit = {
+    var storeLocation: String = null
+
+    // this property is used to determine whether temp location for carbon is inside
+    // container temp dir or is yarn application directory.
+    val carbonUseLocalDir = CarbonProperties.getInstance()
+      .getProperty("carbon.use.local.dir", "false")
+
+    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
+
+      val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
+      if (null != storeLocations && storeLocations.nonEmpty) {
+        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+      }
+      if (storeLocation == null) {
+        storeLocation = System.getProperty("java.io.tmpdir")
+      }
+    } else {
+      storeLocation = System.getProperty("java.io.tmpdir")
+    }
+    storeLocation = storeLocation + CarbonCommonConstants.FILE_SEPARATOR + "carbon" +
+      System.nanoTime() + CarbonCommonConstants.UNDERSCORE + index
+
+    val tempLocationKey = CarbonDataProcessorUtil
+      .getTempStoreLocationKey(carbonLoadModel.getDatabaseName,
+        carbonLoadModel.getTableName,
+        carbonLoadModel.getSegmentId,
+        carbonLoadModel.getTaskNo,
+        isCompactionFlow,
+        isAltPartitionFlow)
+    CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
   }
 
 }
