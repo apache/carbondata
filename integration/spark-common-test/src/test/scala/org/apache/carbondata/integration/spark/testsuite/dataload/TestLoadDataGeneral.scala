@@ -22,7 +22,7 @@ import java.math.BigDecimal
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.Row
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -32,16 +32,15 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
+class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
 
-  override def beforeAll {
+  override def beforeEach {
     sql("DROP TABLE IF EXISTS loadtest")
     sql(
       """
         | CREATE TABLE loadtest(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-
   }
 
   private def checkSegmentExists(
@@ -74,7 +73,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(10))
+      Seq(Row(4))
     )
   }
 
@@ -83,7 +82,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(14))
+      Seq(Row(4))
     )
   }
 
@@ -92,7 +91,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(18))
+      Seq(Row(4))
     )
   }
 
@@ -101,7 +100,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest options ('delimiter'='\\017')")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(22))
+      Seq(Row(4))
     )
   }
 
@@ -249,7 +248,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from stale"), Row("k"))
   }
 
-  override def afterAll {
+  override def afterEach {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")
     CarbonProperties.getInstance()
