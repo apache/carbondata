@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.filter.executer;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -56,12 +57,12 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
         rightExecuter.applyFilter(value, dimOrdinalMax);
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-    BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue);
+  @Override public BitSet isScanRequired(BlockletStatistics blockletStatistics) {
+    BitSet leftFilters = leftExecuter.isScanRequired(blockletStatistics);
     if (leftFilters.isEmpty()) {
       return leftFilters;
     }
-    BitSet rightFilter = rightExecuter.isScanRequired(blockMaxValue, blockMinValue);
+    BitSet rightFilter = rightExecuter.isScanRequired(blockletStatistics);
     if (rightFilter.isEmpty()) {
       return rightFilter;
     }
@@ -75,15 +76,14 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
   }
 
   @Override
-  public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
+  public BitSet isFilterValuesPresentInBlockOrBlocklet(BlockletStatistics blockletStatistics,
       String uniqueBlockPath) {
     BitSet leftFilters = null;
     if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
       leftFilters = ((ImplicitColumnFilterExecutor) leftExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue,uniqueBlockPath);
+          .isFilterValuesPresentInBlockOrBlocklet(blockletStatistics, uniqueBlockPath);
     } else {
-      leftFilters = leftExecuter
-          .isScanRequired(maxValue, minValue);
+      leftFilters = leftExecuter.isScanRequired(blockletStatistics);
     }
     if (leftFilters.isEmpty()) {
       return leftFilters;
@@ -91,10 +91,9 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     BitSet rightFilter = null;
     if (rightExecuter instanceof ImplicitColumnFilterExecutor) {
       rightFilter = ((ImplicitColumnFilterExecutor) rightExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
+          .isFilterValuesPresentInBlockOrBlocklet(blockletStatistics, uniqueBlockPath);
     } else {
-      rightFilter = rightExecuter
-          .isScanRequired(maxValue, minValue);
+      rightFilter = rightExecuter.isScanRequired(blockletStatistics);
     }
     if (rightFilter.isEmpty()) {
       return rightFilter;
@@ -104,15 +103,14 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
   }
 
   @Override
-  public Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue) {
+  public Boolean isFilterValuesPresentInAbstractIndex(BlockletStatistics blockletStatistics) {
     Boolean leftRes;
     BitSet tempFilter;
     if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
       leftRes = ((ImplicitColumnFilterExecutor) leftExecuter)
-          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+          .isFilterValuesPresentInAbstractIndex(blockletStatistics);
     } else {
-      tempFilter = leftExecuter
-          .isScanRequired(maxValue, minValue);
+      tempFilter = leftExecuter.isScanRequired(blockletStatistics);
       leftRes = !tempFilter.isEmpty();
     }
     if (!leftRes) {
@@ -122,10 +120,9 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     Boolean rightRes = null;
     if (rightExecuter instanceof ImplicitColumnFilterExecutor) {
       rightRes = ((ImplicitColumnFilterExecutor) rightExecuter)
-          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+          .isFilterValuesPresentInAbstractIndex(blockletStatistics);
     } else {
-      tempFilter = rightExecuter
-          .isScanRequired(maxValue, minValue);
+      tempFilter = rightExecuter.isScanRequired(blockletStatistics);
       rightRes = !tempFilter.isEmpty();
     }
 

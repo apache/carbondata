@@ -68,6 +68,8 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
     maxKeyOfColumns = minMaxIndex.getMaxValues();
     // min keys of the columns
     minKeyOfColumns = minMaxIndex.getMinValues();
+    // Null Keys of the columns.
+    nullPresentInColumns = minMaxIndex.getNullValues();
     // number of keys present in the leaf
     numberOfKeys =
         builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex).getNumberOfRows();

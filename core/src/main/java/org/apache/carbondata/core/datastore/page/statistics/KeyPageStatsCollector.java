@@ -28,17 +28,20 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
 
   private byte[] min, max;
 
+  private byte nullValue;
+
   public static KeyPageStatsCollector newInstance(DataType dataType) {
     return new KeyPageStatsCollector(dataType);
   }
 
   private KeyPageStatsCollector(DataType dataType) {
     this.dataType = dataType;
+    this.nullValue = (byte) 0;
   }
 
   @Override
   public void updateNull(int rowId) {
-
+    this.nullValue = (byte) 1;
   }
 
   @Override
@@ -96,6 +99,10 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
 
       @Override public Object getMax() {
         return max;
+      }
+
+      @Override public byte getNull() {
+        return nullValue;
       }
 
       @Override public int getDecimalCount() {

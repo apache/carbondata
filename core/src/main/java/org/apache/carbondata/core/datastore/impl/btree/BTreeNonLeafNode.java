@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.datastore.impl.btree;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
@@ -164,6 +165,10 @@ public class BTreeNonLeafNode implements BTreeNode {
     // and in case of B+Tree data will be stored only in leaf node and
     // intermediate
     // node will be used only for searching the leaf node
+    throw new UnsupportedOperationException("Unsupported operation");
+  }
+
+  @Override public BitSet getColumnsNullValue() {
     throw new UnsupportedOperationException("Unsupported operation");
   }
 

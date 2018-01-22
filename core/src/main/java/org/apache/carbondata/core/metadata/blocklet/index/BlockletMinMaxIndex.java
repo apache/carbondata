@@ -19,6 +19,7 @@ package org.apache.carbondata.core.metadata.blocklet.index;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 import java.util.List;
 
 /**
@@ -41,16 +42,24 @@ public class BlockletMinMaxIndex implements Serializable {
    */
   private byte[][] maxValues;
 
+  /**
+   * Null values present in each corresponding columns.
+   */
+  private BitSet nullValues;
+
   public BlockletMinMaxIndex() {
   }
 
-  public BlockletMinMaxIndex(List<ByteBuffer> minValues, List<ByteBuffer> maxValues) {
+  public BlockletMinMaxIndex(List<ByteBuffer> minValues, List<ByteBuffer> maxValues,
+      BitSet nullValues) {
     this.minValues = new byte[minValues.size()][];
     this.maxValues = new byte[maxValues.size()][];
+    this.nullValues = new BitSet(maxValues.size());
     for (int i = 0; i < minValues.size(); i++) {
       this.minValues[i] = minValues.get(i).array();
       this.maxValues[i] = maxValues.get(i).array();
     }
+    this.nullValues = nullValues;
   }
 
   /**
@@ -79,6 +88,22 @@ public class BlockletMinMaxIndex implements Serializable {
    */
   public void setMaxValues(byte[][] maxValues) {
     this.maxValues = maxValues;
+  }
+
+  /**
+   *
+   * @return the nullValues
+   */
+  public BitSet getNullValues() {
+    return nullValues;
+  }
+
+
+  /**
+   * @param nullValues the nullValues to set
+   */
+  public void setNullValues(BitSet nullValues) {
+    this.nullValues = nullValues;
   }
 
 }

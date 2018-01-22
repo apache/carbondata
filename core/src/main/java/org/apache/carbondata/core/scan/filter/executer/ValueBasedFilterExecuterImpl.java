@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.filter.executer;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -38,7 +39,7 @@ public class ValueBasedFilterExecuterImpl implements FilterExecuter {
     throw new FilterUnsupportedException("Unsupported ValueBasedFilterExecuterImpl on row");
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(BlockletStatistics blockletStatistics) {
     return new BitSet(1);
   }
 

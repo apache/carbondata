@@ -45,6 +45,7 @@ struct BlockletBTreeIndex{
 struct BlockletMinMaxIndex{
     1: required list<binary> min_values; //Min value of all columns of one blocklet Bit-Packed
     2: required list<binary> max_values; //Max value of all columns of one blocklet Bit-Packed
+    3: optional binary isNull_value;     //Bit turned On if null value present in each blocklet.
 }
 
 /**

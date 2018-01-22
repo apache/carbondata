@@ -22,6 +22,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -117,6 +118,21 @@ public abstract class ColumnPageEncoder {
         CarbonUtil.getValueAsBytes(inputPage.getDataType(), inputPage.getStatistics().getMin()));
     index.addToMax_values(max);
     index.addToMin_values(min);
+    // get the Null Value Byte Array. And set the Bit and reset it back.
+    byte [] nullValueByte = index.getIsNull_value();
+    if (nullValueByte == null) {
+      // Initialize the Byte Array.
+      byte[] nullByteArray = new byte[1];
+      nullValueByte = nullByteArray;
+    }
+    BitSet nullBitSet = BitSet.valueOf(nullValueByte);
+    if (inputPage.getStatistics().getNull() == (byte) 1) {
+      nullBitSet.set(0);
+      index.setIsNull_value(nullBitSet.toByteArray());
+    } else {
+      index.setIsNull_value(new byte[1]);
+    }
+
     return index;
   }
 

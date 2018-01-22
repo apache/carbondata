@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.datastore;
 
 import java.io.IOException;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -70,6 +71,15 @@ public interface DataRefNode {
    *
    */
   byte[][] getColumnsMinValue();
+
+  /**
+   * This method will be used to get the Null values of all the columns present
+   * in the blocklet. This is used for Measure Filter Queries where is Null or
+   * is Not Null is being prunned. Driver side will be able to prune the blocklets
+   * based in this value.
+   * @return
+   */
+  BitSet getColumnsNullValue();
 
   /**
    * Below method will be used to get the dimension chunks

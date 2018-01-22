@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
@@ -108,19 +109,20 @@ public class FilterScanner extends AbstractBlockletScanner {
         totalPagesScanned.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
     // apply min max
     if (isMinMaxEnabled) {
+      BlockletStatistics blockletStatistics =
+          new BlockletStatistics(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
+              blocksChunkHolder.getDataBlock().getColumnsMinValue(),
+              blocksChunkHolder.getDataBlock().getColumnsNullValue());
+
       BitSet bitSet = null;
       // check for implicit include filter instance
       if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
         String blockletId = blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR
             + blocksChunkHolder.getDataBlock().blockletId();
         bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
-            .isFilterValuesPresentInBlockOrBlocklet(
-                blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
-                blocksChunkHolder.getDataBlock().getColumnsMinValue(), blockletId);
+            .isFilterValuesPresentInBlockOrBlocklet(blockletStatistics, blockletId);
       } else {
-        bitSet = this.filterExecuter
-            .isScanRequired(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
-                blocksChunkHolder.getDataBlock().getColumnsMinValue());
+        bitSet = this.filterExecuter.isScanRequired(blockletStatistics);
       }
       if (bitSet.isEmpty()) {
         CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),

@@ -603,11 +603,14 @@ public final class FilterUtil {
     return columnFilterInfo;
   }
 
-  private static boolean isExcludeFilterNeedsToApply(Dictionary forwardDictionary,
-      int size) {
-    if ((size * 100) / forwardDictionary.getDictionaryChunks().getSize() >= 60) {
-      LOGGER.info("Applying CBO to convert include filter to exclude filter.");
-      return true;
+  private static boolean isExcludeFilterNeedsToApply(Dictionary forwardDictionary, int size) {
+    // If there is only one Dictionary Value and surrogate is 1 then avoid
+    // exclude filter conversion.
+    if (forwardDictionary.getDictionaryChunks().getSize() > 1) {
+      if ((size * 100) / forwardDictionary.getDictionaryChunks().getSize() >= 60) {
+        LOGGER.info("Applying CBO to convert include filter to exclude filter.");
+        return true;
+      }
     }
     return false;
   }

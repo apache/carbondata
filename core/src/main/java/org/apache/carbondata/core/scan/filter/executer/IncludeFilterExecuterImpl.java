@@ -24,6 +24,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -129,8 +130,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       for (int i = 0; i < measureRawColumnChunk.getPagesCount(); i++) {
         if (measureRawColumnChunk.getMaxValues() != null) {
           if (isScanRequired(measureRawColumnChunk.getMaxValues()[i],
-              measureRawColumnChunk.getMinValues()[i], msrColumnExecutorInfo.getFilterKeys(),
-              msrColumnEvaluatorInfo.getType())) {
+              measureRawColumnChunk.getMinValues()[i], measureRawColumnChunk.getNullValues().get(i),
+              msrColumnExecutorInfo.getFilterKeys(), msrColumnEvaluatorInfo.getType())) {
             BitSet bitSet =
                 getFilteredIndexesForMeasure(measureRawColumnChunk.convertToColumnPage(i),
                     measureRawColumnChunk.getRowCount()[i], useBitsetPipeLine,
@@ -423,7 +424,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return bitSet;
   }
 
-  public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal) {
+  public BitSet isScanRequired(BlockletStatistics blockletStatisticss) {
     BitSet bitSet = new BitSet(1);
     byte[][] filterValues = null;
     int columnIndex = 0;
@@ -434,17 +435,18 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       filterValues = dimColumnExecuterInfo.getFilterKeys();
       columnIndex = dimColumnEvaluatorInfo.getColumnIndex();
       blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping().get(columnIndex);
-      isScanRequired =
-          isScanRequired(blkMaxVal[blockIndex], blkMinVal[blockIndex], filterValues);
+      isScanRequired = isScanRequired(blockletStatisticss.getBlockletMaxVal()[blockIndex],
+          blockletStatisticss.getBlockletMinVal()[blockIndex], filterValues);
 
     } else if (isMeasurePresentInCurrentBlock) {
       columnIndex = msrColumnEvaluatorInfo.getColumnIndex();
       blockIndex =
           segmentProperties.getMeasuresOrdinalToBlockMapping().get(columnIndex) + segmentProperties
               .getLastDimensionColOrdinal();
-      isScanRequired = isScanRequired(blkMaxVal[blockIndex], blkMinVal[blockIndex],
-          msrColumnExecutorInfo.getFilterKeys(),
-          msrColumnEvaluatorInfo.getType());
+      isScanRequired = isScanRequired(blockletStatisticss.getBlockletMaxVal()[blockIndex],
+          blockletStatisticss.getBlockletMinVal()[blockIndex],
+          blockletStatisticss.getBlockletNullVal().get(blockIndex),
+          msrColumnExecutorInfo.getFilterKeys(), msrColumnEvaluatorInfo.getType());
     }
 
     if (isScanRequired) {
@@ -475,14 +477,14 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return isScanRequired;
   }
 
-  private boolean isScanRequired(byte[] maxValue, byte[] minValue, Object[] filterValue,
-      DataType dataType) {
+  private boolean isScanRequired(byte[] maxValue, byte[] minValue, boolean nullValue,
+      Object[] filterValue, DataType dataType) {
     Object maxObject = DataTypeUtil.getMeasureObjectFromDataType(maxValue, dataType);
     Object minObject = DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
     for (int i = 0; i < filterValue.length; i++) {
-      // TODO handle min and max for null values.
       if (filterValue[i] == null) {
-        return true;
+        // Check if the Null Byte is set or not.
+        return nullValue;
       }
       if (comparator.compare(filterValue[i], maxObject) <= 0
           && comparator.compare(filterValue[i], minObject) >= 0) {

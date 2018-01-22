@@ -40,6 +40,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
@@ -85,31 +86,35 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private static int MAX_VALUES_INDEX = 2;
 
-  private static int ROW_COUNT_INDEX = 3;
+  private static int NULL_VALUES_INDEX = 3;
 
-  private static int FILE_PATH_INDEX = 4;
+  private static int ROW_COUNT_INDEX = 4;
 
-  private static int PAGE_COUNT_INDEX = 5;
+  private static int FILE_PATH_INDEX = 5;
 
-  private static int VERSION_INDEX = 6;
+  private static int PAGE_COUNT_INDEX = 6;
 
-  private static int SCHEMA_UPADATED_TIME_INDEX = 7;
+  private static int VERSION_INDEX = 7;
 
-  private static int BLOCK_INFO_INDEX = 8;
+  private static int SCHEMA_UPADATED_TIME_INDEX = 8;
 
-  private static int BLOCK_FOOTER_OFFSET = 9;
+  private static int BLOCK_INFO_INDEX = 9;
 
-  private static int LOCATIONS = 10;
+  private static int BLOCK_FOOTER_OFFSET = 10;
 
-  private static int BLOCKLET_ID_INDEX = 11;
+  private static int LOCATIONS = 11;
+
+  private static int BLOCKLET_ID_INDEX = 12;
 
   private static int TASK_MIN_VALUES_INDEX = 0;
 
   private static int TASK_MAX_VALUES_INDEX = 1;
 
-  private static int SCHEMA = 2;
+  private static int TASK_NULL_VALUES_INDEX = 2;
 
-  private static int PARTITION_INFO = 3;
+  private static int SCHEMA = 3;
+
+  private static int PARTITION_INFO = 4;
 
   private UnsafeMemoryDMStore unsafeMemoryDMStore;
 
@@ -223,6 +228,13 @@ public class BlockletDataMap implements DataMap, Cacheable {
           unsafeMemorySummaryDMStore.getSchema()[taskMinMaxOrdinal], maxValues,
           TASK_MAX_VALUES_INDEX, false);
       ordinal++;
+      taskMinMaxOrdinal++;
+
+      addTaskNullValues(summaryRow, minMaxLen,
+          unsafeMemorySummaryDMStore.getSchema()[taskMinMaxOrdinal], minMaxIndex.getNullValues(),
+          TASK_NULL_VALUES_INDEX);
+
+      row.setByteArray(minMaxIndex.getNullValues().toByteArray(), ordinal++);
 
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
 
@@ -501,6 +513,28 @@ public class BlockletDataMap implements DataMap, Cacheable {
     taskMinMaxRow.setRow(row, ordinal);
   }
 
+  private void addTaskNullValues(DataMapRowImpl summaryRow, int[] minMaxLen,
+      CarbonRowSchema carbonRowSchema, BitSet nullValues, int ordinal) {
+    byte[] row = summaryRow.getByteArray(ordinal);
+    BitSet updatedNullValues = nullValues;
+    if (null == row) {
+      if (updatedNullValues.length() == 0) {
+        byte[] nullArray = new byte[1];
+        summaryRow.setByteArray(nullArray, ordinal);
+      } else {
+        summaryRow.setByteArray(updatedNullValues.toByteArray(), ordinal);
+      }
+    } else {
+      BitSet existingNullValues = getNullValue(summaryRow, ordinal);
+      // Compare and update the Null Values. The BitSet will have a OR operation.
+      // In case the existing blocklet will have nullValue set to 1 then the overall
+      // Bit should be set to 1.
+      updatedNullValues.or(existingNullValues);
+      // Update Null Values.
+      summaryRow.setByteArray(updatedNullValues.toByteArray(), ordinal);
+    }
+  }
+
   private void createSchema(SegmentProperties segmentProperties) throws MemoryException {
     List<CarbonRowSchema> indexSchemas = new ArrayList<>();
 
@@ -589,6 +623,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
               mapSchemas);
       minMaxSchemas.add(mapSchema);
     }
+
+    // Add Null Value Byte Array.
+    minMaxSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
   }
 
   @Override
@@ -597,9 +634,12 @@ public class BlockletDataMap implements DataMap, Cacheable {
         FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
     for (int i = 0; i < unsafeMemorySummaryDMStore.getRowCount(); i++) {
       DataMapRow unsafeRow = unsafeMemorySummaryDMStore.getUnsafeRow(i);
+      BlockletStatistics blockletStatistics =
+          new BlockletStatistics(getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
+              getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX),
+              getNullValue(unsafeRow, TASK_NULL_VALUES_INDEX));
       boolean isScanRequired = FilterExpressionProcessor
-          .isScanRequired(filterExecuter, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
-              getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX));
+          .isScanRequired(filterExecuter, blockletStatistics);
       if (isScanRequired) {
         return true;
       }
@@ -664,9 +704,12 @@ public class BlockletDataMap implements DataMap, Cacheable {
         int blockletId = safeRow.getShort(BLOCKLET_ID_INDEX);
         String filePath = new String(safeRow.getByteArray(FILE_PATH_INDEX),
             CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        BlockletStatistics blockletStatistics =
+            new BlockletStatistics(getMinMaxValue(safeRow, MAX_VALUES_INDEX),
+                getMinMaxValue(safeRow, MIN_VALUES_INDEX),
+                getNullValue(safeRow, NULL_VALUES_INDEX));
         boolean isValid =
-            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(safeRow, MAX_VALUES_INDEX),
-                getMinMaxValue(safeRow, MIN_VALUES_INDEX), filePath, blockletId);
+            addBlockBasedOnMinMaxValue(filterExecuter, blockletStatistics, filePath, blockletId);
         if (isValid) {
           blocklets.add(createBlocklet(safeRow, blockletId));
         }
@@ -706,14 +749,13 @@ public class BlockletDataMap implements DataMap, Cacheable {
    * select the blocks based on column min and max value
    *
    * @param filterExecuter
-   * @param maxValue
-   * @param minValue
+   * @param blockletStatistics
    * @param filePath
    * @param blockletId
    * @return
    */
-  private boolean addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter, byte[][] maxValue,
-      byte[][] minValue, String filePath, int blockletId) {
+  private boolean addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter,
+      BlockletStatistics blockletStatistics, String filePath, int blockletId) {
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
       String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
@@ -723,9 +765,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
         uniqueBlockPath = uniqueBlockPath + CarbonCommonConstants.FILE_SEPARATOR + blockletId;
       }
       bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
+          .isFilterValuesPresentInBlockOrBlocklet(blockletStatistics, uniqueBlockPath);
     } else {
-      bitSet = filterExecuter.isScanRequired(maxValue, minValue);
+      bitSet = filterExecuter.isScanRequired(blockletStatistics);
     }
     if (!bitSet.isEmpty()) {
       return true;
@@ -747,6 +789,12 @@ public class BlockletDataMap implements DataMap, Cacheable {
       minMax[i] = minMaxRow.getByteArray(i);
     }
     return minMax;
+  }
+
+  private BitSet getNullValue(DataMapRow row, int index) {
+    byte[] nullValue = row.getByteArray(index);
+    BitSet nullBitSet = BitSet.valueOf(nullValue);
+    return nullBitSet;
   }
 
   private ExtendedBlocklet createBlocklet(DataMapRow row, int blockletId) {

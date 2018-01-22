@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.filter.executer;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
@@ -61,7 +62,7 @@ public class RestructureExcludeFilterExecutorImpl extends RestructureEvaluatorIm
     throw new FilterUnsupportedException("Unsupported RestructureExcludeFilterExecutorImpl on row");
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(BlockletStatistics blockletStatistics) {
     BitSet bitSet = new BitSet(1);
     bitSet.flip(0, 1);
     return bitSet;

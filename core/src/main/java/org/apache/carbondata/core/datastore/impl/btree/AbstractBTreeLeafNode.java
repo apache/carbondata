@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.datastore.impl.btree;
 
 import java.io.IOException;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.DataRefNode;
@@ -63,6 +64,8 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * be used for scanning or not
    */
   protected byte[][] minKeyOfColumns;
+
+  protected BitSet nullPresentInColumns;
 
   /**
    * Method to get the next block this can be used while scanning when
@@ -131,6 +134,9 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
     return minKeyOfColumns;
   }
 
+  @Override public BitSet getColumnsNullValue() {
+    return nullPresentInColumns;
+  }
   /**
    * to check whether node in a btree is a leaf node or not
    *
