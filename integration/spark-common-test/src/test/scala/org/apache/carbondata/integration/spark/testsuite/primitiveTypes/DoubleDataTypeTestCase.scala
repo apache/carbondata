@@ -82,7 +82,7 @@ class DoubleDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table uniq_carbon(name string, double_column double) stored by 'carbondata' TBLPROPERTIES ('DICTIONARY_INCLUDE'='double_column')")
     sql(s"load data inpath '$resourcesPath/uniq.csv' into table uniq_carbon")
     sql("create table uniq_hive(name string, double_column double) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
-    sql(s"load data inpath '$resourcesPath/uniqwithoutheader.csv' into table uniq_hive")
+    sql(s"load data local inpath '$resourcesPath/uniqwithoutheader.csv' into table uniq_hive")
     checkAnswer(sql("select * from uniq_carbon where double_column>=11"),
       sql("select * from uniq_hive where double_column>=11"))
   }
