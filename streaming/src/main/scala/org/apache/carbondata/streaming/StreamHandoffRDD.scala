@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.streaming
 
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util
 import java.util.Date
@@ -32,7 +31,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
@@ -46,7 +46,6 @@ import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, C
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.{HandoffResult, HandoffResultImpl}
 import org.apache.carbondata.spark.rdd.CarbonRDD
-import org.apache.carbondata.streaming.segment.StreamSegment
 
 /**
  * partition of the handoff segment
@@ -106,6 +105,7 @@ class StreamHandoffRDD[K, V](
     carbonLoadModel.setPartitionId("0")
     carbonLoadModel.setTaskNo("" + split.index)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    CarbonMetadata.getInstance().addCarbonTable(carbonTable)
     // the input iterator is using raw row
     val iteratorList = prepareInputIterator(split, carbonTable)
     // use CompactionResultSortProcessor to sort data dan write to columnar files
