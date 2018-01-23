@@ -567,6 +567,12 @@
       <id>include-all</id>
     </profile>
     <profile>
+      <id>carbonstore</id>
+      <modules>
+        <module>store/sdk</module>
+      </modules>
+    </profile>
+    <profile>
       <id>sdvtest</id>
       <modules>
         <module>integration/spark-common-cluster-test</module>
