@@ -183,6 +183,7 @@ class CarbonMergerRDD[K, V](
           .checkIfAnyRestructuredBlockExists(segmentMapping,
             dataFileMetadataSegMapping,
             carbonTable.getTableLastUpdatedTime)
+        LOGGER.info(s"Restructured block exists: $restructuredBlockExists")
         DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
         exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
           carbonTable, dataFileMetadataSegMapping, restructuredBlockExists)
@@ -215,6 +216,7 @@ class CarbonMergerRDD[K, V](
         carbonLoadModel.setPartitionId("0")
         var processor: AbstractResultProcessor = null
         if (restructuredBlockExists) {
+          LOGGER.info("CompactionResultSortProcessor flow is selected")
           processor = new CompactionResultSortProcessor(
             carbonLoadModel,
             carbonTable,
@@ -223,6 +225,7 @@ class CarbonMergerRDD[K, V](
             factTableName,
             partitionNames)
         } else {
+          LOGGER.info("RowResultMergerProcessor flow is selected")
           processor =
             new RowResultMergerProcessor(
               databaseName,
