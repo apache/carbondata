@@ -134,7 +134,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   }
 
   private void initializeAtFirstRow() throws IOException, InterruptedException {
-    isFirstRow = false;
 
     // initialize metadata
     isNoDictionaryDimensionColumn =
@@ -173,6 +172,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       outputStream = FileFactory.getDataOutputStream(filePath, fileType);
       writeFileHeader();
     }
+
+    isFirstRow = false;
   }
 
   @Override public void write(Void key, Object value) throws IOException, InterruptedException {
