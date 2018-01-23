@@ -111,7 +111,7 @@ class CarbonScanRDD(
       val streamPartitions: mutable.Buffer[Partition] =
         streamSplits.zipWithIndex.map { splitWithIndex =>
           val multiBlockSplit =
-            new CarbonMultiBlockSplit(identifier,
+            new CarbonMultiBlockSplit(
               Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
               splitWithIndex._1.getLocations,
               FileFormat.ROW_V1)
@@ -156,7 +156,7 @@ class CarbonScanRDD(
         (0 until bucketedTable.getNumberOfBuckets).map { bucketId =>
           val bucketPartitions = bucketed.getOrElse(bucketId.toString, Nil)
           val multiBlockSplit =
-            new CarbonMultiBlockSplit(identifier,
+            new CarbonMultiBlockSplit(
               bucketPartitions.asJava,
               bucketPartitions.flatMap(_.getLocations).toArray)
           val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
@@ -186,7 +186,7 @@ class CarbonScanRDD(
               val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
               if (blocksPerTask.size() != 0) {
                 val multiBlockSplit =
-                  new CarbonMultiBlockSplit(identifier, splits.asJava, Array(node))
+                  new CarbonMultiBlockSplit(splits.asJava, Array(node))
                 val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
                 result.add(partition)
                 i += 1
@@ -200,7 +200,7 @@ class CarbonScanRDD(
           // Randomize the blocklets for better shuffling
           Random.shuffle(splits.asScala).zipWithIndex.foreach { splitWithIndex =>
             val multiBlockSplit =
-              new CarbonMultiBlockSplit(identifier,
+              new CarbonMultiBlockSplit(
                 Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
                 splitWithIndex._1.getLocations)
             val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
@@ -215,7 +215,7 @@ class CarbonScanRDD(
             .map(_.asInstanceOf[CarbonInputSplit])
             .groupBy(f => f.getBlockPath)
             .map { blockSplitEntry =>
-              new CarbonMultiBlockSplit(identifier,
+              new CarbonMultiBlockSplit(
                 blockSplitEntry._2.asJava,
                 blockSplitEntry._2.flatMap(f => f.getLocations).distinct.toArray)
             }.toArray.sortBy(_.getLength)(implicitly[Ordering[Long]].reverse)
@@ -257,7 +257,7 @@ class CarbonScanRDD(
             f.getSegmentId.concat(f.getBlockPath)
           }.values.zipWithIndex.foreach { splitWithIndex =>
             val multiBlockSplit =
-              new CarbonMultiBlockSplit(identifier,
+              new CarbonMultiBlockSplit(
                 splitWithIndex._1.asJava,
                 splitWithIndex._1.flatMap(f => f.getLocations).distinct.toArray)
             val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
@@ -306,7 +306,7 @@ class CarbonScanRDD(
       .map(_._1)
       .toArray
 
-    val multiBlockSplit = new CarbonMultiBlockSplit(null, carbonInputSplits.asJava, locations)
+    val multiBlockSplit = new CarbonMultiBlockSplit(carbonInputSplits.asJava, locations)
     new CarbonSparkPartition(id, partitionId, multiBlockSplit)
   }
 
