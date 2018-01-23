@@ -273,7 +273,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "carbon_globalsort")
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
     val segmentDir = carbonTablePath.getSegmentDir("0", "0")
-    assertResult(Math.max(4, defaultParallelism) + 1)(new File(segmentDir).listFiles().length)
+    assertResult(Math.max(7, defaultParallelism) + 1)(new File(segmentDir).listFiles().length)
   }
 
   test("Query with small files") {

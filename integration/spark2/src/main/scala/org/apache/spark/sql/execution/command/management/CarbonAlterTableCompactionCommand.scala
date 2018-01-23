@@ -34,16 +34,17 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent, AlterTableCompactionPreStatusUpdateEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadMetadataEvent
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.spark.exception.ConcurrentOperationException
+import org.apache.carbondata.spark.exception.{ConcurrentOperationException, MalformedCarbonCommandException}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.streaming.StreamHandoffRDD
@@ -90,52 +91,74 @@ case class CarbonAlterTableCompactionCommand(
       LogServiceFactory.getLogService(this.getClass.getName)
     val tableName = alterTableModel.tableName.toLowerCase
     val databaseName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
-    val isLoadInProgress = SegmentStatusManager.checkIfAnyLoadInProgressForTable(table)
-    if (isLoadInProgress) {
-      val message = "Cannot run data loading and compaction on same table concurrently. " +
-                    "Please wait for load to finish"
-      LOGGER.error(message)
-      throw new ConcurrentOperationException(message)
-    }
-    val carbonLoadModel = new CarbonLoadModel()
-    carbonLoadModel.setTableName(table.getTableName)
-    val dataLoadSchema = new CarbonDataLoadSchema(table)
-    // Need to fill dimension relation
-    carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-    carbonLoadModel.setTableName(table.getTableName)
-    carbonLoadModel.setDatabaseName(table.getDatabaseName)
-    carbonLoadModel.setTablePath(table.getTablePath)
-
-    var storeLocation = CarbonProperties.getInstance.getProperty(
-      CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
-      System.getProperty("java.io.tmpdir"))
-    storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
-    // trigger event for compaction
-    val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
-      AlterTableCompactionPreEvent(sparkSession, table, null, null)
-    OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
+    operationContext.setProperty("compactionException", "true")
+    var compactionType: CompactionType = null
+    var compactionException = "true"
     try {
-      alterTableForCompaction(
-        sparkSession.sqlContext,
-        alterTableModel,
-        carbonLoadModel,
-        storeLocation,
-        operationContext)
+      compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
     } catch {
-      case e: Exception =>
-        if (null != e.getMessage) {
-          CarbonException.analysisException(
-            s"Compaction failed. Please check logs for more info. ${ e.getMessage }")
-        } else {
-          CarbonException.analysisException(
-            "Exception in compaction. Please check logs for more info.")
-        }
+      case _: Exception =>
+        val alterTableCompactionExceptionEvent: AlterTableCompactionExceptionEvent =
+          AlterTableCompactionExceptionEvent(sparkSession, table, alterTableModel)
+        OperationListenerBus.getInstance
+          .fireEvent(alterTableCompactionExceptionEvent, operationContext)
+        compactionException = operationContext.getProperty("compactionException").toString
     }
-    // trigger event for compaction
-    val alterTableCompactionPostEvent: AlterTableCompactionPostEvent =
-      AlterTableCompactionPostEvent(sparkSession, table, null, null)
-    OperationListenerBus.getInstance.fireEvent(alterTableCompactionPostEvent, operationContext)
-    Seq.empty
+
+    if (compactionException.equalsIgnoreCase("true") && null == compactionType) {
+      throw new MalformedCarbonCommandException(
+        "Unsupported alter operation on carbon table")
+    } else if (compactionException.equalsIgnoreCase("false")) {
+      Seq.empty
+    } else {
+      val isLoadInProgress = SegmentStatusManager.checkIfAnyLoadInProgressForTable(table)
+      if (isLoadInProgress) {
+        val message = "Cannot run data loading and compaction on same table concurrently. " +
+                      "Please wait for load to finish"
+        LOGGER.error(message)
+        throw new ConcurrentOperationException(message)
+      }
+
+      val carbonLoadModel = new CarbonLoadModel()
+      carbonLoadModel.setTableName(table.getTableName)
+      val dataLoadSchema = new CarbonDataLoadSchema(table)
+      // Need to fill dimension relation
+      carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
+      carbonLoadModel.setTableName(table.getTableName)
+      carbonLoadModel.setDatabaseName(table.getDatabaseName)
+      carbonLoadModel.setTablePath(table.getTablePath)
+
+      var storeLocation = CarbonProperties.getInstance.getProperty(
+        CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
+        System.getProperty("java.io.tmpdir"))
+      storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
+      // trigger event for compaction
+      val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
+        AlterTableCompactionPreEvent(sparkSession, table, null, null)
+      OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
+      try {
+        alterTableForCompaction(
+          sparkSession.sqlContext,
+          alterTableModel,
+          carbonLoadModel,
+          storeLocation,
+          operationContext)
+      } catch {
+        case e: Exception =>
+          if (null != e.getMessage) {
+            CarbonException.analysisException(
+              s"Compaction failed. Please check logs for more info. ${ e.getMessage }")
+          } else {
+            CarbonException.analysisException(
+              "Exception in compaction. Please check logs for more info.")
+          }
+      }
+      // trigger event for compaction
+      val alterTableCompactionPostEvent: AlterTableCompactionPostEvent =
+        AlterTableCompactionPostEvent(sparkSession, table, null, null)
+      OperationListenerBus.getInstance.fireEvent(alterTableCompactionPostEvent, operationContext)
+      Seq.empty
+    }
   }
 
   private def alterTableForCompaction(sqlContext: SQLContext,
@@ -225,50 +248,14 @@ case class CarbonAlterTableCompactionCommand(
         LOGGER.info("Acquired the compaction lock for table" +
                     s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         try {
-          if (compactionType == CompactionType.SEGMENT_INDEX) {
-            // Just launch job to merge index and return
-            CommonUtil.mergeIndexFiles(
-              sqlContext.sparkContext,
-              CarbonDataMergerUtil.getValidSegmentList(
-                carbonTable.getAbsoluteTableIdentifier).asScala,
-              carbonLoadModel.getTablePath,
-              carbonTable,
-              mergeIndexProperty = true,
-              readFileFooterFromCarbonDataFile = true)
-
-            val carbonMergerMapping = CarbonMergerMapping(carbonTable.getTablePath,
-              carbonTable.getMetaDataFilepath,
-              "",
-              carbonTable.getDatabaseName,
-              carbonTable.getTableName,
-              Array(),
-              carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
-              compactionType,
-              maxSegmentColCardinality = null,
-              maxSegmentColumnSchemaList = null,
-              compactionModel.currentPartitions,
-              null)
-
-            // trigger event for compaction
-            val alterTableCompactionPreStatusUpdateEvent: AlterTableCompactionPreStatusUpdateEvent =
-              AlterTableCompactionPreStatusUpdateEvent(sqlContext.sparkSession,
-                carbonTable,
-                carbonMergerMapping,
-                carbonLoadModel,
-                "")
-            OperationListenerBus.getInstance
-              .fireEvent(alterTableCompactionPreStatusUpdateEvent, operationContext)
-          lock.unlock()
-          } else {
-            CarbonDataRDDFactory.startCompactionThreads(
-              sqlContext,
-              carbonLoadModel,
-              storeLocation,
-              compactionModel,
-              lock,
-              operationContext
-            )
-          }
+          CarbonDataRDDFactory.startCompactionThreads(
+            sqlContext,
+            carbonLoadModel,
+            storeLocation,
+            compactionModel,
+            lock,
+            operationContext
+          )
         } catch {
           case e: Exception =>
             LOGGER.error(s"Exception in start compaction thread. ${ e.getMessage }")
