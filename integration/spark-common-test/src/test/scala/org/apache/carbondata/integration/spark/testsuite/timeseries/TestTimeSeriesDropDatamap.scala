@@ -51,8 +51,8 @@ class TestTimeSeriesDropDatamap extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap if exists agg1 on table mainTable")
     checkExistence(sql("show datamap on table mainTable"), false, "agg1")
     checkExistence(sql("show tables"), false, "maintable_agg1")
-    sql(s"drop datamap agg1 on table mainTable")
-    sql(s"drop datamap agg1_year on table mainTable")
+    sql(s"drop datamap if exists agg1 on table mainTable")
+    sql(s"drop datamap if exists agg1_year on table mainTable")
     sql("show tables").show()
   }
 
