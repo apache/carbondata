@@ -119,7 +119,16 @@ public class CarbonCompactionUtil {
       DataFileFooter dataFileMatadata = null;
       // check if segId is already present in map
       List<DataFileFooter> metadataList = segmentBlockInfoMapping.get(segId);
-      dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo);
+      // check to decide whether to read file footer of carbondata file forcefully. This will help
+      // in getting the schema last updated time based on which compaction flow is decided that
+      // whether it will go to restructure compaction flow or normal compaction flow.
+      // This decision will impact the compaction performance so it needs to be decided carefully
+      if (null != blockInfo.getDetailInfo()
+          && blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp() == 0L) {
+        dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo, true);
+      } else {
+        dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo);
+      }
       if (null == metadataList) {
         // if it is not present
         eachSegmentBlocks.add(dataFileMatadata);

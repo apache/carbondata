@@ -968,8 +968,27 @@ public final class CarbonUtil {
    * Below method will be used to read the data file matadata
    */
   public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo) throws IOException {
+    return getDataFileFooter(tableBlockInfo, false);
+  }
+
+  /**
+   * Below method will be used to read the data file matadata
+   *
+   * @param tableBlockInfo
+   * @param forceReadDataFileFooter flag to decide whether to read the footer of
+   *                                carbon data file forcefully
+   * @return
+   * @throws IOException
+   */
+  public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo,
+      boolean forceReadDataFileFooter) throws IOException {
+    return getDataFileFooter(tableBlockInfo, forceReadDataFileFooter);
+  }
+
+  private static DataFileFooter getDataFileFooter(TableBlockInfo tableBlockInfo,
+      boolean forceReadDataFileFooter) throws IOException {
     BlockletDetailInfo detailInfo = tableBlockInfo.getDetailInfo();
-    if (detailInfo == null) {
+    if (detailInfo == null || forceReadDataFileFooter) {
       AbstractDataFileFooterConverter fileFooterConverter =
           DataFileFooterConverterFactory.getInstance()
               .getDataFileFooterConverter(tableBlockInfo.getVersion());
@@ -977,8 +996,7 @@ public final class CarbonUtil {
     } else {
       DataFileFooter fileFooter = new DataFileFooter();
       fileFooter.setSchemaUpdatedTimeStamp(detailInfo.getSchemaUpdatedTimeStamp());
-      ColumnarFormatVersion version =
-          ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
+      ColumnarFormatVersion version = ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
       AbstractDataFileFooterConverter dataFileFooterConverter =
           DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
       List<ColumnSchema> schema = dataFileFooterConverter.getSchema(tableBlockInfo);

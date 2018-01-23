@@ -318,7 +318,6 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists badrecordsPartitionintnull")
     sql("drop table if exists badrecordsPartitionintnullalt")
     sql("drop table if exists partitionTable")
-    sql("drop datamap if exists preaggTable on table partitionTable")
   }
 
 }

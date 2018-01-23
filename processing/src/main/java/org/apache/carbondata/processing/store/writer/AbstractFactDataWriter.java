@@ -417,7 +417,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   protected void writeIndexFile() throws IOException, CarbonDataWriterException {
     // get the header
     IndexHeader indexHeader = CarbonMetadataUtil
-        .getIndexHeader(localCardinality, thriftColumnSchemaList, model.getBucketId());
+        .getIndexHeader(localCardinality, thriftColumnSchemaList, model.getBucketId(),
+            model.getSchemaUpdatedTimeStamp());
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     // randomly choose a temp location for index file
