@@ -41,6 +41,7 @@ import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
@@ -103,6 +104,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private static int BLOCKLET_ID_INDEX = 11;
 
+  private static int BLOCK_LENGTH = 12;
+
   private static int TASK_MIN_VALUES_INDEX = 0;
 
   private static int TASK_MAX_VALUES_INDEX = 1;
@@ -146,18 +149,19 @@ public class BlockletDataMap implements DataMap, Cacheable {
         createSummarySchema(segmentProperties, blockletDataMapInfo.getPartitions(), schemaBinary);
       }
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
-      String[] locations = blockletDataMapInfo.getLocationMap().get(blockInfo.getFilePath());
+      BlockletDataMapIndexStore.BlockMetaInfo blockMetaInfo =
+          blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       // Here it loads info about all blocklets of index
       // Only add if the file exists physically. There are scenarios which index file exists inside
       // merge index but related carbondata files are deleted. In that case we first check whether
       // the file exists physically or not
-      if (locations != null) {
+      if (blockMetaInfo != null) {
         if (fileFooter.getBlockletList() == null) {
           // This is old store scenario, here blocklet information is not available in index file so
           // load only block info
           summaryRow =
               loadToUnsafeBlock(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow,
-                  locations);
+                  blockMetaInfo);
         } else {
           // blocklet ID will start from 0 again only when part file path is changed
           if (null == tempFilePath || !tempFilePath.equals(blockInfo.getFilePath())) {
@@ -166,7 +170,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
           }
           summaryRow =
               loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow,
-                  locations, relativeBlockletId);
+                  blockMetaInfo, relativeBlockletId);
           // this is done because relative blocklet id need to be incremented based on the
           // total number of blocklets
           relativeBlockletId += fileFooter.getBlockletList().size();
@@ -190,7 +194,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private DataMapRowImpl loadToUnsafe(DataFileFooter fileFooter,
       SegmentProperties segmentProperties, String filePath, DataMapRowImpl summaryRow,
-      String[] locations, int relativeBlockletId) {
+      BlockletDataMapIndexStore.BlockMetaInfo blockMetaInfo, int relativeBlockletId) {
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
@@ -249,10 +253,12 @@ public class BlockletDataMap implements DataMap, Cacheable {
         row.setByteArray(serializedData, ordinal++);
         // Add block footer offset, it is used if we need to read footer of block
         row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal++);
-        setLocations(locations, row, ordinal);
+        setLocations(blockMetaInfo.getLocationInfo(), row, ordinal);
         ordinal++;
         // for relative blockelt id i.e blocklet id that belongs to a particular part file
-        row.setShort((short) relativeBlockletId++, ordinal);
+        row.setShort((short) relativeBlockletId++, ordinal++);
+        // Store block size
+        row.setLong(blockMetaInfo.getSize(), ordinal);
         unsafeMemoryDMStore.addIndexRowToUnsafe(row);
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -276,7 +282,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
    */
   private DataMapRowImpl loadToUnsafeBlock(DataFileFooter fileFooter,
       SegmentProperties segmentProperties, String filePath, DataMapRowImpl summaryRow,
-      String[] locations) {
+      BlockletDataMapIndexStore.BlockMetaInfo blockMetaInfo) {
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     BlockletIndex blockletIndex = fileFooter.getBlockletIndex();
     CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
@@ -327,12 +333,15 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
     row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal++);
     try {
-      setLocations(locations, row, ordinal);
+      setLocations(blockMetaInfo.getLocationInfo(), row, ordinal);
       ordinal++;
       // for relative blocklet id. Value is -1 because in case of old store blocklet info will
       // not be present in the index file and in that case we will not knwo the total number of
       // blocklets
-      row.setShort((short) -1, ordinal);
+      row.setShort((short) -1, ordinal++);
+
+      // store block size
+      row.setLong(blockMetaInfo.getSize(), ordinal);
       unsafeMemoryDMStore.addIndexRowToUnsafe(row);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -534,6 +543,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
     // for relative blocklet id i.e. blocklet id that belongs to a particular part file.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.SHORT));
+
+    // for storing block length.
+    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
 
     unsafeMemoryDMStore =
         new UnsafeMemoryDMStore(indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]));
@@ -780,6 +792,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
     blocklet.setDetailInfo(detailInfo);
     detailInfo.setBlockFooterOffset(row.getLong(BLOCK_FOOTER_OFFSET));
     detailInfo.setColumnSchemaBinary(getColumnSchemaBinary());
+    detailInfo.setBlockSize(row.getLong(BLOCK_LENGTH));
     return blocklet;
   }
 

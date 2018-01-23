@@ -56,6 +56,8 @@ public class BlockletDetailInfo implements Serializable, Writable {
 
   private byte[] columnSchemaBinary;
 
+  private long blockSize;
+
   public int getRowCount() {
     return rowCount;
   }
@@ -104,6 +106,14 @@ public class BlockletDetailInfo implements Serializable, Writable {
     this.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
   }
 
+  public long getBlockSize() {
+    return blockSize;
+  }
+
+  public void setBlockSize(long blockSize) {
+    this.blockSize = blockSize;
+  }
+
   @Override public void write(DataOutput out) throws IOException {
     out.writeInt(rowCount);
     out.writeShort(pagesCount);
@@ -121,6 +131,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     out.writeLong(blockFooterOffset);
     out.writeInt(columnSchemaBinary.length);
     out.write(columnSchemaBinary);
+    out.writeLong(blockSize);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
@@ -142,6 +153,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     byte[] schemaArray = new byte[bytesSize];
     in.readFully(schemaArray);
     readColumnSchema(schemaArray);
+    blockSize = in.readLong();
   }
 
   /**
@@ -177,6 +189,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     detailInfo.blockletInfo = blockletInfo;
     detailInfo.blockFooterOffset = blockFooterOffset;
     detailInfo.columnSchemas = columnSchemas;
+    detailInfo.blockSize = blockSize;
     return detailInfo;
   }
 

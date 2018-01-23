@@ -433,7 +433,7 @@ class CarbonMergerRDD[K, V](
 
         if (blockletCount != 0) {
           val taskInfo = splitInfo.asInstanceOf[CarbonInputSplitTaskInfo]
-          val multiBlockSplit = new CarbonMultiBlockSplit(absoluteTableIdentifier,
+          val multiBlockSplit = new CarbonMultiBlockSplit(
             taskInfo.getCarbonInputSplitList,
             Array(nodeName))
           if (isPartitionTable) {
