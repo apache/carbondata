@@ -25,18 +25,15 @@ import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.PartitionMapFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 import org.apache.carbondata.events.OperationContext;
 import org.apache.carbondata.events.OperationListenerBus;
 import org.apache.carbondata.processing.loading.events.LoadEvents;
@@ -126,7 +123,16 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         }
       }
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet);
-      mergeCarbonIndexFiles(segmentPath);
+      if (operationContext != null) {
+        LoadEvents.LoadTableMergePartitionEvent loadTableMergePartitionEvent =
+            new LoadEvents.LoadTableMergePartitionEvent(segmentPath);
+        try {
+          OperationListenerBus.getInstance()
+              .fireEvent(loadTableMergePartitionEvent, (OperationContext) operationContext);
+        } catch (Exception e) {
+          throw new IOException(e);
+        }
+      }
       String updateTime =
           context.getConfiguration().get(CarbonTableOutputFormat.UPADTE_TIMESTAMP, null);
       String segmentsToBeDeleted =
@@ -155,24 +161,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       return carbonSessionInfo.getThreadParams().getExtraInfo("partition.operationcontext");
     }
     return null;
-  }
-
-  /**
-   * Merge index files to a new single file.
-   */
-  private void mergeCarbonIndexFiles(String segmentPath) throws IOException {
-    boolean mergeIndex = false;
-    try {
-      mergeIndex = Boolean.parseBoolean(CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT));
-    } catch (Exception e) {
-      mergeIndex = Boolean.parseBoolean(
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT);
-    }
-    if (mergeIndex) {
-      new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment(segmentPath);
-    }
   }
 
   /**

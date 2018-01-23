@@ -27,7 +27,6 @@ public enum CompactionType {
     MAJOR,
     IUD_UPDDEL_DELTA,
     IUD_DELETE_DELTA,
-    SEGMENT_INDEX,
     STREAMING,
     CLOSE_STREAMING,
     NONE

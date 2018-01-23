@@ -100,24 +100,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           .tableExists(TableIdentifier(altertablemodel.tableName,
             altertablemodel.dbName))(sparkSession)
         if (isCarbonTable) {
-          var compactionType: CompactionType = null
-          try {
-            compactionType = CompactionType.valueOf(altertablemodel.compactionType.toUpperCase)
-          } catch {
-            case _: Exception =>
-              throw new MalformedCarbonCommandException(
-                "Unsupported alter operation on carbon table")
-          }
-          if (CompactionType.MINOR == compactionType ||
-              CompactionType.MAJOR == compactionType ||
-              CompactionType.SEGMENT_INDEX == compactionType ||
-              CompactionType.STREAMING == compactionType ||
-              CompactionType.CLOSE_STREAMING == compactionType) {
             ExecutedCommandExec(alterTable) :: Nil
-          } else {
-            throw new MalformedCarbonCommandException(
-              "Unsupported alter operation on carbon table")
-          }
         } else {
           throw new MalformedCarbonCommandException(
             "Operation not allowed : " + altertablemodel.alterSql)

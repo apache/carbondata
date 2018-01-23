@@ -221,8 +221,6 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
 
     if (finalMergeStatus) {
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
-      CommonUtil.mergeIndexFiles(
-        sc.sparkContext, Seq(mergedLoadNumber), tablePath, carbonTable, false)
       new PartitionMapFileStore().mergePartitionMapFiles(
         CarbonTablePath.getSegmentPath(tablePath, mergedLoadNumber),
         carbonLoadModel.getFactTimeStamp + "")
