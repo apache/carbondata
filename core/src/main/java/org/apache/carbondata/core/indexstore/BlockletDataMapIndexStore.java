@@ -247,22 +247,4 @@ public class BlockletDataMapIndexStore
       cacheable.clear();
     }
   }
-
-  public static class BlockMetaInfo {
-    private String[] locationInfo;
-    private long size;
-
-    public BlockMetaInfo(String[] locationInfo, long size) {
-      this.locationInfo = locationInfo;
-      this.size = size;
-    }
-
-    public String[] getLocationInfo() {
-      return locationInfo;
-    }
-
-    public long getSize() {
-      return size;
-    }
-  }
 }

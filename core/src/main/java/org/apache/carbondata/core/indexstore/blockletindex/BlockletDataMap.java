@@ -40,8 +40,8 @@ import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
-import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
@@ -149,7 +149,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
         createSummarySchema(segmentProperties, blockletDataMapInfo.getPartitions(), schemaBinary);
       }
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
-      BlockletDataMapIndexStore.BlockMetaInfo blockMetaInfo =
+      BlockMetaInfo blockMetaInfo =
           blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       // Here it loads info about all blocklets of index
       // Only add if the file exists physically. There are scenarios which index file exists inside
@@ -194,7 +194,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private DataMapRowImpl loadToUnsafe(DataFileFooter fileFooter,
       SegmentProperties segmentProperties, String filePath, DataMapRowImpl summaryRow,
-      BlockletDataMapIndexStore.BlockMetaInfo blockMetaInfo, int relativeBlockletId) {
+      BlockMetaInfo blockMetaInfo, int relativeBlockletId) {
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
@@ -282,7 +282,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
    */
   private DataMapRowImpl loadToUnsafeBlock(DataFileFooter fileFooter,
       SegmentProperties segmentProperties, String filePath, DataMapRowImpl summaryRow,
-      BlockletDataMapIndexStore.BlockMetaInfo blockMetaInfo) {
+      BlockMetaInfo blockMetaInfo) {
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     BlockletIndex blockletIndex = fileFooter.getBlockletIndex();
     CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
