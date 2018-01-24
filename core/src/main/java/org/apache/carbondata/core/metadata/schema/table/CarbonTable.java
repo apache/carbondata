@@ -156,6 +156,17 @@ public class CarbonTable implements Serializable {
       columnSchema.setDataType(DataTypeUtil.valueOf(columnSchema.getDataType(),
           columnSchema.getPrecision(), columnSchema.getScale()));
     }
+    List<DataMapSchema> childSchema = tableInfo.getDataMapSchemaList();
+    for (DataMapSchema dataMapSchema : childSchema) {
+      if (dataMapSchema.childSchema != null
+          && dataMapSchema.childSchema.getListOfColumns().size() > 0) {
+        for (ColumnSchema columnSchema : dataMapSchema.childSchema.getListOfColumns()) {
+          columnSchema.setDataType(DataTypeUtil
+              .valueOf(columnSchema.getDataType(), columnSchema.getPrecision(),
+                  columnSchema.getScale()));
+        }
+      }
+    }
     if (tableInfo.getFactTable().getBucketingInfo() != null) {
       for (ColumnSchema columnSchema : tableInfo.getFactTable()
           .getBucketingInfo().getListOfColumns()) {

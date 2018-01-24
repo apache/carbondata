@@ -35,6 +35,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists datamaptest")
     sql("drop table if exists datamapshowtest")
+    sql("drop table if exists uniqdata")
     sql("create table datamaptest (a string, b string, c string) stored by 'carbondata'")
   }
 
@@ -210,6 +211,16 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
   }
 
+  test("test preaggregate load for decimal column for hivemetastore") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE, "true")
+    sql("drop datamap if exists uniqdata_agg on table uniqdata")
+    sql("CREATE TABLE uniqdata(CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string,DOB timestamp,DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10),DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'")
+    sql("insert into uniqdata select 9000,'CUST_NAME_00000','ACTIVE_EMUI_VERSION_00000','1970-01-01 01:00:03','1970-01-01 02:00:03',123372036854,-223372036854,12345678901.1234000000,22345678901.1234000000,11234567489.7976000000,-11234567489.7976000000,1")
+    sql("create datamap uniqdata_agg on table uniqdata using 'preaggregate' as select min(DECIMAL_COLUMN1) from uniqdata group by DECIMAL_COLUMN1")
+    checkAnswer(sql("select * from uniqdata_uniqdata_agg"),Seq(Row(12345678901.1234000000, 12345678901.1234000000)))
+    sql("drop datamap if exists uniqdata_agg on table uniqdata")
+  }
+
   test("create pre-agg table with path") {
     sql("drop table if exists main_preagg")
     sql("drop table if exists main ")
@@ -237,6 +248,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS maintable")
+    sql("drop table if exists uniqdata")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
       CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
     sql("drop table if exists datamaptest")
