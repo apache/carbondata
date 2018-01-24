@@ -27,12 +27,13 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     sql("use default")
-    sql("DROP TABLE IF EXISTS tableWithGlobalSort")
-    sql("DROP TABLE IF EXISTS tableWithLocalSort")
-    sql("DROP TABLE IF EXISTS tableWithBatchSort")
-    sql("DROP TABLE IF EXISTS tableWithNoSort")
-    sql("DROP TABLE IF EXISTS tableWithUnsupportSortScope")
-    sql("DROP TABLE IF EXISTS tableLoadWithSortScope")
+    dropTables(
+      "tableWithGlobalSort",
+      "tableWithLocalSort",
+      "tableWithBatchSort",
+      "tableWithNoSort",
+      "tableWithUnsupportSortScope",
+      "tableLoadWithSortScope")
   }
 
   test("Do not support load data with specify sort scope") {
@@ -124,11 +125,12 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll: Unit = {
     sql("use default")
-    sql("DROP TABLE IF EXISTS tableWithGlobalSort")
-    sql("DROP TABLE IF EXISTS tableWithLocalSort")
-    sql("DROP TABLE IF EXISTS tableWithBatchSort")
-    sql("DROP TABLE IF EXISTS tableWithNoSort")
-    sql("DROP TABLE IF EXISTS tableWithUnsupportSortScope")
-    sql("DROP TABLE IF EXISTS tableLoadWithSortScope")
+    dropTables(
+      "tableWithGlobalSort",
+      "tableWithLocalSort",
+      "tableWithBatchSort",
+      "tableWithNoSort",
+      "tableWithUnsupportSortScope",
+      "tableLoadWithSortScope")
   }
 }

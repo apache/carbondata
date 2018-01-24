@@ -107,8 +107,10 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table if exists nomeasureTest")
-    sql("drop table if exists nomeasureTest_sd")
-    sql("drop table if exists nomeasureTest_scd")
+    dropTables(
+      "nomeasureTest",
+      "nomeasureTest_sd",
+      "nomeasureTest_scd"
+    )
   }
 }

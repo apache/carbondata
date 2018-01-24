@@ -406,27 +406,28 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table if exists load")
-    sql("drop table if exists inser")
-    sql("DROP TABLE IF EXISTS THive")
-    sql("DROP TABLE IF EXISTS TCarbon")
-    sql("drop table if exists TCarbonLocal")
-    sql("drop table if exists TCarbonSource")
-    sql("drop table if exists loadtable")
-    sql("drop table if exists insertTable")
-    sql("drop table if exists CarbonDest")
-    sql("drop table if exists HiveDest")
-    sql("drop table if exists CarbonOverwrite")
-    sql("drop table if exists HiveOverwrite")
-    sql("drop table if exists tcarbonsourceoverwrite")
-    sql("drop table if exists carbon_table1")
-    sql("drop table if exists carbon_table")
-    sql("DROP TABLE IF EXISTS student")
-    sql("DROP TABLE IF EXISTS uniqdata")
-    sql("DROP TABLE IF EXISTS show_insert")
-    sql("drop table if exists OverwriteTable_t1")
-    sql("drop table if exists OverwriteTable_t2")
-
+    dropTables(
+      "load",
+      "inser",
+      "THive",
+      "TCarbon",
+      "TCarbonLocal",
+      "TCarbonSource",
+      "loadtable",
+      "insertTable",
+      "CarbonDest",
+      "HiveDest",
+      "CarbonOverwrite",
+      "HiveOverwrite",
+      "tcarbonsourceoverwrite",
+      "carbon_table1",
+      "carbon_table",
+      "student",
+      "uniqdata",
+      "show_insert",
+      "OverwriteTable_t1",
+      "OverwriteTable_t2"
+    )
     if (timeStampPropOrig != null) {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeStampPropOrig)

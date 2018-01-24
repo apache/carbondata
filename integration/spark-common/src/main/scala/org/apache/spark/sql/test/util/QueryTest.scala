@@ -110,6 +110,12 @@ class QueryTest extends PlanTest {
     }
   }
 
+  protected def dropTables(tableNames: String*): Unit = {
+    for (tableName <- tableNames) {
+      sql(s"DROP TABLE IF EXISTS $tableName")
+    }
+  }
+
   def sql(sqlText: String): DataFrame = TestQueryExecutor.INSTANCE.sql(sqlText)
 
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
