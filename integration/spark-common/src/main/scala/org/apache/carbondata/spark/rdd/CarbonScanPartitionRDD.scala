@@ -115,7 +115,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
           val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
           if (blocksPerTask.size() != 0) {
             val multiBlockSplit =
-              new CarbonMultiBlockSplit(absoluteTableIdentifier, splits.asJava, Array(node))
+              new CarbonMultiBlockSplit(splits.asJava, Array(node))
             val partition = new CarbonSparkPartition(id, partition_num, multiBlockSplit)
             result.add(partition)
             partition_num += 1
