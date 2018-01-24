@@ -21,12 +21,14 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.BeforeAndAfterAll
 
 
 class TestTimeseriesTableSelection extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
+    SparkUtil4Test.createTaskMockUp(sqlContext)
     sql("drop table if exists mainTable")
     sql("CREATE TABLE mainTable(mytime timestamp, name string, age int) STORED BY 'org.apache.carbondata.format'")
     sql("create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='mytime', 'timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1') as select mytime, sum(age) from mainTable group by mytime")

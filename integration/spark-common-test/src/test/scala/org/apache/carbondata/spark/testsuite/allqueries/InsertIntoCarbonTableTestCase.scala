@@ -387,7 +387,7 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   private def checkSegment(tableName: String) : Boolean ={
-    val storePath_t1 = metastoredb + s"/warehouse/${tableName.toLowerCase()}/Fact/Part0"
+    val storePath_t1 = s"$storeLocation/${tableName.toLowerCase()}/Fact/Part0"
     val carbonFile_t1: CarbonFile = FileFactory
       .getCarbonFile(storePath_t1, FileFactory.getFileType(storePath_t1))
     var exists: Boolean = carbonFile_t1.exists()
