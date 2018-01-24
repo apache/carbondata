@@ -19,17 +19,18 @@ package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-@Ignore
 class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
 
   val testData = s"$resourcesPath/sample.csv"
 
   override def beforeAll(): Unit = {
+    SparkUtil4Test.createTaskMockUp(sqlContext)
     sql("DROP TABLE IF EXISTS maintable")
   }
 
@@ -304,8 +305,9 @@ test("check load and select for avg double datatype") {
     sql("create table maintbl(year int,month int,name string,salary float) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
     sql("insert into maintbl select 10,11,'babu',12")
     sql("insert into maintbl select 10,11,'babu',12")
+    val rows = sql("select name,avg(salary) from maintbl group by name").collect()
     sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
-    checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.89))
+    checkAnswer(sql("select name,avg(salary) from maintbl group by name"), rows)
   }
 
 

@@ -23,10 +23,12 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.util.SparkUtil4Test
 
 class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    SparkUtil4Test.createTaskMockUp(sqlContext)
     dropTable
 
     sql("CREATE TABLE origintable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
@@ -334,9 +336,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
   }
 
-  // This testcase cause CI random failure, the reported error in CI is "TaskCompletionListener is null"
-  // TODO: need to further analyze this.
-  ignore("Test tableTwo data") {
+  test("Test tableTwo data") {
     sql("insert into table tableTwo select id, count(age) from tableOne group by id")
     checkAnswer(
       sql("select id,age from tableTwo order by id"),
