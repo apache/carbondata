@@ -39,7 +39,7 @@ class CarbonDeleteLoadByDateRDD[K, V](
     dimTableName: String,
     storePath: String,
     loadMetadataDetails: List[LoadMetadataDetails])
-  extends CarbonRDD[(K, V)](sc, Nil) {
+  extends CarbonRDD[(K, V)](sc, Nil, sc.hadoopConfiguration) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
