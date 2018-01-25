@@ -20,6 +20,7 @@ import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -28,6 +29,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
+    SparkUtil4Test.createTaskMockUp(sqlContext)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql("drop table if exists mainTable")
