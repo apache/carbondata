@@ -96,7 +96,7 @@ class StreamHandoffRDD[K, V](
     result: HandoffResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     handOffSegmentId: String
-) extends CarbonRDD[(K, V)](sc, Nil) {
+) extends CarbonRDD[(K, V)](sc, Nil, sc.hadoopConfiguration) {
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
