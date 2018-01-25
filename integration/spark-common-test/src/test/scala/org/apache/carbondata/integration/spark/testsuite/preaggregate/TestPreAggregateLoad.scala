@@ -21,9 +21,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.{BeforeAndAfterAll, Ignore}
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 
 class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
 
@@ -310,5 +310,99 @@ test("check load and select for avg double datatype") {
     checkAnswer(sql("select name,avg(salary) from maintbl group by name"), rows)
   }
 
+  test("create datamap with 'if not exists' after load data into mainTable and create datamap") {
+    sql("DROP TABLE IF EXISTS maintable")
+    sql(
+      """
+        | CREATE TABLE maintable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(
+      s"""
+         | create datamap preagg_sum
+         | on table maintable
+         | using 'preaggregate'
+         | as select id,sum(age) from maintable
+         | group by id
+       """.stripMargin)
+
+    sql(
+      s"""
+         | create datamap if not exists preagg_sum
+         | on table maintable
+         | using 'preaggregate'
+         | as select id,sum(age) from maintable
+         | group by id
+       """.stripMargin)
+
+    checkAnswer(sql(s"select * from maintable_preagg_sum"),
+      Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
+    sql("drop table if exists maintable")
+  }
+
+  test("create datamap with 'if not exists' after create datamap and load data into mainTable") {
+    sql("DROP TABLE IF EXISTS maintable")
+    sql(
+      """
+        | CREATE TABLE maintable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(
+      s"""
+         | create datamap preagg_sum
+         | on table maintable
+         | using 'preaggregate'
+         | as select id,sum(age) from maintable
+         | group by id
+       """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(
+      s"""
+         | create datamap if not exists preagg_sum
+         | on table maintable
+         | using 'preaggregate'
+         | as select id,sum(age) from maintable
+         | group by id
+       """.stripMargin)
+
+    checkAnswer(sql(s"select * from maintable_preagg_sum"),
+      Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
+    sql("drop table if exists maintable")
+  }
+
+  test("create datamap without 'if not exists' after load data into mainTable and create datamap") {
+    sql("DROP TABLE IF EXISTS maintable")
+    sql(
+      """
+        | CREATE TABLE maintable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(
+      s"""
+         | create datamap preagg_sum
+         | on table maintable
+         | using 'preaggregate'
+         | as select id,sum(age) from maintable
+         | group by id
+       """.stripMargin)
+
+    val e: Exception = intercept[TableAlreadyExistsException] {
+      sql(
+        s"""
+           | create datamap preagg_sum
+           | on table maintable
+           | using 'preaggregate'
+           | as select id,sum(age) from maintable
+           | group by id
+       """.stripMargin)
+    }
+    assert(e.getMessage.contains("already exists in database"))
+    checkAnswer(sql(s"select * from maintable_preagg_sum"),
+      Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
+    sql("drop table if exists maintable")
+  }
 
 }
