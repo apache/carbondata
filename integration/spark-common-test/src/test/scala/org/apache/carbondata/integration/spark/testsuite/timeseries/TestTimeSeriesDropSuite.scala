@@ -18,9 +18,10 @@ package org.apache.carbondata.integration.spark.testsuite.timeseries
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, NoSuchDataMapException}
 
-class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach{
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+
+class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
 
   override def beforeAll: Unit = {
     sql(s"DROP TABLE IF EXISTS mainTable")
@@ -34,7 +35,6 @@ class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with Befo
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
   }
-
 
   test("test timeseries drop datamap 1: drop datamap should throw exception if no datamap") {
     // DROP DATAMAP DataMapName if the DataMapName not exists
@@ -79,6 +79,27 @@ class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with Befo
       sql(s"DROP DATAMAP agg1_month ON TABLE mainTable")
     }
     assert(e.getMessage.contains("Datamap with name agg1_month does not exist under table mainTable"))
+  }
+
+  test("test timeseries drop datamap: drop datamap should throw exception if table not exist") {
+    // DROP DATAMAP DataMapName if the DataMapName not exists and
+    checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), false, "agg1_month")
+    val e: Exception = intercept[Exception] {
+      sql(s"DROP DATAMAP agg1_month ON TABLE mainTableNotExist")
+    }
+    assert(e.getMessage.contains(
+      "Dropping datamap agg1_month failed: Table or view 'maintablenotexist' not found "))
+  }
+
+  test("test timeseries drop datamap: should throw exception if table not exist with IF EXISTS") {
+    // DROP DATAMAP DataMapName if the DataMapName not exists
+    // DROP DATAMAP should throw exception if table not exist, even though there is IF EXISTS"
+    checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), false, "agg1_month")
+    val e: Exception = intercept[Exception] {
+      sql(s"DROP DATAMAP IF EXISTS agg1_month ON TABLE mainTableNotExist")
+    }
+    assert(e.getMessage.contains(
+      "Dropping datamap agg1_month failed: Table or view 'maintablenotexist' not found "))
   }
 
   override def afterAll: Unit = {
