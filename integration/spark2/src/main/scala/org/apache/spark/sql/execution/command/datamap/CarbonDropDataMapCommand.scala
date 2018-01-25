@@ -26,7 +26,6 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
-import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.datamap.DataMapStoreManager
@@ -35,6 +34,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.events._
+import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, NoSuchDataMapException}
 
 /**
  * Drops the datamap and any related tables associated with the datamap
@@ -110,15 +110,17 @@ case class CarbonDropDataMapCommand(
               sparkSession)
           OperationListenerBus.getInstance.fireEvent(dropDataMapPostEvent, operationContext)
         } else if (!ifExistsSet) {
-          throw new IllegalArgumentException(
-            s"Datamap with name $dataMapName does not exist under table $tableName")
+          throw new NoSuchDataMapException(dataMapName, tableName)
         }
       }
 
     } catch {
+      case e: NoSuchDataMapException =>
+        throw e
       case ex: Exception =>
         LOGGER.error(ex, s"Dropping datamap $dataMapName failed")
-        sys.error(s"Dropping datamap $dataMapName failed: ${ ex.getMessage }")
+        throw new MalformedCarbonCommandException(
+          s"Dropping datamap $dataMapName failed: ${ex.getMessage}")
     }
     finally {
       if (carbonLocks.nonEmpty) {
