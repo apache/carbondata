@@ -22,12 +22,12 @@ package org.apache.carbondata.spark.exception;
  */
 public class NoSuchDataMapException extends MalformedCarbonCommandException {
 
-    /**
-     * default serial version ID.
-     */
-    private static final long serialVersionUID = 1L;
+  /**
+   * default serial version ID.
+   */
+  private static final long serialVersionUID = 1L;
 
-    public NoSuchDataMapException(String dataMapName, String tableName) {
-        super("Datamap with name " + dataMapName + " does not exist under table " + tableName);
-    }
+  public NoSuchDataMapException(String dataMapName, String tableName) {
+    super("Datamap with name " + dataMapName + " does not exist under table " + tableName);
+  }
 }
