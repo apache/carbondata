@@ -221,6 +221,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       val schemaConverter = new ThriftWrapperSchemaConverterImpl
       val wrapperTableInfo =
         schemaConverter.fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
+      CarbonMetadata.getInstance().removeTable(tableUniqueName)
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
       val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
       metadata.carbonTables += carbonTable
@@ -258,6 +259,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       oldTableIdentifier.getTableId)
     val path = createSchemaThriftFile(newAbsoluteTableIdentifier, thriftTableInfo)
     addTableCache(wrapperTableInfo, newAbsoluteTableIdentifier)
+
     path
   }
 

@@ -669,6 +669,18 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists renameTextFileTable")
   }
 
+  test("test rename [create table, rename, create same table with different schema]"){
+    sql("drop table if exists t5")
+    sql("drop table if exists t6")
+
+    sql("create table t5 (c1 string, c2 int) stored by 'carbondata'")
+    sql("insert into t5 select 'asd',1")
+    sql("alter table t5 rename to t6")
+    sql("create table t5 (c1 string, c2 int,c3 string) stored by 'carbondata'")
+    sql("insert into t5 select 'asd',1,'sdf'")
+    checkAnswer(sql("select * from t5"),Seq(Row("asd",1,"sdf")))
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("DROP TABLE IF EXISTS hivetable")

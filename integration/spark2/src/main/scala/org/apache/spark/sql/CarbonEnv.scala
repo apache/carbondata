@@ -23,10 +23,11 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
-import org.apache.spark.sql.hive._
+import org.apache.spark.sql.hive.{HiveSessionCatalog, _}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -111,6 +112,8 @@ object CarbonEnv {
 
   val carbonEnvMap = new ConcurrentHashMap[SparkSession, CarbonEnv]
 
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+
   def getInstance(sparkSession: SparkSession): CarbonEnv = {
     if (sparkSession.isInstanceOf[CarbonSession]) {
       sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].carbonEnv
@@ -152,6 +155,7 @@ object CarbonEnv {
       databaseNameOp: Option[String],
       tableName: String)
     (sparkSession: SparkSession): CarbonTable = {
+    refreshRelationFromCache(TableIdentifier(tableName, databaseNameOp))(sparkSession)
     val databaseName = getDatabaseName(databaseNameOp)(sparkSession)
     val catalog = getInstance(sparkSession).carbonMetastore
     // refresh cache
@@ -164,6 +168,19 @@ object CarbonEnv {
           .lookupRelation(databaseNameOp, tableName)(sparkSession)
           .asInstanceOf[CarbonRelation]
           .carbonTable)
+  }
+
+  def refreshRelationFromCache(identifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
+    var isRefreshed = false
+    val carbonEnv = getInstance(sparkSession)
+    if (carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTable(identifier)) {
+      sparkSession.sessionState.catalog.refreshTable(identifier)
+      DataMapStoreManager.getInstance().
+        clearDataMaps(AbsoluteTableIdentifier.from(CarbonProperties.getStorePath,
+          identifier.database.getOrElse("default"), identifier.table))
+      isRefreshed = true
+    }
+    isRefreshed
   }
 
   /**
