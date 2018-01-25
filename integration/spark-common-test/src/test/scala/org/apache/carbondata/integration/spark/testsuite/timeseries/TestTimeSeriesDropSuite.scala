@@ -18,8 +18,7 @@ package org.apache.carbondata.integration.spark.testsuite.timeseries
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, NoSuchDataMapException}
 
 class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach{
 
@@ -36,7 +35,30 @@ class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with Befo
       """.stripMargin)
   }
 
-  test("test timeseries drop datamap 3: should support drop datamap") {
+
+  test("test timeseries drop datamap 1: drop datamap should throw exception if no datamap") {
+    // DROP DATAMAP DataMapName if the DataMapName not exists
+    checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), false, "agg1_month")
+    val e: Exception = intercept[Exception] {
+      sql(s"DROP DATAMAP agg1_month ON TABLE mainTable")
+    }
+    assert(e.getMessage.contains("Datamap with name agg1_month does not exist under table mainTable"))
+  }
+
+  test("test timeseries drop datamap 2: drop datamap should SUCCESS if haveIF EXISTS") {
+    // DROP DATAMAP DataMapName if the DataMapName not exists
+    checkExistence(sql("show datamap on table mainTable"), false, "agg1_month")
+    try {
+      sql(s"DROP DATAMAP IF EXISTS agg1_month ON TABLE mainTable")
+      assert(true)
+    } catch {
+      case e: Exception =>
+        println(e)
+        assert(false)
+    }
+  }
+
+  test("test timeseries drop datamap 3: drop datamap should throw proper exception") {
     sql(
       """create datamap agg1 on table mainTable
         |using 'preaggregate'

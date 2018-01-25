@@ -20,6 +20,8 @@ package org.apache.carbondata.integration.spark.testsuite.preaggregate
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.NoSuchDataMapException
+
 class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -51,7 +53,7 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
   }
 
   test("drop datamap which is not existed") {
-    intercept[RuntimeException] {
+    intercept[NoSuchDataMapException] {
       sql("drop datamap newpreagg on table maintable")
     }
   }

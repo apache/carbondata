@@ -112,6 +112,10 @@ case class CarbonDropDataMapCommand(
         } else if (!ifExistsSet) {
           throw new NoSuchDataMapException(dataMapName, tableName)
         }
+      } else if ((carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList.size() == 0)) {
+        if (!ifExistsSet) {
+          throw new NoSuchDataMapException(dataMapName, tableName)
+        }
       }
 
     } catch {
