@@ -72,8 +72,7 @@ case class CarbonDropDataMapCommand(
         Some(CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession))
       } catch {
         case ex: NoSuchTableException =>
-          if (!ifExistsSet) throw ex
-          else None
+          throw ex
       }
       if (carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList.size() > 0) {
         val dataMapSchema = carbonTable.get.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
