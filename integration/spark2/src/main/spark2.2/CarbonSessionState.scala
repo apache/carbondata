@@ -95,18 +95,6 @@ class CarbonSessionCatalog(
   CarbonEnv.initListeners()
 
 
-  private def refreshRelationFromCache(identifier: TableIdentifier): Boolean = {
-    var isRefreshed = false
-    if (carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTable(identifier)) {
-      refreshTable(identifier)
-      DataMapStoreManager.getInstance().
-        clearDataMaps(AbsoluteTableIdentifier.from(CarbonProperties.getStorePath,
-          identifier.database.getOrElse("default"), identifier.table))
-      logInfo(s"Schema changes have been detected for table: $identifier")
-      isRefreshed = true
-    }
-    isRefreshed
-  }
 
 
   override def lookupRelation(name: TableIdentifier): LogicalPlan = {
@@ -115,17 +103,20 @@ class CarbonSessionCatalog(
     rtnRelation match {
       case SubqueryAlias(_,
       LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)) =>
-        toRefreshRelation = refreshRelationFromCache(name)
+        toRefreshRelation = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
       case LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _) =>
-        toRefreshRelation = refreshRelationFromCache(name)
+        toRefreshRelation = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
       case SubqueryAlias(_, relation) if
       relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
       relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
       relation.getClass.getName.equals(
         "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation") =>
-        val catalogTable = CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta",
-          relation).asInstanceOf[CatalogTable]
-        toRefreshRelation = refreshRelationFromCache(catalogTable.identifier)
+        val catalogTable =
+          CarbonReflectionUtils.getFieldOfCatalogTable(
+            "tableMeta",
+            relation).asInstanceOf[CatalogTable]
+        toRefreshRelation =
+          CarbonEnv.refreshRelationFromCache(catalogTable.identifier)(sparkSession)
       case _ =>
     }
 
