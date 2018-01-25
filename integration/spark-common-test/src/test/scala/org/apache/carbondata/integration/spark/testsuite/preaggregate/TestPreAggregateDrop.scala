@@ -20,12 +20,12 @@ package org.apache.carbondata.integration.spark.testsuite.preaggregate
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.NoSuchDataMapException
+
 class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists maintable")
-    sql("drop datamap if exists preagg1 on table maintable")
-    sql("drop datamap if exists preagg2 on table maintable")
     sql("create table maintable (a string, b string, c string) stored by 'carbondata'")
   }
 
@@ -51,7 +51,7 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
   }
 
   test("drop datamap which is not existed") {
-    intercept[RuntimeException] {
+    intercept[NoSuchDataMapException] {
       sql("drop datamap newpreagg on table maintable")
     }
   }
@@ -101,8 +101,6 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
   override def afterAll() {
     sql("drop table if exists maintable")
     sql("drop table if exists maintable1")
-    sql("drop datamap if exists preagg1 on table maintable")
-    sql("drop datamap if exists preagg2 on table maintable")
   }
   
 }
