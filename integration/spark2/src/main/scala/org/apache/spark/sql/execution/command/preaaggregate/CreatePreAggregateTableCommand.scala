@@ -49,7 +49,8 @@ case class CreatePreAggregateTableCommand(
     dmClassName: String,
     dmProperties: Map[String, String],
     queryString: String,
-    timeSeriesFunction: Option[String] = None)
+    timeSeriesFunction: Option[String] = None,
+    ifNotExistsSet: Boolean = false)
   extends AtomicRunnableCommand {
 
   var parentTable: CarbonTable = _
@@ -86,7 +87,7 @@ case class CreatePreAggregateTableCommand(
         parentTableIdentifier.database)
     // prepare table model of the collected tokens
     val tableModel: TableModel = new CarbonSpark2SqlParser().prepareTableModel(
-      ifNotExistPresent = false,
+      ifNotExistPresent = ifNotExistsSet,
       new CarbonSpark2SqlParser().convertDbNameToLowerCase(tableIdentifier.database),
       tableIdentifier.table.toLowerCase,
       fields,

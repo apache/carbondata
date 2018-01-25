@@ -17,6 +17,7 @@
 package org.apache.spark.sql.execution.command.datamap
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.preaaggregate.CreatePreAggregateTableCommand
@@ -35,10 +36,21 @@ case class CarbonCreateDataMapCommand(
     tableIdentifier: TableIdentifier,
     dmClassName: String,
     dmproperties: Map[String, String],
-    queryString: Option[String])
+    queryString: Option[String],
+    ifNotExistsSet: Boolean = false)
   extends AtomicRunnableCommand {
 
   var createPreAggregateTableCommands: CreatePreAggregateTableCommand = _
+  var tableIsExists: Boolean = false
+
+  def tableExists(sparkSession: SparkSession, dbName: String, tableName: String): Boolean = {
+    if (sparkSession.sessionState.catalog.listTables(dbName)
+      .exists(_.table.equalsIgnoreCase(tableName))) {
+      true
+    } else {
+      false
+    }
+  }
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     // since streaming segment does not support building index and pre-aggregate yet,
@@ -49,10 +61,26 @@ case class CarbonCreateDataMapCommand(
       throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
     }
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val dbName = tableIdentifier.database.getOrElse("default")
+    val tableName = tableIdentifier.table + "_" + dataMapName
 
-    if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
+    if (tableExists(sparkSession, dbName, tableName)) {
+      LOGGER.audit(
+        s"Table creation with Database name [$dbName] and Table name [$tableName] failed. " +
+          s"Table [$tableName] already exists under database [$dbName]")
+      tableIsExists = true
+      if (!ifNotExistsSet) {
+        throw new TableAlreadyExistsException(dbName, tableName)
+      }
+//      if (ifNotExistsSet) {
+//        tableIsExists =
+//      } else {
+//        throw new TableAlreadyExistsException(dbName, tableName)
+//      }
+    } else if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
       dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
       TimeSeriesUtil.validateTimeSeriesGranularity(dmproperties, dmClassName)
+
       createPreAggregateTableCommands = if (dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
         val details = TimeSeriesUtil
           .getTimeSeriesGranularityDetails(dmproperties, dmClassName)
@@ -62,15 +90,16 @@ case class CarbonCreateDataMapCommand(
           dmClassName,
           updatedDmProperties,
           queryString.get,
-          Some(details._1))
+          Some(details._1),
+          ifNotExistsSet = ifNotExistsSet)
       } else {
         CreatePreAggregateTableCommand(
           dataMapName,
           tableIdentifier,
           dmClassName,
           dmproperties,
-          queryString.get
-        )
+          queryString.get,
+          ifNotExistsSet = ifNotExistsSet)
       }
       createPreAggregateTableCommands.processMetadata(sparkSession)
     } else {
@@ -83,7 +112,11 @@ case class CarbonCreateDataMapCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
       dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
-      createPreAggregateTableCommands.processData(sparkSession)
+      if (!tableIsExists) {
+        createPreAggregateTableCommands.processData(sparkSession)
+      } else {
+        Seq.empty
+      }
     } else {
       throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
     }
@@ -92,7 +125,11 @@ case class CarbonCreateDataMapCommand(
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
     if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
       dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
-      createPreAggregateTableCommands.undoMetadata(sparkSession, exception)
+      if (!tableIsExists) {
+        createPreAggregateTableCommands.undoMetadata(sparkSession, exception)
+      } else {
+        Seq.empty
+      }
     } else {
       throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
     }

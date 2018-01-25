@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.timeseries
 
+import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -81,29 +82,29 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
   }
 
-  test("test timeseries create table Zero") {
+  test("test timeseries create table 1") {
     checkExistence(sql("DESCRIBE FORMATTED mainTable_agg0_second"), true, "maintable_agg0_second")
     sql("drop datamap agg0_second on table mainTable")
   }
 
-  test("test timeseries create table One") {
+  test("test timeseries create table 2") {
     checkExistence(sql("DESCRIBE FORMATTED mainTable_agg0_hour"), true, "maintable_agg0_hour")
     sql("drop datamap agg0_hour on table mainTable")
   }
-  test("test timeseries create table two") {
+  test("test timeseries create table 3") {
     checkExistence(sql("DESCRIBE FORMATTED maintable_agg0_day"), true, "maintable_agg0_day")
     sql("drop datamap agg0_day on table mainTable")
   }
-  test("test timeseries create table three") {
+  test("test timeseries create table 4") {
     checkExistence(sql("DESCRIBE FORMATTED mainTable_agg0_month"), true, "maintable_agg0_month")
     sql("drop datamap agg0_month on table mainTable")
   }
-  test("test timeseries create table four") {
+  test("test timeseries create table 5") {
     checkExistence(sql("DESCRIBE FORMATTED mainTable_agg0_year"), true, "maintable_agg0_year")
     sql("drop datamap agg0_year on table mainTable")
   }
 
-  test("test timeseries create table five") {
+  test("test timeseries create table 6") {
     intercept[Exception] {
       sql(
         s"""
@@ -118,7 +119,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test timeseries create table Six") {
+  test("test timeseries create table 7") {
     intercept[Exception] {
       sql(
         s"""
@@ -133,7 +134,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test timeseries create table seven") {
+  test("test timeseries create table 8") {
     intercept[Exception] {
       sql(
         s"""
@@ -158,7 +159,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test timeseries create table Eight") {
+  test("test timeseries create table 9") {
     intercept[Exception] {
       sql(
         s"""
@@ -173,7 +174,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test timeseries create table Nine") {
+  test("test timeseries create table 10") {
     intercept[Exception] {
       sql(
         s"""
@@ -188,7 +189,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test timeseries create table: USING") {
+  test("test timeseries create table 11: USING") {
     val e: Exception = intercept[MalformedDataMapCommandException] {
       sql(
         """CREATE DATAMAP agg1 ON TABLE mainTable
@@ -203,7 +204,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     assert(e.getMessage.equals("Unknown data map type abc"))
   }
 
-  test("test timeseries create table: USING and catch MalformedCarbonCommandException") {
+  test("test timeseries create table 12: USING and catch MalformedCarbonCommandException") {
     val e: Exception = intercept[MalformedCarbonCommandException] {
       sql(
         """CREATE DATAMAP agg1 ON TABLE mainTable
@@ -218,7 +219,8 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     assert(e.getMessage.equals("Unknown data map type abc"))
   }
 
-  test("test timeseries create table: Only one granularity level can be defined 1") {
+  test("test timeseries create table 13: Only one granularity level can be defined 1") {
+    sql("DROP DATAMAP IF EXISTS agg0_second ON TABLE mainTable")
     val e: Exception = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
@@ -238,7 +240,8 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     assert(e.getMessage.equals("Only one granularity level can be defined"))
   }
 
-  test("test timeseries create table: Only one granularity level can be defined 2") {
+  test("test timeseries create table 14: Only one granularity level can be defined 2") {
+    sql("DROP DATAMAP IF EXISTS agg0_second ON TABLE mainTable")
     val e: Exception = intercept[MalformedDataMapCommandException] {
       sql(
         s"""
@@ -255,7 +258,8 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     assert(e.getMessage.equals("Only one granularity level can be defined"))
   }
 
-  test("test timeseries create table: Only one granularity level can be defined 3") {
+  test("test timeseries create table 15: Only one granularity level can be defined 3") {
+    sql("DROP DATAMAP IF EXISTS agg0_second ON TABLE mainTable")
     val e: Exception = intercept[MalformedDataMapCommandException] {
       sql(
         s"""
@@ -272,7 +276,8 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     assert(e.getMessage.equals("Only one granularity level can be defined"))
   }
 
-  test("test timeseries create table: Granularity only support 1") {
+  test("test timeseries create table 16: Granularity only support 1") {
+    sql("DROP DATAMAP IF EXISTS agg0_second ON TABLE mainTable")
     val e = intercept[MalformedDataMapCommandException] {
       sql(
         s"""
@@ -288,7 +293,8 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     assert(e.getMessage.equals("Granularity only support 1"))
   }
 
-  test("test timeseries create table: Granularity only support 1 and throw Exception") {
+  test("test timeseries create table 17: Granularity only support 1 and throw Exception") {
+    sql("DROP DATAMAP IF EXISTS agg0_second ON TABLE mainTable")
     val e = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
@@ -304,7 +310,8 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     assert(e.getMessage.equals("Granularity only support 1"))
   }
 
-  test("test timeseries create table: timeSeries should define time granularity") {
+  test("test timeseries create table 18: timeSeries should define time granularity") {
+    sql("DROP DATAMAP IF EXISTS agg0_second ON TABLE mainTable")
     val e = intercept[MalformedDataMapCommandException] {
       sql(
         s"""
@@ -317,6 +324,53 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
     }
     assert(e.getMessage.equals(s"$timeSeries should define time granularity"))
+  }
+
+  test("test timeseries create table 19: should support if not exists") {
+    sql("DROP DATAMAP IF EXISTS agg1 ON TABLE mainTable")
+    try {
+      sql(
+        s"""
+          | CREATE DATAMAP agg1 ON TABLE mainTable
+          | USING '$timeSeries'
+          | DMPROPERTIES (
+          |   'EVENT_TIME'='dataTime',
+          |   'MONTH_GRANULARITY'='1')
+          | AS SELECT dataTime, SUM(age) FROM mainTable
+          | GROUP BY dataTime
+        """.stripMargin)
+      sql(
+        s"""
+          | CREATE DATAMAP IF NOT EXISTS agg1 ON TABLE mainTable
+          | USING '$timeSeries'
+          | DMPROPERTIES (
+          |   'EVENT_TIME'='dataTime',
+          |   'MONTH_GRANULARITY'='1')
+          |AS SELECT dataTime, SUM(age) FROM mainTable
+          |GROUP BY dataTime
+        """.stripMargin)
+      checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), true, "agg1")
+      checkExistence(sql("DESC FORMATTED mainTable_agg1"), true, "maintable_age_sum")
+      assert(true)
+    } catch {
+      case _: Exception =>
+        assert(false)
+    }
+  }
+
+  test("test timeseries create table 20: don't support 'create datamap if exists'") {
+    val e: Exception = intercept[AnalysisException] {
+      sql(
+        s"""CREATE DATAMAP IF EXISTS agg2 ON TABLE mainTable
+          | USING '$timeSeries'
+          | DMPROPERTIES (
+          |   'EVENT_TIME'='dataTime',
+          |   'MONTH_GRANULARITY'='1')
+          | AS SELECT dataTime, SUM(age) FROM mainTable
+          | GROUP BY dataTime
+        """.stripMargin)
+    }
+    assert(e.getMessage.contains("identifier matching regex"))
   }
 
   override def afterAll: Unit = {
