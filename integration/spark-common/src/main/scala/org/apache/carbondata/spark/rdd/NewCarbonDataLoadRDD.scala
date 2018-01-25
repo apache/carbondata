@@ -182,7 +182,7 @@ class NewCarbonDataLoadRDD[K, V](
     carbonLoadModel: CarbonLoadModel,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
     @transient hadoopConf: Configuration)
-  extends CarbonRDD[(K, V)](sc, Nil) {
+  extends CarbonRDD[(K, V)](sc, Nil, hadoopConf) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 

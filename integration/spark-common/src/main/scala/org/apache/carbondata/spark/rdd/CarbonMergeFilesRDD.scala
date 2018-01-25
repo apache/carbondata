@@ -41,7 +41,7 @@ class CarbonMergeFilesRDD(
     tablePath: String,
     segments: Seq[String],
     readFileFooterFromCarbonDataFile: Boolean)
-  extends CarbonRDD[String](sc, Nil) {
+  extends CarbonRDD[String](sc, Nil, sc.hadoopConfiguration) {
 
   override def getPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>
