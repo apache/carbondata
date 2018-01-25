@@ -19,7 +19,7 @@ package org.apache.spark.sql.execution.command.preaaggregate
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSession, SparkSession}
+import org.apache.spark.sql._
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias, MatchCastExpression}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction, UnresolvedRelation}
@@ -31,13 +31,14 @@ import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
-import org.apache.spark.sql.types.{DataType, LongType}
+import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema, TableSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.TableInfo
@@ -576,18 +577,15 @@ object PreAggregateUtil {
     }
     updatedPlan
   }
-
-  /**
+    /**
    * This method will start load process on the data map
    */
   def startDataLoadForDataMap(
       parentCarbonTable: CarbonTable,
-      dataMapIdentifier: TableIdentifier,
-      queryString: String,
       segmentToLoad: String,
       validateSegments: Boolean,
-      isOverwrite: Boolean,
-      sparkSession: SparkSession): Unit = {
+      sparkSession: SparkSession,
+      loadCommand: CarbonLoadDataCommand): Unit = {
     CarbonSession.threadSet(
       CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
       parentCarbonTable.getDatabaseName + "." +
@@ -597,32 +595,9 @@ object PreAggregateUtil {
       CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
       parentCarbonTable.getDatabaseName + "." +
       parentCarbonTable.getTableName, validateSegments.toString)
-    val dataMapSchemas = parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala
-    val headers = dataMapSchemas.find(_.getChildSchema.getTableName.equalsIgnoreCase(
-      dataMapIdentifier.table)) match {
-      case Some(dataMapSchema) =>
-        val columns = dataMapSchema.getChildSchema.getListOfColumns.asScala
-          .filter{column =>
-            !column.getColumnName.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)}
-        columns.sortBy(_.getSchemaOrdinal).map(
-          _.getColumnName).mkString(",")
-      case None =>
-        throw new RuntimeException(
-          s"${ dataMapIdentifier.table} datamap not found in DataMapSchema list: ${
-          dataMapSchemas.map(_.getChildSchema.getTableName).mkString("[", ",", "]")}")
-    }
-    val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
-      queryString)).drop("preAggLoad")
+    CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
     try {
-      CarbonLoadDataCommand(dataMapIdentifier.database,
-        dataMapIdentifier.table,
-        null,
-        Nil,
-        Map("fileheader" -> headers),
-        isOverwriteTable = isOverwrite,
-        dataFrame = Some(dataFrame),
-        internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
-        run(sparkSession)
+      loadCommand.processData(sparkSession)
     } finally {
       CarbonSession.threadUnset(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
@@ -647,11 +622,12 @@ object PreAggregateUtil {
           case _ => a.getAggFunction}}(${a.getColumnName})"
       } else {
         groupingExpressions += a.getColumnName
+        aggregateColumns+= a.getColumnName
       }
     }
-    s"select ${ groupingExpressions.mkString(",") },${ aggregateColumns.mkString(",")
-    } from $databaseName.${ tableSchema.getTableName } group by ${
-      groupingExpressions.mkString(",") }"
+    s"select ${ aggregateColumns.mkString(",") } " +
+    s"from $databaseName.${ tableSchema.getTableName }" +
+    s" group by ${ groupingExpressions.mkString(",") }"
   }
 
   /**
@@ -899,5 +875,33 @@ object PreAggregateUtil {
       CarbonUtil.decodeStringToBytes(
         aggDataMapSchema.getProperties.get("CHILD_SELECT QUERY").replace("&", "=")),
       CarbonCommonConstants.DEFAULT_CHARSET)
+  }
+
+  /**
+   * This method will start load process on the data map
+   */
+  def createLoadCommandForChild(
+      columns: java.util.List[ColumnSchema],
+      dataMapIdentifier: TableIdentifier,
+      dataFrame: DataFrame,
+      isOverwrite: Boolean,
+      sparkSession: SparkSession): CarbonLoadDataCommand = {
+    val headers = columns.asScala.filter { column =>
+      !column.getColumnName.equalsIgnoreCase(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)
+    }.sortBy(_.getSchemaOrdinal).map(_.getColumnName).mkString(",")
+    val loadCommand = CarbonLoadDataCommand(dataMapIdentifier.database,
+      dataMapIdentifier.table,
+      null,
+      Nil,
+      Map("fileheader" -> headers),
+      isOverwriteTable = isOverwrite,
+      dataFrame = None,
+      internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true"),
+      logicalPlan = Some(dataFrame.queryExecution.logical))
+    loadCommand
+  }
+
+  def getDataFrame(sparkSession: SparkSession, child: LogicalPlan): DataFrame = {
+    Dataset.ofRows(sparkSession, child)
   }
 }

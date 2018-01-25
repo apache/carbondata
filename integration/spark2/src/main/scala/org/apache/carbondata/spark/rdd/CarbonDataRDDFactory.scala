@@ -173,7 +173,8 @@ object CarbonDataRDDFactory {
           compactionModel,
           executor,
           sqlContext,
-          storeLocation)
+          storeLocation,
+          operationContext)
         try {
           // compaction status of the table which is triggered by the user.
           var triggeredCompactionStatus = false
@@ -225,7 +226,8 @@ object CarbonDataRDDFactory {
                   newcompactionModel,
                   executor,
                   sqlContext,
-                  storeLocation).executeCompaction()
+                  storeLocation,
+                  operationContext).executeCompaction()
               } catch {
                 case e: Exception =>
                   LOGGER.error("Exception in compaction thread for table " +

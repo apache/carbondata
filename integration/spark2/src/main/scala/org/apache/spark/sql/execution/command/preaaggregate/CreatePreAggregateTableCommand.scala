@@ -24,13 +24,13 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 
 /**
@@ -51,6 +51,7 @@ case class CreatePreAggregateTableCommand(
   extends AtomicRunnableCommand {
 
   var parentTable: CarbonTable = _
+  var loadCommand: CarbonLoadDataCommand = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
@@ -64,8 +65,6 @@ case class CreatePreAggregateTableCommand(
     parentTable = PreAggregateUtil.getParentCarbonTable(df.logicalPlan)
     assert(parentTable.getTableName.equalsIgnoreCase(parentTableIdentifier.table),
       "Parent table name is different in select and create")
-
-
     var neworder = Seq[String]()
     val parentOrder = parentTable.getSortColumns(parentTable.getTableName).asScala
     parentOrder.foreach(parentcol =>
@@ -80,7 +79,9 @@ case class CreatePreAggregateTableCommand(
       .LOAD_SORT_SCOPE_DEFAULT))
     tableProperties
       .put(CarbonCommonConstants.TABLE_BLOCKSIZE, parentTable.getBlockSizeInMB.toString)
-
+    val tableIdentifier =
+      TableIdentifier(parentTableIdentifier.table + "_" + dataMapName,
+        parentTableIdentifier.database)
     // prepare table model of the collected tokens
     val tableModel: TableModel = new CarbonSpark2SqlParser().prepareTableModel(
       ifNotExistPresent = false,
@@ -137,7 +138,30 @@ case class CreatePreAggregateTableCommand(
     // to be used in further create process.
     parentTable = CarbonEnv.getCarbonTable(parentTableIdentifier.database,
       parentTableIdentifier.table)(sparkSession)
-
+    val updatedLoadQuery = if (timeSeriesFunction.isDefined) {
+      val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
+        .filter(p => p.getDataMapName
+          .equalsIgnoreCase(dataMapName)).head
+        .asInstanceOf[AggregationDataMapSchema]
+      PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMap.getChildSchema,
+        parentTable.getTableName,
+        parentTable.getDatabaseName)
+    }
+    else {
+      queryString
+    }
+    val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
+      updatedLoadQuery)).drop("preAggLoad")
+    val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
+      .filter(dataMap => dataMap.getDataMapName.equalsIgnoreCase(dataMapName)).head
+      .asInstanceOf[AggregationDataMapSchema]
+    loadCommand = PreAggregateUtil.createLoadCommandForChild(
+      dataMap.getChildSchema.getListOfColumns,
+      tableIdentifier,
+      dataFrame,
+      false,
+      sparkSession = sparkSession)
+    loadCommand.processMetadata(sparkSession)
     Seq.empty
   }
 
@@ -159,35 +183,19 @@ case class CreatePreAggregateTableCommand(
     val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetaDataFilepath)
       .nonEmpty
     if (loadAvailable) {
-      val updatedQuery = if (timeSeriesFunction.isDefined) {
-        val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
-          .filter(p => p.getDataMapName
-            .equalsIgnoreCase(dataMapName)).head
-          .asInstanceOf[AggregationDataMapSchema]
-        PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMap.getChildSchema,
-          parentTable.getTableName,
-          parentTable.getDatabaseName)
-      } else {
-        queryString
-      }
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.
+      loadCommand.dataFrame = Some(PreAggregateUtil
+        .getDataFrame(sparkSession, loadCommand.logicalPlan.get))
       PreAggregateUtil.startDataLoadForDataMap(
-          parentTable,
-          tableIdentifier,
-          updatedQuery,
-          segmentToLoad = "*",
-          validateSegments = true,
-          isOverwrite = false,
-          sparkSession = sparkSession)
+        parentTable,
+        segmentToLoad = "*",
+        validateSegments = true,
+        sparkSession,
+        loadCommand)
     }
     Seq.empty
   }
-
-  // Create the aggregation table name with parent table name prefix
-  private lazy val tableIdentifier =
-    TableIdentifier(parentTableIdentifier.table + "_" + dataMapName, parentTableIdentifier.database)
-
 }
 
 

@@ -53,7 +53,7 @@ class CarbonSession(@transient val sc: SparkContext,
    * and a catalog that interacts with external systems.
    */
   @transient
- override lazy val sharedState: SharedState = {
+  override lazy val sharedState: SharedState = {
     existingSharedState match {
       case Some(_) =>
         val ss = existingSharedState.get
@@ -214,17 +214,31 @@ object CarbonSession {
     ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
   }
 
+
+  def threadSet(key: String, value: Object): Unit = {
+    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfo == null) {
+      currentThreadSessionInfo = new CarbonSessionInfo()
+    }
+    else {
+      currentThreadSessionInfo = currentThreadSessionInfo.clone()
+    }
+    currentThreadSessionInfo.getThreadParams.setExtraInfo(key, value)
+    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
+  }
+
   def threadUnset(key: String): Unit = {
     val currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfo != null) {
       val currentThreadSessionInfoClone = currentThreadSessionInfo.clone()
       val threadParams = currentThreadSessionInfoClone.getThreadParams
       CarbonSetCommand.unsetValue(threadParams, key)
+      threadParams.removeExtraInfo(key)
       ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfoClone)
     }
   }
 
-  private[spark] def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
+  def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
     val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
     val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfoOrig != null) {

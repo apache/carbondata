@@ -138,7 +138,7 @@ public class BlockletDataMapIndexStore
             partitionFileStore.readAllPartitionsOfSegment(carbonFiles, segmentPath);
             partitionFileStoreMap.put(identifier.getSegmentId(), partitionFileStore);
             for (CarbonFile file : carbonFiles) {
-              blockMetaInfoMap.put(file.getAbsolutePath(),
+              blockMetaInfoMap.put(FileFactory.getUpdatedFilePath(file.getAbsolutePath()),
                   new BlockMetaInfo(file.getLocations(), file.getSize()));
             }
           }

@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.CompactionModel
 
+import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 object CompactionFactory {
@@ -33,21 +34,24 @@ object CompactionFactory {
       compactionModel: CompactionModel,
       executor: ExecutorService,
       sqlContext: SQLContext,
-      storeLocation: String): Compactor = {
+      storeLocation: String,
+      operationContext: OperationContext): Compactor = {
     if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap) {
       new AggregateDataMapCompactor(
         carbonLoadModel,
         compactionModel,
         executor,
         sqlContext,
-        storeLocation)
+        storeLocation,
+        operationContext)
     } else {
       new CarbonTableCompactor(
         carbonLoadModel,
         compactionModel,
         executor,
         sqlContext,
-        storeLocation)
+        storeLocation,
+        operationContext)
     }
   }
 }
