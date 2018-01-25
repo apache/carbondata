@@ -47,7 +47,7 @@ class CarbonDropPartitionRDD(
     segments: Seq[Segment],
     partitions: util.List[PartitionSpec],
     uniqueId: String)
-  extends CarbonRDD[(String, String)](sc, Nil) {
+  extends CarbonRDD[(String, String)](sc, Nil, sc.hadoopConfiguration) {
 
   override def getPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>
