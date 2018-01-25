@@ -47,7 +47,7 @@ class CarbonDropPartitionRDD(
     partitions: Seq[String],
     uniqueId: String,
     partialMatch: Boolean)
-  extends CarbonRDD[String](sc, Nil) {
+  extends CarbonRDD[String](sc, Nil, sc.hadoopConfiguration) {
 
   override def getPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>
@@ -105,7 +105,7 @@ class CarbonDropPartitionCommitRDD(
     success: Boolean,
     uniqueId: String,
     partitions: Seq[String])
-  extends CarbonRDD[String](sc, Nil) {
+  extends CarbonRDD[String](sc, Nil, sc.hadoopConfiguration) {
 
   override def getPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>
