@@ -88,12 +88,9 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("insert->carbon column is more then hive-fails") {
      sql("drop table if exists TCarbon")
      sql("create table TCarbon (imei string,deviceInformationId int,MAC string,deviceColor string,gamePointId double,contractNumber BigInt) STORED BY 'org.apache.carbondata.format'")
-     try {
-        sql("insert into TCarbon select imei,deviceInformationId,MAC,deviceColor,gamePointId from THive")
-        assert(false)
-     } catch  {
-       case ex: Exception => assert(true)
-     }
+    intercept[Exception] {
+      sql("insert into TCarbon select imei,deviceInformationId,MAC,deviceColor,gamePointId from THive")
+    }
   }
   test("insert->insert wrong data types-pass") {
      sql("drop table if exists TCarbon")

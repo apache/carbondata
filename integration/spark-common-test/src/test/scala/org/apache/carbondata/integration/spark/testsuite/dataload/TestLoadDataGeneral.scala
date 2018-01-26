@@ -175,17 +175,11 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE load32000chardata(dim1 String, dim2 String, mes1 int) STORED BY 'org.apache.carbondata.format'")
     sql("CREATE TABLE load32000chardata_dup(dim1 String, dim2 String, mes1 int) STORED BY 'org.apache.carbondata.format'")
     sql(s"LOAD DATA LOCAL INPATH '$testdata' into table load32000chardata OPTIONS('FILEHEADER'='dim1,dim2,mes1')")
-    try{
+    intercept[Exception] {
       sql("insert into load32000chardata_dup select dim1,concat(load32000chardata.dim2,'aaaa'),mes1 from load32000chardata").show()
-      assert(false)
-    } catch {
-      case _:Exception => assert(true)
     }
-    try{
+    intercept[Exception] {
       sql("update load32000chardata_dup set(load32000chardata_dup.dim2)=(select concat(load32000chardata.dim2,'aaaa') from load32000chardata)").show()
-      assert(false)
-    } catch {
-      case _:Exception => assert(true)
     }
   }
 

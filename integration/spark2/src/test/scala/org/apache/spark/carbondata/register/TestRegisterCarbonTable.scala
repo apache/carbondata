@@ -150,12 +150,8 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("drop table carbontable")
     if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
-      try {
+      intercept[AnalysisException] {
         sql("refresh table carbontable")
-        assert(false)
-      } catch {
-        case e: AnalysisException =>
-          assert(true)
       }
       restoreData(dblocation, "carbontable_preagg1")
     }
