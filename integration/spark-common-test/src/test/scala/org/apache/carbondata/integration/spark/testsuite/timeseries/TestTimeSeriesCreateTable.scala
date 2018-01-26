@@ -103,6 +103,22 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
         assert(true)
     }
   }
+
+  test("test timeseries create table: using") {
+    val e: Exception = intercept[Exception] {
+      sql(
+        """create datamap agg1 on table mainTable
+          | using 'abc'
+          | DMPROPERTIES (
+          |   'timeseries.eventTime'='dataTime',
+          |   'timeseries.hierarchy'='second=1,year=1')
+          | as select dataTime, sum(age) from mainTable
+          | group by dataTime
+        """.stripMargin)
+    }
+    assert(e.getMessage.contains("Don't support abc"))
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
   }

@@ -207,6 +207,23 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap agg0 on table maintable")
   }
 
+  test("test pre agg create table 21: using") {
+    sql("drop datamap agg0 on table maintable")
+
+    val e: Exception = intercept[Exception] {
+      sql(
+        """
+          | create datamap agg0 on table mainTable
+          | using 'abc'
+          | as select column3, sum(column3),column5, sum(column5)
+          | from maintable
+          | group by column3,column5,column2
+        """.stripMargin)
+    }
+    assert(e.getMessage.contains("Don't support abc"))
+
+    sql("drop datamap agg0 on table maintable")
+  }
 
   def getCarbontable(plan: LogicalPlan) : CarbonTable ={
     var carbonTable : CarbonTable = null

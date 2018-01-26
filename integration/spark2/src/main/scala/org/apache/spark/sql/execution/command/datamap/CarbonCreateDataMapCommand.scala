@@ -79,6 +79,13 @@ case class CarbonCreateDataMapCommand(
       }
       createPreAggregateTableCommands.flatMap(_.processMetadata(sparkSession))
     } else {
+      try {
+        Class.forName(dmClassName).getClass
+      } catch {
+        case _: Exception =>
+          throw new MalformedCarbonCommandException(
+            s"Don't support $dmClassName: parameter $dmClassName is improper or not exists")
+      }
       val dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
       dataMapSchema.setProperties(new java.util.HashMap[String, String](dmproperties.asJava))
       val dbName = CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession)
