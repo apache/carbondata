@@ -23,6 +23,8 @@ import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES
+
 class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
@@ -267,6 +269,8 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     preAggTableValidator(df.queryExecution.analyzed, "maintable")
   }
 
+  val timeSeries = TIMESERIES.getName
+
 test("test PreAggregate table selection with timeseries and normal together") {
     sql("drop table if exists maintabletime")
     sql(
@@ -277,10 +281,18 @@ test("test PreAggregate table selection with timeseries and normal together") {
     sql(
       "create datamap agg0 on table maintabletime using 'preaggregate' as select dob,name from " +
       "maintabletime group by dob,name")
-    sql(
-      "create datamap agg1 on table maintabletime using 'preaggregate' DMPROPERTIES ('timeseries" +
-      ".eventTime'='dob', 'timeseries.hierarchy'='hour=1,day=1,month=1,year=1') as select dob," +
-      "name from maintabletime group by dob,name")
+
+  sql(
+    s"""
+       | create datamap agg1_year on table maintabletime
+       | using '$timeSeries'
+       | DMPROPERTIES (
+       | 'event_time'='dob',
+       | 'year_granularity'='1')
+       | as select dob, name from maintabletime
+       | group by dob,name
+       """.stripMargin)
+
     val df = sql("select timeseries(dob,'year') from maintabletime group by timeseries(dob,'year')")
     preAggTableValidator(df.queryExecution.analyzed, "maintabletime_agg1_year")
 

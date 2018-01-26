@@ -260,4 +260,12 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbon_test")
     assert(exception.contains("Table creation failed. Table name cannot contain blank space"))
   }
+
+  test("test create table: using") {
+    sql("drop table if exists usingTable")
+    val e: Exception = intercept[ClassNotFoundException] {
+      sql("create table usingTable(name String) using abc")
+    }
+    assert(e.getMessage.contains("Failed to find data source: abc"))
+  }
 }

@@ -18,15 +18,18 @@ package org.apache.carbondata.integration.spark.testsuite.timeseries
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil4Test
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES
 import org.apache.carbondata.core.util.CarbonProperties
 
 class TestTimeseriesCompaction extends QueryTest with BeforeAndAfterAll {
 
   var isCompactionEnabled = false
+  val timeSeries = TIMESERIES.getName
+
   override def beforeAll: Unit = {
     SparkUtil4Test.createTaskMockUp(sqlContext)
     CarbonProperties.getInstance()
@@ -38,7 +41,67 @@ class TestTimeseriesCompaction extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     sql("drop table if exists mainTable")
     sql("CREATE TABLE mainTable(mytime timestamp, name string, age int) STORED BY 'org.apache.carbondata.format'")
-    sql("create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='mytime', 'timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1') as select mytime, sum(age) from mainTable group by mytime")
+    sql(
+      s"""
+         | create datamap agg0_second on table mainTable
+         | using '$timeSeries'
+         | DMPROPERTIES (
+         | 'event_time'='mytime',
+         | 'second_granularity'='1')
+         | as select mytime, sum(age) from mainTable
+         | group by mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | create datamap agg0_minute on table mainTable
+         | using '$timeSeries'
+         | DMPROPERTIES (
+         | 'event_time'='mytime',
+         | 'minute_granularity'='1')
+         | as select mytime, sum(age) from mainTable
+         | group by mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | create datamap agg0_hour on table mainTable
+         | using '$timeSeries'
+         | DMPROPERTIES (
+         | 'event_time'='mytime',
+         | 'hour_granularity'='1')
+         | as select mytime, sum(age) from mainTable
+         | group by mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | create datamap agg0_day on table mainTable
+         | using '$timeSeries'
+         | DMPROPERTIES (
+         | 'event_time'='mytime',
+         | 'day_granularity'='1')
+         | as select mytime, sum(age) from mainTable
+         | group by mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | create datamap agg0_month on table mainTable
+         | using '$timeSeries'
+         | DMPROPERTIES (
+         | 'event_time'='mytime',
+         | 'month_granularity'='1')
+         | as select mytime, sum(age) from mainTable
+         | group by mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | create datamap agg0_year on table mainTable
+         | using '$timeSeries'
+         | DMPROPERTIES (
+         | 'event_time'='mytime',
+         | 'year_granularity'='1')
+         | as select mytime, sum(age) from mainTable
+         | group by mytime
+       """.stripMargin)
+
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
