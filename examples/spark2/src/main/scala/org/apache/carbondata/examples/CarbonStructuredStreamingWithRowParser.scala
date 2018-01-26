@@ -171,7 +171,7 @@ object CarbonStructuredStreamingWithRowParser {
             .option("dbName", "default")
             .option("tableName", "stream_table_with_row_parser")
             .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-              "org.apache.carbondata.streaming.parser.RowStreamParserImp")
+              CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
             .start()
 
           qry.awaitTermination()

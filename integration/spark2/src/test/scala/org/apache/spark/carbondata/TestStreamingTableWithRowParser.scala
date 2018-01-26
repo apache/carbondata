@@ -784,7 +784,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
             .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
             .option(CarbonCommonConstants.ENABLE_AUTO_HANDOFF, autoHandoff)
             .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-              "org.apache.carbondata.streaming.parser.RowStreamParserImp")
+              CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
             .start()
           qry.awaitTermination()
         } catch {
