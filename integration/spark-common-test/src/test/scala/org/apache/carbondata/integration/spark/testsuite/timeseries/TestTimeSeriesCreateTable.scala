@@ -50,59 +50,87 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test timeseries create table five") {
-    try {
+    intercept[Exception] {
       sql(
-        "create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='dataTime', 'timeseries.hierarchy'='sec=1,hour=1,day=1,month=1,year=1') as select dataTime, sum(age) from mainTable group by dataTime")
-      assert(false)
-    } catch {
-      case _:Exception =>
-        assert(true)
+        s"""
+           | create datamap agg0 on table mainTable
+           | using 'preaggregate'
+           | DMPROPERTIES (
+           |  'timeseries.eventTime'='dataTime',
+           |  'timeseries.hierarchy'='sec=1,hour=1,day=1,month=1,year=1')
+           | as select dataTime, sum(age) from mainTable
+           | group by dataTime
+         """.stripMargin)
     }
   }
 
   test("test timeseries create table Six") {
-    try {
+    intercept[Exception] {
       sql(
-        "create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='dataTime', 'timeseries.hierarchy'='hour=2') as select dataTime, sum(age) from mainTable group by dataTime")
-      assert(false)
-    } catch {
-      case _:Exception =>
-        assert(true)
+        """
+          | create datamap agg0 on table mainTable
+          | using 'preaggregate'
+          | DMPROPERTIES ('timeseries.eventTime'='dataTime', 'timeseries.hierarchy'='hour=2')
+          | as select dataTime, sum(age) from mainTable
+          | group by dataTime
+        """.stripMargin)
+
     }
   }
 
   test("test timeseries create table seven") {
-    try {
+    intercept[Exception] {
       sql(
-        "create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='dataTime', 'timeseries.hierarchy'='hour=1,day=1,year=1,month=1') as select dataTime, sum(age) from mainTable group by dataTime")
-      assert(false)
-    } catch {
-      case _:Exception =>
-        assert(true)
+        s"""
+           | create datamap agg0 on table mainTable
+           | using 'preaggregate'
+           | DMPROPERTIES (
+           |    'timeseries.eventTime'='dataTime',
+           |    'timeseries.hierarchy'='hour=1,day=1,year=1,month=1')
+           | as select dataTime, sum(age) from mainTable
+           | group by dataTime
+         """.stripMargin)
+      sql(
+        s"""
+           | create datamap agg0 on table mainTable
+           | using 'preaggregate'
+           | DMPROPERTIES (
+           |    'timeseries.eventTime'='dataTime',
+           |    'timeseries.hierarchy'='hour=1,day=1,year=1,month=1')
+           | as select dataTime, sum(age) from mainTable
+           | group by dataTime
+         """.stripMargin)
     }
   }
 
   test("test timeseries create table Eight") {
-    try {
+    intercept[Exception] {
       sql(
-        "create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='name', 'timeseries.hierarchy'='hour=1,day=1,year=1,month=1') as select name, sum(age) from mainTable group by name")
-      assert(false)
-    } catch {
-      case _:Exception =>
-        assert(true)
+        s"""
+           | create datamap agg0 on table mainTable
+           | using 'preaggregate'
+           | DMPROPERTIES ('timeseries.eventTime'='name', 'timeseries.hierarchy'='hour=1,day=1,year=1,month=1')
+           | as select name, sum(age) from mainTable
+           | group by name
+         """.stripMargin)
     }
   }
 
   test("test timeseries create table Nine") {
-    try {
+    intercept[Exception] {
       sql(
-        "create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='dataTime', 'timeseries.hierarchy'='hour=1,day=1,year=1,month=1') as select name, sum(age) from mainTable group by name")
-      assert(false)
-    } catch {
-      case _:Exception =>
-        assert(true)
+        s"""
+           | create datamap agg0 on table mainTable
+           | using 'preaggregate'
+           | DMPROPERTIES (
+           |    'timeseries.eventTime'='dataTime',
+           |    'timeseries.hierarchy'='hour=1,day=1,year=1,month=1')
+           | as select name, sum(age) from mainTable
+           | group by name
+         """.stripMargin)
     }
   }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
   }

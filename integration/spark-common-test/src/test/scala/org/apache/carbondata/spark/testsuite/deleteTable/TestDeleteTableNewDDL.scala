@@ -64,18 +64,12 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("use testdb")
     sql("CREATE TABLE IF NOT EXISTS testtable(empno Int, empname string, utilization Int,salary Int)"
         + " STORED BY 'org.apache.carbondata.format' ")
-    try {
+    intercept[Exception] {
       sql("drop database testdb")
-      assert(false)
-    } catch {
-      case _ : Exception =>
     }
     sql("drop database testdb cascade")
-    try {
+    intercept[Exception] {
       sql("use testdb")
-      assert(false)
-    } catch {
-      case _ : Exception =>
     }
     sql("use default")
   }

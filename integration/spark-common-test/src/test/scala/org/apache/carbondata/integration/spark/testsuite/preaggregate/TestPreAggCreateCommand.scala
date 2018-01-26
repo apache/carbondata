@@ -118,35 +118,40 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test pre agg create table 13") {
-    try {
+    intercept[Exception] {
       sql(
-        "create datamap preagg19 on table PreAggMain2 using 'preaggregate' as select a as a1,count(distinct b) from PreAggMain2 group by a")
-      assert(false)
-    } catch {
-      case _: Exception =>
-        assert(true)
+        s"""
+           | create datamap preagg19 on table PreAggMain2
+           | using 'preaggregate'
+           | as select a as a1,count(distinct b)
+           | from PreAggMain2 group by a
+         """.stripMargin)
     }
   }
 
   test("test pre agg create table 14") {
-    try {
+    intercept[Exception] {
       sql(
-        "create datamap preagg20 on table PreAggMain2 using 'preaggregate' as select a as a1,sum(distinct b) from PreAggMain2 group by a")
-      assert(false)
-    } catch {
-      case _: Exception =>
-        assert(true)
+        s"""
+           | create datamap preagg20 on table PreAggMain2
+           | using 'preaggregate'
+           | as select a as a1,sum(distinct b) from PreAggMain2
+           | group by a
+         """.stripMargin)
     }
   }
 
   test("test pre agg create table 15") {
-    try {
+    intercept[Exception] {
       sql(
-        "create datamap preagg21 on table PreAggMain2 using 'preaggregate' as select a as a1,sum(b) from PreAggMain2 where a='vishal' group by a")
-      assert(false)
-    } catch {
-      case _: Exception =>
-        assert(true)
+        s"""
+           | create datamap preagg21 on table PreAggMain2
+           | using 'preaggregate'
+           | as select a as a1,sum(b)
+           | from PreAggMain2
+           | where a='vishal'
+           | group by a
+         """.stripMargin)
     }
   }
 
