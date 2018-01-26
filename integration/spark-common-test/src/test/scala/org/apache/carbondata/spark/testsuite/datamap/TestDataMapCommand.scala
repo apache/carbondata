@@ -39,32 +39,33 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     sql("create table datamaptest (a string, b string, c string) stored by 'carbondata'")
   }
 
+  val newClass = "org.apache.spark.sql.CarbonSource"
 
   test("test datamap create") {
-    sql("create datamap datamap1 on table datamaptest using 'new.class'")
+    sql(s"create datamap datamap1 on table datamaptest using '$newClass'")
     val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 1)
     assert(dataMapSchemaList.get(0).getDataMapName.equals("datamap1"))
-    assert(dataMapSchemaList.get(0).getClassName.equals("new.class"))
+    assert(dataMapSchemaList.get(0).getClassName.equals(newClass))
   }
 
   test("test datamap create with dmproperties") {
-    sql("create datamap datamap2 on table datamaptest using 'new.class' dmproperties('key'='value')")
+    sql(s"create datamap datamap2 on table datamaptest using '$newClass' dmproperties('key'='value')")
     val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 2)
     assert(dataMapSchemaList.get(1).getDataMapName.equals("datamap2"))
-    assert(dataMapSchemaList.get(1).getClassName.equals("new.class"))
+    assert(dataMapSchemaList.get(1).getClassName.equals(newClass))
     assert(dataMapSchemaList.get(1).getProperties.get("key").equals("value"))
   }
 
   test("test datamap create with existing name") {
     intercept[Exception] {
       sql(
-        "create datamap datamap2 on table datamaptest using 'new.class' dmproperties('key'='value')")
+        s"create datamap datamap2 on table datamaptest using '$newClass' dmproperties('key'='value')")
     }
     val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
@@ -163,19 +164,19 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   test("test show datamap without preaggregate") {
     sql("drop table if exists datamapshowtest")
     sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
-    sql("create datamap datamap1 on table datamapshowtest using 'new.class' dmproperties('key'='value')")
-    sql("create datamap datamap2 on table datamapshowtest using 'new.class' dmproperties('key'='value')")
-    checkExistence(sql("show datamap on table datamapshowtest"), true, "datamap1", "datamap2", "(NA)", "new.class")
+    sql(s"create datamap datamap1 on table datamapshowtest using '$newClass' dmproperties('key'='value')")
+    sql(s"create datamap datamap2 on table datamapshowtest using '$newClass' dmproperties('key'='value')")
+    checkExistence(sql("show datamap on table datamapshowtest"), true, "datamap1", "datamap2", "(NA)", newClass)
   }
 
   test("test show datamap with preaggregate") {
     sql("drop table if exists datamapshowtest")
     sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
     sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
-    sql("create datamap datamap2 on table datamapshowtest using 'new.class' dmproperties('key'='value')")
+    sql(s"create datamap datamap2 on table datamapshowtest using '$newClass' dmproperties('key'='value')")
     val frame = sql("show datamap on table datamapshowtest")
     assert(frame.collect().length == 2)
-    checkExistence(frame, true, "datamap1", "datamap2", "(NA)", "new.class", "default.datamapshowtest_datamap1")
+    checkExistence(frame, true, "datamap1", "datamap2", "(NA)", newClass, "default.datamapshowtest_datamap1")
   }
 
   test("test show datamap with no datamap") {
@@ -188,11 +189,11 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists datamapshowtest")
     sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
     sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
-    sql("create datamap datamap2 on table datamapshowtest using 'new.class' dmproperties('key'='value')")
+    sql(s"create datamap datamap2 on table datamapshowtest using '$newClass' dmproperties('key'='value')")
     sql("drop datamap datamap1 on table datamapshowtest")
     val frame = sql("show datamap on table datamapshowtest")
     assert(frame.collect().length == 1)
-    checkExistence(frame, true, "datamap2", "(NA)", "new.class")
+    checkExistence(frame, true, "datamap2", "(NA)", newClass)
   }
 
   test("test if preaggregate load is successfull for hivemetastore") {
