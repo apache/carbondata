@@ -398,11 +398,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     ```
 
   NOTE:
-  * BAD_RECORD_ACTION property can have four type of actions for bad records FORCE, REDIRECT, IGNORE and FAIL.
+  * BAD_RECORDS_ACTION property can have four type of actions for bad records FORCE, REDIRECT, IGNORE and FAIL.
+  * FAIL option is its Default value. If the FAIL option is used, then data loading fails if any bad records are found.
   * If the REDIRECT option is used, CarbonData will add all bad records in to a separate CSV file. However, this file must not be used for subsequent data loading because the content may not exactly match the source record. You are advised to cleanse the original source record for further data ingestion. This option is used to remind you which records are bad records.
   * If the FORCE option is used, then it auto-corrects the data by storing the bad records as NULL before Loading data.
   * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
-  * IF the FAIL option is used, then data loading fails if any bad records are found.
   * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
   * The maximum number of characters per column is 100000. If there are more than 100000 characters in a column, data loading will fail.
 
