@@ -78,7 +78,6 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
       checkAnswer(
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD}=123"),
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD}"))
-      assert(false)
     }
   }
   //carbon.custom.block.distribution
@@ -124,13 +123,9 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
   }
 
   test(s"test set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS} for invalid option") {
-    try {
+    intercept[InvalidConfigurationException] {
       checkAnswer(sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS}=123"),
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS}"))
-      assert(false)
-    } catch {
-      case ex: InvalidConfigurationException =>
-        assert(true)
     }
   }
   override def afterAll {
