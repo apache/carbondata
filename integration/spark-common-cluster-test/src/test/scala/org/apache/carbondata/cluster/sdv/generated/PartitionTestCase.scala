@@ -31,12 +31,9 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify exception if column in partitioned by is already specified in table schema
   test("Partition-Local-sort_TC001", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (INTEGER_COLUMN1 int)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='List','LIST_INFO'='1,3')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
@@ -60,38 +57,31 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify exception if List info is not given with List type partition
   test("Partition-Local-sort_TC004", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='List')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
 
 
-  //Verify exception if Partition type is not given
+  //exception should not be thrown if Partition type is not given
   test("Partition-Local-sort_TC005", Include) {
     try {
-       sql(s"""drop table if exists uniqdata""").collect
+      sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('LIST_INFO'='1,2')""").collect
-      assert(false)
+      sql(s"""drop table if exists uniqdata""").collect
     } catch {
-      case _ => assert(true)
+      case _ => assert(false)
     }
-     sql(s"""drop table if exists uniqdata""").collect
   }
 
 
   //Verify exception if Partition type is 'range' and LIST_INFO Is provided
   test("Partition-Local-sort_TC006", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'LIST_INFO'='1,2')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
@@ -99,12 +89,9 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify exception if Partition type is 'range' and NUM_PARTITIONS Is provided
   test("Partition-Local-sort_TC007", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'NUM_PARTITIONS'='1')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
@@ -128,12 +115,9 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify exception if Partition type is 'LIST' and NUM_PARTITIONS Is provided
   test("Partition-Local-sort_TC010", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ int)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'NUM_PARTITIONS'='1')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
@@ -141,12 +125,9 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify exception if Partition type is 'LIST' and RANGE_INFO Is provided
   test("Partition-Local-sort_TC011", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'RANGE_INFO'='20160302,20150302')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
@@ -154,12 +135,9 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify exception if datatype is not provided with partition column
   test("Partition-Local-sort_TC012", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='20160302,20150302')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
@@ -167,28 +145,23 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify exception if a non existent file header  is provided in partition
   test("Partition-Local-sort_TC013", Include) {
-    try {
-       sql(s"""drop table if exists uniqdata""").collect
-      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='20160302,20150302')
+    intercept[Exception] {
+      sql(s"""drop table if exists uniqdata""").collect
+      sql(
+        s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='20160302,20150302')
 
   LOAD DATA INPATH  '$resourcesPath/Data/partition/2000_UniqData_partition.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','FILEHEADER'='CUST_NAME,ACTIVE_EMUI_VERSION,DOJ,DOB,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,DOJ,CUST_ID')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists uniqdata""").collect
+    sql(s"""drop table if exists uniqdata""").collect
   }
 
 
   //Verify exception if Partition By Is empty
   test("Partition-Local-sort_TC014", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY ()STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='0,1')
   """).collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
@@ -235,13 +208,10 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify exception if 2 partition columns are provided
   test("Partition-Local-sort_TC018", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""
   CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (CUST_ID int , DOJ timestamp) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='0,1')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
@@ -384,16 +354,13 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify exception is thrown if partition column is dropped
   test("Partition-Local-sort_TC029", Include) {
-    try {
+    intercept[Exception] {
        sql(s"""drop table if exists uniqdata""").collect
       sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='0,1')
 
   alter table uniqdata drop columns(CUST_ID)
 
   """).collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists uniqdata""").collect
   }
