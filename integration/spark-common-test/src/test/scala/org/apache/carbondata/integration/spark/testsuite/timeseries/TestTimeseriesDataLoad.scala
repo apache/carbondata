@@ -107,6 +107,102 @@ class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
         Row(Timestamp.valueOf("2016-02-23 01:02:50.0"),50)))
   }
 
+  test("load data into mainTable after create timeseries datamap on table 1") {
+    sql("drop table if exists mainTable")
+    sql(
+      """
+        | CREATE TABLE mainTable(
+        |   mytime timestamp,
+        |   name string,
+        |   age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
+
+    sql(
+      """
+        | create datamap agg0 on table mainTable
+        | using 'preaggregate'
+        | DMPROPERTIES (
+        |   'timeseries.eventTime'='mytime',
+        |   'timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1')
+        | as select mytime, sum(age)
+        | from mainTable
+        | group by mytime""".stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
+    val df = sql(
+      """
+        | select
+        |   timeseries(mytime,'minute') as minuteLevel,
+        |   sum(age) as sum
+        | from mainTable
+        | where timeseries(mytime,'minute')>='2016-02-23 01:01:00'
+        | group by
+        |   timeseries(mytime,'minute')
+        | order by
+        |   timeseries(mytime,'minute')
+      """.stripMargin)
+
+    // only for test, it need remove before merge
+    df.show()
+    sql("select * from maintable_agg0_minute").show(100)
+
+    checkAnswer(df,
+      Seq(Row(Timestamp.valueOf("2016-02-23 01:01:00"), 120),
+        Row(Timestamp.valueOf("2016-02-23 01:02:00"), 280)))
+
+  }
+
+  test("load data into mainTable after create timeseries datamap on table 2") {
+    sql("drop table if exists mainTable")
+    sql(
+      """
+        | CREATE TABLE mainTable(
+        |   mytime timestamp,
+        |   name string,
+        |   age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
+    sql(
+      """
+        | create datamap agg0 on table mainTable
+        | using 'preaggregate'
+        | DMPROPERTIES (
+        |   'timeseries.eventTime'='mytime',
+        |   'timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1')
+        | as select mytime, sum(age)
+        | from mainTable
+        | group by mytime""".stripMargin)
+
+
+    val df = sql(
+      """
+        | select
+        |   timeseries(mytime,'minute') as minuteLevel,
+        |   sum(age) as sum
+        | from mainTable
+        | where timeseries(mytime,'minute')>='2016-02-23 01:01:00'
+        | group by
+        |   timeseries(mytime,'minute')
+        | order by
+        |   timeseries(mytime,'minute')
+      """.stripMargin)
+
+    // only for test, it need remove before merge
+    df.show()
+    sql("select * from maintable_agg0_minute").show(100)
+
+
+    checkAnswer(df,
+      Seq(Row(Timestamp.valueOf("2016-02-23 01:01:00"), 120),
+        Row(Timestamp.valueOf("2016-02-23 01:02:00"), 280)))
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists table_03")
