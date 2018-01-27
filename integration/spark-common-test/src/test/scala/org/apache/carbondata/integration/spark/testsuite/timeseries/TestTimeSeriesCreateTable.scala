@@ -19,6 +19,8 @@ package org.apache.carbondata.integration.spark.testsuite.timeseries
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+
 class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
@@ -103,6 +105,117 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
         assert(true)
     }
   }
+
+  val timeSeries = "preaggregate"
+
+  test("test timeseries create table 12: hierarchy type with space") {
+    sql("drop table if exists mainTable")
+    sql(
+      """
+        | CREATE TABLE mainTable(dataTime timestamp, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    checkExistence(sql("show tables"), false, "maintable_agg1_second")
+    sql(
+      s"""
+         | create datamap agg1 on table mainTable using '$timeSeries'
+         | DMPROPERTIES (
+         |   'timeseries.eventTime'='dataTime',
+         |   'timeseries.hierarchy'='second= 1,hour=1,day=1,month=1,year=1')
+         | as select dataTime, sum(age) from mainTable
+         | group by dataTime
+       """.stripMargin)
+    checkExistence(sql("show tables"), true, "maintable_agg1_second")
+  }
+
+  test("test timeseries create table 13: hierarchy type with space") {
+    sql("drop table if exists mainTable")
+    sql(
+      """
+        | CREATE TABLE mainTable(dataTime timestamp, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    checkExistence(sql("show tables"), false, "maintable_agg1_second")
+    sql(
+      s"""
+         | create datamap agg1 on table mainTable using '$timeSeries'
+         | DMPROPERTIES (
+         |   'timeseries.eventTime'='dataTime',
+         |   'timeseries.hierarchy'='second=1 ,hour=1,day=1,month=1,year=1')
+         | as select dataTime, sum(age) from mainTable
+         | group by dataTime
+       """.stripMargin)
+    checkExistence(sql("show tables"), true, "maintable_agg1_second")
+  }
+
+  test("test timeseries create table 14: hierarchy type with space") {
+    sql("drop table if exists mainTable")
+    sql(
+      """
+        | CREATE TABLE mainTable(dataTime timestamp, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    checkExistence(sql("show tables"), false, "maintable_agg1_second")
+    sql(
+      s"""
+         | create datamap agg1 on table mainTable using '$timeSeries'
+         | DMPROPERTIES (
+         |   'timeseries.eventTime'='dataTime',
+         |   'timeseries.hierarchy'='second =1,hour=1,day=1,month=1,year=1')
+         | as select dataTime, sum(age) from mainTable
+         | group by dataTime
+       """.stripMargin)
+    checkExistence(sql("show tables"), true, "maintable_agg1_second")
+  }
+
+  test("test timeseries create table 15: hierarchy type with space") {
+    sql("drop table if exists mainTable")
+    sql(
+      """
+        | CREATE TABLE mainTable(dataTime timestamp, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    checkExistence(sql("show tables"), false, "maintable_agg1_second")
+    sql(
+      s"""
+         | create datamap agg1 on table mainTable using '$timeSeries'
+         | DMPROPERTIES (
+         |   'timeseries.eventTime'='dataTime',
+         |   'timeseries.hierarchy'='second  =1, hour=1   ,day=1,  month=1,  year=    1')
+         | as select dataTime, sum(age) from mainTable
+         | group by dataTime
+       """.stripMargin)
+    checkExistence(sql("show tables"), true, "maintable_agg1_second")
+  }
+
+  test("test timeseries create table 16: hierarchy type with space") {
+    sql("drop table if exists mainTable")
+    sql(
+      """
+        | CREATE TABLE mainTable(dataTime timestamp, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    checkExistence(sql("show tables"), false, "maintable_agg1_second")
+    val e = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           |create datamap agg1 on table mainTable using '$timeSeries'
+           |DMPROPERTIES (
+           |   'timeseries.eventTime'='dataTime',
+           |   'timeseries.hierarchy'='secon d=1,hour=1,day=1,month=1,year=1')
+           |as select dataTime, sum(age) from mainTable
+           |group by dataTime
+         """.stripMargin)
+    }
+    assert(e.getMessage.contains("Not supported heirarchy type: secon d"))
+    checkExistence(sql("show tables"), false, "maintable_agg1_second")
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
   }
