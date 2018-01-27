@@ -70,16 +70,16 @@ object TimeSeriesUtil {
       case f =>
         val splits = f.split("=")
         // checking hierarchy name is valid or not
-        if (!TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION.contains(splits(0).toLowerCase)) {
-          throw new MalformedCarbonCommandException(s"Not supported heirarchy type: ${ splits(0) }")
+        if (!TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION.contains(splits(0).trim.toLowerCase)) {
+          throw new MalformedCarbonCommandException(s"Not supported heirarchy type: ${splits(0)}")
         }
         // validating hierarchy level is valid or not
-        if (!splits(1).equals("1")) {
+        if (!splits(1).trim.equals("1")) {
           throw new MalformedCarbonCommandException(
             s"Unsupported Value for hierarchy:" +
-            s"${ splits(0) }=${ splits(1) }")
+              s"${splits(0)}=${splits(1)}")
         }
-        (splits(0), splits(1))
+        (splits(0).trim, splits(1).trim)
     }
     // checking whether hierarchy is in proper order or not
     // get the index of first hierarchy
