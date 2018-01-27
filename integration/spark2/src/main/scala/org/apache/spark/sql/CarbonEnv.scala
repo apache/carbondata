@@ -67,6 +67,7 @@ class CarbonEnv {
     sparkSession.udf.register("preAggLoad", () => "")
 
     // added for handling timeseries function like hour, minute, day , month , year
+    // TODO: support hour !=1 or minute !=1 and so on
     sparkSession.udf.register("timeseries", new TimeSeriesFunction)
     synchronized {
       if (!initialized) {
