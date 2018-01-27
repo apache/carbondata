@@ -39,12 +39,8 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
   }
 
   test("test set command for enable.unsafe.sort for invalid option") {
-    try {
+    intercept[InvalidConfigurationException] {
       checkAnswer(sql("set enable.unsafe.sort=123"), sql("set enable.unsafe.sort"))
-      assert(false)
-    } catch {
-      case ex: InvalidConfigurationException =>
-        assert(true)
     }
   }
   //is_empty_data_bad_record
@@ -58,15 +54,11 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
 
   test(s"test set command for ${
     CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE} for invalid option") {
-    try {
+    intercept[InvalidConfigurationException] {
       checkAnswer(sql(s"set ${
         CarbonLoadOptionConstants
           .CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE
       }=123"), sql(s"set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE }"))
-      assert(false)
-    } catch {
-      case ex: InvalidConfigurationException =>
-        assert(true)
     }
   }
   test(s"test set command for ${
@@ -82,14 +74,11 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
 
   test(s"test set command for ${CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD} " +
        s"for invalid option") {
-    try {
+    intercept[InvalidConfigurationException] {
       checkAnswer(
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD}=123"),
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD}"))
       assert(false)
-    } catch {
-      case ex: InvalidConfigurationException =>
-        assert(true)
     }
   }
   //carbon.custom.block.distribution
@@ -99,13 +88,9 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
   }
 
   test("test set command for carbon.custom.block.distribution for invalid option") {
-    try {
+    intercept[InvalidConfigurationException] {
       checkAnswer(sql("set carbon.custom.block.distribution=123"),
         sql("set carbon.custom.block.distribution"))
-      assert(false)
-    } catch {
-      case ex: InvalidConfigurationException =>
-        assert(true)
     }
   }
   // sort_scope
@@ -115,13 +100,9 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
   }
 
   test(s"test set command for ${CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE} for invalid option") {
-    try {
+    intercept[InvalidConfigurationException] {
       checkAnswer(sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE}=123"),
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE}"))
-      assert(false)
-    } catch {
-      case ex: InvalidConfigurationException =>
-        assert(true)
     }
   }
   // batch_sort_size_inmb
@@ -131,13 +112,9 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
   }
 
   test(s"test set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB} for invalid option") {
-    try {
+    intercept[InvalidConfigurationException] {
       checkAnswer(sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB}=hjf"),
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB}"))
-      assert(false)
-    } catch {
-      case ex: InvalidConfigurationException =>
-        assert(true)
     }
   }
   // single_pass

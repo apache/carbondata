@@ -76,65 +76,51 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
   }
 
   test("test load data with different timestamp format with wrong setting") {
-    try {
-      sql(s"""
+
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
            OPTIONS('dateformat' = 'date')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Wrong option: date is provided for option DateFormat")
-      case _: Throwable=> assert(false)
     }
+    assertResult(ex.getMessage)("Error: Wrong option: date is provided for option DateFormat")
 
-    try {
-      sql(s"""
+    val ex0 = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
            OPTIONS('timestampformat' = 'timestamp')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Wrong option: timestamp is provided for option TimestampFormat")
-      case _: Throwable => assert(false)
     }
+    assertResult(ex0.getMessage)("Error: Wrong option: timestamp is provided for option TimestampFormat")
 
-    try {
-      sql(s"""
+    val ex1 = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
            OPTIONS('dateformat' = 'date:  ')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Wrong option: date:   is provided for option DateFormat")
-      case _: Throwable => assert(false)
     }
+    assertResult(ex1.getMessage)("Error: Wrong option: date:   is provided for option DateFormat")
 
-    try {
-      sql(s"""
+    val ex2 = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
            OPTIONS('dateformat' = 'date  ')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Wrong option: date   is provided for option DateFormat")
-      case _: Throwable => assert(false)
     }
+    assertResult(ex2.getMessage)("Error: Wrong option: date   is provided for option DateFormat")
 
-    try {
-      sql(s"""
+    val ex3 = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
            OPTIONS('dateformat' = 'fasfdas:yyyy/MM/dd')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Wrong option: fasfdas:yyyy/MM/dd is provided for option DateFormat")
-      case _: Throwable => assert(false)
     }
+    assertResult(ex3.getMessage)("Error: Wrong option: fasfdas:yyyy/MM/dd is provided for option DateFormat")
 
   }
 

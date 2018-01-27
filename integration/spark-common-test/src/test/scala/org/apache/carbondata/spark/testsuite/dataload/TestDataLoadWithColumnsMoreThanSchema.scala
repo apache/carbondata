@@ -88,15 +88,12 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
       "CREATE TABLE max_columns_value_test (imei string,age int,task bigint,num double,level " +
       "decimal(10,3),productdate timestamp,mark int,name string) STORED BY 'org.apache.carbondata" +
       ".format'")
-    try {
+
+
+    intercept[Throwable] {
       sql(
         s"LOAD DATA LOCAL INPATH '$resourcesPath/character_carbon.csv' into table " +
-        "max_columns_value_test options('FILEHEADER='imei,age','MAXCOLUMNS'='2')")
-      throw new MalformedCarbonCommandException("Invalid")
-    } catch {
-      case me: MalformedCarbonCommandException =>
-        assert(false)
-      case _: Throwable => assert(true)
+          "max_columns_value_test options('FILEHEADER='imei,age','MAXCOLUMNS'='2')")
     }
   }
 

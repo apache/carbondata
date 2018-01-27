@@ -124,30 +124,20 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Data load-->Empty BadRecords Parameters
   test("BadRecord_Dataload_011", Include) {
-    intercept[Exception] {
-      sql(
-        s"""
-           | CREATE TABLE badrecords_test1 (ID int,CUST_ID int,sal int,cust_name string)
-           | STORED BY 'org.apache.carbondata.format'
-         """.stripMargin)
+    try {
+      sql(s"""CREATE TABLE badrecords_test1 (ID int,CUST_ID int,sal int,cust_name string) STORED BY 'org.apache.carbondata.format'""")
+
         .collect
-      sql(
-        s"""
-           | LOAD DATA INPATH '$resourcesPath/Data/InsertData/bad_records1.csv'
-           | into table badrecords_test1
-           | OPTIONS(
-           |    'DELIMITER'=',' ,
-           |    'QUOTECHAR'='"',
-           |    'BAD_RECORDS_LOGGER_ENABLE'='',
-           |    'BAD_RECORDS_ACTION'='',
-           |    'FILEHEADER'='ID,CUST_ID,sal,cust_name')
-         """.stripMargin)
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/bad_records1.csv' into table badrecords_test1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='', 'BAD_RECORDS_ACTION'='','FILEHEADER'='ID,CUST_ID,sal,cust_name')""")
         .collect
       checkAnswer(
         s"""select count(*) from badrecords_test1""",
         Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_011")
+      assert(false)
+    } catch {
+      case _ => assert(true)
     }
-    sql(s"""drop table badrecords_test1""").collect
+     sql(s"""drop table badrecords_test1""").collect
   }
 
 
