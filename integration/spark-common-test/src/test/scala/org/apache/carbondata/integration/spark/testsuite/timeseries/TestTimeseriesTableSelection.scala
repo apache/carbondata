@@ -16,7 +16,9 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.timeseries
 
-import org.apache.spark.sql.CarbonDatasourceHadoopRelation
+import java.sql.Timestamp
+
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
@@ -99,6 +101,67 @@ class TestTimeseriesTableSelection extends QueryTest with BeforeAndAfterAll {
     val df = sql("select timeseries(mytime,'hour')as hourlevel,sum(age) as sum from mainTable where timeseries(mytime,'hour')='x' and name='vishal' group by timeseries(mytime,'hour') order by timeseries(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable")
   }
+
+
+  val timeSeries = "preaggregate"
+
+  test("test timeseries create table 13: don't support minute=2") {
+    sql(
+      s"""create datamap agg1 on table mainTable using '$timeSeries'
+         |DMPROPERTIES (
+         |   'timeseries.eventTime'='mytime',
+         |   'timeseries.hierarchy'='minute=2')
+         |as select mytime, sum(age) from mainTable
+         |group by mytime
+        """.stripMargin)
+//    checkExistence(sql("show tables"), true, "maintable_agg1_minute")
+
+    val df = sql(
+      """
+        | select
+        |   timeseries(mytime,'minute') as minuteLevel,
+        |   sum(age) as sum
+        | from mainTable
+        | where timeseries(mytime,'minute')<='2016-02-23 01:02:00' and timeseries(mytime,'minute')>='2016-02-23 01:01:00'
+        | group by
+        |   timeseries(mytime,'minute')
+        | order by
+        |   timeseries(mytime,'minute')
+      """.stripMargin)
+    df.show()
+
+    sql("select * from maintable_agg1_minute").show()
+//    checkAnswer( sql("select * from maintable_agg1_hour"),
+//      Seq(Row(Timestamp.valueOf("2016-02-23 01:01:30.0"),10),
+//        Row(Timestamp.valueOf("2016-02-23 01:01:40.0"),20),
+//        Row(Timestamp.valueOf("2016-02-23 01:01:50.0"),30),
+//        Row(Timestamp.valueOf("2016-02-23 01:02:30.0"),40),
+//        Row(Timestamp.valueOf("2016-02-23 01:02:40.0"),50),
+//        Row(Timestamp.valueOf("2016-02-23 01:02:50.0"),50)))
+  }
+
+
+  test("test PreAggregate table selection 33: filter <= and >=") {
+    val df = sql(
+      """
+        | select
+        |   timeseries(mytime,'minute') as minuteLevel,
+        |   sum(age) as sum
+        | from mainTable
+        | where timeseries(mytime,'minute')<='2016-02-23 01:02:00' and timeseries(mytime,'minute')>='2016-02-23 01:01:00'
+        | group by
+        |   timeseries(mytime,'minute')
+        | order by
+        |   timeseries(mytime,'minute')
+      """.stripMargin)
+
+    checkAnswer(df,
+      Seq(Row(Timestamp.valueOf("2016-02-23 01:01:00"), 60),
+        Row(Timestamp.valueOf("2016-02-23 01:02:00"), 140)))
+
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0_minute")
+  }
+
 
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit ={
     var isValidPlan = false

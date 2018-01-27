@@ -68,6 +68,7 @@ public class TimeSeriesUDF {
     calendar.setTimeInMillis(data.getTime());
     TimeSeriesFunctionEnum timeSeriesFunctionEnum =
         TimeSeriesFunctionEnum.valueOf(function.toUpperCase());
+    // TODO: support hour !=1 or minute !=1 and so on
     switch (timeSeriesFunctionEnum) {
       case SECOND:
         calendar.set(Calendar.MILLISECOND, 0);

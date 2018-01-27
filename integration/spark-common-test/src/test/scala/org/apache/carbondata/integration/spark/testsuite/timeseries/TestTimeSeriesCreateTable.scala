@@ -103,6 +103,21 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
         assert(true)
     }
   }
+
+  val timeSeries = "preaggregate"
+
+  test("test timeseries create table 13: don't support hour=2") {
+    sql(
+      s"""create datamap agg1 on table mainTable using '$timeSeries'
+         |DMPROPERTIES (
+         |   'timeseries.eventTime'='dataTime',
+         |   'timeseries.hierarchy'='hour=2')
+         |as select dataTime, sum(age) from mainTable
+         |group by dataTime
+        """.stripMargin)
+    checkExistence(sql("show tables"), true, "maintable_agg1_hour")
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
   }
