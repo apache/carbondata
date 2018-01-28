@@ -24,7 +24,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES
 import org.apache.carbondata.core.metadata.schema.table.Granularity._
 import org.apache.carbondata.core.preagg.TimeSeriesUDF
-import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, UnsupportedDataMapException}
+import org.apache.carbondata.spark.exception.{CarbonIllegalArgumentException, MalformedCarbonCommandException, UnsupportedDataMapException}
 
 /**
  * Utility class for time series to keep
@@ -76,7 +76,7 @@ object TimeSeriesUtil {
     if (dmProperties.get(SECOND.getName).isDefined) {
       return SECOND.getName
     }
-    throw new IllegalArgumentException(
+    throw new CarbonIllegalArgumentException(
       s"${TIMESERIES.getName} should define time granularity")
   }
   def validateTimeSeriesGranularity(
@@ -113,10 +113,10 @@ object TimeSeriesUtil {
     }
 
     if (granularity && !dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
-      throw new IllegalArgumentException(
+      throw new CarbonIllegalArgumentException(
         s"It should using ${TIMESERIES.getName}")
     } else if (!granularity && dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
-      throw new IllegalArgumentException(
+      throw new CarbonIllegalArgumentException(
         s"${TIMESERIES.getName} should define time granularity")
     } else if (granularity) {
       true

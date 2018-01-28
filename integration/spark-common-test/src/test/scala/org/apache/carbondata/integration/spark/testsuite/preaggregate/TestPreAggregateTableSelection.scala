@@ -295,6 +295,7 @@ test("test PreAggregate table selection with timeseries and normal together") {
 
     val df = sql("select timeseries(dob,'year') from maintabletime group by timeseries(dob,'year')")
     preAggTableValidator(df.queryExecution.analyzed, "maintabletime_agg1_year")
+  sql("drop table if exists maintabletime")
 
   }
 
@@ -314,6 +315,7 @@ test("test PreAggregate table selection with timeseries and normal together") {
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists lineitem")
+    sql("drop table if exists maintabletime")
   }
 
 }

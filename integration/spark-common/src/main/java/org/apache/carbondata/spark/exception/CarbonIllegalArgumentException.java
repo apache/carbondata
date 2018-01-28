@@ -20,13 +20,13 @@ package org.apache.carbondata.spark.exception;
 /**
  * Throw exception when using illegal argument
  */
-public class IllegalArgumentException extends MalformedCarbonCommandException {
+public class CarbonIllegalArgumentException extends MalformedCarbonCommandException {
   /**
    * default serial version ID.
    */
   private static final long serialVersionUID = 1L;
 
-  public IllegalArgumentException(String msg) {
+  public CarbonIllegalArgumentException(String msg) {
     super(msg);
   }
 }
