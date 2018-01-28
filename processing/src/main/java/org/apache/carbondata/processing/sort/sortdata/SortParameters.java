@@ -403,6 +403,10 @@ public class SortParameters implements Serializable {
     LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
 
     int numberOfCores = carbonProperties.getNumberOfCores() / 2;
+    // In case of loading from partition we should use the cores specified by it
+    if (configuration.getWritingCoresCount() > 0) {
+      numberOfCores = configuration.getWritingCoresCount();
+    }
     parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
     parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties
