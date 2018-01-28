@@ -26,8 +26,6 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists maintable")
-    sql("drop datamap if exists preagg1 on table maintable")
-    sql("drop datamap if exists preagg2 on table maintable")
     sql("create table maintable (a string, b string, c string) stored by 'carbondata'")
   }
 
@@ -103,8 +101,6 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
   override def afterAll() {
     sql("drop table if exists maintable")
     sql("drop table if exists maintable1")
-    sql("drop datamap if exists preagg1 on table maintable")
-    sql("drop datamap if exists preagg2 on table maintable")
   }
   
 }
