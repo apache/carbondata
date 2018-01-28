@@ -104,12 +104,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     * Delete should not work on compacted segment.
     */
   test("delete compacted segment and check status") {
-    try {
+    intercept[Throwable] {
       sql("delete from table ignoremajor where segment.id in (2)")
-      assert(false)
-    }
-    catch {
-      case _:Throwable => assert(true)
     }
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(

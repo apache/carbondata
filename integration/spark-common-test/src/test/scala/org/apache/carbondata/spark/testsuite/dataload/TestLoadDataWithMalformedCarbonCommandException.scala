@@ -79,60 +79,43 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
   }
 
   test("test load data with dictionary exclude columns which no exist in table.") {
-    try {
+    val e = intercept[MalformedCarbonCommandException] {
       buildTableWithNoExistDictExclude()
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.equals("DICTIONARY_EXCLUDE column: ccc does not exist in table. " +
-          "Please check create table statement."))
-      case _: Throwable => assert(false)
     }
+    assert(e.getMessage.equals("DICTIONARY_EXCLUDE column: ccc does not exist in table. " +
+      "Please check create table statement."))
   }
 
   test("test load data with dictionary include columns which no exist in table.") {
-    try {
+    val e = intercept[MalformedCarbonCommandException] {
       buildTableWithNoExistDictInclude()
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.equals("DICTIONARY_INCLUDE column: aaa does not exist in table. " +
-          "Please check create table statement."))
-      case _: Throwable => assert(false)
     }
+    assert(e.getMessage.equals("DICTIONARY_INCLUDE column: aaa does not exist in table. " +
+      "Please check create table statement."))
   }
 
   test("test load data with dictionary include is same with dictionary exclude") {
-    try {
+    val e = intercept[MalformedCarbonCommandException] {
       buildTableWithSameDictExcludeAndInclude()
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
-          "with DICTIONARY_INCLUDE. Please check create table statement."))
-      case _: Throwable => assert(false)
     }
+    assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
+      "with DICTIONARY_INCLUDE. Please check create table statement."))
   }
 
   test("test load data with invalid option") {
-    try {
+    val e = intercept[MalformedCarbonCommandException] {
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE " +
         "TestLoadTableOptions OPTIONS('QUOTECHAR'='\"', 'DELIMITERRR' =  ',')")
-      assert(false)
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.equals("Error: Invalid option(s): delimiterrr"))
-      case _: Throwable => assert(false)
     }
+    assert(e.getMessage.equals("Error: Invalid option(s): delimiterrr"))
   }
 
   test("test load data with duplicate options") {
-    try {
+    val e = intercept[MalformedCarbonCommandException] {
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE " +
         "TestLoadTableOptions OPTIONS('DELIMITER' =  ',', 'quotechar'='\"', 'DELIMITER' =  '$')")
-      assert(false)
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.equals("Error: Duplicate option(s): delimiter"))
-      case _: Throwable => assert(false)
     }
+    assert(e.getMessage.equals("Error: Duplicate option(s): delimiter"))
   }
 
   test("test load data with case sensitive options") {
@@ -147,13 +130,10 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
   }
 
   test("test load data with dictionary include is same with dictionary exclude with spaces") {
-    try {
+    val e = intercept[MalformedCarbonCommandException] {
       buildTableWithSameDictExcludeAndIncludeWithSpaces()
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
-          "with DICTIONARY_INCLUDE. Please check create table statement."))
-      case _: Throwable => assert(false)
     }
+    assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
+      "with DICTIONARY_INCLUDE. Please check create table statement."))
   }
 }
