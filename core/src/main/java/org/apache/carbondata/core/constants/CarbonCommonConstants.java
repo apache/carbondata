@@ -1527,8 +1527,6 @@ public final class CarbonCommonConstants {
 
   public static final String TIMESERIES_EVENTTIME = "event_time";
 
-  public static final String TIMESERIES_HIERARCHY = "hierarchy";
-
   /**
    * It allows queries on hive metastore directly along with filter information, otherwise first
    * fetches all partitions from hive and apply filters on it.
