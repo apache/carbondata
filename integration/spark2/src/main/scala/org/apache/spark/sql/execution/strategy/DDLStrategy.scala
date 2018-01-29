@@ -231,9 +231,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         // TODO remove this limitation later
         val property = properties.find(_._1.equalsIgnoreCase("streaming"))
         if (property.isDefined) {
-          if (!property.get._2.trim.equalsIgnoreCase("true")) {
+          if (carbonTable.isStreamingTable) {
             throw new MalformedCarbonCommandException(
               "Streaming property can not be changed once it is 'true'")
+          } else {
+            if (!property.get._2.trim.equalsIgnoreCase("true")) {
+              throw new MalformedCarbonCommandException(
+                "Streaming property value is incorrect")
+            }
           }
         }
         ExecutedCommandExec(CarbonAlterTableSetCommand(tableName, properties, isView)) :: Nil
