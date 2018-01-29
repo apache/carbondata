@@ -18,9 +18,14 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Dataset, Row, SparkSession}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataCommand}
+import org.apache.spark.storage.StorageLevel
 
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 case class CarbonInsertIntoCommand(
@@ -33,7 +38,26 @@ case class CarbonInsertIntoCommand(
   var loadCommand: CarbonLoadDataCommand = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val df = Dataset.ofRows(sparkSession, child)
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    def containsLimit(plan: LogicalPlan): Boolean = {
+      plan find {
+        case limit: GlobalLimit => true
+        case other => false
+      } isDefined
+    }
+    val isPersistEnabledUserValue = CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED,
+        CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED_DEFAULT)
+    val isPersistRequired =
+      isPersistEnabledUserValue.equalsIgnoreCase("true") || containsLimit(child)
+    val df =
+      if (isPersistRequired) {
+        LOGGER.audit("Persist enabled for Insert operation")
+        Dataset.ofRows(sparkSession, child)
+          .persist(StorageLevel.MEMORY_AND_DISK)
+      } else {
+        Dataset.ofRows(sparkSession, child)
+      }
     val header = relation.tableSchema.get.fields.map(_.name).mkString(",")
     loadCommand = CarbonLoadDataCommand(
       databaseNameOp = Some(relation.carbonRelation.databaseName),
@@ -48,7 +72,11 @@ case class CarbonInsertIntoCommand(
       tableInfoOp = None,
       internalOptions = Map.empty,
       partition = partition)
-    loadCommand.processMetadata(sparkSession)
+    val load = loadCommand.processMetadata(sparkSession)
+    if (isPersistRequired) {
+      df.unpersist()
+    }
+    load
   }
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (null != loadCommand) {
