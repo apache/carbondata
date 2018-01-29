@@ -25,6 +25,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 * [UPDATE AND DELETE](#update-and-delete)
 * [COMPACTION](#compaction)
 * [PARTITION](#partition)
+* [PRE-AGGREGATE TABLES](#agg-tables)
 * [BUCKETING](#bucketing)
 * [SEGMENT MANAGEMENT](#segment-management)
 
@@ -747,6 +748,250 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   Here are some useful tips to improve query performance of carbonData partition table:
   * The partitioned column can be excluded from SORT_COLUMNS, this will let other columns to do the efficient sorting.
   * When writing SQL on a partition table, try to use filters on the partition column.
+
+## PRE-AGGREGATE TABLES
+  Carbondata supports pre aggregating of data so that OLAP kind of queries can fetch data 
+  much faster.Aggregate tables are created as datamaps so that the handling is as efficient as 
+  other indexing support.Users can create as many aggregate tables they require as datamaps to 
+  improve their query performance,provided the storage requirements and loading speeds are 
+  acceptable.
+  
+  For main table called **sales** which is defined as 
+  
+  ```
+  CREATE TABLE sales (
+  order_time timestamp,
+  user_id string,
+  sex string,
+  country string,
+  quantity int,
+  price bigint)
+  STORED BY 'carbondata'
+  ```
+  
+  user can create pre-aggregate tables using the DDL
+  
+  ```
+  CREATE DATAMAP agg_sales
+  ON TABLE sales
+  USING "preaggregate"
+  AS
+  SELECT country, sex, sum(quantity), avg(price)
+  FROM sales
+  GROUP BY country, sex
+  ```
+  
+<b><p align="left">Functions supported in pre-aggregate tables</p></b>
+
+| Function | Rollup supported |
+|-----------|----------------|
+| SUM | Yes |
+| AVG | Yes |
+| MAX | Yes |
+| MIN | Yes |
+| COUNT | Yes |
+
+
+##### How pre-aggregate tables are selected
+For the main table **sales** and pre-aggregate table **agg_sales** created above, queries of the 
+kind
+```
+SELECT country, sex, sum(quantity), avg(price) from sales GROUP BY country, sex
+
+SELECT sex, sum(quantity) from sales GROUP BY sex
+
+SELECT sum(price), country from sales GROUP BY country
+``` 
+
+will be transformed by Query Planner to fetch data from pre-aggregate table **agg_sales**
+
+But queries of kind
+```
+SELECT user_id, country, sex, sum(quantity), avg(price) from sales GROUP BY country, sex
+
+SELECT sex, avg(quantity) from sales GROUP BY sex
+
+SELECT max(price), country from sales GROUP BY country
+```
+
+will fetch the data from the main table **sales**
+
+##### Loading data to pre-aggregate tables
+For existing table with loaded data, data load to pre-aggregate table will be triggered by the 
+CREATE DATAMAP statement when user creates the pre-aggregate table.
+For incremental loads after aggregates tables are created, loading data to main table triggers 
+the load to pre-aggregate tables once main table loading is complete.These loads are automic 
+meaning that data on main table and aggregate tables are only visible to the user after all tables 
+are loaded
+
+##### Querying data from pre-aggregate tables
+Pre-aggregate tables cannot be queries directly.Queries are to be made on main table.Internally 
+carbondata will check associated pre-aggregate tables with the main table and if the 
+pre-aggregate tables satisfy the query condition, the plan is transformed automatically to use 
+pre-aggregate table to fetch the data
+
+##### Compacting pre-aggregate tables
+Compaction is an optional operation for pre-aggregate table. If compaction is performed on main 
+table but not performed on pre-aggregate table, all queries still can benefit from pre-aggregate 
+table.To further improve performance on pre-aggregate table, compaction can be triggered on 
+pre-aggregate tables directly, it will merge the segments inside pre-aggregation table. 
+To do that, use ALTER TABLE COMPACT command on the pre-aggregate table just like the main table
+
+  NOTE:
+  * If the aggregate function used in the pre-aggregate table creation included distinct-count,
+     during compaction, the pre-aggregate table values are recomputed.This would a costly 
+     operation as compared to the compaction of pre-aggregate tables containing other aggregate 
+     functions alone
+ 
+##### Update/Delete Operations on pre-aggregate tables
+This functionality is not supported.
+
+  NOTE (<b>RESTRICTION</b>):
+  * Update/Delete operations are <b>not supported</b> on main table which has pre-aggregate tables 
+  created on it.All the pre-aggregate tables <b>will have to be dropped</b> before update/delete 
+  operations can be performed on the main table.Pre-aggregate tables can be rebuilt manually 
+  after update/delete operations are completed
+ 
+##### Delete Segment Operations on pre-aggregate tables
+This functionality is not supported.
+
+  NOTE (<b>RESTRICTION</b>):
+  * Delete Segment operations are <b>not supported</b> on main table which has pre-aggregate tables 
+  created on it.All the pre-aggregate tables <b>will have to be dropped</b> before update/delete 
+  operations can be performed on the main table.Pre-aggregate tables can be rebuilt manually 
+  after delete segment operations are completed
+  
+##### Alter Table Operations on pre-aggregate tables
+This functionality is not supported.
+
+  NOTE (<b>RESTRICTION</b>):
+  * Adding new column in new table does not have any affect on pre-aggregate tables. However if 
+  dropping or renaming a column has impact in pre-aggregate table, such operations will be 
+  rejected and error will be thrown.All the pre-aggregate tables <b>will have to be dropped</b> 
+  before Alter Operations can be performed on the main table.Pre-aggregate tables can be rebuilt 
+  manually after Alter Table operations are completed
+  
+### Supporting timeseries data
+Carbondata has built-in understanding of time hierarchy and levels: year, month, day, hour, minute.
+Multiple pre-aggregate tables can be created for the hierarchy and Carbondata can do automatic 
+roll-up for the queries on these hierarchies.
+
+  ```
+  CREATE DATAMAP agg_year
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time’=’order_time’,
+  'year_granualrity’=’1’,
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+    
+  CREATE DATAMAP agg_month
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time’=’order_time’,
+  'month_granualrity’=’1’,
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+    
+  CREATE DATAMAP agg_day
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time’=’order_time’,
+  'day_granualrity’=’1’,
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+        
+  CREATE DATAMAP agg_sales_hour
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time’=’order_time’,
+  'hour_granualrity’=’1’,
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+  
+  CREATE DATAMAP agg_minute
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time’=’order_time’,
+  'minute_granualrity’=’1’,
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+    
+  CREATE DATAMAP agg_minute
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time’=’order_time’,
+  'minute_granualrity’=’1’,
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+  ```
+  
+  For Querying data and automatically roll-up to the desired aggregation level,Carbondata supports 
+  UDF as
+  ```
+  timeseries(timeseries column name, ‘aggregation level’)
+  ```
+  ```
+  Select timeseries(order_time, ‘hour’), sum(quantity) from sales group by timeseries(order_time,
+  ’hour’)
+  ```
+  
+  It is **not necessary** to create pre-aggregate tables for each granularity unless required for 
+  query
+  .Carbondata
+   can roll-up the data and fetch it
+   
+  For Example: For main table **sales** , If pre-aggregate tables were created as  
+  
+  ```
+  CREATE DATAMAP agg_day
+    ON TABLE sales
+    USING "timeseries"
+    DMPROPERTIES (
+    'event_time’=’order_time’,
+    'day_granualrity’=’1’,
+    ) AS
+    SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+     avg(price) FROM sales GROUP BY order_time, country, sex
+          
+    CREATE DATAMAP agg_sales_hour
+    ON TABLE sales
+    USING "timeseries"
+    DMPROPERTIES (
+    'event_time’=’order_time’,
+    'hour_granualrity’=’1’,
+    ) AS
+    SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+     avg(price) FROM sales GROUP BY order_time, country, sex
+  ```
+  
+  Queries like below will be rolled-up and fetched from pre-aggregate tables
+  ```
+  Select timeseries(order_time, ‘month’), sum(quantity) from sales group by timeseries(order_time,
+    ’month’)
+    
+  Select timeseries(order_time, ‘year’), sum(quantity) from sales group by timeseries(order_time,
+    ’year’)
+  ```
+  
+  NOTE (<b>RESTRICTION</b>):
+  * Only value of 1 is supported for hierarchy levels. Other hierarchy levels are not supported. 
+  Other hierarchy levels are not supported
+  * pre-aggregate tables for the desired levels needs to be created one after the other
+  * pre-aggregate tables created for each level needs to be dropped separately 
+    
 
 ## BUCKETING
 
