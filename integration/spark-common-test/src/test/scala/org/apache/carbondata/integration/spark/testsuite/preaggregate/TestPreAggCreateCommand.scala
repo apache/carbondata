@@ -248,7 +248,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
            | group by dob,name
        """.stripMargin)
     }
-    assert(e.getMessage.contains(s"It should using $timeSeries"))
+    assert(e.getMessage.contains(s"$timeSeries keyword missing"))
     sql("drop table if exists maintabletime")
   }
 
@@ -266,7 +266,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
         """.stripMargin)
     }
     assert(e.getMessage.contains(
-      s"Don't support using abc to create datamap, please use $PREAGGREGATE or $TIMESERIES"))
+      s"Unknown data map type abc, Please use one of $PREAGGREGATE or $TIMESERIES"))
     sql("drop datamap agg0 on table maintable")
   }
 

@@ -20,7 +20,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.{PREAGGREGATE, TIMESERIES}
-import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, UnsupportedDataMapException}
+import org.apache.carbondata.spark.exception.{CarbonIllegalArgumentException, MalformedCarbonCommandException, UnsupportedDataMapException}
 
 class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
 
@@ -201,7 +201,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
         """.stripMargin)
     }
     assert(e.getMessage.contains(
-      s"Don't support using abc to create datamap, please use $PREAGGREGATE or $TIMESERIES"))
+      s"Unknown data map type abc, Please use one of $PREAGGREGATE or $TIMESERIES"))
   }
 
   test("test timeseries create table: using and catch MalformedCarbonCommandException") {
@@ -217,10 +217,10 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
         """.stripMargin)
     }
     assert(e.getMessage.contains(
-      s"Don't support using abc to create datamap, please use $PREAGGREGATE or $TIMESERIES"))
+      s"Unknown data map type abc, Please use one of $PREAGGREGATE or $TIMESERIES"))
   }
 
-  test("test timeseries create table: granularity only support one 1") {
+  test("test timeseries create table: Only one granularity level can be defined 1") {
     val e: Exception = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
@@ -237,11 +237,11 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | group by dataTime
        """.stripMargin)
     }
-    assert(e.getMessage.contains("Granularity only support one"))
+    assert(e.getMessage.contains("Only one granularity level can be defined"))
   }
 
-  test("test timeseries create table: granularity only support one 2") {
-    val e: Exception = intercept[UnsupportedDataMapException] {
+  test("test timeseries create table: Only one granularity level can be defined 2") {
+    val e: Exception = intercept[CarbonIllegalArgumentException] {
       sql(
         s"""
            | create datamap agg0_second on table mainTable
@@ -254,11 +254,11 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | group by dataTime
        """.stripMargin)
     }
-    assert(e.getMessage.contains("Granularity only support one"))
+    assert(e.getMessage.contains("Only one granularity level can be defined"))
   }
 
-  test("test timeseries create table: granularity only support one 3") {
-    val e: Exception = intercept[UnsupportedDataMapException] {
+  test("test timeseries create table: Only one granularity level can be defined 3") {
+    val e: Exception = intercept[CarbonIllegalArgumentException] {
       sql(
         s"""
            | create datamap agg0_second on table mainTable
@@ -271,11 +271,11 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | group by dataTime
        """.stripMargin)
     }
-    assert(e.getMessage.contains("Granularity only support one"))
+    assert(e.getMessage.contains("Only one granularity level can be defined"))
   }
 
   test("test timeseries create table: Granularity only support 1") {
-    val e = intercept[UnsupportedDataMapException] {
+    val e = intercept[CarbonIllegalArgumentException] {
       sql(
         s"""
            | create datamap agg0_second on table mainTable
@@ -304,6 +304,21 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
     }
     assert(e.getMessage.contains("Granularity only support 1"))
+  }
+
+  test("test timeseries create table: timeSeries should define time granularity") {
+    val e = intercept[CarbonIllegalArgumentException] {
+      sql(
+        s"""
+           | create datamap agg0_second on table mainTable
+           | using '$timeSeries'
+           | DMPROPERTIES (
+           | 'event_time'='dataTime')
+           | as select dataTime, sum(age) from mainTable
+           | group by dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.contains(s"$timeSeries should define time granularity"))
   }
 
   override def afterAll: Unit = {

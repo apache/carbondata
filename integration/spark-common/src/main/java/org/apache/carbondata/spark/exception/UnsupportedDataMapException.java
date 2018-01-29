@@ -30,7 +30,7 @@ public class UnsupportedDataMapException extends MalformedCarbonCommandException
   private static final long serialVersionUID = 1L;
 
   public UnsupportedDataMapException(String dataMapType) {
-    super("Don't support using " + dataMapType +
-          " to create datamap, please use " + PREAGGREGATE + " or " + TIMESERIES);
+    super("Unknown data map type " + dataMapType +
+            ", Please use one of " + PREAGGREGATE + " or " + TIMESERIES);
   }
 }

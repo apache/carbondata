@@ -20,9 +20,8 @@ import org.apache.spark.sql.execution.command.{DataMapField, Field}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, Granularity}
 import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES
-import org.apache.carbondata.core.metadata.schema.table.Granularity._
 import org.apache.carbondata.core.preagg.TimeSeriesUDF
 import org.apache.carbondata.spark.exception.{CarbonIllegalArgumentException, MalformedCarbonCommandException, UnsupportedDataMapException}
 
@@ -58,55 +57,31 @@ object TimeSeriesUtil {
 
   def getGranularityKey(dmProperties: Map[String, String]): String = {
 
-    if (dmProperties.get(YEAR.getName).isDefined) {
-      return YEAR.getName
+    for (granularity <- Granularity.values()) {
+      if (dmProperties.get(granularity.getName).isDefined) {
+        return granularity.getName
+      }
     }
-    if (dmProperties.get(MONTH.getName).isDefined) {
-      return MONTH.getName
-    }
-    if (dmProperties.get(DAY.getName).isDefined) {
-      return DAY.getName
-    }
-    if (dmProperties.get(HOUR.getName).isDefined) {
-      return HOUR.getName
-    }
-    if (dmProperties.get(MINUTE.getName).isDefined) {
-      return MINUTE.getName
-    }
-    if (dmProperties.get(SECOND.getName).isDefined) {
-      return SECOND.getName
-    }
+
     throw new CarbonIllegalArgumentException(
       s"${TIMESERIES.getName} should define time granularity")
   }
+
   def validateTimeSeriesGranularity(
       dmProperties: Map[String, String],
       dmClassName: String): Boolean = {
-    var sum = 0
+    var count = 0
 
-    if (dmProperties.get(YEAR.getName).isDefined) {
-      sum = sum + 1
-    }
-    if (dmProperties.get(MONTH.getName).isDefined) {
-      sum = sum + 1
-    }
-    if (dmProperties.get(DAY.getName).isDefined) {
-      sum = sum + 1
-    }
-    if (dmProperties.get(HOUR.getName).isDefined) {
-      sum = sum + 1
-    }
-    if (dmProperties.get(MINUTE.getName).isDefined) {
-      sum = sum + 1
-    }
-    if (dmProperties.get(SECOND.getName).isDefined) {
-      sum = sum + 1
+    for (granularity <- Granularity.values()) {
+      if (dmProperties.get(granularity.getName).isDefined) {
+        count = count + 1
+      }
     }
 
-    val granularity = if (sum > 1 || sum < 0) {
-      throw new UnsupportedDataMapException(
-        s"Granularity only support one")
-    } else if (sum == 1) {
+    val granularity = if (count > 1 || count < 0) {
+      throw new CarbonIllegalArgumentException(
+        s"Only one granularity level can be defined")
+    } else if (count == 1) {
       true
     } else {
       false
@@ -114,7 +89,7 @@ object TimeSeriesUtil {
 
     if (granularity && !dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
       throw new CarbonIllegalArgumentException(
-        s"It should using ${TIMESERIES.getName}")
+        s"${TIMESERIES.getName} keyword missing")
     } else if (!granularity && dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
       throw new CarbonIllegalArgumentException(
         s"${TIMESERIES.getName} should define time granularity")
@@ -128,32 +103,16 @@ object TimeSeriesUtil {
   def getTimeSeriesGranularityDetails(
       dmProperties: Map[String, String],
       dmClassName: String): Array[(String, String)] = {
+
     val defaultValue = "1"
-    if (dmProperties.get(YEAR.getName).isDefined &&
-      dmProperties.get(YEAR.getName).get.equalsIgnoreCase(defaultValue)) {
-      return Array((YEAR.getTime, defaultValue))
+    for (granularity <- Granularity.values()) {
+      if (dmProperties.get(granularity.getName).isDefined &&
+        dmProperties.get(granularity.getName).get.equalsIgnoreCase(defaultValue)) {
+        return Array((granularity.getTime, defaultValue))
+      }
     }
-    if (dmProperties.get(MONTH.getName).isDefined &&
-      dmProperties.get(MONTH.getName).get.equalsIgnoreCase(defaultValue)) {
-      return Array((MONTH.getTime, defaultValue))
-    }
-    if (dmProperties.get(DAY.getName).isDefined &&
-      dmProperties.get(DAY.getName).get.equalsIgnoreCase(defaultValue)) {
-      return Array((DAY.getTime, defaultValue))
-    }
-    if (dmProperties.get(HOUR.getName).isDefined &&
-      dmProperties.get(HOUR.getName).get.equalsIgnoreCase(defaultValue)) {
-      return Array((HOUR.getTime, defaultValue))
-    }
-    if (dmProperties.get(MINUTE.getName).isDefined &&
-      dmProperties.get(MINUTE.getName).get.equalsIgnoreCase(defaultValue)) {
-      return Array((MINUTE.getTime, defaultValue))
-    }
-    if (dmProperties.get(SECOND.getName).isDefined &&
-      dmProperties.get(SECOND.getName).get.equalsIgnoreCase(defaultValue)) {
-      return Array((SECOND.getTime, defaultValue))
-    }
-    throw new UnsupportedDataMapException(
+
+    throw new CarbonIllegalArgumentException(
       s"Granularity only support $defaultValue")
   }
 
