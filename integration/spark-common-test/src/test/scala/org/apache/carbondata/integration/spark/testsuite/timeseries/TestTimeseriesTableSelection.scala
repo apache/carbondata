@@ -25,6 +25,7 @@ import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TestTimeseriesTableSelection extends QueryTest with BeforeAndAfterAll {
 
@@ -161,6 +162,54 @@ class TestTimeseriesTableSelection extends QueryTest with BeforeAndAfterAll {
   test("test PreAggregate table selection 13") {
     val df = sql("select timeseries(mytime,'hour')as hourlevel,sum(age) as sum from mainTable where timeseries(mytime,'hour')='x' and name='vishal' group by timeseries(mytime,'hour') order by timeseries(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable")
+  }
+
+  test("test timeseries table selection 14: Granularity only support 1 and throw Exception") {
+    val e = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | create datamap agg3_second on table mainTable
+           | using '$timeSeries'
+           | DMPROPERTIES (
+           | 'event_time'='dataTime',
+           | 'hour_granularity'='2')
+           | as select dataTime, sum(age) from mainTable
+           | group by dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.contains("Granularity only support 1"))
+  }
+
+  test("test timeseries table selection 15: Granularity only support 1 and throw Exception") {
+    val e = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | create datamap agg3_second on table mainTable
+           | using '$timeSeries'
+           | DMPROPERTIES (
+           | 'event_time'='dataTime',
+           | 'hour_granularity'='1.5')
+           | as select dataTime, sum(age) from mainTable
+           | group by dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.contains("Granularity only support 1"))
+  }
+
+  test("test timeseries table selection 16: Granularity only support 1 and throw Exception") {
+    val e = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | create datamap agg3_second on table mainTable
+           | using '$timeSeries'
+           | DMPROPERTIES (
+           | 'event_time'='dataTime',
+           | 'hour_granularity'='-1')
+           | as select dataTime, sum(age) from mainTable
+           | group by dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.contains("Granularity only support 1"))
   }
 
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit ={

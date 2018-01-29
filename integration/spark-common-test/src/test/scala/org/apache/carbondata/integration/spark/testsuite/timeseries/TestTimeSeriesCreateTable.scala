@@ -19,7 +19,7 @@ package org.apache.carbondata.integration.spark.testsuite.timeseries
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.{PREAGGREGATE, TIMESERIES}
+import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES
 import org.apache.carbondata.spark.exception.{CarbonIllegalArgumentException, MalformedCarbonCommandException, UnsupportedDataMapException}
 
 class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
@@ -200,8 +200,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | group by dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.contains(
-      s"Unknown data map type abc, Please use one of $PREAGGREGATE or $TIMESERIES"))
+    assert(e.getMessage.equals("Unknown data map type abc"))
   }
 
   test("test timeseries create table: using and catch MalformedCarbonCommandException") {
@@ -216,8 +215,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | group by dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.contains(
-      s"Unknown data map type abc, Please use one of $PREAGGREGATE or $TIMESERIES"))
+    assert(e.getMessage.equals("Unknown data map type abc"))
   }
 
   test("test timeseries create table: Only one granularity level can be defined 1") {
@@ -237,7 +235,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | group by dataTime
        """.stripMargin)
     }
-    assert(e.getMessage.contains("Only one granularity level can be defined"))
+    assert(e.getMessage.equals("Only one granularity level can be defined"))
   }
 
   test("test timeseries create table: Only one granularity level can be defined 2") {
@@ -254,7 +252,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | group by dataTime
        """.stripMargin)
     }
-    assert(e.getMessage.contains("Only one granularity level can be defined"))
+    assert(e.getMessage.equals("Only one granularity level can be defined"))
   }
 
   test("test timeseries create table: Only one granularity level can be defined 3") {
@@ -271,7 +269,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | group by dataTime
        """.stripMargin)
     }
-    assert(e.getMessage.contains("Only one granularity level can be defined"))
+    assert(e.getMessage.equals("Only one granularity level can be defined"))
   }
 
   test("test timeseries create table: Granularity only support 1") {
@@ -287,7 +285,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | group by dataTime
        """.stripMargin)
     }
-    assert(e.getMessage.contains("Granularity only support 1"))
+    assert(e.getMessage.equals("Granularity only support 1"))
   }
 
   test("test timeseries create table: Granularity only support 1 and throw Exception") {
@@ -303,7 +301,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | group by dataTime
        """.stripMargin)
     }
-    assert(e.getMessage.contains("Granularity only support 1"))
+    assert(e.getMessage.equals("Granularity only support 1"))
   }
 
   test("test timeseries create table: timeSeries should define time granularity") {
@@ -318,7 +316,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | group by dataTime
        """.stripMargin)
     }
-    assert(e.getMessage.contains(s"$timeSeries should define time granularity"))
+    assert(e.getMessage.equals(s"$timeSeries should define time granularity"))
   }
 
   override def afterAll: Unit = {

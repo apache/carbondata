@@ -17,9 +17,6 @@
 
 package org.apache.carbondata.spark.exception;
 
-import static org.apache.carbondata.core.metadata.schema.table.DataMapClassName.PREAGGREGATE;
-import static org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES;
-
 /**
  * Throw exception when using unsupported datamap type
  */
@@ -30,7 +27,6 @@ public class UnsupportedDataMapException extends MalformedCarbonCommandException
   private static final long serialVersionUID = 1L;
 
   public UnsupportedDataMapException(String dataMapType) {
-    super("Unknown data map type " + dataMapType +
-            ", Please use one of " + PREAGGREGATE + " or " + TIMESERIES);
+    super("Unknown data map type " + dataMapType);
   }
 }

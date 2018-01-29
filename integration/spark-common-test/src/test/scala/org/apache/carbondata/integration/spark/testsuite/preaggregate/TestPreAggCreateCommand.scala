@@ -266,7 +266,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
         """.stripMargin)
     }
     assert(e.getMessage.contains(
-      s"Unknown data map type abc, Please use one of $PREAGGREGATE or $TIMESERIES"))
+      s"Unknown data map type abc"))
     sql("drop datamap agg0 on table maintable")
   }
 

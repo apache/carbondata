@@ -23,7 +23,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, Granularity}
 import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES
 import org.apache.carbondata.core.preagg.TimeSeriesUDF
-import org.apache.carbondata.spark.exception.{CarbonIllegalArgumentException, MalformedCarbonCommandException, UnsupportedDataMapException}
+import org.apache.carbondata.spark.exception.{CarbonIllegalArgumentException, MalformedCarbonCommandException}
 
 /**
  * Utility class for time series to keep
@@ -70,30 +70,26 @@ object TimeSeriesUtil {
   def validateTimeSeriesGranularity(
       dmProperties: Map[String, String],
       dmClassName: String): Boolean = {
-    var count = 0
+    var isFound = false
 
     for (granularity <- Granularity.values()) {
       if (dmProperties.get(granularity.getName).isDefined) {
-        count = count + 1
+        if (isFound) {
+          throw new CarbonIllegalArgumentException(
+            s"Only one granularity level can be defined")
+        } else {
+          isFound = true
+        }
       }
     }
 
-    val granularity = if (count > 1 || count < 0) {
-      throw new CarbonIllegalArgumentException(
-        s"Only one granularity level can be defined")
-    } else if (count == 1) {
-      true
-    } else {
-      false
-    }
-
-    if (granularity && !dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
+    if (isFound && !dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
       throw new CarbonIllegalArgumentException(
         s"${TIMESERIES.getName} keyword missing")
-    } else if (!granularity && dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
+    } else if (!isFound && dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
       throw new CarbonIllegalArgumentException(
         s"${TIMESERIES.getName} should define time granularity")
-    } else if (granularity) {
+    } else if (isFound) {
       true
     } else {
       false
