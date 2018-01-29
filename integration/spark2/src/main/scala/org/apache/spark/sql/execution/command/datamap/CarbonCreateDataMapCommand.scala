@@ -40,13 +40,13 @@ case class CarbonCreateDataMapCommand(
     queryString: Option[String])
   extends AtomicRunnableCommand {
 
-  var createPreAggregateTableCommands: Seq[CreatePreAggregateTableCommand] = _
+  var createPreAggregateTableCommands: CreatePreAggregateTableCommand = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     // since streaming segment does not support building index and pre-aggregate yet,
     // so streaming table does not support create datamap
     val carbonTable =
-      CarbonEnv.getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
+    CarbonEnv.getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
     if (carbonTable.isStreamingTable) {
       throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
     }
@@ -59,44 +59,37 @@ case class CarbonCreateDataMapCommand(
         val details = TimeSeriesUtil
           .getTimeSeriesGranularityDetails(dmproperties, dmClassName)
         val updatedDmProperties = dmproperties - TimeSeriesUtil.getGranularityKey(dmproperties)
-        details.map { f =>
-          CreatePreAggregateTableCommand(dataMapName,
-            tableIdentifier,
-            dmClassName,
-            updatedDmProperties,
-            queryString.get,
-            Some(f._1))
-        }.toSeq
+        CreatePreAggregateTableCommand(dataMapName,
+          tableIdentifier,
+          dmClassName,
+          updatedDmProperties,
+          queryString.get,
+          Some(details(0)._1))
       } else {
-        Seq(CreatePreAggregateTableCommand(
+        CreatePreAggregateTableCommand(
           dataMapName,
           tableIdentifier,
           dmClassName,
           dmproperties,
           queryString.get
-        ))
+        )
       }
-      createPreAggregateTableCommands.flatMap(_.processMetadata(sparkSession))
+      createPreAggregateTableCommands.processMetadata(sparkSession)
     } else {
       throw new UnsupportedDataMapException(dmClassName)
     }
-    LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${ tableIdentifier.table }")
+    LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${tableIdentifier.table}")
     Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    if (dmClassName.equalsIgnoreCase(PREAGGREGATE.getName) ||
-      dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
-      createPreAggregateTableCommands.flatMap(_.processData(sparkSession))
-    } else {
-      throw new UnsupportedDataMapException(dmClassName)
-    }
+    createPreAggregateTableCommands.processData(sparkSession)
   }
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
     if (dmClassName.equalsIgnoreCase(PREAGGREGATE.getName) ||
       dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
-      createPreAggregateTableCommands.flatMap(_.undoMetadata(sparkSession, exception))
+      createPreAggregateTableCommands.undoMetadata(sparkSession, exception)
     } else {
       throw new UnsupportedDataMapException(dmClassName)
     }
