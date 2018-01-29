@@ -110,7 +110,14 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                     'COMPACTION_PRESERVE_SEGMENTS'='10',
                     'ALLOWED_COMPACTION_DAYS'='5')
      ```
+     
+   - **Streaming**
 
+     CarbonData supports streaming ingestion for real-time data. You can create the ‘streaming’ table using the following table properties.
+
+     ```
+     TBLPROPERTIES (‘streaming’='true’)
+     ```
 
 ### Example:
 
@@ -134,6 +141,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                    'AUTO_LOAD_MERGE'='true',
                    'COMPACTION_LEVEL_THRESHOLD'='5,6',
                    'COMPACTION_PRESERVE_SEGMENTS'='10',
+				   ‘streaming’='true’,
                    'ALLOWED_COMPACTION_DAYS'='5')
    ```
         
