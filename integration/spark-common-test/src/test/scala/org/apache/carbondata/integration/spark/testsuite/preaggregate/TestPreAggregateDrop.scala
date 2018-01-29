@@ -46,8 +46,9 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
       " a,sum(c) from maintable group by a")
     sql("drop datamap if exists preagg2 on table maintable")
     val showTables = sql("show tables")
+    val showdatamaps =sql("show datamap on table maintable")
     checkExistence(showTables, false, "maintable_preagg2")
-    checkExistence(showTables, true, "maintable_preagg1")
+    checkExistence(showdatamaps, true, "maintable_preagg1")
   }
 
   test("drop datamap which is not existed") {
@@ -66,8 +67,9 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 
     sql("drop datamap preagg_same on table maintable")
     var showTables = sql("show tables")
+    val showdatamaps =sql("show datamap on table maintable1")
     checkExistence(showTables, false, "maintable_preagg_same")
-    checkExistence(showTables, true, "maintable1_preagg_same")
+    checkExistence(showdatamaps, true, "maintable1_preagg_same")
     sql("drop datamap preagg_same on table maintable1")
     showTables = sql("show tables")
     checkExistence(showTables, false, "maintable1_preagg_same")
@@ -84,7 +86,8 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
     sql("create datamap preagg_same1 on table maintable using 'preaggregate' as select" +
         " a,sum(c) from maintable group by a")
     showTables = sql("show tables")
-    checkExistence(showTables, true, "maintable_preagg_same1")
+    val showdatamaps =sql("show datamap on table maintable")
+    checkExistence(showdatamaps, true, "maintable_preagg_same1")
     sql("drop datamap preagg_same1 on table maintable")
   }
 
