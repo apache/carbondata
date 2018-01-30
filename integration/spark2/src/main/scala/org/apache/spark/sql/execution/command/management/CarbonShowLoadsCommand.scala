@@ -19,7 +19,7 @@ package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Checker, DataCommand}
 import org.apache.spark.sql.types.{StringType, TimestampType}
 
 import org.apache.carbondata.api.CarbonStore
@@ -28,7 +28,7 @@ case class CarbonShowLoadsCommand(
     databaseNameOp: Option[String],
     tableName: String,
     limit: Option[String])
-  extends DataCommand {
+  extends AtomicRunnableCommand {
 
   // add new columns of show segments at last
   override def output: Seq[Attribute] = {
@@ -40,8 +40,13 @@ case class CarbonShowLoadsCommand(
       AttributeReference("File Format", StringType, nullable = false)())
   }
 
-  override def processData(sparkSession: SparkSession): Seq[Row] = {
+
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    Seq.empty
+  }
+
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     CarbonStore.showSegments(
       limit,

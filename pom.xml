@@ -253,7 +253,6 @@
             <artifactId>*</artifactId>
           </exclusion>
         </exclusions>
-        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>junit</groupId>
