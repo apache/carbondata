@@ -584,7 +584,7 @@ object PreAggregateUtil {
    * This method will start load process on the data map
    */
   def startDataLoadForDataMap(
-      parentCarbonTable: CarbonTable,
+      parentTableIdentifier: TableIdentifier,
       segmentToLoad: String,
       validateSegments: Boolean,
       loadCommand: CarbonLoadDataCommand,
@@ -592,25 +592,25 @@ object PreAggregateUtil {
       sparkSession: SparkSession): Unit = {
     CarbonSession.threadSet(
       CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-      parentCarbonTable.getDatabaseName + "." +
-      parentCarbonTable.getTableName,
+      parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
+      parentTableIdentifier.table,
       segmentToLoad)
     CarbonSession.threadSet(
       CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-      parentCarbonTable.getDatabaseName + "." +
-      parentCarbonTable.getTableName, validateSegments.toString)
+      parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
+      parentTableIdentifier.table, validateSegments.toString)
     CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
     try {
       loadCommand.processData(sparkSession)
     } finally {
       CarbonSession.threadUnset(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-        parentCarbonTable.getDatabaseName + "." +
-        parentCarbonTable.getTableName)
+        parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
+        parentTableIdentifier.table)
       CarbonSession.threadUnset(
         CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-        parentCarbonTable.getDatabaseName + "." +
-        parentCarbonTable.getTableName)
+        parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
+        parentTableIdentifier.table)
     }
   }
 
@@ -889,7 +889,8 @@ object PreAggregateUtil {
       dataMapIdentifier: TableIdentifier,
       dataFrame: DataFrame,
       isOverwrite: Boolean,
-      sparkSession: SparkSession): CarbonLoadDataCommand = {
+      sparkSession: SparkSession,
+      timeseriesParentTableName: String = ""): CarbonLoadDataCommand = {
     val headers = columns.asScala.filter { column =>
       !column.getColumnName.equalsIgnoreCase(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)
     }.sortBy(_.getSchemaOrdinal).map(_.getColumnName).mkString(",")
@@ -900,7 +901,8 @@ object PreAggregateUtil {
       Map("fileheader" -> headers),
       isOverwriteTable = isOverwrite,
       dataFrame = None,
-      internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true"),
+      internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true",
+        "timeseriesParent" -> timeseriesParentTableName),
       logicalPlan = Some(dataFrame.queryExecution.logical))
     loadCommand
   }

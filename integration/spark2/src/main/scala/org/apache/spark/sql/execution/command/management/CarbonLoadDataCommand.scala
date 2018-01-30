@@ -178,7 +178,16 @@ case class CarbonLoadDataCommand(
       LOGGER.info(s"Deleting stale folders if present for table $dbName.$tableName")
       TableProcessingOperations.deletePartialLoadDataIfExist(table, false)
       var isUpdateTableStatusRequired = false
-      val uuid = Option(operationContext.getProperty("uuid")).getOrElse(UUID.randomUUID()).toString
+      // if the table is child then extract the uuid from the operation context and the parent would
+      // already generated UUID.
+      // if parent table then generate a new UUID else use empty.
+      val uuid = if (table.isChildDataMap) {
+        Option(operationContext.getProperty("uuid")).getOrElse("").toString
+      } else if (table.hasAggregationDataMap) {
+        UUID.randomUUID().toString
+      } else {
+        ""
+      }
       try {
         operationContext.setProperty("uuid", uuid)
         val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =

@@ -115,8 +115,12 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         LoadEvents.LoadTablePreStatusUpdateEvent event =
             new LoadEvents.LoadTablePreStatusUpdateEvent(carbonTable.getCarbonTableIdentifier(),
                 loadModel);
+        LoadEvents.LoadTablePostStatusUpdateEvent postStatusUpdateEvent =
+            new LoadEvents.LoadTablePostStatusUpdateEvent(loadModel);
         try {
           OperationListenerBus.getInstance().fireEvent(event, (OperationContext) operationContext);
+          OperationListenerBus.getInstance().fireEvent(postStatusUpdateEvent,
+              (OperationContext) operationContext);
         } catch (Exception e) {
           throw new IOException(e);
         }

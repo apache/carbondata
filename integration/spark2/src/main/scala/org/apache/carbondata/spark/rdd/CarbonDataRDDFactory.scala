@@ -747,7 +747,8 @@ object CarbonDataRDDFactory {
       operationContext: OperationContext): Unit = {
     LOGGER.info(s"compaction need status is" +
                 s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable) }")
-    if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable)) {
+    if (!carbonTable.isChildDataMap &&
+        CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable)) {
       LOGGER.audit(s"Compaction request received for table " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       val compactionSize = 0

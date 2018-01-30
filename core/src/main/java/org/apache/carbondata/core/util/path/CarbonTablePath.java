@@ -253,7 +253,11 @@ public class CarbonTablePath extends Path {
   }
 
   public String getTableStatusFilePathWithUUID(String uuid) {
-    return getTableStatusFilePath() + CarbonCommonConstants.UNDERSCORE + uuid;
+    if (!uuid.isEmpty()) {
+      return getTableStatusFilePath() + CarbonCommonConstants.UNDERSCORE + uuid;
+    } else {
+      return getTableStatusFilePath();
+    }
   }
 
   /**

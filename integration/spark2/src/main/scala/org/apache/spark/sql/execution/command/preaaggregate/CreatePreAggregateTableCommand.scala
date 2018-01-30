@@ -205,7 +205,7 @@ case class CreatePreAggregateTableCommand(
       loadCommand.dataFrame = Some(PreAggregateUtil
         .getDataFrame(sparkSession, loadCommand.logicalPlan.get))
       PreAggregateUtil.startDataLoadForDataMap(
-        parentTable,
+        TableIdentifier(parentTable.getTableName, Some(parentTable.getDatabaseName)),
         segmentToLoad = "*",
         validateSegments = true,
         loadCommand,

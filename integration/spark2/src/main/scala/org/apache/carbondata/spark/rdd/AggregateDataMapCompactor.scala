@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.OperationContext
@@ -61,6 +62,7 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
       CarbonSession.updateSessionInfoToCurrentThread(sqlContext.sparkSession)
       val loadCommand = operationContext.getProperty(carbonTable.getTableName + "_Compaction")
         .asInstanceOf[CarbonLoadDataCommand]
+      val uuid = Option(loadCommand.operationContext.getProperty("uuid")).getOrElse("").toString
       try {
         val newInternalOptions = loadCommand.internalOptions ++
                                  Map("mergedSegmentName" -> mergedLoadName)
@@ -70,7 +72,7 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
                     sqlContext.sparkSession, loadCommand.logicalPlan.get))
         loadCommand.processData(sqlContext.sparkSession)
         val newLoadMetaDataDetails = SegmentStatusManager.readLoadMetadata(
-          carbonTable.getMetaDataFilepath)
+          carbonTable.getMetaDataFilepath, uuid)
         val updatedLoadMetaDataDetails = newLoadMetaDataDetails collect {
           case load if loadMetaDataDetails.contains(load) =>
             load.setMergedLoadName(mergedLoadName)
@@ -83,16 +85,37 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
           .getCarbonTablePath(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
             .getAbsoluteTableIdentifier)
         SegmentStatusManager
-          .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath,
+          .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePathWithUUID(uuid),
             updatedLoadMetaDataDetails)
         carbonLoadModel.setLoadMetadataDetails(updatedLoadMetaDataDetails.toList.asJava)
       } finally {
         // check if any other segments needs compaction on in case of MINOR_COMPACTION.
         // For example: after 8.1 creation 0.1, 4.1, 8.1 have to be merged to 0.2 if threshhold
         // allows it.
+        // Also as the load which will be fired for 2nd level compaction will read the
+        // tablestatus file and not the tablestatus_UUID therefore we have to commit the
+        // intermediate tablestatus file for 2nd level compaction to be successful.
+        // This is required because:
+        //  1. after doing 12 loads and a compaction after every 4 loads the table status file will
+        //     have 0.1, 4.1, 8, 9, 10, 11 as Success segments. While tablestatus_UUID will have
+        //     0.1, 4.1, 8.1.
+        //  2. Now for 2nd level compaction 0.1, 8.1, 4.1 have to be merged to 0.2. therefore we
+        //     need to read the tablestatus_UUID. But load flow should always read tablestatus file
+        //     because it contains the actual In-Process status for the segments.
+        //  3. If we read the tablestatus then 8, 9, 10, 11 will keep getting compacted into 8.1.
+        //  4. Therefore tablestatus file will be committed in between multiple commits.
         if (!compactionModel.compactionType.equals(CompactionType.MAJOR)) {
-
-          executeCompaction()
+          if (!identifySegmentsToBeMerged().isEmpty) {
+            val carbonTablePath = CarbonStorePath
+              .getCarbonTablePath(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+                .getAbsoluteTableIdentifier)
+            val uuidTableStaus = carbonTablePath.getTableStatusFilePathWithUUID(uuid)
+            val tableStatus = carbonTablePath.getTableStatusFilePath
+            if (!uuidTableStaus.equalsIgnoreCase(tableStatus)) {
+              FileFactory.getCarbonFile(uuidTableStaus).renameForce(tableStatus)
+            }
+            executeCompaction()
+          }
         }
         CarbonSession
           .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +

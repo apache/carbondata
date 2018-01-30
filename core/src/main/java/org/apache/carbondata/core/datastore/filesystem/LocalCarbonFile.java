@@ -233,7 +233,7 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override public boolean renameForce(String changetoName) {
     File destFile = new File(changetoName);
-    if (destFile.exists()) {
+    if (destFile.exists() && !file.getAbsolutePath().equals(destFile.getAbsolutePath())) {
       if (destFile.delete()) {
         return file.renameTo(new File(changetoName));
       }
