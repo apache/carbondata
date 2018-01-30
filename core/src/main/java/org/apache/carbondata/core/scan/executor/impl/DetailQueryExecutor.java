@@ -23,7 +23,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.result.BatchResult;
+import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.result.iterator.DetailQueryResultIterator;
 
 /**
@@ -31,10 +31,10 @@ import org.apache.carbondata.core.scan.result.iterator.DetailQueryResultIterator
  * For executing the detail query it will pass all the block execution
  * info to detail query result iterator and iterator will be returned
  */
-public class DetailQueryExecutor extends AbstractQueryExecutor<BatchResult> {
+public class DetailQueryExecutor extends AbstractQueryExecutor<RowBatch> {
 
   @Override
-  public CarbonIterator<BatchResult> execute(QueryModel queryModel)
+  public CarbonIterator<RowBatch> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     this.queryIterator = new DetailQueryResultIterator(

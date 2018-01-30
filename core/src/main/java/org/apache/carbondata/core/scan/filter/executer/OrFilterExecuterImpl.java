@@ -21,7 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 public class OrFilterExecuterImpl implements FilterExecuter {
@@ -35,30 +35,33 @@ public class OrFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override
-  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
-      throws FilterUnsupportedException, IOException {
-    BitSetGroup leftFilters = leftExecuter.applyFilter(blockChunkHolder, false);
-    BitSetGroup rightFilters = rightExecuter.applyFilter(blockChunkHolder, false);
+  public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
+      boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
+    BitSetGroup leftFilters = leftExecuter.applyFilter(rawBlockletColumnChunks, false);
+    BitSetGroup rightFilters = rightExecuter.applyFilter(rawBlockletColumnChunks, false);
     leftFilters.or(rightFilters);
-    blockChunkHolder.setBitSetGroup(leftFilters);
+    rawBlockletColumnChunks.setBitSetGroup(leftFilters);
     return leftFilters;
   }
 
-  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+  @Override
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     return leftExecuter.applyFilter(value, dimOrdinalMax) ||
         rightExecuter.applyFilter(value, dimOrdinalMax);
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
     BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue);
     BitSet rightFilters = rightExecuter.isScanRequired(blockMaxValue, blockMinValue);
     leftFilters.or(rightFilters);
     return leftFilters;
   }
 
-  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
-    leftExecuter.readBlocks(blockChunkHolder);
-    rightExecuter.readBlocks(blockChunkHolder);
+  @Override
+  public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
+    leftExecuter.readColumnChunks(rawBlockletColumnChunks);
+    rightExecuter.readColumnChunks(rawBlockletColumnChunks);
   }
 }

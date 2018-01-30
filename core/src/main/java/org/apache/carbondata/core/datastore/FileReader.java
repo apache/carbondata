@@ -20,7 +20,7 @@ package org.apache.carbondata.core.datastore;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public interface FileHolder {
+public interface FileReader {
 
   /**
    * This method will be used to reads the data to byteBuffer from file based on offset
@@ -97,10 +97,6 @@ public interface FileHolder {
    * This method will be used to close all the streams currently present in the cache
    */
   void finish() throws IOException;
-
-  void setQueryId(String queryId);
-
-  String getQueryId();
 
   /**
    * Set the flag to read data page by page instead of whole blocklet.

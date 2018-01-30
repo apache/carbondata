@@ -54,7 +54,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   private final List<Type> types;
   private final PageBuilder pageBuilder;
   private boolean closed;
-  private CarbonVectorizedRecordReader vectorReader;
+  private PrestoCarbonVectorizedRecordReader vectorReader;
   private CarbonDictionaryDecodeReadSupport<Object[]> readSupport;
   private long sizeOfData = 0;
 

@@ -69,10 +69,10 @@ public interface DimensionDataChunkStore {
 
   /**
    * Below method will be used to get the reverse Inverted Index
-   * @param invertedIndex
+   * @param rowId
    * @return reverse Inverted Index
    */
-  int getInvertedReverseIndex(int invertedIndex);
+  int getInvertedReverseIndex(int rowId);
 
   /**
    * Below method will be used to get the surrogate key of the
@@ -102,9 +102,9 @@ public interface DimensionDataChunkStore {
   /**
    * to compare the two byte array
    *
-   * @param index        index of first byte array
+   * @param rowId        index of first byte array
    * @param compareValue value of to be compared
    * @return compare result
    */
-  int compareTo(int index, byte[] compareValue);
+  int compareTo(int rowId, byte[] compareValue);
 }

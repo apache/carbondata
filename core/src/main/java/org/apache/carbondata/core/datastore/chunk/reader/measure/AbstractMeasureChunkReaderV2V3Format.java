@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -56,36 +56,40 @@ public abstract class AbstractMeasureChunkReaderV2V3Format extends AbstractMeasu
    * separately and process
    *
    * @param fileReader   file reader to read the blocks from file
-   * @param blockIndexes blocks range to be read
+   * @param columnIndexRange blocks range to be read, columnIndexGroup[i] is one group, inside the
+   *                         group, columnIndexGroup[i][0] is start column index,
+   *                         and columnIndexGroup[i][1] is end column index
    * @return measure column chunks
    * @throws IOException
    */
-  public MeasureRawColumnChunk[] readRawMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
-      throws IOException {
+  public MeasureRawColumnChunk[] readRawMeasureChunks(FileReader fileReader,
+      int[][] columnIndexRange) throws IOException {
     // read the column chunk based on block index and add
     MeasureRawColumnChunk[] dataChunks =
         new MeasureRawColumnChunk[measureColumnChunkOffsets.size()];
-    if (blockIndexes.length == 0) {
+    if (columnIndexRange.length == 0) {
       return dataChunks;
     }
     MeasureRawColumnChunk[] groupChunk = null;
     int index = 0;
-    for (int i = 0; i < blockIndexes.length - 1; i++) {
+    for (int i = 0; i < columnIndexRange.length - 1; i++) {
       index = 0;
-      groupChunk = readRawMeasureChunksInGroup(fileReader, blockIndexes[i][0], blockIndexes[i][1]);
-      for (int j = blockIndexes[i][0]; j <= blockIndexes[i][1]; j++) {
+      groupChunk = readRawMeasureChunksInGroup(
+          fileReader, columnIndexRange[i][0], columnIndexRange[i][1]);
+      for (int j = columnIndexRange[i][0]; j <= columnIndexRange[i][1]; j++) {
         dataChunks[j] = groupChunk[index++];
       }
     }
-    if (blockIndexes[blockIndexes.length - 1][0] == measureColumnChunkOffsets.size() - 1) {
-      dataChunks[blockIndexes[blockIndexes.length - 1][0]] =
-          readRawMeasureChunk(fileReader, blockIndexes[blockIndexes.length - 1][0]);
+    if (columnIndexRange[columnIndexRange.length - 1][0] == measureColumnChunkOffsets.size() - 1) {
+      dataChunks[columnIndexRange[columnIndexRange.length - 1][0]] =
+          readRawMeasureChunk(fileReader, columnIndexRange[columnIndexRange.length - 1][0]);
     } else {
-      groupChunk = readRawMeasureChunksInGroup(fileReader, blockIndexes[blockIndexes.length - 1][0],
-          blockIndexes[blockIndexes.length - 1][1]);
+      groupChunk = readRawMeasureChunksInGroup(
+          fileReader, columnIndexRange[columnIndexRange.length - 1][0],
+          columnIndexRange[columnIndexRange.length - 1][1]);
       index = 0;
-      for (int j = blockIndexes[blockIndexes.length - 1][0];
-           j <= blockIndexes[blockIndexes.length - 1][1]; j++) {
+      for (int j = columnIndexRange[columnIndexRange.length - 1][0];
+           j <= columnIndexRange[columnIndexRange.length - 1][1]; j++) {
         dataChunks[j] = groupChunk[index++];
       }
     }
@@ -112,12 +116,12 @@ public abstract class AbstractMeasureChunkReaderV2V3Format extends AbstractMeasu
    * data from
    *
    * @param fileReader               file reader to read the data
-   * @param startColumnBlockletIndex first column blocklet index to be read
-   * @param endColumnBlockletIndex   end column blocklet index to be read
+   * @param startColumnIndex first column index to be read
+   * @param endColumnIndex   end column index to be read
    * @return measure raw chunkArray
    * @throws IOException
    */
-  protected abstract MeasureRawColumnChunk[] readRawMeasureChunksInGroup(FileHolder fileReader,
-      int startColumnBlockletIndex, int endColumnBlockletIndex) throws IOException;
+  protected abstract MeasureRawColumnChunk[] readRawMeasureChunksInGroup(FileReader fileReader,
+      int startColumnIndex, int endColumnIndex) throws IOException;
 
 }

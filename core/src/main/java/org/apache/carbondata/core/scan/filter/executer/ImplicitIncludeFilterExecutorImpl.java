@@ -23,7 +23,7 @@ import java.util.BitSet;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -41,26 +41,31 @@ public class ImplicitIncludeFilterExecutorImpl
   }
 
   @Override
-  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeline)
-      throws FilterUnsupportedException {
-    BitSetGroup bitSetGroup = new BitSetGroup(blockChunkHolder.getDataBlock().numberOfPages());
-    for (int i = 0; i < blockChunkHolder.getDataBlock().numberOfPages(); i++) {
+  public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
+      boolean useBitsetPipeline) {
+    BitSetGroup bitSetGroup = new BitSetGroup(
+        rawBlockletColumnChunks.getDataBlock().numberOfPages());
+    for (int i = 0; i < rawBlockletColumnChunks.getDataBlock().numberOfPages(); i++) {
       bitSetGroup.setBitSet(
-          setBitSetForCompleteDimensionData(blockChunkHolder.getDataBlock().getPageRowCount(i)), i);
+          setBitSetForCompleteDimensionData(
+              rawBlockletColumnChunks.getDataBlock().getPageRowCount(i)), i);
     }
     return bitSetGroup;
   }
 
-  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+  @Override
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     return false;
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
     return null;
   }
 
-  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+  @Override
+  public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
 
   }
 

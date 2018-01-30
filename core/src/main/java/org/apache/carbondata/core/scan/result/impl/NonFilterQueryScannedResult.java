@@ -17,14 +17,14 @@
 package org.apache.carbondata.core.scan.result.impl;
 
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 
 /**
  * Result provide class for non filter query
  * In case of no filter query we need to return
  * complete data
  */
-public class NonFilterQueryScannedResult extends AbstractScannedResult {
+public class NonFilterQueryScannedResult extends BlockletScannedResult {
 
   public NonFilterQueryScannedResult(BlockExecutionInfo blockExecutionInfo) {
     super(blockExecutionInfo);
@@ -65,16 +65,6 @@ public class NonFilterQueryScannedResult extends AbstractScannedResult {
    */
   @Override public byte[][] getNoDictionaryKeyArray() {
     return getNoDictionaryKeyArray(currentRow);
-  }
-
-  /**
-   * Below method will be used to get the no dictionary key
-   * string array for all the no dictionary dimension selected in query
-   *
-   * @return no dictionary key array for all the no dictionary dimension
-   */
-  @Override public String[] getNoDictionaryKeyStringArray() {
-    return getNoDictionaryKeyStringArray(currentRow);
   }
 
   /**

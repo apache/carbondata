@@ -162,7 +162,7 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     }
   }
 
-  @Override public int compareTo(int index, byte[] compareValue) {
+  @Override public int compareTo(int rowId, byte[] compareValue) {
     // now to get the row from memory block we need to do following thing
     // 1. first get the current offset
     // 2. if it's not a last row- get the next row offset
@@ -171,11 +171,11 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     // length
 
     // get the offset of set of data
-    int currentDataOffset = dataOffsets[index];
+    int currentDataOffset = dataOffsets[rowId];
     short length = 0;
     // calculating the length of data
-    if (index < numberOfRows - 1) {
-      length = (short) (dataOffsets[index + 1] - (currentDataOffset
+    if (rowId < numberOfRows - 1) {
+      length = (short) (dataOffsets[rowId + 1] - (currentDataOffset
           + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
     } else {
       // for last record

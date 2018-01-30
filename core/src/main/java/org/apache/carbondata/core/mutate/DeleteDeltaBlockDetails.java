@@ -45,14 +45,6 @@ public class DeleteDeltaBlockDetails implements Serializable {
     blockletDetails = new ArrayList<DeleteDeltaBlockletDetails>();
   }
 
-  public String getBlockName() {
-    return blockName;
-  }
-
-  public void setBlockName(String blockName) {
-    this.blockName = blockName;
-  }
-
   @Override public boolean equals(Object obj) {
     if (this == obj) return true;
     if (obj == null || !(obj instanceof DeleteDeltaBlockDetails)) return false;

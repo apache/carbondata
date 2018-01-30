@@ -40,7 +40,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
 
   public RowLevelFilterResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
-    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
+    super(exp, isExpressionResolve, isIncludeFilter, false);
     dimColEvaluatorInfoList =
         new ArrayList<DimColumnResolvedFilterInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(

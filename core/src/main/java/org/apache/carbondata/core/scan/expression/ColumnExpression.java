@@ -70,10 +70,6 @@ public class ColumnExpression extends LeafExpression {
     return columnName;
   }
 
-  public void setColumnName(String columnName) {
-    this.columnName = columnName;
-  }
-
   public boolean isDimension() {
     return isDimension;
   }
@@ -100,10 +96,6 @@ public class ColumnExpression extends LeafExpression {
 
   public DataType getDataType() {
     return dataType;
-  }
-
-  public void setDataType(DataType dataType) {
-    this.dataType = dataType;
   }
 
   @Override public ExpressionResult evaluate(RowIntf value) {

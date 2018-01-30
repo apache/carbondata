@@ -17,62 +17,29 @@
 
 package org.apache.carbondata.core.scan.expression;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 
 public class FilterModificationNode {
   private Expression currentExp;
   private Expression parentExp;
   private ExpressionType expType;
-  private ExpressionResult literalValue;
-  private String columnName;
 
-  public FilterModificationNode(Expression currentNode, Expression parentNode,
-      ExpressionType expType, DataType dataType, Object literalVal, String colName) {
+  FilterModificationNode(Expression currentNode, Expression parentNode, ExpressionType expType) {
     this.currentExp = currentNode;
     this.parentExp = parentNode;
     this.expType = expType;
-    this.columnName = colName;
-    this.literalValue = new ExpressionResult(dataType, literalVal);
   }
 
   public Expression getCurrentExp() {
     return currentExp;
   }
 
-  public void setCurrentExp(Expression currentExp) {
-    this.currentExp = currentExp;
-  }
-
   public Expression getParentExp() {
     return parentExp;
-  }
-
-  public void setParentExp(Expression parentExp) {
-    this.parentExp = parentExp;
   }
 
   public ExpressionType getExpType() {
     return expType;
   }
 
-  public void setExpType(ExpressionType expType) {
-    this.expType = expType;
-  }
-
-  public ExpressionResult getLiteralValue() {
-    return literalValue;
-  }
-
-  public void setLiteralValue(ExpressionResult literalValue) {
-    this.literalValue = literalValue;
-  }
-
-  public String getColumnName() {
-    return columnName;
-  }
-
-  public void setColumnName(String columnName) {
-    this.columnName = columnName;
-  }
 }
