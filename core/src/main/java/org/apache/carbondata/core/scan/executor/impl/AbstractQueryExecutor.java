@@ -225,9 +225,20 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       TableBlockInfo info = blockInfo.copy();
       BlockletDetailInfo detailInfo = info.getDetailInfo();
       detailInfo.setRowCount(blockletInfo.getNumberOfRows());
+      // update min and max values in case of old store for measures as min and max is written
+      // opposite for measures in old store
+      byte[][] maxValues = CarbonUtil.updateMinMaxValues(fileFooter,
+          blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues(),
+          blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues(), false);
+      byte[][] minValues = CarbonUtil.updateMinMaxValues(fileFooter,
+          blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues(),
+          blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues(), true);
+      blockletInfo.getBlockletIndex().getMinMaxIndex().setMaxValues(maxValues);
+      blockletInfo.getBlockletIndex().getMinMaxIndex().setMinValues(minValues);
       detailInfo.setBlockletInfo(blockletInfo);
       detailInfo.setPagesCount((short) blockletInfo.getNumberOfPages());
       detailInfo.setBlockletId(count);
+      info.setDataBlockFromOldStore(true);
       tableBlockInfos.add(info);
       count++;
     }

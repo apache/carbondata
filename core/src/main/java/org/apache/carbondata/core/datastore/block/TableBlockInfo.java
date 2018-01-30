@@ -72,6 +72,12 @@ public class TableBlockInfo implements Distributable, Serializable {
   private String[] locations;
 
   private ColumnarFormatVersion version;
+
+  /**
+   * flag to determine whether the data block is from old store (version 1.1)
+   * or current store
+   */
+  private boolean isDataBlockFromOldStore;
   /**
    * The class holds the blockletsinfo
    */
@@ -409,5 +415,13 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setBlockletId(String blockletId) {
     this.blockletId = blockletId;
+  }
+
+  public boolean isDataBlockFromOldStore() {
+    return isDataBlockFromOldStore;
+  }
+
+  public void setDataBlockFromOldStore(boolean dataBlockFromOldStore) {
+    isDataBlockFromOldStore = dataBlockFromOldStore;
   }
 }

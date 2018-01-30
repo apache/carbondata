@@ -85,6 +85,8 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.util.comparator.Comparator;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletHeader;
@@ -2395,6 +2397,51 @@ public final class CarbonUtil {
   public static byte[] decodeStringToBytes(String objectString)
       throws UnsupportedEncodingException {
     return Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
+  }
+
+  /**
+   * This method will be used to update the min and max values and this will be used in case of
+   * old store where min and max values for measures are written opposite
+   * (i.e max values in place of min and min in place of max values)
+   *
+   * @param dataFileFooter
+   * @param maxValues
+   * @param minValues
+   * @param isMinValueComparison
+   * @return
+   */
+  public static byte[][] updateMinMaxValues(DataFileFooter dataFileFooter, byte[][] maxValues,
+      byte[][] minValues, boolean isMinValueComparison) {
+    byte[][] updatedMinMaxValues = new byte[maxValues.length][];
+    if (isMinValueComparison) {
+      System.arraycopy(minValues, 0, updatedMinMaxValues, 0, minValues.length);
+    } else {
+      System.arraycopy(maxValues, 0, updatedMinMaxValues, 0, maxValues.length);
+    }
+    for (int i = 0; i < maxValues.length; i++) {
+      // update min and max values only for measures
+      if (!dataFileFooter.getColumnInTable().get(i).isDimensionColumn()) {
+        DataType dataType = dataFileFooter.getColumnInTable().get(i).getDataType();
+        SerializableComparator comparator = Comparator.getComparator(dataType);
+        int compare;
+        if (isMinValueComparison) {
+          compare = comparator
+              .compare(DataTypeUtil.getMeasureObjectFromDataType(maxValues[i], dataType),
+                  DataTypeUtil.getMeasureObjectFromDataType(minValues[i], dataType));
+          if (compare < 0) {
+            updatedMinMaxValues[i] = maxValues[i];
+          }
+        } else {
+          compare = comparator
+              .compare(DataTypeUtil.getMeasureObjectFromDataType(minValues[i], dataType),
+                  DataTypeUtil.getMeasureObjectFromDataType(maxValues[i], dataType));
+          if (compare > 0) {
+            updatedMinMaxValues[i] = minValues[i];
+          }
+        }
+      }
+    }
+    return updatedMinMaxValues;
   }
 
 }
