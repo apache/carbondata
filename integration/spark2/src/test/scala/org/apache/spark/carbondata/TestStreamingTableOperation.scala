@@ -527,8 +527,11 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       Seq(Row(2 * 100))
     )
 
+    val resultBeforeHandoff = sql("select * from streaming.stream_table_handoff order by id, name").collect()
     sql("alter table streaming.stream_table_handoff compact 'streaming'")
     Thread.sleep(5000)
+    val resultAfterHandoff = sql("select * from streaming.stream_table_handoff order by id, name").collect()
+    assertResult(resultBeforeHandoff)(resultAfterHandoff)
     val newSegments = sql("show segments for table streaming.stream_table_handoff").collect()
     assert(newSegments.length == 3 || newSegments.length == 5)
     assertResult("Streaming")(newSegments((newSegments.length - 1) / 2).getString(1))
