@@ -75,11 +75,14 @@ class StreamingRawResultIterator(
   }
 
   override def next(): Array[Object] = {
-    recordReader
+    val rowTmp = recordReader
       .getCurrentValue
       .asInstanceOf[GenericInternalRow]
       .values
       .asInstanceOf[Array[Object]]
+    val row = new Array[Object](rowTmp.length)
+    System.arraycopy(rowTmp, 0, row, 0, rowTmp.length)
+    row
   }
 }
 
