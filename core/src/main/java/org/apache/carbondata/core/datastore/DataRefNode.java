@@ -18,7 +18,6 @@ package org.apache.carbondata.core.datastore;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 
@@ -28,46 +27,47 @@ import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 public interface DataRefNode {
 
   /**
-   * Method to get the next block this can be used while scanning when
+   * Return the next data block in the tree, this can be used while scanning when
    * iterator of this class can be used iterate over blocks
-   *
-   * @return next block
    */
   DataRefNode getNextDataRefNode();
 
   /**
-   * to get the number of keys tuples present in the block
-   *
-   * @return number of keys in the block
+   * Return the number of rows in the data block
    */
-  int nodeSize();
+  int numRows();
 
   /**
-   * Method can be used to get the block index .This can be used when multiple
-   * thread can be used scan group of blocks in that can we can assign the
+   * Return the block index. This can be used when multiple
+   * thread can be used scan group of blocks in that can we can assign
    * some of the blocks to one thread and some to other
-   *
-   * @return block number
    */
-  long nodeNumber();
+  long nodeIndex();
 
   /**
-   * Method is used for retreiving the BlockletId.
-   * @return the blockletid related to the data block.
+   * Return the blocklet index in the node
    */
-  String blockletId();
+  short blockletIndex();
 
   /**
-   * This method will be used to get the max value of all the columns this can
+   * Return the number of pages
+   */
+  int numberOfPages();
+
+  /**
+   * Return the number of rows for a give page
+   */
+  int getPageRowCount(int pageNumber);
+
+  /**
+   * Return the max value of all the columns, this can
    * be used in case of filter query
-   *
    */
   byte[][] getColumnsMaxValue();
 
   /**
-   * This method will be used to get the min value of all the columns this can
+   * Return the min value of all the columns, this can
    * be used in case of filter query
-   *
    */
   byte[][] getColumnsMinValue();
 
@@ -75,15 +75,15 @@ public interface DataRefNode {
    * Below method will be used to get the dimension chunks
    *
    * @param fileReader   file reader to read the chunks from file
-   * @param blockIndexes range indexes of the blocks need to be read
+   * @param columnIndexRange range indexes of the blocks need to be read
    *                     value can be {{0,10},{11,12},{13,13}}
    *                     here 0 to 10 and 11 to 12 column blocks will be read in one
    *                     IO operation 13th column block will be read separately
    *                     This will be helpful to reduce IO by reading bigger chunk of
-   *                     data in On IO
+   *                     data in one IO operation
    * @return dimension data chunks
    */
-  DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
+  DimensionRawColumnChunk[] readDimensionChunks(FileReader fileReader, int[][] columnIndexRange)
       throws IOException;
 
   /**
@@ -92,54 +92,31 @@ public interface DataRefNode {
    * @param fileReader file reader to read the chunk from file
    * @return dimension data chunk
    */
-  DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader, int blockIndexes)
+  DimensionRawColumnChunk readDimensionChunk(FileReader fileReader, int columnIndex)
       throws IOException;
 
   /**
    * Below method will be used to get the measure chunk
    *
    * @param fileReader   file reader to read the chunk from file
-   * @param blockIndexes range indexes of the blocks need to be read
+   * @param columnIndexRange range indexes of the blocks need to be read
    *                     value can be {{0,10},{11,12},{13,13}}
    *                     here 0 to 10 and 11 to 12 column blocks will be read in one
    *                     IO operation 13th column block will be read separately
    *                     This will be helpful to reduce IO by reading bigger chunk of
-   *                     data in On IO
+   *                     data in one IO operation
    * @return measure column data chunk
    */
-  MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
+  MeasureRawColumnChunk[] readMeasureChunks(FileReader fileReader, int[][] columnIndexRange)
       throws IOException;
 
   /**
    * Below method will be used to read the measure chunk
    *
    * @param fileReader file read to read the file chunk
-   * @param blockIndex block index to be read from file
+   * @param columnIndex block index to be read from file
    * @return measure data chunk
    */
-  MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex) throws IOException;
+  MeasureRawColumnChunk readMeasureChunk(FileReader fileReader, int columnIndex) throws IOException;
 
-  /**
-   * @param deleteDeltaDataCache
-   */
-  void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache);
-
-  /**
-   * @return
-   */
-  BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache();
-
-  /**
-   * number of pages in blocklet
-   * @return
-   */
-  int numberOfPages();
-
-  /**
-   * Return the number of rows for a give page
-   *
-   * @param pageNumber
-   * @return
-   */
-  int getPageRowCount(int pageNumber);
 }

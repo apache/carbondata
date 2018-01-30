@@ -16,18 +16,18 @@
  */
 package org.apache.carbondata.core.datastore.chunk.impl;
 
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 
 /**
  * Class responsibility is to give access to dimension column data chunk store
  */
-public abstract class AbstractDimensionDataChunk implements DimensionColumnDataChunk {
+public abstract class AbstractDimensionColumnPage implements DimensionColumnPage {
 
   /**
    * data chunks
    */
-  protected DimensionDataChunkStore dataChunkStore;
+  DimensionDataChunkStore dataChunkStore;
 
   /**
    * @return whether columns where explicitly sorted or not
@@ -39,44 +39,38 @@ public abstract class AbstractDimensionDataChunk implements DimensionColumnDataC
   /**
    * Below method to get the data based in row id
    *
-   * @param index row id of the data
+   * @param rowId row id of the data
    * @return chunk
    */
-  @Override public byte[] getChunkData(int index) {
-    return dataChunkStore.getRow(index);
+  @Override public byte[] getChunkData(int rowId) {
+    return dataChunkStore.getRow(rowId);
   }
 
   /**
    * @return inverted index
    */
-  @Override public int getInvertedIndex(int index) {
-    return dataChunkStore.getInvertedIndex(index);
+  @Override public int getInvertedIndex(int rowId) {
+    return dataChunkStore.getInvertedIndex(rowId);
   }
 
   /**
-   * @param invertedIndex
+   * @param rowId
    * @return inverted index reverse
    */
-  @Override public int getInvertedReverseIndex(int invertedIndex) {
-    return dataChunkStore.getInvertedReverseIndex(invertedIndex);
-  }
-  /**
-   * @return length of each column
-   */
-  @Override public int getColumnValueSize() {
-    return dataChunkStore.getColumnValueSize();
+  @Override public int getInvertedReverseIndex(int rowId) {
+    return dataChunkStore.getInvertedReverseIndex(rowId);
   }
 
   /**
    * To compare the data
    *
-   * @param index        row index to be compared
+   * @param rowId        row index to be compared
    * @param compareValue value to compare
    * @return compare result
    */
-  @Override public int compareTo(int index, byte[] compareValue) {
+  @Override public int compareTo(int rowId, byte[] compareValue) {
     // TODO Auto-generated method stub
-    return dataChunkStore.compareTo(index, compareValue);
+    return dataChunkStore.compareTo(rowId, compareValue);
   }
 
   /**

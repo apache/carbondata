@@ -17,20 +17,15 @@
 package org.apache.carbondata.core.scan.result.iterator;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.scan.result.BatchResult;
+import org.apache.carbondata.core.scan.result.RowBatch;
 
 public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> {
 
-  private CarbonIterator<BatchResult> iterator;
-  private BatchResult batch;
+  private CarbonIterator<RowBatch> iterator;
+  private RowBatch batch;
   private int counter;
 
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(PartitionSpliterRawResultIterator.class.getName());
-
-  public PartitionSpliterRawResultIterator(CarbonIterator<BatchResult> iterator) {
+  public PartitionSpliterRawResultIterator(CarbonIterator<RowBatch> iterator) {
     this.iterator = iterator;
   }
 
@@ -65,7 +60,7 @@ public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> 
    * @param batch
    * @return
    */
-  private boolean checkBatchEnd(BatchResult batch) {
+  private boolean checkBatchEnd(RowBatch batch) {
     return !(counter < batch.getSize());
   }
 

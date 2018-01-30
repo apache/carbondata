@@ -171,7 +171,8 @@ class CarbonMergerRDD[K, V](
         LOGGER.info(s"Restructured block exists: $restructuredBlockExists")
         DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
         exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
-          carbonTable, dataFileMetadataSegMapping, restructuredBlockExists)
+          carbonTable, dataFileMetadataSegMapping, restructuredBlockExists,
+          new SparkDataTypeConverterImpl)
 
         // fire a query and get the results.
         var result2: java.util.List[RawResultIterator] = null

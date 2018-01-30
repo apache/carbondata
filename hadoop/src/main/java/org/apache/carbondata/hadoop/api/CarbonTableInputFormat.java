@@ -58,7 +58,6 @@ import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.SingleTableProvider;
 import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
@@ -112,11 +111,11 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   // comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
-  public static final String VALIDATE_INPUT_SEGMENT_IDs =
+  private static final String VALIDATE_INPUT_SEGMENT_IDs =
       "mapreduce.input.carboninputformat.validsegments";
   // comma separated list of input files
   public static final String INPUT_FILES = "mapreduce.input.carboninputformat.files";
-  public static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
+  private static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
   private static final Log LOG = LogFactory.getLog(CarbonTableInputFormat.class);
   private static final String FILTER_PREDICATE =
       "mapreduce.input.carboninputformat.filter.predicate";
@@ -127,7 +126,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
   public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
-  public static final String PARTITIONS_TO_PRUNE =
+  private static final String PARTITIONS_TO_PRUNE =
       "mapreduce.input.carboninputformat.partitions.to.prune";
   public static final String UPADTE_T =
       "mapreduce.input.carboninputformat.partitions.to.prune";
@@ -340,7 +339,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    * @return List<InputSplit> list of CarbonInputSplit
    * @throws IOException
    */
-  @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
+  @Override
+  public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     LoadMetadataDetails[] loadMetadataDetails = SegmentStatusManager
         .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
@@ -811,28 +811,29 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return split;
   }
 
-  @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
+  @Override
+  public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     Configuration configuration = taskAttemptContext.getConfiguration();
-    QueryModel queryModel = getQueryModel(inputSplit, taskAttemptContext);
+    QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext);
     CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
     return new CarbonRecordReader<T>(queryModel, readSupport);
   }
 
-  public QueryModel getQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+  public QueryModel createQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
       throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
     TableProvider tableProvider = new SingleTableProvider(carbonTable);
-    // getting the table absoluteTableIdentifier from the carbonTable
-    // to avoid unnecessary deserialization
-    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
 
     // query plan includes projection column
-    String projection = getColumnProjection(configuration);
-    CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
-    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable,
-        getDataTypeConverter(configuration));
+    String projectionString = getColumnProjection(configuration);
+    String[] projectionColumnNames = null;
+    if (projectionString != null) {
+      projectionColumnNames = projectionString.split(",");
+    }
+    QueryModel queryModel = carbonTable.createQueryWithProjection(
+        projectionColumnNames, getDataTypeConverter(configuration));
 
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
@@ -887,7 +888,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return readSupport;
   }
 
-  @Override protected boolean isSplitable(JobContext context, Path filename) {
+  @Override
+  protected boolean isSplitable(JobContext context, Path filename) {
     try {
       // Don't split the file if it is local file system
       FileSystem fileSystem = filename.getFileSystem(context.getConfiguration());
@@ -898,16 +900,6 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       return true;
     }
     return true;
-  }
-
-  /**
-   * required to be moved to core
-   *
-   * @return updateExtension
-   */
-  private String getUpdateExtension() {
-    // TODO: required to modify when supporting update, mostly will be update timestamp
-    return "update";
   }
 
   /**

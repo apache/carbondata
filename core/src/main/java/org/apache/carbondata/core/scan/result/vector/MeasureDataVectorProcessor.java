@@ -29,7 +29,7 @@ public class MeasureDataVectorProcessor {
 
     void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info);
 
-    void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
+    void fillMeasureVector(int[] filteredRowId, ColumnPage dataChunk,
         ColumnVectorInfo info);
   }
 
@@ -60,7 +60,7 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
+    public void fillMeasureVector(int[] filteredRowId, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
@@ -69,13 +69,13 @@ public class MeasureDataVectorProcessor {
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           vector.putInt(vectorOffset, (int)dataChunk.getLong(currentRow));
           vectorOffset++;
         }
       } else {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
@@ -117,7 +117,7 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping,
+    public void fillMeasureVector(int[] filteredRowId,
         ColumnPage dataChunk, ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
@@ -126,13 +126,13 @@ public class MeasureDataVectorProcessor {
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           vector.putBoolean(vectorOffset, dataChunk.getBoolean(currentRow));
           vectorOffset++;
         }
       } else {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
@@ -171,7 +171,7 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
+    public void fillMeasureVector(int[] filteredRowId, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
@@ -180,13 +180,13 @@ public class MeasureDataVectorProcessor {
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           vector.putShort(vectorOffset, (short) dataChunk.getLong(currentRow));
           vectorOffset++;
         }
       } else {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
@@ -225,7 +225,7 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
+    public void fillMeasureVector(int[] filteredRowId, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
@@ -234,13 +234,13 @@ public class MeasureDataVectorProcessor {
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           vector.putLong(vectorOffset, dataChunk.getLong(currentRow));
           vectorOffset++;
         }
       } else {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
@@ -279,7 +279,7 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
+    public void fillMeasureVector(int[] filteredRowId, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
@@ -288,7 +288,7 @@ public class MeasureDataVectorProcessor {
       int precision = info.measure.getMeasure().getPrecision();
       BitSet nullBitSet = dataChunk.getNullBits();
       for (int i = offset; i < len; i++) {
-        int currentRow = rowMapping[i];
+        int currentRow = filteredRowId[i];
         if (nullBitSet.get(currentRow)) {
           vector.putNull(vectorOffset);
         } else {
@@ -330,7 +330,7 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
+    public void fillMeasureVector(int[] filteredRowId, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
@@ -339,13 +339,13 @@ public class MeasureDataVectorProcessor {
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           vector.putDouble(vectorOffset, dataChunk.getDouble(currentRow));
           vectorOffset++;
         }
       } else {
         for (int i = offset; i < len; i++) {
-          int currentRow = rowMapping[i];
+          int currentRow = filteredRowId[i];
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
