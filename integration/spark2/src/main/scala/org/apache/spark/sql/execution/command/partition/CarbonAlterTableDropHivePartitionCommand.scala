@@ -21,7 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AtomicRunnableCommand}
@@ -34,6 +34,7 @@ import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.PartitionMapFileStore
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.rdd.{CarbonDropPartitionCommitRDD, CarbonDropPartitionRDD}
 
 /**
@@ -61,6 +62,10 @@ case class CarbonAlterTableDropHivePartitionCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
+    if (CarbonUtil.hasAggregationDataMap(table)) {
+      throw new AnalysisException(
+        "Partition can not be dropped as it is mapped to Pre Aggregate table")
+    }
     if (table.isHivePartitionTable) {
       try {
         specs.flatMap(f => sparkSession.sessionState.catalog.listPartitions(tableName, Some(f)))
