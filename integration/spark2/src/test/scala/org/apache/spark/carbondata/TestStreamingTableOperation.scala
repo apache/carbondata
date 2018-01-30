@@ -181,7 +181,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   }
 
   // normal table not support streaming ingest
-  test("normal table not support streaming ingest") {
+  test("normal table not support streaming ingest and alter normal table's streaming property") {
     // alter normal table's streaming property
     val msg = intercept[MalformedCarbonCommandException](sql("alter table streaming.batch_table set tblproperties('streaming'='false')"))
     assertResult("Streaming property value is incorrect")(msg.getMessage)
