@@ -23,24 +23,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-public class DFSFileHolderImpl implements FileHolder {
+public class DFSFileReaderImpl implements FileReader {
   /**
    * cache to hold filename and its stream
    */
   private Map<String, FSDataInputStream> fileNameAndStreamCache;
 
-  private String queryId;
-
   private boolean readPageByPage;
 
-
-  public DFSFileHolderImpl() {
+  public DFSFileReaderImpl() {
     this.fileNameAndStreamCache =
         new HashMap<String, FSDataInputStream>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
@@ -59,7 +56,7 @@ public class DFSFileHolderImpl implements FileHolder {
    * @param filePath fully qualified file path
    * @return channel
    */
-  public FSDataInputStream updateCache(String filePath) throws IOException {
+  private FSDataInputStream updateCache(String filePath) throws IOException {
     FSDataInputStream fileChannel = fileNameAndStreamCache.get(filePath);
     if (null == fileChannel) {
       Path pt = new Path(filePath);
@@ -141,14 +138,6 @@ public class DFSFileHolderImpl implements FileHolder {
     ByteBuffer byteBuffer = ByteBuffer.wrap(readByteArray);
     byteBuffer.rewind();
     return byteBuffer;
-  }
-
-  @Override public void setQueryId(String queryId) {
-    this.queryId = queryId;
-  }
-
-  @Override public String getQueryId() {
-    return queryId;
   }
 
   @Override public void setReadPageByPage(boolean isReadPageByPage) {

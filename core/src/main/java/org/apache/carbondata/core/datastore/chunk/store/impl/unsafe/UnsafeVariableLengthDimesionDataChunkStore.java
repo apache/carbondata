@@ -189,11 +189,11 @@ public class UnsafeVariableLengthDimesionDataChunkStore
   /**
    * to compare the two byte array
    *
-   * @param index index of first byte array
+   * @param rowId index of first byte array
    * @param compareValue value of to be compared
    * @return compare result
    */
-  @Override public int compareTo(int index, byte[] compareValue) {
+  @Override public int compareTo(int rowId, byte[] compareValue) {
     // now to get the row from memory block we need to do following thing
     // 1. first get the current offset
     // 2. if it's not a last row- get the next row offset
@@ -201,13 +201,13 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     // else subtract the current row offset
     // with complete data length get the offset of set of data
     int currentDataOffset = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
-        dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((long)index
+        dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((long) rowId
             * CarbonCommonConstants.INT_SIZE_IN_BYTE * 1L));
     short length = 0;
     // calculating the length of data
-    if (index < numberOfRows - 1) {
+    if (rowId < numberOfRows - 1) {
       int OffsetOfNextdata = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
-          dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((index + 1)
+          dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((rowId + 1)
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
       length = (short) (OffsetOfNextdata - (currentDataOffset
           + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));

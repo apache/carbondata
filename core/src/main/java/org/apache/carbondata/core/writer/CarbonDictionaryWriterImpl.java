@@ -144,7 +144,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @param value unique dictionary value
    * @throws IOException if an I/O error occurs
    */
-  @Override public void write(byte[] value) throws IOException {
+  private void write(byte[] value) throws IOException {
     if (isFirstTime) {
       init();
       isFirstTime = false;

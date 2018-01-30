@@ -20,12 +20,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.ColumnGroupDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReader;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
@@ -61,14 +61,14 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
    * Below method will be used to read the raw chunk based on block indexes
    *
    * @param fileReader   file reader to read the blocks from file
-   * @param blockletIndexes blocks to be read
+   * @param columnIndexRange blocks to be read
    * @return dimension column chunks
    */
-  @Override public DimensionRawColumnChunk[] readRawDimensionChunks(FileHolder fileReader,
-      int[][] blockletIndexes) throws IOException {
+  @Override public DimensionRawColumnChunk[] readRawDimensionChunks(FileReader fileReader,
+      int[][] columnIndexRange) throws IOException {
     DimensionRawColumnChunk[] dataChunks = new DimensionRawColumnChunk[dimensionColumnChunk.size()];
-    for (int i = 0; i < blockletIndexes.length; i++) {
-      for (int j = blockletIndexes[i][0]; j <= blockletIndexes[i][1]; j++) {
+    for (int i = 0; i < columnIndexRange.length; i++) {
+      for (int j = columnIndexRange[i][0]; j <= columnIndexRange[i][1]; j++) {
         dataChunks[j] = readRawDimensionChunk(fileReader, j);
       }
     }
@@ -82,7 +82,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
    * @param columnIndex column to be read
    * @return dimension column chunk
    */
-  @Override public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader,
+  @Override public DimensionRawColumnChunk readRawDimensionChunk(FileReader fileReader,
       int columnIndex) throws IOException {
     DataChunk dataChunk = dimensionColumnChunk.get(columnIndex);
     ByteBuffer buffer = null;
@@ -92,20 +92,20 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
     }
     DimensionRawColumnChunk rawColumnChunk = new DimensionRawColumnChunk(columnIndex, buffer, 0,
         dataChunk.getDataPageLength(), this);
-    rawColumnChunk.setFileHolder(fileReader);
+    rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(1);
     rawColumnChunk.setRowCount(new int[] { numberOfRows });
     return rawColumnChunk;
   }
 
-  @Override public DimensionColumnDataChunk convertToDimensionChunk(
+  @Override public DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) throws IOException {
     int blockIndex = dimensionRawColumnChunk.getColumnIndex();
     byte[] dataPage = null;
     int[] invertedIndexes = null;
     int[] invertedIndexesReverse = null;
     int[] rlePage = null;
-    FileHolder fileReader = dimensionRawColumnChunk.getFileReader();
+    FileReader fileReader = dimensionRawColumnChunk.getFileReader();
 
     ByteBuffer rawData = dimensionRawColumnChunk.getRawData();
     dataPage = COMPRESSOR.unCompressByte(rawData.array(), (int) dimensionRawColumnChunk.getOffSet(),
@@ -145,23 +145,23 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
       rlePage = null;
     }
     // fill chunk attributes
-    DimensionColumnDataChunk columnDataChunk = null;
+    DimensionColumnPage columnDataChunk = null;
     if (dataChunk.isRowMajor()) {
       // to store fixed length column chunk values
-      columnDataChunk = new ColumnGroupDimensionDataChunk(dataPage, eachColumnValueSize[blockIndex],
-          numberOfRows);
+      columnDataChunk = new ColumnGroupDimensionColumnPage(
+          dataPage, eachColumnValueSize[blockIndex], numberOfRows);
     }
     // if no dictionary column then first create a no dictionary column chunk
     // and set to data chunk instance
     else if (!CarbonUtil
         .hasEncoding(dataChunk.getEncodingList(), Encoding.DICTIONARY)) {
       columnDataChunk =
-          new VariableLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
+          new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               numberOfRows);
     } else {
       // to store fixed length column chunk values
       columnDataChunk =
-          new FixedLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
+          new FixedLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               numberOfRows, eachColumnValueSize[blockIndex]);
     }
     return columnDataChunk;

@@ -104,8 +104,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    *
    */
   public List<DataRefNode> getFilterredBlocks(DataRefNode btreeNode,
-      FilterResolverIntf filterResolver, AbstractIndex tableSegment,
-      AbsoluteTableIdentifier tableIdentifier) {
+      FilterResolverIntf filterResolver, AbstractIndex tableSegment) {
     // Need to get the current dimension tables
     List<DataRefNode> listOfDataBlocksToScan = new ArrayList<DataRefNode>();
     // getting the start and end index key based on filter for hitting the
@@ -400,7 +399,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case FALSE:
         return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
       case TRUE:
-        return new TrueConditionalResolverImpl(expression, false, false, tableIdentifier);
+        return new TrueConditionalResolverImpl(expression, false, false);
       case EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         // check for implicit column in the expression
@@ -409,7 +408,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
               currentCondExpression.getColumnList().get(0).getCarbonColumn();
           if (carbonColumn.hasEncoding(Encoding.IMPLICIT)) {
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
-                tableIdentifier,
                 currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
           }
         }
@@ -435,7 +433,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
                   tableIdentifier);
             }
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
-                tableIdentifier,
                 currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
           }
           // getting new dim index.
@@ -461,14 +458,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
             }
           }
           return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
-              tableIdentifier,
               currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
 
         }
         break;
       case RANGE:
-        return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
-            tableIdentifier, false);
+        return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true, false);
       case NOT_EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         column = currentCondExpression.getColumnList().get(0).getCarbonColumn();
@@ -491,8 +486,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
               return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, false,
                   tableIdentifier);
             }
-            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false,
-                tableIdentifier, true);
+            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false, true);
           }
 
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
@@ -515,11 +509,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
                   tableIdentifier);
             }
 
-            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false,
-                tableIdentifier, false);
+            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false, false);
           }
-          return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false,
-              tableIdentifier, false);
+          return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false, false);
         }
         break;
 
@@ -533,7 +525,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)
                 .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY))
                 || (condExpression.getColumnList().get(0).getCarbonColumn().isMeasure())) {
-              return new ConditionalFilterResolverImpl(expression, true, true, tableIdentifier,
+              return new ConditionalFilterResolverImpl(expression, true, true,
                   condExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
             }
           }

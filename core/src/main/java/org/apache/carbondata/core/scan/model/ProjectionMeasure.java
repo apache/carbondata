@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.scan.model;
 
-import java.io.Serializable;
-
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 
 /**
@@ -26,20 +24,16 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
  * about measure present in the query, this is done to avoid the serialization
  * of the heavy object
  */
-public class QueryMeasure extends QueryColumn implements Serializable {
-
-  /**
-   * serialVersionUID
-   */
-  private static final long serialVersionUID = 1035512411375495414L;
+public class ProjectionMeasure extends ProjectionColumn {
 
   /**
    * actual carbon measure object
    */
-  private transient CarbonMeasure measure;
+  private CarbonMeasure measure;
 
-  public QueryMeasure(String columnName) {
-    super(columnName);
+  public ProjectionMeasure(CarbonMeasure measure) {
+    super(measure.getColName());
+    this.measure = measure;
   }
 
   /**
@@ -47,13 +41,6 @@ public class QueryMeasure extends QueryColumn implements Serializable {
    */
   public CarbonMeasure getMeasure() {
     return measure;
-  }
-
-  /**
-   * @param measure the measure to set
-   */
-  public void setMeasure(CarbonMeasure measure) {
-    this.measure = measure;
   }
 
 }

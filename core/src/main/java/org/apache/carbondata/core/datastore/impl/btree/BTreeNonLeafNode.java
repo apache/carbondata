@@ -19,10 +19,9 @@ package org.apache.carbondata.core.datastore.impl.btree;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
@@ -34,13 +33,6 @@ import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 public class BTreeNonLeafNode implements BTreeNode {
 
   /**
-   * Below method will be used to load the data block
-   *
-   * @param blockInfo block detail
-   */
-  protected BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache;
-
-  /**
    * Child nodes
    */
   private BTreeNode[] children;
@@ -50,7 +42,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    */
   private List<IndexKey> listOfKeys;
 
-  public BTreeNonLeafNode() {
+  BTreeNonLeafNode() {
     // creating a list which will store all the indexes
     listOfKeys = new ArrayList<IndexKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
@@ -120,7 +112,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    *
    * @return number of keys in the block
    */
-  @Override public int nodeSize() {
+  @Override public int numRows() {
     return listOfKeys.size();
   }
 
@@ -131,11 +123,11 @@ public class BTreeNonLeafNode implements BTreeNode {
    *
    * @return block number
    */
-  @Override public long nodeNumber() {
+  @Override public long nodeIndex() {
     throw new UnsupportedOperationException("Unsupported operation");
   }
 
-  @Override public String blockletId() {
+  @Override public short blockletIndex() {
     throw new UnsupportedOperationException("Unsupported operation");
   }
 
@@ -171,11 +163,11 @@ public class BTreeNonLeafNode implements BTreeNode {
    * Below method will be used to get the dimension chunks
    *
    * @param fileReader   file reader to read the chunks from file
-   * @param blockIndexes indexes of the blocks need to be read
+   * @param columnIndexRange indexes of the blocks need to be read
    * @return dimension data chunks
    */
-  @Override public DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader,
-      int[][] blockIndexes) {
+  @Override public DimensionRawColumnChunk[] readDimensionChunks(FileReader fileReader,
+      int[][] columnIndexRange) {
 
     // operation of getting the dimension chunks is not supported as its a
     // non leaf node
@@ -191,8 +183,8 @@ public class BTreeNonLeafNode implements BTreeNode {
    * @param fileReader file reader to read the chunk from file
    * @return dimension data chunk
    */
-  @Override public DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader,
-      int blockIndexes) {
+  @Override public DimensionRawColumnChunk readDimensionChunk(FileReader fileReader,
+      int columnIndex) {
     // operation of getting the dimension chunk is not supported as its a
     // non leaf node
     // and in case of B+Tree data will be stored only in leaf node and
@@ -205,11 +197,11 @@ public class BTreeNonLeafNode implements BTreeNode {
    * Below method will be used to get the measure chunk
    *
    * @param fileReader   file reader to read the chunk from file
-   * @param blockIndexes block indexes to be read from file
+   * @param columnIndexRange block indexes to be read from file
    * @return measure column data chunk
    */
-  @Override public MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader,
-      int[][] blockIndexes) {
+  @Override public MeasureRawColumnChunk[] readMeasureChunks(FileReader fileReader,
+      int[][] columnIndexRange) {
     // operation of getting the measure chunk is not supported as its a non
     // leaf node
     // and in case of B+Tree data will be stored only in leaf node and
@@ -222,31 +214,17 @@ public class BTreeNonLeafNode implements BTreeNode {
    * Below method will be used to read the measure chunk
    *
    * @param fileReader file read to read the file chunk
-   * @param blockIndex block index to be read from file
+   * @param columnIndex block index to be read from file
    * @return measure data chunk
    */
 
-  @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex) {
+  @Override public MeasureRawColumnChunk readMeasureChunk(FileReader fileReader, int columnIndex) {
     // operation of getting the measure chunk is not supported as its a non
     // leaf node
     // and in case of B+Tree data will be stored only in leaf node and
     // intermediate
     // node will be used only for searching the leaf node
     throw new UnsupportedOperationException("Unsupported operation");
-  }
-
-  /**
-   * @return the segmentProperties
-   */
-  public void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache) {
-
-    this.deleteDeltaDataCache = deleteDeltaDataCache;
-  }
-  /**
-   * @return the segmentProperties
-   */
-  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
-    return deleteDeltaDataCache;
   }
 
   /**
