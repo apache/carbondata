@@ -315,6 +315,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // total number dimension
     blockExecutionInfo
         .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
+    blockExecutionInfo.setPrefetchBlocklet(!queryModel.isReadPageByPage());
     blockExecutionInfo
         .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
     blockExecutionInfo.setAbsoluteTableIdentifier(queryModel.getAbsoluteTableIdentifier());

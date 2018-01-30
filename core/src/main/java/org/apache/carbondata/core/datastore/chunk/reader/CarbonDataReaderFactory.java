@@ -18,10 +18,12 @@ package org.apache.carbondata.core.datastore.chunk.reader;
 
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.v1.CompressedDimensionChunkFileBasedReaderV1;
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.v2.CompressedDimensionChunkFileBasedReaderV2;
+import org.apache.carbondata.core.datastore.chunk.reader.dimension.v3.CompressedDimChunkFileBasedPageLevelReaderV3;
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.v3.CompressedDimensionChunkFileBasedReaderV3;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.v1.CompressedMeasureChunkFileBasedReaderV1;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.v2.CompressedMeasureChunkFileBasedReaderV2;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.v3.CompressedMeasureChunkFileBasedReaderV3;
+import org.apache.carbondata.core.datastore.chunk.reader.measure.v3.CompressedMsrChunkFileBasedPageLevelReaderV3;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 
@@ -62,7 +64,8 @@ public class CarbonDataReaderFactory {
    * @return dimension column data reader based on version number
    */
   public DimensionColumnChunkReader getDimensionColumnChunkReader(ColumnarFormatVersion version,
-      BlockletInfo blockletInfo, int[] eachColumnValueSize, String filePath) {
+      BlockletInfo blockletInfo, int[] eachColumnValueSize, String filePath,
+      boolean readPagebyPage) {
     switch (version) {
       case V1:
         return new CompressedDimensionChunkFileBasedReaderV1(blockletInfo, eachColumnValueSize,
@@ -72,8 +75,13 @@ public class CarbonDataReaderFactory {
             filePath);
       case V3:
       default:
-        return new CompressedDimensionChunkFileBasedReaderV3(blockletInfo, eachColumnValueSize,
-            filePath);
+        if (readPagebyPage) {
+          return new CompressedDimChunkFileBasedPageLevelReaderV3(blockletInfo, eachColumnValueSize,
+              filePath);
+        } else {
+          return new CompressedDimensionChunkFileBasedReaderV3(blockletInfo, eachColumnValueSize,
+              filePath);
+        }
     }
   }
 
@@ -86,7 +94,7 @@ public class CarbonDataReaderFactory {
    * @return measure column data reader based on version number
    */
   public MeasureColumnChunkReader getMeasureColumnChunkReader(ColumnarFormatVersion version,
-      BlockletInfo blockletInfo, String filePath) {
+      BlockletInfo blockletInfo, String filePath, boolean readPagebyPage) {
     switch (version) {
       case V1:
         return new CompressedMeasureChunkFileBasedReaderV1(blockletInfo, filePath);
@@ -94,7 +102,11 @@ public class CarbonDataReaderFactory {
         return new CompressedMeasureChunkFileBasedReaderV2(blockletInfo, filePath);
       case V3:
       default:
-        return new CompressedMeasureChunkFileBasedReaderV3(blockletInfo, filePath);
+        if (readPagebyPage) {
+          return new CompressedMsrChunkFileBasedPageLevelReaderV3(blockletInfo, filePath);
+        } else {
+          return new CompressedMeasureChunkFileBasedReaderV3(blockletInfo, filePath);
+        }
 
     }
 

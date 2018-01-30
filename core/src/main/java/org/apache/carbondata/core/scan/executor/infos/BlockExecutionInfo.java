@@ -223,6 +223,11 @@ public class BlockExecutionInfo {
    */
   private String[] deleteDeltaFilePath;
 
+  /**
+   * whether to prefetch the blocklet data while scanning
+   */
+  private boolean prefetchBlocklet = true;
+
   private Map<String, DeleteDeltaVo> deletedRecordsMap;
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
     return absoluteTableIdentifier;
@@ -657,5 +662,13 @@ public class BlockExecutionInfo {
    */
   public void setDeletedRecordsMap(Map<String, DeleteDeltaVo> deletedRecordsMap) {
     this.deletedRecordsMap = deletedRecordsMap;
+  }
+
+  public boolean isPrefetchBlocklet() {
+    return prefetchBlocklet;
+  }
+
+  public void setPrefetchBlocklet(boolean prefetchBlocklet) {
+    this.prefetchBlocklet = prefetchBlocklet;
   }
 }

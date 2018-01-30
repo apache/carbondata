@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.datastore;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -103,6 +102,17 @@ public interface FileHolder {
 
   String getQueryId();
 
-  DataInputStream getDataInputStream(String filePath, long offset) throws IOException;
+  /**
+   * Set the flag to read data page by page instead of whole blocklet.
+   *
+   * @param isReadPageByPage
+   */
+  void setReadPageByPage(boolean isReadPageByPage);
+
+  /**
+   * Whether read the data page by page from carbondata file instead of reading whole
+   * blocklet to memory. It is need in case of memory constraint operations.
+   */
+  boolean isReadPageByPage();
 
 }
