@@ -28,8 +28,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
-import org.apache.carbondata.core.scan.model.QueryDimension;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
+import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 
 import org.junit.Test;
 
@@ -79,22 +79,20 @@ public class RestructureUtilTest {
     List<CarbonDimension> tableComplexDimensions =
         Arrays.asList(tableComplexDimension1, tableComplexDimension2);
 
-    QueryDimension queryDimension1 = new QueryDimension("Id");
-    queryDimension1.setDimension(tableBlockDimension1);
-    QueryDimension queryDimension2 = new QueryDimension("Name");
-    queryDimension2.setDimension(tableComplexDimension2);
-    QueryDimension queryDimension3 = new QueryDimension("Address");
-    queryDimension3.setDimension(new CarbonDimension(columnSchema5, 3, 3, 3, 3));
+    ProjectionDimension queryDimension1 = new ProjectionDimension(tableBlockDimension1);
+    ProjectionDimension queryDimension2 = new ProjectionDimension(tableComplexDimension2);
+    ProjectionDimension
+        queryDimension3 = new ProjectionDimension(new CarbonDimension(columnSchema5, 3, 3, 3, 3));
 
-    List<QueryDimension> queryDimensions =
+    List<ProjectionDimension> queryDimensions =
         Arrays.asList(queryDimension1, queryDimension2, queryDimension3);
 
-    List<QueryDimension> result = null;
+    List<ProjectionDimension> result = null;
     result = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo, queryDimensions,
             tableBlockDimensions, tableComplexDimensions);
     List<CarbonDimension> resultDimension = new ArrayList<>(result.size());
-    for (QueryDimension queryDimension : result) {
+    for (ProjectionDimension queryDimension : result) {
       resultDimension.add(queryDimension.getDimension());
     }
     assertThat(resultDimension,
@@ -121,13 +119,10 @@ public class RestructureUtilTest {
     carbonMeasure3.getColumnSchema().setDefaultValue("3".getBytes());
     List<CarbonMeasure> currentBlockMeasures = Arrays.asList(carbonMeasure1, carbonMeasure2);
 
-    QueryMeasure queryMeasure1 = new QueryMeasure("Id");
-    queryMeasure1.setMeasure(carbonMeasure1);
-    QueryMeasure queryMeasure2 = new QueryMeasure("Name");
-    queryMeasure2.setMeasure(carbonMeasure2);
-    QueryMeasure queryMeasure3 = new QueryMeasure("Age");
-    queryMeasure3.setMeasure(carbonMeasure3);
-    List<QueryMeasure> queryMeasures = Arrays.asList(queryMeasure1, queryMeasure2, queryMeasure3);
+    ProjectionMeasure queryMeasure1 = new ProjectionMeasure(carbonMeasure1);
+    ProjectionMeasure queryMeasure2 = new ProjectionMeasure(carbonMeasure2);
+    ProjectionMeasure queryMeasure3 = new ProjectionMeasure(carbonMeasure3);
+    List<ProjectionMeasure> queryMeasures = Arrays.asList(queryMeasure1, queryMeasure2, queryMeasure3);
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     RestructureUtil.createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo, queryMeasures,
         currentBlockMeasures);

@@ -378,7 +378,6 @@ public abstract class AbstractDataFileFooterConverter {
       cardinality[i] = segmentInfo.getColumn_cardinalities().get(i);
     }
     info.setColumnCardinality(cardinality);
-    info.setNumberOfColumns(segmentInfo.getNum_cols());
     return info;
   }
 

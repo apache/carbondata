@@ -260,8 +260,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     DictionaryCacheLoader dictionaryCacheLoader =
         new DictionaryCacheLoaderImpl(dictionaryColumnUniqueIdentifier);
     dictionaryCacheLoader
-        .load(dictionaryInfo, dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-            dictionaryChunkStartOffset, dictionaryChunkEndOffset, loadSortIndex);
+        .load(dictionaryInfo, dictionaryChunkStartOffset, dictionaryChunkEndOffset, loadSortIndex);
   }
 
   /**

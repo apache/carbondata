@@ -29,13 +29,6 @@ public class ColumnGroupModel {
   private int noOfColumnsStore;
 
   /**
-   * whether given index is columnar or not
-   * true: columnar
-   * false: row block
-   */
-  private boolean[] columnarStore;
-
-  /**
    * column groups
    * e.g
    * {{0,1,2},3,4,{5,6}}
@@ -77,31 +70,12 @@ public class ColumnGroupModel {
   }
 
   /**
-   * it's an identifier for row block or single column block
-   *
-   * @param columnarStore
-   */
-  public void setColumnarStore(boolean[] columnarStore) {
-    this.columnarStore = columnarStore;
-  }
-
-  /**
    * set column groups
    *
    * @param columnGroups
    */
   public void setColumnGroup(int[][] columnGroups) {
     this.columnGroups = columnGroups;
-  }
-
-  /**
-   * check if given column group is columnar
-   *
-   * @param colGroup
-   * @return true if given block is columnar
-   */
-  public boolean isColumnar(int colGroup) {
-    return columnarStore[colGroup];
   }
 
   /**

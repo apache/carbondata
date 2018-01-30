@@ -22,7 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
-import org.apache.carbondata.core.datastore.impl.FileHolderImpl;
+import org.apache.carbondata.core.datastore.impl.DFSFileReaderImpl;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -35,21 +35,18 @@ import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
-public class FileHolderImplUnitTest {
+public class DFSFileReaderImplUnitTest {
 
-  private static FileHolderImpl fileHolder;
-  private static FileHolderImpl fileHolderWithCapacity;
+  private static DFSFileReaderImpl dfsFileHolder;
   private static String fileName;
   private static String fileNameWithEmptyContent;
   private static File file;
   private static File fileWithEmptyContent;
 
   @BeforeClass public static void setup() {
-    fileHolder = new FileHolderImpl();
-    fileHolderWithCapacity = new FileHolderImpl(50);
+    dfsFileHolder = new DFSFileReaderImpl();
     file = new File("Test.carbondata");
     fileWithEmptyContent = new File("TestEXception.carbondata");
 
@@ -75,67 +72,70 @@ public class FileHolderImplUnitTest {
     fileNameWithEmptyContent = fileWithEmptyContent.getAbsolutePath();
   }
 
-  @AfterClass public static void tearDown() throws IOException {
+  @AfterClass public static void tearDown() throws IOException  {
     file.delete();
     fileWithEmptyContent.delete();
-    fileHolder.finish();
+    dfsFileHolder.finish();
   }
 
   @Test public void testReadByteArray() throws IOException  {
-    byte[] result = fileHolder.readByteArray(fileName, 1);
+    byte[] result = dfsFileHolder.readByteArray(fileName, 1);
     byte[] expected_result = new byte[] { 72 };
     assertThat(result, is(equalTo(expected_result)));
   }
 
   @Test public void testReadByteArrayWithFilePath() throws IOException  {
-    byte[] result = fileHolder.readByteArray(fileName, 2L, 2);
+    byte[] result = dfsFileHolder.readByteArray(fileName, 2L, 2);
     byte[] expected_result = { 108, 108 };
     assertThat(result, is(equalTo(expected_result)));
   }
 
   @Test public void testReadLong() throws IOException  {
-    long actualResult = fileHolder.readLong(fileName, 1L);
+    long actualResult = dfsFileHolder.readLong(fileName, 1L);
     long expectedResult = 7308335519855243122L;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testReadLongForIoException() throws IOException {
-    fileHolder.readLong(fileNameWithEmptyContent, 1L);
+  @Test(expected = IOException.class)
+  public void testReadLongForIoException() throws IOException {
+    dfsFileHolder.readLong(fileNameWithEmptyContent, 1L);
   }
 
-  @Test public void testReadIntForIoException() throws IOException {
-    fileHolder.readInt(fileNameWithEmptyContent, 1L);
+  @Test(expected = IOException.class)
+  public void testReadIntForIoException() throws IOException{
+    dfsFileHolder.readInt(fileNameWithEmptyContent, 1L);
   }
 
   @Test public void testReadInt() throws IOException  {
-    int actualResult = fileHolder.readInt(fileName, 1L);
+    int actualResult = dfsFileHolder.readInt(fileName, 1L);
     int expectedResult = 1701604463;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testReadIntWithFileName() throws IOException  {
-    int actualResult = fileHolder.readInt(fileName);
+  @Test public void testReadIntWithFileName() throws IOException {
+    int actualResult = dfsFileHolder.readInt(fileName);
     int expectedResult = 1701604463;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testReadIntWithFileNameForIOException() throws IOException  {
-    fileHolder.readInt(fileNameWithEmptyContent);
-
+  @Test(expected = IOException.class)
+  public void testReadIntWithFileNameForIOException() throws IOException {
+    dfsFileHolder.readInt(fileNameWithEmptyContent);
   }
 
   @Test public void testDouble() throws IOException  {
-    double actualResult = fileHolder.readDouble(fileName, 1L);
+    double actualResult = dfsFileHolder.readDouble(fileName, 1L);
     double expectedResult = 7.3083355198552433E18;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testDoubleForIoException() throws IOException {
-    fileHolder.readDouble(fileNameWithEmptyContent, 1L);
-
+  @Test(expected = IOException.class)
+  public void testDoubleForIoException() throws IOException {
+    dfsFileHolder.readDouble(fileNameWithEmptyContent, 1L);
   }
 
-  @Test public void testDoubleForIoExceptionwithUpdateCache() throws Exception {
+  @Test
+  public void testDoubleForIoExceptionwithUpdateCache() throws IOException {
     new MockUp<FileSystem>() {
       @SuppressWarnings("unused") @Mock public FSDataInputStream open(Path file)
           throws IOException {
@@ -143,12 +143,7 @@ public class FileHolderImplUnitTest {
       }
 
     };
-    try {
-      fileHolder.readDouble(fileName, 1L);
-    } catch (Exception e) {
-      assertNull(e.getMessage());
-    }
-
+    dfsFileHolder.readDouble(fileName, 1L);
   }
 
 }

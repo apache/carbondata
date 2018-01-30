@@ -50,32 +50,32 @@ public class RawBasedResultCollectorTest {
 //    aggregatorInfo.setDefaultValues(new Object[] { 1, 2, 3, 4 });
 //    aggregatorInfo.setMeasureDataTypes(
 //        new DataType[] { DataTypes.INT, DataTypes.TIMESTAMP, DataTypes.INT, DataTypes.INT });
-//    QueryMeasure queryMeasure1 = new QueryMeasure("QMCol1");
+//    ProjectionMeasure queryMeasure1 = new ProjectionMeasure("QMCol1");
 //    queryMeasure1.setQueryOrder(1);
-//    QueryMeasure queryMeasure2 = new QueryMeasure("QMCol2");
+//    ProjectionMeasure queryMeasure2 = new ProjectionMeasure("QMCol2");
 //    queryMeasure1.setQueryOrder(2);
-//    QueryMeasure queryMeasure3 = new QueryMeasure("QMCol3");
+//    ProjectionMeasure queryMeasure3 = new ProjectionMeasure("QMCol3");
 //    queryMeasure1.setQueryOrder(3);
-//    QueryMeasure queryMeasure4 = new QueryMeasure("QMCol4");
+//    ProjectionMeasure queryMeasure4 = new ProjectionMeasure("QMCol4");
 //    queryMeasure1.setQueryOrder(4);
-//    QueryDimension queryDimension1 = new QueryDimension("QDCol1");
+//    ProjectionDimension queryDimension1 = new ProjectionDimension("QDCol1");
 //    queryDimension1.setQueryOrder(1);
 //    ColumnSchema columnSchema = new ColumnSchema();
 //    queryDimension1.setDimension(new CarbonDimension(columnSchema, 0, 0, 0, 0));
-//    QueryDimension queryDimension2 = new QueryDimension("QDCol2");
+//    ProjectionDimension queryDimension2 = new ProjectionDimension("QDCol2");
 //    queryDimension2.setQueryOrder(2);
 //    queryDimension2.setDimension(new CarbonDimension(columnSchema, 1, 1, 1, 1));
-//    QueryDimension queryDimension3 = new QueryDimension("QDCol3");
+//    ProjectionDimension queryDimension3 = new ProjectionDimension("QDCol3");
 //    queryDimension3.setQueryOrder(3);
 //    queryDimension3.setDimension(new CarbonDimension(columnSchema, 2, 0, 0, 0));
-//    QueryDimension queryDimension4 = new QueryDimension("QDCol4");
+//    ProjectionDimension queryDimension4 = new ProjectionDimension("QDCol4");
 //    queryDimension4.setQueryOrder(4);
 //    queryDimension4.setDimension(new CarbonDimension(columnSchema, 3, 0, 0, 0));
-//    blockExecutionInfo.setQueryDimensions(
-//        new QueryDimension[] { queryDimension1, queryDimension2, queryDimension3,
+//    blockExecutionInfo.setProjectionDimensions(
+//        new ProjectionDimension[] { queryDimension1, queryDimension2, queryDimension3,
 //            queryDimension4 });
-//    blockExecutionInfo.setQueryMeasures(
-//        new QueryMeasure[] { queryMeasure1, queryMeasure2, queryMeasure3, queryMeasure4 });
+//    blockExecutionInfo.setProjectionMeasures(
+//        new ProjectionMeasure[] { queryMeasure1, queryMeasure2, queryMeasure3, queryMeasure4 });
 //    blockExecutionInfo.setFixedKeyUpdateRequired(true);
 //    blockExecutionInfo.setMeasureInfo(aggregatorInfo);
 //    blockExecutionInfo.setMaskedByteForBlock(new int[] { 1, 2 });
@@ -99,7 +99,7 @@ public class RawBasedResultCollectorTest {
 //        return new byte[][] { { 1, 2 }, { 1, 2 } };
 //      }
 //
-//      @SuppressWarnings("unused") @Mock public ColumnPage getMeasureChunk(int ordinal) {
+//      @SuppressWarnings("unused") @Mock public ColumnPage readMeasureChunk(int ordinal) {
 //        ColumnPage ColumnPage = new ColumnPage();
 //        PresenceMeta presenceMeta = new PresenceMeta();
 //        BitSet bitSet = new BitSet();
@@ -120,10 +120,10 @@ public class RawBasedResultCollectorTest {
 //      }
 //    };
 //
-//    AbstractScannedResult abstractScannedResult =
+//    BlockletScannedResult abstractScannedResult =
 //        new NonFilterQueryScannedResult(blockExecutionInfo);
-//    abstractScannedResult.setNumberOfRows(2);
-//    List<Object[]> result = rawBasedResultCollector.collectData(abstractScannedResult, 2);
+//    abstractScannedResult.setPageFilteredRowCount(2);
+//    List<Object[]> result = rawBasedResultCollector.collectResultInRow(abstractScannedResult, 2);
 //    int expectedResult = 2;
 //    assertThat(result.size(), is(equalTo(expectedResult)));
 //  }

@@ -154,7 +154,7 @@ class StreamHandoffRDD[K, V](
     CarbonTableInputFormat.setTableInfo(hadoopConf, carbonTable.getTableInfo)
     val attemptContext = new TaskAttemptContextImpl(hadoopConf, attemptId)
     val format = new CarbonTableInputFormat[Array[Object]]()
-    val model = format.getQueryModel(inputSplit, attemptContext)
+    val model = format.createQueryModel(inputSplit, attemptContext)
     val inputFormat = new CarbonStreamInputFormat
     val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
       .asInstanceOf[CarbonStreamRecordReader]

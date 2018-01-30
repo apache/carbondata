@@ -20,8 +20,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
@@ -70,7 +70,8 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
    * @param blockletColumnIndex blocklet index of the column in carbon data file
    * @return dimension raw chunk
    */
-  public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader,
+  @Override
+  public DimensionRawColumnChunk readRawDimensionChunk(FileReader fileReader,
       int blockletColumnIndex) throws IOException {
     // get the current dimension offset
     long currentDimensionOffset = dimensionChunksOffset.get(blockletColumnIndex);
@@ -116,7 +117,7 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
    * @param endBlockletColumnIndex   blocklet index of the last dimension column
    * @ DimensionRawColumnChunk array
    */
-  protected DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileHolder fileReader,
+  protected DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileReader fileReader,
       int startBlockletColumnIndex, int endBlockletColumnIndex) throws IOException {
     // create raw chunk for each dimension column
     DimensionRawColumnChunk[] dimensionDataChunks =
@@ -136,7 +137,7 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
    * @param pageNumber              number
    * @return DimensionColumnDataChunk
    */
-  @Override public DimensionColumnDataChunk convertToDimensionChunk(
+  @Override public DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber)
       throws IOException, MemoryException {
     // data chunk of page

@@ -26,7 +26,7 @@ import org.apache.carbondata.common.CarbonIterator;
 /**
  * Below class holds the query result
  */
-public class BatchResult extends CarbonIterator<Object[]> {
+public class RowBatch extends CarbonIterator<Object[]> {
 
   /**
    * list of keys
@@ -38,7 +38,7 @@ public class BatchResult extends CarbonIterator<Object[]> {
    */
   protected int counter;
 
-  public BatchResult() {
+  public RowBatch() {
     this.rows = new ArrayList<>();
   }
 

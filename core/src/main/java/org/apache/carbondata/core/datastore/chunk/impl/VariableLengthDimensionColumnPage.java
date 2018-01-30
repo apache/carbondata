@@ -26,7 +26,7 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 /**
  * This class is gives access to variable length dimension data chunk store
  */
-public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk {
+public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPage {
 
   /**
    * Constructor for this class
@@ -35,7 +35,7 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
    * @param invertedIndexReverse
    * @param numberOfRows
    */
-  public VariableLengthDimensionDataChunk(byte[] dataChunks, int[] invertedIndex,
+  public VariableLengthDimensionColumnPage(byte[] dataChunks, int[] invertedIndex,
       int[] invertedIndexReverse, int numberOfRows) {
     long totalSize = null != invertedIndex ?
         (dataChunks.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
@@ -50,13 +50,13 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
   /**
    * Below method will be used to fill the data based on offset and row id
    *
-   * @param data              data to filed
+   * @param rowId             row id of the chunk
    * @param offset            offset from which data need to be filed
-   * @param index             row id of the chunk
+   * @param data              data to filed
    * @param restructuringInfo define the structure of the key
    * @return how many bytes was copied
    */
-  @Override public int fillChunkData(byte[] data, int offset, int index,
+  @Override public int fillRawData(int rowId, int offset, byte[] data,
       KeyStructureInfo restructuringInfo) {
     // no required in this case because this column chunk is not the part if
     // mdkey
@@ -67,14 +67,14 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
    * Converts to column dictionary integer value
    *
    * @param rowId
-   * @param columnIndex
-   * @param row
+   * @param chunkIndex
+   * @param outputSurrogateKey
    * @param restructuringInfo
    * @return
    */
-  @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+  @Override public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey,
       KeyStructureInfo restructuringInfo) {
-    return columnIndex + 1;
+    return chunkIndex + 1;
   }
 
   /**
@@ -85,23 +85,16 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
   }
 
   /**
-   * @return length of each column
-   */
-  @Override public int getColumnValueSize() {
-    return -1;
-  }
-
-  /**
    * Fill the data to vector
    *
    * @param vectorInfo
-   * @param column
+   * @param chunkIndex
    * @param restructuringInfo
    * @return next column index
    */
-  @Override public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+  @Override public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex,
       KeyStructureInfo restructuringInfo) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     CarbonColumnVector vector = columnVectorInfo.vector;
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
@@ -111,21 +104,21 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
       // string in no dictionary case at present.
       dataChunkStore.fillRow(i, vector, vectorOffset++);
     }
-    return column + 1;
+    return chunkIndex + 1;
   }
 
   /**
    * Fill the data to vector
    *
-   * @param rowMapping
+   * @param filteredRowId
    * @param vectorInfo
-   * @param column
+   * @param chunkIndex
    * @param restructuringInfo
    * @return next column index
    */
-  @Override public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo,
-      int column, KeyStructureInfo restructuringInfo) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+  @Override public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo,
+      int chunkIndex, KeyStructureInfo restructuringInfo) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     CarbonColumnVector vector = columnVectorInfo.vector;
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
@@ -133,8 +126,8 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
     for (int i = offset; i < len; i++) {
       // Considering only String case now as we support only
       // string in no dictionary case at present.
-      dataChunkStore.fillRow(rowMapping[i], vector, vectorOffset++);
+      dataChunkStore.fillRow(filteredRowId[i], vector, vectorOffset++);
     }
-    return column + 1;
+    return chunkIndex + 1;
   }
 }

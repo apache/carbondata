@@ -49,7 +49,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -172,10 +172,8 @@ public final class FilterUtil {
                   segmentProperties);
         case RANGE:
           return new RangeValueFilterExecuterImpl(
-              ((ConditionalFilterResolverImpl) filterExpressionResolverTree)
-                  .getDimColResolvedFilterInfo(),
-              null, filterExpressionResolverTree.getFilterExpression(),
-              ((ConditionalFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
+              filterExpressionResolverTree.getFilterExpression(),
               ((ConditionalFilterResolverImpl) filterExpressionResolverTree)
                   .getFilterRangeValues(segmentProperties), segmentProperties);
         case TRUE:
@@ -551,10 +549,9 @@ public final class FilterUtil {
       sortFilterModelMembers(columnExpression, evaluateResultList);
       getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
       filterInfo =
-          getFilterValues(columnExpression, forwardDictionary, isIncludeFilter, null, surrogates);
+          getFilterValues(forwardDictionary, isIncludeFilter, surrogates);
       if (filterInfo.isOptimized()) {
-        return getDimColumnFilterInfoAfterApplyingCBO(columnExpression,
-            forwardDictionary, filterInfo);
+        return getDimColumnFilterInfoAfterApplyingCBO(forwardDictionary, filterInfo);
       }
     } finally {
       CarbonUtil.clearDictionaryCache(forwardDictionary);
@@ -566,22 +563,20 @@ public final class FilterUtil {
    * Method will prepare the  dimfilterinfo instance by resolving the filter
    * expression value to its respective surrogates.
    *
-   * @param columnExpression
    * @param forwardDictionary
    * @param isIncludeFilter
    * @param filterInfo
    * @param surrogates
    * @return
    */
-  private static ColumnFilterInfo getFilterValues(ColumnExpression columnExpression,
-      Dictionary forwardDictionary, boolean isIncludeFilter, ColumnFilterInfo filterInfo,
-      List<Integer> surrogates) throws QueryExecutionException {
+  private static ColumnFilterInfo getFilterValues(Dictionary forwardDictionary,
+      boolean isIncludeFilter, List<Integer> surrogates) {
     // Default value has to be added
     if (surrogates.isEmpty()) {
       surrogates.add(0);
     }
     boolean isExcludeFilterNeedsToApply = false;
-    if (null == filterInfo && isIncludeFilter) {
+    if (isIncludeFilter) {
       isExcludeFilterNeedsToApply =
           isExcludeFilterNeedsToApply(forwardDictionary, surrogates.size());
     }
@@ -593,17 +588,10 @@ public final class FilterUtil {
         columnFilterInfo.setOptimized(true);
       }
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
-      if (null != filterInfo) {
-        filterInfo.setIncludeFilter(isIncludeFilter);
-        filterInfo.setOptimized(true);
-        filterInfo.setExcludeFilterList(surrogates);
-        return filterInfo;
+      if (!isIncludeFilter) {
+        columnFilterInfo.setExcludeFilterList(surrogates);
       } else {
-        if (!isIncludeFilter) {
-          columnFilterInfo.setExcludeFilterList(surrogates);
-        } else {
-          columnFilterInfo.setFilterList(surrogates);
-        }
+        columnFilterInfo.setFilterList(surrogates);
       }
     }
     return columnFilterInfo;
@@ -619,8 +607,7 @@ public final class FilterUtil {
   }
 
   private static ColumnFilterInfo getDimColumnFilterInfoAfterApplyingCBO(
-      ColumnExpression columnExpression, Dictionary forwardDictionary,
-      ColumnFilterInfo filterInfo) throws FilterUnsupportedException, QueryExecutionException {
+      Dictionary forwardDictionary, ColumnFilterInfo filterInfo) throws FilterUnsupportedException {
     List<Integer> excludeMemberSurrogates =
         prepareExcludeFilterMembers(forwardDictionary, filterInfo.getFilterList());
     filterInfo.setExcludeFilterList(excludeMemberSurrogates);
@@ -730,14 +717,12 @@ public final class FilterUtil {
       prepareIncludeFilterMembers(expression, columnExpression, isIncludeFilter, forwardDictionary,
           surrogates);
       ColumnFilterInfo filterInfo =
-          getFilterValues(columnExpression, forwardDictionary, isIncludeFilter, null, surrogates);
+          getFilterValues(forwardDictionary, isIncludeFilter, surrogates);
       if (filterInfo.isOptimized()) {
-        return getDimColumnFilterInfoAfterApplyingCBO(columnExpression, forwardDictionary,
+        return getDimColumnFilterInfoAfterApplyingCBO(forwardDictionary,
             filterInfo);
       }
       return filterInfo;
-    } catch (QueryExecutionException e) {
-      throw new FilterUnsupportedException(e.getMessage());
     } finally {
       CarbonUtil.clearDictionaryCache(forwardDictionary);
     }
@@ -761,21 +746,16 @@ public final class FilterUtil {
    * expression value to its respective surrogates in the scenario of restructure.
    *
    * @param expression
-   * @param columnExpression
    * @param defaultValues
    * @param defaultSurrogate
    * @return
    * @throws FilterUnsupportedException
    */
-  public static ColumnFilterInfo getFilterListForRS(Expression expression,
-      ColumnExpression columnExpression, String defaultValues, int defaultSurrogate)
-      throws FilterUnsupportedException {
+  public static ColumnFilterInfo getFilterListForRS(Expression expression, String defaultValues,
+      int defaultSurrogate) throws FilterUnsupportedException {
     List<Integer> filterValuesList = new ArrayList<Integer>(20);
     ColumnFilterInfo columnFilterInfo = null;
-    // List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
-    // KeyGenerator keyGenerator =
-    // KeyGeneratorFactory.getKeyGenerator(new int[] { defaultSurrogate });
     try {
       List<ExpressionResult> evaluateResultList = expression.evaluate(null).getList();
       for (ExpressionResult result : evaluateResultList) {
@@ -821,8 +801,6 @@ public final class FilterUtil {
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     ColumnFilterInfo columnFilterInfo = null;
 
-    // KeyGenerator keyGenerator =
-    // KeyGeneratorFactory.getKeyGenerator(new int[] { defaultSurrogate });
     try {
       RowIntf row = new RowImpl();
       if (defaultValues.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
@@ -1775,14 +1753,14 @@ public final class FilterUtil {
    * This method will compare the selected data against null values and
    * flip the bitSet if any null value is found
    *
-   * @param dimensionColumnDataChunk
+   * @param dimensionColumnPage
    * @param bitSet
    */
-  public static void removeNullValues(DimensionColumnDataChunk dimensionColumnDataChunk,
+  public static void removeNullValues(DimensionColumnPage dimensionColumnPage,
       BitSet bitSet, byte[] defaultValue) {
     if (!bitSet.isEmpty()) {
       for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-        if (dimensionColumnDataChunk.compareTo(i, defaultValue) == 0) {
+        if (dimensionColumnPage.compareTo(i, defaultValue) == 0) {
           bitSet.flip(i);
         }
       }

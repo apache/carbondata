@@ -34,8 +34,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.DimensionInfo;
 import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
-import org.apache.carbondata.core.scan.model.QueryDimension;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
+import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -61,11 +61,11 @@ public class RestructureUtil {
    * @param tableComplexDimension
    * @return list of query dimension which is present in the table block
    */
-  public static List<QueryDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
-      BlockExecutionInfo blockExecutionInfo, List<QueryDimension> queryDimensions,
+  public static List<ProjectionDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
+      BlockExecutionInfo blockExecutionInfo, List<ProjectionDimension> queryDimensions,
       List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension) {
-    List<QueryDimension> presentDimension =
-        new ArrayList<QueryDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<ProjectionDimension> presentDimension =
+        new ArrayList<ProjectionDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     boolean[] isDimensionExists = new boolean[queryDimensions.size()];
     Object[] defaultValues = new Object[queryDimensions.size()];
     // create dimension information instance
@@ -74,22 +74,21 @@ public class RestructureUtil {
     int newNoDictionaryColumnCount = 0;
     // selecting only those dimension which is present in the query
     int dimIndex = 0;
-    for (QueryDimension queryDimension : queryDimensions) {
+    for (ProjectionDimension queryDimension : queryDimensions) {
       if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         presentDimension.add(queryDimension);
         isDimensionExists[dimIndex] = true;
       } else {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
           if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
-            QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
+            ProjectionDimension currentBlockDimension = new ProjectionDimension(tableDimension);
             tableDimension.getColumnSchema()
                 .setPrecision(queryDimension.getDimension().getColumnSchema().getPrecision());
             tableDimension.getColumnSchema()
                 .setScale(queryDimension.getDimension().getColumnSchema().getScale());
             tableDimension.getColumnSchema()
                 .setDefaultValue(queryDimension.getDimension().getDefaultValue());
-            currentBlockDimension.setDimension(tableDimension);
-            currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
+            currentBlockDimension.setOrdinal(queryDimension.getOrdinal());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
             break;
@@ -102,11 +101,10 @@ public class RestructureUtil {
         }
         for (CarbonDimension tableDimension : tableComplexDimension) {
           if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
-            QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
+            ProjectionDimension currentBlockDimension = new ProjectionDimension(tableDimension);
             // TODO: for complex dimension set scale and precision by traversing
             // the child dimensions
-            currentBlockDimension.setDimension(tableDimension);
-            currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
+            currentBlockDimension.setOrdinal(queryDimension.getOrdinal());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
             break;
@@ -242,39 +240,6 @@ public class RestructureUtil {
   }
 
   /**
-   * Below method is to add dimension children for complex type dimension as
-   * internally we are creating dimension column for each each complex
-   * dimension so when complex query dimension request will come in the query,
-   * we need to add its children as it is hidden from the user For example if
-   * complex dimension is of Array of String[2] so we are storing 3 dimension
-   * and when user will query for complex type i.e. array type we need to add
-   * its children and then we will read respective block and create a tuple
-   * based on all three dimension
-   *
-   * @param queryDimensions      current query dimensions
-   * @param tableBlockDimensions dimensions which is present in the table block
-   * @return updated dimension(after adding complex type children)
-   */
-  public static List<CarbonDimension> addChildrenForComplexTypeDimension(
-      List<CarbonDimension> queryDimensions, List<CarbonDimension> tableBlockDimensions) {
-    List<CarbonDimension> updatedQueryDimension = new ArrayList<CarbonDimension>();
-    int numberOfChildren = 0;
-    for (CarbonDimension queryDimension : queryDimensions) {
-      // if number of child is zero, then it is not a complex dimension
-      // so directly add it query dimension
-      if (queryDimension.getNumberOfChild() == 0) {
-        updatedQueryDimension.add(queryDimension);
-      }
-      // if number of child is more than 1 then add all its children
-      numberOfChildren = queryDimension.getOrdinal() + queryDimension.getNumberOfChild();
-      for (int j = queryDimension.getOrdinal(); j < numberOfChildren; j++) {
-        updatedQueryDimension.add(tableBlockDimensions.get(j));
-      }
-    }
-    return updatedQueryDimension;
-  }
-
-  /**
    * Method for computing measure default value based on the data type
    *
    * @param columnSchema
@@ -361,30 +326,29 @@ public class RestructureUtil {
    * @param currentBlockMeasures current block measures
    * @return measures present in the block
    */
-  public static List<QueryMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
-      BlockExecutionInfo blockExecutionInfo, List<QueryMeasure> queryMeasures,
+  public static List<ProjectionMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
+      BlockExecutionInfo blockExecutionInfo, List<ProjectionMeasure> queryMeasures,
       List<CarbonMeasure> currentBlockMeasures) {
     MeasureInfo measureInfo = new MeasureInfo();
-    List<QueryMeasure> presentMeasure = new ArrayList<>(queryMeasures.size());
+    List<ProjectionMeasure> presentMeasure = new ArrayList<>(queryMeasures.size());
     int numberOfMeasureInQuery = queryMeasures.size();
     List<Integer> measureOrdinalList = new ArrayList<>(numberOfMeasureInQuery);
     Object[] defaultValues = new Object[numberOfMeasureInQuery];
     boolean[] measureExistsInCurrentBlock = new boolean[numberOfMeasureInQuery];
     int index = 0;
-    for (QueryMeasure queryMeasure : queryMeasures) {
+    for (ProjectionMeasure queryMeasure : queryMeasures) {
       // if query measure exists in current dimension measures
       // then setting measure exists is true
       // otherwise adding a default value of a measure
       for (CarbonMeasure carbonMeasure : currentBlockMeasures) {
         if (carbonMeasure.getColumnId().equals(queryMeasure.getMeasure().getColumnId())) {
-          QueryMeasure currentBlockMeasure = new QueryMeasure(carbonMeasure.getColName());
+          ProjectionMeasure currentBlockMeasure = new ProjectionMeasure(carbonMeasure);
           carbonMeasure.getColumnSchema().setDataType(queryMeasure.getMeasure().getDataType());
           carbonMeasure.getColumnSchema().setPrecision(queryMeasure.getMeasure().getPrecision());
           carbonMeasure.getColumnSchema().setScale(queryMeasure.getMeasure().getScale());
           carbonMeasure.getColumnSchema()
               .setDefaultValue(queryMeasure.getMeasure().getDefaultValue());
-          currentBlockMeasure.setMeasure(carbonMeasure);
-          currentBlockMeasure.setQueryOrder(queryMeasure.getQueryOrder());
+          currentBlockMeasure.setOrdinal(queryMeasure.getOrdinal());
           presentMeasure.add(currentBlockMeasure);
           measureOrdinalList.add(carbonMeasure.getOrdinal());
           measureExistsInCurrentBlock[index] = true;

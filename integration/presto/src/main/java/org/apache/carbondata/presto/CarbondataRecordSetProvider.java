@@ -105,7 +105,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
           new TaskAttemptContextImpl(jobConf, new TaskAttemptID("", 1, TaskType.MAP, 0, 0));
       CarbonInputSplit carbonInputSplit =
           CarbonLocalInputSplit.convertSplit(carbondataSplit.getLocalInputSplit());
-      queryModel = carbonTableInputFormat.getQueryModel(carbonInputSplit, hadoopAttemptContext);
+      queryModel = carbonTableInputFormat.createQueryModel(carbonInputSplit, hadoopAttemptContext);
       queryModel.setVectorReader(true);
     } catch (IOException e) {
       throw new RuntimeException("Unable to get the Query Model ", e);

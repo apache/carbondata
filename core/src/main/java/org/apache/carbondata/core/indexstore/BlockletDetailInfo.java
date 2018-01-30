@@ -213,10 +213,6 @@ public class BlockletDetailInfo implements Serializable, Writable {
     return columnSchemas;
   }
 
-  public void setColumnSchemas(List<ColumnSchema> columnSchemas) {
-    this.columnSchemas = columnSchemas;
-  }
-
   public void setColumnSchemaBinary(byte[] columnSchemaBinary) {
     this.columnSchemaBinary = columnSchemaBinary;
   }
