@@ -74,6 +74,7 @@ case class CarbonDatasourceHadoopRelation(
 
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
+    CarbonSession.threadUnset(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP)
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     new CarbonScanRDD(
       sparkSession,
