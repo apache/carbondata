@@ -18,32 +18,33 @@ package org.apache.spark.sql.execution.command.timeseries
 
 import org.apache.spark.sql.execution.command.{DataMapField, Field}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
+import org.apache.carbondata.core.metadata.schema.datamap.Granularity
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.preagg.TimeSeriesUDF
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 
 /**
  * Utility class for time series to keep
  */
 object TimeSeriesUtil {
 
+  val TIMESERIES_EVENTTIME = "event_time"
+
   /**
    * Below method will be used to validate whether column mentioned in time series
    * is timestamp column or not
    *
-   * @param dmproperties
-   * data map properties
-   * @param parentTable
-   * parent table
+   * @param dmproperties data map properties
+   * @param parentTable  parent table
    * @return whether time stamp column
    */
   def validateTimeSeriesEventTime(dmproperties: Map[String, String],
       parentTable: CarbonTable) {
-    val eventTime = dmproperties.get(CarbonCommonConstants.TIMESERIES_EVENTTIME)
+    val eventTime = dmproperties.get(TIMESERIES_EVENTTIME)
     if (!eventTime.isDefined) {
-      throw new MalformedCarbonCommandException("Eventtime not defined in time series")
+      throw new MalformedCarbonCommandException("event_time not defined in time series")
     } else {
       val carbonColumn = parentTable.getColumnByName(parentTable.getTableName, eventTime.get)
       if (carbonColumn.getDataType != DataTypes.TIMESTAMP) {
@@ -55,13 +56,79 @@ object TimeSeriesUtil {
   }
 
   /**
+   * validate TimeSeries Granularity
+   *
+   * @param dmProperties datamap properties
+   * @param dmClassName  datamap class name
+   * @return whether find  only one granularity
+   */
+  def validateTimeSeriesGranularity(
+      dmProperties: Map[String, String],
+      dmClassName: String): Boolean = {
+    var isFound = false
+
+    // 1. granularity only support one
+    for (granularity <- Granularity.values()) {
+      if (dmProperties.get(granularity.getName).isDefined) {
+        if (isFound) {
+          throw new MalformedDataMapCommandException(
+            s"Only one granularity level can be defined")
+        } else {
+          isFound = true
+        }
+      }
+    }
+
+    // 2. check whether timeseries and granularity match
+    if (isFound && !dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+      throw new MalformedDataMapCommandException(
+        s"${TIMESERIES.toString} keyword missing")
+    } else if (!isFound && dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+      throw new MalformedDataMapCommandException(
+        s"${TIMESERIES.toString} should define time granularity")
+    } else if (isFound) {
+      true
+    } else {
+      false
+    }
+  }
+
+  /**
+   * get TimeSeries Granularity key and value
+   * check the value
+   *
+   * TODO:we will support value not only equal to 1 in the future
+   *
+   * @param dmProperties datamap properties
+   * @param dmClassName  datamap class name
+   * @return key and value tuple
+   */
+  def getTimeSeriesGranularityDetails(
+      dmProperties: Map[String, String],
+      dmClassName: String): (String, String) = {
+
+    val defaultValue = "1"
+    for (granularity <- Granularity.values()) {
+      if (dmProperties.get(granularity.getName).isDefined &&
+        dmProperties.get(granularity.getName).get.equalsIgnoreCase(defaultValue)) {
+        return (granularity.toString.toLowerCase, dmProperties.get(granularity.getName).get)
+      }
+    }
+
+    throw new MalformedDataMapCommandException(
+      s"Granularity only support $defaultValue")
+  }
+
+  /**
    * Below method will be used to validate the hierarchy of time series and its value
    * validation will be done whether hierarchy order is proper or not and hierarchy level
    * value
+   * TODO: we should remove this method
    *
    * @param timeSeriesHierarchyDetails
    * time series hierarchy string
    */
+  @deprecated
   def validateAndGetTimeSeriesHierarchyDetails(timeSeriesHierarchyDetails: String): Array[
     (String, String)] = {
     val updatedtimeSeriesHierarchyDetails = timeSeriesHierarchyDetails.toLowerCase

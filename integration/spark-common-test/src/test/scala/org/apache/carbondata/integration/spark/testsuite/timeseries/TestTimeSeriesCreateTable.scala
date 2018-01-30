@@ -17,14 +17,68 @@
 package org.apache.carbondata.integration.spark.testsuite.timeseries
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
+import org.apache.carbondata.spark.exception.{MalformedDataMapCommandException, MalformedCarbonCommandException}
 
 class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
 
+  val timeSeries = TIMESERIES.toString
+
   override def beforeAll: Unit = {
-    sql("drop table if exists mainTable")
+    sql("DROP TABLE IF EXISTS mainTable")
     sql("CREATE TABLE mainTable(dataTime timestamp, name string, city string, age int) STORED BY 'org.apache.carbondata.format'")
-    sql("create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='dataTime', 'timeseries.hierarchy'='second=1,hour=1,day=1,month=1,year=1') as select dataTime, sum(age) from mainTable group by dataTime")
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_second ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='dataTime',
+         | 'SECOND_GRANULARITY'='1')
+         | AS SELECT dataTime, SUM(age) FROM mainTable
+         | GROUP BY dataTime
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_hour ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='dataTime',
+         | 'HOUR_GRANULARITY'='1')
+         | AS SELECT dataTime, SUM(age) FROM mainTable
+         | GROUP BY dataTime
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_day ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='dataTime',
+         | 'day_granularity'='1')
+         | AS SELECT dataTime, SUM(age) FROM mainTable
+         | GROUP BY dataTime
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_month ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='dataTime',
+         | 'month_granularity'='1')
+         | AS SELECT dataTime, SUM(age) FROM mainTable
+         | GROUP BY dataTime
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_year ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='dataTime',
+         | 'year_granularity'='1')
+         | AS SELECT dataTime, SUM(age) FROM mainTable
+         | GROUP BY dataTime
+       """.stripMargin)
   }
 
   test("test timeseries create table Zero") {
@@ -53,28 +107,29 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql(
         s"""
-           | create datamap agg0 on table mainTable
-           | using 'preaggregate'
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
            | DMPROPERTIES (
-           |  'timeseries.eventTime'='dataTime',
-           |  'timeseries.hierarchy'='sec=1,hour=1,day=1,month=1,year=1')
-           | as select dataTime, sum(age) from mainTable
-           | group by dataTime
-         """.stripMargin)
+           | 'EVENT_TIME'='dataTime',
+           | 'SEC_GRANULARITY'='1')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+        """.stripMargin)
     }
   }
 
   test("test timeseries create table Six") {
     intercept[Exception] {
       sql(
-        """
-          | create datamap agg0 on table mainTable
-          | using 'preaggregate'
-          | DMPROPERTIES ('timeseries.eventTime'='dataTime', 'timeseries.hierarchy'='hour=2')
-          | as select dataTime, sum(age) from mainTable
-          | group by dataTime
-        """.stripMargin)
-
+        s"""
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime',
+           | 'SECOND_GRANULARITY'='2')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
     }
   }
 
@@ -82,24 +137,24 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql(
         s"""
-           | create datamap agg0 on table mainTable
-           | using 'preaggregate'
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
            | DMPROPERTIES (
-           |    'timeseries.eventTime'='dataTime',
-           |    'timeseries.hierarchy'='hour=1,day=1,year=1,month=1')
-           | as select dataTime, sum(age) from mainTable
-           | group by dataTime
-         """.stripMargin)
+           | 'EVENT_TIME'='dataTime',
+           | 'SECOND_GRANULARITY'='1')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
       sql(
         s"""
-           | create datamap agg0 on table mainTable
-           | using 'preaggregate'
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
            | DMPROPERTIES (
-           |    'timeseries.eventTime'='dataTime',
-           |    'timeseries.hierarchy'='hour=1,day=1,year=1,month=1')
-           | as select dataTime, sum(age) from mainTable
-           | group by dataTime
-         """.stripMargin)
+           | 'EVENT_TIME'='dataTime',
+           | 'SECOND_GRANULARITY'='1')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
     }
   }
 
@@ -107,12 +162,14 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql(
         s"""
-           | create datamap agg0 on table mainTable
-           | using 'preaggregate'
-           | DMPROPERTIES ('timeseries.eventTime'='name', 'timeseries.hierarchy'='hour=1,day=1,year=1,month=1')
-           | as select name, sum(age) from mainTable
-           | group by name
-         """.stripMargin)
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='name',
+           | 'SECOND_GRANULARITY'='1')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
     }
   }
 
@@ -120,18 +177,149 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql(
         s"""
-           | create datamap agg0 on table mainTable
-           | using 'preaggregate'
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
            | DMPROPERTIES (
-           |    'timeseries.eventTime'='dataTime',
-           |    'timeseries.hierarchy'='hour=1,day=1,year=1,month=1')
-           | as select name, sum(age) from mainTable
-           | group by name
-         """.stripMargin)
+           | 'EVENT_TIME'='name',
+           | 'SECOND_GRANULARITY'='1')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
     }
   }
 
+  test("test timeseries create table: USING") {
+    val e: Exception = intercept[MalformedDataMapCommandException] {
+      sql(
+        """CREATE DATAMAP agg1 ON TABLE mainTable
+          | USING 'abc'
+          | DMPROPERTIES (
+          |   'EVENT_TIME'='dataTime',
+          |   'SECOND_GRANULARITY'='1')
+          | AS SELECT dataTime, SUM(age) FROM mainTable
+          | GROUP BY dataTime
+        """.stripMargin)
+    }
+    assert(e.getMessage.equals("Unknown data map type abc"))
+  }
+
+  test("test timeseries create table: USING and catch MalformedCarbonCommandException") {
+    val e: Exception = intercept[MalformedCarbonCommandException] {
+      sql(
+        """CREATE DATAMAP agg1 ON TABLE mainTable
+          | USING 'abc'
+          | DMPROPERTIES (
+          |   'EVENT_TIME'='dataTime',
+          |   'SECOND_GRANULARITY'='1')
+          | AS SELECT dataTime, SUM(age) FROM mainTable
+          | GROUP BY dataTime
+        """.stripMargin)
+    }
+    assert(e.getMessage.equals("Unknown data map type abc"))
+  }
+
+  test("test timeseries create table: Only one granularity level can be defined 1") {
+    val e: Exception = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime',
+           | 'SECOND_GRANULARITY'='1',
+           | 'HOUR_GRANULARITY'='1',
+           | 'DAY_GRANULARITY'='1',
+           | 'MONTH_GRANULARITY'='1',
+           | 'YEAR_GRANULARITY'='1')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.equals("Only one granularity level can be defined"))
+  }
+
+  test("test timeseries create table: Only one granularity level can be defined 2") {
+    val e: Exception = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime',
+           | 'SECOND_GRANULARITY'='1',
+           | 'HOUR_GRANULARITY'='1')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.equals("Only one granularity level can be defined"))
+  }
+
+  test("test timeseries create table: Only one granularity level can be defined 3") {
+    val e: Exception = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime',
+           | 'DAY_GRANULARITY'='1',
+           | 'HOUR_GRANULARITY'='1')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.equals("Only one granularity level can be defined"))
+  }
+
+  test("test timeseries create table: Granularity only support 1") {
+    val e = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime',
+           | 'DAY_GRANULARITY'='2')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.equals("Granularity only support 1"))
+  }
+
+  test("test timeseries create table: Granularity only support 1 and throw Exception") {
+    val e = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime',
+           | 'HOUR_GRANULARITY'='2')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.equals("Granularity only support 1"))
+  }
+
+  test("test timeseries create table: timeSeries should define time granularity") {
+    val e = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.equals(s"$timeSeries should define time granularity"))
+  }
+
   override def afterAll: Unit = {
-    sql("drop table if exists mainTable")
+    sql("DROP TABLE IF EXISTS mainTable")
   }
 }

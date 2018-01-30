@@ -104,9 +104,9 @@ case class CreatePreAggregateTableCommand(
       TimeSeriesUtil.validateTimeSeriesEventTime(dmProperties, parentTable)
       TimeSeriesUtil.validateEventTimeColumnExitsInSelect(
         fieldRelationMap,
-        dmProperties.get(CarbonCommonConstants.TIMESERIES_EVENTTIME).get)
+        dmProperties.get(TimeSeriesUtil.TIMESERIES_EVENTTIME).get)
       TimeSeriesUtil.updateTimeColumnSelect(fieldRelationMap,
-        dmProperties.get(CarbonCommonConstants.TIMESERIES_EVENTTIME).get,
+        dmProperties.get(TimeSeriesUtil.TIMESERIES_EVENTTIME).get,
       timeSeriesFunction.get)
     }
     tableModel.parentTable = Some(parentTable)
