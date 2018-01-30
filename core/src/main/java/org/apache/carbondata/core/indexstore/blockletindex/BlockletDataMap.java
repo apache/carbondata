@@ -26,7 +26,6 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
@@ -48,7 +47,6 @@ import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -64,6 +62,7 @@ import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -298,18 +297,23 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
     BlockletMinMaxIndex minMaxIndex = blockletIndex.getMinMaxIndex();
     byte[][] minValues = updateMinValues(minMaxIndex.getMinValues(), minMaxLen);
-    row.setRow(addMinMax(minMaxLen, schema[ordinal], minValues), ordinal);
+    byte[][] maxValues = updateMaxValues(minMaxIndex.getMaxValues(), minMaxLen);
+    // update min max values in case of old store
+    byte[][] updatedMinValues =
+        CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, true);
+    byte[][] updatedMaxValues =
+        CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
+    row.setRow(addMinMax(minMaxLen, schema[ordinal], updatedMinValues), ordinal);
     // compute and set task level min values
     addTaskMinMaxValues(summaryRow, minMaxLen,
-        unsafeMemorySummaryDMStore.getSchema()[taskMinMaxOrdinal], minValues,
+        unsafeMemorySummaryDMStore.getSchema()[taskMinMaxOrdinal], updatedMinValues,
         TASK_MIN_VALUES_INDEX, true);
     ordinal++;
     taskMinMaxOrdinal++;
-    byte[][] maxValues = updateMaxValues(minMaxIndex.getMaxValues(), minMaxLen);
-    row.setRow(addMinMax(minMaxLen, schema[ordinal], maxValues), ordinal);
+    row.setRow(addMinMax(minMaxLen, schema[ordinal], updatedMaxValues), ordinal);
     // compute and set task level max values
     addTaskMinMaxValues(summaryRow, minMaxLen,
-        unsafeMemorySummaryDMStore.getSchema()[taskMinMaxOrdinal], maxValues,
+        unsafeMemorySummaryDMStore.getSchema()[taskMinMaxOrdinal], updatedMaxValues,
         TASK_MAX_VALUES_INDEX, false);
     ordinal++;
 
@@ -624,42 +628,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
     if (unsafeMemoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }
-    // getting the start and end index key based on filter for hitting the
-    // selected block reference nodes based on filter resolver tree.
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("preparing the start and end key for finding"
-          + "start and end block as per filter resolver");
-    }
     List<Blocklet> blocklets = new ArrayList<>();
-    Comparator<DataMapRow> comparator =
-        new BlockletDMComparator(segmentProperties.getColumnsValueSize(),
-            segmentProperties.getNumberOfSortColumns(),
-            segmentProperties.getNumberOfNoDictSortColumns());
-    List<IndexKey> listOfStartEndKeys = new ArrayList<IndexKey>(2);
-    FilterUtil
-        .traverseResolverTreeAndGetStartAndEndKey(segmentProperties, filterExp, listOfStartEndKeys);
-    // reading the first value from list which has start key
-    IndexKey searchStartKey = listOfStartEndKeys.get(0);
-    // reading the last value from list which has end key
-    IndexKey searchEndKey = listOfStartEndKeys.get(1);
-    if (null == searchStartKey && null == searchEndKey) {
-      try {
-        // TODO need to handle for no dictionary dimensions
-        searchStartKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
-        // TODO need to handle for no dictionary dimensions
-        searchEndKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
-      } catch (KeyGenException e) {
-        return null;
-      }
-    }
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(
-          "Successfully retrieved the start and end key" + "Dictionary Start Key: " + Arrays
-              .toString(searchStartKey.getDictionaryKeys()) + "No Dictionary Start Key " + Arrays
-              .toString(searchStartKey.getNoDictionaryKeys()) + "Dictionary End Key: " + Arrays
-              .toString(searchEndKey.getDictionaryKeys()) + "No Dictionary End Key " + Arrays
-              .toString(searchEndKey.getNoDictionaryKeys()));
-    }
     if (filterExp == null) {
       int rowCount = unsafeMemoryDMStore.getRowCount();
       for (int i = 0; i < rowCount; i++) {
@@ -667,11 +636,13 @@ public class BlockletDataMap implements DataMap, Cacheable {
         blocklets.add(createBlocklet(safeRow, safeRow.getShort(BLOCKLET_ID_INDEX)));
       }
     } else {
-      int startIndex = findStartIndex(convertToRow(searchStartKey), comparator);
-      int endIndex = findEndIndex(convertToRow(searchEndKey), comparator);
+      // Remove B-tree jump logic as start and end key prepared is not
+      // correct for old store scenarios
+      int startIndex = 0;
+      int endIndex = unsafeMemoryDMStore.getRowCount();
       FilterExecuter filterExecuter =
           FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
-      while (startIndex <= endIndex) {
+      while (startIndex < endIndex) {
         DataMapRow safeRow = unsafeMemoryDMStore.getUnsafeRow(startIndex).convertToSafeRow();
         int blockletId = safeRow.getShort(BLOCKLET_ID_INDEX);
         String filePath = new String(safeRow.getByteArray(FILE_PATH_INDEX),

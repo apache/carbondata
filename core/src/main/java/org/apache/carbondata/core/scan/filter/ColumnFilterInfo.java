@@ -35,7 +35,7 @@ public class ColumnFilterInfo implements Serializable {
   /**
    * Implicit column filter values to be used for block and blocklet pruning
    */
-  private List<String> implicitColumnFilterList;
+  private Set<String> implicitColumnFilterList;
   private transient Set<String> implicitDriverColumnFilterList;
   private List<Integer> excludeFilterList;
   /**
@@ -85,12 +85,15 @@ public class ColumnFilterInfo implements Serializable {
   public void setExcludeFilterList(List<Integer> excludeFilterList) {
     this.excludeFilterList = excludeFilterList;
   }
-  public List<String> getImplicitColumnFilterList() {
+  public Set<String> getImplicitColumnFilterList() {
     return implicitColumnFilterList;
   }
 
   public void setImplicitColumnFilterList(List<String> implicitColumnFilterList) {
-    this.implicitColumnFilterList = implicitColumnFilterList;
+    // this is done to improve the query performance. As the list of size increases time taken to
+    // search in list will increase as list contains method uses equals check internally but set
+    // will be very fast as it will directly use the has code to find the bucket and search
+    this.implicitColumnFilterList = new HashSet<>(implicitColumnFilterList);
   }
 
   public List<Object> getMeasuresFilterValuesList() {
