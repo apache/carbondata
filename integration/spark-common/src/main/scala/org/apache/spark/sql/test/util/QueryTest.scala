@@ -107,6 +107,7 @@ class QueryTest extends PlanTest {
   val metastoredb = TestQueryExecutor.metastoredb
   val integrationPath = TestQueryExecutor.integrationPath
   val dblocation = TestQueryExecutor.location
+  val defaultParallelism = sqlContext.sparkContext.defaultParallelism
 }
 
 object QueryTest {
