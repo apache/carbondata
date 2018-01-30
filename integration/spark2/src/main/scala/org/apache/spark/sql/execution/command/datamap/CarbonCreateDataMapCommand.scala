@@ -54,17 +54,17 @@ case class CarbonCreateDataMapCommand(
 
     if (dmClassName.equalsIgnoreCase(PREAGGREGATE.getName) ||
       dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
-      val timeSeries = TimeSeriesUtil.validateTimeSeriesGranularity(dmproperties, dmClassName)
+      TimeSeriesUtil.validateTimeSeriesGranularity(dmproperties, dmClassName)
       createPreAggregateTableCommands = if (dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
         val details = TimeSeriesUtil
           .getTimeSeriesGranularityDetails(dmproperties, dmClassName)
-        val updatedDmProperties = dmproperties - TimeSeriesUtil.getGranularityKey(dmproperties)
+        val updatedDmProperties = dmproperties - details._1
         CreatePreAggregateTableCommand(dataMapName,
           tableIdentifier,
           dmClassName,
           updatedDmProperties,
           queryString.get,
-          Some(details(0)._1))
+          Some(details._1))
       } else {
         CreatePreAggregateTableCommand(
           dataMapName,
@@ -83,7 +83,12 @@ case class CarbonCreateDataMapCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    createPreAggregateTableCommands.processData(sparkSession)
+    if (dmClassName.equalsIgnoreCase(PREAGGREGATE.getName) ||
+      dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
+      createPreAggregateTableCommands.processData(sparkSession)
+    } else {
+      throw new UnsupportedDataMapException(dmClassName)
+    }
   }
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {

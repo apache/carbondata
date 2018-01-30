@@ -34,10 +34,8 @@ object TimeSeriesUtil {
    * Below method will be used to validate whether column mentioned in time series
    * is timestamp column or not
    *
-   * @param dmproperties
-   * data map properties
-   * @param parentTable
-   * parent table
+   * @param dmproperties data map properties
+   * @param parentTable  parent table
    * @return whether time stamp column
    */
   def validateTimeSeriesEventTime(dmproperties: Map[String, String],
@@ -55,23 +53,19 @@ object TimeSeriesUtil {
     }
   }
 
-  def getGranularityKey(dmProperties: Map[String, String]): String = {
-
-    for (granularity <- Granularity.values()) {
-      if (dmProperties.get(granularity.getName).isDefined) {
-        return granularity.getName
-      }
-    }
-
-    throw new CarbonIllegalArgumentException(
-      s"${TIMESERIES.getName} should define time granularity")
-  }
-
+  /**
+   * validate TimeSeries Granularity
+   *
+   * @param dmProperties datamap properties
+   * @param dmClassName  datamap class name
+   * @return whether find  only one granularity
+   */
   def validateTimeSeriesGranularity(
       dmProperties: Map[String, String],
       dmClassName: String): Boolean = {
     var isFound = false
 
+    // 1. granularity only support one
     for (granularity <- Granularity.values()) {
       if (dmProperties.get(granularity.getName).isDefined) {
         if (isFound) {
@@ -83,6 +77,7 @@ object TimeSeriesUtil {
       }
     }
 
+    // 2. check whether timeseries and granularity match
     if (isFound && !dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
       throw new CarbonIllegalArgumentException(
         s"${TIMESERIES.getName} keyword missing")
@@ -96,15 +91,25 @@ object TimeSeriesUtil {
     }
   }
 
+  /**
+   * get TimeSeries Granularity key and value
+   * check the value
+   *
+   * TODO:we will support value not only equal to 1 in the future
+   *
+   * @param dmProperties datamap properties
+   * @param dmClassName  datamap class name
+   * @return key and value tuple
+   */
   def getTimeSeriesGranularityDetails(
       dmProperties: Map[String, String],
-      dmClassName: String): Array[(String, String)] = {
+      dmClassName: String): (String, String) = {
 
     val defaultValue = "1"
     for (granularity <- Granularity.values()) {
       if (dmProperties.get(granularity.getName).isDefined &&
         dmProperties.get(granularity.getName).get.equalsIgnoreCase(defaultValue)) {
-        return Array((granularity.getTime, defaultValue))
+        return (granularity.getTime, dmProperties.get(granularity.getName).get)
       }
     }
 
@@ -116,10 +121,12 @@ object TimeSeriesUtil {
    * Below method will be used to validate the hierarchy of time series and its value
    * validation will be done whether hierarchy order is proper or not and hierarchy level
    * value
+   * TODO: we should remove this method
    *
    * @param timeSeriesHierarchyDetails
    * time series hierarchy string
    */
+  @deprecated
   def validateAndGetTimeSeriesHierarchyDetails(timeSeriesHierarchyDetails: String): Array[
     (String, String)] = {
     val updatedtimeSeriesHierarchyDetails = timeSeriesHierarchyDetails.toLowerCase
