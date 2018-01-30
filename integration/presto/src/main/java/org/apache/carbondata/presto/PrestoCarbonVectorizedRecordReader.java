@@ -33,8 +33,8 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
-import org.apache.carbondata.core.scan.model.QueryDimension;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
+import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResultIterator;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
@@ -51,7 +51,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  * A specialized RecordReader that reads into InternalRows or ColumnarBatches directly using the
  * carbondata column APIs and fills the data directly into columns.
  */
-class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
+class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   private int batchIdx = 0;
 
@@ -72,7 +72,7 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   private QueryExecutor queryExecutor;
 
-  public CarbonVectorizedRecordReader(QueryExecutor queryExecutor, QueryModel queryModel, AbstractDetailQueryResultIterator iterator) {
+  public PrestoCarbonVectorizedRecordReader(QueryExecutor queryExecutor, QueryModel queryModel, AbstractDetailQueryResultIterator iterator) {
     this.queryModel = queryModel;
     this.iterator = iterator;
     this.queryExecutor = queryExecutor;
@@ -164,39 +164,39 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
    */
 
   private void initBatch() {
-    List<QueryDimension> queryDimension = queryModel.getQueryDimension();
-    List<QueryMeasure> queryMeasures = queryModel.getQueryMeasures();
+    List<ProjectionDimension> queryDimension = queryModel.getProjectionDimensions();
+    List<ProjectionMeasure> queryMeasures = queryModel.getProjectionMeasures();
     StructField[] fields = new StructField[queryDimension.size() + queryMeasures.size()];
     for (int i = 0; i < queryDimension.size(); i++) {
-      QueryDimension dim = queryDimension.get(i);
+      ProjectionDimension dim = queryDimension.get(i);
       if (dim.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());
-        fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
+        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
            generator.getReturnType());
       } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
+        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
             dim.getDimension().getDataType());
       } else if (dim.getDimension().isComplex()) {
-        fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
+        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
            dim.getDimension().getDataType());
       } else {
-        fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
+        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
             DataTypes.INT);
       }
     }
 
-    for (QueryMeasure msr : queryMeasures) {
+    for (ProjectionMeasure msr : queryMeasures) {
       DataType dataType = msr.getMeasure().getDataType();
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT || dataType == DataTypes.INT
           || dataType == DataTypes.LONG) {
-        fields[msr.getQueryOrder()] =
+        fields[msr.getOrdinal()] =
             new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
       } else if (DataTypes.isDecimal(dataType)) {
-        fields[msr.getQueryOrder()] =
+        fields[msr.getOrdinal()] =
             new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
       } else {
-        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(), DataTypes.DOUBLE);
+        fields[msr.getOrdinal()] = new StructField(msr.getColumnName(), DataTypes.DOUBLE);
       }
     }
 

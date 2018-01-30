@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.model;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,25 +45,17 @@ import org.apache.carbondata.core.util.DataTypeConverter;
  * about the query, This will be sent from driver to executor '
  * This will be refereed to executing the query.
  */
-public class QueryModel implements Serializable {
+public class QueryModel {
 
-  /**
-   * serialization version
-   */
-  private static final long serialVersionUID = -4674677234007089052L;
   /**
    * this will hold the information about the dictionary dimension
    * which to
    */
-  public transient Map<String, Dictionary> columnToDictionaryMapping;
+  private transient Map<String, Dictionary> columnToDictionaryMapping;
   /**
-   * list of dimension selected for in query
+   * list of projection columns in query
    */
-  private List<QueryDimension> queryDimension;
-  /**
-   * list of measure selected in query
-   */
-  private List<QueryMeasure> queryMeasures;
+  private QueryProjection projection;
   /**
    * query id
    */
@@ -78,10 +69,6 @@ public class QueryModel implements Serializable {
    * table block information in which query will be executed
    */
   private List<TableBlockInfo> tableBlockInfos;
-  /**
-   * absolute table identifier
-   */
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
   /**
    * To handle most of the computation in query engines like spark and hive, carbon should give
    * raw detailed records to it.
@@ -117,43 +104,15 @@ public class QueryModel implements Serializable {
    */
   private boolean readPageByPage;
 
-  public QueryModel() {
+  private QueryModel(CarbonTable carbonTable) {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
-    queryDimension = new ArrayList<QueryDimension>();
-    queryMeasures = new ArrayList<QueryMeasure>();
     invalidSegmentIds = new ArrayList<>();
+    this.table = carbonTable;
+    this.queryId = String.valueOf(System.nanoTime());
   }
 
-  public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
-      CarbonQueryPlan queryPlan, CarbonTable carbonTable, DataTypeConverter converter) {
-    QueryModel queryModel = new QueryModel();
-    queryModel.setAbsoluteTableIdentifier(absoluteTableIdentifier);
-
-    fillQueryModel(queryPlan, carbonTable, queryModel);
-
-    queryModel.setForcedDetailRawQuery(queryPlan.isRawDetailQuery());
-    queryModel.setQueryId(queryPlan.getQueryId());
-    queryModel.setConverter(converter);
-    return queryModel;
-  }
-
-  private static void fillQueryModel(CarbonQueryPlan queryPlan, CarbonTable carbonTable,
-      QueryModel queryModel) {
-    queryModel.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
-    queryModel.setQueryDimension(queryPlan.getDimensions());
-    queryModel.setQueryMeasures(queryPlan.getMeasures());
-    if (null != queryPlan.getFilterExpression()) {
-      boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
-      boolean[] isFilterMeasures =
-          new boolean[carbonTable.getNumberOfMeasures(carbonTable.getTableName())];
-      processFilterExpression(carbonTable, queryPlan.getFilterExpression(), isFilterDimensions,
-          isFilterMeasures);
-      queryModel.setIsFilterDimensions(isFilterDimensions);
-      queryModel.setIsFilterMeasures(isFilterMeasures);
-    }
-    //TODO need to remove this code, and executor will load the table
-    // from file metadata
-    queryModel.setTable(carbonTable);
+  public static QueryModel newInstance(CarbonTable carbonTable) {
+    return new QueryModel(carbonTable);
   }
 
   public static void processFilterExpression(CarbonTable carbonTable, Expression filterExpression,
@@ -239,42 +198,26 @@ public class QueryModel implements Serializable {
    */
   public CarbonColumn[] getProjectionColumns() {
     CarbonColumn[] carbonColumns =
-        new CarbonColumn[getQueryDimension().size() + getQueryMeasures().size()];
-    for (QueryDimension dimension : getQueryDimension()) {
-      carbonColumns[dimension.getQueryOrder()] = dimension.getDimension();
+        new CarbonColumn[getProjectionDimensions().size() + getProjectionMeasures().size()];
+    for (ProjectionDimension dimension : getProjectionDimensions()) {
+      carbonColumns[dimension.getOrdinal()] = dimension.getDimension();
     }
-    for (QueryMeasure msr : getQueryMeasures()) {
-      carbonColumns[msr.getQueryOrder()] = msr.getMeasure();
+    for (ProjectionMeasure msr : getProjectionMeasures()) {
+      carbonColumns[msr.getOrdinal()] = msr.getMeasure();
     }
     return carbonColumns;
   }
 
-  /**
-   * @return the queryDimension
-   */
-  public List<QueryDimension> getQueryDimension() {
-    return queryDimension;
+  public void setProjection(QueryProjection projection) {
+    this.projection = projection;
   }
 
-  /**
-   * @param queryDimension the queryDimension to set
-   */
-  public void setQueryDimension(List<QueryDimension> queryDimension) {
-    this.queryDimension = queryDimension;
+  public List<ProjectionDimension> getProjectionDimensions() {
+    return projection.getDimensions();
   }
 
-  /**
-   * @return the queryMeasures
-   */
-  public List<QueryMeasure> getQueryMeasures() {
-    return queryMeasures;
-  }
-
-  /**
-   * @param queryMeasures the queryMeasures to set
-   */
-  public void setQueryMeasures(List<QueryMeasure> queryMeasures) {
-    this.queryMeasures = queryMeasures;
+  public List<ProjectionMeasure> getProjectionMeasures() {
+    return projection.getMeasures();
   }
 
   /**
@@ -282,13 +225,6 @@ public class QueryModel implements Serializable {
    */
   public String getQueryId() {
     return queryId;
-  }
-
-  /**
-   * @param queryId the queryId to set
-   */
-  public void setQueryId(String queryId) {
-    this.queryId = queryId;
   }
 
   /**
@@ -320,14 +256,7 @@ public class QueryModel implements Serializable {
    * @return the absoluteTableIdentifier
    */
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
-    return absoluteTableIdentifier;
-  }
-
-  /**
-   * @param absoluteTableIdentifier the absoluteTableIdentifier to set
-   */
-  public void setAbsoluteTableIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
+    return table.getAbsoluteTableIdentifier();
   }
 
   /**
@@ -335,13 +264,6 @@ public class QueryModel implements Serializable {
    */
   public CarbonTable getTable() {
     return table;
-  }
-
-  /**
-   * @param table the table to set
-   */
-  public void setTable(CarbonTable table) {
-    this.table = table;
   }
 
   public boolean isForcedDetailRawQuery() {

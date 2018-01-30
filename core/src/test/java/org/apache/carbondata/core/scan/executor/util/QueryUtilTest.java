@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesTestUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.scan.model.QueryDimension;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
 
 import junit.framework.TestCase;
 import mockit.Mock;
@@ -45,9 +45,8 @@ public class QueryUtilTest extends TestCase {
 
   @Test public void testGetMaskedByteRangeGivingProperMaksedByteRange() {
 
-    QueryDimension dimension =
-        new QueryDimension(segmentProperties.getDimensions().get(0).getColName());
-    dimension.setDimension(segmentProperties.getDimensions().get(0));
+    ProjectionDimension dimension =
+        new ProjectionDimension(segmentProperties.getDimensions().get(0));
     int[] maskedByteRange = QueryUtil
         .getMaskedByteRange(Arrays.asList(dimension), segmentProperties.getDimensionKeyGenerator());
     int[] expectedMaskedByteRange = { 0 };
@@ -57,11 +56,10 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetMaskedByteRangeGivingProperMaksedByteRangeOnlyForDictionaryKey() {
-    List<QueryDimension> dimensions = new ArrayList<QueryDimension>();
+    List<ProjectionDimension> dimensions = new ArrayList<ProjectionDimension>();
     for (int i = 0; i < 2; i++) {
-      QueryDimension dimension =
-          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
-      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      ProjectionDimension dimension =
+          new ProjectionDimension(segmentProperties.getDimensions().get(i));
       dimensions.add(dimension);
     }
     int[] maskedByteRange =
@@ -84,11 +82,10 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetMaxKeyBasedOnDimensions() {
-    List<QueryDimension> dimensions = new ArrayList<QueryDimension>();
+    List<ProjectionDimension> dimensions = new ArrayList<ProjectionDimension>();
     for (int i = 0; i < 2; i++) {
-      QueryDimension dimension =
-          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
-      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      ProjectionDimension dimension =
+          new ProjectionDimension(segmentProperties.getDimensions().get(i));
       dimensions.add(dimension);
     }
     byte[] maxKeyBasedOnDimensions = null;
@@ -115,10 +112,8 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetMaksedByte() {
-    QueryDimension dimension =
-        new QueryDimension(segmentProperties.getDimensions().get(0).getColName());
-    dimension.setDimension(segmentProperties.getDimensions().get(0));
-    dimension.setDimension(segmentProperties.getDimensions().get(0));
+    ProjectionDimension dimension =
+        new ProjectionDimension(segmentProperties.getDimensions().get(0));
     int[] maskedByteRange = QueryUtil
         .getMaskedByteRange(Arrays.asList(dimension), segmentProperties.getDimensionKeyGenerator());
     int[] maskedByte = QueryUtil
@@ -203,18 +198,16 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetSortDimensionIndexes() {
-    List<QueryDimension> sortedDimensions = new ArrayList<QueryDimension>();
+    List<ProjectionDimension> sortedDimensions = new ArrayList<ProjectionDimension>();
     for (int i = 0; i < 2; i++) {
-      QueryDimension dimension =
-          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
-      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      ProjectionDimension dimension =
+          new ProjectionDimension(segmentProperties.getDimensions().get(i));
       sortedDimensions.add(dimension);
     }
-    List<QueryDimension> queryDimensions = new ArrayList<QueryDimension>();
+    List<ProjectionDimension> queryDimensions = new ArrayList<ProjectionDimension>();
     for (int i = 0; i < 2; i++) {
-      QueryDimension dimension =
-          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
-      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      ProjectionDimension dimension =
+          new ProjectionDimension(segmentProperties.getDimensions().get(i));
       queryDimensions.add(dimension);
     }
     byte[] actualValue = QueryUtil.getSortDimensionIndexes(sortedDimensions, queryDimensions);

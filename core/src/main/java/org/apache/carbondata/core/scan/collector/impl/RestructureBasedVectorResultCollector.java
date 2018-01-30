@@ -26,7 +26,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -43,8 +43,8 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
 
   public RestructureBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
-    queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
-    queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
+    queryDimensions = executionInfo.getActualQueryDimensions();
+    queryMeasures = executionInfo.getActualQueryMeasures();
     measureDefaultValues = new Object[queryMeasures.length];
     allColumnInfo = new ColumnVectorInfo[queryDimensions.length + queryMeasures.length];
     createVectorForNewlyAddedDimensions();
@@ -66,7 +66,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
           columnVectorInfo.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
         }
-        allColumnInfo[queryDimensions[i].getQueryOrder()] = columnVectorInfo;
+        allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
       }
     }
   }
@@ -79,7 +79,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       if (!measureInfo.getMeasureExists()[i]) {
         // add a dummy column vector result collector object
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
-        allColumnInfo[queryMeasures[i].getQueryOrder()] = columnVectorInfo;
+        allColumnInfo[queryMeasures[i].getOrdinal()] = columnVectorInfo;
         columnVectorInfo.measure = queryMeasures[i];
         measureDefaultValues[i] = getMeasureDefaultValue(queryMeasures[i].getMeasure());
       }
@@ -97,11 +97,13 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         carbonMeasure.getDefaultValue());
   }
 
-  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
-    throw new UnsupportedOperationException("collectData is not supported here");
+  @Override
+  public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
+    throw new UnsupportedOperationException("collectResultInRow is not supported here");
   }
 
-  @Override public void collectVectorBatch(AbstractScannedResult scannedResult,
+  @Override
+  public void collectResultInColumnarBatch(BlockletScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
     int numberOfPages = scannedResult.numberOfpages();
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
@@ -124,7 +126,8 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       fillDataForNonExistingDimensions();
       fillDataForNonExistingMeasures();
       // fill existing dimensions and measures data
-      scanAndFillResult(scannedResult, columnarBatch, rowCounter, availableRows, requiredRows);
+      fillResultToColumnarBatch(
+          scannedResult, columnarBatch, rowCounter, availableRows, requiredRows);
       columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows - filteredRows);
     }
   }
@@ -133,11 +136,11 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
    * This method will fill the default values of non existing dimensions in the current block
    */
   private void fillDataForNonExistingDimensions() {
-    for (int i = 0; i < tableBlockExecutionInfos.getActualQueryDimensions().length; i++) {
+    for (int i = 0; i < executionInfo.getActualQueryDimensions().length; i++) {
       if (!dimensionInfo.getDimensionExists()[i]) {
-        int queryOrder = tableBlockExecutionInfos.getActualQueryDimensions()[i].getQueryOrder();
+        int queryOrder = executionInfo.getActualQueryDimensions()[i].getOrdinal();
         CarbonDimension dimension =
-            tableBlockExecutionInfos.getActualQueryDimensions()[i].getDimension();
+            executionInfo.getActualQueryDimensions()[i].getDimension();
         if (dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           // fill direct dictionary column data
           fillDirectDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
@@ -215,10 +218,10 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
    * This method will fill the default values of non existing measures in the current block
    */
   private void fillDataForNonExistingMeasures() {
-    for (int i = 0; i < tableBlockExecutionInfos.getActualQueryMeasures().length; i++) {
+    for (int i = 0; i < executionInfo.getActualQueryMeasures().length; i++) {
       if (!measureInfo.getMeasureExists()[i]) {
-        int queryOrder = tableBlockExecutionInfos.getActualQueryMeasures()[i].getQueryOrder();
-        CarbonMeasure measure = tableBlockExecutionInfos.getActualQueryMeasures()[i].getMeasure();
+        int queryOrder = executionInfo.getActualQueryMeasures()[i].getOrdinal();
+        CarbonMeasure measure = executionInfo.getActualQueryMeasures()[i].getMeasure();
         ColumnVectorInfo columnVectorInfo = allColumnInfo[queryOrder];
         CarbonColumnVector vector = columnVectorInfo.vector;
         Object defaultValue = measureDefaultValues[i];

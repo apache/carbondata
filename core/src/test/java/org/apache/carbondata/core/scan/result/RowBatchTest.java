@@ -29,38 +29,38 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class BatchResultTest {
-  private static BatchResult batchResult;
+public class RowBatchTest {
+  private static RowBatch rowBatch;
   private static List<Object[]> rowsList = new ArrayList(2);
 
   @BeforeClass public static void setUp() {
-    batchResult = new BatchResult();
+    rowBatch = new RowBatch();
     rowsList.add(0, new Integer[] { 1, 2 });
     rowsList.add(1, new Integer[] { 3 });
   }
 
   @Test public void testNext() throws NoSuchElementException {
-    BatchResult rows = new BatchResult();
+    RowBatch rows = new RowBatch();
     rows.setRows(rowsList);
     Object[] result = rows.next();
     Assert.assertTrue(result.equals(rowsList.get(0)));
   }
 
   @Test(expected = NoSuchElementException.class) public void testNextWithNoSuchElementException() {
-    BatchResult rows = new BatchResult();
+    RowBatch rows = new RowBatch();
     List emptyList = new ArrayList(2);
     rows.setRows(emptyList);
     rows.next();
   }
 
   @Test public void testGetRows() {
-    new MockUp<BatchResult>() {
+    new MockUp<RowBatch>() {
       @Mock public void $init() {
         //to be left blank
       }
     };
-    BatchResult batchResult = new BatchResult();
-    List<Object[]> list = batchResult.getRows();
+    RowBatch rowBatch = new RowBatch();
+    List<Object[]> list = rowBatch.getRows();
     assertNull("Number of rows is null", list);
   }
 
@@ -68,16 +68,16 @@ public class BatchResultTest {
     List<Object[]> list = new ArrayList<>();
     list.add(0, new Integer[] { 1, 2 });
     list.add(1, new Integer[] { 1, 2 });
-    batchResult.setRows(list);
-    boolean result = batchResult.hasNext();
+    rowBatch.setRows(list);
+    boolean result = rowBatch.hasNext();
     Assert.assertTrue(result);
   }
 
   @Test public void testGetRawRow() {
     List<Object[]> list = new ArrayList<>();
     list.add(0, new Integer[] { 1, 2 });
-    batchResult.setRows(list);
-    Object[] actualValue = batchResult.getRawRow(0);
+    rowBatch.setRows(list);
+    Object[] actualValue = rowBatch.getRawRow(0);
     Assert.assertTrue(list.get(0) == actualValue);
   }
 
@@ -85,8 +85,8 @@ public class BatchResultTest {
     List<Object[]> list = new ArrayList<>();
     list.add(0, new Integer[] { 1, 2 });
     list.add(1, new Integer[] { 1, 2 });
-    batchResult.setRows(list);
-    int actualValue = batchResult.getSize();
+    rowBatch.setRows(list);
+    int actualValue = rowBatch.getSize();
     int expectedValue = 2;
     assertEquals(expectedValue, actualValue);
   }

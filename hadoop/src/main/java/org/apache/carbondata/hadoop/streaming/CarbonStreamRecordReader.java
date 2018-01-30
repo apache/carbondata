@@ -156,7 +156,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     hadoopConf = context.getConfiguration();
     if (model == null) {
       CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
-      model = format.getQueryModel(split, context);
+      model = format.createQueryModel(split, context);
     }
     carbonTable = model.getTable();
     List<CarbonDimension> dimensions =
