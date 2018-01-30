@@ -231,17 +231,15 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
       TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
     loadModel.setTaskNo(System.nanoTime() + "");
-    final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
     final CarbonOutputIteratorWrapper iteratorWrapper = new CarbonOutputIteratorWrapper();
-    final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
+    final DataLoadExecutor dataLoadExecutor = DataLoadExecutor.newInstance(loadModel);
     ExecutorService executorService = Executors.newFixedThreadPool(1,
         new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));;
     // It should be started in new thread as the underlying iterator uses blocking queue.
     Future future = executorService.submit(new Thread() {
       @Override public void run() {
         try {
-          dataLoadExecutor
-              .execute(loadModel, tempStoreLocations, new CarbonIterator[] { iteratorWrapper });
+          dataLoadExecutor.execute(new CarbonIterator[] { iteratorWrapper });
         } catch (Exception e) {
           dataLoadExecutor.close();
           throw new RuntimeException(e);

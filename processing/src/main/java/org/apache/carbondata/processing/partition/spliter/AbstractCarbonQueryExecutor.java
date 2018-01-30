@@ -69,8 +69,8 @@ public abstract class AbstractCarbonQueryExecutor {
    * @param blockList
    * @return
    */
-  protected QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
-    QueryModel model = new QueryModel();
+  QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
+    QueryModel model = QueryModel.newModel();
     model.setTableBlockInfos(blockList);
     model.setForcedDetailRawQuery(true);
     model.setFilterExpressionResolverTree(null);

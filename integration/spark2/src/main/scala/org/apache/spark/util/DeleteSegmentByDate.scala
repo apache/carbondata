@@ -19,7 +19,7 @@ package org.apache.spark.util
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 
-import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.api.CarbonStoreSparkUtil
 
 /**
  * delete segments before some date
@@ -31,7 +31,7 @@ object DeleteSegmentByDate {
       dateValue: String): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
-    CarbonStore.deleteLoadByDate(dateValue, dbName, tableName, carbonTable)
+    CarbonStoreSparkUtil.deleteLoadByDate(dateValue, dbName, tableName, carbonTable)
   }
 
   def main(args: Array[String]): Unit = {

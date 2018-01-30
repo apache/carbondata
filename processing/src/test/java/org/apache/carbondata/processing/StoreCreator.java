@@ -403,10 +403,7 @@ public class StoreCreator {
         format.createRecordReader(blockDetails, hadoopAttemptContext);
 
     CSVRecordReaderIterator readerIterator = new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
-    String[] storeLocationArray = new String[] {storeLocation + "/" + databaseName + "/" + tableName};
-    new DataLoadExecutor().execute(loadModel,
-        storeLocationArray,
-        new CarbonIterator[]{readerIterator});
+    DataLoadExecutor.newInstance(loadModel).execute(new CarbonIterator[]{readerIterator});
 
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<LoadMetadataDetails>());

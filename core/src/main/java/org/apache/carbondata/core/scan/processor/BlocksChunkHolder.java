@@ -98,13 +98,6 @@ public class BlocksChunkHolder {
   }
 
   /**
-   * @param fileReader the fileReader to set
-   */
-  public void setFileReader(FileHolder fileReader) {
-    this.fileReader = fileReader;
-  }
-
-  /**
    * @return the dataBlock
    */
   public DataRefNode getDataBlock() {

@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -32,12 +31,10 @@ import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResult
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
 
-import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
 import com.facebook.presto.spi.type.Type;
-import org.apache.hadoop.mapred.TaskAttemptContext;
 
 import static org.apache.carbondata.presto.Types.checkType;
 
@@ -50,9 +47,8 @@ public class CarbondataRecordSet implements RecordSet {
 
   private CarbonDictionaryDecodeReadSupport readSupport;
 
-  public CarbondataRecordSet(CarbonTable carbonTable, ConnectorSession session,
-      ConnectorSplit split, List<CarbondataColumnHandle> columns, QueryModel queryModel,
-      TaskAttemptContext taskAttemptContext) {
+  public CarbondataRecordSet(ConnectorSplit split, List<CarbondataColumnHandle> columns,
+      QueryModel queryModel) {
     this.split = checkType(split, CarbondataSplit.class, "connectorSplit");
     this.queryModel = queryModel;
     this.columns = columns;

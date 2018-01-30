@@ -177,6 +177,9 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    */
   public static CarbonTable buildFromTableInfo(TableInfo tableInfo) {
+    if (tableInfo == null) {
+      throw new IllegalArgumentException("input table info is null");
+    }
     CarbonTable table = new CarbonTable();
     updateTableInfo(tableInfo);
     table.tableInfo = tableInfo;

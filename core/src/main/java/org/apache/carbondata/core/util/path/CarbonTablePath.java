@@ -314,7 +314,8 @@ public class CarbonTablePath extends Path {
     switch (columnarFormatVersion) {
       case V1:
       case V2:
-        return getCarbonIndexFilePath(taskId, segmentId, bucketNumber);
+        return
+            getCarbonIndexFilePath(taskId, segmentId, bucketNumber);
       default:
         String segmentDir = getSegmentDir(segmentId);
         return segmentDir + File.separator + getCarbonIndexFileName(taskId,

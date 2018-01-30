@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hadoop.streaming;
+package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
 
@@ -23,6 +23,7 @@ import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -34,21 +35,28 @@ import org.apache.carbondata.core.scan.complextypes.PrimitiveQueryType;
 import org.apache.carbondata.core.scan.complextypes.StructQueryType;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.hadoop.streaming.CarbonStreamRecordReader;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /**
  * Stream input format
  */
-public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
+public class CarbonStreamInputFormat extends CarbonTableInputFormat<Object> {
 
   public static final String READ_BUFFER_SIZE = "carbon.stream.read.buffer.size";
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
 
-  @Override public RecordReader<Void, Object> createRecordReader(InputSplit split,
+  // Use [[CarbonInputFormat.newStreamFormat]] to create new instance
+  CarbonStreamInputFormat(Configuration configuration, AbsoluteTableIdentifier identifier) {
+    super(configuration, identifier);
+  }
+
+  @Override
+  public RecordReader<Void, Object> createRecordReader(InputSplit split,
       TaskAttemptContext context) throws IOException, InterruptedException {
     return new CarbonStreamRecordReader();
   }

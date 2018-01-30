@@ -20,7 +20,7 @@ package org.apache.spark.util
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 
-import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.api.CarbonStoreSparkUtil
 
 /**
  * clean files api
@@ -41,7 +41,7 @@ object CleanFiles {
       storePath: String, forceTableClean: Boolean = false): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
-    CarbonStore.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean)
+    CarbonStoreSparkUtil.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean)
   }
 
   def main(args: Array[String]): Unit = {

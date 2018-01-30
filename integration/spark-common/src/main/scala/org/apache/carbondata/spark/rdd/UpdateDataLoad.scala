@@ -54,10 +54,7 @@ object UpdateDataLoad {
       loader.initialize()
 
       loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
-      new DataLoadExecutor().execute(carbonLoadModel,
-        loader.storeLocation,
-        recordReaders.toArray)
-
+      DataLoadExecutor.newInstance(carbonLoadModel).execute(recordReaders.toArray)
     } catch {
       case e: Exception =>
         LOGGER.error(e)

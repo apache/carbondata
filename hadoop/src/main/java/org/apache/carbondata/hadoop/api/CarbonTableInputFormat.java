@@ -17,12 +17,9 @@
 
 package org.apache.carbondata.hadoop.api;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -55,10 +52,7 @@ import org.apache.carbondata.core.mutate.data.BlockMappingVO;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
-import org.apache.carbondata.core.scan.filter.SingleTableProvider;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
@@ -69,23 +63,16 @@ import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeConverter;
-import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
-import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.hadoop.util.SchemaReader;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
@@ -106,90 +93,48 @@ import org.apache.hadoop.mapreduce.security.TokenCache;
  *
  * @param <T>
  */
-public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
+public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
   // comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
-  public static final String VALIDATE_INPUT_SEGMENT_IDs =
+  private static final String VALIDATE_INPUT_SEGMENT_IDs =
       "mapreduce.input.carboninputformat.validsegments";
-  // comma separated list of input files
-  public static final String INPUT_FILES = "mapreduce.input.carboninputformat.files";
-  public static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
-  private static final Log LOG = LogFactory.getLog(CarbonTableInputFormat.class);
-  private static final String FILTER_PREDICATE =
-      "mapreduce.input.carboninputformat.filter.predicate";
-  private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
-  private static final String TABLE_INFO = "mapreduce.input.carboninputformat.tableinfo";
-  private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
-  private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
+  private static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
   private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
   public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
-  public static final String PARTITIONS_TO_PRUNE =
-      "mapreduce.input.carboninputformat.partitions.to.prune";
-  public static final String UPADTE_T =
+  private static final String PARTITIONS_TO_PRUNE =
       "mapreduce.input.carboninputformat.partitions.to.prune";
 
-  // a cache for carbon table, it will be used in task side
-  private CarbonTable carbonTable;
+  // For map reduce reflection
+  CarbonTableInputFormat() { }
 
-  /**
-   * Set the `tableInfo` in `configuration`
-   */
-  public static void setTableInfo(Configuration configuration, TableInfo tableInfo)
-      throws IOException {
-    if (null != tableInfo) {
-      configuration.set(TABLE_INFO, CarbonUtil.encodeToString(tableInfo.serialize()));
-    }
+  // Use [[CarbonInputFormat.newTableFormat]] to create new instance
+  CarbonTableInputFormat(Configuration configuration, AbsoluteTableIdentifier identifier) {
+    super();
+    CarbonTableInputFormat.setTableName(configuration, identifier.getTableName());
+    CarbonTableInputFormat.setDatabaseName(configuration, identifier.getDatabaseName());
+    CarbonTableInputFormat.setTablePath(configuration, identifier.getTablePath());
   }
 
-  /**
-   * Get TableInfo object from `configuration`
-   */
-  private static TableInfo getTableInfo(Configuration configuration) throws IOException {
-    String tableInfoStr = configuration.get(TABLE_INFO);
-    if (tableInfoStr == null) {
-      return null;
-    } else {
-      TableInfo output = new TableInfo();
-      output.readFields(
-          new DataInputStream(
-              new ByteArrayInputStream(CarbonUtil.decodeStringToBytes(tableInfoStr))));
-      return output;
+  @Override
+  TableInfo getTableInfo(Configuration configuration) throws IOException {
+    TableInfo tableInfo = super.getTableInfo(configuration);
+    if (tableInfo == null) {
+      AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(configuration);
+      tableInfo = SchemaReader.getTableInfo(identifier);
     }
+    return tableInfo;
   }
 
-  /**
-   * Get the cached CarbonTable or create it by TableInfo in `configuration`
-   */
-  private CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
-    if (carbonTable == null) {
-      // carbon table should be created either from deserialized table info (schema saved in
-      // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
-      TableInfo tableInfo = getTableInfo(configuration);
-      CarbonTable carbonTable;
-      if (tableInfo != null) {
-        carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
-      } else {
-        carbonTable = SchemaReader.readCarbonTableFromStore(
-            getAbsoluteTableIdentifier(configuration));
-      }
-      this.carbonTable = carbonTable;
-      return carbonTable;
-    } else {
-      return this.carbonTable;
-    }
-  }
-
-  public static void setTablePath(Configuration configuration, String tablePath) {
+  private static void setTablePath(Configuration configuration, String tablePath) {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
   public static void setPartitionIdList(Configuration configuration, List<String> partitionIds) {
     configuration.set(ALTER_PARTITION_ID, partitionIds.toString());
   }
-
 
   public static void setDataMapJob(Configuration configuration, DataMapJob dataMapJob)
       throws IOException {
@@ -207,51 +152,33 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return null;
   }
 
-  /**
-   * It sets unresolved filter expression.
-   *
-   * @param configuration
-   * @param filterExpression
-   */
-  public static void setFilterPredicates(Configuration configuration, Expression filterExpression) {
-    if (filterExpression == null) {
-      return;
-    }
-    try {
-      String filterString = ObjectSerializationUtil.convertObjectToString(filterExpression);
-      configuration.set(FILTER_PREDICATE, filterString);
-    } catch (Exception e) {
-      throw new RuntimeException("Error while setting filter expression to Job", e);
-    }
-  }
-
-  public static void setColumnProjection(Configuration configuration, CarbonProjection projection) {
-    if (projection == null || projection.isEmpty()) {
-      return;
-    }
-    String[] allColumns = projection.getAllColumns();
-    StringBuilder builder = new StringBuilder();
-    for (String column : allColumns) {
-      builder.append(column).append(",");
-    }
-    String columnString = builder.toString();
-    columnString = columnString.substring(0, columnString.length() - 1);
-    configuration.set(COLUMN_PROJECTION, columnString);
-  }
-
-  public static String getColumnProjection(Configuration configuration) {
-    return configuration.get(COLUMN_PROJECTION);
-  }
-
-  public static void setCarbonReadSupport(Configuration configuration,
-      Class<? extends CarbonReadSupport> readSupportClass) {
-    if (readSupportClass != null) {
-      configuration.set(CARBON_READ_SUPPORT, readSupportClass.getName());
+  // TODO: move this to proper class
+  public static void setUpdateCache(InputSplit inputSplit, QueryModel queryModel) {
+    // update the file level index store if there are invalid segment
+    if (inputSplit instanceof CarbonMultiBlockSplit) {
+      CarbonMultiBlockSplit split = (CarbonMultiBlockSplit) inputSplit;
+      List<String> invalidSegments = split.getAllSplits().get(0).getInvalidSegments();
+      if (invalidSegments.size() > 0) {
+        queryModel.setInvalidSegmentIds(invalidSegments);
+      }
+      List<UpdateVO> invalidTimestampRangeList =
+          split.getAllSplits().get(0).getInvalidTimestampRange();
+      if ((null != invalidTimestampRangeList) && (invalidTimestampRangeList.size() > 0)) {
+        queryModel.setInvalidBlockForSegmentId(invalidTimestampRangeList);
+      }
     }
   }
 
-  private static CarbonTablePath getTablePath(AbsoluteTableIdentifier absIdentifier) {
-    return CarbonStorePath.getCarbonTablePath(absIdentifier);
+  private CarbonTable getCarbonTable(Configuration configuration)
+      throws IOException {
+    // carbon table should be created either from deserialized table info (in configuration)
+    // or by reading schema in HDFS (schema saved in HDFS)
+    CarbonTable carbonTable = buildCarbonTable(configuration);
+    if (carbonTable == null) {
+      carbonTable = SchemaReader.readCarbonTableFromStore(
+          getAbsoluteTableIdentifier(configuration));
+    }
+    return carbonTable;
   }
 
   /**
@@ -264,7 +191,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Set `CARBON_INPUT_SEGMENTS` from property to configuration
    */
-  public static void setQuerySegment(Configuration conf, AbsoluteTableIdentifier identifier) {
+  public void setQuerySegment(Configuration conf, AbsoluteTableIdentifier identifier) {
     String dbName = identifier.getCarbonTableIdentifier().getDatabaseName().toLowerCase();
     String tbName = identifier.getCarbonTableIdentifier().getTableName().toLowerCase();
     String segmentNumbersFromProperty = CarbonProperties.getInstance()
@@ -285,7 +212,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * get list of segment to access
    */
-  public static boolean getValidateSegmentsToAccess(Configuration configuration) {
+  private static boolean getValidateSegmentsToAccess(Configuration configuration) {
     return configuration.get(CarbonTableInputFormat.VALIDATE_INPUT_SEGMENT_IDs, "true")
         .equalsIgnoreCase("true");
   }
@@ -308,23 +235,12 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * get list of partitions to prune
    */
-  public static List<String> getPartitionsToPrune(Configuration configuration) throws IOException {
+  private static List<String> getPartitionsToPrune(Configuration configuration) throws IOException {
     String partitionString = configuration.get(PARTITIONS_TO_PRUNE);
     if (partitionString != null) {
       return (List<String>) ObjectSerializationUtil.convertStringToObject(partitionString);
     }
     return null;
-  }
-
-  public AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
-      throws IOException {
-    String tablePath = configuration.get(INPUT_DIR, "");
-    try {
-      return AbsoluteTableIdentifier
-          .from(tablePath, getDatabaseName(configuration), getTableName(configuration));
-    } catch (InvalidConfigurationException e) {
-      throw new IOException(e);
-    }
   }
 
   /**
@@ -336,10 +252,11 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    * @return List<InputSplit> list of CarbonInputSplit
    * @throws IOException
    */
-  @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
+  @Override
+  public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
-    CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
+    CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
     }
@@ -401,10 +318,9 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
     // process and resolve the expression
     Expression filter = getFilterPredicates(job.getConfiguration());
-    TableProvider tableProvider = new SingleTableProvider(carbonTable);
     // this will be null in case of corrupt schema file.
     PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
-    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
+    QueryModel.processFilterExpression(carbonTable, filter, null, null);
 
     // prune partitions for filter query on partition table
     BitSet matchedPartitions = null;
@@ -419,8 +335,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       }
     }
 
-    FilterResolverIntf filterInterface = CarbonInputFormatUtil
-        .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
+    FilterResolverIntf filterInterface = QueryModel.resolveFilter(carbonTable, filter);
 
     // do block filtering and get split
     List<InputSplit> splits =
@@ -462,7 +377,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       if (!filteredSegmentToAccess.containsAll(segmentToAccessSet)) {
         List<String> filteredSegmentToAccessTemp = new ArrayList<>(filteredSegmentToAccess);
         filteredSegmentToAccessTemp.removeAll(segmentToAccessSet);
-        LOG.info(
+        LOGGER.info(
             "Segments ignored are : " + Arrays.toString(filteredSegmentToAccessTemp.toArray()));
       }
     }
@@ -536,14 +451,13 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return splits;
   }
 
-  protected FileSplit makeSplit(String segmentId, Path file, long start, long length,
-      String[] hosts, FileFormat fileFormat) {
+  private FileSplit makeSplit(String segmentId, Path file, long start, long length, String[] hosts,
+      FileFormat fileFormat) {
     return new CarbonInputSplit(segmentId, file, start, length, hosts, fileFormat);
   }
 
-
-  protected FileSplit makeSplit(String segmentId, Path file, long start, long length,
-      String[] hosts, String[] inMemoryHosts, FileFormat fileFormat) {
+  private FileSplit makeSplit(String segmentId, Path file, long start, long length, String[] hosts,
+      String[] inMemoryHosts, FileFormat fileFormat) {
     return new CarbonInputSplit(segmentId, file, start, length, hosts, inMemoryHosts, fileFormat);
   }
 
@@ -556,12 +470,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    * @throws IOException
    */
   public List<InputSplit> getSplitsOfOneSegment(JobContext job, String targetSegment,
-      List<Integer> oldPartitionIdList, PartitionInfo partitionInfo)
-      throws IOException {
-    AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
-    List<String> invalidSegments = new ArrayList<>();
-    List<UpdateVO> invalidTimestampsList = new ArrayList<>();
-
+      List<Integer> oldPartitionIdList, PartitionInfo partitionInfo) {
     List<String> segmentList = new ArrayList<>();
     segmentList.add(targetSegment);
     setSegmentsToAccess(job.getConfiguration(), segmentList);
@@ -569,15 +478,14 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
       // process and resolve the expression
       Expression filter = getFilterPredicates(job.getConfiguration());
-      CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
+      CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
       // this will be null in case of corrupt schema file.
       if (null == carbonTable) {
         throw new IOException("Missing/Corrupt schema file for table.");
       }
 
-      CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
+      QueryModel.processFilterExpression(carbonTable, filter, null, null);
 
-      TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // prune partitions for filter query on partition table
       String partitionIds = job.getConfiguration().get(ALTER_PARTITION_ID);
       // matchedPartitions records partitionIndex, not partitionId
@@ -594,18 +502,10 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         }
       }
 
-      FilterResolverIntf filterInterface =
-          CarbonInputFormatUtil.resolveFilter(filter, identifier, tableProvider);
+      FilterResolverIntf filterInterface = QueryModel.resolveFilter(carbonTable, filter);
       // do block filtering and get split
       List<InputSplit> splits = getSplits(job, filterInterface, segmentList, matchedPartitions,
           partitionInfo, oldPartitionIdList);
-      // pass the invalid segment to task side in order to remove index entry in task side
-      if (invalidSegments.size() > 0) {
-        for (InputSplit split : splits) {
-          ((CarbonInputSplit) split).setInvalidSegments(invalidSegments);
-          ((CarbonInputSplit) split).setInvalidTimestampRange(invalidTimestampsList);
-        }
-      }
       return splits;
     } catch (IOException e) {
       throw new RuntimeException("Can't get splits of the target segment ", e);
@@ -653,14 +553,12 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
     List<InputSplit> result = new LinkedList<InputSplit>();
     UpdateVO invalidBlockVOForSegmentId = null;
-    Boolean isIUDTable = false;
-
     AbsoluteTableIdentifier absoluteTableIdentifier =
-        getOrCreateCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
+        getCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
     SegmentUpdateStatusManager updateStatusManager =
         new SegmentUpdateStatusManager(absoluteTableIdentifier);
 
-    isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
+    Boolean isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<org.apache.carbondata.hadoop.CarbonInputSplit> dataBlocksOfSegment =
@@ -694,19 +592,6 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       result.add(inputSplit);
     }
     return result;
-  }
-
-  protected Expression getFilterPredicates(Configuration configuration) {
-    try {
-      String filterExprString = configuration.get(FILTER_PREDICATE);
-      if (filterExprString == null) {
-        return null;
-      }
-      Object filter = ObjectSerializationUtil.convertStringToObject(filterExprString);
-      return (Expression) filter;
-    } catch (IOException e) {
-      throw new RuntimeException("Error while reading filter expression", e);
-    }
   }
 
   /**
@@ -798,83 +683,17 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return split;
   }
 
-  @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
+  @Override
+  public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     Configuration configuration = taskAttemptContext.getConfiguration();
-    QueryModel queryModel = getQueryModel(inputSplit, taskAttemptContext);
-    CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
+    QueryModel queryModel = createQueryModel(configuration);
+    CarbonReadSupport<T> readSupport = getReadSupport(configuration);
     return new CarbonRecordReader<T>(queryModel, readSupport);
   }
 
-  public QueryModel getQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
-      throws IOException {
-    Configuration configuration = taskAttemptContext.getConfiguration();
-    CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
-    TableProvider tableProvider = new SingleTableProvider(carbonTable);
-    // getting the table absoluteTableIdentifier from the carbonTable
-    // to avoid unnecessary deserialization
-    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
-
-    // query plan includes projection column
-    String projection = getColumnProjection(configuration);
-    CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
-    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable,
-        getDataTypeConverter(configuration));
-
-    // set the filter to the query model in order to filter blocklet before scan
-    Expression filter = getFilterPredicates(configuration);
-    boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
-    // getAllMeasures returns list of visible and invisible columns
-    boolean[] isFilterMeasures =
-        new boolean[carbonTable.getAllMeasures().size()];
-    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, isFilterDimensions,
-        isFilterMeasures);
-    queryModel.setIsFilterDimensions(isFilterDimensions);
-    queryModel.setIsFilterMeasures(isFilterMeasures);
-    FilterResolverIntf filterIntf = CarbonInputFormatUtil
-        .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
-    queryModel.setFilterExpressionResolverTree(filterIntf);
-
-    // update the file level index store if there are invalid segment
-    if (inputSplit instanceof CarbonMultiBlockSplit) {
-      CarbonMultiBlockSplit split = (CarbonMultiBlockSplit) inputSplit;
-      List<String> invalidSegments = split.getAllSplits().get(0).getInvalidSegments();
-      if (invalidSegments.size() > 0) {
-        queryModel.setInvalidSegmentIds(invalidSegments);
-      }
-      List<UpdateVO> invalidTimestampRangeList =
-          split.getAllSplits().get(0).getInvalidTimestampRange();
-      if ((null != invalidTimestampRangeList) && (invalidTimestampRangeList.size() > 0)) {
-        queryModel.setInvalidBlockForSegmentId(invalidTimestampRangeList);
-      }
-    }
-    return queryModel;
-  }
-
-  public CarbonReadSupport<T> getReadSupportClass(Configuration configuration) {
-    String readSupportClass = configuration.get(CARBON_READ_SUPPORT);
-    //By default it uses dictionary decoder read class
-    CarbonReadSupport<T> readSupport = null;
-    if (readSupportClass != null) {
-      try {
-        Class<?> myClass = Class.forName(readSupportClass);
-        Constructor<?> constructor = myClass.getConstructors()[0];
-        Object object = constructor.newInstance();
-        if (object instanceof CarbonReadSupport) {
-          readSupport = (CarbonReadSupport) object;
-        }
-      } catch (ClassNotFoundException ex) {
-        LOG.error("Class " + readSupportClass + "not found", ex);
-      } catch (Exception ex) {
-        LOG.error("Error while creating " + readSupportClass, ex);
-      }
-    } else {
-      readSupport = new DictionaryDecodeReadSupport<>();
-    }
-    return readSupport;
-  }
-
-  @Override protected boolean isSplitable(JobContext context, Path filename) {
+  @Override
+  protected boolean isSplitable(JobContext context, Path filename) {
     try {
       // Don't split the file if it is local file system
       FileSystem fileSystem = filename.getFileSystem(context.getConfiguration());
@@ -900,7 +719,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * return valid segment to access
    */
-  public String[] getSegmentsToAccess(JobContext job) {
+  private String[] getSegmentsToAccess(JobContext job) {
     String segmentString = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "");
     if (segmentString.trim().isEmpty()) {
       return new String[0];
@@ -959,37 +778,24 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
   }
 
-  /**
-   * It is optional, if user does not set then it reads from store
-   *
-   * @param configuration
-   * @param converter is the Data type converter for different computing engine
-   * @throws IOException
-   */
-  public static void setDataTypeConverter(Configuration configuration, DataTypeConverter converter)
+  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
       throws IOException {
-    if (null != converter) {
-      configuration.set(CARBON_CONVERTER,
-          ObjectSerializationUtil.convertObjectToString(converter));
+    String tablePath = configuration.get(INPUT_DIR, "");
+    try {
+      return AbsoluteTableIdentifier
+          .from(tablePath, getDatabaseName(configuration), getTableName(configuration));
+    } catch (InvalidConfigurationException e) {
+      throw new IOException(e);
     }
   }
 
-  public static DataTypeConverter getDataTypeConverter(Configuration configuration)
-      throws IOException {
-    String converter = configuration.get(CARBON_CONVERTER);
-    if (converter == null) {
-      return new DataTypeConverterImpl();
-    }
-    return (DataTypeConverter) ObjectSerializationUtil.convertStringToObject(converter);
-  }
-
-  public static void setDatabaseName(Configuration configuration, String databaseName) {
+  private static void setDatabaseName(Configuration configuration, String databaseName) {
     if (null != databaseName) {
       configuration.set(DATABASE_NAME, databaseName);
     }
   }
 
-  public static String getDatabaseName(Configuration configuration)
+  private static String getDatabaseName(Configuration configuration)
       throws InvalidConfigurationException {
     String databseName = configuration.get(DATABASE_NAME);
     if (null == databseName) {
@@ -998,13 +804,13 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return databseName;
   }
 
-  public static void setTableName(Configuration configuration, String tableName) {
+  private static void setTableName(Configuration configuration, String tableName) {
     if (null != tableName) {
       configuration.set(TABLE_NAME, tableName);
     }
   }
 
-  public static String getTableName(Configuration configuration)
+  private static String getTableName(Configuration configuration)
       throws InvalidConfigurationException {
     String tableName = configuration.get(TABLE_NAME);
     if (tableName == null) {
@@ -1012,4 +818,5 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     }
     return tableName;
   }
+
 }

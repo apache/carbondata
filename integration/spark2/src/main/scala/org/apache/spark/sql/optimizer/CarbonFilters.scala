@@ -26,6 +26,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.CarbonSessionCatalog
+import org.apache.spark.sql.sources.Filter
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.PartitionMapFileStore
@@ -45,10 +46,16 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  */
 object CarbonFilters {
 
+  def createFilter(schema: StructType, filters: Array[Filter]): Option[CarbonExpression] = {
+    filters.flatMap { filter =>
+      CarbonFilters.createCarbonFilter(schema, filter)
+    }.reduceOption(new AndExpression(_, _))
+  }
+
   /**
    * Converts data sources filters to carbon filter predicates.
    */
-  def createCarbonFilter(schema: StructType,
+  private def createCarbonFilter(schema: StructType,
       predicate: sources.Filter): Option[CarbonExpression] = {
     val dataTypeOf = schema.map(f => f.name -> f.dataType).toMap
 

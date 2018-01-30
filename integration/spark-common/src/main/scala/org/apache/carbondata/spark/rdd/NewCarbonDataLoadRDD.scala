@@ -241,13 +241,11 @@ class NewCarbonDataLoadRDD[K, V](
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
-        val executor = new DataLoadExecutor()
+        val executor = DataLoadExecutor.newInstance(model)
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
-        executor.execute(model,
-          loader.storeLocation,
-          recordReaders)
+        executor.execute(recordReaders)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
@@ -289,8 +287,7 @@ class NewCarbonDataLoadRDD[K, V](
         val fileList: java.util.List[String] = new java.util.ArrayList[String](
             CarbonCommonConstants.CONSTANT_SIZE_TEN)
         CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, fileList, ",")
-        model = carbonLoadModel.getCopyWithPartition(
-          carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
+        model = carbonLoadModel.copy
         StandardLogService.setThreadName(StandardLogService
           .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
           , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
@@ -403,11 +400,11 @@ class NewDataFrameLoaderRDD[K, V](
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
-        val executor = new DataLoadExecutor
+        val executor = DataLoadExecutor.newInstance(model)
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
-        executor.execute(model, loader.storeLocation, recordReaders.toArray)
+        executor.execute(recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
@@ -602,11 +599,11 @@ class PartitionTableDataLoaderRDD[K, V](
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
-        val executor = new DataLoadExecutor
+        val executor = DataLoadExecutor.newInstance(model)
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
-        executor.execute(model, loader.storeLocation, recordReaders)
+        executor.execute(recordReaders)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)

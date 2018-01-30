@@ -36,6 +36,11 @@ import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.UnknownExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
+import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
+import org.apache.carbondata.core.scan.filter.intf.FilterOptimizerBasic;
+import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -100,6 +105,9 @@ public class QueryModel implements Serializable {
 
   private DataTypeConverter converter;
 
+  // For file level reader, this stores the file full path to read
+  private String filePath;
+
   /**
    * Invalid table blocks, which need to be removed from
    * memory, invalid blocks can be segment which are deleted
@@ -112,24 +120,101 @@ public class QueryModel implements Serializable {
   private boolean[] isFilterDimensions;
   private boolean[] isFilterMeasures;
 
-  public QueryModel() {
+  private QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     queryDimension = new ArrayList<QueryDimension>();
     queryMeasures = new ArrayList<QueryMeasure>();
     invalidSegmentIds = new ArrayList<>();
   }
 
-  public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
-      CarbonQueryPlan queryPlan, CarbonTable carbonTable, DataTypeConverter converter) {
-    QueryModel queryModel = new QueryModel();
-    queryModel.setAbsoluteTableIdentifier(absoluteTableIdentifier);
+  public static QueryModel newModel() {
+    return new QueryModel();
+  }
 
+  public static QueryModel createModel(CarbonTable carbonTable,
+      String projection, Expression filter, DataTypeConverter converter) {
+    QueryModel queryModel = new QueryModel();
+    queryModel.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
+    CarbonQueryPlan queryPlan = createQueryPlan(carbonTable, projection);
     fillQueryModel(queryPlan, carbonTable, queryModel);
 
     queryModel.setForcedDetailRawQuery(queryPlan.isRawDetailQuery());
     queryModel.setQueryId(queryPlan.getQueryId());
     queryModel.setConverter(converter);
+
+    boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
+    // getAllMeasures returns list of visible and invisible columns
+    boolean[] isFilterMeasures = new boolean[carbonTable.getAllMeasures().size()];
+    processFilterExpression(carbonTable, filter, isFilterDimensions, isFilterMeasures);
+    queryModel.setIsFilterDimensions(isFilterDimensions);
+    queryModel.setIsFilterMeasures(isFilterMeasures);
+    FilterResolverIntf filterIntf = resolveFilter(carbonTable, filter);
+    queryModel.setFilterExpressionResolverTree(filterIntf);
+
     return queryModel;
+  }
+
+  private static CarbonQueryPlan createQueryPlan(CarbonTable carbonTable, String columnString) {
+    String[] columns = null;
+    if (columnString != null) {
+      columns = columnString.split(",");
+    }
+    String factTableName = carbonTable.getTableName();
+    CarbonQueryPlan plan = new CarbonQueryPlan(carbonTable.getDatabaseName(), factTableName);
+    // fill dimensions
+    // If columns are null, set all dimensions and measures
+    int i = 0;
+    if (columns != null) {
+      for (String column : columns) {
+        CarbonDimension dimensionByName = carbonTable.getDimensionByName(factTableName, column);
+        if (dimensionByName != null) {
+          addQueryDimension(plan, i, dimensionByName);
+          i++;
+        } else {
+          CarbonMeasure measure = carbonTable.getMeasureByName(factTableName, column);
+          if (measure == null) {
+            throw new RuntimeException(column + " column not found in the table " + factTableName);
+          }
+          addQueryMeasure(plan, i, measure);
+          i++;
+        }
+      }
+    }
+
+    plan.setQueryId(System.nanoTime() + "");
+    return plan;
+  }
+
+  private static void addQueryMeasure(CarbonQueryPlan plan, int order, CarbonMeasure measure) {
+    QueryMeasure queryMeasure = new QueryMeasure(measure.getColName());
+    queryMeasure.setQueryOrder(order);
+    queryMeasure.setMeasure(measure);
+    plan.addMeasure(queryMeasure);
+  }
+
+  private static void addQueryDimension(CarbonQueryPlan plan, int order,
+      CarbonDimension dimension) {
+    QueryDimension queryDimension = new QueryDimension(dimension.getColName());
+    queryDimension.setQueryOrder(order);
+    queryDimension.setDimension(dimension);
+    plan.addDimension(queryDimension);
+  }
+
+  /**
+   * Return a Resolved filter expression.
+   */
+  public static FilterResolverIntf resolveFilter(CarbonTable carbonTable,
+      Expression filterExpression) {
+    try {
+      FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
+      //get resolved filter
+      return filterExpressionProcessor.getFilterResolver(
+          filterExpression,
+          carbonTable.getAbsoluteTableIdentifier(),
+          new SingleTableProvider(carbonTable));  // TODO: replace TableProvider with CarbonTable
+    } catch (Exception e) {
+      throw new RuntimeException("Error while resolving filter expression", e);
+    }
   }
 
   private static void fillQueryModel(CarbonQueryPlan queryPlan, CarbonTable carbonTable,
@@ -179,6 +264,12 @@ public class QueryModel implements Serializable {
       }
     }
 
+    if (null != filterExpression) {
+      // Optimize Filter Expression and fit RANGE filters is conditions apply.
+      FilterOptimizer rangeFilterOptimizer =
+          new RangeFilterOptmizer(new FilterOptimizerBasic(), filterExpression);
+      rangeFilterOptimizer.optimizeFilter();
+    }
   }
 
   private static CarbonMeasure getCarbonMetadataMeasure(String name, List<CarbonMeasure> measures) {
@@ -416,5 +507,13 @@ public class QueryModel implements Serializable {
 
   public void setIsFilterMeasures(boolean[] isFilterMeasures) {
     this.isFilterMeasures = isFilterMeasures;
+  }
+
+  public String getFilePath() {
+    return filePath;
+  }
+
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
   }
 }

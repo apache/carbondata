@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.management
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 
-import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.api.CarbonStoreSparkUtil
 import org.apache.carbondata.events.{DeleteSegmentByIdPostEvent, DeleteSegmentByIdPreEvent, OperationContext, OperationListenerBus}
 
 case class CarbonDeleteLoadByIdCommand(
@@ -40,7 +40,7 @@ case class CarbonDeleteLoadByIdCommand(
         sparkSession)
     OperationListenerBus.getInstance.fireEvent(deleteSegmentByIdPreEvent, operationContext)
 
-    CarbonStore.deleteLoadById(
+    CarbonStoreSparkUtil.deleteLoadById(
       loadIds,
       CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
       tableName,

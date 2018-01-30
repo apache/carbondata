@@ -200,7 +200,7 @@ public class CarbonCompactionExecutor {
    * @return
    */
   private QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
-    QueryModel model = new QueryModel();
+    QueryModel model = QueryModel.newModel();
     model.setTableBlockInfos(blockList);
     model.setForcedDetailRawQuery(true);
     model.setFilterExpressionResolverTree(null);

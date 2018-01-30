@@ -45,7 +45,7 @@ import org.apache.carbondata.core.scan.result.iterator.PartitionSpliterRawResult
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.merger.CarbonCompactionUtil
 import org.apache.carbondata.processing.partition.spliter.CarbonSplitExecutor
@@ -94,9 +94,9 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
     val parallelism = sparkContext.defaultParallelism
     val jobConf = new JobConf(new Configuration)
     val job = new Job(jobConf)
-    val format = CarbonInputFormatUtil.createCarbonTableInputFormat(absoluteTableIdentifier,
-      partitionIds.toList.asJava, job)
-    CarbonTableInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
+    val format = CarbonInputFormat.newTableFormat(job.getConfiguration, absoluteTableIdentifier)
+    CarbonTableInputFormat.setPartitionIdList(job.getConfiguration, partitionIds.asJava)
+    format.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     job.getConfiguration.set("query.id", queryId)
 
     val splits = format.getSplitsOfOneSegment(job, segmentId,

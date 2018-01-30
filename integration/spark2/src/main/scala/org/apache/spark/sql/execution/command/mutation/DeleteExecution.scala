@@ -20,13 +20,10 @@ package org.apache.spark.sql.execution.command.mutation
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -42,7 +39,7 @@ import org.apache.carbondata.core.mutate.data.RowCountDetailsVO
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.spark.DeleteDelataResultImpl
@@ -85,7 +82,7 @@ object DeleteExecution {
     }
 
     val (carbonInputFormat, job) = createCarbonInputFormat(absoluteTableIdentifier)
-    CarbonTableInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
+    carbonInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     val keyRdd = deleteRdd.map({ row =>
       val tupleId: String = row
         .getString(row.fieldIndex(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
@@ -315,12 +312,11 @@ object DeleteExecution {
     segmentsTobeDeleted
   }
 
-  private def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :
-  (CarbonTableInputFormat[Array[Object]], Job) = {
-    val carbonInputFormat = new CarbonTableInputFormat[Array[Object]]()
+  private def createCarbonInputFormat(identifier: AbsoluteTableIdentifier) :
+  (CarbonTableInputFormat[_], Job) = {
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)
-    FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
-    (carbonInputFormat, job)
+    val format = CarbonInputFormat.newTableFormat(job.getConfiguration, identifier)
+    (format, job)
   }
 }

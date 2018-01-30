@@ -37,13 +37,22 @@ public class DataLoadExecutor {
 
   private AbstractDataLoadProcessorStep loadProcessorStep;
 
+  private CarbonLoadModel loadModel;
+
   private boolean isClosed;
 
-  public void execute(CarbonLoadModel loadModel, String[] storeLocation,
-      CarbonIterator<Object[]>[] inputIterators) throws Exception {
+  private DataLoadExecutor(CarbonLoadModel loadModel) {
+    this.loadModel = loadModel;
+  }
+
+  public static DataLoadExecutor newInstance(CarbonLoadModel loadModel) {
+    return new DataLoadExecutor(loadModel);
+  }
+
+  public void execute(CarbonIterator<Object[]>[] inputIterators) {
     try {
       loadProcessorStep =
-          new DataLoadProcessBuilder().build(loadModel, storeLocation, inputIterators);
+          new DataLoadProcessBuilder().build(loadModel, inputIterators);
       // 1. initialize
       loadProcessorStep.initialize();
       LOGGER.info("Data Loading is started for table " + loadModel.getTableName());

@@ -185,7 +185,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     // so only data loading flow will need to read from cardinality file.
     if (null == this.localCardinality) {
       this.localCardinality = CarbonMergerUtil
-          .getCardinalityFromLevelMetadata(this.model.getStoreLocation(),
+          .getCardinalityFromLevelMetadata(this.model.getWriteTempPath(),
               this.model.getTableName());
       List<Integer> cardinalityList = new ArrayList<Integer>();
       thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
@@ -285,6 +285,10 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * @param copyInCurrentThread set to false if want to do data copy in a new thread
    */
   protected void commitCurrentFile(boolean copyInCurrentThread) {
+    if (model.isFileLevelLoad()) {
+      // File will be committed by OutputCommitter, we do not need to copy it here.
+      return;
+    }
     notifyDataMapBlockEnd();
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
     // rename carbon data file from in progress status to actual
@@ -309,23 +313,29 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     initFileCount();
 
     //each time we initialize writer, we choose a local temp location randomly
-    String[] tempFileLocations = model.getStoreLocation();
+    String[] tempFileLocations = model.getWriteTempPath();
     String chosenTempLocation = tempFileLocations[new Random().nextInt(tempFileLocations.length)];
     LOGGER.info("Randomly choose factdata temp location: " + chosenTempLocation);
 
-    this.carbonDataFileName = CarbonTablePath
-        .getCarbonDataFileName(fileCount, model.getCarbonDataFileAttributes().getTaskId(),
-            model.getBucketId(), model.getTaskExtension(),
-            "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
-    this.carbonDataFileTempPath = chosenTempLocation + File.separator
-        + carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    carbonDataFileName = CarbonTablePath.getCarbonDataFileName(
+        fileCount, model.getCarbonDataFileAttributes().getTaskId(), model.getBucketId(),
+        model.getBatchId(), "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
+    if (model.isFileLevelLoad()) {
+      carbonDataFileTempPath =
+          chosenTempLocation.substring(0, chosenTempLocation.lastIndexOf(File.separator)) +
+              File.separator + carbonDataFileName;
+    } else {
+      CarbonUtil.checkAndCreateFolder(chosenTempLocation);
+      carbonDataFileTempPath = chosenTempLocation + File.separator + carbonDataFileName +
+          CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    }
     this.fileCount++;
     try {
       // open channel for new data file
       fileOutputStream = new FileOutputStream(this.carbonDataFileTempPath, true);
       this.fileChannel = fileOutputStream.getChannel();
     } catch (FileNotFoundException fileNotFoundException) {
-      throw new CarbonDataWriterException("Problem while getting the FileChannel for Leaf File",
+      throw new CarbonDataWriterException("Fail to create file: " + this.carbonDataFileTempPath,
           fileNotFoundException);
     }
     notifyDataMapBlockStart();
@@ -344,7 +354,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     };
 
     List<File> dataFileList = new ArrayList<File>();
-    for (String tempLoc : model.getStoreLocation()) {
+    for (String tempLoc : model.getWriteTempPath()) {
       File[] subFiles = new File(tempLoc).listFiles(fileFilter);
       if (null != subFiles && subFiles.length > 0) {
         dataFileList.addAll(Arrays.asList(subFiles));
@@ -420,20 +430,28 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * @throws CarbonDataWriterException data writing
    */
   protected void writeIndexFile() throws IOException, CarbonDataWriterException {
+    if (model.isFileLevelLoad()) {
+      // If file level write, do not need to write index file since the reader can read
+      // data file directly without index file
+      return;
+    }
     // get the header
     IndexHeader indexHeader = CarbonMetadataUtil
         .getIndexHeader(localCardinality, thriftColumnSchemaList, model.getBucketId());
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     // randomly choose a temp location for index file
-    String[] tempLocations = model.getStoreLocation();
+    String[] tempLocations = model.getWriteTempPath();
     String chosenTempLocation = tempLocations[new Random().nextInt(tempLocations.length)];
     LOGGER.info("Randomly choose index file location: " + chosenTempLocation);
 
-    String fileName = chosenTempLocation + File.separator + CarbonTablePath
-        .getCarbonIndexFileName(model.getCarbonDataFileAttributes().getTaskId(),
-            model.getBucketId(), model.getTaskExtension(),
-            "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
+    String fileName =
+        chosenTempLocation.substring(0, chosenTempLocation.lastIndexOf(File.separator)) +
+            File.separator +
+            CarbonTablePath.getCarbonIndexFileName(
+                model.getCarbonDataFileAttributes().getTaskId(),
+                model.getBucketId(), model.getBatchId(),
+                "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
     // open file
     writer.openThriftWriter(fileName);
@@ -495,6 +513,10 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    */
   protected void copyCarbonDataFileToCarbonStorePath(String localFileName)
       throws CarbonDataWriterException {
+    if (model.isFileLevelLoad()) {
+      // File will be committed by OutputCommitter, we do not need to copy it here.
+      return;
+    }
     long copyStartTime = System.currentTimeMillis();
     LOGGER.info("Copying " + localFileName + " --> " + model.getCarbonDataDirectoryPath());
     try {

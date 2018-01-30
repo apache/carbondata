@@ -45,7 +45,7 @@ import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentUpdateStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -269,11 +269,11 @@ class CarbonMergerRDD[K, V](
       absoluteTableIdentifier)
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)
-    val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
+    val format = CarbonInputFormat.newTableFormat(job.getConfiguration, absoluteTableIdentifier)
     CarbonTableInputFormat.setPartitionsToPrune(
       job.getConfiguration,
       carbonMergerMapping.currentPartitions.asJava)
-    CarbonTableInputFormat.setTableInfo(job.getConfiguration,
+    format.setTableInfo(job.getConfiguration,
       carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)
     var updateDetails: UpdateVO = null
     // initialise query_id for job

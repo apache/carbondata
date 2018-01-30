@@ -38,6 +38,8 @@ public class CarbonDataLoadConfiguration {
 
   private AbsoluteTableIdentifier tableIdentifier;
 
+  private String[] writeTempPath;
+
   private String[] header;
 
   private String segmentId;
@@ -107,7 +109,17 @@ public class CarbonDataLoadConfiguration {
    */
   private short writingCoresCount;
 
+  private boolean isFileLevelLoad;
+
   public CarbonDataLoadConfiguration() {
+  }
+
+  public boolean isFileLevelLoad() {
+    return isFileLevelLoad;
+  }
+
+  public void setFileLevelLoad(boolean fileLevelLoad) {
+    isFileLevelLoad = fileLevelLoad;
   }
 
   public void setDataFields(DataField[] dataFields) {
@@ -352,5 +364,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setWritingCoresCount(short writingCoresCount) {
     this.writingCoresCount = writingCoresCount;
+  }
+
+  public String[] getWriteTempPath() {
+    return writeTempPath;
+  }
+
+  public void setWriteTempPath(String[] writeTempPath) {
+    this.writeTempPath = writeTempPath;
   }
 }

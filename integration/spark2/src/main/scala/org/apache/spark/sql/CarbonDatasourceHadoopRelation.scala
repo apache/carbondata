@@ -68,9 +68,7 @@ case class CarbonDatasourceHadoopRelation(
   def buildScan(requiredColumns: Array[String],
       filters: Array[Filter],
       partitions: Seq[String]): RDD[InternalRow] = {
-    val filterExpression: Option[Expression] = filters.flatMap { filter =>
-      CarbonFilters.createCarbonFilter(schema, filter)
-    }.reduceOption(new AndExpression(_, _))
+    val filterExpression: Option[Expression] = CarbonFilters.createFilter(schema, filters)
 
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)

@@ -80,7 +80,7 @@ public class RestructureUtil {
         isDimensionExists[dimIndex] = true;
       } else {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
-          if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
+          if (tableDimension.getColName().equals(queryDimension.getDimension().getColName())) {
             QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
             tableDimension.getColumnSchema()
                 .setPrecision(queryDimension.getDimension().getColumnSchema().getPrecision());
@@ -371,7 +371,7 @@ public class RestructureUtil {
       // then setting measure exists is true
       // otherwise adding a default value of a measure
       for (CarbonMeasure carbonMeasure : currentBlockMeasures) {
-        if (carbonMeasure.getColumnId().equals(queryMeasure.getMeasure().getColumnId())) {
+        if (carbonMeasure.getColName().equals(queryMeasure.getMeasure().getColName())) {
           QueryMeasure currentBlockMeasure = new QueryMeasure(carbonMeasure.getColName());
           carbonMeasure.getColumnSchema().setDataType(queryMeasure.getMeasure().getDataType());
           carbonMeasure.getColumnSchema().setPrecision(queryMeasure.getMeasure().getPrecision());

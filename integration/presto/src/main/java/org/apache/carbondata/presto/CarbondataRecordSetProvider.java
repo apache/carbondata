@@ -21,15 +21,12 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.service.impl.PathFactory;
-import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonProjection;
+import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
-import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 
@@ -41,10 +38,6 @@ import com.facebook.presto.spi.connector.ConnectorRecordSetProvider;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.google.common.collect.ImmutableList;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.TaskAttemptContextImpl;
-import org.apache.hadoop.mapred.TaskAttemptID;
-import org.apache.hadoop.mapreduce.TaskType;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -88,7 +81,6 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     CarbonTable targetTable = tableCacheModel.carbonTable;
 
     QueryModel queryModel ;
-    TaskAttemptContextImpl hadoopAttemptContext;
     try {
       Configuration conf = new Configuration();
       conf.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
@@ -96,38 +88,13 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
           .getCarbonTablePath(targetTable.getAbsoluteTableIdentifier(), null).getPath();
 
       conf.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
-      JobConf jobConf = new JobConf(conf);
-      CarbonTableInputFormat carbonTableInputFormat =
-          createInputFormat(jobConf, tableCacheModel.carbonTable,
-              PrestoFilterUtil.parseFilterExpression(carbondataSplit.getConstraints()),
-              carbonProjection);
-      hadoopAttemptContext =
-          new TaskAttemptContextImpl(jobConf, new TaskAttemptID("", 1, TaskType.MAP, 0, 0));
-      CarbonInputSplit carbonInputSplit =
-          CarbonLocalInputSplit.convertSplit(carbondataSplit.getLocalInputSplit());
-      queryModel = carbonTableInputFormat.getQueryModel(carbonInputSplit, hadoopAttemptContext);
+      queryModel = CarbonInputFormat.createQueryModel(conf);
       queryModel.setVectorReader(true);
     } catch (IOException e) {
       throw new RuntimeException("Unable to get the Query Model ", e);
     }
-    return new CarbondataRecordSet(targetTable, session, carbondataSplit, handles.build(),
-        queryModel, hadoopAttemptContext);
+    return new CarbondataRecordSet(carbondataSplit, handles.build(),
+        queryModel);
   }
 
-  private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
-      CarbonTable carbonTable, Expression filterExpression, CarbonProjection projection) {
-
-    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
-    CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
-    CarbonTableInputFormat
-        .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));
-    CarbonTableInputFormat
-        .setDatabaseName(conf, identifier.getCarbonTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat
-        .setTableName(conf, identifier.getCarbonTableIdentifier().getTableName());
-  CarbonTableInputFormat.setFilterPredicates(conf, filterExpression);
-    CarbonTableInputFormat.setColumnProjection(conf, projection);
-
-    return format;
-  }
 }

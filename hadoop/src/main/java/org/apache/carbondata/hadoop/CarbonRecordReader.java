@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.hadoop;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,9 @@ import java.util.Map;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -84,6 +88,48 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {
       throw new InterruptedException(e.getMessage());
+    }
+  }
+
+  public void initializeForFileLevelRead(String filePath)
+      throws IOException, InterruptedException {
+    CarbonFile file = FileFactory.getCarbonFile(filePath);
+    long fileLength = file.getSize();
+    long footerOffset = getFooterOffset(filePath, fileLength);
+
+    TableBlockInfo blockInfo = new TableBlockInfo(
+        filePath, "0", footerOffset, "0", new String[]{}, fileLength,
+        null, ColumnarFormatVersion.V3, new String[]{});
+
+    List<TableBlockInfo> tableBlockInfoList = new ArrayList<>(1);
+    tableBlockInfoList.add(blockInfo);
+    queryModel.setTableBlockInfos(tableBlockInfoList);
+    readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
+    try {
+      carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
+    } catch (QueryExecutionException e) {
+      throw new InterruptedException(e.getMessage());
+    }
+  }
+
+  private long getFooterOffset(String filePath, long fileLength) throws IOException {
+    DataInputStream dataInputStream = null;
+    try {
+      dataInputStream = FileFactory.getDataInputStream(filePath, FileFactory.getFileType(filePath));
+      long offset = fileLength - 8;
+      if (dataInputStream.skipBytes((int) (offset)) != offset) {
+        throw new IOException("failed to skip to footer in file: " + filePath);
+      }
+      long footerOffset = dataInputStream.readLong();
+      if (footerOffset >= fileLength) {
+        throw new IOException("corrupted data file (" + filePath + "), footer offset: " +
+            footerOffset + ", file length: " + fileLength);
+      }
+      return footerOffset;
+    } finally {
+      if (dataInputStream != null) {
+        dataInputStream.close();
+      }
     }
   }
 
