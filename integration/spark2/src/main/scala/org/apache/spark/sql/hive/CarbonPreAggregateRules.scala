@@ -259,6 +259,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * @return transformed plan
    */
   def transformPreAggQueryPlan(logicalPlan: LogicalPlan): LogicalPlan = {
+    var isPlanUpdated = false
     val updatedPlan = logicalPlan.transform {
       case agg@Aggregate(
         grExp,
@@ -294,6 +295,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   childPlan,
                   carbonTable,
                   agg)
+              isPlanUpdated = true
               Aggregate(updatedGroupExp,
                 updatedAggExp,
                 CarbonReflectionUtils
@@ -346,6 +348,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   childPlan,
                   carbonTable,
                   agg)
+              isPlanUpdated = true
               Aggregate(updatedGroupExp,
                 updatedAggExp,
                 CarbonReflectionUtils
@@ -401,6 +404,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   childPlan,
                   carbonTable,
                   agg)
+              isPlanUpdated = true
               Aggregate(updatedGroupExp,
                 updatedAggExp,
                 Filter(updatedFilterExpression.get,
@@ -461,6 +465,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   childPlan,
                   carbonTable,
                   agg)
+              isPlanUpdated = true
               Aggregate(updatedGroupExp,
                 updatedAggExp,
                 Filter(updatedFilterExpression.get,
@@ -480,6 +485,10 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           agg
         }
 
+    }
+    if(isPlanUpdated) {
+      CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+        "true")
     }
     updatedPlan
   }

@@ -599,6 +599,8 @@ object PreAggregateUtil {
       CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
       parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
       parentTableIdentifier.table, validateSegments.toString)
+    CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+      "true")
     CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
     try {
       loadCommand.processData(sparkSession)

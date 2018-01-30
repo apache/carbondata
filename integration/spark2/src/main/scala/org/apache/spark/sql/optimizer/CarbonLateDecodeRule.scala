@@ -35,7 +35,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.stats.QueryStatistic
-import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 
@@ -66,7 +66,8 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   }
 
   def checkIfRuleNeedToBeApplied(plan: LogicalPlan, removeSubQuery: Boolean = false): Boolean = {
-    relations = collectCarbonRelation(plan);
+    relations = collectCarbonRelation(plan)
+    validateQueryDirectlyOnDataMap(relations)
     if (relations.nonEmpty && !isOptimized(plan)) {
       // In case scalar subquery skip the transformation and update the flag.
       if (relations.exists(_.carbonRelation.isSubquery.nonEmpty)) {
@@ -84,6 +85,41 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     } else {
       LOGGER.info("skip CarbonOptimizer")
       false
+    }
+  }
+
+  /**
+   * Below method will be used to validate if query is directly fired on pre aggregate
+   * data map or not
+   * @param relations all relations from query
+   *
+   */
+  def validateQueryDirectlyOnDataMap(relations: Seq[CarbonDecoderRelation]): Unit = {
+    var isPreAggDataMapExists = false
+    // first check if pre aggregate data map exists or not
+    relations.foreach{relation =>
+      if (relation.carbonRelation.carbonTable.isChildDataMap) {
+        isPreAggDataMapExists = true
+      }
+    }
+    val validateQuery = CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP,
+        CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE).toBoolean
+    var isThrowException = false
+    // if validate query is enabled and relation contains pre aggregate data map
+    if (validateQuery && isPreAggDataMapExists) {
+      val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+      if (null != carbonSessionInfo) {
+        val supportQueryOnDataMap = CarbonEnv.getThreadParam(
+          CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+            CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE).toBoolean
+        if (!supportQueryOnDataMap) {
+          isThrowException = true
+        }
+      }
+    }
+    if(isThrowException) {
+      throw new AnalysisException("Query On DataMap not supported")
     }
   }
 

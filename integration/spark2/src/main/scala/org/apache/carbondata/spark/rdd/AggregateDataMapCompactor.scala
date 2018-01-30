@@ -70,6 +70,8 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         loadCommand.dataFrame =
                   Some(PreAggregateUtil.getDataFrame(
                     sqlContext.sparkSession, loadCommand.logicalPlan.get))
+        CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+          "true")
         loadCommand.processData(sqlContext.sparkSession)
         val newLoadMetaDataDetails = SegmentStatusManager.readLoadMetadata(
           carbonTable.getMetaDataFilepath, uuid)

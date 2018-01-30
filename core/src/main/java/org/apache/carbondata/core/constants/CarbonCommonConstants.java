@@ -1588,6 +1588,16 @@ public final class CarbonCommonConstants {
       "carbon.sort.storage.inmemory.size.inmb";
   public static final String IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB_DEFAULT = "512";
 
+  @CarbonProperty
+  public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP =
+      "carbon.query.directQueryOnDataMap.enabled";
+  public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "false";
+
+  @CarbonProperty
+  public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP =
+      "carbon.query.validate.directqueryondatamap";
+  public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "true";
+
   private CarbonCommonConstants() {
   }
 }

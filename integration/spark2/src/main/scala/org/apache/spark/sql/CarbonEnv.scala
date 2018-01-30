@@ -265,4 +265,22 @@ object CarbonEnv {
       tableName)
   }
 
+  def getThreadParam(key: String, defaultValue: String) : String = {
+    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (null != carbonSessionInfo) {
+      carbonSessionInfo.getThreadParams.getProperty(key, defaultValue)
+    } else {
+      defaultValue
+    }
+  }
+
+  def getSessionParam(key: String, defaultValue: String) : String = {
+    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (null != carbonSessionInfo) {
+      carbonSessionInfo.getThreadParams.getProperty(key, defaultValue)
+    } else {
+      defaultValue
+    }
+  }
+
 }
