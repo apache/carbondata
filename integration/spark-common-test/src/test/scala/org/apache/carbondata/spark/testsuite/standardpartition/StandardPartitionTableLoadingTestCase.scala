@@ -476,7 +476,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
           .asInstanceOf[CarbonScanRDD]
       }.head
       assert(scanRdd.getPartitions.length < 10)
-      assertResult(100)(dataFrame.collect().length)
+      assertResult(100)(dataFrame.count)
     } finally {
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION ,
         CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)

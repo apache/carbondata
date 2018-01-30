@@ -90,7 +90,9 @@ case class CarbonLoadDataCommand(
 
   var table: CarbonTable = _
 
-  var logicalRelation: LogicalRelation = _
+  var logicalPartitionRelation: LogicalRelation = _
+
+  var sizeInBytes: Long = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -111,12 +113,13 @@ case class CarbonLoadDataCommand(
         relation.carbonTable
       }
     if (table.isHivePartitionTable) {
-      logicalRelation =
+      logicalPartitionRelation =
         new FindDataSourceTable(sparkSession).apply(
           sparkSession.sessionState.catalog.lookupRelation(
             TableIdentifier(tableName, databaseNameOp))).collect {
           case l: LogicalRelation => l
         }.head
+      sizeInBytes = logicalPartitionRelation.relation.sizeInBytes
     }
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     if(CarbonUtil.hasAggregationDataMap(table)) {
@@ -505,7 +508,7 @@ case class CarbonLoadDataCommand(
       operationContext: OperationContext) = {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val identifier = TableIdentifier(table.getTableName, Some(table.getDatabaseName))
-    val catalogTable: CatalogTable = logicalRelation.catalogTable.get
+    val catalogTable: CatalogTable = logicalPartitionRelation.catalogTable.get
     val currentPartitions =
       CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, identifier)
     // Clean up the alreday dropped partitioned data
@@ -594,23 +597,24 @@ case class CarbonLoadDataCommand(
           DataLoadingUtil.csvFileScanRDD(
             sparkSession,
             model = carbonLoadModel,
-            hadoopConf).map { row =>
-            val data = new Array[Any](len)
-            var i = 0
-            val input = row.asInstanceOf[GenericInternalRow].values.asInstanceOf[Array[String]]
-            val inputLen = Math.min(input.length, len)
-            while (i < inputLen) {
-              data(i) = UTF8String.fromString(input(i))
-              // If partition column then update empty value with special string otherwise spark
-              // makes it as null so we cannot internally handle badrecords.
-              if (partitionColumns(i)) {
-                if (input(i) != null && input(i).isEmpty) {
-                  data(i) = UTF8String.fromString(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
+            hadoopConf)
+            .map { row =>
+              val data = new Array[Any](len)
+              var i = 0
+              val input = row.asInstanceOf[GenericInternalRow].values.asInstanceOf[Array[String]]
+              val inputLen = Math.min(input.length, len)
+              while (i < inputLen) {
+                data(i) = UTF8String.fromString(input(i))
+                // If partition column then update empty value with special string otherwise spark
+                // makes it as null so we cannot internally handle badrecords.
+                if (partitionColumns(i)) {
+                  if (input(i) != null && input(i).isEmpty) {
+                    data(i) = UTF8String.fromString(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
+                  }
                 }
+                i = i + 1
               }
-              i = i + 1
-            }
-            InternalRow.fromSeq(data)
+              InternalRow.fromSeq(data)
 
           }
         // Only select the required columns
@@ -624,7 +628,6 @@ case class CarbonLoadDataCommand(
         }
         Project(output, LogicalRDD(attributes, rdd)(sparkSession))
       }
-      val sizeInBytes = logicalRelation.relation.sizeInBytes
       val convertRelation = convertToLogicalRelation(
         catalogTable,
         sizeInBytes,
