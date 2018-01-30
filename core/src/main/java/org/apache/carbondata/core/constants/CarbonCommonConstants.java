@@ -1525,8 +1525,6 @@ public final class CarbonCommonConstants {
    */
   public static final long HANDOFF_SIZE_DEFAULT = 1024L * 1024 * 1024;
 
-  public static final String TIMESERIES_EVENTTIME = "event_time";
-
   /**
    * It allows queries on hive metastore directly along with filter information, otherwise first
    * fetches all partitions from hive and apply filters on it.

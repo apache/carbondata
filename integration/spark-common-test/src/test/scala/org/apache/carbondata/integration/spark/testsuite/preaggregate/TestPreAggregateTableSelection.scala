@@ -23,7 +23,7 @@ import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
 
 class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
 
@@ -269,7 +269,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     preAggTableValidator(df.queryExecution.analyzed, "maintable")
   }
 
-  val timeSeries = TIMESERIES.getName
+  val timeSeries = TIMESERIES.toString
 
 test("test PreAggregate table selection with timeseries and normal together") {
     sql("drop table if exists maintabletime")
@@ -284,23 +284,23 @@ test("test PreAggregate table selection with timeseries and normal together") {
 
   sql(
     s"""
-       | create datamap agg1_year on table maintabletime
-       | using '$timeSeries'
+       | CREATE DATAMAP agg1_year ON TABLE maintabletime
+       | USING '$timeSeries'
        | DMPROPERTIES (
-       | 'event_time'='dob',
-       | 'year_granularity'='1')
-       | as select dob, name from maintabletime
-       | group by dob,name
+       | 'EVENT_TIME'='dob',
+       | 'YEAR_GRANULARITY'='1')
+       | AS SELECT dob, name FROM maintabletime
+       | GROUP BY dob,name
        """.stripMargin)
 
-    val df = sql("select timeseries(dob,'year') from maintabletime group by timeseries(dob,'year')")
+    val df = sql("SELECT timeseries(dob,'year') FROM maintabletime GROUP BY timeseries(dob,'year')")
     preAggTableValidator(df.queryExecution.analyzed, "maintabletime_agg1_year")
-  sql("drop table if exists maintabletime")
+  sql("DROP TABLE IF EXISTS maintabletime")
 
   }
 
   test("test table selection when unsupported aggregate function is present") {
-    sql("drop table if exists maintabletime")
+    sql("DROP TABLE IF EXISTS maintabletime")
     sql(
       "create table maintabletime(year int,month int,name string,salary int,dob string) stored" +
       " by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23'," +
@@ -315,7 +315,7 @@ test("test PreAggregate table selection with timeseries and normal together") {
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists lineitem")
-    sql("drop table if exists maintabletime")
+    sql("DROP TABLE IF EXISTS maintabletime")
   }
 
 }

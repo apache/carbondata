@@ -11,7 +11,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.{PREAGGREGATE, TIMESERIES}
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
@@ -215,59 +215,59 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap agg0 on table maintable")
   }
 
-  val timeSeries = TIMESERIES.getName
+  val timeSeries = TIMESERIES.toString
 
   test("test PreAggregate table selection: create with preaggregate and hierarchy") {
-    sql("drop table if exists maintabletime")
+    sql("DROP TABLE IF EXISTS maintabletime")
     sql(
       """
-        | create table maintabletime(year int,month int,name string,salary int,dob string)
-        | stored by 'carbondata'
-        | tblproperties(
-        |   'sort_scope'='Global_sort',
-        |   'table_blocksize'='23',
-        |   'sort_columns'='month,year,name')
+        | CREATE TABLE maintabletime(year INT,month INT,name STRING,salary INT,dob STRING)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES(
+        |   'SORT_SCOPE'='Global_sort',
+        |   'TABLE_BLOCKSIZE'='23',
+        |   'SORT_COLUMNS'='month,year,name')
       """.stripMargin)
-    sql("insert into maintabletime select 10,11,'x',12,'2014-01-01 00:00:00'")
+    sql("INSERT INTO maintabletime SELECT 10,11,'x',12,'2014-01-01 00:00:00'")
     sql(
       s"""
-         | create datamap agg0 on table maintabletime
-         | using 'preaggregate'
-         | as select dob,name from maintabletime
-         | group by dob,name
+         | CREATE DATAMAP agg0 ON TABLE maintabletime
+         | USING 'preaggregate'
+         | AS SELECT dob,name FROM maintabletime
+         | GROUP BY dob,name
        """.stripMargin)
     val e = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
-           | create datamap agg1 on table maintabletime
-           | using 'preaggregate'
+           | CREATE DATAMAP agg1 ON TABLE maintabletime
+           | USING 'preaggregate'
            | DMPROPERTIES (
-           |  'event_time'='dob',
-           |  'second_granularity'='1')
-           | as select dob,name from maintabletime
-           | group by dob,name
+           |  'EVENT_TIME'='dob',
+           |  'SECOND_GRANULARITY'='1')
+           | AS SELECT dob,name FROM maintabletime
+           | GROUP BY dob,name
        """.stripMargin)
     }
     assert(e.getMessage.contains(s"$timeSeries keyword missing"))
-    sql("drop table if exists maintabletime")
+    sql("DROP TABLE IF EXISTS maintabletime")
   }
 
   test("test pre agg create table 21: using") {
-    sql("drop datamap agg0 on table maintable")
+    sql("DROP DATAMAP agg0 ON TABLE maintable")
 
     val e: Exception = intercept[Exception] {
       sql(
         """
-          | create datamap agg0 on table mainTable
-          | using 'abc'
-          | as select column3, sum(column3),column5, sum(column5)
-          | from maintable
-          | group by column3,column5,column2
+          | CREATE DATAMAP agg0 ON TABLE mainTable
+          | USING 'abc'
+          | AS SELECT column3, SUM(column3),column5, SUM(column5)
+          | FROM maintable
+          | GROUP BY column3,column5,column2
         """.stripMargin)
     }
     assert(e.getMessage.contains(
       s"Unknown data map type abc"))
-    sql("drop datamap agg0 on table maintable")
+    sql("DROP DATAMAP agg0 ON TABLE maintable")
   }
 
   def getCarbontable(plan: LogicalPlan) : CarbonTable ={

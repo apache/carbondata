@@ -262,9 +262,9 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table: using") {
-    sql("drop table if exists usingTable")
+    sql("DROP TABLE IF EXISTS usingTable")
     val e: Exception = intercept[ClassNotFoundException] {
-      sql("create table usingTable(name String) using abc")
+      sql("CREATE TABLE usingTable(name STRING) USING abc")
     }
     assert(e.getMessage.contains("Failed to find data source: abc"))
   }

@@ -18,17 +18,19 @@ package org.apache.spark.sql.execution.command.timeseries
 
 import org.apache.spark.sql.execution.command.{DataMapField, Field}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, Granularity}
-import org.apache.carbondata.core.metadata.schema.table.DataMapClassName.TIMESERIES
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
+import org.apache.carbondata.core.metadata.schema.datamap.Granularity
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.preagg.TimeSeriesUDF
-import org.apache.carbondata.spark.exception.{CarbonIllegalArgumentException, MalformedCarbonCommandException}
+import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 
 /**
  * Utility class for time series to keep
  */
 object TimeSeriesUtil {
+
+  val TIMESERIES_EVENTTIME = "event_time"
 
   /**
    * Below method will be used to validate whether column mentioned in time series
@@ -40,7 +42,7 @@ object TimeSeriesUtil {
    */
   def validateTimeSeriesEventTime(dmproperties: Map[String, String],
       parentTable: CarbonTable) {
-    val eventTime = dmproperties.get(CarbonCommonConstants.TIMESERIES_EVENTTIME)
+    val eventTime = dmproperties.get(TIMESERIES_EVENTTIME)
     if (!eventTime.isDefined) {
       throw new MalformedCarbonCommandException("event_time not defined in time series")
     } else {
@@ -69,7 +71,7 @@ object TimeSeriesUtil {
     for (granularity <- Granularity.values()) {
       if (dmProperties.get(granularity.getName).isDefined) {
         if (isFound) {
-          throw new CarbonIllegalArgumentException(
+          throw new MalformedDataMapCommandException(
             s"Only one granularity level can be defined")
         } else {
           isFound = true
@@ -78,12 +80,12 @@ object TimeSeriesUtil {
     }
 
     // 2. check whether timeseries and granularity match
-    if (isFound && !dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
-      throw new CarbonIllegalArgumentException(
-        s"${TIMESERIES.getName} keyword missing")
-    } else if (!isFound && dmClassName.equalsIgnoreCase(TIMESERIES.getName)) {
-      throw new CarbonIllegalArgumentException(
-        s"${TIMESERIES.getName} should define time granularity")
+    if (isFound && !dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+      throw new MalformedDataMapCommandException(
+        s"${TIMESERIES.toString} keyword missing")
+    } else if (!isFound && dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+      throw new MalformedDataMapCommandException(
+        s"${TIMESERIES.toString} should define time granularity")
     } else if (isFound) {
       true
     } else {
@@ -109,11 +111,11 @@ object TimeSeriesUtil {
     for (granularity <- Granularity.values()) {
       if (dmProperties.get(granularity.getName).isDefined &&
         dmProperties.get(granularity.getName).get.equalsIgnoreCase(defaultValue)) {
-        return (granularity.getTime, dmProperties.get(granularity.getName).get)
+        return (granularity.toString.toLowerCase, dmProperties.get(granularity.getName).get)
       }
     }
 
-    throw new CarbonIllegalArgumentException(
+    throw new MalformedDataMapCommandException(
       s"Granularity only support $defaultValue")
   }
 

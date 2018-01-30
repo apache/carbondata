@@ -15,38 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.metadata.schema.table;
+package org.apache.carbondata.spark.exception;
 
 /**
- * type for create datamap
- * The syntax of datamap creation is as follows.
- * CREATE DATAMAP IF NOT EXISTS dataMapName ON TABLE tableName USING 'DataMapClassName'
- * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
- *
- * Please refer {{org.apache.spark.sql.parser.CarbonSpark2SqlParser}}
+ * Throw exception when using illegal argument
  */
+public class MalformedDataMapCommandException extends MalformedCarbonCommandException {
+  /**
+   * default serial version ID.
+   */
+  private static final long serialVersionUID = 1L;
 
-public enum DataMapClassName {
-  PREAGGREGATE((short) 1, "preaggregate"),
-  TIMESERIES((short) 2, "timeseries");
-  private int value;
-  private String name;
-
-  DataMapClassName(int value, String name) {
-    this.value = value;
-    this.name = name;
-  }
-
-  public int getValue() {
-    return value;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public String toString() {
-    return this.name;
+  public MalformedDataMapCommandException(String msg) {
+    super(msg);
   }
 }

@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.exception;
+package org.apache.carbondata.core.metadata.schema.datamap;
 
 /**
- * Throw exception when using unsupported datamap type
+ * type for create datamap
+ * The syntax of datamap creation is as follows.
+ * CREATE DATAMAP IF NOT EXISTS dataMapName ON TABLE tableName USING 'DataMapProvider'
+ * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
+ *
+ * Please refer {{org.apache.spark.sql.parser.CarbonSpark2SqlParser}}
  */
-public class UnsupportedDataMapException extends MalformedCarbonCommandException {
-  /**
-   * default serial version ID.
-   */
-  private static final long serialVersionUID = 1L;
 
-  public UnsupportedDataMapException(String dataMapType) {
-    super("Unknown data map type " + dataMapType);
-  }
+public enum DataMapProvider {
+  PREAGGREGATE,
+  TIMESERIES;
 }

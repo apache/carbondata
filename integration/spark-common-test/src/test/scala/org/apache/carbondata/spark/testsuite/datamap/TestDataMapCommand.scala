@@ -27,7 +27,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.spark.exception.UnsupportedDataMapException
+import org.apache.carbondata.spark.exception.MalformedDataMapCommandException
 
 class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
@@ -43,8 +43,8 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   val newClass = "org.apache.spark.sql.CarbonSource"
 
   test("test datamap create: don't support using class, only support short name") {
-    intercept[UnsupportedDataMapException] {
-      sql(s"create datamap datamap1 on table datamaptest using '$newClass'")
+    intercept[MalformedDataMapCommandException] {
+      sql(s"CREATE DATAMAP datamap1 ON TABLE datamaptest USING '$newClass'")
       val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
       assert(table != null)
       val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
@@ -55,8 +55,8 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test datamap create with dmproperties: don't support using class") {
-    intercept[UnsupportedDataMapException] {
-      sql(s"create datamap datamap2 on table datamaptest using '$newClass' dmproperties('key'='value')")
+    intercept[MalformedDataMapCommandException] {
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamaptest USING '$newClass' DMPROPERTIES('key'='value')")
       val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
       assert(table != null)
       val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
@@ -68,9 +68,9 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test datamap create with existing name: don't support using class") {
-    intercept[UnsupportedDataMapException] {
+    intercept[MalformedDataMapCommandException] {
       sql(
-        s"create datamap datamap2 on table datamaptest using '$newClass' dmproperties('key'='value')")
+        s"CREATE DATAMAP datamap2 ON TABLE datamaptest USING '$newClass' DMPROPERTIES('key'='value')")
       val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
       assert(table != null)
       val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
@@ -147,17 +147,17 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql(
         s"""
-           | create datamap datamap2 on table datamaptest
-           | using 'preaggregate'
-           | dmproperties('key'='value')
-           | as select count(a) from datamaptest
+           | CREATE DATAMAP datamap2 ON TABLE datamaptest
+           | USING 'preaggregate'
+           | DMPROPERTIES('key'='value')
+           | AS SELECT COUNT(a) FROM datamaptest
          """.stripMargin)
       sql(
         s"""
-           | create datamap datamap2 on table datamaptest
-           | using 'preaggregate'
-           | dmproperties('key'='value')
-           | as select count(a) from datamaptest
+           | CREATE DATAMAP datamap2 ON TABLE datamaptest
+           | USING 'preaggregate'
+           | DMPROPERTIES('key'='value')
+           | AS SELECT COUNT(a) FROM datamaptest
          """.stripMargin)
     }
     val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
@@ -178,21 +178,21 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test show datamap without preaggregate: don't support using class") {
-    intercept[UnsupportedDataMapException] {
+    intercept[MalformedDataMapCommandException] {
       sql("drop table if exists datamapshowtest")
       sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
-      sql(s"create datamap datamap1 on table datamapshowtest using '$newClass' dmproperties('key'='value')")
-      sql(s"create datamap datamap2 on table datamapshowtest using '$newClass' dmproperties('key'='value')")
-      checkExistence(sql("show datamap on table datamapshowtest"), true, "datamap1", "datamap2", "(NA)", newClass)
+      sql(s"CREATE DATAMAP datamap1 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
+      checkExistence(sql("SHOW DATAMAP ON TABLE datamapshowtest"), true, "datamap1", "datamap2", "(NA)", newClass)
     }
   }
 
   test("test show datamap with preaggregate: don't support using class") {
-    intercept[UnsupportedDataMapException] {
+    intercept[MalformedDataMapCommandException] {
       sql("drop table if exists datamapshowtest")
       sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
       sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
-      sql(s"create datamap datamap2 on table datamapshowtest using '$newClass' dmproperties('key'='value')")
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
       val frame = sql("show datamap on table datamapshowtest")
       assert(frame.collect().length == 2)
       checkExistence(frame, true, "datamap1", "datamap2", "(NA)", newClass, "default.datamapshowtest_datamap1")
@@ -206,11 +206,11 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test show datamap after dropping datamap: don't support using class") {
-    intercept[UnsupportedDataMapException] {
+    intercept[MalformedDataMapCommandException] {
       sql("drop table if exists datamapshowtest")
       sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
       sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
-      sql(s"create datamap datamap2 on table datamapshowtest using '$newClass' dmproperties('key'='value')")
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
       sql("drop datamap datamap1 on table datamapshowtest")
       val frame = sql("show datamap on table datamapshowtest")
       assert(frame.collect().length == 1)
