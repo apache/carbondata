@@ -28,7 +28,7 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 /**
  * This class is gives access to fixed length dimension data chunk store
  */
-public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
+public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage {
 
   /**
    * Constructor
@@ -39,7 +39,7 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
    * @param numberOfRows         number of rows
    * @param columnValueSize      size of each column value
    */
-  public FixedLengthDimensionDataChunk(byte[] dataChunk, int[] invertedIndex,
+  public FixedLengthDimensionColumnPage(byte[] dataChunk, int[] invertedIndex,
       int[] invertedIndexReverse, int numberOfRows, int columnValueSize) {
     long totalSize = null != invertedIndex ?
         dataChunk.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
@@ -53,15 +53,15 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
   /**
    * Below method will be used to fill the data based on offset and row id
    *
-   * @param data             data to filed
+   * @param rowId            row id of the chunk
    * @param offset           offset from which data need to be filed
-   * @param index            row id of the chunk
+   * @param data             data to filed
    * @param keyStructureInfo define the structure of the key
    * @return how many bytes was copied
    */
-  @Override public int fillChunkData(byte[] data, int offset, int index,
+  @Override public int fillRawData(int rowId, int offset, byte[] data,
       KeyStructureInfo keyStructureInfo) {
-    dataChunkStore.fillRow(index, data, offset);
+    dataChunkStore.fillRow(rowId, data, offset);
     return dataChunkStore.getColumnValueSize();
   }
 
@@ -69,28 +69,28 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
    * Converts to column dictionary integer value
    *
    * @param rowId
-   * @param columnIndex
-   * @param row
+   * @param chunkIndex
+   * @param outputSurrogateKey
    * @param restructuringInfo
    * @return
    */
-  @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+  @Override public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey,
       KeyStructureInfo restructuringInfo) {
-    row[columnIndex] = dataChunkStore.getSurrogate(rowId);
-    return columnIndex + 1;
+    outputSurrogateKey[chunkIndex] = dataChunkStore.getSurrogate(rowId);
+    return chunkIndex + 1;
   }
 
   /**
    * Fill the data to vector
    *
    * @param vectorInfo
-   * @param column
+   * @param chunkIndex
    * @param restructuringInfo
    * @return next column index
    */
-  @Override public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+  @Override public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex,
       KeyStructureInfo restructuringInfo) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = columnVectorInfo.size + offset;
@@ -117,27 +117,27 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
         }
       }
     }
-    return column + 1;
+    return chunkIndex + 1;
   }
 
   /**
    * Fill the data to vector
    *
-   * @param rowMapping
+   * @param filteredRowId
    * @param vectorInfo
-   * @param column
+   * @param chunkIndex
    * @param restructuringInfo
    * @return next column index
    */
-  @Override public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo,
-      int column, KeyStructureInfo restructuringInfo) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+  @Override public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo,
+      int chunkIndex, KeyStructureInfo restructuringInfo) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = columnVectorInfo.size + offset;
     CarbonColumnVector vector = columnVectorInfo.vector;
     for (int j = offset; j < len; j++) {
-      int dict = dataChunkStore.getSurrogate(rowMapping[j]);
+      int dict = dataChunkStore.getSurrogate(filteredRowId[j]);
       if (columnVectorInfo.directDictionaryGenerator == null) {
         vector.putInt(vectorOffset++, dict);
       } else {
@@ -158,6 +158,6 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
         }
       }
     }
-    return column + 1;
+    return chunkIndex + 1;
   }
 }

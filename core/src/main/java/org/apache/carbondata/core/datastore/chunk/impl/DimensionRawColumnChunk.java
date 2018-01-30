@@ -19,25 +19,25 @@ package org.apache.carbondata.core.datastore.chunk.impl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.memory.MemoryException;
 
 /**
  * Contains raw dimension data,
  * 1. The read uncompressed raw data of column chunk with all pages is stored in this instance.
- * 2. The raw data can be converted to processed chunk using convertToDimColDataChunk method
+ * 2. The raw data can be converted to processed chunk using decodeColumnPage method
  *  by specifying page number.
  */
 public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
-  private DimensionColumnDataChunk[] dataChunks;
+  private DimensionColumnPage[] dataChunks;
 
   private DimensionColumnChunkReader chunkReader;
 
-  private FileHolder fileHolder;
+  private FileReader fileReader;
 
   public DimensionRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length,
       DimensionColumnChunkReader columnChunkReader) {
@@ -46,17 +46,17 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   }
 
   /**
-   * Convert all raw data with all pages to processed DimensionColumnDataChunk's
+   * Convert all raw data with all pages to processed DimensionColumnPage's
    * @return
    */
-  public DimensionColumnDataChunk[] convertToDimColDataChunks() {
+  public DimensionColumnPage[] decodeAllColumnPages() {
     if (dataChunks == null) {
-      dataChunks = new DimensionColumnDataChunk[pagesCount];
+      dataChunks = new DimensionColumnPage[pagesCount];
     }
     for (int i = 0; i < pagesCount; i++) {
       try {
         if (dataChunks[i] == null) {
-          dataChunks[i] = chunkReader.convertToDimensionChunk(this, i);
+          dataChunks[i] = chunkReader.decodeColumnPage(this, i);
         }
       } catch (IOException | MemoryException e) {
         throw new RuntimeException(e);
@@ -66,24 +66,24 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   }
 
   /**
-   * Convert raw data with specified page number processed to DimensionColumnDataChunk
-   * @param index
+   * Convert raw data with specified page number processed to DimensionColumnPage
+   * @param pageNumber
    * @return
    */
-  public DimensionColumnDataChunk convertToDimColDataChunk(int index) {
-    assert index < pagesCount;
+  public DimensionColumnPage decodeColumnPage(int pageNumber) {
+    assert pageNumber < pagesCount;
     if (dataChunks == null) {
-      dataChunks = new DimensionColumnDataChunk[pagesCount];
+      dataChunks = new DimensionColumnPage[pagesCount];
     }
-    if (dataChunks[index] == null) {
+    if (dataChunks[pageNumber] == null) {
       try {
-        dataChunks[index] = chunkReader.convertToDimensionChunk(this, index);
+        dataChunks[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber);
       } catch (IOException | MemoryException e) {
         throw new RuntimeException(e);
       }
     }
 
-    return dataChunks[index];
+    return dataChunks[pageNumber];
   }
 
   /**
@@ -92,10 +92,10 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @param index
    * @return
    */
-  public DimensionColumnDataChunk convertToDimColDataChunkWithOutCache(int index) {
+  public DimensionColumnPage convertToDimColDataChunkWithOutCache(int index) {
     assert index < pagesCount;
     try {
-      return chunkReader.convertToDimensionChunk(this, index);
+      return chunkReader.decodeColumnPage(this, index);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -111,11 +111,11 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     }
   }
 
-  public void setFileHolder(FileHolder fileHolder) {
-    this.fileHolder = fileHolder;
+  public void setFileReader(FileReader fileReader) {
+    this.fileReader = fileReader;
   }
 
-  public FileHolder getFileReader() {
-    return fileHolder;
+  public FileReader getFileReader() {
+    return fileReader;
   }
 }

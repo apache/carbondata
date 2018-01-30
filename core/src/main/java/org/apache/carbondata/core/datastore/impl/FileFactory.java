@@ -28,7 +28,7 @@ import java.nio.channels.FileChannel;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 
 import org.apache.commons.io.FileUtils;
@@ -62,7 +62,7 @@ public final class FileFactory {
     return configuration;
   }
 
-  public static FileHolder getFileHolder(FileType fileType) {
+  public static FileReader getFileHolder(FileType fileType) {
     return fileFileTypeInerface.getFileHolder(fileType);
   }
 

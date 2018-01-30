@@ -17,24 +17,28 @@
 
 package org.apache.carbondata.core.datastore.impl;
 
-import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.filesystem.*;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.filesystem.AlluxioCarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.HDFSCarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.ViewFSCarbonFile;
 
 import org.apache.hadoop.conf.Configuration;
 
 public class DefaultFileTypeProvider implements FileTypeInerface {
 
-  public FileHolder getFileHolder(FileFactory.FileType fileType) {
+  public FileReader getFileHolder(FileFactory.FileType fileType) {
     switch (fileType) {
       case LOCAL:
-        return new FileHolderImpl();
+        return new FileReaderImpl();
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
       case S3:
-        return new DFSFileHolderImpl();
+        return new DFSFileReaderImpl();
       default:
-        return new FileHolderImpl();
+        return new FileReaderImpl();
     }
   }
 

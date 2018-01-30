@@ -14,47 +14,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.scan.scanner;
+package org.apache.carbondata.core.scan.scanner.impl;
 
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.DataRefNode;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.impl.NonFilterQueryScannedResult;
+import org.apache.carbondata.core.scan.scanner.BlockletScanner;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
 
 /**
- * Blocklet scanner class to process the block
+ * Blocklet scanner to do full scan of a blocklet,
+ * returning all projection and filter column chunks
  */
-public abstract class AbstractBlockletScanner implements BlockletScanner {
+public class BlockletFullScanner implements BlockletScanner {
 
   /**
    * block execution info
    */
   protected BlockExecutionInfo blockExecutionInfo;
 
-  public QueryStatisticsModel queryStatisticsModel;
+  private QueryStatisticsModel queryStatisticsModel;
 
-  private AbstractScannedResult emptyResult;
+  private BlockletScannedResult emptyResult;
 
-  public AbstractBlockletScanner(BlockExecutionInfo tableBlockExecutionInfos) {
+  public BlockletFullScanner(BlockExecutionInfo tableBlockExecutionInfos,
+      QueryStatisticsModel queryStatisticsModel) {
     this.blockExecutionInfo = tableBlockExecutionInfos;
+    this.queryStatisticsModel = queryStatisticsModel;
   }
 
-  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
+  @Override
+  public BlockletScannedResult scanBlocklet(
+      RawBlockletColumnChunks rawBlockletColumnChunks)
       throws IOException, FilterUnsupportedException {
     long startTime = System.currentTimeMillis();
-    AbstractScannedResult scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
+    BlockletScannedResult scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
     QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
     totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
@@ -68,52 +75,53 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     QueryStatistic validPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.VALID_PAGE_SCANNED);
     validPages.addCountStatistic(QueryStatisticsConstants.VALID_PAGE_SCANNED,
-        validPages.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
+        validPages.getCount() + rawBlockletColumnChunks.getDataBlock().numberOfPages());
     // adding statistics for number of pages
     QueryStatistic totalPagesScanned = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.TOTAL_PAGE_SCANNED);
     totalPagesScanned.addCountStatistic(QueryStatisticsConstants.TOTAL_PAGE_SCANNED,
-        totalPagesScanned.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
+        totalPagesScanned.getCount() + rawBlockletColumnChunks.getDataBlock().numberOfPages());
     scannedResult.setBlockletId(
-        blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
-            .getDataBlock().blockletId());
+        blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR +
+            rawBlockletColumnChunks.getDataBlock().blockletIndex());
     if (!blockExecutionInfo.isPrefetchBlocklet()) {
-      readBlocklet(blocksChunkHolder);
+      readBlocklet(rawBlockletColumnChunks);
     }
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
-        blocksChunkHolder.getDimensionRawDataChunk();
-    DimensionColumnDataChunk[][] dimensionColumnDataChunks =
-        new DimensionColumnDataChunk[dimensionRawColumnChunks.length][blocksChunkHolder
+        rawBlockletColumnChunks.getDimensionRawColumnChunks();
+    DimensionColumnPage[][] dimensionColumnDataChunks =
+        new DimensionColumnPage[dimensionRawColumnChunks.length][rawBlockletColumnChunks
             .getDataBlock().numberOfPages()];
-    MeasureRawColumnChunk[] measureRawColumnChunks = blocksChunkHolder.getMeasureRawDataChunk();
-    ColumnPage[][] columnPages =
-        new ColumnPage[measureRawColumnChunks.length][blocksChunkHolder.getDataBlock()
+    MeasureRawColumnChunk[] measureRawColumnChunks =
+        rawBlockletColumnChunks.getMeasureRawColumnChunks();
+    ColumnPage[][] measureColumnPages =
+        new ColumnPage[measureRawColumnChunks.length][rawBlockletColumnChunks.getDataBlock()
                        .numberOfPages()];
-    scannedResult.setDimensionChunks(dimensionColumnDataChunks);
-    scannedResult.setMeasureChunks(columnPages);
+    scannedResult.setDimensionColumnPages(dimensionColumnDataChunks);
+    scannedResult.setMeasureColumnPages(measureColumnPages);
     scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     if (blockExecutionInfo.isPrefetchBlocklet()) {
       for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
         if (dimensionRawColumnChunks[i] != null) {
-          dimensionColumnDataChunks[i] = dimensionRawColumnChunks[i].convertToDimColDataChunks();
+          dimensionColumnDataChunks[i] = dimensionRawColumnChunks[i].decodeAllColumnPages();
         }
       }
       for (int i = 0; i < measureRawColumnChunks.length; i++) {
         if (measureRawColumnChunks[i] != null) {
-          columnPages[i] = measureRawColumnChunks[i].convertToColumnPage();
+          measureColumnPages[i] = measureRawColumnChunks[i].decodeAllColumnPages();
         }
       }
     }
     int[] numberOfRows = null;
-    if (blockExecutionInfo.getAllSelectedDimensionBlocksIndexes().length > 0) {
+    if (blockExecutionInfo.getAllSelectedDimensionColumnIndexRange().length > 0) {
       for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
         if (dimensionRawColumnChunks[i] != null) {
           numberOfRows = dimensionRawColumnChunks[i].getRowCount();
           break;
         }
       }
-    } else if (blockExecutionInfo.getAllSelectedMeasureBlocksIndexes().length > 0) {
+    } else if (blockExecutionInfo.getAllSelectedMeasureIndexRange().length > 0) {
       for (int i = 0; i < measureRawColumnChunks.length; i++) {
         if (measureRawColumnChunks[i] != null) {
           numberOfRows = measureRawColumnChunks[i].getRowCount();
@@ -124,19 +132,19 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
 
     // count(*)  case there would not be any dimensions are measures selected.
     if (numberOfRows == null) {
-      numberOfRows = new int[blocksChunkHolder.getDataBlock().numberOfPages()];
+      numberOfRows = new int[rawBlockletColumnChunks.getDataBlock().numberOfPages()];
       for (int i = 0; i < numberOfRows.length; i++) {
         numberOfRows[i] =
             CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
       }
-      int lastPageSize = blocksChunkHolder.getDataBlock().nodeSize()
+      int lastPageSize = rawBlockletColumnChunks.getDataBlock().numRows()
           % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
       ;
       if (lastPageSize > 0) {
         numberOfRows[numberOfRows.length - 1] = lastPageSize;
       }
     }
-    scannedResult.setNumberOfRows(numberOfRows);
+    scannedResult.setPageFilteredRowCount(numberOfRows);
     if (!blockExecutionInfo.isPrefetchBlocklet()) {
       scannedResult.fillDataChunks();
     }
@@ -148,16 +156,18 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     return scannedResult;
   }
 
-  @Override public void readBlocklet(BlocksChunkHolder blocksChunkHolder) throws IOException {
+  @Override
+  public void readBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws IOException {
     long startTime = System.currentTimeMillis();
-    DimensionRawColumnChunk[] dimensionRawColumnChunks = blocksChunkHolder.getDataBlock()
-        .getDimensionChunks(blocksChunkHolder.getFileReader(),
-            blockExecutionInfo.getAllSelectedDimensionBlocksIndexes());
-    blocksChunkHolder.setDimensionRawDataChunk(dimensionRawColumnChunks);
-    MeasureRawColumnChunk[] measureRawColumnChunks = blocksChunkHolder.getDataBlock()
-        .getMeasureChunks(blocksChunkHolder.getFileReader(),
-            blockExecutionInfo.getAllSelectedMeasureBlocksIndexes());
-    blocksChunkHolder.setMeasureRawDataChunk(measureRawColumnChunks);
+    DimensionRawColumnChunk[] dimensionRawColumnChunks = rawBlockletColumnChunks.getDataBlock()
+        .readDimensionChunks(rawBlockletColumnChunks.getFileReader(),
+            blockExecutionInfo.getAllSelectedDimensionColumnIndexRange());
+    rawBlockletColumnChunks.setDimensionRawColumnChunks(dimensionRawColumnChunks);
+    MeasureRawColumnChunk[] measureRawColumnChunks = rawBlockletColumnChunks.getDataBlock()
+        .readMeasureChunks(rawBlockletColumnChunks.getFileReader(),
+            blockExecutionInfo.getAllSelectedMeasureIndexRange());
+    rawBlockletColumnChunks.setMeasureRawColumnChunks(measureRawColumnChunks);
     // adding statistics for carbon read time
     QueryStatistic readTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
@@ -165,16 +175,16 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
         readTime.getCount() + (System.currentTimeMillis() - startTime));
   }
 
-  @Override public AbstractScannedResult createEmptyResult() {
+  BlockletScannedResult createEmptyResult() {
     if (emptyResult == null) {
       emptyResult = new NonFilterQueryScannedResult(blockExecutionInfo);
-      emptyResult.setNumberOfRows(new int[0]);
-      emptyResult.setIndexes(new int[0][]);
+      emptyResult.setPageFilteredRowCount(new int[0]);
+      emptyResult.setPageFilteredRowId(new int[0][]);
     }
     return emptyResult;
   }
 
-  @Override public boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException {
+  @Override public boolean isScanRequired(DataRefNode dataBlock) {
     // For non filter it is always true
     return true;
   }

@@ -23,8 +23,8 @@ import java.util.Map;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.model.ProjectionMeasure;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 
 /**
  * class for handling restructure scenarios for filling result
@@ -35,8 +35,8 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
 
   public RestructureBasedDictionaryResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
-    queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
-    queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
+    queryDimensions = executionInfo.getActualQueryDimensions();
+    queryMeasures = executionInfo.getActualQueryMeasures();
     measureDefaultValues = new Object[queryMeasures.length];
     fillMeasureDefaultValues();
     initDimensionAndMeasureIndexesForFillingData();
@@ -61,7 +61,8 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
    * This method will add a record both key and value to list object
    * it will keep track of how many record is processed, to handle limit scenario
    */
-  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+  @Override
+  public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
     // scan the record and add to list
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     int rowCounter = 0;
@@ -69,7 +70,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
     byte[][] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
     Map<Integer, GenericQueryType> comlexDimensionInfoMap =
-        tableBlockExecutionInfos.getComlexDimensionInfoMap();
+        executionInfo.getComlexDimensionInfoMap();
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
@@ -107,13 +108,13 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
   }
 
   protected void fillMeasureData(Object[] msrValues, int offset,
-      AbstractScannedResult scannedResult) {
+      BlockletScannedResult scannedResult) {
     int measureExistIndex = 0;
     for (short i = 0; i < measureInfo.getMeasureDataTypes().length; i++) {
       // if measure exists is block then pass measure column
       // data chunk to the collector
       if (measureInfo.getMeasureExists()[i]) {
-        QueryMeasure queryMeasure = tableBlockExecutionInfos.getQueryMeasures()[measureExistIndex];
+        ProjectionMeasure queryMeasure = executionInfo.getProjectionMeasures()[measureExistIndex];
         msrValues[i + offset] = getMeasureData(
             scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex]),
             scannedResult.getCurrentRowId(), queryMeasure.getMeasure());

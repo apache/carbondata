@@ -16,17 +16,10 @@
  */
 package org.apache.carbondata.core.scan.model;
 
-import java.io.Serializable;
-
 /**
- * query column  which will have information about column
+ * Contains information for a column for projection
  */
-public class QueryColumn implements Serializable {
-
-  /**
-   * serialVersionUID
-   */
-  private static final long serialVersionUID = -4222306600480181084L;
+public class ProjectionColumn {
 
   /**
    * name of the column
@@ -36,9 +29,9 @@ public class QueryColumn implements Serializable {
   /**
    * query order in which result of the query will be send
    */
-  private int queryOrder;
+  private int projectionOrdinal;
 
-  public QueryColumn(String columnName) {
+  ProjectionColumn(String columnName) {
     this.columnName = columnName;
   }
 
@@ -50,17 +43,17 @@ public class QueryColumn implements Serializable {
   }
 
   /**
-   * @return the queryOrder
+   * @return the projectionOrdinal
    */
-  public int getQueryOrder() {
-    return queryOrder;
+  public int getOrdinal() {
+    return projectionOrdinal;
   }
 
   /**
-   * @param queryOrder the queryOrder to set
+   * @param projectionOrdinal the projectionOrdinal to set
    */
-  public void setQueryOrder(int queryOrder) {
-    this.queryOrder = queryOrder;
+  public void setOrdinal(int projectionOrdinal) {
+    this.projectionOrdinal = projectionOrdinal;
   }
 
 }

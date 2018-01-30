@@ -27,27 +27,26 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 
-public class FileHolderImpl implements FileHolder {
+public class FileReaderImpl implements FileReader {
   /**
    * cache to hold filename and its stream
    */
   private Map<String, FileChannel> fileNameAndStreamCache;
-  private String queryId;
 
   private boolean readPageByPage;
 
   /**
-   * FileHolderImpl Constructor
+   * FileReaderImpl Constructor
    * It will create the cache
    */
-  public FileHolderImpl() {
+  public FileReaderImpl() {
     this.fileNameAndStreamCache =
         new HashMap<String, FileChannel>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
 
-  public FileHolderImpl(int capacity) {
+  public FileReaderImpl(int capacity) {
     this.fileNameAndStreamCache = new HashMap<String, FileChannel>(capacity);
   }
 
@@ -204,14 +203,6 @@ public class FileHolderImpl implements FileHolder {
     fileChannel.read(byteBuffer);
     byteBuffer.rewind();
     return byteBuffer;
-  }
-
-  @Override public void setQueryId(String queryId) {
-    this.queryId = queryId;
-  }
-
-  @Override public String getQueryId() {
-    return queryId;
   }
 
   @Override public void setReadPageByPage(boolean isReadPageByPage) {
