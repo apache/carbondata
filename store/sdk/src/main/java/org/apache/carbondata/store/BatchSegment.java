@@ -39,7 +39,7 @@ import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 
-public class BatchSegment implements Segment {
+class BatchSegment implements Segment {
   private CarbonTable table;
   private CarbonTableOutputFormat format;
   private Configuration hadoopConf;

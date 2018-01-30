@@ -234,10 +234,16 @@ object DataLoadingUtil {
     model
   }
 
-  // TODO: move to java
   /**
    * build CarbonLoadModel for data loading
-   *
+   * @param table CarbonTable object containing all metadata information for the table
+   *              like table name, table path, schema, etc
+   * @param carbonProperty Carbon property instance
+   * @param options Load options from user input
+   * @param optionsFinal Load options that populated with default values for optional options
+   * @param carbonLoadModel The output load model
+   * @param hadoopConf hadoopConf is needed to read CSV header if there 'fileheader' is not set in
+   *                   user provided load options
    */
   def buildCarbonLoadModel(
       table: CarbonTable,

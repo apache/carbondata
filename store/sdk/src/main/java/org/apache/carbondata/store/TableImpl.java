@@ -18,15 +18,14 @@
 package org.apache.carbondata.store;
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.store.BatchSegment;
 import org.apache.carbondata.store.api.Segment;
 import org.apache.carbondata.store.api.Table;
 
-public class TableImpl implements Table {
+class TableImpl implements Table {
 
   private CarbonTable table;
 
-  public TableImpl(CarbonTable table) {
+  TableImpl(CarbonTable table) {
     this.table = table;
   }
 

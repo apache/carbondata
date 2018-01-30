@@ -15,27 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api;
+package org.apache.carbondata.processing.segmentmanager;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.metadata.schema.table.TableSchema;
-import org.apache.carbondata.store.TableBuilder;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
-public class CarbonStore {
+public interface SegmentManager {
 
-  private CarbonStore() { }
+  String openNewSegment(CarbonTable table) throws IOException;
 
-  public static CarbonStore build() {
-    return new CarbonStore();
-  }
+  void commitLoadSegment(CarbonTable table, String segmentId) throws IOException;
 
-  public Table createTable(String tableName, TableSchema schema, String tablePath)
-      throws IOException {
-    return TableBuilder.newInstance()
-        .tableName(tableName)
-        .tablePath(tablePath)
-        .tableSchema(schema)
-        .create();
-  }
+  void commitOverwriteSegment(CarbonTable table, String segmentId) throws IOException;
+
+  void commitCompactedSegment(CarbonTable table, String segmentId) throws IOException;
+
+  void failSegment(CarbonTable table, String segmentId) throws IOException;
+
 }

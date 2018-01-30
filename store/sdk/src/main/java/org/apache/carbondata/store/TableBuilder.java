@@ -17,16 +17,26 @@
 
 package org.apache.carbondata.store;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.converter.SchemaConverter;
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.writer.ThriftWriter;
+import org.apache.carbondata.format.SchemaEvolutionEntry;
 import org.apache.carbondata.store.api.Table;
 
 public class TableBuilder {
@@ -42,7 +52,7 @@ public class TableBuilder {
     return new TableBuilder();
   }
 
-  public Table create() {
+  public Table create() throws IOException {
     if (tableName == null || tablePath == null || tableSchema == null) {
       throw new IllegalArgumentException("must provide table name and table path");
     }
@@ -58,8 +68,34 @@ public class TableBuilder {
     tableInfo.setTablePath(tablePath);
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setDataMapSchemaList(new ArrayList<DataMapSchema>(0));
+    AbsoluteTableIdentifier identifier = tableInfo.getOrCreateAbsoluteTableIdentifier();
 
-    CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo);
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
+        identifier.getTablePath(),
+        identifier.getCarbonTableIdentifier());
+    String schemaFilePath = carbonTablePath.getSchemaFilePath();
+    String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath);
+    CarbonMetadata.getInstance().loadTableMetadata(tableInfo);
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    org.apache.carbondata.format.TableInfo thriftTableInfo =
+        schemaConverter.fromWrapperToExternalTableInfo(
+            tableInfo,
+            tableInfo.getDatabaseName(),
+            tableInfo.getFactTable().getTableName());
+    org.apache.carbondata.format.SchemaEvolutionEntry schemaEvolutionEntry =
+        new SchemaEvolutionEntry(
+            tableInfo.getLastUpdatedTime());
+    thriftTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history()
+        .add(schemaEvolutionEntry);
+    FileFactory.FileType fileType = FileFactory.getFileType(schemaMetadataPath);
+    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
+      FileFactory.mkdirs(schemaMetadataPath, fileType);
+    }
+    ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);
+    thriftWriter.open();
+    thriftWriter.write(thriftTableInfo);
+    thriftWriter.close();
+    CarbonTable table = CarbonMetadata.getInstance().getCarbonTable(tableInfo.getTableUniqueName());
     return new TableImpl(table);
   }
 

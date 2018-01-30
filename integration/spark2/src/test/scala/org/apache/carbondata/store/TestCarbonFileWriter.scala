@@ -27,31 +27,26 @@ import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 import org.apache.carbondata.store.api.{CarbonStore, SchemaBuilder}
 
 class TestCarbonFileWriter extends QueryTest with BeforeAndAfterAll {
+  val tablePath = "./db1/tc1"
+
+  override def beforeAll(): Unit = {
+    createTestTable(tablePath)
+  }
+
+  override def afterAll(): Unit = {
+    cleanTestTable(tablePath)
+  }
 
   test("test write carbon table and read as external table") {
-    sql("DROP TABLE IF EXISTS source")
-
-    val tablePath = "./db1/tc1"
-    cleanTestTable(tablePath)
-    createTestTable(tablePath)
-
     sql(s"CREATE EXTERNAL TABLE source STORED BY 'carbondata' LOCATION '$tablePath'")
     checkAnswer(sql("SELECT count(*) from source"), Row(1000))
-
     sql("DROP TABLE IF EXISTS source")
   }
 
   test("test write carbon table and read by refresh table") {
-    sql("DROP DATABASE IF EXISTS db1 CASCADE")
-
-    val tablePath = "./db1/tc1"
-    cleanTestTable(tablePath)
-    createTestTable(tablePath)
-
     sql("CREATE DATABASE db1 LOCATION './db1'")
     sql("REFRESH TABLE db1.tc1")
     checkAnswer(sql("SELECT count(*) from db1.tc1"), Row(1000))
-
     sql("DROP DATABASE IF EXISTS db1 CASCADE")
   }
 
@@ -70,14 +65,18 @@ class TestCarbonFileWriter extends QueryTest with BeforeAndAfterAll {
       .addColumn(new StructField("height", DataTypes.DOUBLE), false)
       .create
 
-    val table = carbon.createTable("t1", schema, tablePath)
-    val segment = table.newBatchSegment()
+    try {
+      val table = carbon.createTable("t1", schema, tablePath)
+      val segment = table.newBatchSegment()
 
-    segment.open()
-    val writer = segment.newWriter()
-    (1 to 1000).foreach { _ => writer.writeRow(Array[String]("amy", "1", "2.3")) }
-    writer.close()
-    segment.commit()
+      segment.open()
+      val writer = segment.newWriter()
+      (1 to 1000).foreach { _ => writer.writeRow(Array[String]("amy", "1", "2.3")) }
+      writer.close()
+      segment.commit()
+    } catch {
+      case e:Throwable => fail(e.getMessage)
+    }
   }
 
 }

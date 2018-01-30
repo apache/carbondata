@@ -27,7 +27,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-public class CarbonFileWriterImpl implements CarbonFileWriter {
+class CarbonFileWriterImpl implements CarbonFileWriter {
 
   private RecordWriter<NullWritable, StringArrayWritable> recordWriter;
   private TaskAttemptContext context;
