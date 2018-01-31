@@ -274,7 +274,6 @@ test("Creation of partition table should fail if the colname in table schema and
 
   test("drop partition on preAggregate table should fail"){
     sql("drop table if exists partitionTable")
-    sql("drop datamap if exists preaggTable on table partitionTable")
     sql("create table partitionTable (id int,city string,age int) partitioned by(name string) stored by 'carbondata'".stripMargin)
     sql(
       s"""create datamap preaggTable on table partitionTable using 'preaggregate' as select id,sum(age) from partitionTable group by id"""
@@ -318,7 +317,6 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists badrecordsPartitionintnull")
     sql("drop table if exists badrecordsPartitionintnullalt")
     sql("drop table if exists partitionTable")
-    sql("drop datamap if exists preaggTable on table partitionTable")
   }
 
 }
