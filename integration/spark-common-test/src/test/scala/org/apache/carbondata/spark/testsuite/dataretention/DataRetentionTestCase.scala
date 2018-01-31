@@ -25,7 +25,7 @@ import org.apache.commons.lang3.time.DateUtils
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -79,8 +79,8 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       "dataRetentionTable"
     )
     absoluteTableIdentifierForRetention = carbonTable2.getAbsoluteTableIdentifier
-    carbonTablePath = CarbonStorePath
-      .getCarbonTablePath(absoluteTableIdentifierForRetention).getMetadataDirectoryPath
+    carbonTablePath = CarbonTablePath
+      .getMetadataPath(absoluteTableIdentifierForRetention.getTablePath)
     carbonTableStatusLock = CarbonLockFactory
       .getCarbonLockObj(absoluteTableIdentifierForLock, LockUsage.TABLE_STATUS_LOCK)
     carbonDeleteSegmentLock= CarbonLockFactory

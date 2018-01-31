@@ -142,7 +142,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     val carbonTable = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetastore
       .lookupRelation(Option("default"), "ctas_tblproperties_test")(Spark2TestQueryExecutor.spark)
       .asInstanceOf[CarbonRelation].carbonTable
-    val metadataFolderPath: CarbonFile = FileFactory.getCarbonFile(carbonTable.getMetaDataFilepath)
+    val metadataFolderPath: CarbonFile = FileFactory.getCarbonFile(carbonTable.getMetadataPath)
     assert(metadataFolderPath.exists())
     val dictFiles: Array[CarbonFile] = metadataFolderPath.listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = {

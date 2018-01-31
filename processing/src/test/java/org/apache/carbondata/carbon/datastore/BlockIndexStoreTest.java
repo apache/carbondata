@@ -73,12 +73,12 @@ public class BlockIndexStoreTest extends TestCase {
 //            file.length(), ColumnarFormatVersion.V1, null);
 //    CarbonTableIdentifier carbonTableIdentifier =
 //            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
-//    AbsoluteTableIdentifier absoluteTableIdentifier =
+//    AbsoluteTableIdentifier identifier =
 //        new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
 //    try {
 //
 //      List<TableBlockUniqueIdentifier> tableBlockInfoList =
-//          getTableBlockUniqueIdentifierList(Arrays.asList(new TableBlockInfo[] { info }), absoluteTableIdentifier);
+//          getTableBlockUniqueIdentifierList(Arrays.asList(new TableBlockInfo[] { info }), identifier);
 //      List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockInfoList);
 //      assertTrue(loadAndGetBlocks.size() == 1);
 //    } catch (Exception e) {
@@ -86,7 +86,7 @@ public class BlockIndexStoreTest extends TestCase {
 //    }
 //    List<String> segmentIds = new ArrayList<>();
 //      segmentIds.add(info.getSegmentId());
-//    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
+//    cache.removeTableBlocks(segmentIds, identifier);
 //  }
 //
   private List<TableBlockUniqueIdentifier> getTableBlockUniqueIdentifierList(List<TableBlockInfo> tableBlockInfos,
@@ -122,19 +122,19 @@ public class BlockIndexStoreTest extends TestCase {
 //
 //    CarbonTableIdentifier carbonTableIdentifier =
 //            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
-//    AbsoluteTableIdentifier absoluteTableIdentifier =
+//    AbsoluteTableIdentifier identifier =
 //        new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
 //    ExecutorService executor = Executors.newFixedThreadPool(3);
 //    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info, info1 }),
-//        absoluteTableIdentifier));
+//        identifier));
 //    executor.submit(
 //        new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info2, info3, info4 }),
-//            absoluteTableIdentifier));
+//            identifier));
 //    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info, info1 }),
-//        absoluteTableIdentifier));
+//        identifier));
 //    executor.submit(
 //        new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info2, info3, info4 }),
-//            absoluteTableIdentifier));
+//            identifier));
 //    executor.shutdown();
 //    try {
 //      executor.awaitTermination(1, TimeUnit.DAYS);
@@ -145,7 +145,7 @@ public class BlockIndexStoreTest extends TestCase {
 //        Arrays.asList(new TableBlockInfo[] { info, info1, info2, info3, info4 });
 //    try {
 //      List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
-//          getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
+//          getTableBlockUniqueIdentifierList(tableBlockInfos, identifier);
 //      List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockUniqueIdentifiers);
 //      assertTrue(loadAndGetBlocks.size() == 5);
 //    } catch (Exception e) {
@@ -155,7 +155,7 @@ public class BlockIndexStoreTest extends TestCase {
 //    for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
 //      segmentIds.add(tableBlockInfo.getSegmentId());
 //    }
-//    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
+//    cache.removeTableBlocks(segmentIds, identifier);
 //  }
 //
 //  public void testloadAndGetTaskIdToSegmentsMapForDifferentSegmentLoadedConcurrently()
@@ -193,18 +193,18 @@ public class BlockIndexStoreTest extends TestCase {
 //
 //    CarbonTableIdentifier carbonTableIdentifier =
 //            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
-//    AbsoluteTableIdentifier absoluteTableIdentifier =
+//    AbsoluteTableIdentifier identifier =
 //        new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
 //    ExecutorService executor = Executors.newFixedThreadPool(3);
 //    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info, info1 }),
-//        absoluteTableIdentifier));
+//        identifier));
 //    executor.submit(
 //        new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info2, info3, info4 }),
-//            absoluteTableIdentifier));
+//            identifier));
 //    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info5, info6 }),
-//        absoluteTableIdentifier));
+//        identifier));
 //    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info7 }),
-//        absoluteTableIdentifier));
+//        identifier));
 //
 //    executor.shutdown();
 //    try {
@@ -217,7 +217,7 @@ public class BlockIndexStoreTest extends TestCase {
 //        .asList(new TableBlockInfo[] { info, info1, info2, info3, info4, info5, info6, info7 });
 //    try {
 //      List<TableBlockUniqueIdentifier> blockUniqueIdentifierList =
-//          getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
+//          getTableBlockUniqueIdentifierList(tableBlockInfos, identifier);
 //      List<AbstractIndex> loadAndGetBlocks = cache.getAll(blockUniqueIdentifierList);
 //      assertTrue(loadAndGetBlocks.size() == 8);
 //    } catch (Exception e) {
@@ -227,7 +227,7 @@ public class BlockIndexStoreTest extends TestCase {
 //    for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
 //      segmentIds.add(tableBlockInfo.getSegmentId());
 //    }
-//    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
+//    cache.removeTableBlocks(segmentIds, identifier);
 //  }
 
   private class BlockLoaderThread implements Callable<Void> {
@@ -250,7 +250,7 @@ public class BlockIndexStoreTest extends TestCase {
   }
 
   private static File getPartFile() {
-    String path = StoreCreator.getAbsoluteTableIdentifier().getTablePath()
+    String path = StoreCreator.getIdentifier().getTablePath()
         + "/Fact/Part0/Segment_0";
     File file = new File(path);
     File[] files = file.listFiles();

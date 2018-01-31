@@ -22,16 +22,14 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
 import org.apache.hadoop.fs.Path;
 
-
 /**
  * Helps to get Table content paths.
  */
-public class CarbonTablePath extends Path {
+public class CarbonTablePath {
 
   private static final String METADATA_DIR = "Metadata";
   private static final String DICTIONARY_EXT = ".dict";
@@ -54,19 +52,10 @@ public class CarbonTablePath extends Path {
   private static final String STREAMING_LOG_DIR = "log";
   private static final String STREAMING_CHECKPOINT_DIR = "checkpoint";
 
-  private String tablePath;
-  private CarbonTableIdentifier carbonTableIdentifier;
-
   /**
-   * structure CarbonTablePath object to manage table paths
-   *
-   * @param carbonTableIdentifier identifier of carbon table that the segment belong to
-   * @param tablePathString the store path of the segment
+   * This class provides static utility only.
    */
-  public CarbonTablePath(CarbonTableIdentifier carbonTableIdentifier, String tablePathString) {
-    super(tablePathString);
-    this.carbonTableIdentifier = carbonTableIdentifier;
-    this.tablePath = tablePathString;
+  private CarbonTablePath() {
   }
 
   /**
@@ -136,120 +125,74 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * gets table path
+   * Return absolute path of dictionary file
    */
-  public String getPath() {
-    return tablePath;
+  public static String getDictionaryFilePath(String tablePath, String columnId) {
+    return getMetadataPath(tablePath) + File.separator + getDictionaryFileName(columnId);
   }
 
   /**
-   * @param columnId unique column identifier
-   * @return absolute path of dictionary file
+   * Return absolute path of dictionary file
    */
-  public String getDictionaryFilePath(String columnId) {
-    return getMetaDataDir() + File.separator + getDictionaryFileName(columnId);
-  }
-
-  /**
-   * @param dictionaryPath
-   * @param columnId unique column identifier
-   * @return absolute path of dictionary file
-   */
-  public String getDictionaryFilePath(String dictionaryPath, String columnId) {
+  public static String getExternalDictionaryFilePath(String dictionaryPath, String columnId) {
     return dictionaryPath + File.separator + getDictionaryFileName(columnId);
   }
 
   /**
-   * This method will return the metadata directory location for a table
-   *
-   * @return
-   */
-  public String getMetadataDirectoryPath() {
-    return getMetaDataDir();
-  }
-
-  /**
-   * Return metadata path based on `tablePath`
+   * Return metadata path
    */
   public static String getMetadataPath(String tablePath) {
     return tablePath + File.separator + METADATA_DIR;
   }
 
   /**
-   * @param columnId unique column identifier
-   * @return absolute path of dictionary meta file
+   * Return absolute path of dictionary meta file
    */
-  public String getDictionaryMetaFilePath(String columnId) {
-    return getMetaDataDir() + File.separator + columnId + DICTIONARY_META_EXT;
-  }
-
-  /**
-   * @param dictionaryPath
-   * @param columnId unique column identifier
-   * @return absolute path of dictionary file
-   */
-  public String getDictionaryMetaFilePath(String dictionaryPath, String columnId) {
+  public static String getExternalDictionaryMetaFilePath(String dictionaryPath, String columnId) {
     return dictionaryPath + File.separator + columnId + DICTIONARY_META_EXT;
   }
 
   /**
-   * @param columnId unique column identifier
-   * @return absolute path of sort index file
+   * Return absolute path of dictionary meta file
    */
-  public String getSortIndexFilePath(String columnId) {
-    return getMetaDataDir() + File.separator + columnId + SORT_INDEX_EXT;
+  public static String getDictionaryMetaFilePath(String tablePath, String columnId) {
+    return getMetadataPath(tablePath) + File.separator + columnId + DICTIONARY_META_EXT;
   }
 
   /**
-   * @param dictionaryPath
-   * @param columnId unique column identifier
-   * @return absolute path of dictionary file
+   * Return absolute path of sort index file
    */
-  public String getSortIndexFilePath(String dictionaryPath, String columnId) {
+  public static String getSortIndexFilePath(String tablePath, String columnId) {
+    return getMetadataPath(tablePath) + File.separator + columnId + SORT_INDEX_EXT;
+  }
+
+  /**
+   * Return sortindex file path based on specified dictionary path
+   */
+  public static String getExternalSortIndexFilePath(String dictionaryPath, String columnId) {
     return dictionaryPath + File.separator + columnId + SORT_INDEX_EXT;
   }
 
   /**
-   *
-   * @param columnId
-   * @param dictOffset
-   * @return absolute path of sortindex with appeneded dictionary offset
+   * Return sortindex file path for columnId and offset based on specified dictionary path
    */
-  public String getSortIndexFilePath(String columnId, long dictOffset) {
-    return getMetaDataDir() + File.separator + columnId + "_" + dictOffset + SORT_INDEX_EXT;
-  }
-
-  /**
-   * @param dictionaryPath
-   * @param columnId unique column identifier
-   * @param dictOffset
-   * @return absolute path of dictionary file
-   */
-  public String getSortIndexFilePath(String dictionaryPath, String columnId, long dictOffset) {
+  public static String getExternalSortIndexFilePath(String dictionaryPath, String columnId,
+      long dictOffset) {
     return dictionaryPath + File.separator + columnId + "_" + dictOffset + SORT_INDEX_EXT;
   }
 
   /**
-   * @return absolute path of schema file
-   */
-  public String getSchemaFilePath() {
-    return getMetaDataDir() + File.separator + SCHEMA_FILE;
-  }
-
-  /**
-   * return the schema file path
-   * @param tablePath path to table files
-   * @return schema file path
+   * Return absolute path of schema file
    */
   public static String getSchemaFilePath(String tablePath) {
-    return tablePath + File.separator + METADATA_DIR + File.separator + SCHEMA_FILE;
+    return getMetadataPath(tablePath) + File.separator + SCHEMA_FILE;
   }
 
   /**
-   * @return absolute path of table status file
+   * Return absolute path of table status file
    */
-  public String getTableStatusFilePath() {
-    return getMetaDataDir() + File.separator + TABLE_STATUS_FILE;
+  public static String getTableStatusFilePath(String tablePath) {
+    return getMetadataPath(tablePath) + File.separator + TABLE_STATUS_FILE;
   }
 
   /**
@@ -260,9 +203,9 @@ public class CarbonTablePath extends Path {
    * @param factUpdateTimeStamp unique identifier to identify an update
    * @return absolute path of data file stored in carbon data format
    */
-  public String getCarbonDataFilePath(String segmentId, Integer filePartNo, Long taskNo,
-      int batchNo, int bucketNumber, String factUpdateTimeStamp) {
-    return getSegmentDir(segmentId) + File.separator + getCarbonDataFileName(
+  public static String getCarbonDataFilePath(String tablePath, String segmentId, Integer filePartNo,
+      Long taskNo, int batchNo, int bucketNumber, String factUpdateTimeStamp) {
+    return getSegmentPath(tablePath, segmentId) + File.separator + getCarbonDataFileName(
         filePartNo, taskNo, bucketNumber, batchNo, factUpdateTimeStamp);
   }
 
@@ -274,9 +217,9 @@ public class CarbonTablePath extends Path {
    * @param segmentId   segment number
    * @return full qualified carbon index path
    */
-  public String getCarbonIndexFilePath(final String taskId, final String segmentId,
-      final String bucketNumber) {
-    String segmentDir = getSegmentDir(segmentId);
+  private static String getCarbonIndexFilePath(final String tablePath, final String taskId,
+      final String segmentId, final String bucketNumber) {
+    String segmentDir = getSegmentPath(tablePath, segmentId);
     CarbonFile carbonFile =
         FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir));
 
@@ -309,27 +252,28 @@ public class CarbonTablePath extends Path {
    *        timestamp
    * @return carbon index file path
    */
-  public String getCarbonIndexFilePath(String taskId, String segmentId, String bucketNumber,
-      String timeStamp, ColumnarFormatVersion columnarFormatVersion) {
+  public static String getCarbonIndexFilePath(String tablePath, String taskId, String segmentId,
+      String bucketNumber, String timeStamp, ColumnarFormatVersion columnarFormatVersion) {
     switch (columnarFormatVersion) {
       case V1:
       case V2:
-        return getCarbonIndexFilePath(taskId, segmentId, bucketNumber);
+        return getCarbonIndexFilePath(tablePath, taskId, segmentId, bucketNumber);
       default:
-        String segmentDir = getSegmentDir(segmentId);
+        String segmentDir = getSegmentPath(tablePath, segmentId);
         return segmentDir + File.separator + getCarbonIndexFileName(taskId,
             Integer.parseInt(bucketNumber), timeStamp);
     }
   }
 
-  public String getCarbonIndexFilePath(String taskId, String segmentId, int batchNo,
-      String bucketNumber, String timeStamp, ColumnarFormatVersion columnarFormatVersion) {
+  public static String getCarbonIndexFilePath(String tablePath, String taskId, String segmentId,
+      int batchNo, String bucketNumber, String timeStamp,
+      ColumnarFormatVersion columnarFormatVersion) {
     switch (columnarFormatVersion) {
       case V1:
       case V2:
-        return getCarbonIndexFilePath(taskId, segmentId, bucketNumber);
+        return getCarbonIndexFilePath(tablePath, taskId, segmentId, bucketNumber);
       default:
-        String segmentDir = getSegmentDir(segmentId);
+        String segmentDir = getSegmentPath(tablePath, segmentId);
         return segmentDir + File.separator + getCarbonIndexFileName(Long.parseLong(taskId),
             Integer.parseInt(bucketNumber), batchNo, timeStamp);
     }
@@ -341,13 +285,10 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * Gets absolute path of data file
-   *
-   * @param segmentId   unique partition identifier
-   * @return absolute path of data file stored in carbon data format
+   * Return the segment path from table path and segmentid
    */
-  public String getCarbonDataDirectoryPath(String segmentId) {
-    return getSegmentDir(segmentId);
+  public static String getSegmentPath(String tablePath, String segmentId) {
+    return getPartitionDir(tablePath) + File.separator + SEGMENT_PREFIX + segmentId;
   }
 
   /**
@@ -385,48 +326,46 @@ public class CarbonTablePath extends Path {
     return segmentDir + File.separator + getCarbonStreamIndexFileName();
   }
 
-  public String getSegmentDir(String segmentId) {
-    return getPartitionDir() + File.separator + SEGMENT_PREFIX + segmentId;
-  }
-
   // This partition is not used in any code logic, just keep backward compatibility
   public static final String DEPRECATED_PATITION_ID = "0";
 
-  public String getPartitionDir() {
-    return getFactDir() + File.separator + PARTITION_PREFIX +
+  /**
+   * Return true if tablePath exists
+   */
+  public static boolean exists(String tablePath) {
+    return FileFactory.getCarbonFile(tablePath, FileFactory.getFileType(tablePath)).exists();
+  }
+
+  public static String getPartitionDir(String tablePath) {
+    return getFactDir(tablePath) + File.separator + PARTITION_PREFIX +
         CarbonTablePath.DEPRECATED_PATITION_ID;
   }
 
-  private String getMetaDataDir() {
-    return tablePath + File.separator + METADATA_DIR;
-  }
-
-  public String getFactDir() {
+  public static String getFactDir(String tablePath) {
     return tablePath + File.separator + FACT_DIR;
   }
 
-  public String getStreamingLogDir() {
+  public static String getStreamingLogDir(String tablePath) {
     return tablePath + File.separator + STREAMING_DIR + File.separator + STREAMING_LOG_DIR;
   }
 
-  public String getStreamingCheckpointDir() {
+  public static String getStreamingCheckpointDir(String tablePath) {
     return tablePath + File.separator + STREAMING_DIR + File.separator + STREAMING_CHECKPOINT_DIR;
   }
 
-  public CarbonTableIdentifier getCarbonTableIdentifier() {
-    return carbonTableIdentifier;
-  }
-
-  @Override public boolean equals(Object o) {
-    if (!(o instanceof CarbonTablePath)) {
-      return false;
-    }
-    CarbonTablePath path = (CarbonTablePath) o;
-    return tablePath.equals(path.tablePath) && super.equals(o);
-  }
-
-  @Override public int hashCode() {
-    return super.hashCode() + tablePath.hashCode();
+  /**
+   * get the parent folder of old table path and returns the new tablePath by appending new
+   * tableName to the parent
+   *
+   * @param tablePath         Old tablePath
+   * @param newTableName      new table name
+   * @return the new table path
+   */
+  public static String getNewTablePath(
+      String tablePath,
+      String newTableName) {
+    Path parentPath = new Path(tablePath).getParent();
+    return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + newTableName;
   }
 
   /**
@@ -445,11 +384,8 @@ public class CarbonTablePath extends Path {
       return fileName.substring(startIndex, endIndex);
     }
 
-
     /**
-     * This will return the timestamp present in the delete delta file.
-     * @param fileName
-     * @return
+     * Return the timestamp present in the delete delta file.
      */
     public static String getTimeStampFromDeleteDeltaFile(String fileName) {
       return fileName.substring(fileName.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
@@ -457,9 +393,7 @@ public class CarbonTablePath extends Path {
     }
 
     /**
-     * This will return the timestamp present in the delete delta file.
-     * @param fileName
-     * @return
+     * Return the timestamp present in the delete delta file.
      */
     public static String getBlockNameFromDeleteDeltaFile(String fileName) {
       return fileName.substring(0,
@@ -467,7 +401,7 @@ public class CarbonTablePath extends Path {
     }
 
     /**
-     * gets updated timestamp information from given carbon data file name
+     * Return the updated timestamp information from given carbon data file name
      */
     public static String getBucketNo(String carbonFilePath) {
       // Get the file name from path
@@ -485,7 +419,7 @@ public class CarbonTablePath extends Path {
     }
 
     /**
-     * gets file part number information from given carbon data file name
+     * Return the file part number information from given carbon data file name
      */
     public static String getPartNo(String carbonDataFileName) {
       // Get the file name from path
@@ -497,7 +431,7 @@ public class CarbonTablePath extends Path {
     }
 
     /**
-     * gets updated timestamp information from given carbon data file name
+     * Return the updated timestamp information from given carbon data file name
      */
     public static String getTaskNo(String carbonDataFileName) {
       // Get the file name from path
@@ -510,35 +444,30 @@ public class CarbonTablePath extends Path {
     }
 
     /**
-     * get the taskId part from taskNo(include taskId + batchNo)
-     * @param taskNo
-     * @return
+     * Return the taskId part from taskNo(include taskId + batchNo)
      */
     public static long getTaskIdFromTaskNo(String taskNo) {
       return Long.parseLong(taskNo.split(BATCH_PREFIX)[0]);
     }
 
+    /**
+     * Return the batch number from taskNo string
+     */
     public static int getBatchNoFromTaskNo(String taskNo) {
       return Integer.parseInt(taskNo.split(BATCH_PREFIX)[1]);
     }
 
     /**
-     * Gets the file name from file path
+     * Return the file name from file path
      */
-    private static String getFileName(String carbonDataFileName) {
-      int endIndex = carbonDataFileName.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
+    private static String getFileName(String dataFilePath) {
+      int endIndex = dataFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
       if (endIndex > -1) {
-        return carbonDataFileName.substring(endIndex + 1, carbonDataFileName.length());
+        return dataFilePath.substring(endIndex + 1, dataFilePath.length());
       } else {
-        return carbonDataFileName;
+        return dataFilePath;
       }
     }
-  }
-
-  /**
-   * To manage data path and composition
-   */
-  public static class DataPathUtil {
 
     /**
      * gets segement id from given absolute data file path
@@ -546,11 +475,11 @@ public class CarbonTablePath extends Path {
     public static String getSegmentId(String dataFileAbsolutePath) {
       // find segment id from last of data file path
       String tempdataFileAbsolutePath = dataFileAbsolutePath.replace(
-              CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR);
+          CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR);
       int endIndex = tempdataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
       // + 1 for size of "/"
       int startIndex = tempdataFileAbsolutePath.lastIndexOf(
-              CarbonCommonConstants.FILE_SEPARATOR, endIndex - 1) + 1;
+          CarbonCommonConstants.FILE_SEPARATOR, endIndex - 1) + 1;
       String segmentDirStr = dataFileAbsolutePath.substring(startIndex, endIndex);
       //identify id in segment_<id>
       String[] segmentDirSplits = segmentDirStr.split("_");
@@ -582,19 +511,16 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * returns the carbondata file name
-   *
-   * @param carbonDataFilePath carbondata file path
-   * @return
+   * Return the carbondata file name
    */
   public static String getCarbonDataFileName(String carbonDataFilePath) {
-    return carbonDataFilePath
-        .substring(carbonDataFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1,
-            carbonDataFilePath.indexOf(CARBON_DATA_EXT));
+    return carbonDataFilePath.substring(
+        carbonDataFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1,
+        carbonDataFilePath.indexOf(CARBON_DATA_EXT));
   }
 
   /**
-   * @return prefix of carbon data
+   * Return prefix of carbon data
    */
   public static String getCarbonDataPrefix() {
     return DATA_PART_PREFIX;
@@ -638,40 +564,6 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * This method will append strings in path and return block id
-   *
-   * @param shortBlockId
-   * @return blockId
-   */
-  public static String getBlockId(String shortBlockId) {
-    String[] splitRecords = shortBlockId.split(CarbonCommonConstants.FILE_SEPARATOR);
-    StringBuffer sb = new StringBuffer();
-    for (int i = 0; i < splitRecords.length; i++) {
-      if (i == 0) {
-        sb.append(PARTITION_PREFIX);
-        sb.append(splitRecords[i]);
-      } else if (i == 1) {
-        sb.append(CarbonCommonConstants.FILE_SEPARATOR);
-        sb.append(SEGMENT_PREFIX);
-        sb.append(splitRecords[i]);
-      } else if (i == 2) {
-        sb.append(CarbonCommonConstants.FILE_SEPARATOR);
-        sb.append(DATA_PART_PREFIX);
-        sb.append(splitRecords[i]);
-      } else if (i == 3) {
-        sb.append(CarbonCommonConstants.FILE_SEPARATOR);
-        sb.append(splitRecords[i]);
-        sb.append(CARBON_DATA_EXT);
-      } else {
-        sb.append(CarbonCommonConstants.FILE_SEPARATOR);
-        sb.append(splitRecords[i]);
-      }
-    }
-    return sb.toString();
-  }
-
-
-  /**
    * adds data part prefix to given value
    * @return partition prefix
    */
@@ -700,10 +592,4 @@ public class CarbonTablePath extends Path {
         + "-" + DataFileUtil.getTimeStampFromFileName(actualBlockName) + INDEX_FILE_EXT;
   }
 
-  /**
-   * Get the segment path from table path and segmentid
-   */
-  public static String getSegmentPath(String tablePath, String segmentId) {
-    return tablePath + "/Fact/Part0/Segment_" + segmentId;
-  }
 }

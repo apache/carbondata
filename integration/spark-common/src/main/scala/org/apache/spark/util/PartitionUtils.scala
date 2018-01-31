@@ -176,8 +176,6 @@ object PartitionUtils {
       getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIds,
         partitionInfo, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable).asScala
     val pathList: util.List[String] = new util.ArrayList[String]()
-    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
-    val carbonTablePath = new CarbonTablePath(carbonTableIdentifier, tablePath)
     tableBlockInfoList.foreach{ tableBlockInfo =>
       val path = tableBlockInfo.getFilePath
       val timestamp = CarbonTablePath.DataFileUtil.getTimeStampFromFileName(path)
@@ -190,8 +188,8 @@ object PartitionUtils {
         val batchNo = CarbonTablePath.DataFileUtil.getBatchNoFromTaskNo(taskNo)
         val taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskNo)
         val bucketNumber = CarbonTablePath.DataFileUtil.getBucketNo(path)
-        val indexFilePath = carbonTablePath.getCarbonIndexFilePath(
-          String.valueOf(taskId), segmentId, batchNo, String.valueOf(bucketNumber),
+        val indexFilePath = CarbonTablePath.getCarbonIndexFilePath(
+          tablePath, String.valueOf(taskId), segmentId, batchNo, String.valueOf(bucketNumber),
           timestamp, version)
         // indexFilePath could be duplicated when multiple data file related to one index file
         if (indexFilePath != null && !pathList.contains(indexFilePath)) {

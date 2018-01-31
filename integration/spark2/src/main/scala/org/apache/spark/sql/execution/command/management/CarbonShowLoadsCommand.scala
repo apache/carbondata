@@ -45,7 +45,7 @@ case class CarbonShowLoadsCommand(
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     CarbonStore.showSegments(
       limit,
-      carbonTable.getMetaDataFilepath
+      carbonTable.getMetadataPath
     )
   }
 }
