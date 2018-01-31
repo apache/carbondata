@@ -264,15 +264,6 @@ public final class CarbonCommonConstants {
    */
   public static final String MEASUREMETADATA_FILE_EXT = ".msrmetadata";
   /**
-   * GRAPH_ROWSET_SIZE
-   */
-  @CarbonProperty
-  public static final String GRAPH_ROWSET_SIZE = "carbon.graph.rowset.size";
-  /**
-   * GRAPH_ROWSET_SIZE_DEFAULT
-   */
-  public static final String GRAPH_ROWSET_SIZE_DEFAULT = "500";
-  /**
    * Comment for <code>TYPE_MYSQL</code>
    */
   public static final String TYPE_MYSQL = "MYSQL";
@@ -1192,7 +1183,7 @@ public final class CarbonCommonConstants {
   /**
    * to enable offheap sort
    */
-  public static final String ENABLE_UNSAFE_SORT_DEFAULT = "false";
+  public static final String ENABLE_UNSAFE_SORT_DEFAULT = "true";
 
   /**
    * to enable offheap sort
@@ -1287,7 +1278,7 @@ public final class CarbonCommonConstants {
   /**
    * default property of unsafe processing
    */
-  public static final String ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE = "false";
+  public static final String ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE = "true";
 
   /**
    * property for offheap based processing
