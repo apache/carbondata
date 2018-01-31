@@ -52,7 +52,7 @@ import org.apache.carbondata.core.reader.CarbonDictionaryReader
 import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, StringArrayWritable}
@@ -308,7 +308,7 @@ object GlobalDictionaryUtil {
     }
     val primDimensions = primDimensionsBuffer.map { x => x }.toArray
     val dictDetail = CarbonSparkFactory.getDictionaryDetailService.
-      getDictionaryDetail(dictFolderPath, primDimensions, table, carbonLoadModel.getTablePath)
+      getDictionaryDetail(dictFolderPath, primDimensions, carbonLoadModel.getTablePath)
     val dictFilePaths = dictDetail.dictFilePaths
     val dictFileExists = dictDetail.dictFileExists
     val columnIdentifier = dictDetail.columnIdentifiers
@@ -397,10 +397,6 @@ object GlobalDictionaryUtil {
       dictRdd
     }
   }
-
-  // Hack for spark2 integration
-  var updateTableMetadataFunc: (CarbonLoadModel, SQLContext, DictionaryLoadModel,
-    Array[CarbonDimension]) => Unit = _
 
   /**
    * check whether global dictionary have been generated successfully or not
@@ -705,10 +701,7 @@ object GlobalDictionaryUtil {
     try {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
       val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
-      // create dictionary folder if not exists
-      val tablePath = carbonLoadModel.getTablePath
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(tablePath, carbonTableIdentifier)
-      val dictfolderPath = carbonTablePath.getMetadataDirectoryPath
+      val dictfolderPath = CarbonTablePath.getMetadataPath(carbonLoadModel.getTablePath)
       // columns which need to generate global dictionary file
       val dimensions = carbonTable.getDimensionByTableName(
         carbonTable.getTableName).asScala.toArray
@@ -845,12 +838,11 @@ object GlobalDictionaryUtil {
    * This method will write dictionary file, sortindex file and dictionary meta for new dictionary
    * column with default value
    *
-   * @param carbonTablePath
    * @param columnSchema
    * @param absoluteTableIdentifier
    * @param defaultValue
    */
-  def loadDefaultDictionaryValueForNewColumn(carbonTablePath: CarbonTablePath,
+  def loadDefaultDictionaryValueForNewColumn(
       columnSchema: ColumnSchema,
       absoluteTableIdentifier: AbsoluteTableIdentifier,
       defaultValue: String): Unit = {

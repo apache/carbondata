@@ -24,7 +24,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.spark.sql.test.util.QueryTest
 
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -43,9 +43,7 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
         new CarbonTableIdentifier(
           CarbonCommonConstants.DATABASE_DEFAULT_NAME, "compactionlocktesttable", "1")
       )
-  val carbonTablePath: CarbonTablePath = CarbonStorePath
-    .getCarbonTablePath(absoluteTableIdentifier)
-  val dataPath: String = carbonTablePath.getMetadataDirectoryPath
+  val dataPath: String = CarbonTablePath.getMetadataPath(absoluteTableIdentifier.getTablePath)
 
   val carbonLock: ICarbonLock =
     CarbonLockFactory

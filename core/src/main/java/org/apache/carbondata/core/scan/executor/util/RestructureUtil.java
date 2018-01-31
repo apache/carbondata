@@ -80,7 +80,7 @@ public class RestructureUtil {
       if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         presentDimension.add(queryDimension);
         isDimensionExists[dimIndex] = true;
-        dimensionInfo.dataType[queryDimension.getQueryOrder()] =
+        dimensionInfo.dataType[queryDimension.getOrdinal()] =
             queryDimension.getDimension().getDataType();
       } else {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
@@ -95,7 +95,7 @@ public class RestructureUtil {
             currentBlockDimension.setOrdinal(queryDimension.getOrdinal());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
-            dimensionInfo.dataType[currentBlockDimension.getQueryOrder()] =
+            dimensionInfo.dataType[currentBlockDimension.getOrdinal()] =
                 currentBlockDimension.getDimension().getDataType();
             break;
           }
@@ -113,7 +113,7 @@ public class RestructureUtil {
             currentBlockDimension.setOrdinal(queryDimension.getOrdinal());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
-            dimensionInfo.dataType[currentBlockDimension.getQueryOrder()] =
+            dimensionInfo.dataType[currentBlockDimension.getOrdinal()] =
                 currentBlockDimension.getDimension().getDataType();
             break;
           }

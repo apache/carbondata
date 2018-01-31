@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
@@ -74,7 +74,7 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
           "true")
         loadCommand.processData(sqlContext.sparkSession)
         val newLoadMetaDataDetails = SegmentStatusManager.readLoadMetadata(
-          carbonTable.getMetaDataFilepath, uuid)
+          carbonTable.getMetadataPath, uuid)
         val updatedLoadMetaDataDetails = newLoadMetaDataDetails collect {
           case load if loadMetaDataDetails.contains(load) =>
             load.setMergedLoadName(mergedLoadName)
@@ -83,11 +83,8 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
             load
           case other => other
         }
-        val carbonTablePath = CarbonStorePath
-          .getCarbonTablePath(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-            .getAbsoluteTableIdentifier)
-        SegmentStatusManager
-          .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePathWithUUID(uuid),
+        SegmentStatusManager.writeLoadDetailsIntoFile(
+          CarbonTablePath.getTableStatusFilePathWithUUID(carbonTable.getTablePath, uuid),
             updatedLoadMetaDataDetails)
         carbonLoadModel.setLoadMetadataDetails(updatedLoadMetaDataDetails.toList.asJava)
       } finally {
@@ -108,11 +105,9 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         //  4. Therefore tablestatus file will be committed in between multiple commits.
         if (!compactionModel.compactionType.equals(CompactionType.MAJOR)) {
           if (!identifySegmentsToBeMerged().isEmpty) {
-            val carbonTablePath = CarbonStorePath
-              .getCarbonTablePath(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-                .getAbsoluteTableIdentifier)
-            val uuidTableStaus = carbonTablePath.getTableStatusFilePathWithUUID(uuid)
-            val tableStatus = carbonTablePath.getTableStatusFilePath
+            val uuidTableStaus = CarbonTablePath.getTableStatusFilePathWithUUID(
+              carbonTable.getTablePath, uuid)
+            val tableStatus = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
             if (!uuidTableStaus.equalsIgnoreCase(tableStatus)) {
               FileFactory.getCarbonFile(uuidTableStaus).renameForce(tableStatus)
             }
