@@ -1009,6 +1009,15 @@ public final class CarbonDataMergerUtil {
   /**
    * This method traverses Update Delta Files inside the seg and return true
    * if UpdateDelta Files are more than IUD Compaction threshold.
+<<<<<<< 7540cc9cab404c06eaf5c92da77ef7e36f9182b5
+=======
+   *
+   * @param seg
+   * @param identifier
+   * @param segmentUpdateStatusManager
+   * @param numberDeltaFilesThreshold
+   * @return
+>>>>>>> [CARBONDATA-2025] Unify all path construction through CarbonTablePath static method
    */
   private static Boolean checkUpdateDeltaFilesInSeg(Segment seg,
       AbsoluteTableIdentifier identifier, SegmentUpdateStatusManager segmentUpdateStatusManager,
