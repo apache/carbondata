@@ -217,7 +217,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
   val timeSeries = TIMESERIES.toString
 
-  test("test PreAggregate table selection: create with preaggregate and hierarchy") {
+  test("test pre agg  create table 21: create with preaggregate and hierarchy") {
     sql("DROP TABLE IF EXISTS maintabletime")
     sql(
       """
@@ -252,8 +252,8 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS maintabletime")
   }
 
-  test("test pre agg create table 21: using") {
-    sql("DROP DATAMAP agg0 ON TABLE maintable")
+  test("test pre agg create table 22: using invalid datamap provider") {
+    sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
 
     val e: Exception = intercept[Exception] {
       sql(
@@ -267,7 +267,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     }
     assert(e.getMessage.contains(
       s"Unknown data map type abc"))
-    sql("DROP DATAMAP agg0 ON TABLE maintable")
+    sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 
   def getCarbontable(plan: LogicalPlan) : CarbonTable ={
