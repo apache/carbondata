@@ -18,18 +18,14 @@
 
 package org.apache.carbondata.cluster.sdv.generated
 
-import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * Test Class for AlterTableTestCase to verify all scenerios

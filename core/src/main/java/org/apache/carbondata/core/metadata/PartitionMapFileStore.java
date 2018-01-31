@@ -48,7 +48,6 @@ import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 
@@ -343,13 +342,8 @@ public class PartitionMapFileStore {
       CarbonTable table,
       List<String> currentPartitions,
       boolean forceDelete) throws IOException {
-    SegmentStatusManager ssm = new SegmentStatusManager(table.getAbsoluteTableIdentifier());
-
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(table.getAbsoluteTableIdentifier().getTablePath(),
-            table.getAbsoluteTableIdentifier().getCarbonTableIdentifier());
-
-    LoadMetadataDetails[] details = ssm.readLoadMetadata(table.getMetaDataFilepath());
+    LoadMetadataDetails[] details =
+        SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
     // scan through each segment.
     List<String> segmentsNeedToBeDeleted = new ArrayList<>();
     for (LoadMetadataDetails segment : details) {
@@ -363,7 +357,8 @@ public class PartitionMapFileStore {
         List<String> toBeDeletedIndexFiles = new ArrayList<>();
         List<String> toBeDeletedDataFiles = new ArrayList<>();
         // take the list of files from this segment.
-        String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(segment.getLoadName());
+        String segmentPath = CarbonTablePath.getSegmentPath(
+            table.getAbsoluteTableIdentifier().getTablePath(), segment.getLoadName());
         String partitionFilePath = getPartitionFilePath(segmentPath);
         if (partitionFilePath != null) {
           PartitionMapper partitionMapper = readPartitionMap(partitionFilePath);
@@ -436,7 +431,7 @@ public class PartitionMapFileStore {
         SegmentStatusManager.updateDeletionStatus(
             table.getAbsoluteTableIdentifier(),
             segmentsNeedToBeDeleted,
-            table.getMetaDataFilepath());
+            table.getMetadataPath());
       } catch (Exception e) {
         throw new IOException(e);
       }

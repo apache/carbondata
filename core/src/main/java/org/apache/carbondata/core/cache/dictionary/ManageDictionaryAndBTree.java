@@ -36,7 +36,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -56,13 +55,11 @@ public class ManageDictionaryAndBTree {
    * clear the dictionary cache
    *
    * @param columnSchema
-   * @param carbonTableIdentifier
+   * @param identifier
    */
   public static void deleteDictionaryFileAndCache(final ColumnSchema columnSchema,
-      AbsoluteTableIdentifier carbonTableIdentifier) {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonTableIdentifier);
-    String metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath();
+      AbsoluteTableIdentifier identifier) {
+    String metadataDirectoryPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
     CarbonFile metadataDir = FileFactory
         .getCarbonFile(metadataDirectoryPath, FileFactory.getFileType(metadataDirectoryPath));
     if (metadataDir.exists()) {
@@ -90,7 +87,7 @@ public class ManageDictionaryAndBTree {
       }
     }
     // remove dictionary cache
-    removeDictionaryColumnFromCache(carbonTableIdentifier, columnSchema.getColumnUniqueId());
+    removeDictionaryColumnFromCache(identifier, columnSchema.getColumnUniqueId());
   }
 
   /**
@@ -101,7 +98,7 @@ public class ManageDictionaryAndBTree {
   public static void clearBTreeAndDictionaryLRUCache(CarbonTable carbonTable) {
     // clear Btree cache from LRU cache
     LoadMetadataDetails[] loadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath());
+        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
     String[] segments = new String[loadMetadataDetails.length];
     int i = 0;
     for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
