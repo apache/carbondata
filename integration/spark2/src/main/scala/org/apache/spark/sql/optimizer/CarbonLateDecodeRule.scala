@@ -522,6 +522,30 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           }
       }
 
+
+    transFormedPlan transform {
+      // If project list attributes are not present as part of decoder to be decoded attributes
+      // then add them to notDecodeCarryForward list, otherwise there is a chance of skipping
+      // decoding of those columns in case of join case.
+      // If left and right plans both uses same attribute but from left side it is
+      // not decoded and right side it is decoded then we should decide based on the above project
+      // list plan.
+      case project@Project(projectList, child: Join) =>
+        val allAttr = new util.HashSet[AttributeReferenceWrapper]()
+        val allDecoder = child.collect {
+          case cd : CarbonDictionaryTempDecoder =>
+            allAttr.addAll(cd.attrList)
+            cd
+        }
+        if (allDecoder.nonEmpty && !allAttr.isEmpty) {
+          val notForward = allAttr.asScala.filterNot {attrWrapper =>
+            val attr = attrWrapper.attr
+            projectList.exists(f => attr.name.equalsIgnoreCase(f.name) && attr.exprId == f.exprId)
+          }
+          allDecoder.head.notDecodeCarryForward.addAll(notForward.asJava)
+        }
+        project
+    }
     val processor = new CarbonDecoderProcessor
     processor.updateDecoders(processor.getDecoderList(transFormedPlan))
     updateProjection(updateTempDecoder(transFormedPlan, aliasMap, attrMap))
@@ -825,5 +849,7 @@ case class CarbonDecoderRelation(
   }
 
   lazy val dictionaryMap = carbonRelation.carbonRelation.metaData.dictionaryMap
+
+  override def toString: String = carbonRelation.carbonTable.getTableUniqueName
 }
 
