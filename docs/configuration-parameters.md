@@ -61,6 +61,7 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.options.bad.record.path |  | Specifies the HDFS path where bad records are stored. By default the value is Null. This path must to be configured by the user if bad record logger is enabled or bad record action redirect. | |
 | carbon.enable.vector.reader | true | This parameter increases the performance of select queries as it fetch columnar batch of size 4*1024 rows instead of fetching data row by row. | |
 | carbon.blockletgroup.size.in.mb | 64 MB | The data are read as a group of blocklets which are called blocklet groups. This parameter specifies the size of the blocklet group. Higher value results in better sequential IO access.The minimum value is 16MB, any value lesser than 16MB will reset to the default value (64MB). |  |
+| carbon.task.distribution | merge_small_files | Setting this parameter value to *merge_small_files* will merge all the small files to a size of (128 MB). During data loading, all the small CSV files are combined to a map task to reduce the number of read task. This enhances the performance. | | 
 
 * **Compaction Configuration**
   
