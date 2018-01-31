@@ -25,7 +25,7 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.events.{CleanFilesPostEvent, CleanFilesPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -70,12 +70,13 @@ case class CarbonCleanFilesCommand(
       databaseNameOp: Option[String], tableName: String): Unit = {
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
+    val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
     CarbonStore.cleanFiles(
-      dbName,
-      tableName,
-      databaseLocation,
-      null,
-      forceTableClean)
+      dbName = dbName,
+      tableName = tableName,
+      tablePath = tablePath,
+      carbonTable = null, // in case of delete all data carbonTable is not required.
+      forceTableClean = forceTableClean)
   }
 
   private def cleanGarbageData(sparkSession: SparkSession,
@@ -90,12 +91,12 @@ case class CarbonCleanFilesCommand(
       None
     }
     CarbonStore.cleanFiles(
-      CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
-      tableName,
-      CarbonProperties.getStorePath,
-      carbonTable,
-      forceTableClean,
-      partitions)
+      dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
+      tableName = tableName,
+      tablePath = carbonTable.getTablePath,
+      carbonTable = carbonTable,
+      forceTableClean = forceTableClean,
+      currentTablePartitions = partitions)
   }
 
   // Clean garbage data in all tables in all databases
