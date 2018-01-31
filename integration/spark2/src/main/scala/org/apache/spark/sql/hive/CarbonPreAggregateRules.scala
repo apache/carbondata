@@ -1023,10 +1023,14 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       // with aggregation sum and count.
       // Then add divide(sum(column with sum), sum(column with count)).
       case Average(exp: Expression) =>
-        Divide(AggregateExpression(Sum(attrs.head),
+        Divide(AggregateExpression(Sum(Cast(
+          attrs.head,
+          DoubleType)),
           aggExp.mode,
           isDistinct = false),
-          AggregateExpression(Sum(attrs.last),
+          AggregateExpression(Sum(Cast(
+            attrs.last,
+            DoubleType)),
             aggExp.mode,
             isDistinct = false))
     }
