@@ -43,15 +43,6 @@ case class CarbonCreateDataMapCommand(
   var createPreAggregateTableCommands: CreatePreAggregateTableCommand = _
   var tableIsExists: Boolean = false
 
-  def tableExists(sparkSession: SparkSession, dbName: String, tableName: String): Boolean = {
-    if (sparkSession.sessionState.catalog.listTables(dbName)
-      .exists(_.table.equalsIgnoreCase(tableName))) {
-      true
-    } else {
-      false
-    }
-  }
-
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     // since streaming segment does not support building index and pre-aggregate yet,
     // so streaming table does not support create datamap
@@ -64,7 +55,8 @@ case class CarbonCreateDataMapCommand(
     val dbName = tableIdentifier.database.getOrElse("default")
     val tableName = tableIdentifier.table + "_" + dataMapName
 
-    if (tableExists(sparkSession, dbName, tableName)) {
+    if (sparkSession.sessionState.catalog.listTables(dbName)
+      .exists(_.table.equalsIgnoreCase(tableName))) {
       LOGGER.audit(
         s"Table creation with Database name [$dbName] and Table name [$tableName] failed. " +
           s"Table [$tableName] already exists under database [$dbName]")
