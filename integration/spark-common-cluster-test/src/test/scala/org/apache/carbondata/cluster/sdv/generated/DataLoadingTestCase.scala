@@ -124,7 +124,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Data load-->Empty BadRecords Parameters
   test("BadRecord_Dataload_011", Include) {
-    try {
+    intercept[Exception] {
       sql(s"""CREATE TABLE badrecords_test1 (ID int,CUST_ID int,sal int,cust_name string) STORED BY 'org.apache.carbondata.format'""")
 
         .collect
@@ -133,11 +133,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
       checkAnswer(
         s"""select count(*) from badrecords_test1""",
         Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_011")
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table badrecords_test1""").collect
+    sql(s"""drop table badrecords_test1""").collect
   }
 
 

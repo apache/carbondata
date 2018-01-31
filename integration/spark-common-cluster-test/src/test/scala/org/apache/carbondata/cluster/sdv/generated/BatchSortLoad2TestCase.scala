@@ -69,27 +69,21 @@ class BatchSortLoad2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To load data after setting only sort scope in carbon property file without folder path in load
   test("Batch_sort_Loading_001-01-01-01_001-TC_030", Include) {
-    try {
-     sql(s"""CREATE TABLE uniqdata13 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
+    intercept[Exception] {
+      sql(s"""CREATE TABLE uniqdata13 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
       sql(s"""LOAD DATA  into table uniqdata13 OPTIONS('DELIMITER'=',' , 'FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table uniqdata13""").collect
+    sql(s"""drop table uniqdata13""").collect
   }
 
 
   //To load data after setting only sort scope in carbon property file without table_name in load
   test("Batch_sort_Loading_001-01-01-01_001-TC_031", Include) {
-    try {
-     sql(s"""CREATE TABLE uniqdata14 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
+    intercept[Exception] {
+      sql(s"""CREATE TABLE uniqdata14 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
       sql(s"""LOAD DATA  INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table OPTIONS('DELIMITER'=',' , 'FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table uniqdata14""").collect
+    sql(s"""drop table uniqdata14""").collect
   }
 
 
@@ -255,12 +249,9 @@ class BatchSortLoad2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check sort_scope option with a wrong value
   test("Batch_sort_Loading_001-01-01-01_001-TC_049", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata20a OPTIONS('DELIMITER'=',' , 'SORT_SCOPE'='ABCXYZ',‘SINGLE_PASS’=’true’,'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table uniqdata20a""").collect
   }
@@ -268,14 +259,11 @@ class BatchSortLoad2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check sort_scope option with null value
   test("Batch_sort_Loading_001-01-01-01_001-TC_050", Include) {
-    try {
-     sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
+    intercept[Exception] {
+      sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata20a OPTIONS('DELIMITER'=',' , 'SORT_SCOPE'='null',‘SINGLE_PASS’=’true’,'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table uniqdata20a""").collect
+    sql(s"""drop table uniqdata20a""").collect
   }
 
   val prop = CarbonProperties.getInstance()
