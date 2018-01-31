@@ -28,10 +28,10 @@ class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with Befo
     sql(
       """
         | CREATE TABLE mainTable(
-        |   dataTime timestamp,
-        |   name string,
-        |   city string,
-        |   age int)
+        |   dataTime TIMESTAMP,
+        |   name STRING,
+        |   city STRING,
+        |   age INT)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
   }
@@ -42,46 +42,46 @@ class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with Befo
     val e: Exception = intercept[Exception] {
       sql(s"DROP DATAMAP agg1_month ON TABLE mainTable")
     }
-    assert(e.getMessage.contains("Datamap with name agg1_month does not exist under table mainTable"))
+    assert(e.getMessage.equals("Datamap with name agg1_month does not exist under table mainTable"))
   }
 
-  test("test timeseries drop datamap 2: drop datamap should SUCCESS if haveIF EXISTS") {
+  test("test timeseries drop datamap 2: drop datamap should SUCCESS if have IF EXISTS") {
     // DROP DATAMAP DataMapName if the DataMapName not exists
-    checkExistence(sql("show datamap on table mainTable"), false, "agg1_month")
+    checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), false, "agg1_month")
     try {
       sql(s"DROP DATAMAP IF EXISTS agg1_month ON TABLE mainTable")
       assert(true)
     } catch {
-      case e: Exception =>
-        println(e)
+      case _: Exception =>
         assert(false)
     }
   }
 
   test("test timeseries drop datamap 3: drop datamap should throw proper exception") {
     sql(
-      """create datamap agg1 on table mainTable
-        |using 'preaggregate'
-        |DMPROPERTIES (
-        |   'timeseries.eventTime'='dataTime',
-        |   'timeseries.hierarchy'='month=1,year=1')
-        |as select dataTime, sum(age) from mainTable
-        |group by dataTime
+      """
+        | CREATE DATAMAP agg1_month ON TABLE mainTable
+        | USING 'timeseries'
+        | DMPROPERTIES (
+        |   'event_Time'='dataTime',
+        |   'month_granularity'='1')
+        | AS SELECT dataTime, SUM(age) FROM mainTable
+        | GROUP BY dataTime
       """.stripMargin)
 
     // Before DROP DATAMAP
-    checkExistence(sql("show datamap on table mainTable"), true, "agg1_month", "agg1_year")
+    checkExistence(sql("show datamap on table mainTable"), true, "agg1_month")
 
     // DROP DATAMAP DataMapName
     sql(s"DROP DATAMAP agg1_month ON TABLE mainTable")
-    checkExistence(sql("show datamap on table mainTable"), false, "agg1_month")
+    checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), false, "agg1_month")
     val e: Exception = intercept[MalformedCarbonCommandException] {
       sql(s"DROP DATAMAP agg1_month ON TABLE mainTable")
     }
-    assert(e.getMessage.contains("Datamap with name agg1_month does not exist under table mainTable"))
+    assert(e.getMessage.equals("Datamap with name agg1_month does not exist under table mainTable"))
   }
 
-  test("test timeseries drop datamap: drop datamap should throw exception if table not exist") {
+  test("test timeseries drop datamap 4: drop datamap should throw exception if table not exist") {
     // DROP DATAMAP DataMapName if the DataMapName not exists and
     checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), false, "agg1_month")
     val e: Exception = intercept[Exception] {
@@ -91,7 +91,7 @@ class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with Befo
       "Dropping datamap agg1_month failed: Table or view 'maintablenotexist' not found "))
   }
 
-  test("test timeseries drop datamap: should throw exception if table not exist with IF EXISTS") {
+  test("test timeseries drop datamap 5: should throw exception if table not exist with IF EXISTS") {
     // DROP DATAMAP DataMapName if the DataMapName not exists
     // DROP DATAMAP should throw exception if table not exist, even though there is IF EXISTS"
     checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), false, "agg1_month")
