@@ -42,7 +42,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.service.impl.PathFactory;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
@@ -243,9 +242,10 @@ public class CarbonTableReader {
       updateSchemaList();
     }
     try {
-      if (isKeyExists && !FileFactory
-          .isFileExist(carbonCache.get().get(schemaTableName).carbonTablePath.getSchemaFilePath(),
-              fileType)) {
+      if (isKeyExists
+          && !FileFactory.isFileExist(
+              CarbonTablePath.getSchemaFilePath(
+                  carbonCache.get().get(schemaTableName).carbonTable.getTablePath()), fileType)) {
         removeTableFromCache(schemaTableName);
         throw new TableNotFoundException(schemaTableName);
       }
@@ -255,10 +255,12 @@ public class CarbonTableReader {
 
     if (isKeyExists) {
       CarbonTableCacheModel ctcm = carbonCache.get().get(schemaTableName);
-      if(ctcm != null && ctcm.tableInfo != null) {
-        Long latestTime = FileFactory.getCarbonFile(ctcm.carbonTablePath.getSchemaFilePath())
-            .getLastModifiedTime();
-        Long oldTime = ctcm.tableInfo.getLastUpdatedTime();
+      if(ctcm != null && ctcm.carbonTable.getTableInfo() != null) {
+        Long latestTime = FileFactory.getCarbonFile(
+            CarbonTablePath.getSchemaFilePath(
+                carbonCache.get().get(schemaTableName).carbonTable.getTablePath())
+        ).getLastModifiedTime();
+        Long oldTime = ctcm.carbonTable.getTableInfo().getLastUpdatedTime();
         if (DateUtils.truncate(new Date(latestTime), Calendar.MINUTE)
             .after(DateUtils.truncate(new Date(oldTime), Calendar.MINUTE))) {
           removeTableFromCache(schemaTableName);
@@ -312,21 +314,12 @@ public class CarbonTableReader {
 
       // Step 1: get store path of the table and cache it.
       // create table identifier. the table id is randomly generated.
-      cache.carbonTableIdentifier =
+      CarbonTableIdentifier carbonTableIdentifier =
               new CarbonTableIdentifier(table.getSchemaName(), table.getTableName(),
                       UUID.randomUUID().toString());
       String storePath = config.getStorePath();
-      String tablePath = storePath + "/" + cache.carbonTableIdentifier.getDatabaseName() + "/"
-          + cache.carbonTableIdentifier.getTableName();
-
-      // get the store path of the table.
-
-      AbsoluteTableIdentifier absoluteTableIdentifier =
-          AbsoluteTableIdentifier.from(tablePath, cache.carbonTableIdentifier);
-      cache.carbonTablePath =
-          PathFactory.getInstance().getCarbonTablePath(absoluteTableIdentifier, null);
-      // cache the table
-      carbonCache.get().put(table, cache);
+      String tablePath = storePath + "/" + carbonTableIdentifier.getDatabaseName() + "/"
+          + carbonTableIdentifier.getTableName();
 
       //Step 2: read the metadata (tableInfo) of the table.
       ThriftReader.TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
@@ -338,7 +331,7 @@ public class CarbonTableReader {
         }
       };
       ThriftReader thriftReader =
-              new ThriftReader(cache.carbonTablePath.getSchemaFilePath(), createTBase);
+              new ThriftReader(CarbonTablePath.getSchemaFilePath(tablePath), createTBase);
       thriftReader.open();
       org.apache.carbondata.format.TableInfo tableInfo =
               (org.apache.carbondata.format.TableInfo) thriftReader.read();
@@ -355,9 +348,12 @@ public class CarbonTableReader {
       // Step 4: Load metadata info into CarbonMetadata
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
 
-      cache.tableInfo = wrapperTableInfo;
-      cache.carbonTable = CarbonMetadata.getInstance()
-              .getCarbonTable(cache.carbonTableIdentifier.getTableUniqueName());
+      cache.carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+          table.getSchemaName(), table.getTableName());
+
+      // cache the table
+      carbonCache.get().put(table, cache);
+
       result = cache.carbonTable;
     } catch (Exception ex) {
       throw new RuntimeException(ex);
@@ -372,11 +368,10 @@ public class CarbonTableReader {
     List<CarbonLocalInputSplit> result = new ArrayList<>();
 
     CarbonTable carbonTable = tableCacheModel.carbonTable;
-    TableInfo tableInfo = tableCacheModel.tableInfo;
+    TableInfo tableInfo = tableCacheModel.carbonTable.getTableInfo();
     Configuration config = new Configuration();
     config.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
-    String carbonTablePath = PathFactory.getInstance()
-        .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier(), null).getPath();
+    String carbonTablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
     config.set(CarbonTableInputFormat.DATABASE_NAME, carbonTable.getDatabaseName());
     config.set(CarbonTableInputFormat.TABLE_NAME, carbonTable.getTableName());

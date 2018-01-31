@@ -183,7 +183,7 @@ case class CreatePreAggregateTableCommand(
     // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT
     // table.
     DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, parentTable)
-    val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetaDataFilepath)
+    val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath)
     if (loadAvailable.exists(load => load.getSegmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
       load.getSegmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS)) {
       throw new UnsupportedOperationException(
