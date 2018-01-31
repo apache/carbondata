@@ -248,6 +248,46 @@ test("Creation of partition table should fail if the colname in table schema and
   }
 }
 
+  test("Renaming a partition table should fail"){
+    sql("drop table if exists partitionTable")
+    sql(
+      """create table partitionTable (id int,name String) partitioned by(email string) stored by 'carbondata'
+      """.stripMargin)
+    sql("insert into partitionTable select 1,'huawei','abc'")
+    checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc")))
+    intercept[Exception]{
+      sql("alter table partitionTable PARTITION (email='abc') rename to PARTITION (email='def)")
+    }
+  }
+
+  test("add partition based on location on partition table should fail"){
+    sql("drop table if exists partitionTable")
+    sql(
+      """create table partitionTable (id int,name String) partitioned by(email string) stored by 'carbondata'
+      """.stripMargin)
+    sql("insert into partitionTable select 1,'huawei','abc'")
+    checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc")))
+    intercept[Exception]{
+      sql("alter table partitionTable add partition (email='def') location 'abc/part1'")
+    }
+  }
+
+  test("drop partition on preAggregate table should fail"){
+    sql("drop table if exists partitionTable")
+    sql("drop datamap if exists preaggTable on table partitionTable")
+    sql("create table partitionTable (id int,city string,age int) partitioned by(name string) stored by 'carbondata'".stripMargin)
+    sql(
+      s"""create datamap preaggTable on table partitionTable using 'preaggregate' as select id,sum(age) from partitionTable group by id"""
+        .stripMargin)
+    sql("insert into partitionTable select 1,'Bangalore',30,'John'")
+    sql("insert into partitionTable select 2,'Chennai',20,'Huawei'")
+    checkAnswer(sql("show partitions partitionTable"), Seq(Row("name=John"),Row("name=Huawei")))
+    intercept[Exception]{
+      sql("alter table partitionTable drop PARTITION(name='John')")
+    }
+  }
+
+
   private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String]) = {
     val plan = frame.queryExecution.sparkPlan
     val scanRDD = plan collect {
@@ -277,6 +317,8 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists badrecordsignore")
     sql("drop table if exists badrecordsPartitionintnull")
     sql("drop table if exists badrecordsPartitionintnullalt")
+    sql("drop table if exists partitionTable")
+    sql("drop datamap if exists preaggTable on table partitionTable")
   }
 
 }

@@ -254,6 +254,27 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(
           CarbonAlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
       }
+      case rename@AlterTableRenamePartitionCommand(tableName, oldPartition, newPartition) =>
+        val dbOption = tableName.database.map(_.toLowerCase)
+        val tableIdentifier = TableIdentifier(tableName.table.toLowerCase(), dbOption)
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableIdentifier)(sparkSession)
+        if (isCarbonTable) {
+          throw new UnsupportedOperationException("Renaming partition on table is not supported")
+        } else {
+          ExecutedCommandExec(rename) :: Nil
+        }
+      case addPartition@AlterTableAddPartitionCommand(tableName, partitionSpecsAndLocs, _) =>
+        val dbOption = tableName.database.map(_.toLowerCase)
+        val tableIdentifier = TableIdentifier(tableName.table.toLowerCase(), dbOption)
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableIdentifier)(sparkSession)
+        if (isCarbonTable && partitionSpecsAndLocs.exists(_._2.isDefined)) {
+          throw new UnsupportedOperationException(
+            "add partition with location is not supported")
+        } else {
+          ExecutedCommandExec(addPartition) :: Nil
+        }
       case RefreshTable(tableIdentifier) =>
         RefreshCarbonTableCommand(tableIdentifier.database,
           tableIdentifier.table).run(sparkSession)
