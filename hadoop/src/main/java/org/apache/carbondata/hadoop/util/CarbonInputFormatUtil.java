@@ -22,6 +22,8 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -39,6 +41,7 @@ import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
@@ -158,5 +161,22 @@ public class CarbonInputFormatUtil {
   public static JobID getJobId(java.util.Date date, int batch) {
     String jobtrackerID = createJobTrackerID(date);
     return new JobID(jobtrackerID, batch);
+  }
+
+  public static void setS3Configurations(Configuration hadoopConf) {
+    FileFactory.getConfiguration()
+        .set("fs.s3a.access.key", hadoopConf.get("fs.s3a.access.key", ""));
+    FileFactory.getConfiguration()
+        .set("fs.s3a.secret.key", hadoopConf.get("fs.s3a.secret.key", ""));
+    FileFactory.getConfiguration()
+        .set("fs.s3a.endpoint", hadoopConf.get("fs.s3a.endpoint", ""));
+    FileFactory.getConfiguration().set(CarbonCommonConstants.S3_ACCESS_KEY,
+        hadoopConf.get(CarbonCommonConstants.S3_ACCESS_KEY, ""));
+    FileFactory.getConfiguration().set(CarbonCommonConstants.S3_SECRET_KEY,
+        hadoopConf.get(CarbonCommonConstants.S3_SECRET_KEY, ""));
+    FileFactory.getConfiguration().set(CarbonCommonConstants.S3N_ACCESS_KEY,
+        hadoopConf.get(CarbonCommonConstants.S3N_ACCESS_KEY, ""));
+    FileFactory.getConfiguration().set(CarbonCommonConstants.S3N_SECRET_KEY,
+        hadoopConf.get(CarbonCommonConstants.S3N_SECRET_KEY, ""));
   }
 }
