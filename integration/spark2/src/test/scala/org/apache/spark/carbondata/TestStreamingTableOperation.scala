@@ -181,7 +181,11 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   }
 
   // normal table not support streaming ingest
-  test("normal table not support streaming ingest") {
+  test("normal table not support streaming ingest and alter normal table's streaming property") {
+    // alter normal table's streaming property
+    val msg = intercept[MalformedCarbonCommandException](sql("alter table streaming.batch_table set tblproperties('streaming'='false')"))
+    assertResult("Streaming property value is incorrect")(msg.getMessage)
+
     val identifier = new TableIdentifier("batch_table", Option("streaming"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)
       .asInstanceOf[CarbonRelation].metaData.carbonTable
@@ -518,6 +522,11 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       case _ =>
         assert(false, "should support set table to streaming")
     }
+
+    // alter streaming table's streaming property
+    val msg = intercept[MalformedCarbonCommandException](sql("alter table streaming.stream_table_handoff set tblproperties('streaming'='false')"))
+    assertResult("Streaming property can not be changed once it is 'true'")(msg.getMessage)
+
     val segments = sql("show segments for table streaming.stream_table_handoff").collect()
     assert(segments.length == 2 || segments.length == 3)
     assertResult("Streaming")(segments(0).getString(1))
