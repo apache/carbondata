@@ -244,14 +244,29 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   test("create pre-agg table with path") {
     sql("drop table if exists main_preagg")
     sql("drop table if exists main ")
-    val path = "./_pre-agg_test"
-    sql("create table main(year int,month int,name string,salary int) stored by 'carbondata' tblproperties('sort_columns'='month,year,name')")
+    val path = "./preAggTestPath"
+    sql(
+      s"""
+         | create table main(
+         |     year int,
+         |     month int,
+         |     name string,
+         |     salary int)
+         | stored by 'carbondata'
+         | tblproperties('sort_columns'='month,year,name')
+      """.stripMargin)
     sql("insert into main select 10,11,'amy',12")
     sql("insert into main select 10,11,'amy',14")
-    sql("create datamap preagg on table main " +
-      "using 'preaggregate' " +
-      s"dmproperties ('path'='$path') " +
-      "as select name,avg(salary) from main group by name")
+    sql(
+      s"""
+         | create datamap preagg
+         | on table main
+         | using 'preaggregate'
+         | dmproperties ('path'='$path')
+         | as select name,avg(salary)
+         |    from main
+         |    group by name
+       """.stripMargin)
     assertResult(true)(new File(path).exists())
     assertResult(true)(new File(s"${CarbonTablePath.getSegmentPath(path, "0")}")
       .list(new FilenameFilter {
@@ -259,6 +274,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
           name.contains(CarbonCommonConstants.FACT_FILE_EXT)
         }
       }).length > 0)
+    sql("select name,avg(salary) from main group by name").show()
     checkAnswer(sql("select name,avg(salary) from main group by name"), Row("amy", 13.0))
     checkAnswer(sql("select * from main_preagg"), Row("amy", 26, 2))
     sql("drop datamap preagg on table main")
