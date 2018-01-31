@@ -47,7 +47,6 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
@@ -60,10 +59,10 @@ public class SegmentStatusManager {
   private static final LogService LOG =
       LogServiceFactory.getLogService(SegmentStatusManager.class.getName());
 
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
+  private AbsoluteTableIdentifier identifier;
 
-  public SegmentStatusManager(AbsoluteTableIdentifier absoluteTableIdentifier) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
+  public SegmentStatusManager(AbsoluteTableIdentifier identifier) {
+    this.identifier = identifier;
   }
 
   /**
@@ -72,7 +71,7 @@ public class SegmentStatusManager {
    * @return
    */
   public ICarbonLock getTableStatusLock() {
-    return CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
+    return CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
   }
 
   /**
@@ -80,9 +79,7 @@ public class SegmentStatusManager {
    */
   public static long getTableStatusLastModifiedTime(AbsoluteTableIdentifier identifier)
       throws IOException {
-    String tableStatusPath = CarbonStorePath
-        .getCarbonTablePath(identifier.getTablePath(), identifier.getCarbonTableIdentifier())
-        .getTableStatusFilePath();
+    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
     if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
       return 0L;
     } else {
@@ -114,13 +111,11 @@ public class SegmentStatusManager {
     List<Segment> listOfInvalidSegments = new ArrayList<>(10);
     List<Segment> listOfStreamSegments = new ArrayList<>(10);
     List<Segment> listOfInProgressSegments = new ArrayList<>(10);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
 
     try {
       if (loadMetadataDetails == null) {
-        loadMetadataDetails = readTableStatusFile(carbonTablePath.getTableStatusFilePath());
+        loadMetadataDetails = readTableStatusFile(
+            CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
       }
       //just directly iterate Array
       for (LoadMetadataDetails segment : loadMetadataDetails) {
@@ -306,9 +301,7 @@ public class SegmentStatusManager {
       if (carbonDeleteSegmentLock.lockWithRetries()) {
         LOG.info("Delete segment lock has been successfully acquired");
 
-        CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
-            identifier.getTablePath(), identifier.getCarbonTableIdentifier());
-        String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
+        String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
         LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
         if (!FileFactory.isFileExist(dataLoadLocation, FileFactory.getFileType(dataLoadLocation))) {
           // log error.
@@ -388,9 +381,7 @@ public class SegmentStatusManager {
       if (carbonDeleteSegmentLock.lockWithRetries()) {
         LOG.info("Delete segment lock has been successfully acquired");
 
-        CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
-            identifier.getTablePath(), identifier.getCarbonTableIdentifier());
-        String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
+        String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
         LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
 
         if (!FileFactory.isFileExist(dataLoadLocation, FileFactory.getFileType(dataLoadLocation))) {
@@ -718,7 +709,7 @@ public class SegmentStatusManager {
       return false;
     }
     boolean loadInProgress = false;
-    String metaPath = carbonTable.getMetaDataFilepath();
+    String metaPath = carbonTable.getMetadataPath();
     LoadMetadataDetails[] listOfLoadFolderDetailsArray =
               SegmentStatusManager.readLoadMetadata(metaPath);
     if (listOfLoadFolderDetailsArray.length != 0) {
@@ -743,7 +734,7 @@ public class SegmentStatusManager {
       return false;
     }
     boolean loadInProgress = false;
-    String metaPath = carbonTable.getMetaDataFilepath();
+    String metaPath = carbonTable.getMetadataPath();
     LoadMetadataDetails[] listOfLoadFolderDetailsArray =
         SegmentStatusManager.readLoadMetadata(metaPath);
     if (listOfLoadFolderDetailsArray.length != 0) {

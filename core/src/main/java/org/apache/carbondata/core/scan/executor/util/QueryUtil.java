@@ -63,7 +63,6 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnRes
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -409,7 +408,7 @@ public class QueryUtil {
   }
 
   public static AbsoluteTableIdentifier getTableIdentifierForColumn(CarbonDimension carbonDimension,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      AbsoluteTableIdentifier identifier) {
     RelationIdentifier relation = carbonDimension.getColumnSchema()
         .getParentColumnTableRelations()
         .get(0)
@@ -417,8 +416,8 @@ public class QueryUtil {
     String parentTableName = relation.getTableName();
     String parentDatabaseName = relation.getDatabaseName();
     String parentTableId = relation.getTableId();
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
-    String newTablePath = CarbonUtil.getNewTablePath(carbonTablePath, parentTableName);
+    String newTablePath =
+        CarbonTablePath.getNewTablePath(identifier.getTablePath(), parentTableName);
     return AbsoluteTableIdentifier.from(newTablePath, parentDatabaseName, parentTableName,
         parentTableId);
   }

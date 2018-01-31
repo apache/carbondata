@@ -17,29 +17,12 @@
 
 package org.apache.carbondata.core.util;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -89,7 +72,6 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk2;
@@ -1088,20 +1070,18 @@ public final class CarbonUtil {
    *
    * @param taskId
    * @param tableBlockInfoList
-   * @param absoluteTableIdentifier
+   * @param identifier
    */
   public static long calculateDriverBTreeSize(String taskId, String bucketNumber,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier) {
+      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier identifier) {
     // need to sort the  block info list based for task in ascending  order so
     // it will be sinkup with block index read from file
     Collections.sort(tableBlockInfoList);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
-    String carbonIndexFilePath = carbonTablePath
-        .getCarbonIndexFilePath(taskId, tableBlockInfoList.get(0).getSegmentId(),
+    String carbonIndexFilePath = CarbonTablePath
+        .getCarbonIndexFilePath(identifier.getTablePath(), taskId,
+            tableBlockInfoList.get(0).getSegmentId(),
             bucketNumber, CarbonTablePath.DataFileUtil
                 .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
             tableBlockInfoList.get(0).getVersion());
@@ -1328,23 +1308,21 @@ public final class CarbonUtil {
    *
    * @param taskId                  task id of the file
    * @param tableBlockInfoList      list of table block
-   * @param absoluteTableIdentifier absolute table identifier
+   * @param identifier absolute table identifier
    * @return list of block info
    * @throws IOException if any problem while reading
    */
   public static List<DataFileFooter> readCarbonIndexFile(String taskId, String bucketNumber,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier)
+      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier identifier)
       throws IOException {
     // need to sort the  block info list based for task in ascending  order so
     // it will be sinkup with block index read from file
     Collections.sort(tableBlockInfoList);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
-    String carbonIndexFilePath = carbonTablePath
-        .getCarbonIndexFilePath(taskId, tableBlockInfoList.get(0).getSegmentId(),
+    String carbonIndexFilePath = CarbonTablePath
+        .getCarbonIndexFilePath(identifier.getTablePath(), taskId,
+            tableBlockInfoList.get(0).getSegmentId(),
             bucketNumber, CarbonTablePath.DataFileUtil
                 .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
             tableBlockInfoList.get(0).getVersion());
@@ -2204,21 +2182,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * get the parent folder of old table path and returns the new tablePath by appending new
-   * tableName to the parent
-   *
-   * @param carbonTablePath       Old tablePath
-   * @param newTableName          new table name
-   * @return the new table path
-   */
-  public static String getNewTablePath(
-      Path carbonTablePath,
-      String newTableName) {
-    Path parentPath = carbonTablePath.getParent();
-    return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + newTableName;
-  }
-
-  /**
    * This method will calculate the data size and index size for carbon table
    */
   public static Map<String, Long> calculateDataIndexSize(CarbonTable carbonTable)
@@ -2228,18 +2191,17 @@ public final class CarbonUtil {
     long indexSize = 0L;
     long lastUpdateTime = 0L;
     boolean needUpdate = false;
-    AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
+    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     String isCalculated = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_CALCULATE_SIZE,
             CarbonCommonConstants.DEFAULT_ENABLE_CALCULATE_SIZE);
     if (isCalculated.equalsIgnoreCase("true")) {
-      SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+      SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
       try {
         if (carbonLock.lockWithRetries()) {
           LOGGER.info("Acquired lock for table for table status updation");
-          String metadataPath = carbonTable.getMetaDataFilepath();
+          String metadataPath = carbonTable.getMetadataPath();
           LoadMetadataDetails[] loadMetadataDetails =
               SegmentStatusManager.readLoadMetadata(metadataPath);
 
@@ -2253,8 +2215,8 @@ public final class CarbonUtil {
               if (null == dsize || null == isize) {
                 needUpdate = true;
                 LOGGER.info("It is an old segment, need calculate data size and index size again");
-                HashMap<String, Long> map = CarbonUtil
-                    .getDataSizeAndIndexSize(carbonTablePath, loadMetadataDetail.getLoadName());
+                HashMap<String, Long> map = CarbonUtil.getDataSizeAndIndexSize(
+                    identifier.getTablePath(), loadMetadataDetail.getLoadName());
                 dsize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE));
                 isize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE));
                 loadMetadataDetail.setDataSize(dsize);
@@ -2266,10 +2228,12 @@ public final class CarbonUtil {
           }
           // If it contains old segment, write new load details
           if (needUpdate) {
-            SegmentStatusManager.writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(),
+            SegmentStatusManager.writeLoadDetailsIntoFile(
+                CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
                 loadMetadataDetails);
           }
-          String tableStatusPath = carbonTablePath.getTableStatusFilePath();
+          String tableStatusPath =
+              CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
           if (FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
             lastUpdateTime =
                 FileFactory.getCarbonFile(tableStatusPath, FileFactory.getFileType(tableStatusPath))
@@ -2296,12 +2260,12 @@ public final class CarbonUtil {
   }
 
   // Get the total size of carbon data and the total size of carbon index
-  private static HashMap<String, Long> getDataSizeAndIndexSize(CarbonTablePath carbonTablePath,
+  private static HashMap<String, Long> getDataSizeAndIndexSize(String tablePath,
       String segmentId) throws IOException {
     long carbonDataSize = 0L;
     long carbonIndexSize = 0L;
     HashMap<String, Long> dataAndIndexSize = new HashMap<String, Long>();
-    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(segmentId);
+    String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     FileFactory.FileType fileType = FileFactory.getFileType(segmentPath);
     switch (fileType) {
       case HDFS:
@@ -2370,21 +2334,19 @@ public final class CarbonUtil {
   }
 
   // Get the total size of carbon data and the total size of carbon index
-  public static HashMap<String, Long> getDataSizeAndIndexSize(CarbonTablePath carbonTablePath,
+  public static HashMap<String, Long> getDataSizeAndIndexSize(String tablePath,
       Segment segment) throws IOException {
     if (segment.getSegmentFileName() != null) {
-      SegmentFileStore fileStore =
-          new SegmentFileStore(carbonTablePath.getPath(), segment.getSegmentFileName());
+      SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
       return getDataSizeAndIndexSize(fileStore);
     } else {
-      return getDataSizeAndIndexSize(carbonTablePath, segment.getSegmentNo());
+      return getDataSizeAndIndexSize(tablePath, segment.getSegmentNo());
     }
   }
 
   // Get the total size of segment.
-  public static long getSizeOfSegment(CarbonTablePath carbonTablePath,
-      Segment segment) throws IOException {
-    HashMap<String, Long> dataSizeAndIndexSize = getDataSizeAndIndexSize(carbonTablePath, segment);
+  public static long getSizeOfSegment(String tablePath, Segment segment) throws IOException {
+    HashMap<String, Long> dataSizeAndIndexSize = getDataSizeAndIndexSize(tablePath, segment);
     long size = 0;
     for (Long eachSize: dataSizeAndIndexSize.values()) {
       size += eachSize;
@@ -2506,9 +2468,7 @@ public final class CarbonUtil {
     String blockName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
     String tablePath = identifier.getTablePath();
     if (filePath.startsWith(tablePath)) {
-      String factDir =
-          CarbonStorePath.getCarbonTablePath(tablePath, identifier.getCarbonTableIdentifier())
-              .getFactDir();
+      String factDir = CarbonTablePath.getFactDir(tablePath);
       if (filePath.startsWith(factDir)) {
         blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
             + CarbonCommonConstants.FILE_SEPARATOR + blockName;

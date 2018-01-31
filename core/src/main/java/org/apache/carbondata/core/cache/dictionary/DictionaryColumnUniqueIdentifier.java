@@ -22,7 +22,6 @@ import java.io.Serializable;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -41,8 +40,6 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * unique column id
    */
   private ColumnIdentifier columnIdentifier;
-
-  private transient CarbonTablePath carbonTablePath;
 
   private DataType dataType;
 
@@ -68,8 +65,7 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
     this.columnIdentifier = columnIdentifier;
     this.dataType = columnIdentifier.getDataType();
     this.dictionaryLocation =
-        CarbonStorePath.getCarbonTablePath(dictionarySourceAbsoluteTableIdentifier)
-            .getMetadataDirectoryPath();
+        CarbonTablePath.getMetadataPath(dictionarySourceAbsoluteTableIdentifier.getTablePath());
   }
 
   /**
@@ -100,13 +96,6 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
     return dataType;
   }
 
-  public CarbonTablePath getCarbonTablePath() {
-    if (null == carbonTablePath) {
-      carbonTablePath = CarbonStorePath.getCarbonTablePath(dictionarySourceAbsoluteTableIdentifier);
-    }
-    return carbonTablePath;
-  }
-
   /**
    * @return columnIdentifier
    */
@@ -118,24 +107,24 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * @return dictionary file path
    */
   public String getDictionaryFilePath() {
-    return getCarbonTablePath()
-        .getDictionaryFilePath(dictionaryLocation, columnIdentifier.getColumnId());
+    return CarbonTablePath.getExternalDictionaryFilePath(
+        dictionaryLocation, columnIdentifier.getColumnId());
   }
 
   /**
    * @return dictionary metadata file path
    */
   public String getDictionaryMetaFilePath() {
-    return getCarbonTablePath()
-        .getDictionaryMetaFilePath(dictionaryLocation, columnIdentifier.getColumnId());
+    return CarbonTablePath.getExternalDictionaryMetaFilePath(
+        dictionaryLocation, columnIdentifier.getColumnId());
   }
 
   /**
    * @return sort index file path
    */
   public String getSortIndexFilePath() {
-    return getCarbonTablePath()
-        .getSortIndexFilePath(dictionaryLocation, columnIdentifier.getColumnId());
+    return CarbonTablePath.getExternalSortIndexFilePath(
+        dictionaryLocation, columnIdentifier.getColumnId());
   }
 
   /**
@@ -143,8 +132,8 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * @return sort index file path with given offset
    */
   public String getSortIndexFilePath(long offset) {
-    return getCarbonTablePath()
-        .getSortIndexFilePath(dictionaryLocation, columnIdentifier.getColumnId(), offset);
+    return CarbonTablePath.getExternalSortIndexFilePath(
+        dictionaryLocation, columnIdentifier.getColumnId(), offset);
   }
 
   /**

@@ -23,7 +23,7 @@ import java.net.ServerSocket
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 case class FileElement(school: Array[String], age: Int)
@@ -77,7 +77,6 @@ object CarbonStructuredStreamingWithRowParser {
       }
 
       val carbonTable = CarbonEnv.getCarbonTable(Some("default"), streamTableName)(spark)
-      val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
       // batch load
       val path = s"$rootPath/examples/spark2/src/main/resources/streamSample.csv"
       spark.sql(
@@ -89,7 +88,7 @@ object CarbonStructuredStreamingWithRowParser {
 
       // streaming ingest
       val serverSocket = new ServerSocket(7071)
-      val thread1 = startStreaming(spark, tablePath)
+      val thread1 = startStreaming(spark, carbonTable.getTablePath)
       val thread2 = writeSocket(serverSocket)
       val thread3 = showTableCount(spark, streamTableName)
 
@@ -140,7 +139,7 @@ object CarbonStructuredStreamingWithRowParser {
     thread
   }
 
-  def startStreaming(spark: SparkSession, tablePath: CarbonTablePath): Thread = {
+  def startStreaming(spark: SparkSession, tablePath: String): Thread = {
     val thread = new Thread() {
       override def run(): Unit = {
         var qry: StreamingQuery = null
@@ -167,7 +166,7 @@ object CarbonStructuredStreamingWithRowParser {
           qry = readSocketDF.writeStream
             .format("carbondata")
             .trigger(ProcessingTime("5 seconds"))
-            .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
+            .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(tablePath))
             .option("dbName", "default")
             .option("tableName", "stream_table_with_row_parser")
             .option(CarbonStreamParser.CARBON_STREAM_PARSER,

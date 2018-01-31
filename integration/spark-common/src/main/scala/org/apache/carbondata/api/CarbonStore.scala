@@ -177,7 +177,7 @@ object CarbonStore {
     LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
     validateLoadIds(loadids)
 
-    val path = carbonTable.getMetaDataFilepath
+    val path = carbonTable.getMetadataPath
 
     try {
       val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
@@ -203,7 +203,7 @@ object CarbonStore {
     LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
 
     val time = validateTimeFormat(timestamp)
-    val path = carbonTable.getMetaDataFilepath
+    val path = carbonTable.getMetadataPath
 
     try {
       val invalidLoadTimestamps =

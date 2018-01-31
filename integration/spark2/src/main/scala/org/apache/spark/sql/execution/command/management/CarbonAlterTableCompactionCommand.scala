@@ -34,12 +34,12 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadMetadataEvent
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -292,9 +292,10 @@ case class CarbonAlterTableCompactionCommand(
           true)(sparkSession,
           sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
         // 5. remove checkpoint
-        val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
-        FileFactory.deleteAllFilesOfDir(new File(tablePath.getStreamingCheckpointDir))
-        FileFactory.deleteAllFilesOfDir(new File(tablePath.getStreamingLogDir))
+        FileFactory.deleteAllFilesOfDir(
+          new File(CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath)))
+        FileFactory.deleteAllFilesOfDir(
+          new File(CarbonTablePath.getStreamingLogDir(carbonTable.getTablePath)))
       } else {
         val msg = "Failed to close streaming table, because streaming is locked for table " +
                   carbonTable.getDatabaseName() + "." + carbonTable.getTableName()

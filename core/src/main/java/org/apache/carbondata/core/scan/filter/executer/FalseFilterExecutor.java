@@ -21,7 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 /**
@@ -33,9 +33,9 @@ import org.apache.carbondata.core.util.BitSetGroup;
 public class FalseFilterExecutor implements FilterExecuter {
 
   @Override
-  public BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder, boolean useBitsetPipeline)
+  public BitSetGroup applyFilter(RawBlockletColumnChunks rawChunks, boolean useBitsetPipeline)
       throws FilterUnsupportedException, IOException {
-    int numberOfPages = blocksChunkHolder.getDataBlock().numberOfPages();
+    int numberOfPages = rawChunks.getDataBlock().numberOfPages();
     BitSetGroup group = new BitSetGroup(numberOfPages);
     for (int i = 0; i < numberOfPages; i++) {
       BitSet set = new BitSet();
@@ -54,7 +54,7 @@ public class FalseFilterExecutor implements FilterExecuter {
     return new BitSet();
   }
 
-  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+  @Override public void readColumnChunks(RawBlockletColumnChunks blockChunkHolder) {
     // Do Nothing
   }
 }
