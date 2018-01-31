@@ -47,6 +47,7 @@ object StandardPartitionExample {
                 | salary Int)
                 | PARTITIONED BY (country String)
                 | STORED BY 'org.apache.carbondata.format'
+                | TBLPROPERTIES('SORT_COLUMNS'='id,vin')
               """.stripMargin)
 
     spark.sql(s"""
@@ -55,7 +56,7 @@ object StandardPartitionExample {
 
     spark.sql(
       s"""
-         | SELECT *
+         | SELECT country,id,vin,phonenumver,area,salary
          | FROM partitiontable0
       """.stripMargin).show()
 
@@ -65,8 +66,8 @@ object StandardPartitionExample {
     import scala.util.Random
     import spark.implicits._
     val r = new Random()
-    val df = spark.sparkContext.parallelize(1 to 10 * 1000 * 1000)
-      .map(x => ("No." + r.nextInt(100000), "country" + x % 8, "city" + x % 50, x % 300))
+    val df = spark.sparkContext.parallelize(1 to 10 * 1000 * 10)
+      .map(x => ("No." + r.nextInt(1000), "country" + x % 8, "city" + x % 50, x % 300))
       .toDF("ID", "country", "city", "population")
 
     // Create table without partition

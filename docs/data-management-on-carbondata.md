@@ -567,9 +567,43 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ALTER TABLE table_name COMPACT 'MAJOR'
   ```
 
-## PARTITION
+  - **CLEAN SEGMENTS AFTER Compaction**
+  
+  Clean the segments which are compacted:
+  ```
+  CLEAN FILES FOR TABLE carbon_table
+  ```
 
-  Similar to other system's partition features, CarbonData's partition feature also can be used to improve query performance by filtering on the partition column.
+## STANDARD PARTITION
+
+  The partition is same as Spark, the creation partition command as below:
+  
+  ```
+  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
+                    [(col_name data_type , ...)]
+  PARTITIONED BY (partition_col_name data_type)
+  STORED BY 'carbondata'
+  [TBLPROPERTIES (property_name=property_value, ...)]
+  ```
+
+  Example:
+  ```
+  CREATE TABLE partitiontable0
+                  (id Int,
+                  vin String,
+                  phonenumber Long,
+                  area String,
+                  salary Int)
+                  PARTITIONED BY (country String)
+                  STORED BY 'org.apache.carbondata.format'
+                  TBLPROPERTIES('SORT_COLUMNS'='id,vin')
+                  )
+  ```
+
+
+## CARBONDATA PARTITION(HASH,RANGE,LIST)
+
+  The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column.
 
 ### Create Hash Partition Table
 
