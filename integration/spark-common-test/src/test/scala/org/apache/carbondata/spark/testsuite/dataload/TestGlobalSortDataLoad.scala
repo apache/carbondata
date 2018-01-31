@@ -25,14 +25,15 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.BatchedDataSourceScanExec
 import org.apache.spark.sql.test.TestQueryExecutor.projectPath
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   var filePath: String = s"$resourcesPath/globalsort"
@@ -272,7 +273,29 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "carbon_globalsort")
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
     val segmentDir = carbonTablePath.getSegmentDir("0", "0")
-    assertResult(5)(new File(segmentDir).listFiles().length)
+    assertResult(Math.max(4, defaultParallelism) + 1)(new File(segmentDir).listFiles().length)
+  }
+
+  test("Query with small files") {
+    try {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
+        CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_MERGE_FILES)
+      for (i <- 0 until 10) {
+        sql(s"insert into carbon_globalsort select $i, 'name_$i', 'city_$i', ${ i % 100 }")
+      }
+      val df = sql("select * from carbon_globalsort")
+      val scanRdd = df.queryExecution.sparkPlan.collect {
+        case b: BatchedDataSourceScanExec if b.rdd.isInstanceOf[CarbonScanRDD] =>
+          b.rdd.asInstanceOf[CarbonScanRDD]
+      }.head
+      assertResult(defaultParallelism)(scanRdd.getPartitions.length)
+      assertResult(10)(df.count)
+    } finally {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
+        CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
+    }
   }
 
   // ----------------------------------- INSERT INTO -----------------------------------
