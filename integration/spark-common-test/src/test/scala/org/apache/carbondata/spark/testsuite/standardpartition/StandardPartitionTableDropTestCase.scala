@@ -16,7 +16,10 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
+import java.nio.file.{Files, LinkOption, Paths}
+
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -182,6 +185,29 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
       Seq(Row(0)))
   }
 
+  test("test dropping on partition table for int partition column") {
+    sql(
+      """
+        | CREATE TABLE partitionone1 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empno int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionone1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(
+      sql(s"""select count (*) from partitionone1"""),
+      sql(s"""select count (*) from originTable"""))
+
+    checkAnswer(
+      sql(s"""select count (*) from partitionone1 where empno=11"""),
+      sql(s"""select count (*) from originTable where empno=11"""))
+    sql(s"""ALTER TABLE partitionone1 DROP PARTITION(empno='11')""")
+    assert(Files.notExists(Paths.get(TestQueryExecutor.warehouse + "/partitionone1/" + "empno=11"), LinkOption.NOFOLLOW_LINKS))
+    sql("drop table if exists partitionone1")
+  }
+
   override def afterAll = {
     dropTable
   }
@@ -195,6 +221,7 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
     sql("drop table if exists partitionshow")
     sql("drop table if exists staticpartition")
     sql("drop table if exists partitionallcompaction")
+    sql("drop table if exists partitionone1")
   }
 
 }

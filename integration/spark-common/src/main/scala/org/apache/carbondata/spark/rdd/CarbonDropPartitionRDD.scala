@@ -103,7 +103,8 @@ class CarbonDropPartitionCommitRDD(
     tablePath: String,
     segments: Seq[String],
     success: Boolean,
-    uniqueId: String)
+    uniqueId: String,
+    partitions: Seq[String])
   extends CarbonRDD[String](sc, Nil) {
 
   override def getPartitions: Array[Partition] = {
@@ -117,7 +118,8 @@ class CarbonDropPartitionCommitRDD(
       val split = theSplit.asInstanceOf[CarbonDropPartition]
       logInfo("Commit partition information from : " + split.segmentPath)
 
-      new PartitionMapFileStore().commitPartitions(split.segmentPath, uniqueId, success)
+      new PartitionMapFileStore().commitPartitions(split.segmentPath, uniqueId, success, tablePath,
+        partitions.toList.asJava)
 
       var havePair = false
       var finished = false
