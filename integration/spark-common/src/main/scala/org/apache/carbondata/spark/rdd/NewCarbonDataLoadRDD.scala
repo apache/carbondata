@@ -41,10 +41,10 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -371,7 +371,7 @@ class NewDataFrameLoaderRDD[K, V](
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val hadoopConf = getConf
-    setS3Configurations(hadoopConf)
+    CarbonInputFormatUtil.setS3Configurations(hadoopConf)
     val iter = new Iterator[(K, V)] {
       val loadMetadataDetails = new LoadMetadataDetails()
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
@@ -441,23 +441,6 @@ class NewDataFrameLoaderRDD[K, V](
     iter
   }
   override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
-
-  private def setS3Configurations(hadoopConf: Configuration): Unit = {
-    FileFactory.getConfiguration
-      .set("fs.s3a.access.key", hadoopConf.get("fs.s3a.access.key", ""))
-    FileFactory.getConfiguration
-      .set("fs.s3a.secret.key", hadoopConf.get("fs.s3a.secret.key", ""))
-    FileFactory.getConfiguration
-      .set("fs.s3a.endpoint", hadoopConf.get("fs.s3a.endpoint", ""))
-    FileFactory.getConfiguration.set(CarbonCommonConstants.S3_ACCESS_KEY,
-      hadoopConf.get(CarbonCommonConstants.S3_ACCESS_KEY, ""))
-    FileFactory.getConfiguration.set(CarbonCommonConstants.S3_SECRET_KEY,
-      hadoopConf.get(CarbonCommonConstants.S3_SECRET_KEY, ""))
-    FileFactory.getConfiguration.set(CarbonCommonConstants.S3N_ACCESS_KEY,
-      hadoopConf.get(CarbonCommonConstants.S3N_ACCESS_KEY, ""))
-    FileFactory.getConfiguration.set(CarbonCommonConstants.S3N_SECRET_KEY,
-     hadoopConf.get(CarbonCommonConstants.S3N_SECRET_KEY, ""))
-  }
 }
 
 /**
