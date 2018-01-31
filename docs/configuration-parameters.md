@@ -110,6 +110,8 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.tempstore.location | /opt/Carbon/TempStoreLoc | Temporary store location. By default it takes System.getProperty("java.io.tmpdir"). |
 | carbon.load.log.counter | 500000 | Data loading records count logger. |
 | carbon.skip.empty.line | false | Setting this property ignores the empty lines in the CSV file during the data load |
+| carbon.enable.calculate.size | true | **For Load Operation**: Setting this property calculates the size of the carbon data file (.carbondata) and carbon index file (.carbonindex) for every load and updates the table status file. **For Describe Formatted**: Setting this property calculates the total size of the carbon data files and carbon index files for the respective table and displays in describe formatted command. | 
+
 
 
 * **Compaction Configuration**
