@@ -21,6 +21,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+
 class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -103,7 +105,7 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       " a,sum(b) from PreAggMain group by a")
     sql("alter table preaggmain drop columns(c)")
 //    checkExistence(sql("desc table preaggmain"), false, "c")
-    assert(intercept[RuntimeException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain_preagg1 drop columns(preaggmain_b_sum)").show
     }.getMessage.contains("Cannot drop columns in pre-aggreagate table"))
     sql("drop table if exists preaggMain")

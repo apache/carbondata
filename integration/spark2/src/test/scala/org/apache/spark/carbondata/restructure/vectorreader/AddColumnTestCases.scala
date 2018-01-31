@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, ProcessMetaDataException}
 
 class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -649,7 +649,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql(
       "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
-    assert(intercept[RuntimeException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain_preagg1 add columns(d string)")
     }.getMessage.contains("Cannot add columns"))
     sql("drop table if exists preaggMain")

@@ -123,7 +123,7 @@ case class CarbonDropDataMapCommand(
         throw e
       case ex: Exception =>
         LOGGER.error(ex, s"Dropping datamap $dataMapName failed")
-        throw new MalformedCarbonCommandException(
+        throwMetadataException(dbName, tableName,
           s"Dropping datamap $dataMapName failed: ${ex.getMessage}")
     }
     finally {

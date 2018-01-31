@@ -44,12 +44,8 @@ private[sql] case class CarbonProjectForDeleteCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-    val isLoadInProgress = SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)
-    if (isLoadInProgress) {
-      val errorMessage = "Cannot run data loading and delete on same table concurrently. Please " +
-                         "wait for load to finish"
-      LOGGER.error(errorMessage)
-      throw new ConcurrentOperationException(errorMessage)
+    if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "loading", "data delete")
     }
 
     IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)

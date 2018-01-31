@@ -72,7 +72,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
       } catch {
         case e: Exception =>
           if (!ifExists) {
-            throw e
+            throwMetadataException(table.getDatabaseName, table.getTableName, e.getMessage)
           } else {
             log.warn(e.getMessage)
             return Seq.empty[Row]

@@ -55,12 +55,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
       return Seq.empty
     }
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-    val isLoadInProgress = SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)
-    if (isLoadInProgress) {
-      val errorMessage = "Cannot run data loading and update on same table concurrently. Please " +
-                         "wait for load to finish"
-      LOGGER.error(errorMessage)
-      throw new ConcurrentOperationException(errorMessage)
+    if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "loading", "data update")
     }
 
     // trigger event for Update table

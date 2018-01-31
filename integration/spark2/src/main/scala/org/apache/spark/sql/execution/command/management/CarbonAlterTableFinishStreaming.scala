@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import java.io.IOException
-
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.MetadataCommand
 
@@ -46,7 +44,7 @@ case class CarbonAlterTableFinishStreaming(
         val msg = "Failed to finish streaming, because streaming is locked for table " +
                   carbonTable.getDatabaseName() + "." + carbonTable.getTableName()
         LOGGER.error(msg)
-        throw new IOException(msg)
+        throwMetadataException(carbonTable.getDatabaseName, carbonTable.getTableName, msg)
       }
     } finally {
       if (streamingLock.unlock()) {

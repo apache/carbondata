@@ -83,14 +83,13 @@ case class CarbonAlterTableCompactionCommand(
       val loadMetadataEvent = new LoadMetadataEvent(table, true)
       OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
     }
+    if (SegmentStatusManager.isLoadInProgressInTable(table)) {
+      throw new ConcurrentOperationException(table, "loading", "compaction")
+    }
     Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService =
-      LogServiceFactory.getLogService(this.getClass.getName)
-    val tableName = alterTableModel.tableName.toLowerCase
-    val databaseName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
     operationContext.setProperty("compactionException", "true")
     var compactionType: CompactionType = null
     var compactionException = "true"
@@ -111,14 +110,6 @@ case class CarbonAlterTableCompactionCommand(
     } else if (compactionException.equalsIgnoreCase("false")) {
       Seq.empty
     } else {
-      val isLoadInProgress = SegmentStatusManager.checkIfAnyLoadInProgressForTable(table)
-      if (isLoadInProgress) {
-        val message = "Cannot run data loading and compaction on same table concurrently. " +
-                      "Please wait for load to finish"
-        LOGGER.error(message)
-        throw new ConcurrentOperationException(message)
-      }
-
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(table.getTableName)
       val dataLoadSchema = new CarbonDataLoadSchema(table)

@@ -24,6 +24,7 @@ import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 /**
  *
@@ -150,7 +151,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("drop table carbontable")
     if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
-      intercept[AnalysisException] {
+      intercept[ProcessMetaDataException] {
         sql("refresh table carbontable")
       }
       restoreData(dblocation, "carbontable_preagg1")
