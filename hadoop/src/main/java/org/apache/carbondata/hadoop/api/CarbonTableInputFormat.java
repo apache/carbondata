@@ -20,7 +20,6 @@ package org.apache.carbondata.hadoop.api;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -140,14 +139,14 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setTableInfo(Configuration configuration, TableInfo tableInfo)
       throws IOException {
     if (null != tableInfo) {
-      configuration.set(TABLE_INFO, ObjectSerializationUtil.encodeToString(tableInfo.serialize()));
+      configuration.set(TABLE_INFO, CarbonUtil.encodeToString(tableInfo.serialize()));
     }
   }
 
   /**
    * Get TableInfo object from `configuration`
    */
-  public static TableInfo getTableInfo(Configuration configuration) throws IOException {
+  private static TableInfo getTableInfo(Configuration configuration) throws IOException {
     String tableInfoStr = configuration.get(TABLE_INFO);
     if (tableInfoStr == null) {
       return null;
@@ -155,7 +154,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       TableInfo output = new TableInfo();
       output.readFields(
           new DataInputStream(
-              new ByteArrayInputStream(ObjectSerializationUtil.decodeStringToBytes(tableInfoStr))));
+              new ByteArrayInputStream(CarbonUtil.decodeStringToBytes(tableInfoStr))));
       return output;
     }
   }
@@ -163,7 +162,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get the cached CarbonTable or create it by TableInfo in `configuration`
    */
-  public CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
+  private CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
     if (carbonTable == null) {
       // carbon table should be created either from deserialized table info (schema saved in
       // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
@@ -182,8 +181,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
-  public static void setTablePath(Configuration configuration, String tablePath)
-      throws IOException {
+  public static void setTablePath(Configuration configuration, String tablePath) {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
@@ -315,12 +313,6 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       return (List<String>) ObjectSerializationUtil.convertStringToObject(partitionString);
     }
     return null;
-  }
-  /**
-   * Set list of files to access
-   */
-  public static void setFilesToAccess(Configuration configuration, List<String> validFiles) {
-    configuration.set(INPUT_FILES, CarbonUtil.convertToString(validFiles));
   }
 
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
@@ -648,7 +640,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   }
   /**
    * {@inheritDoc}
-   * Configurations FileInputFormat.INPUT_DIR, CarbonInputFormat.INPUT_SEGMENT_NUMBERS
+   * Configurations FileInputFormat.INPUT_DIR, CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS
    * are used to get table path to read.
    *
    * @return
@@ -787,15 +779,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return resultFilterredBlocks;
   }
 
-  private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet)
-      throws IOException {
-    try {
-      blocklet.updateLocations();
-    } catch (FileNotFoundException e) {
-      // In case of clean files there is a chance of carbondata file is deleted but index file
-      // exist inside merged file. So just return null.
-      return null;
-    }
+  private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet) throws IOException {
     org.apache.carbondata.hadoop.CarbonInputSplit split =
         org.apache.carbondata.hadoop.CarbonInputSplit.from(blocklet.getSegmentId(),
             blocklet.getBlockletId(), new FileSplit(new Path(blocklet.getPath()), 0,

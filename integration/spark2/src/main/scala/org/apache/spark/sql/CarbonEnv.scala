@@ -21,16 +21,19 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
-import org.apache.spark.sql.hive._
+import org.apache.spark.sql.hive.{HiveSessionCatalog, _}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
-import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events._
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -109,6 +112,8 @@ object CarbonEnv {
 
   val carbonEnvMap = new ConcurrentHashMap[SparkSession, CarbonEnv]
 
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+
   def getInstance(sparkSession: SparkSession): CarbonEnv = {
     if (sparkSession.isInstanceOf[CarbonSession]) {
       sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].carbonEnv
@@ -124,12 +129,35 @@ object CarbonEnv {
   }
 
   /**
+   * Method to initialize Listeners to their respective events in the OperationListenerBus.
+   */
+  def initListeners(): Unit = {
+    OperationListenerBus.getInstance()
+      .addListener(classOf[LoadTablePreStatusUpdateEvent], LoadPostAggregateListener)
+      .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
+      .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
+      .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
+      .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
+      .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
+      .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
+      .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
+      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
+        AlterPreAggregateTableCompactionPostListener)
+      .addListener(classOf[LoadMetadataEvent], LoadProcessMetaListener)
+      .addListener(classOf[LoadMetadataEvent], CompactionProcessMetaListener)
+  }
+
+  /**
    * Return carbon table instance from cache or by looking up table in `sparkSession`
    */
   def getCarbonTable(
       databaseNameOp: Option[String],
       tableName: String)
     (sparkSession: SparkSession): CarbonTable = {
+    refreshRelationFromCache(TableIdentifier(tableName, databaseNameOp))(sparkSession)
     val databaseName = getDatabaseName(databaseNameOp)(sparkSession)
     val catalog = getInstance(sparkSession).carbonMetastore
     // refresh cache
@@ -142,6 +170,19 @@ object CarbonEnv {
           .lookupRelation(databaseNameOp, tableName)(sparkSession)
           .asInstanceOf[CarbonRelation]
           .carbonTable)
+  }
+
+  def refreshRelationFromCache(identifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
+    var isRefreshed = false
+    val carbonEnv = getInstance(sparkSession)
+    if (carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTable(identifier)) {
+      sparkSession.sessionState.catalog.refreshTable(identifier)
+      DataMapStoreManager.getInstance().
+        clearDataMaps(AbsoluteTableIdentifier.from(CarbonProperties.getStorePath,
+          identifier.database.getOrElse("default"), identifier.table))
+      isRefreshed = true
+    }
+    isRefreshed
   }
 
   /**

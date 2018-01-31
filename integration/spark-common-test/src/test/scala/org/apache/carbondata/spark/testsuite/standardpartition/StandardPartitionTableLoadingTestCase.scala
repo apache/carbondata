@@ -22,7 +22,7 @@ import java.util.concurrent.{Callable, ExecutorService, Executors}
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{AnalysisException, Row}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -391,10 +391,12 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     val dblocation = table.getTablePath.substring(0, table.getTablePath.lastIndexOf("/"))
     backUpData(dblocation, "restorepartition")
     sql("drop table restorepartition")
-    restoreData(dblocation, "restorepartition")
-    sql("refresh table restorepartition")
-    checkAnswer(sql("select count(*) from restorepartition"), rows)
-    checkAnswer(sql("show partitions restorepartition"), partitions)
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+      restoreData(dblocation, "restorepartition")
+      sql("refresh table restorepartition")
+      checkAnswer(sql("select count(*) from restorepartition"), rows)
+      checkAnswer(sql("show partitions restorepartition"), partitions)
+    }
   }
 
   test("test case sensitive on partition columns") {

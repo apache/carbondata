@@ -111,9 +111,12 @@ case class CarbonAlterTableDropPartitionCommand(
       schemaConverter.fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
     thriftTable.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
       .setTime_stamp(System.currentTimeMillis)
-    carbonMetaStore.updateMetadataByThriftTable(schemaFilePath, thriftTable,
-      dbName, tableName, tablePath)
-    CarbonUtil.writeThriftTableToSchemaFile(schemaFilePath, thriftTable)
+    carbonMetaStore.updateTableSchemaForAlter(
+      table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+      table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+      thriftTable,
+      null,
+      table.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     // update the schema modified time
     carbonMetaStore.updateAndTouchSchemasUpdatedTime()
     // sparkSession.catalog.refreshTable(tableName)

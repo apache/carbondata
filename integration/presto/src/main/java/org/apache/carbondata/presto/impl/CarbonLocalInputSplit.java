@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 import org.apache.hadoop.fs.Path;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
@@ -123,6 +124,11 @@ public class CarbonLocalInputSplit {
         carbonLocalInputSplit.getDeleteDeltaFiles());
     Gson gson = new Gson();
     BlockletDetailInfo blockletDetailInfo = gson.fromJson(carbonLocalInputSplit.detailInfo, BlockletDetailInfo.class);
+    try {
+      blockletDetailInfo.readColumnSchema(blockletDetailInfo.getColumnSchemaBinary());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
     inputSplit.setDetailInfo(blockletDetailInfo);
     return inputSplit;
   }

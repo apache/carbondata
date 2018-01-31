@@ -17,9 +17,9 @@
 
 package org.apache.spark.sql.hive
 
+import java.io.IOException
 import java.net.URI
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -221,6 +221,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       val schemaConverter = new ThriftWrapperSchemaConverterImpl
       val wrapperTableInfo =
         schemaConverter.fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
+      CarbonMetadata.getInstance().removeTable(tableUniqueName)
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
       val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
       metadata.carbonTables += carbonTable
@@ -258,6 +259,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       oldTableIdentifier.getTableId)
     val path = createSchemaThriftFile(newAbsoluteTableIdentifier, thriftTableInfo)
     addTableCache(wrapperTableInfo, newAbsoluteTableIdentifier)
+
     path
   }
 
@@ -344,7 +346,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
     val fileType = FileFactory.getFileType(schemaMetadataPath)
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      FileFactory.mkdirs(schemaMetadataPath, fileType)
+      val isDirCreated = FileFactory.mkdirs(schemaMetadataPath, fileType)
+      if (!isDirCreated) {
+        throw new IOException(s"Failed to create the metadata directory $schemaMetadataPath")
+      }
     }
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
     thriftWriter.open(FileWriteOperation.OVERWRITE)
@@ -376,12 +381,12 @@ class CarbonFileMetastore extends CarbonMetaStore {
     carbonTableToBeRemoved match {
       case Some(carbonTable) =>
         metadata.carbonTables -= carbonTable
-        CarbonMetadata.getInstance.removeTable(dbName, tableName)
       case None =>
         if (LOGGER.isDebugEnabled) {
           LOGGER.debug(s"No entry for table $tableName in database $dbName")
         }
     }
+    CarbonMetadata.getInstance.removeTable(dbName, tableName)
   }
 
   private def updateMetadataByWrapperTable(

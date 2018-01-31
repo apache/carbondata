@@ -43,7 +43,7 @@ case class CarbonDropTableCommand(
   extends AtomicRunnableCommand {
 
   var carbonTable: CarbonTable = _
-  var childTables : Seq[CarbonTable] = Seq.empty
+  var childDropCommands : Seq[CarbonDropTableCommand] = Seq.empty
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -89,22 +89,24 @@ case class CarbonDropTableCommand(
         // drop all child tables
        val childSchemas = carbonTable.getTableInfo.getDataMapSchemaList
 
-        childTables = childSchemas.asScala
+        childDropCommands = childSchemas.asScala
           .filter(_.getRelationIdentifier != null)
           .map { childSchema =>
             val childTable =
               CarbonEnv.getCarbonTable(
                 TableIdentifier(childSchema.getRelationIdentifier.getTableName,
                   Some(childSchema.getRelationIdentifier.getDatabaseName)))(sparkSession)
-            CarbonDropTableCommand(
+            val dropCommand = CarbonDropTableCommand(
               ifExistsSet = true,
               Some(childSchema.getRelationIdentifier.getDatabaseName),
               childSchema.getRelationIdentifier.getTableName,
               dropChildTable = true
-            ).processMetadata(sparkSession)
-            childTable
+            )
+            dropCommand.carbonTable = childTable
+            dropCommand
           }
-      }
+        childDropCommands.foreach(_.processMetadata(sparkSession))
+        }
 
       // fires the event after dropping main table
       val dropTablePostEvent: DropTablePostEvent =
@@ -136,8 +138,8 @@ case class CarbonDropTableCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    // clear driver side index and dictionary cache
     if (carbonTable != null) {
-      // clear driver side index and dictionary cache
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
       // delete the table folder
       val tablePath = carbonTable.getTablePath
@@ -146,18 +148,9 @@ case class CarbonDropTableCommand(
         val file = FileFactory.getCarbonFile(tablePath, fileType)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }
-      if (carbonTable.hasDataMapSchema && childTables.nonEmpty) {
+      if (carbonTable.hasDataMapSchema && childDropCommands.nonEmpty) {
         // drop all child tables
-        childTables.foreach { childTable =>
-          val carbonDropCommand = CarbonDropTableCommand(
-            ifExistsSet = true,
-            Some(childTable.getDatabaseName),
-            childTable.getTableName,
-            dropChildTable = true
-          )
-          carbonDropCommand.carbonTable = childTable
-          carbonDropCommand.processData(sparkSession)
-        }
+        childDropCommands.foreach(_.processData(sparkSession))
       }
     }
     Seq.empty

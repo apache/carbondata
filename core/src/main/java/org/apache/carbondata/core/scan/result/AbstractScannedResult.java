@@ -28,6 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
@@ -83,7 +84,12 @@ public abstract class AbstractScannedResult {
   /**
    * Raw dimension chunks;
    */
-  protected DimensionRawColumnChunk[] rawColumnChunks;
+  protected DimensionRawColumnChunk[] dimRawColumnChunks;
+
+  /**
+   * Raw dimension chunks;
+   */
+  protected MeasureRawColumnChunk[] msrRawColumnChunks;
   /**
    * measure column data chunk
    */
@@ -172,8 +178,12 @@ public abstract class AbstractScannedResult {
     this.measureDataChunks = measureDataChunks;
   }
 
-  public void setRawColumnChunks(DimensionRawColumnChunk[] rawColumnChunks) {
-    this.rawColumnChunks = rawColumnChunks;
+  public void setDimRawColumnChunks(DimensionRawColumnChunk[] dimRawColumnChunks) {
+    this.dimRawColumnChunks = dimRawColumnChunks;
+  }
+
+  public void setMsrRawColumnChunks(MeasureRawColumnChunk[] msrRawColumnChunks) {
+    this.msrRawColumnChunks = msrRawColumnChunks;
   }
 
   /**
@@ -269,7 +279,7 @@ public abstract class AbstractScannedResult {
         DataOutputStream dataOutput = new DataOutputStream(byteStream);
         try {
           vectorInfos[i].genericQueryType
-              .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks,
+              .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks,
                   rowMapping == null ? j : rowMapping[pageCounter][j], pageCounter, dataOutput);
           Object data = vectorInfos[i].genericQueryType
               .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(byteStream.toByteArray()));
@@ -325,8 +335,48 @@ public abstract class AbstractScannedResult {
     rowCounter = 0;
     currentRow = -1;
     pageCounter++;
+    fillDataChunks();
     if (null != deletedRecordMap) {
       currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + "_" + pageCounter);
+    }
+  }
+
+  /**
+   * This case is used only in case of compaction, since it does not use filter flow.
+   */
+  public void fillDataChunks() {
+    freeDataChunkMemory();
+    if (pageCounter >= numberOfRows.length) {
+      return;
+    }
+    for (int i = 0; i < dimensionDataChunks.length; i++) {
+      if (dimensionDataChunks[i][pageCounter] == null && dimRawColumnChunks[i] != null) {
+        dimensionDataChunks[i][pageCounter] =
+            dimRawColumnChunks[i].convertToDimColDataChunkWithOutCache(pageCounter);
+      }
+    }
+
+    for (int i = 0; i < measureDataChunks.length; i++) {
+      if (measureDataChunks[i][pageCounter] == null && msrRawColumnChunks[i] != null) {
+        measureDataChunks[i][pageCounter] =
+            msrRawColumnChunks[i].convertToColumnPageWithOutCache(pageCounter);
+      }
+    }
+  }
+
+  // free the memory for the last page chunk
+  private void freeDataChunkMemory() {
+    for (int i = 0; i < dimensionDataChunks.length; i++) {
+      if (pageCounter > 0 && dimensionDataChunks[i][pageCounter - 1] != null) {
+        dimensionDataChunks[i][pageCounter - 1].freeMemory();
+        dimensionDataChunks[i][pageCounter - 1] = null;
+      }
+    }
+    for (int i = 0; i < measureDataChunks.length; i++) {
+      if (pageCounter > 0 && measureDataChunks[i][pageCounter - 1] != null) {
+        measureDataChunks[i][pageCounter - 1].freeMemory();
+        measureDataChunks[i][pageCounter - 1] = null;
+      }
     }
   }
 
@@ -451,7 +501,7 @@ public abstract class AbstractScannedResult {
       DataOutputStream dataOutput = new DataOutputStream(byteStream);
       try {
         genericQueryType
-            .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, rowId, pageCounter,
+            .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, rowId, pageCounter,
                 dataOutput);
         complexTypeData[i] = byteStream.toByteArray();
       } catch (IOException e) {
@@ -481,6 +531,7 @@ public abstract class AbstractScannedResult {
       return true;
     } else if (pageCounter < numberOfRows.length) {
       pageCounter++;
+      fillDataChunks();
       rowCounter = 0;
       currentRow = -1;
       if (null != deletedRecordMap) {
@@ -520,10 +571,10 @@ public abstract class AbstractScannedResult {
       }
     }
     // free the raw chunks
-    if (null != rawColumnChunks) {
-      for (int i = 0; i < rawColumnChunks.length; i++) {
-        if (null != rawColumnChunks[i]) {
-          rawColumnChunks[i].freeMemory();
+    if (null != dimRawColumnChunks) {
+      for (int i = 0; i < dimRawColumnChunks.length; i++) {
+        if (null != dimRawColumnChunks[i]) {
+          dimRawColumnChunks[i].freeMemory();
         }
       }
     }

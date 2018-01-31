@@ -14,23 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark
 
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+package org.apache.carbondata.core.metadata.schema.datamap;
 
- /**
-  * Carbon column validator
-  */
-class CarbonColumnValidator extends ColumnValidator {
-  def validateColumns(allColumns: Seq[ColumnSchema]): Unit = {
-    allColumns.foreach { columnSchema =>
-      val colWithSameId = allColumns.filter { x =>
-        x.getColumnUniqueId.equals(columnSchema.getColumnUniqueId)
-      }
-      if (colWithSameId.size > 1) {
-        throw new MalformedCarbonCommandException("Two column can not have same columnId")
-      }
-    }
-  }
+/**
+ * type for create datamap
+ * The syntax of datamap creation is as follows.
+ * CREATE DATAMAP IF NOT EXISTS dataMapName ON TABLE tableName USING 'DataMapProvider'
+ * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
+ *
+ * Please refer {{org.apache.spark.sql.parser.CarbonSpark2SqlParser}}
+ */
+
+public enum DataMapProvider {
+  PREAGGREGATE,
+  TIMESERIES;
 }

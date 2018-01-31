@@ -110,7 +110,14 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                     'COMPACTION_PRESERVE_SEGMENTS'='10',
                     'ALLOWED_COMPACTION_DAYS'='5')
      ```
+     
+   - **Streaming**
 
+     CarbonData supports streaming ingestion for real-time data. You can create the ‘streaming’ table using the following table properties.
+
+     ```
+     TBLPROPERTIES ('streaming'='true')
+     ```
 
 ### Example:
 
@@ -134,6 +141,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                    'AUTO_LOAD_MERGE'='true',
                    'COMPACTION_LEVEL_THRESHOLD'='5,6',
                    'COMPACTION_PRESERVE_SEGMENTS'='10',
+				   'streaming'='true',
                    'ALLOWED_COMPACTION_DAYS'='5')
    ```
         
@@ -271,6 +279,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * Before executing this command the old table schema and data should be copied into the new database location.
   * If the table is aggregate table, then all the aggregate tables should be copied to the new database location.
   * For old store, the time zone of the source and destination cluster should be same.
+  * If old cluster uses HIVE meta store, refresh will not work as schema file does not exist in file system.
   
 
 ## LOAD DATA
@@ -397,11 +406,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     ```
 
   NOTE:
-  * BAD_RECORD_ACTION property can have four type of actions for bad records FORCE, REDIRECT, IGNORE and FAIL.
+  * BAD_RECORDS_ACTION property can have four type of actions for bad records FORCE, REDIRECT, IGNORE and FAIL.
+  * FAIL option is its Default value. If the FAIL option is used, then data loading fails if any bad records are found.
   * If the REDIRECT option is used, CarbonData will add all bad records in to a separate CSV file. However, this file must not be used for subsequent data loading because the content may not exactly match the source record. You are advised to cleanse the original source record for further data ingestion. This option is used to remind you which records are bad records.
   * If the FORCE option is used, then it auto-corrects the data by storing the bad records as NULL before Loading data.
   * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
-  * IF the FAIL option is used, then data loading fails if any bad records are found.
   * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
   * The maximum number of characters per column is 100000. If there are more than 100000 characters in a column, data loading will fail.
 
@@ -558,9 +567,43 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ALTER TABLE table_name COMPACT 'MAJOR'
   ```
 
-## PARTITION
+  - **CLEAN SEGMENTS AFTER Compaction**
+  
+  Clean the segments which are compacted:
+  ```
+  CLEAN FILES FOR TABLE carbon_table
+  ```
 
-  Similar to other system's partition features, CarbonData's partition feature also can be used to improve query performance by filtering on the partition column.
+## STANDARD PARTITION
+
+  The partition is same as Spark, the creation partition command as below:
+  
+  ```
+  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
+                    [(col_name data_type , ...)]
+  PARTITIONED BY (partition_col_name data_type)
+  STORED BY 'carbondata'
+  [TBLPROPERTIES (property_name=property_value, ...)]
+  ```
+
+  Example:
+  ```
+  CREATE TABLE partitiontable0
+                  (id Int,
+                  vin String,
+                  phonenumber Long,
+                  area String,
+                  salary Int)
+                  PARTITIONED BY (country String)
+                  STORED BY 'org.apache.carbondata.format'
+                  TBLPROPERTIES('SORT_COLUMNS'='id,vin')
+                  )
+  ```
+
+
+## CARBONDATA PARTITION(HASH,RANGE,LIST)
+
+  The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column.
 
 ### Create Hash Partition Table
 
@@ -780,58 +823,38 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   DELETE FROM TABLE CarbonDatabase.CarbonTable WHERE SEGMENT.STARTTIME BEFORE '2017-06-01 12:05:06' 
   ```
-### SEGMENT READING
+
+### QUERY DATA WITH SPECIFIED SEGMENTS
 
   This command is used to read data from specified segments during CarbonScan.
   
-  
   Get the Segment ID:
-  
   ```
   SHOW SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
   ```
   
-  Set the segment IDs
-  
+  Set the segment IDs for table
   ```
-  SET cabon.input.segments.<database_name>.<table_name> = <list of segment IDs>;
+  SET carbon.input.segments.<database_name>.<table_name> = <list of segment IDs>
   ```
   
-  **Property:**
-  
-  cabon.input.segments:  Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
-  
-  ```
-  SET cabon.input.segments.<database_name>.<table_name> = <list of segment IDs>;
-  ```
+  NOTE:
+  carbon.input.segments: Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
   
   If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query.
-  
   ```
-  CarbonSession.threadSet ("cabon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
+  CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
   ```
   
-  Reset the segment IDs:
-  
+  Reset the segment IDs
   ```
-  SET cabon.input.segments.<database_name>.<table_name> = *;
+  SET carbon.input.segments.<database_name>.<table_name> = *;
   ```
   
   If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query. 
-  
   ```
-  CarbonSession.threadSet ("cabon.input.segments.<database_name>.<table_name>","*");
+  CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","*");
   ```
-  
-  Reset
-  
-  It will reset all the properties set for carbondata. It is not recommended if you do not want to reset all the properties except cabon.input.segments.
-  
-  ```
-  RESET
-  ```
-  
-  **NOTE**: It is not recommended to set this property in carbon.properties file, because all the sessions will take this segments list unless it is overwritten at session or thread level.
   
   **Examples:**
   
@@ -840,13 +863,13 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   SHOW SEGMENTS FOR carbontable1;
   
-  SET cabon.input.segments.db.carbontable1 = 1,3,9;
+  SET carbon.input.segments.db.carbontable1 = 1,3,9;
   ```
   
   * Example to query with segments reading in multi threading mode:
   
   ```
-  CarbonSession.threadSet ("cabon.input.segments.db.carbontable_Multi_Thread","1,3");
+  CarbonSession.threadSet ("carbon.input.segments.db.carbontable_Multi_Thread","1,3");
   ```
   
   * Example for threadset in multithread environment (following shows how it is used in Scala code):
@@ -854,8 +877,8 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   def main(args: Array[String]) {
   Future {          
-    CarbonSession.threadSet ("cabon.input.segments.db.carbontable_Multi_Thread","1")
-    spark.sql("select count(empno) from cabon.input.segments.db.carbontable_Multi_Thread").show();
+    CarbonSession.threadSet ("carbon.input.segments.db.carbontable_Multi_Thread","1")
+    spark.sql("select count(empno) from carbon.input.segments.db.carbontable_Multi_Thread").show();
      }
    }
   ```

@@ -19,6 +19,8 @@ package org.apache.spark.sql.execution.datasources
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -125,13 +127,16 @@ with Serializable {
     if (segemntsTobeDeleted.isDefined) {
       conf.set(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, segemntsTobeDeleted.get)
     }
-    val operationContextStr = options.get("operationcontext")
-    if (operationContextStr.isDefined) {
-      conf.set(CarbonTableOutputFormat.OPERATION_CONTEXT, operationContextStr.get)
-    }
     CarbonTableOutputFormat.setLoadModel(conf, model)
 
     new OutputWriterFactory {
+
+      /**
+       * counter used for generating task numbers. This is used to generate unique partition numbers
+       * in case of partitioning
+       */
+      val counter = new AtomicLong()
+      val taskIdMap = new ConcurrentHashMap[String, java.lang.Long]()
 
       override def newInstance(
           path: String,
@@ -141,7 +146,11 @@ with Serializable {
         var storeLocation: Array[String] = Array[String]()
         val isCarbonUseLocalDir = CarbonProperties.getInstance()
           .getProperty("carbon.use.local.dir", "false").equalsIgnoreCase("true")
-        val tmpLocationSuffix = File.separator + System.nanoTime()
+
+
+        val taskNumber = generateTaskNumber(path, context)
+        val tmpLocationSuffix =
+          File.separator + "carbon" + System.nanoTime() + File.separator + taskNumber
         if (isCarbonUseLocalDir) {
           val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
           if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
@@ -161,7 +170,24 @@ with Serializable {
             storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
         }
         CarbonTableOutputFormat.setTempStoreLocations(context.getConfiguration, storeLocation)
-        new CarbonOutputWriter(path, context, dataSchema.map(_.dataType))
+        new CarbonOutputWriter(path, context, dataSchema.map(_.dataType), taskNumber)
+      }
+
+      /**
+       * Generate taskid using the taskid of taskcontext and the path. It should be unique in case
+       * of partition tables.
+       */
+      private def generateTaskNumber(path: String,
+          context: TaskAttemptContext): String = {
+        var partitionNumber: java.lang.Long = taskIdMap.get(path)
+        if (partitionNumber == null) {
+          partitionNumber = counter.incrementAndGet()
+          // Generate taskid using the combination of taskid and partition number to make it unique.
+          taskIdMap.put(path, partitionNumber)
+        }
+        val taskID = context.getTaskAttemptID.getTaskID.getId
+        String.valueOf(Math.pow(10, 5).toInt + taskID) +
+          String.valueOf(partitionNumber + Math.pow(10, 5).toInt)
       }
 
       override def getFileExtension(context: TaskAttemptContext): String = {
@@ -202,7 +228,8 @@ private trait AbstractCarbonOutputWriter {
 
 private class CarbonOutputWriter(path: String,
     context: TaskAttemptContext,
-    fieldTypes: Seq[DataType])
+    fieldTypes: Seq[DataType],
+    taskNo : String)
   extends OutputWriter with AbstractCarbonOutputWriter {
   val partitions = getPartitionsFromPath(path, context).map(ExternalCatalogUtils.unescapePathName)
   val staticPartition: util.HashMap[String, Boolean] = {
@@ -214,7 +241,7 @@ private class CarbonOutputWriter(path: String,
       null
     }
   }
-  lazy val partitionData = if (partitions.nonEmpty) {
+  lazy val (updatedPartitions, partitionData) = if (partitions.nonEmpty) {
     val updatedPartitions = partitions.map{ p =>
       val value = p.substring(p.indexOf("=") + 1, p.length)
       val col = p.substring(0, p.indexOf("="))
@@ -242,29 +269,30 @@ private class CarbonOutputWriter(path: String,
         dateFormatString = loadModel.getDefaultDateFormat
       }
       val dateFormat = new SimpleDateFormat(dateFormatString)
-      updatedPartitions.map {case (col, value) =>
+      val formattedPartitions = updatedPartitions.map {case (col, value) =>
         // Only convert the static partitions to the carbon format and use it while loading data
         // to carbon.
         if (staticPartition.getOrDefault(col, false)) {
-          CarbonScalaUtil.convertToCarbonFormat(value,
+          (col, CarbonScalaUtil.convertToCarbonFormat(value,
             CarbonScalaUtil.convertCarbonToSparkDataType(
               table.getColumnByName(table.getTableName, col).getDataType),
             timeFormat,
-            dateFormat)
+            dateFormat))
         } else {
-          value
+          (col, value)
         }
       }
+      (formattedPartitions, formattedPartitions.map(_._2))
     } else {
-      updatedPartitions.map(_._2)
+      (updatedPartitions, updatedPartitions.map(_._2))
     }
   } else {
-    Array.empty
+    (Map.empty[String, String].toArray, Array.empty)
   }
   val writable = new StringArrayWritable()
 
   private val recordWriter: CarbonRecordWriter = {
-
+    context.getConfiguration.set("carbon.outputformat.taskno", taskNo)
     new CarbonTableOutputFormat() {
       override def getDefaultWorkFile(context: TaskAttemptContext, extension: String): Path = {
         new Path(path)
@@ -315,41 +343,17 @@ private class CarbonOutputWriter(path: String,
     val isEmptyBadRecord = loadModel.getIsEmptyDataBadRecord.split(",")(1).toBoolean
     // write partition info to new file.
     val partitonList = new util.ArrayList[String]()
-    val splitPartitions = partitions.map{ p =>
-      val value = p.substring(p.indexOf("=") + 1, p.length)
-      val col = p.substring(0, p.indexOf("="))
-      (col, value)
-    }.toMap
-    val updatedPartitions =
-      if (staticPartition != null) {
-        // There can be scnerio like dynamic and static combination, in that case we should convert
-        // only the dyanamic partition values to the proper format and store to carbon parttion map
-        splitPartitions.map { case (col, value) =>
-          if (!staticPartition.getOrDefault(col, false)) {
-            CarbonScalaUtil.updatePartitions(
-              Seq((col, value)).toMap,
-              table,
-              timeFormat,
-              dateFormat,
-              serializeFormat,
-              badRecordAction,
-              isEmptyBadRecord).toSeq.head
-          } else {
-            (col, value)
-          }
-        }
-      } else {
-        // All dynamic partitions need to be converted to proper format
-        CarbonScalaUtil.updatePartitions(
-          splitPartitions,
-          table,
-          timeFormat,
-          dateFormat,
-          serializeFormat,
-          badRecordAction,
-          isEmptyBadRecord)
-      }
-    updatedPartitions.foreach(p => partitonList.add(p._1 + "=" + p._2))
+    val formattedPartitions =
+    // All dynamic partitions need to be converted to proper format
+      CarbonScalaUtil.updatePartitions(
+        updatedPartitions.toMap,
+        table,
+        timeFormat,
+        dateFormat,
+        serializeFormat,
+        badRecordAction,
+        isEmptyBadRecord)
+    formattedPartitions.foreach(p => partitonList.add(p._1 + "=" + p._2))
     new PartitionMapFileStore().writePartitionMapFile(
       segmentPath,
       loadModel.getTaskNo,

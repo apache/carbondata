@@ -93,7 +93,7 @@ public class CarbonMetadataUtil {
     return footer;
   }
 
-  private static BlockletIndex getBlockletIndex(
+  public static BlockletIndex getBlockletIndex(
       org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex info) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
 
@@ -282,7 +282,7 @@ public class CarbonMetadataUtil {
     return thriftBlockIndexList;
   }
 
-  private static BlockletInfo3 getBlocletInfo3(
+  public static BlockletInfo3 getBlocletInfo3(
       org.apache.carbondata.core.metadata.blocklet.BlockletInfo blockletInfo) {
     List<Long> dimensionChunkOffsets = blockletInfo.getDimensionChunkOffsets();
     dimensionChunkOffsets.addAll(blockletInfo.getMeasureChunkOffsets());

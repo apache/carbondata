@@ -75,6 +75,9 @@ class CarbonSessionCatalog(
     env
   }
 
+  // Initialize all listeners to the Operation bus.
+  CarbonEnv.initListeners()
+
   /**
    * This method will invalidate carbonrelation from cache if carbon table is updated in
    * carbon catalog

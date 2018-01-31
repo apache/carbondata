@@ -24,8 +24,10 @@ import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -85,14 +87,13 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -1467,6 +1468,22 @@ public final class CarbonUtil {
     }, offset, length);
   }
 
+  public static DataChunk3 readDataChunk3(InputStream stream) throws IOException {
+    TBaseCreator creator = new ThriftReader.TBaseCreator() {
+      @Override public TBase create() {
+        return new DataChunk3();
+      }
+    };
+    TProtocol binaryIn = new TCompactProtocol(new TIOStreamTransport(stream));
+    TBase t = creator.create();
+    try {
+      t.read(binaryIn);
+    } catch (TException e) {
+      throw new IOException(e);
+    }
+    return (DataChunk3) t;
+  }
+
   public static DataChunk2 readDataChunk(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
     byte[] data = dataChunkBuffer.array();
@@ -1682,6 +1699,16 @@ public final class CarbonUtil {
       if ((blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp() && (
           invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp() != null
               && blockTimeStamp < invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()))) {
+        return true;
+      }
+      // aborted files case.
+      if (invalidBlockVOForSegmentId.getLatestUpdateTimestamp() != null
+          && blockTimeStamp > invalidBlockVOForSegmentId.getLatestUpdateTimestamp()) {
+        return true;
+      }
+      // for 1st time starttime stamp will be empty so need to consider fact time stamp.
+      if (null == invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()
+          && blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp()) {
         return true;
       }
     }
@@ -2032,16 +2059,6 @@ public final class CarbonUtil {
     return tableInfo;
   }
 
-  public static void writeThriftTableToSchemaFile(String schemaFilePath,
-      org.apache.carbondata.format.TableInfo tableInfo) throws IOException {
-    ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);
-    try {
-      thriftWriter.open();
-      thriftWriter.write(tableInfo);
-    } finally {
-      thriftWriter.close();
-    }
-  }
 
   public static void dropDatabaseDirectory(String databasePath)
       throws IOException, InterruptedException {
@@ -2270,15 +2287,17 @@ public final class CarbonUtil {
       case S3:
         Path path = new Path(segmentPath);
         FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-        FileStatus[] fileStatuses = fs.listStatus(path);
-        if (null != fileStatuses) {
-          for (FileStatus dataAndIndexStatus : fileStatuses) {
-            String pathName = dataAndIndexStatus.getPath().getName();
-            if (pathName.endsWith(CarbonTablePath.getCarbonIndexExtension()) || pathName
-                .endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
-              carbonIndexSize += dataAndIndexStatus.getLen();
-            } else if (pathName.endsWith(CarbonTablePath.getCarbonDataExtension())) {
-              carbonDataSize += dataAndIndexStatus.getLen();
+        if (fs.exists(path)) {
+          FileStatus[] fileStatuses = fs.listStatus(path);
+          if (null != fileStatuses) {
+            for (FileStatus dataAndIndexStatus : fileStatuses) {
+              String pathName = dataAndIndexStatus.getPath().getName();
+              if (pathName.endsWith(CarbonTablePath.getCarbonIndexExtension()) || pathName
+                  .endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
+                carbonIndexSize += dataAndIndexStatus.getLen();
+              } else if (pathName.endsWith(CarbonTablePath.getCarbonDataExtension())) {
+                carbonDataSize += dataAndIndexStatus.getLen();
+              }
             }
           }
         }
@@ -2315,7 +2334,9 @@ public final class CarbonUtil {
     List<DataMapSchema> dataMapSchemaList = carbonTable.getTableInfo().getDataMapSchemaList();
     for (DataMapSchema dataMapSchema : dataMapSchemaList) {
       if (dataMapSchema instanceof AggregationDataMapSchema) {
-        return ((AggregationDataMapSchema) dataMapSchema).isTimeseriesDataMap();
+        if (((AggregationDataMapSchema) dataMapSchema).isTimeseriesDataMap()) {
+          return true;
+        }
       }
     }
     return false;
@@ -2334,6 +2355,28 @@ public final class CarbonUtil {
       }
     }
     return false;
+  }
+
+  /**
+   * Convert the bytes to base64 encode string
+   * @param bytes
+   * @return
+   * @throws UnsupportedEncodingException
+   */
+  public static String encodeToString(byte[] bytes) throws UnsupportedEncodingException {
+    return new String(Base64.encodeBase64(bytes),
+        CarbonCommonConstants.DEFAULT_CHARSET);
+  }
+
+  /**
+   * Deoce
+   * @param objectString
+   * @return
+   * @throws UnsupportedEncodingException
+   */
+  public static byte[] decodeStringToBytes(String objectString)
+      throws UnsupportedEncodingException {
+    return Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
   }
 
 }

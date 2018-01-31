@@ -30,6 +30,8 @@ import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerat
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
+
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -69,7 +71,7 @@ public class ColumnGroupDimensionDataChunkTest {
   @Test public void getChunkDataTest() {
     byte[] b = { 34, 2 };
     byte res[] = columnGroupDimensionDataChunk.getChunkData(1);
-    assert (Arrays.equals(res, b));
+    Assert.assertTrue(Arrays.equals(res, b));
   }
 
   @Test public void fillConvertedChunkDataTest() {
@@ -80,7 +82,7 @@ public class ColumnGroupDimensionDataChunkTest {
     KeyStructureInfo keyStructureInfo = getKeyStructureInfo(ordinals, keyGenerator);
     keyStructureInfo.setMdkeyQueryDimensionOrdinal(new int[] { 2 });
     int res = columnGroupDimensionDataChunk.fillConvertedChunkData(2, 2, row, keyStructureInfo);
-    assert (Arrays.equals(row, expected));
+    Assert.assertTrue(Arrays.equals(row, expected));
   }
 
   /**

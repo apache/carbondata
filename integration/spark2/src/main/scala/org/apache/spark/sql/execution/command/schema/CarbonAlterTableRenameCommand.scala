@@ -122,6 +122,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
       val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
         .getClient()
+      sparkSession.catalog.refreshTable(TableIdentifier(oldTableName,
+        Some(oldDatabaseName)).quotedString)
       hiveClient.runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
       hiveClient.runSqlHive(

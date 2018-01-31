@@ -51,13 +51,15 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       absIdentifier: AbsoluteTableIdentifier,
       sparkSession: SparkSession): CarbonRelation = {
     val info = CarbonUtil.convertGsonToTableInfo(parameters.asJava)
-    if (info != null) {
+    val carbonRelation = if (info != null) {
       val table = CarbonTable.buildFromTableInfo(info)
       CarbonRelation(info.getDatabaseName, info.getFactTable.getTableName,
         CarbonSparkUtil.createSparkMeta(table), table)
     } else {
       super.createCarbonRelation(parameters, absIdentifier, sparkSession)
     }
+    carbonRelation.refresh()
+    carbonRelation
   }
 
 
@@ -167,8 +169,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       newTableIdentifier.getDatabaseName,
       newTableIdentifier.getTableName,
       newTablePath)
-    val dbName = oldTableIdentifier.getDatabaseName
-    val tableName = oldTableIdentifier.getTableName
+    val dbName = newTableIdentifier.getDatabaseName
+    val tableName = newTableIdentifier.getTableName
     val schemaParts = CarbonUtil.convertToMultiGsonStrings(wrapperTableInfo, "=", "'", "")
     val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
       .getClient()
@@ -177,7 +179,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     sparkSession.catalog.refreshTable(TableIdentifier(tableName, Some(dbName)).quotedString)
     removeTableFromMetadata(dbName, tableName)
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
-    CarbonStorePath.getCarbonTablePath(oldTablePath, newTableIdentifier).getPath
+    newTablePath
   }
 
   /**

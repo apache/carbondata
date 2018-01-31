@@ -88,12 +88,9 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("insert->carbon column is more then hive-fails") {
      sql("drop table if exists TCarbon")
      sql("create table TCarbon (imei string,deviceInformationId int,MAC string,deviceColor string,gamePointId double,contractNumber BigInt) STORED BY 'org.apache.carbondata.format'")
-     try {
-        sql("insert into TCarbon select imei,deviceInformationId,MAC,deviceColor,gamePointId from THive")
-        assert(false)
-     } catch  {
-       case ex: Exception => assert(true)
-     }
+    intercept[Exception] {
+      sql("insert into TCarbon select imei,deviceInformationId,MAC,deviceColor,gamePointId from THive")
+    }
   }
   test("insert->insert wrong data types-pass") {
      sql("drop table if exists TCarbon")
@@ -387,7 +384,7 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   private def checkSegment(tableName: String) : Boolean ={
-    val storePath_t1 = metastoredb + s"/warehouse/${tableName.toLowerCase()}/Fact/Part0"
+    val storePath_t1 = s"$storeLocation/${tableName.toLowerCase()}/Fact/Part0"
     val carbonFile_t1: CarbonFile = FileFactory
       .getCarbonFile(storePath_t1, FileFactory.getFileType(storePath_t1))
     var exists: Boolean = carbonFile_t1.exists()

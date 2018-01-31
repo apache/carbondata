@@ -44,15 +44,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check select query with limit as string
   test("OffHeapQuery-002-TC_121", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 limit """"").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -112,57 +106,33 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check where clause with OR and no operand
   test("OffHeapQuery-002-TC_128", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id > 1 OR """).collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check OR clause with LHS and RHS having no arguments
   test("OffHeapQuery-002-TC_129", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where OR """).collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check OR clause with LHS having no arguments
   test("OffHeapQuery-002-TC_130", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where OR cust_id > "1"""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check incorrect query
   test("OffHeapQuery-002-TC_132", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id > 0 OR name  """).collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -231,15 +201,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check select count and distinct query execution
   test("OffHeapQuery-002-TC_140", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select count(cust_id),distinct(cust_name) from uniqdataquery2""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -281,15 +245,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check query execution with IN operator without paranthesis
   test("OffHeapQuery-002-TC_146", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id IN 9000,9005""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -304,15 +262,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check query execution with IN operator with out specifying any field.
   test("OffHeapQuery-002-TC_148", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where IN(1,2)""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -354,15 +306,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check AND with using booleans in invalid syntax
   test("OffHeapQuery-002-TC_153", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where AND true""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -386,15 +332,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check AND using 0 and 1 treated as boolean values
   test("OffHeapQuery-002-TC_156", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where true aNd 0""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -418,29 +358,17 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check '='operator without Passing any value
   test("OffHeapQuery-002-TC_159", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id=""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check '='operator without Passing columnname and value.
   test("OffHeapQuery-002-TC_160", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where =""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -455,15 +383,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check '!='operator by keeping space between them
   test("OffHeapQuery-002-TC_162", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id !   = 9001""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -478,29 +400,17 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check '!='operator without providing any value
   test("OffHeapQuery-002-TC_164", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id != """).collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check '!='operator without providing any column name
   test("OffHeapQuery-002-TC_165", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where  != false""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -542,43 +452,25 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check 'NOT' operator in nested way
   test("OffHeapQuery-002-TC_170", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id NOT (NOT(true))""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check 'NOT' operator with parenthesis.
   test("OffHeapQuery-002-TC_171", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id NOT ()""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check 'NOT' operator without condition.
   test("OffHeapQuery-002-TC_172", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id NOT""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -593,29 +485,17 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check '>' operator without specifying column
   test("OffHeapQuery-002-TC_174", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where > 20""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check '>' operator without specifying value
   test("OffHeapQuery-002-TC_175", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id > """).collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -648,15 +528,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check '<' operator without specifying column
   test("OffHeapQuery-002-TC_179", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where < 5""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -680,29 +554,17 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check '<=' operator without specifying column
   test("OffHeapQuery-002-TC_182", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where  <= 2""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check '<=' operator without providing value
   test("OffHeapQuery-002-TC_183", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where  cust_id <= """).collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -717,13 +579,8 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check '<=' operator adding space between'<' and  '='
   test("OffHeapQuery-002-TC_185", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id < =  9002""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
 
   }
@@ -731,15 +588,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check 'BETWEEN' operator without providing range
   test("OffHeapQuery-002-TC_186", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where age between""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -799,29 +650,17 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check  'IS NULL' without providing column
   test("OffHeapQuery-002-TC_193", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where Is NulL""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check  'IS NOT NULL' without providing column
   test("OffHeapQuery-002-TC_194", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where IS NOT NULL""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -854,29 +693,17 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check Limit clause with where condition and no argument
   test("OffHeapQuery-002-TC_198", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id=10987 limit""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check Limit clause with where condition and decimal argument
   test("OffHeapQuery-002-TC_199", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id=10987 limit 0.0""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -928,15 +755,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check Full join
   test("OffHeapQuery-002-TC_205", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select uniqdataquery2.CUST_ID from uniqdataquery2 FULL JOIN uniqdataquery22 where CUST_ID""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -1023,15 +844,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check SORT using 'AND' on multiple column
   test("OffHeapQuery-002-TC_216", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 where cust_id > 10544 sort by cust_name desc and cust_id asc""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -1055,15 +870,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check average aggregate function with no arguments
   test("OffHeapQuery-002-TC_219", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select cust_id,avg() from uniqdataquery2 group by cust_id""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -1078,15 +887,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check nested  average aggregate function
   test("OffHeapQuery-002-TC_221", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select cust_id,avg(count(cust_id)) from uniqdataquery2 group by cust_id""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -1173,15 +976,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check Order by without column name
   test("OffHeapQuery-002-TC_231", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select * from uniqdataquery2 order by ASC""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -1223,15 +1020,9 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check Using window without partition
   test("OffHeapQuery-002-TC_236", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select cust_name, sum(bigint_column1) OVER w from uniqdataquery2 WINDOW w""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -1246,13 +1037,8 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check Using ROLLUP without group by clause
   test("OffHeapQuery-002-TC_238", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""select cust_name from uniqdataquery2 with ROLLUP""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table uniqdataquery2""").collect
   }

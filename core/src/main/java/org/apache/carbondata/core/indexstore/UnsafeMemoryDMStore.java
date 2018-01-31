@@ -36,7 +36,7 @@ public class UnsafeMemoryDMStore {
 
   private MemoryBlock memoryBlock;
 
-  private static int capacity = 8 * 1024 * 1024;
+  private static int capacity = 8 * 1024;
 
   private int allocatedSize;
 
@@ -66,20 +66,24 @@ public class UnsafeMemoryDMStore {
    * @param rowSize
    */
   private void ensureSize(int rowSize) throws MemoryException {
-    if (runningLength + rowSize >= allocatedSize) {
-      MemoryBlock allocate =
-          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, allocatedSize + capacity);
-      getUnsafe().copyMemory(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset(),
-          allocate.getBaseObject(), allocate.getBaseOffset(), runningLength);
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
-      allocatedSize = allocatedSize + capacity;
-      memoryBlock = allocate;
+    while (runningLength + rowSize >= allocatedSize) {
+      increaseMemory();
     }
     if (this.pointers.length <= rowCount + 1) {
       int[] newPointer = new int[pointers.length + 1000];
       System.arraycopy(pointers, 0, newPointer, 0, pointers.length);
       this.pointers = newPointer;
     }
+  }
+
+  private void increaseMemory() throws MemoryException {
+    MemoryBlock allocate =
+        UnsafeMemoryManager.allocateMemoryWithRetry(taskId, allocatedSize + capacity);
+    getUnsafe().copyMemory(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset(),
+        allocate.getBaseObject(), allocate.getBaseOffset(), runningLength);
+    UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
+    allocatedSize = allocatedSize + capacity;
+    memoryBlock = allocate;
   }
 
   /**
@@ -168,7 +172,7 @@ public class UnsafeMemoryDMStore {
     }
   }
 
-  public DataMapRow getUnsafeRow(int index) {
+  public UnsafeDataMapRow getUnsafeRow(int index) {
     assert (index < rowCount);
     return new UnsafeDataMapRow(schema, memoryBlock, pointers[index]);
   }

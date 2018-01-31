@@ -74,7 +74,7 @@ public class CarbonStreamInputFormatTest extends TestCase {
     CarbonInputSplit carbonInputSplit = new CarbonInputSplit();
     List<CarbonInputSplit> splitList = new ArrayList<>();
     splitList.add(carbonInputSplit);
-    return new CarbonMultiBlockSplit(identifier, splitList, new String[] { "localhost" },
+    return new CarbonMultiBlockSplit(splitList, new String[] { "localhost" },
         FileFormat.ROW_V1);
   }
 

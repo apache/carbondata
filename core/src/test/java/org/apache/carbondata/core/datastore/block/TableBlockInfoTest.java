@@ -22,6 +22,7 @@ import mockit.MockUp;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -39,55 +40,55 @@ public class TableBlockInfoTest {
 
   @Test public void equalTestWithSameObject() {
     Boolean res = tableBlockInfo.equals(tableBlockInfo);
-    assert (res);
+    Assert.assertTrue(res);
   }
 
   @Test public void equalTestWithSimilarObject() {
     TableBlockInfo tableBlockInfoTest = new TableBlockInfo("filePath", 4, "segmentId", null, 6, ColumnarFormatVersion.V1, null);
     Boolean res = tableBlockInfo.equals(tableBlockInfoTest);
-    assert (res);
+    Assert.assertTrue(res);
   }
 
   @Test public void equalTestWithNullObject() {
     Boolean res = tableBlockInfo.equals(null);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalTestWithStringObject() {
     Boolean res = tableBlockInfo.equals("dummyObject");
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equlsTestWithDiffSegmentId() {
     TableBlockInfo tableBlockInfoTest = new TableBlockInfo("filePath", 4, "diffsegmentId", null, 6, ColumnarFormatVersion.V1, null);
     Boolean res = tableBlockInfo.equals(tableBlockInfoTest);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equlsTestWithDiffBlockOffset() {
     TableBlockInfo tableBlockInfoTest = new TableBlockInfo("filePath", 6, "segmentId", null, 6, ColumnarFormatVersion.V1, null);
     Boolean res = tableBlockInfo.equals(tableBlockInfoTest);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithDiffBlockLength() {
     TableBlockInfo tableBlockInfoTest = new TableBlockInfo("filePath", 4, "segmentId", null, 4, ColumnarFormatVersion.V1, null);
     Boolean res = tableBlockInfo.equals(tableBlockInfoTest);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithDiffBlockletNumber() {
     TableBlockInfo tableBlockInfoTest =
         new TableBlockInfo("filepath", 6, "segmentId", null, 6, new BlockletInfos(6, 3, 2), ColumnarFormatVersion.V1, null);
     Boolean res = tableBlockInfos.equals(tableBlockInfoTest);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithDiffFilePath() {
     TableBlockInfo tableBlockInfoTest =
         new TableBlockInfo("difffilepath", 6, "segmentId", null, 6, new BlockletInfos(6, 3, 2), ColumnarFormatVersion.V1, null);
     Boolean res = tableBlockInfos.equals(tableBlockInfoTest);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void compareToTestForSegmentId() {

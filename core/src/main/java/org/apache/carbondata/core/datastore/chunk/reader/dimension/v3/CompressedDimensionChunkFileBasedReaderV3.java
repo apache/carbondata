@@ -103,9 +103,15 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     }
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk = CarbonUtil.readDataChunk3(buffer, 0, length);
+    return getDimensionRawColumnChunk(fileReader, blockletColumnIndex, 0, length, buffer,
+        dataChunk);
+  }
+
+  protected DimensionRawColumnChunk getDimensionRawColumnChunk(FileHolder fileReader,
+      int blockletColumnIndex, long offset, int length, ByteBuffer buffer, DataChunk3 dataChunk) {
     // creating a raw chunks instance and filling all the details
     DimensionRawColumnChunk rawColumnChunk =
-        new DimensionRawColumnChunk(blockletColumnIndex, buffer, 0, length, this);
+        new DimensionRawColumnChunk(blockletColumnIndex, buffer, offset, length, this);
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
@@ -166,29 +172,11 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     int runningLength = 0;
     for (int i = startBlockletColumnIndex; i <= endBlockletColumnIndex; i++) {
       int currentLength = (int) (dimensionChunksOffset.get(i + 1) - dimensionChunksOffset.get(i));
-      dimensionDataChunks[index] =
-          new DimensionRawColumnChunk(i, buffer, runningLength, currentLength, this);
       DataChunk3 dataChunk =
           CarbonUtil.readDataChunk3(buffer, runningLength, dimensionChunksLength.get(i));
-      int numberOfPages = dataChunk.getPage_length().size();
-      byte[][] maxValueOfEachPage = new byte[numberOfPages][];
-      byte[][] minValueOfEachPage = new byte[numberOfPages][];
-      int[] eachPageLength = new int[numberOfPages];
-      for (int j = 0; j < minValueOfEachPage.length; j++) {
-        maxValueOfEachPage[j] =
-            dataChunk.getData_chunk_list().get(j).getMin_max().getMax_values().get(0).array();
-        minValueOfEachPage[j] =
-            dataChunk.getData_chunk_list().get(j).getMin_max().getMin_values().get(0).array();
-        eachPageLength[j] = dataChunk.getData_chunk_list().get(j).getNumberOfRowsInpage();
-      }
-      dimensionDataChunks[index].setDataChunkV3(dataChunk);
-      dimensionDataChunks[index].setFileHolder(fileReader);
-      dimensionDataChunks[index].setPagesCount(dataChunk.getPage_length().size());
-      dimensionDataChunks[index].setMaxValues(maxValueOfEachPage);
-      dimensionDataChunks[index].setMinValues(minValueOfEachPage);
-      dimensionDataChunks[index].setRowCount(eachPageLength);
-      dimensionDataChunks[index].setOffsets(ArrayUtils
-          .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
+      dimensionDataChunks[index] =
+          getDimensionRawColumnChunk(fileReader, i, runningLength, currentLength, buffer,
+              dataChunk);
       runningLength += currentLength;
       index++;
     }
@@ -212,7 +200,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
-    int offset = rawColumnPage.getOffSet() + dimensionChunksLength
+    int offset = (int) rawColumnPage.getOffSet() + dimensionChunksLength
         .get(rawColumnPage.getColumnIndex()) + dataChunk3.getPage_offset().get(pageNumber);
     // first read the data and uncompressed it
     return decodeDimension(rawColumnPage, rawData, pageMetadata, offset);
@@ -240,7 +228,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     return false;
   }
 
-  private DimensionColumnDataChunk decodeDimension(DimensionRawColumnChunk rawColumnPage,
+  protected DimensionColumnDataChunk decodeDimension(DimensionRawColumnChunk rawColumnPage,
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset)
       throws IOException, MemoryException {
     if (isEncodedWithMeta(pageMetadata)) {

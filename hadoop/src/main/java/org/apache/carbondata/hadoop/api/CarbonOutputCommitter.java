@@ -18,7 +18,10 @@
 package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -30,11 +33,12 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 import org.apache.carbondata.events.OperationContext;
 import org.apache.carbondata.events.OperationListenerBus;
-import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.processing.loading.events.LoadEvents;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
@@ -69,6 +73,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
     CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet);
+    CarbonLoaderUtil.checkAndCreateCarbonDataLocation(loadModel.getSegmentId(),
+        loadModel.getCarbonDataLoadSchema().getCarbonTable());
     CarbonTableOutputFormat.setLoadModel(context.getConfiguration(), loadModel);
   }
 
@@ -103,19 +109,14 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     long segmentSize = CarbonLoaderUtil
         .addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
-    if (segmentSize > 0) {
-      String operationContextStr =
-          context.getConfiguration().get(
-              CarbonTableOutputFormat.OPERATION_CONTEXT,
-              null);
-      if (operationContextStr != null) {
-        OperationContext operationContext =
-            (OperationContext) ObjectSerializationUtil.convertStringToObject(operationContextStr);
+    if (segmentSize > 0 || overwriteSet) {
+      Object operationContext = getOperationContext();
+      if (operationContext != null) {
         LoadEvents.LoadTablePreStatusUpdateEvent event =
             new LoadEvents.LoadTablePreStatusUpdateEvent(carbonTable.getCarbonTableIdentifier(),
                 loadModel);
         try {
-          OperationListenerBus.getInstance().fireEvent(event, operationContext);
+          OperationListenerBus.getInstance().fireEvent(event, (OperationContext) operationContext);
         } catch (Exception e) {
           throw new IOException(e);
         }
@@ -141,6 +142,15 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     } else {
       CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
     }
+  }
+
+  private Object getOperationContext() {
+    // when validate segments is disabled in thread local update it to CarbonTableInputFormat
+    CarbonSessionInfo carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
+    if (carbonSessionInfo != null) {
+      return carbonSessionInfo.getThreadParams().getExtraInfo("partition.operationcontext");
+    }
+    return null;
   }
 
   /**

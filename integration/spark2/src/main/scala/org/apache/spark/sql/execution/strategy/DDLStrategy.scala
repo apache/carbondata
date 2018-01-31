@@ -95,7 +95,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
         ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
-      case alterTable@CarbonAlterTableCompactionCommand(altertablemodel, _) =>
+      case alterTable@CarbonAlterTableCompactionCommand(altertablemodel, _, _) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(altertablemodel.tableName,
             altertablemodel.dbName))(sparkSession)
@@ -218,12 +218,27 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
+
+        // TODO remove this limiation after streaming table support 'preaggregate' DataMap
+        // if the table has 'preaggregate' DataMap, it doesn't support streaming now
+        val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
+        if (carbonTable.hasAggregationDataMap) {
+          throw new MalformedCarbonCommandException(
+            "The table has 'preaggregate' DataMap, it doesn't support streaming")
+        }
+
         // TODO remove this limitation later
         val property = properties.find(_._1.equalsIgnoreCase("streaming"))
         if (property.isDefined) {
-          if (!property.get._2.trim.equalsIgnoreCase("true")) {
+          if (carbonTable.isStreamingTable) {
             throw new MalformedCarbonCommandException(
               "Streaming property can not be changed once it is 'true'")
+          } else {
+            if (!property.get._2.trim.equalsIgnoreCase("true")) {
+              throw new MalformedCarbonCommandException(
+                "Streaming property value is incorrect")
+            }
           }
         }
         ExecutedCommandExec(CarbonAlterTableSetCommand(tableName, properties, isView)) :: Nil
@@ -239,6 +254,27 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(
           CarbonAlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
       }
+      case rename@AlterTableRenamePartitionCommand(tableName, oldPartition, newPartition) =>
+        val dbOption = tableName.database.map(_.toLowerCase)
+        val tableIdentifier = TableIdentifier(tableName.table.toLowerCase(), dbOption)
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableIdentifier)(sparkSession)
+        if (isCarbonTable) {
+          throw new UnsupportedOperationException("Renaming partition on table is not supported")
+        } else {
+          ExecutedCommandExec(rename) :: Nil
+        }
+      case addPartition@AlterTableAddPartitionCommand(tableName, partitionSpecsAndLocs, _) =>
+        val dbOption = tableName.database.map(_.toLowerCase)
+        val tableIdentifier = TableIdentifier(tableName.table.toLowerCase(), dbOption)
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableIdentifier)(sparkSession)
+        if (isCarbonTable && partitionSpecsAndLocs.exists(_._2.isDefined)) {
+          throw new UnsupportedOperationException(
+            "add partition with location is not supported")
+        } else {
+          ExecutedCommandExec(addPartition) :: Nil
+        }
       case RefreshTable(tableIdentifier) =>
         RefreshCarbonTableCommand(tableIdentifier.database,
           tableIdentifier.table).run(sparkSession)

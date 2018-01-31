@@ -23,6 +23,8 @@ import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
+
 class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
@@ -262,9 +264,58 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
   }
 
+ test("Test query with math operation hitting fact table") {
+    val df =  sql("select sum(id)+count(id) from maintable")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable")
+  }
+
+  val timeSeries = TIMESERIES.toString
+
+test("test PreAggregate table selection with timeseries and normal together") {
+    sql("drop table if exists maintabletime")
+    sql(
+      "create table maintabletime(year int,month int,name string,salary int,dob timestamp) stored" +
+      " by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23'," +
+      "'sort_columns'='month,year,name')")
+    sql("insert into maintabletime select 10,11,'babu',12,'2014-01-01 00:00:00'")
+    sql(
+      "create datamap agg0 on table maintabletime using 'preaggregate' as select dob,name from " +
+      "maintabletime group by dob,name")
+
+  sql(
+    s"""
+       | CREATE DATAMAP agg1_year ON TABLE maintabletime
+       | USING '$timeSeries'
+       | DMPROPERTIES (
+       | 'EVENT_TIME'='dob',
+       | 'YEAR_GRANULARITY'='1')
+       | AS SELECT dob, name FROM maintabletime
+       | GROUP BY dob,name
+       """.stripMargin)
+
+    val df = sql("SELECT timeseries(dob,'year') FROM maintabletime GROUP BY timeseries(dob,'year')")
+    preAggTableValidator(df.queryExecution.analyzed, "maintabletime_agg1_year")
+  sql("DROP TABLE IF EXISTS maintabletime")
+
+  }
+
+  test("test table selection when unsupported aggregate function is present") {
+    sql("DROP TABLE IF EXISTS maintabletime")
+    sql(
+      "create table maintabletime(year int,month int,name string,salary int,dob string) stored" +
+      " by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23'," +
+      "'sort_columns'='month,year,name')")
+    sql("insert into maintabletime select 10,11,'x',12,'2014-01-01 00:00:00'")
+    sql(
+      "create datamap agg0 on table maintabletime using 'preaggregate' as select name,sum(salary) from " +
+      "maintabletime group by name")
+
+    sql("select var_samp(name) from maintabletime  where name='Mikka' ")
+  }
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists lineitem")
+    sql("DROP TABLE IF EXISTS maintabletime")
   }
 
 }

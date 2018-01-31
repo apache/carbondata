@@ -36,6 +36,8 @@ This section provides the details of all the configurations required for the Car
 | carbon.ddl.base.hdfs.url | hdfs://hacluster/opt/data | This property is used to configure the HDFS relative path, the path configured in carbon.ddl.base.hdfs.url will be appended to the HDFS path configured in fs.defaultFS. If this path is configured, then user need not pass the complete path while dataload. For example: If absolute path of the csv file is hdfs://10.18.101.155:54310/data/cnbc/2016/xyz.csv, the path "hdfs://10.18.101.155:54310" will come from property fs.defaultFS and user can configure the /data/cnbc/ as carbon.ddl.base.hdfs.url. Now while dataload user can specify the csv path as /2016/xyz.csv. |
 | carbon.badRecords.location | /opt/Carbon/Spark/badrecords | Path where the bad records are stored. |
 | carbon.data.file.version | 2 | If this parameter value is set to 1, then CarbonData will support the data load which is in old format(0.x version). If the value is set to 2(1.x onwards version), then CarbonData will support the data load of new format only.|
+| carbon.streaming.auto.handoff.enabled | true | If this parameter value is set to true, auto trigger handoff function will be enabled.|
+| carbon.streaming.segment.max.size | 1024000000 | This parameter defines the maximum size of the streaming segment. Setting this parameter to appropriate value will avoid impacting the streaming ingestion. The value is in bytes.|
 
 ##  Performance Configuration
 This section provides the details of all the configurations required for CarbonData Performance Optimization.
@@ -94,17 +96,17 @@ This section provides the details of all the configurations required for CarbonD
   
 | Parameter | Default Value | Description |
 |---------------------------------------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| carbon.sort.file.write.buffer.size | 10485760 | File write buffer size used during sorting. |
+| carbon.sort.file.write.buffer.size | 16777216 | File write buffer size used during sorting (minValue = 10 KB, maxValue=10MB). |
 | carbon.lock.type | LOCALLOCK | This configuration specifies the type of lock to be acquired during concurrent operations on table. There are following types of lock implementation: - LOCALLOCK: Lock is created on local file system as file. This lock is useful when only one spark driver (thrift server) runs on a machine and no other CarbonData spark application is launched concurrently. - HDFSLOCK: Lock is created on HDFS file system as file. This lock is useful when multiple CarbonData spark applications are launched and no ZooKeeper is running on cluster and HDFS supports file based locking. |
-| carbon.sort.intermediate.files.limit | 20 | Minimum number of intermediate files after which merged sort can be started. |
+| carbon.sort.intermediate.files.limit | 20 | Minimum number of intermediate files after which merged sort can be started (minValue = 2, maxValue=50). |
 | carbon.block.meta.size.reserved.percentage | 10 | Space reserved in percentage for writing block meta data in CarbonData file. |
 | carbon.csv.read.buffersize.byte | 1048576 | csv reading buffer size. |
 | high.cardinality.value | 100000 | To identify and apply compression for non-high cardinality columns. |
 | carbon.merge.sort.reader.thread | 3 | Maximum no of threads used for reading intermediate files for final merging. |
-| carbon.load.metadata.lock.retries | 3 | Maximum number of retries to get the metadata lock for loading data to table. |
-| carbon.load.metadata.lock.retry.timeout.sec | 5 | Interval between the retries to get the lock. |
 | carbon.concurrent.lock.retries | 100 | Specifies the maximum number of retries to obtain the lock for concurrent operations. This is used for concurrent loading. |
 | carbon.concurrent.lock.retry.timeout.sec | 1 | Specifies the interval between the retries to obtain the lock for concurrent operations. |
+| carbon.lock.retries | 3 | Specifies the maximum number of retries to obtain the lock for any operations other than load. |
+| carbon.lock.retry.timeout.sec | 5 | Specifies the interval between the retries to obtain the lock for any operation other than load. |
 | carbon.tempstore.location | /opt/Carbon/TempStoreLoc | Temporary store location. By default it takes System.getProperty("java.io.tmpdir"). |
 | carbon.load.log.counter | 500000 | Data loading records count logger. |
 | carbon.skip.empty.line | false | Setting this property ignores the empty lines in the CSV file during the data load |
@@ -117,6 +119,7 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.numberof.preserve.segments | 0 | If the user wants to preserve some number of segments from being compacted then he can set this property. Example: carbon.numberof.preserve.segments = 2 then 2 latest segments will always be excluded from the compaction. No segments will be preserved by default. |
 | carbon.allowed.compaction.days | 0 | Compaction will merge the segments which are loaded with in the specific number of days configured. Example: If the configuration is 2, then the segments which are loaded in the time frame of 2 days only will get merged. Segments which are loaded 2 days apart will not be merged. This is disabled by default. |
 | carbon.enable.auto.load.merge | false | To enable compaction while data loading. |
+|carbon.enable.page.level.reader.in.compaction|true|Enabling page level reader for compaction reduces the memory usage while compacting more number of segments. It allows reading only page by page instead of reading whole blocklet to memory.|
 
  
 * **Query Configuration**
@@ -124,7 +127,9 @@ This section provides the details of all the configurations required for CarbonD
 | Parameter | Default Value | Description |
 |--------------------------|---------------|-----------------------------------------------------------------------------------------------|
 | max.query.execution.time | 60 | Maximum time allowed for one query to be executed. The value is in minutes. |
-| carbon.enableMinMax | true | Min max is feature added to enhance query performance. To disable this feature, set it false. | 
+| carbon.enableMinMax | true | Min max is feature added to enhance query performance. To disable this feature, set it false. |
+| carbon.dynamicallocation.schedulertimeout | 5 | Specifies the maximum time (unit in seconds) the scheduler can wait for executor to be active. Minimum value is 5 sec and maximum value is 15 sec. |
+| carbon.scheduler.minregisteredresourcesratio | 0.8 | Specifies the minimum resource (executor) ratio needed for starting the block distribution. The default value is 0.8, which indicates 80% of the requested resource is allocated for starting block distribution.  The minimum value is 0.1 min and the maximum value is 1.0. | 
   
 * **Global Dictionary Configurations**
   

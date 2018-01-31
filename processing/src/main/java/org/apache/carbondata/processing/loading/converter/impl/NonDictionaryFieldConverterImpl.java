@@ -25,6 +25,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class NonDictionaryFieldConverterImpl implements FieldConverter {
@@ -67,9 +68,16 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
         dateFormat = dataField.getTimestampFormat();
       }
       try {
-        row.update(DataTypeUtil
-            .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType,
-                dateFormat), index);
+        byte[] value = DataTypeUtil
+            .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
+        if (dataType == DataTypes.STRING
+            && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+          throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+              + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+        }
+        row.update(value, index);
+      } catch (CarbonDataLoadingException e) {
+        throw e;
       } catch (Throwable ex) {
         if (dimensionValue.length() > 0 || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
           String message = logHolder.getColumnMessageMap().get(column.getColName());

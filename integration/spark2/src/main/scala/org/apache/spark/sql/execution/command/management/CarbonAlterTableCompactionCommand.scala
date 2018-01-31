@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.{AlterTableModel, CarbonMergerMapping, CompactionModel, DataCommand}
+import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand, CarbonMergerMapping, CompactionModel, DataCommand}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.CarbonException
@@ -37,9 +37,10 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent, AlterTableCompactionPreStatusUpdateEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.processing.loading.events.LoadEvents.LoadMetadataEvent
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.exception.ConcurrentOperationException
@@ -53,34 +54,42 @@ import org.apache.carbondata.streaming.segment.StreamSegment
  */
 case class CarbonAlterTableCompactionCommand(
     alterTableModel: AlterTableModel,
-    tableInfoOp: Option[TableInfo] = None)
-  extends DataCommand {
+    tableInfoOp: Option[TableInfo] = None,
+    val operationContext: OperationContext = new OperationContext ) extends AtomicRunnableCommand {
+
+  var table: CarbonTable = _
+
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val tableName = alterTableModel.tableName.toLowerCase
+    val dbName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
+    table = if (tableInfoOp.isDefined) {
+      CarbonTable.buildFromTableInfo(tableInfoOp.get)
+    } else {
+      val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+      if (relation == null) {
+        throw new NoSuchTableException(dbName, tableName)
+      }
+      if (null == relation.carbonTable) {
+        LOGGER.error(s"Data loading failed. table not found: $dbName.$tableName")
+        throw new NoSuchTableException(dbName, tableName)
+      }
+      relation.carbonTable
+    }
+    if (CarbonUtil.hasAggregationDataMap(table) ||
+        (table.isChildDataMap && null == operationContext.getProperty(table.getTableName))) {
+      val loadMetadataEvent = new LoadMetadataEvent(table, true)
+      OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
+    }
+    Seq.empty
+  }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService =
       LogServiceFactory.getLogService(this.getClass.getName)
     val tableName = alterTableModel.tableName.toLowerCase
     val databaseName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
-
-    val table = if (tableInfoOp.isDefined) {
-      val tableInfo = tableInfoOp.get
-      //   To DO: CarbonEnv.updateStorePath
-      CarbonTable.buildFromTableInfo(tableInfo)
-    } else {
-      val relation =
-        CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .lookupRelation(Option(databaseName), tableName)(sparkSession)
-          .asInstanceOf[CarbonRelation]
-      if (relation == null) {
-        throw new NoSuchTableException(databaseName, tableName)
-      }
-      if (null == relation.carbonTable) {
-        LOGGER.error(s"alter table failed. table not found: $databaseName.$tableName")
-        throw new NoSuchTableException(databaseName, tableName)
-      }
-      relation.carbonTable
-    }
-
     val isLoadInProgress = SegmentStatusManager.checkIfAnyLoadInProgressForTable(table)
     if (isLoadInProgress) {
       val message = "Cannot run data loading and compaction on same table concurrently. " +
@@ -88,7 +97,6 @@ case class CarbonAlterTableCompactionCommand(
       LOGGER.error(message)
       throw new ConcurrentOperationException(message)
     }
-
     val carbonLoadModel = new CarbonLoadModel()
     carbonLoadModel.setTableName(table.getTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
@@ -103,7 +111,6 @@ case class CarbonAlterTableCompactionCommand(
       System.getProperty("java.io.tmpdir"))
     storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
     // trigger event for compaction
-    val operationContext = new OperationContext
     val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
       AlterTableCompactionPreEvent(sparkSession, table, null, null)
     OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
@@ -220,11 +227,14 @@ case class CarbonAlterTableCompactionCommand(
         try {
           if (compactionType == CompactionType.SEGMENT_INDEX) {
             // Just launch job to merge index and return
-            CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
+            CommonUtil.mergeIndexFiles(
+              sqlContext.sparkContext,
               CarbonDataMergerUtil.getValidSegmentList(
                 carbonTable.getAbsoluteTableIdentifier).asScala,
               carbonLoadModel.getTablePath,
-              carbonTable, true)
+              carbonTable,
+              mergeIndexProperty = true,
+              readFileFooterFromCarbonDataFile = true)
 
             val carbonMergerMapping = CarbonMergerMapping(carbonTable.getTablePath,
               carbonTable.getMetaDataFilepath,
@@ -239,8 +249,6 @@ case class CarbonAlterTableCompactionCommand(
               compactionModel.currentPartitions,
               null)
 
-            // trigger event for merge index
-            val operationContext = new OperationContext
             // trigger event for compaction
             val alterTableCompactionPreStatusUpdateEvent: AlterTableCompactionPreStatusUpdateEvent =
               AlterTableCompactionPreStatusUpdateEvent(sqlContext.sparkSession,

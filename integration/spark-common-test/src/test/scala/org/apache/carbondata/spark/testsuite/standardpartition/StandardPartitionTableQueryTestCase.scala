@@ -237,6 +237,54 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionload partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    val frame = sql("select empno,empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from staticpartitionload")
+    verifyPartitionInfo(frame, Seq("empname=ravi"))
+
+  }
+
+test("Creation of partition table should fail if the colname in table schema and partition column is same even if both are case sensitive"){
+  intercept[Exception]{
+    sql("CREATE TABLE uniqdata_char2(name char,id int) partitioned by (NAME char)stored by 'carbondata' ")
+  }
+}
+
+  test("Renaming a partition table should fail"){
+    sql("drop table if exists partitionTable")
+    sql(
+      """create table partitionTable (id int,name String) partitioned by(email string) stored by 'carbondata'
+      """.stripMargin)
+    sql("insert into partitionTable select 1,'huawei','abc'")
+    checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc")))
+    intercept[Exception]{
+      sql("alter table partitionTable PARTITION (email='abc') rename to PARTITION (email='def)")
+    }
+  }
+
+  test("add partition based on location on partition table should fail"){
+    sql("drop table if exists partitionTable")
+    sql(
+      """create table partitionTable (id int,name String) partitioned by(email string) stored by 'carbondata'
+      """.stripMargin)
+    sql("insert into partitionTable select 1,'huawei','abc'")
+    checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc")))
+    intercept[Exception]{
+      sql("alter table partitionTable add partition (email='def') location 'abc/part1'")
+    }
+  }
+
+  test("drop partition on preAggregate table should fail"){
+    sql("drop table if exists partitionTable")
+    sql("drop datamap if exists preaggTable on table partitionTable")
+    sql("create table partitionTable (id int,city string,age int) partitioned by(name string) stored by 'carbondata'".stripMargin)
+    sql(
+      s"""create datamap preaggTable on table partitionTable using 'preaggregate' as select id,sum(age) from partitionTable group by id"""
+        .stripMargin)
+    sql("insert into partitionTable select 1,'Bangalore',30,'John'")
+    sql("insert into partitionTable select 2,'Chennai',20,'Huawei'")
+    checkAnswer(sql("show partitions partitionTable"), Seq(Row("name=John"),Row("name=Huawei")))
+    intercept[Exception]{
+      sql("alter table partitionTable drop PARTITION(name='John')")
+    }
   }
 
 
@@ -269,6 +317,8 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists badrecordsignore")
     sql("drop table if exists badrecordsPartitionintnull")
     sql("drop table if exists badrecordsPartitionintnullalt")
+    sql("drop table if exists partitionTable")
+    sql("drop datamap if exists preaggTable on table partitionTable")
   }
 
 }

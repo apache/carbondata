@@ -26,6 +26,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
@@ -52,10 +53,19 @@ public class SessionParams implements Serializable {
 
   private Map<String, String> sProps;
   private Map<String, String> addedProps;
-
+  private Map<String, Object> extraInfo;
   public SessionParams() {
     sProps = new HashMap<>();
     addedProps = new HashMap<>();
+    extraInfo = new HashMap<>();
+  }
+
+  public void setExtraInfo(String key, Object value) {
+    this.extraInfo.put(key, value);
+  }
+
+  public Object getExtraInfo(String key) {
+    return this.extraInfo.get(key);
   }
 
   /**
@@ -95,6 +105,9 @@ public class SessionParams implements Serializable {
       throws InvalidConfigurationException {
     boolean isValidConf = validateKeyValue(key, value);
     if (isValidConf) {
+      if (key.equals(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)) {
+        value = value.toUpperCase();
+      }
       if (doAuditing) {
         LOGGER.audit("The key " + key + " with value " + value + " added in the session param");
       }
@@ -198,6 +211,9 @@ public class SessionParams implements Serializable {
     sProps.remove(property);
   }
 
+  public void removeExtraInfo(String key) {
+    extraInfo.remove(key);
+  }
   /**
    * clear the set properties
    */

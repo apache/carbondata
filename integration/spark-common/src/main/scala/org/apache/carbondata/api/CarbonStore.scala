@@ -98,34 +98,46 @@ object CarbonStore {
     }
   }
 
+  /**
+   * The method deletes all data if forceTableCLean <true> and lean garbage segment
+   * (MARKED_FOR_DELETE state) if forceTableCLean <false>
+   *
+   * @param dbName          : Database name
+   * @param tableName       : Table name
+   * @param tablePath       : Table path
+   * @param carbonTable     : CarbonTable Object <null> in case of force clean
+   * @param forceTableClean : <true> for force clean it will delete all data
+   *                        <false> it will clean garbage segment (MARKED_FOR_DELETE state)
+   * @param currentTablePartitions : Hive Partitions  details
+   */
   def cleanFiles(
       dbName: String,
       tableName: String,
-      storePath: String,
+      tablePath: String,
       carbonTable: CarbonTable,
       forceTableClean: Boolean,
       currentTablePartitions: Option[Seq[String]] = None): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     var carbonCleanFilesLock: ICarbonLock = null
-    var absoluteTableIdentifier: AbsoluteTableIdentifier = null
-    if (forceTableClean) {
-      absoluteTableIdentifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
+    val absoluteTableIdentifier = if (forceTableClean) {
+      AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
     } else {
-      absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
+      carbonTable.getAbsoluteTableIdentifier
     }
     try {
       val errorMsg = "Clean files request is failed for " +
                      s"$dbName.$tableName" +
                      ". Not able to acquire the clean files lock due to another clean files " +
                      "operation is running in the background."
-      carbonCleanFilesLock =
-        CarbonLockUtil.getLockObject(absoluteTableIdentifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
+      // in case of force clean the lock is not required
       if (forceTableClean) {
-        val absIdent = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
         FileFactory.deleteAllCarbonFilesOfDir(
-          FileFactory.getCarbonFile(absIdent.getTablePath,
-            FileFactory.getFileType(absIdent.getTablePath)))
+          FileFactory.getCarbonFile(absoluteTableIdentifier.getTablePath,
+            FileFactory.getFileType(absoluteTableIdentifier.getTablePath)))
       } else {
+        carbonCleanFilesLock =
+          CarbonLockUtil
+            .getLockObject(absoluteTableIdentifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
         DataLoadingUtil.deleteLoadsAndUpdateMetadata(
           isForceDeletion = true, carbonTable)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)

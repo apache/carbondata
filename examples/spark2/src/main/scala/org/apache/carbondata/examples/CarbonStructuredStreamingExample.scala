@@ -28,7 +28,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 
 // scalastyle:off println
-object StreamExample {
+object CarbonStructuredStreamingExample {
   def main(args: Array[String]) {
 
     // setup paths
@@ -46,7 +46,7 @@ object StreamExample {
     val spark = SparkSession
       .builder()
       .master("local")
-      .appName("StreamExample")
+      .appName("CarbonStructuredStreamingExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 

@@ -42,12 +42,15 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNodeWrapper;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -135,7 +138,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           tableBlockInfos = new ArrayList<>();
           listMap.put(blockInfo.getFilePath(), tableBlockInfos);
         }
-        tableBlockInfos.add(blockInfo);
+        BlockletDetailInfo blockletDetailInfo = blockInfo.getDetailInfo();
+        // This is the case of old stores where blocklet information is not available so read
+        // the blocklet information from block file
+        if (blockletDetailInfo.getBlockletInfo() == null) {
+          readAndFillBlockletInfo(blockInfo, tableBlockInfos, blockletDetailInfo);
+        } else {
+          tableBlockInfos.add(blockInfo);
+        }
       }
       for (List<TableBlockInfo> tableBlockInfos: listMap.values()) {
         indexList.add(new IndexWrapper(tableBlockInfos));
@@ -197,6 +207,30 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     queryModel.setColumnToDictionaryMapping(queryProperties.columnToDictionayMapping);
+  }
+
+  /**
+   * Read the file footer of block file and get the blocklets to query
+   */
+  private void readAndFillBlockletInfo(TableBlockInfo blockInfo,
+      List<TableBlockInfo> tableBlockInfos, BlockletDetailInfo blockletDetailInfo)
+      throws IOException {
+    blockInfo.setBlockOffset(blockletDetailInfo.getBlockFooterOffset());
+    blockInfo.setDetailInfo(null);
+    DataFileFooter fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+    blockInfo.setDetailInfo(blockletDetailInfo);
+    List<BlockletInfo> blockletList = fileFooter.getBlockletList();
+    short count = 0;
+    for (BlockletInfo blockletInfo: blockletList) {
+      TableBlockInfo info = blockInfo.copy();
+      BlockletDetailInfo detailInfo = info.getDetailInfo();
+      detailInfo.setRowCount(blockletInfo.getNumberOfRows());
+      detailInfo.setBlockletInfo(blockletInfo);
+      detailInfo.setPagesCount((short) blockletInfo.getNumberOfPages());
+      detailInfo.setBlockletId(count);
+      tableBlockInfos.add(info);
+      count++;
+    }
   }
 
   private List<TableBlockUniqueIdentifier> prepareTableBlockUniqueIdentifier(
@@ -281,6 +315,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // total number dimension
     blockExecutionInfo
         .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
+    blockExecutionInfo.setPrefetchBlocklet(!queryModel.isReadPageByPage());
     blockExecutionInfo
         .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
     blockExecutionInfo.setAbsoluteTableIdentifier(queryModel.getAbsoluteTableIdentifier());

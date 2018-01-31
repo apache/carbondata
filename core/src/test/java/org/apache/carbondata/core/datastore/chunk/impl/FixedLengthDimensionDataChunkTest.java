@@ -22,6 +22,8 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
+
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -54,7 +56,7 @@ public class FixedLengthDimensionDataChunkTest {
   @Test public void getChunkDataTest() {
     byte expected[] = { 121, 32, 115, 116 };
     byte res[] = fixedLengthDimensionDataChunk.getChunkData(0);
-    assert (Arrays.equals(res, expected));
+    Assert.assertTrue(Arrays.equals(res, expected));
   }
 
   @Test public void fillConvertedChunkDataTest() {

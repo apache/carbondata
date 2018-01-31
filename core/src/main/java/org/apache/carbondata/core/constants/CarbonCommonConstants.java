@@ -865,6 +865,24 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
 
   /**
+   * If we are executing insert into query from source table using select statement
+   * & loading the same source table concurrently, when select happens on source table
+   * during the data load , it gets new record for which dictionary is not generated,
+   * So there will be inconsistency. To avoid this condition we can persist the dataframe
+   * into MEMORY_AND_DISK and perform insert into operation. By default this value
+   * will be false because no need to persist the dataframe in all cases. If user want
+   * to run load and insert queries on source table concurrently then user can enable this flag
+   */
+  @CarbonProperty
+  public static final String CARBON_INSERT_PERSIST_ENABLED = "carbon.insert.persist.enable";
+
+  /**
+   * by default rdd will not be persisted in the insert case.
+
+   */
+  public static final String CARBON_INSERT_PERSIST_ENABLED_DEFAULT = "false";
+
+  /**
    * default name of data base
    */
   public static final String DATABASE_DEFAULT_NAME = "default";
@@ -1299,11 +1317,6 @@ public final class CarbonCommonConstants {
 
   @CarbonProperty
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
-  public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT = "false";
-
-  @CarbonProperty
-  public static final String CARBON_COMBINE_SMALL_INPUT_FILES = "carbon.mergeSmallFileRead.enable";
-  public static final String CARBON_COMBINE_SMALL_INPUT_FILES_DEFAULT = "false";
 
   public static final int DICTIONARY_DEFAULT_CARDINALITY = 1;
   @CarbonProperty
@@ -1404,9 +1417,38 @@ public final class CarbonCommonConstants {
 
   public static final String USE_DISTRIBUTED_DATAMAP_DEFAULT = "false";
 
-  public static final String CARBON_USE_BLOCKLET_DISTRIBUTION = "carbon.blocklet.distribution";
+  /**
+   * This property defines how the tasks are splitted/combined and launch spark tasks during query
+   */
+  @CarbonProperty
+  public static final String CARBON_TASK_DISTRIBUTION = "carbon.task.distribution";
 
-  public static final String CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT = "true";
+  /**
+   * It combines the available blocks as per the maximum available tasks in the cluster.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_CUSTOM = "custom";
+
+  /**
+   * It creates the splits as per the number of blocks/carbondata files available for query.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_BLOCK = "block";
+
+  /**
+   * It creates the splits as per the number of blocklets available for query.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_BLOCKLET = "blocklet";
+
+  /**
+   * It merges all the small files and create tasks as per the configurable partition size.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_MERGE_FILES = "merge_small_files";
+
+  /**
+   * Default task distribution.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_DEFAULT = CARBON_TASK_DISTRIBUTION_BLOCK;
+
+
   /**
    * The property to configure the mdt file folder path, earlier it was pointing to the
    * fixed carbon store path. This is needed in case of the federation setup when user removes
@@ -1501,10 +1543,6 @@ public final class CarbonCommonConstants {
    */
   public static final long HANDOFF_SIZE_DEFAULT = 1024L * 1024 * 1024;
 
-  public static final String TIMESERIES_EVENTTIME = "timeseries.eventtime";
-
-  public static final String TIMESERIES_HIERARCHY = "timeseries.hierarchy";
-
   /**
    * It allows queries on hive metastore directly along with filter information, otherwise first
    * fetches all partitions from hive and apply filters on it.
@@ -1513,6 +1551,21 @@ public final class CarbonCommonConstants {
   public static final String CARBON_READ_PARTITION_HIVE_DIRECT =
       "carbon.read.partition.hive.direct";
   public static final String CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT = "true";
+
+  // As Short data type is used for storing the length of a column during data processing hence
+  // the maximum characters that can be supported should be less than Short max value
+  public static final int MAX_CHARS_PER_COLUMN_DEFAULT = 32000;
+
+  /**
+   * Enabling page level reader for compaction reduces the memory usage while compacting more
+   * number of segments. It allows reading only page by page instead of reaing whole blocklet to
+   * memory.
+   */
+  @CarbonProperty
+  public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION =
+      "carbon.enable.page.level.reader.in.compaction";
+
+  public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT = "true";
 
   private CarbonCommonConstants() {
   }

@@ -21,9 +21,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 
 import org.apache.hadoop.io.Writable;
@@ -55,15 +56,15 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
     length = 0;
   }
 
-  public CarbonMultiBlockSplit(AbsoluteTableIdentifier identifier, List<CarbonInputSplit> splitList,
-      String[] locations) throws IOException {
+  public CarbonMultiBlockSplit(List<CarbonInputSplit> splitList,
+      String[] locations) {
     this.splitList = splitList;
     this.locations = locations;
     calculateLength();
   }
 
-  public CarbonMultiBlockSplit(AbsoluteTableIdentifier identifier, List<CarbonInputSplit> splitList,
-      String[] locations, FileFormat fileFormat) throws IOException {
+  public CarbonMultiBlockSplit(List<CarbonInputSplit> splitList,
+      String[] locations, FileFormat fileFormat) {
     this.splitList = splitList;
     this.locations = locations;
     this.fileFormat = fileFormat;
@@ -79,7 +80,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
   }
 
   @Override
-  public long getLength() throws IOException, InterruptedException {
+  public long getLength() {
     return length;
   }
 
@@ -89,14 +90,24 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
 
   private void calculateLength() {
     long total = 0;
-    for (CarbonInputSplit split : splitList) {
-      total += split.getLength();
+    if (splitList.size() > 0 && splitList.get(0).getDetailInfo() != null) {
+      Map<String, Long> blockSizes = new HashMap<>();
+      for (CarbonInputSplit split : splitList) {
+        blockSizes.put(split.getBlockPath(), split.getDetailInfo().getBlockSize());
+      }
+      for (Map.Entry<String, Long> entry : blockSizes.entrySet()) {
+        total += entry.getValue();
+      }
+    } else {
+      for (CarbonInputSplit split : splitList) {
+        total += split.getLength();
+      }
     }
     length = total;
   }
 
   @Override
-  public String[] getLocations() throws IOException, InterruptedException {
+  public String[] getLocations() {
     return locations;
   }
 

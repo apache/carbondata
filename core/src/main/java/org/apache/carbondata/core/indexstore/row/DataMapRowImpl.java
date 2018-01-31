@@ -26,6 +26,8 @@ public class DataMapRowImpl extends DataMapRow {
 
   private Object[] data;
 
+  private int totalLengthInBytes;
+
   public DataMapRowImpl(CarbonRowSchema[] schemas) {
     super(schemas);
     this.data = new Object[schemas.length];
@@ -107,4 +109,15 @@ public class DataMapRowImpl extends DataMapRow {
     return (Double) data[ordinal];
   }
 
+  public void setTotalLengthInBytes(int totalLengthInBytes) {
+    this.totalLengthInBytes = totalLengthInBytes;
+  }
+
+  @Override public int getTotalSizeInBytes() {
+    if (totalLengthInBytes > 0) {
+      return totalLengthInBytes;
+    } else {
+      return super.getTotalSizeInBytes();
+    }
+  }
 }

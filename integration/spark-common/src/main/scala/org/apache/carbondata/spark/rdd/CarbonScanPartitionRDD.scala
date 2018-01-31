@@ -45,6 +45,7 @@ import org.apache.carbondata.core.scan.result.iterator.PartitionSpliterRawResult
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.merger.CarbonCompactionUtil
 import org.apache.carbondata.processing.partition.spliter.CarbonSplitExecutor
@@ -95,6 +96,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
     val job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonTableInputFormat(absoluteTableIdentifier,
       partitionIds.toList.asJava, job)
+    CarbonTableInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     job.getConfiguration.set("query.id", queryId)
 
     val splits = format.getSplitsOfOneSegment(job, segmentId,
@@ -113,7 +115,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
           val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
           if (blocksPerTask.size() != 0) {
             val multiBlockSplit =
-              new CarbonMultiBlockSplit(absoluteTableIdentifier, splits.asJava, Array(node))
+              new CarbonMultiBlockSplit(splits.asJava, Array(node))
             val partition = new CarbonSparkPartition(id, partition_num, multiBlockSplit)
             result.add(partition)
             partition_num += 1
@@ -152,7 +154,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
             }
         }
         val segmentProperties = PartitionUtils.getSegmentProperties(absoluteTableIdentifier,
-          segmentId, partitionIds.toList, oldPartitionIdList, partitionInfo)
+          segmentId, partitionIds.toList, oldPartitionIdList, partitionInfo, carbonTable)
         val partColIdx = getPartitionColumnIndex(partitionColumnName, segmentProperties)
         indexInitialise()
         for (iterator <- result.asScala) {

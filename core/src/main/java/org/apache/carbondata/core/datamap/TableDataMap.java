@@ -36,7 +36,7 @@ import org.apache.carbondata.events.OperationEventListener;
  * DataMap at the table level, user can add any number of datamaps for one table. Depends
  * on the filter condition it can prune the blocklets.
  */
-public final class TableDataMap implements OperationEventListener {
+public final class TableDataMap extends OperationEventListener {
 
   private AbsoluteTableIdentifier identifier;
 
@@ -163,7 +163,7 @@ public final class TableDataMap implements OperationEventListener {
     return dataMapFactory;
   }
 
-  @Override public void onEvent(Event event, OperationContext opContext) {
+  @Override public void onEvent(Event event, OperationContext opContext) throws Exception {
     dataMapFactory.fireEvent(event);
   }
 

@@ -21,15 +21,81 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TestTimeseriesTableSelection extends QueryTest with BeforeAndAfterAll {
 
+  val timeSeries = TIMESERIES.toString
+
   override def beforeAll: Unit = {
+    SparkUtil4Test.createTaskMockUp(sqlContext)
     sql("drop table if exists mainTable")
     sql("CREATE TABLE mainTable(mytime timestamp, name string, age int) STORED BY 'org.apache.carbondata.format'")
-    sql("create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='mytime', 'timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1') as select mytime, sum(age) from mainTable group by mytime")
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_second ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='mytime',
+         | 'SECOND_GRANULARITY'='1')
+         | AS SELECT mytime, SUM(age) FROM mainTable
+         | GROUP BY mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_minute ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='mytime',
+         | 'minute_granularity'='1')
+         | AS SELECT mytime, SUM(age) FROM mainTable
+         | GROUP BY mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_hour ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='mytime',
+         | 'HOUR_GRANULARITY'='1')
+         | AS SELECT mytime, SUM(age) FROM mainTable
+         | GROUP BY mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_day ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='mytime',
+         | 'DAY_GRANULARITY'='1')
+         | AS SELECT mytime, SUM(age) FROM mainTable
+         | GROUP BY mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_month ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='mytime',
+         | 'MONTH_GRANULARITY'='1')
+         | AS SELECT mytime, SUM(age) FROM mainTable
+         | GROUP BY mytime
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_year ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='mytime',
+         | 'YEAR_GRANULARITY'='1')
+         | AS SELECT mytime, SUM(age) FROM mainTable
+         | GROUP BY mytime
+       """.stripMargin)
+
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
   }
 
@@ -96,6 +162,54 @@ class TestTimeseriesTableSelection extends QueryTest with BeforeAndAfterAll {
   test("test PreAggregate table selection 13") {
     val df = sql("select timeseries(mytime,'hour')as hourlevel,sum(age) as sum from mainTable where timeseries(mytime,'hour')='x' and name='vishal' group by timeseries(mytime,'hour') order by timeseries(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable")
+  }
+
+  test("test timeseries table selection 14: Granularity only support 1 and throw Exception") {
+    val e = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg3_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime',
+           | 'HOUR_GRANULARITY'='2')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.contains("Granularity only support 1"))
+  }
+
+  test("test timeseries table selection 15: Granularity only support 1 and throw Exception") {
+    val e = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg3_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime',
+           | 'HOUR_GRANULARITY'='1.5')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.contains("Granularity only support 1"))
+  }
+
+  test("test timeseries table selection 16: Granularity only support 1 and throw Exception") {
+    val e = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg3_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           | 'EVENT_TIME'='dataTime',
+           | 'HOUR_GRANULARITY'='-1')
+           | AS SELECT dataTime, SUM(age) FROM mainTable
+           | GROUP BY dataTime
+       """.stripMargin)
+    }
+    assert(e.getMessage.contains("Granularity only support 1"))
   }
 
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit ={

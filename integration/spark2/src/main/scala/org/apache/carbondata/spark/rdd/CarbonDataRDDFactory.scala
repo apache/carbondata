@@ -173,7 +173,8 @@ object CarbonDataRDDFactory {
           compactionModel,
           executor,
           sqlContext,
-          storeLocation)
+          storeLocation,
+          operationContext)
         try {
           // compaction status of the table which is triggered by the user.
           var triggeredCompactionStatus = false
@@ -225,7 +226,8 @@ object CarbonDataRDDFactory {
                   newcompactionModel,
                   executor,
                   sqlContext,
-                  storeLocation).executeCompaction()
+                  storeLocation,
+                  operationContext).executeCompaction()
               } catch {
                 case e: Exception =>
                   LOGGER.error("Exception in compaction thread for table " +
@@ -595,6 +597,8 @@ object CarbonDataRDDFactory {
 
       val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
         carbonTable.getMetaDataFilepath)
+        .filter(lmd => lmd.getSegmentStatus.equals(SegmentStatus.LOAD_PARTIAL_SUCCESS) ||
+                       lmd.getSegmentStatus.equals(SegmentStatus.SUCCESS))
       val segmentIds = loadMetadataDetails.map(_.getLoadName)
       val segmentIdIndex = segmentIds.zipWithIndex.toMap
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonLoadModel.getTablePath,
@@ -1026,9 +1030,10 @@ object CarbonDataRDDFactory {
              org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
 
     CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConf)
-
+    val jobConf = new JobConf(hadoopConf)
+    SparkHadoopUtil.get.addCredentials(jobConf)
     val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-    val jobContext = new Job(hadoopConf)
+    val jobContext = new Job(jobConf)
     val rawSplits = inputFormat.getSplits(jobContext).toArray
     val blockList = rawSplits.map { inputSplit =>
       val fileSplit = inputSplit.asInstanceOf[FileSplit]

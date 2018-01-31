@@ -14,29 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop;
-
-import org.apache.carbondata.core.util.path.CarbonTablePath;
-
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
+package org.apache.carbondata.core.indexstore;
 
 /**
- * Filters to accept valid carbon data Files only
+ * Holds the metadata info of the block.
  */
-public class CarbonPathFilter implements PathFilter {
-
-  // update extension which should be picked
-  private final String validUpdateTimestamp;
+public class BlockMetaInfo {
 
   /**
-   * @param validUpdateTimestamp update extension which should be picked
+   * HDFS locations of a block
    */
-  public CarbonPathFilter(String validUpdateTimestamp) {
-    this.validUpdateTimestamp = validUpdateTimestamp;
+  private String[] locationInfo;
+
+  /**
+   * Size of block
+   */
+  private long size;
+
+  public BlockMetaInfo(String[] locationInfo, long size) {
+    this.locationInfo = locationInfo;
+    this.size = size;
   }
 
-  @Override public boolean accept(Path path) {
-    return CarbonTablePath.isCarbonDataFile(path.getName());
+  public String[] getLocationInfo() {
+    return locationInfo;
+  }
+
+  public long getSize() {
+    return size;
   }
 }
+

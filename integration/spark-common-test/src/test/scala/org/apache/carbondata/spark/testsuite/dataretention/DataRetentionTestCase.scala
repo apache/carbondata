@@ -173,15 +173,11 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("RetentionTest4_DeleteByInvalidLoadId") {
-    try {
+    val e = intercept[MalformedCarbonCommandException] {
       // delete segment with no id
       sql("delete from table DataRetentionTable where segment.id in ()")
-      assert(false)
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.contains("should not be empty"))
-      case _: Throwable => assert(false)
     }
+    assert(e.getMessage.contains("should not be empty"))
   }
 
   test("test delete segments by load date with case-insensitive table name") {
@@ -211,27 +207,19 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest_DeleteSegmentsByLoadTimeValiadtion") {
 
-    try {
+    val e = intercept[MalformedCarbonCommandException] {
       sql(
         "delete from table DataRetentionTable where segment.starttime before" +
-        " 'abcd-01-01 00:00:00'")
-      assert(false)
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.contains("Invalid load start time format"))
-      case _: Throwable => assert(false)
+          " 'abcd-01-01 00:00:00'")
     }
+    assert(e.getMessage.contains("Invalid load start time format"))
 
-    try {
+    val ex = intercept[MalformedCarbonCommandException] {
       sql(
         "delete from table DataRetentionTable where segment.starttime before" +
-        " '2099:01:01 00:00:00'")
-      assert(false)
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.contains("Invalid load start time format"))
-      case _: Throwable => assert(false)
+          " '2099:01:01 00:00:00'")
     }
+    assert(ex.getMessage.contains("Invalid load start time format"))
 
     checkAnswer(
       sql("SELECT country, count(salary) AS amount FROM DataRetentionTable WHERE country" +
@@ -249,31 +237,16 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest_InvalidDeleteCommands") {
     // All these queries should fail.
-    try {
+    intercept[Exception] {
       sql("DELETE LOADS FROM TABLE DataRetentionTable where STARTTIME before '2099-01-01'")
-      throw new MalformedCarbonCommandException("Invalid query")
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _: Throwable => assert(true)
     }
 
-    try {
+    intercept[Exception] {
       sql("DELETE LOAD 2 FROM TABLE DataRetentionTable")
-      throw new MalformedCarbonCommandException("Invalid query")
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _: Throwable => assert(true)
     }
 
-    try {
+    intercept[Exception] {
       sql("show loads for table DataRetentionTable")
-      throw new MalformedCarbonCommandException("Invalid query")
-    } catch {
-      case e: MalformedCarbonCommandException =>
-        assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _: Throwable => assert(true)
     }
 
   }
@@ -288,37 +261,19 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     carbonCleanFilesLock.lockWithRetries()
 
     // delete segment 0 it should fail
-    try {
+    intercept[Exception] {
       sql("delete from table retentionlock where segment.id in (0)")
-      throw new MalformedCarbonCommandException("Invalid")
-    } catch {
-      case me: MalformedCarbonCommandException =>
-        assert(false)
-      case ex: Exception =>
-        assert(true)
     }
 
     // it should fail
-    try {
+    intercept[Exception] {
       sql("delete from table retentionlock where segment.starttime before " +
-          "'2099-01-01 00:00:00.0'")
-      throw new MalformedCarbonCommandException("Invalid")
-    } catch {
-      case me: MalformedCarbonCommandException =>
-        assert(false)
-      case ex: Exception =>
-        assert(true)
+        "'2099-01-01 00:00:00.0'")
     }
 
     // it should fail
-    try {
+    intercept[Exception] {
       sql("clean files for table retentionlock")
-      throw new MalformedCarbonCommandException("Invalid")
-    } catch {
-      case me: MalformedCarbonCommandException =>
-        assert(false)
-      case ex: Exception =>
-        assert(true)
     }
 
     sql("SHOW SEGMENTS FOR TABLE retentionlock").show

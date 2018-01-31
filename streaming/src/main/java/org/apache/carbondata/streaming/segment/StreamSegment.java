@@ -244,10 +244,11 @@ public class StreamSegment {
         writer.write(null, inputIterators.next());
       }
       inputIterators.close();
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
       if (writer != null) {
         LOGGER.error(ex, "Failed to append batch data to stream segment: " +
             writer.getSegmentDir());
+        writer.setHasException(true);
       }
       throw ex;
     } finally {
@@ -360,7 +361,7 @@ public class StreamSegment {
   }
 
   /**
-   * update carbonindex file after after a stream batch.
+   * update carbonindex file after a stream batch.
    */
   public static void updateIndexFile(String segmentDir) throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);

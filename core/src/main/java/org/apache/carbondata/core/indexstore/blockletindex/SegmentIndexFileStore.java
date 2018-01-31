@@ -21,11 +21,22 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.reader.ThriftReader;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.MergedBlockIndex;
 import org.apache.carbondata.format.MergedBlockIndexHeader;
 
@@ -37,6 +48,11 @@ import org.apache.thrift.TBase;
  */
 public class SegmentIndexFileStore {
 
+  /**
+   * Logger constant
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(SegmentIndexFileStore.class.getName());
   /**
    * Stores the indexfile name and related binary file data in it.
    */
@@ -54,6 +70,40 @@ public class SegmentIndexFileStore {
    */
   public void readAllIIndexOfSegment(String segmentPath) throws IOException {
     CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath);
+    for (int i = 0; i < carbonIndexFiles.length; i++) {
+      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        readMergeFile(carbonIndexFiles[i].getCanonicalPath());
+      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        readIndexFile(carbonIndexFiles[i]);
+      }
+    }
+  }
+
+  /**
+   * read index file and fill the blocklet information
+   *
+   * @param segmentPath
+   * @throws IOException
+   */
+  public void readAllIndexAndFillBolckletInfo(String segmentPath) throws IOException {
+    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath);
+    for (int i = 0; i < carbonIndexFiles.length; i++) {
+      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        readMergeFile(carbonIndexFiles[i].getCanonicalPath());
+      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        readIndexAndFillBlockletInfo(carbonIndexFiles[i]);
+      }
+    }
+  }
+
+  /**
+   * Read all index files and keep the cache in it.
+   *
+   * @param carbonFiles
+   * @throws IOException
+   */
+  public void readAllIIndexOfSegment(CarbonFile[] carbonFiles) throws IOException {
+    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(carbonFiles);
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         readMergeFile(carbonIndexFiles[i].getCanonicalPath());
@@ -178,11 +228,123 @@ public class SegmentIndexFileStore {
   }
 
   /**
+   * List all the index files of the segment.
+   *
+   * @param carbonFiles
+   * @return
+   */
+  public static CarbonFile[] getCarbonIndexFiles(CarbonFile[] carbonFiles) {
+    List<CarbonFile> indexFiles = new ArrayList<>();
+    for (CarbonFile file: carbonFiles) {
+      if (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
+          file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        indexFiles.add(file);
+      }
+    }
+    return indexFiles.toArray(new CarbonFile[indexFiles.size()]);
+  }
+
+  /**
    * Return the map that contain index file name and content of the file.
    *
    * @return
    */
   public Map<String, byte[]> getCarbonIndexMap() {
     return carbonIndexMap;
+  }
+
+  /**
+   * This method will read the index information from carbon index file
+   *
+   * @param indexFile
+   * @return
+   * @throws IOException
+   */
+  private void readIndexAndFillBlockletInfo(CarbonFile indexFile) throws IOException {
+    // flag to take decision whether carbondata file footer reading is required.
+    // If the index file does not contain the file footer then carbondata file footer
+    // read is required else not required
+    boolean isCarbonDataFileFooterReadRequired = true;
+    List<BlockletInfo> blockletInfoList = null;
+    List<BlockIndex> blockIndexThrift =
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
+    try {
+      indexReader.openThriftReader(indexFile.getCanonicalPath());
+      // get the index header
+      org.apache.carbondata.format.IndexHeader indexHeader = indexReader.readIndexHeader();
+      DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+      String filePath = indexFile.getCanonicalPath();
+      String parentPath =
+          filePath.substring(0, filePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+      while (indexReader.hasNext()) {
+        BlockIndex blockIndex = indexReader.readBlockIndexInfo();
+        if (blockIndex.isSetBlocklet_info()) {
+          // this case will come in case segment index compaction property is set to false from the
+          // application and alter table segment index compaction is run manually. In that case
+          // blocklet info will be present in the index but read carbon data file footer property
+          // will be true
+          isCarbonDataFileFooterReadRequired = false;
+          break;
+        } else {
+          TableBlockInfo blockInfo =
+              fileFooterConverter.getTableBlockInfo(blockIndex, indexHeader, parentPath);
+          blockletInfoList = getBlockletInfoFromIndexInfo(blockInfo);
+        }
+        // old store which does not have the blocklet info will have 1 count per part file but in
+        // the current code, the number of entries in the index file is equal to the total number
+        // of blocklets in all part files for 1 task. So to make it compatible with new structure,
+        // the same entry with different blocklet info need to be repeated
+        for (int i = 0; i < blockletInfoList.size(); i++) {
+          BlockIndex blockIndexReplica = blockIndex.deepCopy();
+          BlockletInfo blockletInfo = blockletInfoList.get(i);
+          blockIndexReplica
+              .setBlock_index(CarbonMetadataUtil.getBlockletIndex(blockletInfo.getBlockletIndex()));
+          blockIndexReplica
+              .setBlocklet_info(CarbonMetadataUtil.getBlocletInfo3(blockletInfo));
+          blockIndexThrift.add(blockIndexReplica);
+        }
+      }
+      // read complete file at once
+      if (!isCarbonDataFileFooterReadRequired) {
+        readIndexFile(indexFile);
+      } else {
+        int totalSize = 0;
+        List<byte[]> blockIndexByteArrayList =
+            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        byte[] indexHeaderBytes = CarbonUtil.getByteArray(indexHeader);
+        totalSize += indexHeaderBytes.length;
+        blockIndexByteArrayList.add(indexHeaderBytes);
+        for (BlockIndex blockIndex : blockIndexThrift) {
+          byte[] indexInfoBytes = CarbonUtil.getByteArray(blockIndex);
+          totalSize += indexInfoBytes.length;
+          blockIndexByteArrayList.add(indexInfoBytes);
+        }
+        ByteBuffer byteBuffer = ByteBuffer.allocate(totalSize);
+        for (byte[] blockIndexBytes : blockIndexByteArrayList) {
+          byteBuffer.put(blockIndexBytes);
+        }
+        carbonIndexMap.put(indexFile.getName(), byteBuffer.array());
+      }
+    } finally {
+      indexReader.closeThriftReader();
+    }
+  }
+
+  /**
+   * This method will read the blocklet info from carbon data file and fill it to index info
+   *
+   * @param blockInfo
+   * @return
+   * @throws IOException
+   */
+  private List<BlockletInfo> getBlockletInfoFromIndexInfo(TableBlockInfo blockInfo)
+      throws IOException {
+    long startTime = System.currentTimeMillis();
+    DataFileFooter carbondataFileFooter = CarbonUtil.readMetadatFile(blockInfo);
+    LOGGER.info(
+        "Time taken to read carbondata file footer to get blocklet info " + blockInfo.getFilePath()
+            + " is " + (System.currentTimeMillis() - startTime));
+    return carbondataFileFooter.getBlockletList();
   }
 }

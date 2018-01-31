@@ -119,17 +119,13 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
-    try {
-      CarbonTableInputFormat
-          .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));
-      CarbonTableInputFormat
-          .setDatabaseName(conf, identifier.getCarbonTableIdentifier().getDatabaseName());
-      CarbonTableInputFormat
-          .setTableName(conf, identifier.getCarbonTableIdentifier().getTableName());
-    } catch (IOException e) {
-      throw new RuntimeException("Unable to create the CarbonTableInputFormat", e);
-    }
-    CarbonTableInputFormat.setFilterPredicates(conf, filterExpression);
+    CarbonTableInputFormat
+        .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));
+    CarbonTableInputFormat
+        .setDatabaseName(conf, identifier.getCarbonTableIdentifier().getDatabaseName());
+    CarbonTableInputFormat
+        .setTableName(conf, identifier.getCarbonTableIdentifier().getTableName());
+  CarbonTableInputFormat.setFilterPredicates(conf, filterExpression);
     CarbonTableInputFormat.setColumnProjection(conf, projection);
 
     return format;

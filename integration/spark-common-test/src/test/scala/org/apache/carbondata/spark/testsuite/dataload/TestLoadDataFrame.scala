@@ -251,6 +251,7 @@ test("test the boolean data type"){
       .contains("not found"))
   }
 
+
   test("test datasource table with specified quotechar") {
 
     df3.write
@@ -265,6 +266,24 @@ test("test the boolean data type"){
     checkAnswer(
       sql("select count(*) from carbon11"), Row(3)
     )
+  }
+
+
+  test("test streaming Table") {
+    dataFrame.write
+      .format("carbondata")
+      .option("tableName", "carbon11")
+      .option("tempCSV", "true")
+      .option("single_pass", "false")
+      .option("compress", "false")
+      .option("streaming", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("SELECT decimal FROM carbon11"),Seq(Row(BigDecimal.valueOf(10000.00)),Row(BigDecimal.valueOf(1234.44))))
+    val descResult =sql("desc formatted carbon11")
+    val isStreaming: String = descResult.collect().find(row=>row(0).asInstanceOf[String].trim.equalsIgnoreCase("streaming")).get.get(1).asInstanceOf[String]
+    assert(isStreaming.contains("true"))
   }
 
   private def getSortColumnValue(tableName: String): Array[String] = {

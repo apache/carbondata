@@ -94,9 +94,17 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk =
         CarbonUtil.readDataChunk3(buffer, 0, measureColumnChunkLength.get(columnIndex));
+
+    return getMeasureRawColumnChunk(fileReader, columnIndex, 0,  dataLength, buffer,
+        dataChunk);
+  }
+
+  protected MeasureRawColumnChunk getMeasureRawColumnChunk(FileHolder fileReader,
+      int columnIndex, long offset, int dataLength, ByteBuffer buffer,
+      DataChunk3 dataChunk) {
     // creating a raw chunks instance and filling all the details
     MeasureRawColumnChunk rawColumnChunk =
-        new MeasureRawColumnChunk(columnIndex, buffer, 0, dataLength, this);
+        new MeasureRawColumnChunk(columnIndex, buffer, offset, dataLength, this);
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
@@ -158,31 +166,10 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     for (int i = startColumnBlockletIndex; i <= endColumnBlockletIndex; i++) {
       int currentLength =
           (int) (measureColumnChunkOffsets.get(i + 1) - measureColumnChunkOffsets.get(i));
-      MeasureRawColumnChunk measureRawColumnChunk =
-          new MeasureRawColumnChunk(i, buffer, runningLength, currentLength, this);
       DataChunk3 dataChunk =
           CarbonUtil.readDataChunk3(buffer, runningLength, measureColumnChunkLength.get(i));
-
-      int numberOfPages = dataChunk.getPage_length().size();
-      byte[][] maxValueOfEachPage = new byte[numberOfPages][];
-      byte[][] minValueOfEachPage = new byte[numberOfPages][];
-      int[] eachPageLength = new int[numberOfPages];
-      for (int j = 0; j < minValueOfEachPage.length; j++) {
-        maxValueOfEachPage[j] =
-            dataChunk.getData_chunk_list().get(j).getMin_max().getMax_values().get(0).array();
-        minValueOfEachPage[j] =
-            dataChunk.getData_chunk_list().get(j).getMin_max().getMin_values().get(0).array();
-        eachPageLength[j] = dataChunk.getData_chunk_list().get(j).getNumberOfRowsInpage();
-      }
-      measureRawColumnChunk.setDataChunkV3(dataChunk);
-      ;
-      measureRawColumnChunk.setFileReader(fileReader);
-      measureRawColumnChunk.setPagesCount(dataChunk.getPage_length().size());
-      measureRawColumnChunk.setMaxValues(maxValueOfEachPage);
-      measureRawColumnChunk.setMinValues(minValueOfEachPage);
-      measureRawColumnChunk.setRowCount(eachPageLength);
-      measureRawColumnChunk.setOffsets(ArrayUtils
-          .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
+      MeasureRawColumnChunk measureRawColumnChunk =
+          getMeasureRawColumnChunk(fileReader, i, runningLength, currentLength, buffer, dataChunk);
       measureDataChunk[index] = measureRawColumnChunk;
       runningLength += currentLength;
       index++;
@@ -208,7 +195,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
-    int offset = rawColumnPage.getOffSet() +
+    int offset = (int) rawColumnPage.getOffSet() +
         measureColumnChunkLength.get(rawColumnPage.getColumnIndex()) +
         dataChunk3.getPage_offset().get(pageNumber);
     ColumnPage decodedPage = decodeMeasure(pageMetadata, rawColumnPage.getRawData(), offset);
@@ -219,7 +206,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
   /**
    * Decode measure column page with page header and raw data starting from offset
    */
-  private ColumnPage decodeMeasure(DataChunk2 pageMetadata, ByteBuffer pageData, int offset)
+  protected ColumnPage decodeMeasure(DataChunk2 pageMetadata, ByteBuffer pageData, int offset)
       throws MemoryException, IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();

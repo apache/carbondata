@@ -155,6 +155,55 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     checkAnswer(sql("select count(*) from weather6"), Seq(Row(2)))
   }
 
+  test("Test overwrite static partition with wrong int value") {
+    sql(
+      """
+        | CREATE TABLE weather7 (type String)
+        | PARTITIONED BY (year int, month int, day int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql("insert into weather7 partition(year=2014, month=05, day=25) select 'rainy'")
+    sql("insert into weather7 partition(year=2014, month=04, day=23) select 'cloudy'")
+    sql("insert overwrite table weather7 partition(year=2014, month=05, day=25) select 'sunny'")
+    checkExistence(sql("select * from weather7"), true, "sunny")
+    checkAnswer(sql("select count(*) from weather7"), Seq(Row(2)))
+    sql("insert into weather7 partition(year=2014, month, day) select 'rainy1',06,25")
+    sql("insert into weather7 partition(year=2014, month=01, day) select 'rainy2',27")
+    sql("insert into weather7 partition(year=2014, month=01, day=02) select 'rainy3'")
+    checkAnswer(sql("select count(*) from weather7 where month=1"), Seq(Row(2)))
+  }
+
+  test("test insert overwrite on dynamic partition") {
+    sql("CREATE TABLE uniqdata_hive_dynamic (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double, INTEGER_COLUMN1 int)ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
+    sql("CREATE TABLE uniqdata_string_dynamic(CUST_ID int,CUST_NAME String,DOB timestamp,DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10),DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY(ACTIVE_EMUI_VERSION string) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/partData.csv' into table uniqdata_string_dynamic partition(active_emui_version='abc') OPTIONS('FILEHEADER'='CUST_ID,CUST_NAME ,ACTIVE_EMUI_VERSION,DOB,DOJ, BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1, Double_COLUMN2,INTEGER_COLUMN1','BAD_RECORDS_ACTION'='FORCE')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/partData.csv' into table uniqdata_string_dynamic partition(active_emui_version='abc') OPTIONS('FILEHEADER'='CUST_ID,CUST_NAME ,ACTIVE_EMUI_VERSION,DOB,DOJ, BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1, Double_COLUMN2,INTEGER_COLUMN1','BAD_RECORDS_ACTION'='FORCE')")
+    sql("insert overwrite table uniqdata_string_dynamic partition(active_emui_version='xxx') select CUST_ID, CUST_NAME,DOB,doj, bigint_column1, bigint_column2, decimal_column1, decimal_column2,double_column1, double_column2,integer_column1 from uniqdata_hive_dynamic limit 10")
+    assert(sql("select * from uniqdata_string_dynamic").collect().length == 2)
+    sql("insert overwrite table uniqdata_string_dynamic select CUST_ID, CUST_NAME,DOB,doj, bigint_column1, bigint_column2, decimal_column1, decimal_column2,double_column1, double_column2,integer_column1,ACTIVE_EMUI_VERSION from uniqdata_hive_dynamic limit 10")
+    checkAnswer(sql("select * from uniqdata_string_dynamic"), sql("select * from uniqdata_hive_dynamic"))
+  }
+
+  test("test insert overwrite on static partition") {
+    sql("CREATE TABLE uniqdata_hive_static (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double, INTEGER_COLUMN1 int)ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
+    sql("CREATE TABLE uniqdata_string_static(CUST_ID int,CUST_NAME String,DOB timestamp,DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10),DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY(ACTIVE_EMUI_VERSION string) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/partData.csv' into table uniqdata_string_static OPTIONS('FILEHEADER'='CUST_ID,CUST_NAME ,ACTIVE_EMUI_VERSION,DOB,DOJ, BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1, Double_COLUMN2,INTEGER_COLUMN1','BAD_RECORDS_ACTION'='FORCE')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/partData.csv' into table uniqdata_string_static OPTIONS('FILEHEADER'='CUST_ID,CUST_NAME ,ACTIVE_EMUI_VERSION,DOB,DOJ, BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1, Double_COLUMN2,INTEGER_COLUMN1','BAD_RECORDS_ACTION'='FORCE')")
+    sql("insert overwrite table uniqdata_string_static partition(active_emui_version='xxx') select CUST_ID, CUST_NAME,DOB,doj, bigint_column1, bigint_column2, decimal_column1, decimal_column2,double_column1, double_column2,integer_column1 from uniqdata_hive_static limit 10")
+    assert(sql("select * from uniqdata_string_static").collect().length == 2)
+    sql("insert overwrite table uniqdata_string_static select CUST_ID, CUST_NAME,DOB,doj, bigint_column1, bigint_column2, decimal_column1, decimal_column2,double_column1, double_column2,integer_column1,active_emui_version from uniqdata_hive_static limit 10")
+    checkAnswer(sql("select * from uniqdata_string_static"), sql("select * from uniqdata_hive_static"))
+  }
+
+  test("overwrite whole partition table with empty data") {
+    sql("create table partitionLoadTable(name string, age int) PARTITIONED BY(address string) stored by 'carbondata'")
+    sql("insert into partitionLoadTable select 'abc',4,'def'")
+    sql("insert into partitionLoadTable select 'abd',5,'xyz'")
+    sql("create table noLoadTable (name string, age int, address string) stored by 'carbondata'")
+    sql("insert overwrite table partitionLoadTable select * from noLoadTable")
+    checkAnswer(sql("select * from partitionLoadTable"), sql("select * from noLoadTable"))
+  }
 
   override def afterAll = {
     dropTable
@@ -168,6 +217,13 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     sql("drop table if exists insertstaticpartitiondynamic")
     sql("drop table if exists partitionallcompaction")
     sql("drop table if exists weather6")
+    sql("drop table if exists weather7")
+    sql("drop table if exists uniqdata_hive_static")
+    sql("drop table if exists uniqdata_hive_dynamic")
+    sql("drop table if exists uniqdata_string_static")
+    sql("drop table if exists uniqdata_string_dynamic")
+    sql("drop table if exists partitionLoadTable")
+    sql("drop table if exists noLoadTable")
   }
 
 }

@@ -16,18 +16,15 @@
  */
 package org.apache.spark.sql.execution.command.datamap
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.preaaggregate.{CreatePreAggregateTableCommand, PreAggregateUtil}
+import org.apache.spark.sql.execution.command.preaaggregate.CreatePreAggregateTableCommand
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider._
+import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 
 /**
  * Below command class will be used to create datamap on table
@@ -41,117 +38,63 @@ case class CarbonCreateDataMapCommand(
     queryString: Option[String])
   extends AtomicRunnableCommand {
 
+  var createPreAggregateTableCommands: CreatePreAggregateTableCommand = _
+
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     // since streaming segment does not support building index and pre-aggregate yet,
     // so streaming table does not support create datamap
     val carbonTable =
-      CarbonEnv.getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
+    CarbonEnv.getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
     if (carbonTable.isStreamingTable) {
       throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
     }
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    if (dmClassName.equals("org.apache.carbondata.datamap.AggregateDataMapHandler") ||
-        dmClassName.equalsIgnoreCase("preaggregate")) {
-      val timeHierarchyString = dmproperties.get(CarbonCommonConstants.TIMESERIES_HIERARCHY)
-      if (timeHierarchyString.isDefined) {
+
+    if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
+      dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+      TimeSeriesUtil.validateTimeSeriesGranularity(dmproperties, dmClassName)
+      createPreAggregateTableCommands = if (dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
         val details = TimeSeriesUtil
-          .validateAndGetTimeSeriesHierarchyDetails(
-            timeHierarchyString.get)
-        val updatedDmProperties = dmproperties - CarbonCommonConstants.TIMESERIES_HIERARCHY
-        details.foreach { f =>
-          CreatePreAggregateTableCommand(dataMapName + '_' + f._1,
-            tableIdentifier,
-            dmClassName,
-            updatedDmProperties,
-            queryString.get,
-            Some(f._1)).processMetadata(sparkSession)
-        }
-      }
-      else {
+          .getTimeSeriesGranularityDetails(dmproperties, dmClassName)
+        val updatedDmProperties = dmproperties - details._1
+        CreatePreAggregateTableCommand(dataMapName,
+          tableIdentifier,
+          dmClassName,
+          updatedDmProperties,
+          queryString.get,
+          Some(details._1))
+      } else {
         CreatePreAggregateTableCommand(
           dataMapName,
           tableIdentifier,
           dmClassName,
           dmproperties,
           queryString.get
-        ).processMetadata(sparkSession)
+        )
       }
+      createPreAggregateTableCommands.processMetadata(sparkSession)
     } else {
-      val dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
-      dataMapSchema.setProperties(new java.util.HashMap[String, String](dmproperties.asJava))
-      val dbName = CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession)
-      // upadting the parent table about dataschema
-      PreAggregateUtil.updateMainTable(dbName, tableIdentifier.table, dataMapSchema, sparkSession)
+      throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
     }
-    LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${ tableIdentifier.table }")
+    LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${tableIdentifier.table}")
     Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    if (dmClassName.equals("org.apache.carbondata.datamap.AggregateDataMapHandler") ||
-        dmClassName.equalsIgnoreCase("preaggregate")) {
-      val timeHierarchyString = dmproperties.get(CarbonCommonConstants.TIMESERIES_HIERARCHY)
-      if (timeHierarchyString.isDefined) {
-        val details = TimeSeriesUtil
-          .validateAndGetTimeSeriesHierarchyDetails(
-            timeHierarchyString.get)
-        val updatedDmProperties = dmproperties - CarbonCommonConstants.TIMESERIES_HIERARCHY
-        details.foreach { f =>
-          CreatePreAggregateTableCommand(dataMapName + '_' + f._1,
-            tableIdentifier,
-            dmClassName,
-            updatedDmProperties,
-            queryString.get,
-            Some(f._1)).processData(sparkSession)
-        }
-        Seq.empty
-      }
-      else {
-        CreatePreAggregateTableCommand(
-          dataMapName,
-          tableIdentifier,
-          dmClassName,
-          dmproperties,
-          queryString.get
-        ).processData(sparkSession)
-        Seq.empty
-      }
+    if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
+      dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+      createPreAggregateTableCommands.processData(sparkSession)
     } else {
-      Seq.empty
+      throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
     }
   }
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
-    if (dmClassName.equals("org.apache.carbondata.datamap.AggregateDataMapHandler") ||
-        dmClassName.equalsIgnoreCase("preaggregate")) {
-      val timeHierarchyString = dmproperties.get(CarbonCommonConstants.TIMESERIES_HIERARCHY)
-      if (timeHierarchyString.isDefined) {
-        val details = TimeSeriesUtil
-          .validateAndGetTimeSeriesHierarchyDetails(
-            timeHierarchyString.get)
-        val updatedDmProperties = dmproperties - CarbonCommonConstants.TIMESERIES_HIERARCHY
-        details.foreach { f =>
-          CreatePreAggregateTableCommand(dataMapName + '_' + f._1,
-            tableIdentifier,
-            dmClassName,
-            updatedDmProperties,
-            queryString.get,
-            Some(f._1)).undoMetadata(sparkSession, exception)
-        }
-        Seq.empty
-      }
-      else {
-        CreatePreAggregateTableCommand(
-          dataMapName,
-          tableIdentifier,
-          dmClassName,
-          dmproperties,
-          queryString.get
-        ).undoMetadata(sparkSession, exception)
-        Seq.empty
-      }
+    if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
+      dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+      createPreAggregateTableCommands.undoMetadata(sparkSession, exception)
     } else {
-      Seq.empty
+      throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
     }
   }
 }
