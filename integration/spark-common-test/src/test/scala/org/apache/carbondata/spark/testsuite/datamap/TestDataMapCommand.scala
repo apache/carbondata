@@ -244,7 +244,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   test("create pre-agg table with path") {
     sql("drop table if exists main_preagg")
     sql("drop table if exists main ")
-    val path = "./preAggTestPath"
+    val path = System.getProperty("java.io.tmpdir") + "/" + System.nanoTime + "_preAggTestPath"
     sql(
       s"""
          | create table main(
@@ -274,7 +274,6 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
           name.contains(CarbonCommonConstants.FACT_FILE_EXT)
         }
       }).length > 0)
-    sql("select name,avg(salary) from main group by name").show()
     checkAnswer(sql("select name,avg(salary) from main group by name"), Row("amy", 13.0))
     checkAnswer(sql("select * from main_preagg"), Row("amy", 26, 2))
     sql("drop datamap preagg on table main")
