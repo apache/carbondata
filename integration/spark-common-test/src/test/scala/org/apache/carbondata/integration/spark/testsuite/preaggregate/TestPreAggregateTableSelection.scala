@@ -29,6 +29,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     sql("drop table if exists mainTable")
+    sql("drop table if exists mainTableavg")
     sql("drop table if exists agg0")
     sql("drop table if exists agg1")
     sql("drop table if exists agg2")
@@ -47,7 +48,10 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     sql("create datamap agg6 on table mainTable using 'preaggregate' as select name,min(age) from mainTable group by name")
     sql("create datamap agg7 on table mainTable using 'preaggregate' as select name,max(age) from mainTable group by name")
     sql("create datamap agg8 on table maintable using 'preaggregate' as select name, sum(id), avg(id) from maintable group by name")
+    sql("CREATE TABLE mainTableavg(id int, name string, city string, age bigint) STORED BY 'org.apache.carbondata.format'")
+    sql("create datamap agg0 on table mainTableavg using 'preaggregate' as select name,sum(age), avg(age) from mainTableavg group by name")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table mainTable")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table mainTableavg")
   }
 
   test("test sum and avg on same column should give proper results") {
@@ -191,7 +195,6 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     preAggTableValidator(df.queryExecution.analyzed, "maintable")
   }
 
-
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit ={
     var isValidPlan = false
     plan.transform {
@@ -312,8 +315,14 @@ test("test PreAggregate table selection with timeseries and normal together") {
 
     sql("select var_samp(name) from maintabletime  where name='Mikka' ")
   }
+
+  test("test PreAggregate table selection For Sum And Avg in aggregate table with bigint") {
+    val df = sql("select avg(age) from mainTableavg")
+    preAggTableValidator(df.queryExecution.analyzed, "mainTableavg_agg0")
+  }
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
+    sql("drop table if exists mainTable_avg")
     sql("drop table if exists lineitem")
     sql("DROP TABLE IF EXISTS maintabletime")
   }
