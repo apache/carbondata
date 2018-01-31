@@ -72,11 +72,6 @@ case class CarbonCreateDataMapCommand(
       if (!ifNotExistsSet) {
         throw new TableAlreadyExistsException(dbName, tableName)
       }
-//      if (ifNotExistsSet) {
-//        tableIsExists =
-//      } else {
-//        throw new TableAlreadyExistsException(dbName, tableName)
-//      }
     } else if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
       dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
       TimeSeriesUtil.validateTimeSeriesGranularity(dmproperties, dmClassName)
