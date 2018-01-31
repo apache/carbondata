@@ -372,7 +372,7 @@ object DataLoadingUtil {
       isForceDeletion: Boolean,
       carbonTable: CarbonTable,
       specs: util.List[PartitionSpec]): Unit = {
-    if (isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
+    if (isLoadDeletionRequired(carbonTable.getMetadataPath)) {
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
       val (details, updationRequired) =
@@ -406,7 +406,7 @@ object DataLoadingUtil {
             }
             // read latest table status again.
             val latestMetadata = SegmentStatusManager
-              .readLoadMetadata(carbonTable.getMetaDataFilepath)
+              .readLoadMetadata(carbonTable.getMetadataPath)
 
             // update the metadata details from old to new status.
             val latestStatus = CarbonLoaderUtil
@@ -433,7 +433,7 @@ object DataLoadingUtil {
         if (updationCompletionStaus) {
           DeleteLoadFolders
             .physicalFactAndMeasureMetadataDeletion(absoluteTableIdentifier,
-              carbonTable.getMetaDataFilepath, isForceDeletion, specs)
+              carbonTable.getMetadataPath, isForceDeletion, specs)
         }
       }
     }
@@ -442,14 +442,14 @@ object DataLoadingUtil {
   private def isUpdationRequired(isForceDeletion: Boolean,
       carbonTable: CarbonTable,
       absoluteTableIdentifier: AbsoluteTableIdentifier) = {
-    val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
+    val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
     // Delete marked loads
     val isUpdationRequired =
       DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
         absoluteTableIdentifier,
         isForceDeletion,
         details,
-        carbonTable.getMetaDataFilepath
+        carbonTable.getMetadataPath
       )
     (details, isUpdationRequired)
   }

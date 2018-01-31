@@ -50,7 +50,7 @@ import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.comparator.Comparator
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -635,7 +635,7 @@ object CommonUtil {
 
 
   def readLoadMetadataDetails(model: CarbonLoadModel): Unit = {
-    val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
+    val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetadataPath
     val details = SegmentStatusManager.readLoadMetadata(metadataPath)
     model.setLoadMetadataDetails(new util.ArrayList[LoadMetadataDetails](details.toList.asJava))
   }
@@ -866,20 +866,18 @@ object CommonUtil {
       val fileType = FileFactory.getFileType(databaseLocation)
       if (FileFactory.isFileExist(databaseLocation, fileType)) {
         val file = FileFactory.getCarbonFile(databaseLocation, fileType)
-          if (file.isDirectory) {
-            val tableFolders = file.listFiles()
-            tableFolders.foreach { tableFolder =>
-              if (tableFolder.isDirectory) {
-                val tablePath = databaseLocation +
-                                CarbonCommonConstants.FILE_SEPARATOR + tableFolder.getName
-                val identifier =
-                  AbsoluteTableIdentifier.from(tablePath, dbName, tableFolder.getName)
-                val carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier)
-                val tableStatusFile = carbonTablePath.getTableStatusFilePath
-                if (FileFactory.isFileExist(tableStatusFile, fileType)) {
-                  val segmentStatusManager = new SegmentStatusManager(identifier)
-                  val carbonLock = segmentStatusManager.getTableStatusLock
-                  try {
+        if (file.isDirectory) {
+          val tableFolders = file.listFiles()
+          tableFolders.foreach { tableFolder =>
+            if (tableFolder.isDirectory) {
+              val tablePath = databaseLocation +
+                              CarbonCommonConstants.FILE_SEPARATOR + tableFolder.getName
+              val identifier =
+                AbsoluteTableIdentifier.from(tablePath, dbName, tableFolder.getName)
+              val tableStatusFile =
+                CarbonTablePath.getTableStatusFilePath(tablePath)
+              if (FileFactory.isFileExist(tableStatusFile, fileType)) {
+                try {
                   val carbonTable = CarbonMetadata.getInstance
                     .getCarbonTable(identifier.getCarbonTableIdentifier.getTableUniqueName)
                   DataLoadingUtil.deleteLoadsAndUpdateMetadata(

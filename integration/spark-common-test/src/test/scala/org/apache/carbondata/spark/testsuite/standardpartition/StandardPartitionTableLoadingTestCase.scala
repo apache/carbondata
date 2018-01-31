@@ -72,8 +72,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
 
   def validateDataFiles(tableUniqueName: String, segmentId: String, partition: Int): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
-    val tablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
-      carbonTable.getTablePath)
     val partitions = CarbonFilters
       .getPartitions(Seq.empty,
         sqlContext.sparkSession,
@@ -334,9 +332,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE mergeindexpartitionthree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_mergeindexpartitionthree")
-    val tablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
-        carbonTable.getTablePath)
-    val details = SegmentStatusManager.readTableStatusFile(tablePath.getTableStatusFilePath)
+    val details = SegmentStatusManager.readTableStatusFile(CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
     val store = new SegmentFileStore(carbonTable.getTablePath, details(0).getSegmentFile)
     store.readIndexFiles()
     store.getIndexFiles

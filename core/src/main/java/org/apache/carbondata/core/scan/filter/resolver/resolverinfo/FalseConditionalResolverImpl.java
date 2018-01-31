@@ -28,8 +28,8 @@ public class FalseConditionalResolverImpl extends ConditionalFilterResolverImpl 
   private static final long serialVersionUID = 4599541011924324041L;
 
   public FalseConditionalResolverImpl(Expression exp, boolean isExpressionResolve,
-      boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
-    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
+      boolean isIncludeFilter) {
+    super(exp, isExpressionResolve, isIncludeFilter, false);
   }
 
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier,

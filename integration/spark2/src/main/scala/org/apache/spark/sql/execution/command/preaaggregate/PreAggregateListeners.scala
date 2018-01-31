@@ -290,13 +290,12 @@ object CommitPreAggregateListener extends OperationEventListener {
       // keep committing until one fails
       val renamedDataMaps = childLoadCommands.takeWhile { childLoadCommand =>
         val childCarbonTable = childLoadCommand.table
-        val carbonTablePath =
-          new CarbonTablePath(childCarbonTable.getCarbonTableIdentifier,
-            childCarbonTable.getTablePath)
         // Generate table status file name with UUID, forExample: tablestatus_1
-        val oldTableSchemaPath = carbonTablePath.getTableStatusFilePathWithUUID(uuid)
+        val oldTableSchemaPath = CarbonTablePath.getTableStatusFilePathWithUUID(
+          childCarbonTable.getTablePath, uuid)
         // Generate table status file name without UUID, forExample: tablestatus
-        val newTableSchemaPath = carbonTablePath.getTableStatusFilePath
+        val newTableSchemaPath = CarbonTablePath.getTableStatusFilePath(
+          childCarbonTable.getTablePath)
         renameDataMapTableStatusFiles(oldTableSchemaPath, newTableSchemaPath, uuid)
       }
       // if true then the commit for one of the child tables has failed
@@ -306,11 +305,10 @@ object CommitPreAggregateListener extends OperationEventListener {
         renamedDataMaps.foreach {
           loadCommand =>
             val carbonTable = loadCommand.table
-            val carbonTablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
-              carbonTable.getTablePath)
             // rename the backup tablestatus i.e tablestatus_backup_UUID to tablestatus
-            val backupTableSchemaPath = carbonTablePath.getTableStatusFilePath + "_backup_" + uuid
-            val tableSchemaPath = carbonTablePath.getTableStatusFilePath
+            val backupTableSchemaPath =
+              CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath) + "_backup_" + uuid
+            val tableSchemaPath = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
             markInProgressSegmentAsDeleted(backupTableSchemaPath, operationContext, loadCommand)
             renameDataMapTableStatusFiles(backupTableSchemaPath, tableSchemaPath, "")
         }
@@ -377,9 +375,8 @@ object CommitPreAggregateListener extends OperationEventListener {
       operationContext: OperationContext,
       uuid: String): Unit = {
     childTables.foreach { childTable =>
-      val carbonTablePath = new CarbonTablePath(childTable.getCarbonTableIdentifier,
-        childTable.getTablePath)
-      val metaDataDir = FileFactory.getCarbonFile(carbonTablePath.getMetadataDirectoryPath)
+      val metaDataDir = FileFactory.getCarbonFile(
+        CarbonTablePath.getMetadataPath(childTable.getTablePath))
       val tableStatusFiles = metaDataDir.listFiles(new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = {
           file.getName.contains(uuid) || file.getName.contains("backup")

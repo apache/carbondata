@@ -44,7 +44,6 @@ import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.apache.carbondata.core.reader.CarbonDictionaryReaderImpl;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
 
@@ -72,7 +71,7 @@ public class CarbonDictionaryWriterImplTest {
 
   private String tableName;
 
-  private String carbonStorePath;
+  private String tablePath;
 
   private ColumnIdentifier columnIdentifier;
 
@@ -100,10 +99,10 @@ public class CarbonDictionaryWriterImplTest {
     init();
     this.databaseName = props.getProperty("database", "testSchema");
     this.tableName = props.getProperty("tableName", "carbon");
-    this.carbonStorePath = props.getProperty("storePath", "carbonStore");
+    this.tablePath = props.getProperty("storePath", "carbonStore");
     this.columnIdentifier = new ColumnIdentifier("Name", null, null);
     carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
-    absoluteTableIdentifier = AbsoluteTableIdentifier.from(carbonStorePath, carbonTableIdentifier);
+    absoluteTableIdentifier = AbsoluteTableIdentifier.from(tablePath, carbonTableIdentifier);
     this.dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
             columnIdentifier.getDataType());
@@ -479,8 +478,8 @@ public class CarbonDictionaryWriterImplTest {
    * this method will delete the store path
    */
   private void deleteStorePath() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath, fileType);
+    FileFactory.FileType fileType = FileFactory.getFileType(this.tablePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(this.tablePath, fileType);
     deleteRecursiveSilent(carbonFile);
   }
 
@@ -528,14 +527,12 @@ public class CarbonDictionaryWriterImplTest {
    * this method will form the dictionary directory paths
    */
   private void initDictionaryDirPaths() throws IOException {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(this.carbonStorePath, carbonTableIdentifier);
-    String dictionaryLocation = carbonTablePath.getMetadataDirectoryPath();
+    String dictionaryLocation = CarbonTablePath.getMetadataPath(tablePath);
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryLocation);
     if(!FileFactory.isFileExist(dictionaryLocation, fileType)) {
       FileFactory.mkdirs(dictionaryLocation, fileType);
     }
-    this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
-    this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
+    this.dictionaryFilePath = CarbonTablePath.getDictionaryFilePath(tablePath, columnIdentifier.getColumnId());
+    this.dictionaryMetaFilePath = CarbonTablePath.getDictionaryMetaFilePath(tablePath, columnIdentifier.getColumnId());
   }
 }
