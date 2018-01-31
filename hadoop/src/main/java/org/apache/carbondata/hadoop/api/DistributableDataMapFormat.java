@@ -84,7 +84,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
     TableDataMap dataMap =
-        DataMapStoreManager.getInstance().getDataMap(identifier, dataMapName, className);
+        DataMapStoreManager.getInstance().getDataMap(identifier, null, dataMapName, className);
     List<DataMapDistributable> distributables = dataMap.toDistributable(validSegments);
     List<InputSplit> inputSplits = new ArrayList<>(distributables.size());
     inputSplits.addAll(distributables);
@@ -103,7 +103,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
           throws IOException, InterruptedException {
         DataMapDistributable distributable = (DataMapDistributable)inputSplit;
         TableDataMap dataMap = DataMapStoreManager.getInstance()
-            .getDataMap(identifier, distributable.getDataMapName(),
+            .getDataMap(identifier, null, distributable.getDataMapName(),
                 distributable.getDataMapFactoryClass());
         blockletIterator = dataMap.prune(
             distributable, getFilterExp(taskAttemptContext.getConfiguration()), partitions)

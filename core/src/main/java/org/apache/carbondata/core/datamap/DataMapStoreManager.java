@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.dev.DataMapChooser;
+import org.apache.carbondata.core.datamap.dev.DataMapExpression;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
@@ -31,6 +33,7 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactor
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 
 /**
@@ -65,7 +68,7 @@ public final class DataMapStoreManager {
    * @param factoryClass
    * @return
    */
-  public TableDataMap getDataMap(AbsoluteTableIdentifier identifier,
+  public TableDataMap getDataMap(AbsoluteTableIdentifier identifier, FilterResolverIntf resolver,
       String dataMapName, String factoryClass) {
     String table = identifier.uniqueName();
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
@@ -80,7 +83,8 @@ public final class DataMapStoreManager {
         }
       }
     } else {
-      dataMap = getTableDataMap(dataMapName, tableDataMaps);
+      // dataMap = getTableDataMap(dataMapName, tableDataMaps);
+      dataMap = getTableDataMap(resolver, identifier, tableDataMaps, dataMapName);
     }
 
     if (dataMap == null) {
@@ -123,6 +127,10 @@ public final class DataMapStoreManager {
       LOGGER.error(e);
       throw new RuntimeException(e);
     }
+
+    if (null != allDataMaps.get(table)) {
+      tableDataMaps.addAll(allDataMaps.get(table));
+    }
     tableDataMaps.add(dataMap);
     allDataMaps.put(table, tableDataMaps);
     return dataMap;
@@ -138,6 +146,24 @@ public final class DataMapStoreManager {
       }
     }
     return dataMap;
+  }
+
+  private TableDataMap getTableDataMap(FilterResolverIntf resolver,
+      AbsoluteTableIdentifier identifier, List<TableDataMap> tableDataMaps, String dataMapName) {
+
+    DataMapExpression dataMapExpression = null;
+    DataMapChooser mapChooser = new DataMapChooser(resolver.getFilterExpression(), identifier);
+    dataMapExpression = mapChooser.dataMapSelection();
+
+    TableDataMap dataMap = null;
+    for (TableDataMap tableDataMap: tableDataMaps) {
+      if (tableDataMap.getDataMapName().equals(dataMapName)) {
+        dataMap = tableDataMap;
+        break;
+      }
+    }
+    return dataMap;
+
   }
 
   /**
@@ -179,12 +205,13 @@ public final class DataMapStoreManager {
 
   /**
    * Get the blocklet datamap factory to get the detail information of blocklets
+   *
    * @param identifier
    * @return
    */
   private BlockletDetailsFetcher getBlockletDetailsFetcher(AbsoluteTableIdentifier identifier) {
     TableDataMap blockletMap =
-        getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
+        getDataMap(identifier, null, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
     return (BlockletDetailsFetcher) blockletMap.getDataMapFactory();
   }
 
