@@ -27,6 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -337,13 +338,13 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     checkExistence(sql("desc restructure"), true, "intfield", "bigint")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(11,3)")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
-    intercept[RuntimeException] {
+    intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
     }
-    intercept[RuntimeException] {
+    intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,1)")
     }
-    intercept[RuntimeException] {
+    intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,5)")
     }
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,4)")
@@ -516,10 +517,10 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql(
       "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
-    assert(intercept[RuntimeException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preAggmain_preagg1 rename to preagg2")
     }.getMessage.contains("Rename operation for pre-aggregate table is not supported."))
-    assert(intercept[RuntimeException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain rename to preaggmain_new")
     }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables"))
     sql("drop table if exists preaggMain")

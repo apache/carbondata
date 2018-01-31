@@ -34,7 +34,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, ProcessMetaDataException}
+import org.apache.carbondata.streaming.CarbonStreamException
 
 class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
@@ -201,13 +202,10 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       val future = pool.submit(thread2)
       Thread.sleep(1000)
       thread1.interrupt()
-      try {
+      val msg = intercept[Exception] {
         future.get()
-        assert(false)
-      } catch {
-        case ex =>
-          assert(ex.getMessage.contains("is not a streaming table"))
       }
+      assert(msg.getMessage.contains("is not a streaming table"))
     } finally {
       if (server != null) {
         server.close()
@@ -655,10 +653,10 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       thread1.start()
       thread2.start()
       Thread.sleep(1000)
-      val msg = intercept[Exception] {
+      val msg = intercept[ProcessMetaDataException] {
         sql(s"drop table streaming.stream_table_drop")
       }
-      assertResult("Dropping table streaming.stream_table_drop failed: Acquire table lock failed after retry, please try after some time;")(msg.getMessage)
+      assert(msg.getMessage.contains("Dropping table streaming.stream_table_drop failed: Acquire table lock failed after retry, please try after some time"))
       thread1.interrupt()
       thread2.interrupt()
     } finally {

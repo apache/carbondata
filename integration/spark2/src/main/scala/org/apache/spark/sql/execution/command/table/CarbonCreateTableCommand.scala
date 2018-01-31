@@ -22,8 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, _}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
-import org.apache.spark.sql.execution.command.{Field, MetadataCommand, TableModel, TableNewProcessor}
-import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -79,7 +78,7 @@ case class CarbonCreateTableCommand(
       }
 
       if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
-        CarbonException.analysisException("Table should have at least one column.")
+        throwMetadataException(dbName, tableName, "Table should have at least one column.")
       }
 
       val operationContext = new OperationContext
@@ -125,7 +124,7 @@ case class CarbonCreateTableCommand(
             val msg = s"Create table'$tableName' in database '$dbName' failed"
             LOGGER.audit(msg.concat(", ").concat(e.getMessage))
             LOGGER.error(e, msg)
-            CarbonException.analysisException(msg.concat(", ").concat(e.getMessage))
+            throwMetadataException(dbName, tableName, msg)
         }
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =

@@ -35,9 +35,11 @@ import org.apache.carbondata.core.indexstore.schema.FilterType
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
+import org.apache.carbondata.spark.exception.ConcurrentOperationException
 import org.apache.carbondata.spark.testsuite.datamap.C2DataMapFactory
 
-class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+// This testsuite test insert and insert overwrite with other commands concurrently
+class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
   var df: DataFrame = _
 
@@ -109,40 +111,138 @@ class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll wit
     future
   }
 
+  // ----------- INSERT OVERWRITE --------------
+
   test("compaction should fail if insert overwrite is in progress") {
-    val future = runSqlAsync("insert overWrite table orders select * from orders_overwrite")
-    val ex = intercept[Exception]{
+    val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException]{
       sql("alter table orders compact 'MINOR'")
     }
     assert(future.get.contains("PASS"))
-    assert(ex.getMessage.contains("Cannot run data loading and compaction on same table concurrently"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, compaction operation is not allowed"))
   }
 
   test("update should fail if insert overwrite is in progress") {
-    val future = runSqlAsync("insert overWrite table orders select * from orders_overwrite")
-    val ex = intercept[Exception] {
+    val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
       sql("update orders set (o_country)=('newCountry') where o_country='china'").show
     }
     assert(future.get.contains("PASS"))
-    assert(ex.getMessage.contains("Cannot run data loading and update on same table concurrently"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, data update operation is not allowed"))
   }
 
   test("delete should fail if insert overwrite is in progress") {
-    val future = runSqlAsync("insert overWrite table orders select * from orders_overwrite")
-    val ex = intercept[Exception] {
+    val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
       sql("delete from orders where o_country='china'").show
     }
     assert(future.get.contains("PASS"))
-    assert(ex.getMessage.contains("Cannot run data loading and delete on same table concurrently"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, data delete operation is not allowed"))
   }
 
   test("drop table should fail if insert overwrite is in progress") {
-    val future = runSqlAsync("insert overWrite table orders select * from orders_overwrite")
-    val ex = intercept[Exception] {
+    val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
       sql("drop table if exists orders")
     }
     assert(future.get.contains("PASS"))
-    assert(ex.getMessage.contains("Data loading is in progress for table orders, drop table operation is not allowed"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, drop table operation is not allowed"))
+  }
+
+  test("alter rename table should fail if insert overwrite is in progress") {
+    val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
+      sql("alter table orders rename to other")
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, alter table rename operation is not allowed"))
+  }
+
+  test("delete segment by id should fail if insert overwrite is in progress") {
+    val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
+      sql("DELETE FROM TABLE orders WHERE SEGMENT.ID IN (0)")
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains(
+      "insert overwrite is in progress for table default.orders, delete segment operation is not allowed"))
+  }
+
+  test("delete segment by date should fail if insert overwrite is in progress") {
+    val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
+      sql("DELETE FROM TABLE orders WHERE SEGMENT.STARTTIME BEFORE '2099-06-01 12:05:06' ")
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains(
+      "insert overwrite is in progress for table default.orders, delete segment operation is not allowed"))
+  }
+
+  test("clean file should fail if insert overwrite is in progress") {
+    val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
+      sql("clean files for table  orders")
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains(
+      "insert overwrite is in progress for table default.orders, clean file operation is not allowed"))
+  }
+
+  // ----------- INSERT  --------------
+
+  test("compaction should fail if insert is in progress") {
+    val future = runSqlAsync("insert into table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException]{
+      sql("alter table orders compact 'MINOR'")
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, compaction operation is not allowed"))
+  }
+
+  test("update should fail if insert is in progress") {
+    val future = runSqlAsync("insert into table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
+      sql("update orders set (o_country)=('newCountry') where o_country='china'").show
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, data update operation is not allowed"))
+  }
+
+  test("delete should fail if insert is in progress") {
+    val future = runSqlAsync("insert into table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
+      sql("delete from orders where o_country='china'").show
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, data delete operation is not allowed"))
+  }
+
+  test("drop table should fail if insert is in progress") {
+    val future = runSqlAsync("insert into table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
+      sql("drop table if exists orders")
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, drop table operation is not allowed"))
+  }
+
+  test("alter rename table should fail if insert is in progress") {
+    val future = runSqlAsync("insert into table orders select * from orders_overwrite")
+    val ex = intercept[ConcurrentOperationException] {
+      sql("alter table orders rename to other")
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains(
+      "loading is in progress for table default.orders, alter table rename operation is not allowed"))
   }
 
   class QueryTask(query: String) extends Callable[String] {

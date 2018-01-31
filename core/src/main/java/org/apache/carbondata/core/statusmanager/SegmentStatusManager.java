@@ -509,13 +509,13 @@ public class SegmentStatusManager {
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
           } else if (SegmentStatus.INSERT_IN_PROGRESS == segmentStatus
-              && checkIfValidLoadInProgress(absoluteTableIdentifier, loadId)) {
+              && isLoadInProgress(absoluteTableIdentifier, loadId)) {
             // if the segment status is in progress then no need to delete that.
             LOG.error("Cannot delete the segment " + loadId + " which is load in progress");
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
           } else if (SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == segmentStatus
-              && checkIfValidLoadInProgress(absoluteTableIdentifier, loadId)) {
+              && isLoadInProgress(absoluteTableIdentifier, loadId)) {
             // if the segment status is overwrite in progress, then no need to delete that.
             LOG.error("Cannot delete the segment " + loadId + " which is load overwrite " +
                     "in progress");
@@ -572,12 +572,12 @@ public class SegmentStatusManager {
         } else if (SegmentStatus.STREAMING == segmentStatus) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment is streaming in progress.");
-        } else if (SegmentStatus.INSERT_IN_PROGRESS == segmentStatus && checkIfValidLoadInProgress(
+        } else if (SegmentStatus.INSERT_IN_PROGRESS == segmentStatus && isLoadInProgress(
             absoluteTableIdentifier, loadMetadata.getLoadName())) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment is insert in progress.");
         } else if (SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == segmentStatus
-            && checkIfValidLoadInProgress(absoluteTableIdentifier, loadMetadata.getLoadName())) {
+            && isLoadInProgress(absoluteTableIdentifier, loadMetadata.getLoadName())) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment is insert overwrite in progress.");
         } else if (SegmentStatus.MARKED_FOR_DELETE != segmentStatus) {
@@ -714,21 +714,23 @@ public class SegmentStatusManager {
   }
 
   /**
-   * This function checks if any load or insert overwrite is in progress before dropping that table
-   * @return
+   * Return true if any load or insert overwrite is in progress for specified table
    */
-  public static Boolean checkIfAnyLoadInProgressForTable(CarbonTable carbonTable) {
-    Boolean loadInProgress = false;
+  public static Boolean isLoadInProgressInTable(CarbonTable carbonTable) {
+    if (carbonTable == null) {
+      return false;
+    }
+    boolean loadInProgress = false;
     String metaPath = carbonTable.getMetaDataFilepath();
     LoadMetadataDetails[] listOfLoadFolderDetailsArray =
               SegmentStatusManager.readLoadMetadata(metaPath);
     if (listOfLoadFolderDetailsArray.length != 0) {
       for (LoadMetadataDetails loaddetail :listOfLoadFolderDetailsArray) {
         SegmentStatus segmentStatus = loaddetail.getSegmentStatus();
-        if (segmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
-                segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+        if (segmentStatus == SegmentStatus.INSERT_IN_PROGRESS
+            || segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
           loadInProgress =
-              checkIfValidLoadInProgress(carbonTable.getAbsoluteTableIdentifier(),
+              isLoadInProgress(carbonTable.getAbsoluteTableIdentifier(),
                   loaddetail.getLoadName());
         }
       }
@@ -737,15 +739,36 @@ public class SegmentStatusManager {
   }
 
   /**
-   * This method will check for valid IN_PROGRESS segments.
-   * Tries to acquire a lock on the segment and decide on the stale segments
-   * @param absoluteTableIdentifier
-   *
+   * Return true if insert overwrite is in progress for specified table
    */
-  public static Boolean checkIfValidLoadInProgress(AbsoluteTableIdentifier absoluteTableIdentifier,
-      String loadId) {
+  public static Boolean isOverwriteInProgressInTable(CarbonTable carbonTable) {
+    if (carbonTable == null) {
+      return false;
+    }
+    boolean loadInProgress = false;
+    String metaPath = carbonTable.getMetaDataFilepath();
+    LoadMetadataDetails[] listOfLoadFolderDetailsArray =
+        SegmentStatusManager.readLoadMetadata(metaPath);
+    if (listOfLoadFolderDetailsArray.length != 0) {
+      for (LoadMetadataDetails loaddetail :listOfLoadFolderDetailsArray) {
+        SegmentStatus segmentStatus = loaddetail.getSegmentStatus();
+        if (segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+          loadInProgress =
+              isLoadInProgress(carbonTable.getAbsoluteTableIdentifier(),
+                  loaddetail.getLoadName());
+        }
+      }
+    }
+    return loadInProgress;
+  }
+
+  /**
+   * Return true if the specified `loadName` is in progress, by checking the load lock.
+   */
+  public static Boolean isLoadInProgress(AbsoluteTableIdentifier absoluteTableIdentifier,
+      String loadName) {
     ICarbonLock segmentLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
-        CarbonTablePath.addSegmentPrefix(loadId) + LockUsage.LOCK);
+        CarbonTablePath.addSegmentPrefix(loadName) + LockUsage.LOCK);
     try {
       return !segmentLock.lockWithRetries(1, 0);
     } finally {

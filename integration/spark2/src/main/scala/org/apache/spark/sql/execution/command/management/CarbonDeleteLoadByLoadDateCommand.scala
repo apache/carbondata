@@ -21,7 +21,9 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{DeleteSegmentByDatePostEvent, DeleteSegmentByDatePreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.spark.exception.ConcurrentOperationException
 
 case class CarbonDeleteLoadByLoadDateCommand(
     databaseNameOp: Option[String],
@@ -33,6 +35,12 @@ case class CarbonDeleteLoadByLoadDateCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+
+    // if insert overwrite in progress, do not allow delete segment
+    if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "insert overwrite", "delete segment")
+    }
+
     val operationContext = new OperationContext
     val deleteSegmentByDatePreEvent: DeleteSegmentByDatePreEvent =
       DeleteSegmentByDatePreEvent(carbonTable,

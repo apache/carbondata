@@ -276,8 +276,8 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists partitionTable")
     sql("create table partitionTable (id int,city string,age int) partitioned by(name string) stored by 'carbondata'".stripMargin)
     sql(
-      s"""create datamap preaggTable on table partitionTable using 'preaggregate' as select id,sum(age) from partitionTable group by id"""
-        .stripMargin)
+    s"""create datamap preaggTable on table partitionTable using 'preaggregate' as select id,sum(age) from partitionTable group by id"""
+      .stripMargin)
     sql("insert into partitionTable select 1,'Bangalore',30,'John'")
     sql("insert into partitionTable select 2,'Chennai',20,'Huawei'")
     checkAnswer(sql("show partitions partitionTable"), Seq(Row("name=John"),Row("name=Huawei")))

@@ -25,6 +25,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+
 class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll = {
 
@@ -136,10 +138,11 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   }
 
   test("show partition table: exception when show not partition table") {
-    val errorMessage =
-      intercept[AnalysisException] { sql("show partitions notPartitionTable").show() }
+    val errorMessage = intercept[ProcessMetaDataException] {
+      sql("show partitions notPartitionTable").show()
+    }
     assert(errorMessage.getMessage.contains(
-      "SHOW PARTITIONS is not allowed on a table that is not partitioned: notpartitiontable"))
+      "SHOW PARTITIONS is not allowed on a table that is not partitioned"))
   }
 
   test("show partition table: hash table") {
