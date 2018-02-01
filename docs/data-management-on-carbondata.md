@@ -44,7 +44,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
    - **Dictionary Encoding Configuration**
 
-     Dictionary encoding is turned off for all columns by default from 1.3 onwards, you can use this command for including or excludeing columns to do dictionary encoding.
+     Dictionary encoding is turned off for all columns by default from 1.3 onwards, you can use this command for including or excluding columns to do dictionary encoding.
      Suggested use cases : do dictionary encoding for low cardinality columns, it might help to improve data compression ratio and performance.
 
      ```
