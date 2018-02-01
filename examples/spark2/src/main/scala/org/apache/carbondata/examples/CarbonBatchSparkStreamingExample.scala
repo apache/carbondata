@@ -24,10 +24,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, SaveMode, SparkSession}
 import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
-
 /**
  * This example introduces how to use CarbonData batch load to integrate
  * with Spark Streaming(it's DStream, not Spark Structured Streaming)
@@ -74,7 +70,6 @@ object CarbonBatchSparkStreamingExample {
            | """.stripMargin)
 
       val carbonTable = CarbonEnv.getCarbonTable(Some("default"), streamTableName)(spark)
-      val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
       // batch load
       val path = s"$rootPath/examples/spark2/src/main/resources/streamSample.csv"
       spark.sql(
@@ -88,7 +83,7 @@ object CarbonBatchSparkStreamingExample {
       val serverSocket = new ServerSocket(7071)
       val thread1 = writeSocket(serverSocket)
       val thread2 = showTableCount(spark, streamTableName)
-      val ssc = startStreaming(spark, streamTableName, tablePath, checkpointPath)
+      val ssc = startStreaming(spark, streamTableName, checkpointPath)
       // wait for stop signal to stop Spark Streaming App
       waitForStopSignal(ssc)
       // it need to start Spark Streaming App in main thread
@@ -153,7 +148,7 @@ object CarbonBatchSparkStreamingExample {
   }
 
   def startStreaming(spark: SparkSession, tableName: String,
-      tablePath: CarbonTablePath, checkpointPath: String): StreamingContext = {
+      checkpointPath: String): StreamingContext = {
     var ssc: StreamingContext = null
     try {
       // recommend: the batch interval must set larger, such as 30s, 1min.
