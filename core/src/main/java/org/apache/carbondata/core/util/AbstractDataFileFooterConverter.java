@@ -208,7 +208,8 @@ public abstract class AbstractDataFileFooterConverter {
     if (fileName.lastIndexOf("/") > 0) {
       fileName = fileName.substring(fileName.lastIndexOf("/"));
     }
-    tableBlockInfo.setFilePath(parentPath + "/" + fileName);
+    fileName = (CarbonCommonConstants.FILE_SEPARATOR + fileName).replaceAll("//", "/");
+    tableBlockInfo.setFilePath(parentPath + fileName);
     return tableBlockInfo;
   }
 
