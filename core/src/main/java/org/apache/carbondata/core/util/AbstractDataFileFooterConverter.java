@@ -165,6 +165,10 @@ public abstract class AbstractDataFileFooterConverter {
         dataFileFooter.setBlockInfo(new BlockInfo(tableBlockInfo));
         dataFileFooter.setSegmentInfo(segmentInfo);
         dataFileFooter.setVersionId(tableBlockInfo.getVersion());
+        // In case of old schema time stamp will not be found in the index header
+        if (readIndexHeader.isSetSchema_time_stamp()) {
+          dataFileFooter.setSchemaUpdatedTimeStamp(readIndexHeader.getSchema_time_stamp());
+        }
         if (readBlockIndexInfo.isSetBlocklet_info()) {
           List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
           BlockletInfo blockletInfo = new DataFileFooterConverterV3()

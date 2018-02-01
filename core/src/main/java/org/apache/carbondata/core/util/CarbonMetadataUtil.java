@@ -234,10 +234,12 @@ public class CarbonMetadataUtil {
    *
    * @param columnCardinality cardinality of each column
    * @param columnSchemaList  list of column present in the table
+   * @param bucketNumber
+   * @param schemaTimeStamp current timestamp of schema
    * @return Index header object
    */
   public static IndexHeader getIndexHeader(int[] columnCardinality,
-      List<ColumnSchema> columnSchemaList, int bucketNumber) {
+      List<ColumnSchema> columnSchemaList, int bucketNumber, long schemaTimeStamp) {
     // create segment info object
     SegmentInfo segmentInfo = new SegmentInfo();
     // set the number of columns
@@ -254,6 +256,8 @@ public class CarbonMetadataUtil {
     indexHeader.setTable_columns(columnSchemaList);
     // set the bucket number
     indexHeader.setBucket_id(bucketNumber);
+    // set the current schema time stamp which will used for deciding the restructured block
+    indexHeader.setSchema_time_stamp(schemaTimeStamp);
     return indexHeader;
   }
 
