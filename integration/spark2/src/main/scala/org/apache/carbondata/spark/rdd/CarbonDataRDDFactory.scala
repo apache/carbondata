@@ -103,18 +103,6 @@ object CarbonDataRDDFactory {
       LOGGER.info(s"Acquired the compaction lock for table ${ carbonLoadModel.getDatabaseName }" +
           s".${ carbonLoadModel.getTableName }")
       try {
-        if (compactionType == CompactionType.SEGMENT_INDEX) {
-          // Just launch job to merge index and return
-          CommonUtil.mergeIndexFiles(
-            sqlContext.sparkContext,
-            CarbonDataMergerUtil.getValidSegmentList(
-              carbonTable.getAbsoluteTableIdentifier).asScala,
-            carbonLoadModel.getTablePath,
-            carbonTable,
-            true)
-          lock.unlock()
-          return
-        }
         startCompactionThreads(
           sqlContext,
           carbonLoadModel,
@@ -359,8 +347,6 @@ object CarbonDataRDDFactory {
           } else {
             loadDataFile(sqlContext, carbonLoadModel, hadoopConf)
           }
-          CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
-            Seq(carbonLoadModel.getSegmentId), storePath, carbonTable, false)
           val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
           if (status.nonEmpty) {
             status.foreach { eachLoadStatus =>

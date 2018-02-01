@@ -319,8 +319,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
   }
 
   test("merge carbon index disable data loading for partition table for three partition column") {
-    CarbonProperties.getInstance.addProperty(
-      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
     sql(
       """
         | CREATE TABLE mergeindexpartitionthree (empno int, doj Timestamp,
@@ -340,9 +338,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     val files = carbonFile.listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = CarbonTablePath.isCarbonIndexFile(file.getName)
     })
-    CarbonProperties.getInstance.addProperty(
-      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
     assert(files.length == 10)
   }
 

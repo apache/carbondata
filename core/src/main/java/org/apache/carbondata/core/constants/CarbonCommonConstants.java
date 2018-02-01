@@ -1478,13 +1478,6 @@ public final class CarbonCommonConstants {
 
   public static final String BITSET_PIPE_LINE_DEFAULT = "true";
 
-  /**
-   * It is internal configuration and used only for test purpose.
-   * It will merge the carbon index files with in the segment to single segment.
-   */
-  public static final String CARBON_MERGE_INDEX_IN_SEGMENT = "carbon.merge.index.in.segment";
-
-  public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
   public static final String AGGREGATIONDATAMAPSCHEMA = "AggregateDataMapHandler";
   /*
