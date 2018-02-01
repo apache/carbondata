@@ -75,14 +75,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return storeLocation;
   }
 
-  public CarbonFactDataHandlerModel getDataHandlerModel() {
-    CarbonTableIdentifier tableIdentifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    String[] storeLocation = getStoreLocation(tableIdentifier);
-    return CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(configuration,
-        storeLocation, 0, 0);
-  }
-
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     Iterator<CarbonRowBatch>[] iterators = child.execute();
     CarbonTableIdentifier tableIdentifier =
@@ -94,10 +86,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
               System.currentTimeMillis());
       int i = 0;
       for (Iterator<CarbonRowBatch> iterator : iterators) {
-        String[] storeLocation = getStoreLocation(tableIdentifier);
-
         CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-            .createCarbonFactDataHandlerModel(configuration, storeLocation, i, 0);
+            .createCarbonFactDataHandlerModel(configuration, i, 0);
         CarbonFactHandler dataHandler = null;
         boolean rowsNotExist = true;
         while (iterator.hasNext()) {

@@ -109,6 +109,9 @@ public final class CarbonDataProcessorUtil {
    * @param locations locations to create
    */
   public static void createLocations(String[] locations) {
+    if (locations == null) {
+      throw new IllegalArgumentException("input location is null");
+    }
     for (String loc : locations) {
       if (!new File(loc).mkdirs()) {
         LOGGER.warn("Error occurs while creating dirs: " + loc);

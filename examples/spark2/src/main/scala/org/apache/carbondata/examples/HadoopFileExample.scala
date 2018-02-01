@@ -19,7 +19,8 @@ package org.apache.carbondata.examples
 
 import org.apache.hadoop.conf.Configuration
 
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.CarbonProjection
 
 // scalastyle:off println
@@ -34,9 +35,9 @@ object HadoopFileExample {
     projection.addColumn("c1")  // column c1
     projection.addColumn("c3")  // column c3
     val conf = new Configuration()
-    CarbonTableInputFormat.setColumnProjection(conf, projection)
-    CarbonTableInputFormat.setDatabaseName(conf, "default")
-    CarbonTableInputFormat.setTableName(conf, "carbon1")
+    val format = CarbonInputFormat.newTableFormat(
+      conf, AbsoluteTableIdentifier.from("", "default", "carbon1"))
+    format.setColumnProjection(conf, projection)
 
     val sc = spark.sparkContext
     val input = sc.newAPIHadoopFile(s"${ExampleUtils.storeLocation}/default/carbon1",

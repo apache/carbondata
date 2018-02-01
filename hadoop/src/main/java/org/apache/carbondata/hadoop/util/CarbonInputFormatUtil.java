@@ -17,9 +17,7 @@
 
 package org.apache.carbondata.hadoop.util;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.Locale;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -33,43 +31,14 @@ import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /**
  * Utility class
  */
 public class CarbonInputFormatUtil {
-
-  public static <V> CarbonTableInputFormat<V> createCarbonInputFormat(
-      AbsoluteTableIdentifier identifier,
-      Job job) throws IOException {
-    CarbonTableInputFormat<V> carbonInputFormat = new CarbonTableInputFormat<>();
-    CarbonTableInputFormat.setDatabaseName(
-        job.getConfiguration(), identifier.getCarbonTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat.setTableName(
-        job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
-    FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
-    return carbonInputFormat;
-  }
-
-  public static <V> CarbonTableInputFormat<V> createCarbonTableInputFormat(
-      AbsoluteTableIdentifier identifier, List<String> partitionId, Job job) throws IOException {
-    CarbonTableInputFormat<V> carbonTableInputFormat = new CarbonTableInputFormat<>();
-    CarbonTableInputFormat.setPartitionIdList(
-        job.getConfiguration(), partitionId);
-    CarbonTableInputFormat.setDatabaseName(
-        job.getConfiguration(), identifier.getCarbonTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat.setTableName(
-        job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
-    FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
-    return carbonTableInputFormat;
-  }
 
   public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable,
       boolean[] isFilterDimensions, boolean[] isFilterMeasures) {

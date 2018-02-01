@@ -20,14 +20,11 @@ package org.apache.carbondata.hadoop.ft;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-
-import junit.framework.TestCase;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -38,10 +35,11 @@ import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonProjection;
+import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.test.util.StoreCreator;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -52,9 +50,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 public class CarbonTableInputFormatTest {
@@ -70,17 +66,14 @@ public class CarbonTableInputFormatTest {
   }
 
   @Test public void testGetFilteredSplits() throws Exception {
-    CarbonTableInputFormat carbonInputFormat = new CarbonTableInputFormat();
     JobConf jobConf = new JobConf(new Configuration());
     Job job = Job.getInstance(jobConf);
     job.getConfiguration().set("query.id", UUID.randomUUID().toString());
-    String tblPath = StoreCreator.getAbsoluteTableIdentifier().getTablePath();
-    FileInputFormat.addInputPath(job, new Path(tblPath));
-    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(), StoreCreator.getAbsoluteTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat.setTableName(job.getConfiguration(), StoreCreator.getAbsoluteTableIdentifier().getTableName());
+    AbsoluteTableIdentifier identifier = StoreCreator.getAbsoluteTableIdentifier();
+    CarbonTableInputFormat carbonInputFormat = CarbonInputFormat.newTableFormat(job.getConfiguration(), identifier);
     Expression expression = new EqualToExpression(new ColumnExpression("country", DataTypes.STRING),
         new LiteralExpression("china", DataTypes.STRING));
-    CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(), expression);
+    carbonInputFormat.setFilterPredicates(job.getConfiguration(), expression);
     List splits = carbonInputFormat.getSplits(job);
 
     Assert.assertTrue(splits != null);
@@ -89,28 +82,12 @@ public class CarbonTableInputFormatTest {
 
   @Test
   public void testGetSplits() throws Exception {
-    CarbonTableInputFormat carbonInputFormat = new CarbonTableInputFormat();
     JobConf jobConf = new JobConf(new Configuration());
     Job job = Job.getInstance(jobConf);
     job.getConfiguration().set("query.id", UUID.randomUUID().toString());
-    String tblPath = StoreCreator.getAbsoluteTableIdentifier().getTablePath();
-    FileInputFormat.addInputPath(job, new Path(tblPath));
-    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(), StoreCreator.getAbsoluteTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat.setTableName(job.getConfiguration(), StoreCreator.getAbsoluteTableIdentifier().getTableName());
-    // list files to get the carbondata file
-    String segmentPath = CarbonTablePath.getSegmentPath(StoreCreator.getAbsoluteTableIdentifier().getTablePath(), "0");
-    File segmentDir = new File(segmentPath);
-    if (segmentDir.exists() && segmentDir.isDirectory()) {
-      File[] files = segmentDir.listFiles(new FileFilter() {
-        @Override
-        public boolean accept(File pathname) {
-          return pathname.getName().endsWith("carbondata");
-        }
-      });
-      if (files != null && files.length > 0) {
-        job.getConfiguration().set(CarbonTableInputFormat.INPUT_FILES, files[0].getName());
-      }
-    }
+    AbsoluteTableIdentifier identifier = StoreCreator.getAbsoluteTableIdentifier();
+    CarbonTableInputFormat carbonInputFormat = CarbonInputFormat.newTableFormat(job.getConfiguration(), identifier);
+
     List splits = carbonInputFormat.getSplits(job);
 
     Assert.assertTrue(splits != null && splits.size() == 1);
@@ -247,16 +224,13 @@ public class CarbonTableInputFormatTest {
     job.setInputFormatClass(CarbonTableInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
     AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
+    CarbonInputFormat format = CarbonInputFormat.newTableFormat(configuration, abs);
     if (projection != null) {
-      CarbonTableInputFormat.setColumnProjection(job.getConfiguration(), projection);
+      format.setColumnProjection(job.getConfiguration(), projection);
     }
     if (filter != null) {
-      CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(), filter);
+      format.setFilterPredicates(job.getConfiguration(), filter);
     }
-    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),
-        abs.getCarbonTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat.setTableName(job.getConfiguration(),
-        abs.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(abs.getTablePath()));
     CarbonUtil.deleteFoldersAndFiles(new File(outPath + "1"));
     FileOutputFormat.setOutputPath(job, new Path(outPath + "1"));

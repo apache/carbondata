@@ -30,6 +30,8 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.api.CarbonInputFormat;
+import org.apache.carbondata.hadoop.api.CarbonStreamInputFormat;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 
 import junit.framework.TestCase;
@@ -81,7 +83,8 @@ public class CarbonStreamInputFormatTest extends TestCase {
   @Test public void testCreateRecordReader() {
     try {
       InputSplit inputSplit = buildInputSplit();
-      CarbonStreamInputFormat inputFormat = new CarbonStreamInputFormat();
+      CarbonStreamInputFormat inputFormat = CarbonInputFormat.newStreamFormat(
+          new Configuration(), AbsoluteTableIdentifier.from("", "", ""));
       RecordReader recordReader = inputFormat.createRecordReader(inputSplit, taskAttemptContext);
       Assert.assertNotNull("Failed to create record reader", recordReader);
     } catch (Exception e) {

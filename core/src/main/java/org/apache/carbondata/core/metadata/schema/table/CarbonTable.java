@@ -39,10 +39,13 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryProjection;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -196,6 +199,9 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    */
   public static CarbonTable buildFromTableInfo(TableInfo tableInfo) {
+    if (tableInfo == null) {
+      throw new IllegalArgumentException("input table info is null");
+    }
     CarbonTable table = new CarbonTable();
     updateTableInfo(tableInfo);
     table.tableInfo = tableInfo;
@@ -820,7 +826,7 @@ public class CarbonTable implements Serializable {
   /**
    * Create a new QueryModel with projection all columns in the table.
    */
-  public QueryModel createQueryModelWithProjectAllColumns(DataTypeConverter converter) {
+  public QueryModel createQueryModelWithProjectAllColumns() {
     QueryProjection projection = new QueryProjection();
 
     List<CarbonDimension> dimensions = getDimensionByTableName(getTableName());
@@ -833,19 +839,27 @@ public class CarbonTable implements Serializable {
     }
     QueryModel model = QueryModel.newInstance(this);
     model.setProjection(projection);
-    model.setConverter(converter);
     return model;
   }
 
   /**
    * Create a new QueryModel with specified projection
    */
-  public QueryModel createQueryWithProjection(String[] projectionColumnNames,
-      DataTypeConverter converter) {
+  public QueryModel createQueryWithProjection(String[] projectionColumnNames) {
     QueryProjection projection = createProjection(projectionColumnNames);
     QueryModel queryModel = QueryModel.newInstance(this);
     queryModel.setProjection(projection);
-    queryModel.setConverter(converter);
+    return queryModel;
+  }
+
+  /**
+   * Create a new QueryModel with specified projection and filter expression
+   */
+  public QueryModel createQuery(String[] projectionColumnNames, Expression filter) {
+    QueryProjection projection = createProjection(projectionColumnNames);
+    QueryModel queryModel = QueryModel.newInstance(this);
+    queryModel.setProjection(projection);
+    queryModel.setFilterExpressionResolverTree(resolveFilter(filter));
     return queryModel;
   }
 
@@ -872,7 +886,22 @@ public class CarbonTable implements Serializable {
         }
       }
     }
-
     return projection;
+  }
+
+  /**
+   * Return a Resolved filter expression.
+   */
+  public FilterResolverIntf resolveFilter(Expression filterExpression) {
+    try {
+      FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
+      //get resolved filter
+      return filterExpressionProcessor.getFilterResolver(
+          filterExpression,
+          getAbsoluteTableIdentifier(),
+          new SingleTableProvider(this));  // TODO: replace TableProvider with CarbonTable
+    } catch (Exception e) {
+      throw new RuntimeException("Error while resolving filter expression", e);
+    }
   }
 }

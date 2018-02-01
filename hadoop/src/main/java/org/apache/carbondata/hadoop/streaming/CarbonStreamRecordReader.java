@@ -58,6 +58,8 @@ import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.FileHeader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.api.CarbonInputFormat;
+import org.apache.carbondata.hadoop.api.CarbonStreamInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.util.CarbonTypeUtil;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -137,7 +139,8 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
   // return raw row for handoff
   private boolean useRawRow = false;
 
-  @Override public void initialize(InputSplit split, TaskAttemptContext context)
+  @Override
+  public void initialize(InputSplit split, TaskAttemptContext context)
       throws IOException, InterruptedException {
     // input
     if (split instanceof CarbonInputSplit) {
@@ -151,8 +154,10 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     // metadata
     hadoopConf = context.getConfiguration();
     if (model == null) {
-      CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
+      CarbonStreamInputFormat format = CarbonInputFormat.newStreamFormat(hadoopConf,
+          carbonTable.getAbsoluteTableIdentifier());
       model = format.createQueryModel(split, context);
+      CarbonTableInputFormat.setUpdateCache(split, model);
     }
     carbonTable = model.getTable();
     List<CarbonDimension> dimensions =

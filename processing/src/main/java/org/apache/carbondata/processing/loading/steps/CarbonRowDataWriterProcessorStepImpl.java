@@ -89,17 +89,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     child.initialize();
   }
 
-  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
-    String[] storeLocation = CarbonDataProcessorUtil.getLocalDataFolderLocation(
-        tableIdentifier.getDatabaseName(),
-        tableIdentifier.getTableName(),
-        String.valueOf(configuration.getTaskNo()), configuration.getSegmentId(),
-        false,
-        false);
-    CarbonDataProcessorUtil.createLocations(storeLocation);
-    return storeLocation;
-  }
-
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     final Iterator<CarbonRowBatch>[] iterators = child.execute();
     tableIdentifier = configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -154,9 +143,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   }
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) {
-    String[] storeLocation = getStoreLocation(tableIdentifier);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
-        configuration, storeLocation, 0, iteratorIndex);
+        configuration, 0, iteratorIndex);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
     while (iterator.hasNext()) {

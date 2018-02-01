@@ -86,7 +86,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
           // If no rows from merge sorter, then don't create a file in fact column handler
           if (next.hasNext()) {
             CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-                .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, k++);
+                .createCarbonFactDataHandlerModel(configuration, 0, k++);
             CarbonFactHandler dataHandler = CarbonFactHandlerFactory
                 .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
             dataHandler.initialise();

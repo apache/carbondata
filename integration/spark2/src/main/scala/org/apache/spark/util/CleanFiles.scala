@@ -20,7 +20,7 @@ package org.apache.spark.util
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 
-import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.api.CarbonStoreSparkUtil
 
 /**
  * clean files api
@@ -47,7 +47,7 @@ object CleanFiles {
     } else {
       null
     }
-    CarbonStore.cleanFiles(
+    CarbonStoreSparkUtil.cleanFiles(
       dbName = dbName,
       tableName = tableName,
       tablePath = tablePath,

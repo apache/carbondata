@@ -26,6 +26,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.BlockletInfo;
 import org.apache.carbondata.format.MutationType;
+import org.apache.carbondata.hadoop.api.CarbonStreamOutputFormat;
 
 /**
  * stream blocklet writer
@@ -129,8 +130,8 @@ public class StreamBlockletWriter {
     count += len;
   }
 
-  void apppendBlocklet(DataOutputStream outputStream) throws IOException {
-    outputStream.write(CarbonStreamOutputFormat.CARBON_SYNC_MARKER);
+  void appendBlocklet(DataOutputStream outputStream) throws IOException {
+    outputStream.write(CarbonStreamOutputFormat.getSyncMarker());
 
     BlockletInfo blockletInfo = new BlockletInfo();
     blockletInfo.setNum_rows(getRowIndex() + 1);

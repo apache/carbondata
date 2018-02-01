@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.util.Random
 
 import org.apache.hadoop.fs.{FileStatus, Path}
@@ -39,7 +38,7 @@ import org.apache.spark.sql.sources.DataSourceRegister
 import org.apache.spark.sql.types.{DataType, StructType}
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
-import org.apache.carbondata.core.metadata.PartitionMapFileStore
+import org.apache.carbondata.core.metadata.{CarbonMetadata, PartitionMapFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonOutputCommitter, CarbonTableOutputFormat}
@@ -49,11 +48,13 @@ import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataLoadingUtil, Util}
 
-class CarbonFileFormat
+// Table level format implementation that writes carbondata files in
+// carbon's table folder structure that composed of segment folders
+class CarbonTableLevelFormat
   extends FileFormat
     with DataSourceRegister
     with Logging
-with Serializable {
+    with Serializable {
 
   override def shortName(): String = "carbondata"
 
@@ -94,31 +95,27 @@ with Serializable {
     optionsFinal.put(
       "fileheader",
       dataSchema.fields.map(_.name.toLowerCase).mkString(",") + "," + partitionStr)
-    val optionsLocal = new mutable.HashMap[String, String]()
-    optionsLocal ++= options
-    optionsLocal += (("header", "false"))
     DataLoadingUtil.buildCarbonLoadModel(
       table,
       carbonProperty,
-      optionsLocal.toMap,
+      options,
       optionsFinal,
       model,
       conf
     )
+    // Set the standard date/time format which supported by spark/hive.
+    model.setTimestampformat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    model.setDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
     model.setUseOnePass(options.getOrElse("onepass", "false").toBoolean)
     model.setDictionaryServerHost(options.getOrElse("dicthost", null))
     model.setDictionaryServerPort(options.getOrElse("dictport", "-1").toInt)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
     // Set the update timestamp if user sets in case of update query. It needs to be updated
     // in load status update time
-    val updateTimeStamp = options.get("updatetimestamp")
-    if (updateTimeStamp.isDefined) {
-      conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp.get)
-      model.setFactTimeStamp(updateTimeStamp.get.toLong)
-    }
-    val staticPartition = options.getOrElse("staticpartition", null)
-    if (staticPartition != null) {
-      conf.set("carbon.staticpartition", staticPartition)
+    val updateTimeStamp = options.getOrElse("updatetimestamp", null)
+    if (updateTimeStamp != null) {
+      conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp)
+      model.setFactTimeStamp(updateTimeStamp.toLong)
     }
     // In case of update query there is chance to remove the older segments, so here we can set
     // the to be deleted segments to mark as delete while updating tablestatus
@@ -142,7 +139,7 @@ with Serializable {
           dataSchema: StructType,
           context: TaskAttemptContext): OutputWriter = {
         val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
-        var storeLocation: Array[String] = Array[String]()
+        var tempLocation: Array[String] = Array[String]()
         val isCarbonUseLocalDir = CarbonProperties.getInstance()
           .getProperty("carbon.use.local.dir", "false").equalsIgnoreCase("true")
 
@@ -154,22 +151,22 @@ with Serializable {
           val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
           if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
             // use single dir
-            storeLocation = storeLocation :+
+            tempLocation = tempLocation :+
               (yarnStoreLocations(Random.nextInt(yarnStoreLocations.length)) + tmpLocationSuffix)
-            if (storeLocation == null || storeLocation.isEmpty) {
-              storeLocation = storeLocation :+
+            if (tempLocation == null || tempLocation.isEmpty) {
+              tempLocation = tempLocation :+
                 (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
             }
           } else {
             // use all the yarn dirs
-            storeLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
+            tempLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
           }
         } else {
-          storeLocation =
-            storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+          tempLocation =
+            tempLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
         }
-        CarbonTableOutputFormat.setTempStoreLocations(context.getConfiguration, storeLocation)
-        new CarbonOutputWriter(path, context, dataSchema.map(_.dataType), taskNumber)
+        model.setWriteTempPath(tempLocation)
+        new CarbonTableOutputWriter(path, context, dataSchema.map(_.dataType), taskNumber)
       }
 
       /**
@@ -225,7 +222,8 @@ private trait AbstractCarbonOutputWriter {
   def writeCarbon(row: InternalRow): Unit
 }
 
-private class CarbonOutputWriter(path: String,
+private class CarbonTableOutputWriter(
+    path: String,
     context: TaskAttemptContext,
     fieldTypes: Seq[DataType],
     taskNo : String)

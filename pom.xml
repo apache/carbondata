@@ -99,6 +99,7 @@
     <module>core</module>
     <module>processing</module>
     <module>hadoop</module>
+    <module>store/sdk</module>
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
     <module>assembly</module>
@@ -567,6 +568,12 @@
     </profile>
     <profile>
       <id>include-all</id>
+    </profile>
+    <profile>
+      <id>carbonstore</id>
+      <modules>
+        <module>store/sdk</module>
+      </modules>
     </profile>
     <profile>
       <id>sdvtest</id>

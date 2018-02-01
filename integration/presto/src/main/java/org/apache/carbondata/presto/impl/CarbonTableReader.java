@@ -44,6 +44,7 @@ import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import com.facebook.presto.hadoop.$internal.com.google.gson.Gson;
@@ -377,9 +378,10 @@ public class CarbonTableReader {
     config.set(CarbonTableInputFormat.TABLE_NAME, carbonTable.getTableName());
 
     try {
-      CarbonTableInputFormat.setTableInfo(config, tableInfo);
+      CarbonTableInputFormat format = CarbonInputFormat.newTableFormat(config, tableCacheModel.carbonTable.getAbsoluteTableIdentifier());
+      format.setTableInfo(config, tableInfo);
       CarbonTableInputFormat carbonTableInputFormat =
-              createInputFormat(config, carbonTable.getAbsoluteTableIdentifier(), filters);
+          createInputFormat(config, carbonTable.getAbsoluteTableIdentifier(), filters);
       JobConf jobConf = new JobConf(config);
       Job job = Job.getInstance(jobConf);
       List<InputSplit> splits = carbonTableInputFormat.getSplits(job);
@@ -404,14 +406,10 @@ public class CarbonTableReader {
     return result;
   }
 
-  private CarbonTableInputFormat<Object>  createInputFormat( Configuration conf,
-       AbsoluteTableIdentifier identifier, Expression filterExpression)
-          throws IOException {
-    CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
-    CarbonTableInputFormat.setTablePath(conf,
-            identifier.appendWithLocalPrefix(identifier.getTablePath()));
-    CarbonTableInputFormat.setFilterPredicates(conf, filterExpression);
-
+  private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
+       AbsoluteTableIdentifier identifier, Expression filterExpression) {
+    CarbonTableInputFormat<Object> format = CarbonInputFormat.newTableFormat(conf, identifier);
+    format.setFilterPredicates(conf, filterExpression);
     return format;
   }
 

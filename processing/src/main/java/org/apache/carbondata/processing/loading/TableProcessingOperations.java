@@ -106,10 +106,12 @@ public class TableProcessingOperations {
       boolean isCompactionFlow, boolean isAltPartitionFlow) {
     String tableName = loadModel.getTableName();
     String databaseName = loadModel.getDatabaseName();
-    String tempLocationKey = CarbonDataProcessorUtil
-        .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
-            loadModel.getTaskNo(), isCompactionFlow, isAltPartitionFlow);
-    deleteLocalDataLoadFolderLocation(tempLocationKey, tableName);
+    if (!loadModel.isFileLevelLoad()) {
+      String tempLocationKey = CarbonDataProcessorUtil
+          .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
+              loadModel.getTaskNo(), isCompactionFlow, isAltPartitionFlow);
+      deleteLocalDataLoadFolderLocation(tempLocationKey, tableName);
+    }
   }
 
   /**

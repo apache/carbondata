@@ -87,6 +87,9 @@ public class QueryModel {
 
   private DataTypeConverter converter;
 
+  // For file level reader, this stores the file full path to read
+  private String filePath;
+
   /**
    * Invalid table blocks, which need to be removed from
    * memory, invalid blocks can be segment which are deleted
@@ -142,7 +145,6 @@ public class QueryModel {
         }
       }
     }
-
   }
 
   private static CarbonMeasure getCarbonMetadataMeasure(String name, List<CarbonMeasure> measures) {
@@ -351,5 +353,13 @@ public class QueryModel {
 
   public void setReadPageByPage(boolean readPageByPage) {
     this.readPageByPage = readPageByPage;
+  }
+
+  public String getFilePath() {
+    return filePath;
+  }
+
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
   }
 }

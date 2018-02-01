@@ -39,8 +39,8 @@ import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentSta
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection}
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
-import org.apache.carbondata.hadoop.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
+import org.apache.carbondata.hadoop.api.CarbonInputFormat
+import org.apache.carbondata.hadoop.streaming.CarbonStreamRecordReader
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -138,20 +138,18 @@ class StreamHandoffRDD[K, V](
     val inputSplit = split.asInstanceOf[HandoffPartition].split.value
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
     val hadoopConf = new Configuration()
-    CarbonTableInputFormat.setDatabaseName(hadoopConf, carbonTable.getDatabaseName)
-    CarbonTableInputFormat.setTableName(hadoopConf, carbonTable.getTableName)
-    CarbonTableInputFormat.setTablePath(hadoopConf, carbonTable.getTablePath)
     val projection = new CarbonProjection
     val dataFields = carbonTable.getStreamStorageOrderColumn(carbonTable.getTableName)
     (0 until dataFields.size()).foreach { index =>
       projection.addColumn(dataFields.get(index).getColName)
     }
-    CarbonTableInputFormat.setColumnProjection(hadoopConf, projection)
-    CarbonTableInputFormat.setTableInfo(hadoopConf, carbonTable.getTableInfo)
     val attemptContext = new TaskAttemptContextImpl(hadoopConf, attemptId)
-    val format = new CarbonTableInputFormat[Array[Object]]()
+    val format = CarbonInputFormat.newStreamFormat(
+      hadoopConf, carbonTable.getAbsoluteTableIdentifier)
+    format.setColumnProjection(hadoopConf, projection)
     val model = format.createQueryModel(inputSplit, attemptContext)
-    val inputFormat = new CarbonStreamInputFormat
+    val inputFormat = CarbonInputFormat.newStreamFormat(
+      hadoopConf, carbonTable.getAbsoluteTableIdentifier)
     val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
       .asInstanceOf[CarbonStreamRecordReader]
     streamReader.setVectorReader(false)
@@ -191,7 +189,9 @@ class StreamHandoffRDD[K, V](
    */
   override protected def getPartitions: Array[Partition] = {
     val job = Job.getInstance(FileFactory.getConfiguration)
-    val inputFormat = new CarbonTableInputFormat[Array[Object]]()
+    val inputFormat = CarbonInputFormat.newStreamFormat(
+      job.getConfiguration,
+      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier)
     val segmentList = new util.ArrayList[String](1)
     segmentList.add(handOffSegmentId)
     val splits = inputFormat.getSplitsOfStreaming(

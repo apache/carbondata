@@ -39,6 +39,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.FileHeader;
+import org.apache.carbondata.hadoop.api.CarbonStreamOutputFormat;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
 import org.apache.carbondata.processing.loading.BadRecordsLoggerProvider;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
@@ -95,7 +96,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private boolean isFirstRow = true;
   private boolean hasException = false;
 
-  CarbonStreamRecordWriter(TaskAttemptContext job) throws IOException {
+  public CarbonStreamRecordWriter(TaskAttemptContext job) throws IOException {
     initialize(job);
   }
 
@@ -275,7 +276,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
         CarbonMetadataUtil.getFileHeader(true, columnSchemaList, System.currentTimeMillis());
     fileHeader.setIs_footer_present(false);
     fileHeader.setIs_splitable(true);
-    fileHeader.setSync_marker(CarbonStreamOutputFormat.CARBON_SYNC_MARKER);
+    fileHeader.setSync_marker(CarbonStreamOutputFormat.getSyncMarker());
     outputStream.write(CarbonUtil.getByteArray(fileHeader));
   }
 
@@ -286,7 +287,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     if (output.getRowIndex() == -1) {
       return;
     }
-    output.apppendBlocklet(outputStream);
+    output.appendBlocklet(outputStream);
     outputStream.flush();
     // reset data
     output.reset();

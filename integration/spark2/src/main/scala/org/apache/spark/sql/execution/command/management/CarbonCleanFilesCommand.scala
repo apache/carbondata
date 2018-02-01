@@ -23,11 +23,12 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
 
-import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.api.CarbonStoreSparkUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.events.{CleanFilesPostEvent, CleanFilesPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.store.api.CarbonStore
 
 /**
  * Clean data in table
@@ -71,7 +72,7 @@ case class CarbonCleanFilesCommand(
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
     val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    CarbonStore.cleanFiles(
+    CarbonStoreSparkUtil.cleanFiles(
       dbName = dbName,
       tableName = tableName,
       tablePath = tablePath,
@@ -90,7 +91,7 @@ case class CarbonCleanFilesCommand(
     } else {
       None
     }
-    CarbonStore.cleanFiles(
+    CarbonStoreSparkUtil.cleanFiles(
       dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
       tableName = tableName,
       tablePath = carbonTable.getTablePath,

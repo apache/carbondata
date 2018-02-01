@@ -38,7 +38,7 @@ import org.apache.carbondata.processing.loading.parser.impl.RowParserImpl
 import org.apache.carbondata.processing.loading.sort.SortStepRowUtil
 import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImpl
 import org.apache.carbondata.processing.sort.sortdata.SortParameters
-import org.apache.carbondata.processing.store.{CarbonFactHandler, CarbonFactHandlerFactory}
+import org.apache.carbondata.processing.store.{CarbonFactDataHandlerModel, CarbonFactHandler, CarbonFactHandlerFactory}
 import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil}
 import org.apache.carbondata.spark.rdd.{NewRddIterator, StringArrayRow}
 import org.apache.carbondata.spark.util.Util
@@ -180,8 +180,7 @@ object DataLoadProcessorStepOnSpark {
     var dataWriter: DataWriterProcessorStepImpl = null
     try {
       model = modelBroadcast.value.getCopyWithTaskNo(index.toString)
-      val storeLocation = Array(getTempStoreLocation(index))
-      val conf = DataLoadProcessBuilder.createConfiguration(model, storeLocation)
+      val conf = DataLoadProcessBuilder.createConfiguration(model)
 
       tableName = model.getTableName
 
@@ -194,7 +193,7 @@ object DataLoadProcessorStepOnSpark {
 
       dataWriter = new DataWriterProcessorStepImpl(conf)
 
-      val dataHandlerModel = dataWriter.getDataHandlerModel
+      val dataHandlerModel = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(conf, 0, 0)
       var dataHandler: CarbonFactHandler = null
       var rowsNotExist = true
       while (rows.hasNext) {

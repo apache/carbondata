@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.CommonUtil
@@ -152,9 +152,9 @@ object PartitionUtils {
       carbonTable: CarbonTable): java.util.List[TableBlockInfo] = {
     val jobConf = new JobConf(new Configuration)
     val job = new Job(jobConf)
-    val format = CarbonInputFormatUtil
-      .createCarbonTableInputFormat(identifier, partitionIds.asJava, job)
-    CarbonTableInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
+    val format = CarbonInputFormat.newTableFormat(job.getConfiguration, identifier)
+    CarbonTableInputFormat.setPartitionIdList(job.getConfiguration, partitionIds.asJava)
+    format.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     val splits = format.getSplitsOfOneSegment(job, segmentId,
       oldPartitionIdList.map(_.asInstanceOf[Integer]).asJava, partitionInfo)
     val blockList = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])

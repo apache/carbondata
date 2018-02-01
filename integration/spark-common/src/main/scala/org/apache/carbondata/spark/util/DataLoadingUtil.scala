@@ -17,11 +17,15 @@
 
 package org.apache.carbondata.spark.util
 
+import java.io.File
+
 import scala.collection.{immutable, mutable}
 import scala.collection.JavaConverters._
+import scala.util.Random
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkEnv
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
@@ -195,6 +199,51 @@ object DataLoadingUtil {
 
   /**
    * build CarbonLoadModel for data loading
+   * @param table CarbonTable object containing all metadata information for the table
+   *              like table name, table path, schema, etc
+   * @param options Load options from user input
+   * @return a new CarbonLoadModel instance
+   */
+  def buildCarbonLoadModelJava(
+      table: CarbonTable,
+      options: java.util.Map[String, String]
+  ): CarbonLoadModel = {
+    val carbonProperty: CarbonProperties = CarbonProperties.getInstance
+    val optionsFinal = getDataLoadingOptions(carbonProperty, options.asScala.toMap)
+    optionsFinal.put("sort_scope", "no_sort")
+    if (!options.containsKey("fileheader")) {
+      val csvHeader = table.getCreateOrderColumn(table.getTableName)
+        .asScala.map(_.getColName).mkString(",")
+      optionsFinal.put("fileheader", csvHeader)
+    }
+    val model = new CarbonLoadModel()
+    buildCarbonLoadModel(
+      table = table,
+      carbonProperty = carbonProperty,
+      options = options.asScala.toMap,
+      optionsFinal = optionsFinal,
+      carbonLoadModel = model,
+      hadoopConf = null)  // we have provided 'fileheader', so it can be null
+
+    // set default values
+    model.setTimestampformat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    model.setDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    model.setUseOnePass(options.asScala.getOrElse("onepass", "false").toBoolean)
+    model.setDictionaryServerHost(options.asScala.getOrElse("dicthost", null))
+    model.setDictionaryServerPort(options.asScala.getOrElse("dictport", "-1").toInt)
+    model
+  }
+
+  /**
+   * build CarbonLoadModel for data loading
+   * @param table CarbonTable object containing all metadata information for the table
+   *              like table name, table path, schema, etc
+   * @param carbonProperty Carbon property instance
+   * @param options Load options from user input
+   * @param optionsFinal Load options that populated with default values for optional options
+   * @param carbonLoadModel The output load model
+   * @param hadoopConf hadoopConf is needed to read CSV header if there 'fileheader' is not set in
+   *                   user provided load options
    */
   def buildCarbonLoadModel(
       table: CarbonTable,
@@ -325,6 +374,48 @@ object DataLoadingUtil {
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
+
+    carbonLoadModel.setWriteTempPath(genWriteTempPath)
+    carbonLoadModel.setFileLevelLoad(false)
+  }
+
+  /**
+   * Return temporary write directories for writer. It either generate one or pick from
+   * configured local directories in YARN.
+   */
+  private def genWriteTempPath: Array[String] = {
+
+    def tmpLocationSuffix = File.separator + System.nanoTime() + "_" + Random.nextInt()
+
+    var storeLocation: Array[String] = Array[String]()
+
+    // this property is used to determine whether temp location for carbon is inside
+    // container temp dir or is yarn application directory.
+    val isCarbonUseLocalDir = CarbonProperties.getInstance().getProperty(
+      "carbon.use.local.dir", "false").equalsIgnoreCase("true")
+
+    val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
+
+    if (isCarbonUseLocalDir) {
+      val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
+
+      if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
+        // use single dir
+        storeLocation = storeLocation :+
+                        (yarnStoreLocations(Random.nextInt(yarnStoreLocations.length)) +
+                         tmpLocationSuffix)
+        if (storeLocation == null || storeLocation.isEmpty) {
+          storeLocation = storeLocation :+
+                          (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+        }
+      } else {
+        // use all the yarn dirs
+        storeLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
+      }
+    } else {
+      storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+    }
+    storeLocation
   }
 
   private def isLoadDeletionRequired(metaDataLocation: String): Boolean = {

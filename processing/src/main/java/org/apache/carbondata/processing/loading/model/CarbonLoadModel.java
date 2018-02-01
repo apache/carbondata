@@ -186,6 +186,24 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean isAggLoadRequest;
 
+  /**
+   * Temporary output file path for writer to write (full path including file name)
+   */
+  private String[] writeTempPath;
+
+  /**
+   * True if it is file level loading, writeTempPath is controlled by user
+   */
+  private boolean isFileLevelLoad;
+
+  public boolean isFileLevelLoad() {
+    return isFileLevelLoad;
+  }
+
+  public void setFileLevelLoad(boolean fileLevelLoad) {
+    isFileLevelLoad = fileLevelLoad;
+  }
+
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
   }
@@ -402,17 +420,15 @@ public class CarbonLoadModel implements Serializable {
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.isAggLoadRequest = isAggLoadRequest;
     copy.badRecordsLocation = badRecordsLocation;
+    copy.writeTempPath = writeTempPath;
+    copy.isFileLevelLoad = isFileLevelLoad;
     return copy;
   }
 
   /**
-   * get CarbonLoadModel with partition
-   *
-   * @param header
-   * @param delimiter
-   * @return
+   * Return a new copy
    */
-  public CarbonLoadModel getCopyWithPartition(String header, String delimiter) {
+  public CarbonLoadModel copy() {
     CarbonLoadModel copyObj = new CarbonLoadModel();
     copyObj.tableName = tableName;
     copyObj.factFilePath = null;
@@ -421,9 +437,9 @@ public class CarbonLoadModel implements Serializable {
     copyObj.loadMetadataDetails = loadMetadataDetails;
     copyObj.isRetentionRequest = isRetentionRequest;
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
-    copyObj.csvHeader = header;
+    copyObj.csvHeader = csvHeader;
     copyObj.csvHeaderColumns = csvHeaderColumns;
-    copyObj.csvDelimiter = delimiter;
+    copyObj.csvDelimiter = csvDelimiter;
     copyObj.complexDelimiterLevel1 = complexDelimiterLevel1;
     copyObj.complexDelimiterLevel2 = complexDelimiterLevel2;
     copyObj.blocksID = blocksID;
@@ -454,6 +470,8 @@ public class CarbonLoadModel implements Serializable {
     copyObj.batchSortSizeInMb = batchSortSizeInMb;
     copyObj.badRecordsLocation = badRecordsLocation;
     copyObj.isAggLoadRequest = isAggLoadRequest;
+    copyObj.writeTempPath = writeTempPath;
+    copyObj.isFileLevelLoad = isFileLevelLoad;
     return copyObj;
   }
 
@@ -784,5 +802,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setSkipEmptyLine(String skipEmptyLine) {
     this.skipEmptyLine = skipEmptyLine;
+  }
+
+  public String[] getWriteTempPath() {
+    return writeTempPath;
+  }
+
+  public void setWriteTempPath(String[] writeTempPath) {
+    this.writeTempPath = writeTempPath;
   }
 }

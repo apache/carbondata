@@ -37,6 +37,7 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.BlockIndexStore;
+import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -248,17 +249,31 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       throws IOException, QueryExecutionException {
     initQuery(queryModel);
     List<BlockExecutionInfo> blockExecutionInfoList = new ArrayList<BlockExecutionInfo>();
-    // fill all the block execution infos for all the blocks selected in
-    // query
+    // fill all the block execution infos for all the blocks selected in query
     // and query will be executed based on that infos
     for (int i = 0; i < queryProperties.dataBlocks.size(); i++) {
       AbstractIndex abstractIndex = queryProperties.dataBlocks.get(i);
-      BlockletDataRefNode dataRefNode =
-          (BlockletDataRefNode) abstractIndex.getDataRefNode();
-      blockExecutionInfoList.add(getBlockExecutionInfoForBlock(queryModel, abstractIndex,
-          dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
-          dataRefNode.numberOfNodes(), dataRefNode.getBlockInfos().get(0).getFilePath(),
-          dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath()));
+      DataRefNode dataRefNode = abstractIndex.getDataRefNode();
+      BlockExecutionInfo blockExecutionInfo;
+      if (dataRefNode instanceof BlockletDataRefNode) {
+        BlockletDataRefNode node = (BlockletDataRefNode) abstractIndex.getDataRefNode();
+        blockExecutionInfo = getBlockExecutionInfoForBlock(
+            queryModel,
+            abstractIndex,
+            node.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
+            node.numberOfNodes(),
+            node.getBlockInfos().get(0).getFilePath(),
+            node.getBlockInfos().get(0).getDeletedDeltaFilePath());
+      } else {
+        blockExecutionInfo = getBlockExecutionInfoForBlock(
+            queryModel,
+            abstractIndex,
+            0,
+            -1,
+            queryModel.getFilePath(),
+            new String[] {});
+      }
+      blockExecutionInfoList.add(blockExecutionInfo);
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();

@@ -58,13 +58,21 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
 
   private LogService LOGGER = LogServiceFactory.getLogService(this.getClass().getCanonicalName());
 
+  MapredCarbonInputFormat() {
+    super();
+  }
+
+  MapredCarbonInputFormat(Configuration configuration, AbsoluteTableIdentifier identifier) {
+    super(configuration, identifier);
+  }
+
   /**
    * this method will read the schema from the physical file and populate into CARBON_TABLE
    *
    * @param configuration
    * @throws IOException
    */
-  private static void populateCarbonTable(Configuration configuration, String paths)
+  private void populateCarbonTable(Configuration configuration, String paths)
       throws IOException, InvalidConfigurationException {
     String dirs = configuration.get(INPUT_DIR, "");
     String[] inputPaths = StringUtils.split(dirs);
@@ -90,7 +98,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     setTableInfo(configuration, carbonTable.getTableInfo());
   }
 
-  private static CarbonTable getCarbonTable(Configuration configuration, String path)
+  private CarbonTable getCarbonTable(Configuration configuration, String path)
       throws IOException, InvalidConfigurationException {
     populateCarbonTable(configuration, path);
     // read it from schema file in the store
@@ -142,8 +150,8 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     String projectionString = getProjection(configuration, carbonTable,
         identifier.getCarbonTableIdentifier().getTableName());
     String[] projectionColumns = projectionString.split(",");
-    QueryModel queryModel = carbonTable.createQueryWithProjection(
-        projectionColumns, new DataTypeConverterImpl());
+    QueryModel queryModel = carbonTable.createQueryWithProjection(projectionColumns);
+    queryModel.setConverter(new DataTypeConverterImpl());
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);

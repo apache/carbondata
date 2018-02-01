@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hadoop.streaming;
+package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.hadoop.streaming.CarbonStreamRecordWriter;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
@@ -33,9 +34,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
  * Stream output format
  */
 public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
-
-  static final byte[] CARBON_SYNC_MARKER =
-      "@carbondata_sync".getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
 
   public static final String CARBON_ENCODER_ROW_BUFFER_SIZE = "carbon.stream.row.buffer.size";
 
@@ -84,4 +82,7 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
     return hadoopConf.get(SEGMENT_ID);
   }
 
+  public static byte[] getSyncMarker() {
+    return "@carbondata_sync".getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+  }
 }

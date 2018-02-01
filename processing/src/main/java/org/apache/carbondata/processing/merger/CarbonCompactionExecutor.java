@@ -100,7 +100,9 @@ public class CarbonCompactionExecutor {
     List<RawResultIterator> resultList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<TableBlockInfo> list = null;
-    queryModel = carbonTable.createQueryModelWithProjectAllColumns(dataTypeConverter);
+    queryModel = carbonTable.createQueryModelWithProjectAllColumns();
+    queryModel.setConverter(dataTypeConverter);
+    queryModel.setForcedDetailRawQuery(true);
     queryModel.setReadPageByPage(enablePageLevelReaderForCompaction());
     queryModel.setForcedDetailRawQuery(true);
     // iterate each seg ID

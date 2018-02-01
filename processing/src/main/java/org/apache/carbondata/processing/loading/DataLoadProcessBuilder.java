@@ -52,9 +52,9 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class DataLoadProcessBuilder {
 
-  public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String[] storeLocation,
+  public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel,
       CarbonIterator[] inputIterators) throws Exception {
-    CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
+    CarbonDataLoadConfiguration configuration = createConfiguration(loadModel);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     if (!configuration.isSortTable() || sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
       return buildInternalForNoSort(inputIterators, configuration);
@@ -128,28 +128,30 @@ public final class DataLoadProcessBuilder {
     return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
   }
 
-  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
-      String[] storeLocation) {
-    CarbonDataProcessorUtil.createLocations(storeLocation);
-
+  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel) {
+    if (loadModel.isFileLevelLoad()) {
+      String fullPath = loadModel.getWriteTempPath()[0];
+      CarbonDataProcessorUtil.createLocations(
+          new String[]{fullPath.substring(0, fullPath.lastIndexOf(File.separator))});
+    } else {
+      CarbonDataProcessorUtil.createLocations(loadModel.getWriteTempPath());
+    }
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     String tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
             loadModel.getTaskNo(), false, false);
     CarbonProperties.getInstance().addProperty(tempLocationKey,
-        StringUtils.join(storeLocation, File.pathSeparator));
+        StringUtils.join(loadModel.getWriteTempPath(), File.pathSeparator));
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getTablePath());
 
-    return createConfiguration(loadModel);
-  }
-
-  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel) {
     CarbonDataLoadConfiguration configuration = new CarbonDataLoadConfiguration();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     configuration.setTableIdentifier(identifier);
+    configuration.setWriteTempPath(loadModel.getWriteTempPath());
+    configuration.setFileLevelLoad(loadModel.isFileLevelLoad());
     configuration.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     configuration.setHeader(loadModel.getCsvHeaderColumns());
     configuration.setSegmentId(loadModel.getSegmentId());
