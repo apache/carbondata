@@ -46,7 +46,7 @@ object TimeSeriesUtil {
     if (!eventTime.isDefined) {
       throw new MalformedCarbonCommandException("event_time not defined in time series")
     } else {
-      val carbonColumn = parentTable.getColumnByName(parentTable.getTableName, eventTime.get)
+      val carbonColumn = parentTable.getColumnByName(parentTable.getTableName, eventTime.get.trim)
       if (carbonColumn.getDataType != DataTypes.TIMESTAMP) {
         throw new MalformedCarbonCommandException(
           "Timeseries event time is only supported on Timestamp " +
@@ -110,7 +110,7 @@ object TimeSeriesUtil {
     val defaultValue = "1"
     for (granularity <- Granularity.values()) {
       if (dmProperties.get(granularity.getName).isDefined &&
-        dmProperties.get(granularity.getName).get.equalsIgnoreCase(defaultValue)) {
+        dmProperties.get(granularity.getName).get.trim.equalsIgnoreCase(defaultValue)) {
         return (granularity.toString.toLowerCase, dmProperties.get(granularity.getName).get)
       }
     }
@@ -168,10 +168,9 @@ object TimeSeriesUtil {
   /**
    * Below method will be used to validate whether timeseries column present in
    * select statement or not
-   * @param fieldMapping
-   *                     fields from select plan
-   * @param timeSeriesColumn
-   *                         timeseries column name
+   *
+   * @param fieldMapping     fields from select plan
+   * @param timeSeriesColumn timeseries column name
    */
   def validateEventTimeColumnExitsInSelect(fieldMapping: scala.collection.mutable
   .LinkedHashMap[Field, DataMapField],

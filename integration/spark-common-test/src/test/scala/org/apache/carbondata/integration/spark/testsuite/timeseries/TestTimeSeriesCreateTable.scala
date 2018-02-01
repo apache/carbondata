@@ -368,6 +368,82 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
     assert(e.getMessage.contains("identifier matching regex"))
   }
 
+  test("test timeseries create table 33: support event_time and granularity key with space") {
+    sql("DROP DATAMAP IF EXISTS agg1_month ON TABLE maintable")
+    sql(
+      s"""CREATE DATAMAP agg1_month ON TABLE mainTable
+         |USING '$timeSeries'
+         |DMPROPERTIES (
+         |   ' event_time '='dataTime',
+         |   ' MONTH_GRANULARITY '='1')
+         |AS SELECT dataTime, SUM(age) FROM mainTable
+         |GROUP BY dataTime
+        """.stripMargin)
+    checkExistence(sql("SHOW DATAMAP ON TABLE maintable"), true, "maintable_agg1_month")
+    sql("DROP DATAMAP IF EXISTS agg1_month ON TABLE maintable")
+  }
+
+
+  test("test timeseries create table 34: support event_time value with space") {
+    sql("DROP DATAMAP IF EXISTS agg1_month ON TABLE maintable")
+    sql(
+      s"""CREATE DATAMAP agg1_month ON TABLE mainTable
+         |USING '$timeSeries'
+         |DMPROPERTIES (
+         |   'event_time '=' dataTime',
+         |   'MONTH_GRANULARITY '='1')
+         |AS SELECT dataTime, SUM(age) FROM mainTable
+         |GROUP BY dataTime
+        """.stripMargin)
+    checkExistence(sql("SHOW DATAMAP ON TABLE maintable"), true, "maintable_agg1_month")
+    sql("DROP DATAMAP IF EXISTS agg1_month ON TABLE maintable")
+  }
+
+  test("test timeseries create table 35: support granularity value with space") {
+    sql("DROP DATAMAP IF EXISTS agg1_month ON TABLE maintable")
+    sql(
+      s"""CREATE DATAMAP agg1_month ON TABLE mainTable
+         |USING '$timeSeries'
+         |DMPROPERTIES (
+         |   'event_time '='dataTime',
+         |   'MONTH_GRANULARITY '=' 1')
+         |AS SELECT dataTime, SUM(age) FROM mainTable
+         |GROUP BY dataTime
+        """.stripMargin)
+    checkExistence(sql("SHOW DATAMAP ON TABLE maintable"), true, "maintable_agg1_month")
+    sql("DROP DATAMAP IF EXISTS agg1_month ON TABLE maintable")
+  }
+
+  test("test timeseries create table 36: support event_time and granularity value with space") {
+    sql("DROP DATAMAP IF EXISTS agg1_month ON TABLE maintable")
+    sql(
+      s"""
+         | CREATE DATAMAP agg1_month ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         |   'EVENT_TIME'='dataTime   ',
+         |   'MONTH_GRANULARITY'=' 1  ')
+         | AS SELECT dataTime, SUM(age) FROM mainTable
+         | GROUP BY dataTime
+        """.stripMargin)
+    checkExistence(sql("SHOW DATAMAP ON TABLE maintable"), true, "maintable_agg1_month")
+  }
+
+  test("test timeseries create table 37:  unsupport event_time error value") {
+    sql("DROP DATAMAP IF EXISTS agg1_month ON TABLE maintable")
+    intercept[NullPointerException] {
+      sql(
+        s"""CREATE DATAMAP agg1_month ON TABLE mainTable USING '$timeSeries'
+           |DMPROPERTIES (
+           |   'event_time'='data Time',
+           |   'MONTH_GRANULARITY'='1')
+           |AS SELECT dataTime, SUM(age) FROM mainTable
+           |GROUP BY dataTime
+        """.stripMargin)
+    }
+    sql("DROP DATAMAP IF EXISTS agg1_month ON TABLE maintable")
+  }
+
   override def afterAll: Unit = {
     sql("DROP TABLE IF EXISTS mainTable")
   }
