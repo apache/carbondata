@@ -68,7 +68,8 @@ class CarbonEnv {
 
     // added for handling timeseries function like hour, minute, day , month , year
     sparkSession.udf.register("timeseries", new TimeSeriesFunction)
-    synchronized {
+    // acquiring global level lock so global configuration will be updated by only one thread
+    CarbonEnv.carbonEnvMap.synchronized {
       if (!initialized) {
         // update carbon session parameters , preserve thread parameters
         val currentThreadSesssionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
