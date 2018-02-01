@@ -52,7 +52,14 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
       throws IOException {
     int dataLength = 0;
     if (measureColumnChunkOffsets.size() - 1 == columnIndex) {
-      dataLength = measureColumnChunkLength.get(columnIndex);
+      DataChunk2 metadataChunk = null;
+      synchronized (fileReader) {
+        metadataChunk = CarbonUtil.readDataChunk(ByteBuffer.wrap(fileReader
+                .readByteArray(filePath, measureColumnChunkOffsets.get(columnIndex),
+                    measureColumnChunkLength.get(columnIndex))), 0,
+            measureColumnChunkLength.get(columnIndex));
+      }
+      dataLength = measureColumnChunkLength.get(columnIndex) + metadataChunk.data_page_length;
     } else {
       long currentMeasureOffset = measureColumnChunkOffsets.get(columnIndex);
       dataLength = (int) (measureColumnChunkOffsets.get(columnIndex + 1) - currentMeasureOffset);
@@ -115,9 +122,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
     DataChunk2 measureColumnChunk = CarbonUtil.readDataChunk(rawData, copyPoint,
         measureColumnChunkLength.get(blockIndex));
-    if (measureColumnChunkOffsets.size() - 1 != blockIndex) {
-      copyPoint += measureColumnChunkLength.get(blockIndex);
-    }
+    copyPoint += measureColumnChunkLength.get(blockIndex);
 
     ColumnPage page = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
     page.setNullBits(getNullBitSet(measureColumnChunk.presence));
@@ -130,7 +135,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     List<ByteBuffer> encoder_meta = measureColumnChunk.getEncoder_meta();
     byte[] encodedMeta = encoder_meta.get(0).array();
 
-    ValueEncoderMeta meta = CarbonUtil.deserializeEncoderMetaV3(encodedMeta);
+    ValueEncoderMeta meta = CarbonUtil.deserializeEncoderMetaV2(encodedMeta);
     ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta);
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);

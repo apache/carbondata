@@ -49,6 +49,11 @@ public final class CarbonVersionConstants {
    */
   public static final String CARBONDATA_BUILD_DATE;
 
+  /**
+   * number of rows per blocklet column page default value for V2 version
+   */
+  public static final int NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT_V2 = 120000;
+
   static {
     // create input stream for CARBONDATA_VERSION_INFO_FILE
     InputStream resourceStream = Thread.currentThread().getContextClassLoader()

@@ -587,26 +587,24 @@ public class CarbonUpdateUtil {
    */
   private static void deleteStaleCarbonDataFiles(LoadMetadataDetails segment,
       CarbonFile[] allSegmentFiles, SegmentUpdateStatusManager updateStatusManager) {
-    boolean doForceDelete = true;
-    boolean isAbortedFile = true;
     CarbonFile[] invalidUpdateDeltaFiles = updateStatusManager
         .getUpdateDeltaFilesList(segment.getLoadName(), false,
             CarbonCommonConstants.UPDATE_DELTA_FILE_EXT, true, allSegmentFiles,
-            isAbortedFile);
+            true);
     // now for each invalid delta file need to check the query execution time out
     // and then delete.
     for (CarbonFile invalidFile : invalidUpdateDeltaFiles) {
-      compareTimestampsAndDelete(invalidFile, doForceDelete, false);
+      compareTimestampsAndDelete(invalidFile, true, false);
     }
     // do the same for the index files.
     CarbonFile[] invalidIndexFiles = updateStatusManager
         .getUpdateDeltaFilesList(segment.getLoadName(), false,
             CarbonCommonConstants.UPDATE_INDEX_FILE_EXT, true, allSegmentFiles,
-            isAbortedFile);
+            true);
     // now for each invalid index file need to check the query execution time out
     // and then delete.
     for (CarbonFile invalidFile : invalidIndexFiles) {
-      compareTimestampsAndDelete(invalidFile, doForceDelete, false);
+      compareTimestampsAndDelete(invalidFile, true, false);
     }
   }
 
