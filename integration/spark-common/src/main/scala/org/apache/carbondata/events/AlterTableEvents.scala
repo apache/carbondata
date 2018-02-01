@@ -182,6 +182,16 @@ case class AlterTableCompactionPreStatusUpdateEvent(sparkSession: SparkSession,
     mergedLoadName: String) extends Event with AlterTableCompactionStatusUpdateEventInfo
 
 /**
+ * Compaction Event for handling post update status file operations, like committing child
+ * datamaps in one transaction
+ */
+case class AlterTableCompactionPostStatusUpdateEvent(
+    carbonTable: CarbonTable,
+    carbonMergerMapping: CarbonMergerMapping,
+    carbonLoadModel: CarbonLoadModel,
+    mergedLoadName: String) extends Event with AlterTableCompactionStatusUpdateEventInfo
+
+/**
  * Compaction Event for handling clean up in case of any compaction failure and abort the
  * operation, lister has to implement this event to handle failure scenarios
  *

@@ -178,23 +178,42 @@ public class SegmentStatusManager {
    * @return
    */
   public static LoadMetadataDetails[] readLoadMetadata(String metadataFolderPath) {
+    String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonCommonConstants.LOADMETADATA_FILENAME;
+    return readTableStatusFile(metadataFileName);
+  }
+
+  /**
+   * Reads the table status file with the specified UUID if non empty.
+   */
+  public static LoadMetadataDetails[] readLoadMetadata(String metaDataFolderPath, String uuid) {
+    String tableStatusFileName;
+    if (uuid.isEmpty()) {
+      tableStatusFileName = metaDataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonCommonConstants.LOADMETADATA_FILENAME;
+    } else {
+      tableStatusFileName = metaDataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonCommonConstants.LOADMETADATA_FILENAME + CarbonCommonConstants.UNDERSCORE + uuid;
+    }
+    return readTableStatusFile(tableStatusFileName);
+  }
+
+  public static LoadMetadataDetails[] readTableStatusFile(String tableStatusPath) {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
-    String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.LOADMETADATA_FILENAME;
     LoadMetadataDetails[] listOfLoadFolderDetailsArray;
     AtomicFileOperations fileOperation =
-        new AtomicFileOperationsImpl(metadataFileName, FileFactory.getFileType(metadataFileName));
+        new AtomicFileOperationsImpl(tableStatusPath, FileFactory.getFileType(tableStatusPath));
 
     try {
-      if (!FileFactory.isFileExist(metadataFileName, FileFactory.getFileType(metadataFileName))) {
+      if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
         return new LoadMetadataDetails[0];
       }
       dataInputStream = fileOperation.openForRead();
       inStream = new InputStreamReader(dataInputStream,
-              Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       buffReader = new BufferedReader(inStream);
       listOfLoadFolderDetailsArray =
           gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
