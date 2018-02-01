@@ -119,14 +119,16 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (!filteredRows[rowId]) {
       Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(value);
       columnVector.putDecimal(counter++, toDecimal, precision);
+      Decimal decimal = Decimal.apply(value);
+      columnVector.putDecimal(counter++, decimal, precision);
     }
   }
 
   @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
+    Decimal decimal = Decimal.apply(value);
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(value);
-        columnVector.putDecimal(counter++, toDecimal, precision);
+        columnVector.putDecimal(counter++, decimal, precision);
       }
       rowId++;
     }

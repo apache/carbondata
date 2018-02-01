@@ -26,12 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
-
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class StructQueryType extends ComplexQueryType implements GenericQueryType {
 
@@ -97,15 +92,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     }
   }
 
-  @Override public DataType getSchemaType() {
-    StructField[] fields = new StructField[children.size()];
-    for (int i = 0; i < children.size(); i++) {
-      fields[i] = new StructField(children.get(i).getName(), null, true,
-          Metadata.empty());
-    }
-    return new StructType(fields);
-  }
-
   @Override public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);
@@ -122,6 +108,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
       fields[i] =  children.get(i).getDataBasedOnDataTypeFromSurrogates(surrogateData);
     }
 
-    return new GenericInternalRow(fields);
+    return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
   }
 }

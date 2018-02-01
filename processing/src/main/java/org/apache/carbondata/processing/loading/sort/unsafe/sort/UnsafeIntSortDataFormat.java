@@ -20,8 +20,6 @@ import org.apache.carbondata.core.memory.IntPointerBuffer;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeCarbonRow;
 
-import org.apache.spark.util.collection.SortDataFormat;
-
 /**
  * Interface implementation for utilities to sort the data.
  */

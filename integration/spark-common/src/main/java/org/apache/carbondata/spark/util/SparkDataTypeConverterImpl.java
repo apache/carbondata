@@ -21,6 +21,8 @@ import java.io.Serializable;
 
 import org.apache.carbondata.core.util.DataTypeConverter;
 
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.catalyst.util.GenericArrayData;
 import org.apache.spark.unsafe.types.UTF8String;
 
 /**
@@ -30,20 +32,44 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
 
   private static final long serialVersionUID = -4379212832935070583L;
 
+  @Override
   public Object convertToDecimal(Object data) {
     java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
     return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
   }
 
+  @Override
+  public Object convertToBigDecimal(Object data) {
+    return ((org.apache.spark.sql.types.Decimal) data).toJavaBigDecimal();
+  }
+
+  @Override
   public byte[] convertFromStringToByte(Object data) {
     return UTF8String.fromString((String) data).getBytes();
   }
 
+  @Override
   public Object convertFromByteToUTF8String(Object data) {
     return UTF8String.fromBytes((byte[]) data);
   }
 
+  @Override
+  public byte[] convertFromByteToUTF8Bytes(byte[] data) {
+    return UTF8String.fromBytes(data).getBytes();
+  }
+
+  @Override
   public Object convertFromStringToUTF8String(Object data) {
     return UTF8String.fromString((String) data);
+  }
+
+  @Override
+  public Object wrapWithGenericArrayData(Object data) {
+    return new GenericArrayData(data);
+  }
+
+  @Override
+  public Object wrapWithGenericRow(Object[] fields) {
+    return new GenericInternalRow(fields);
   }
 }

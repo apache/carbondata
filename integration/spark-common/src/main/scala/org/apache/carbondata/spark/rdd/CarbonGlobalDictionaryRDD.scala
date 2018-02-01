@@ -48,7 +48,7 @@ import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
+import org.apache.carbondata.spark.util.{DataLoadingUtil, GlobalDictionaryUtil}
 
 /**
  * A partitioner partition by column.
@@ -297,12 +297,14 @@ class CarbonBlockDistinctValuesCombineRDD(
         if (row != null) {
           rowCount += 1
           for (i <- 0 until dimNum) {
-            dimensionParsers(i).parseString(CarbonScalaUtil.getString(row.get(i),
-              model.serializationNullFormat,
-              model.delimiters(0),
-              model.delimiters(1),
-              timeStampFormat,
-              dateFormat))
+            dimensionParsers(i).parseString(
+              DataLoadingUtil.getString(
+                row.get(i),
+                model.serializationNullFormat,
+                model.delimiters(0),
+                model.delimiters(1),
+                timeStampFormat,
+                dateFormat))
           }
         }
       }

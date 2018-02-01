@@ -41,9 +41,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.spark.annotation.DeveloperApi;
 
-@DeveloperApi
 public class TableProcessingOperations {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());

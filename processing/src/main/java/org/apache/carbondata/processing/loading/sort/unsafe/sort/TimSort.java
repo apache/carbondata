@@ -18,8 +18,6 @@ package org.apache.carbondata.processing.loading.sort.unsafe.sort;
 
 import java.util.Comparator;
 
-import org.apache.spark.util.collection.SortDataFormat;
-
 /**
  * A port of the Apache Spark's TimSort and they originally ported from Android TimSort class,
  * which utilizes a "stable, adaptive, iterative mergesort."
