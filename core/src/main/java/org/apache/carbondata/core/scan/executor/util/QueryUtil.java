@@ -229,14 +229,15 @@ public class QueryUtil {
       allProjectionListDimensionIndexes.add(dimensionOrdinalToBlockMapping.get(dimensionOrdinal));
       if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
         addChildrenBlockIndex(allProjectionListDimensionIndexes,
-            queryDimensions.get(i).getDimension());
+            queryDimensions.get(i).getDimension(),dimensionOrdinalToBlockMapping);
       }
 
       if (!filterDimensionOrdinal.contains(dimensionOrdinal)) {
         blockIndex = dimensionOrdinalToBlockMapping.get(dimensionOrdinal);
         dimensionBlockIndex.add(blockIndex);
         if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
-          addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension());
+          addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension(),
+                  dimensionOrdinalToBlockMapping);
         }
       }
     }
@@ -260,10 +261,13 @@ public class QueryUtil {
    * @param blockIndexes block indexes
    * @param dimension    parent dimension
    */
-  private static void addChildrenBlockIndex(Set<Integer> blockIndexes, CarbonDimension dimension) {
+  private static void addChildrenBlockIndex(Set<Integer> blockIndexes, CarbonDimension dimension,
+                                            Map<Integer, Integer> dimensionOrdinalToBlockMapping) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
-      addChildrenBlockIndex(blockIndexes, dimension.getListOfChildDimensions().get(i));
-      blockIndexes.add(dimension.getListOfChildDimensions().get(i).getOrdinal());
+      addChildrenBlockIndex(blockIndexes, dimension.getListOfChildDimensions().get(i),
+              dimensionOrdinalToBlockMapping);
+      blockIndexes.add(dimensionOrdinalToBlockMapping.get(
+              dimension.getListOfChildDimensions().get(i).getOrdinal()));
     }
   }
 

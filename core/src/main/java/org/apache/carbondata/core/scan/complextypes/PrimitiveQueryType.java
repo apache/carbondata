@@ -134,4 +134,14 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     }
     return actualData;
   }
+
+  @Override public Object getDataBasedOnDataTypeFromSurrogates(
+          ByteBuffer surrogateData , DataOutputStream out) throws IOException {
+    byte[] data = new byte[keySize];
+    surrogateData.get(data);
+    Bits bit = new Bits(new int[]{keySize * 8});
+    int surrgateValue = (int)bit.getKeyArray(data, 0)[0];
+    out.writeInt(surrgateValue);
+    return out;
+  }
 }

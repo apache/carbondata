@@ -16,12 +16,21 @@
  */
 package org.apache.carbondata.processing.merger;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.cache.CacheType;
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
@@ -32,6 +41,10 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.scan.complextypes.ArrayQueryType;
+import org.apache.carbondata.core.scan.complextypes.PrimitiveQueryType;
+import org.apache.carbondata.core.scan.complextypes.StructQueryType;
+import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -128,10 +141,19 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * intermediate sort merger
    */
   private SortIntermediateFileMerger intermediateFileMerger;
-
   private List<String> partitionNames;
   private SortParameters sortParameters;
+  private CacheProvider cacheProvider ;
+  private Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache;
 
+
+  /**
+   * @param carbonLoadModel
+   * @param carbonTable
+   * @param segmentProperties
+   * @param compactionType
+   * @param tableName
+   */
   public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
       SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
       List<String> partitionNames) {
@@ -240,7 +262,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     // ByteBuffer[] noDictionaryBuffer = new ByteBuffer[noDictionaryCount];
     List<CarbonDimension> dimensions = segmentProperties.getDimensions();
-    Object[] preparedRow = new Object[dimensions.size() + measureCount];
+    List<CarbonDimension> complexDims = segmentProperties.getComplexDimensions();
+    Object[] preparedRow = new Object[dimensions.size() + complexDims.size() + measureCount];
     // convert the dictionary from MDKey to surrogate key
     byte[] dictionaryKey = wrapper.getDictionaryKey();
     long[] keyArray = segmentProperties.getDimensionKeyGenerator().getKeyArray(dictionaryKey);
@@ -260,11 +283,27 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         preparedRow[i] = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);
       }
     }
+    cacheProvider = CacheProvider.getInstance();
+    cache = cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
+    GenericQueryType[] complexTypes  = new GenericQueryType[complexDims.size()];
+    try {
+      complexTypes = getComplexDimensionsQueryType(carbonTable,complexDims , cache);
+      for (int i = 0; i < complexDims.size(); i++) {
+        ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
+        DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
+        complexTypes[i].getDataBasedOnDataTypeFromSurrogates(
+              ByteBuffer.wrap(wrapper.getComplexTypesKeys()[i]) ,dataOutputStream);
+        preparedRow[dimensions.size() + i] = byteArrayOutput.toByteArray();
+      }
+    } catch (IOException e) {
+      LOGGER.error("Error occured during compaction " + e);
+    }
+
     // fill all the measures
     // measures will always start from 1st index in the row object array
     int measureIndexInRow = 1;
     for (int i = 0; i < measureCount; i++) {
-      preparedRow[dimensionColumnCount + i] =
+      preparedRow[dimensions.size() + complexDims.size() + i] =
           getConvertedMeasureValue(row[measureIndexInRow++], dataTypes[i]);
     }
     return preparedRow;
@@ -338,9 +377,15 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private void initSortDataRows() throws Exception {
     measureCount = carbonTable.getMeasureByTableName(tableName).size();
     List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
-    noDictionaryColMapping = new boolean[dimensions.size()];
+    List<CarbonDimension> normalDims = new ArrayList<CarbonDimension>();
+    for (CarbonDimension dim : dimensions) {
+      if (!dim.isComplex()) {
+        normalDims.add(dim);
+      }
+    }
+    noDictionaryColMapping = new boolean[normalDims.size()];
     int i = 0;
-    for (CarbonDimension dimension : dimensions) {
+    for (CarbonDimension dimension : normalDims) {
       if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
         i++;
         continue;
@@ -424,6 +469,71 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         .getLocalDataFolderLocation(carbonLoadModel.getDatabaseName(), tableName,
             carbonLoadModel.getTaskNo(), carbonLoadModel.getPartitionId(), segmentId,
             true, false);
+  }
+
+
+  public  GenericQueryType[] getComplexDimensionsQueryType(CarbonTable carbontable,
+                                                        List<CarbonDimension> carbonColumns,
+                                                           Cache<DictionaryColumnUniqueIdentifier,
+                                                                   Dictionary> cache)
+          throws IOException {
+    GenericQueryType[] queryTypes = new GenericQueryType[carbonColumns.size()];
+    for (int i = 0; i < carbonColumns.size(); i++) {
+      if (carbonColumns.get(i).isComplex()) {
+        if (DataTypes.isArrayType(carbonColumns.get(i).getDataType())) {
+          queryTypes[i] = new ArrayQueryType(carbonColumns.get(i).getColName(),
+                  carbonColumns.get(i).getColName(), i);
+        } else if (DataTypes.isStructType(carbonColumns.get(i).getDataType())) {
+          queryTypes[i] = new StructQueryType(carbonColumns.get(i).getColName(),
+                  carbonColumns.get(i).getColName(), i);
+        } else {
+          throw new UnsupportedOperationException(
+                  carbonColumns.get(i).getDataType().getName() + " is not supported");
+        }
+
+        fillChildren(carbontable, queryTypes[i], carbonColumns.get(i), i, cache);
+      }
+    }
+
+    return queryTypes;
+  }
+
+  private  void fillChildren(CarbonTable carbontable, GenericQueryType parentQueryType,
+                                   CarbonDimension dimension, int parentBlockIndex,
+                                   Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache)
+          throws IOException {
+    for (int i = 0; i < dimension.getNumberOfChild(); i++) {
+      CarbonDimension child = dimension.getListOfChildDimensions().get(i);
+      DataType dataType = child.getDataType();
+      GenericQueryType queryType = null;
+      if (DataTypes.isArrayType(dataType)) {
+        queryType =
+                new ArrayQueryType(child.getColName(), dimension.getColName(), ++parentBlockIndex);
+
+      } else if (DataTypes.isStructType(dataType)) {
+        queryType =
+                new StructQueryType(child.getColName(), dimension.getColName(), ++parentBlockIndex);
+      } else {
+        boolean isDirectDictionary =
+                CarbonUtil.hasEncoding(child.getEncoder(), Encoding.DIRECT_DICTIONARY);
+        String dictionaryPath = carbontable.getTableInfo().getFactTable().getTableProperties()
+                .get(CarbonCommonConstants.DICTIONARY_PATH);
+        DictionaryColumnUniqueIdentifier dictionarIdentifier =
+                new DictionaryColumnUniqueIdentifier(carbontable.getAbsoluteTableIdentifier(),
+                        child.getColumnIdentifier(), child.getDataType(), dictionaryPath);
+        int keySize = segmentProperties.getEachComplexDimColumnValueSize()
+                [dimension.getListOfChildDimensions().get(i).getComplexTypeOrdinal()];
+        queryType =
+                new PrimitiveQueryType(child.getColName(), dimension.getColName(),
+                        ++parentBlockIndex, child.getDataType(), keySize,
+                        cache.get(dictionarIdentifier),
+                        isDirectDictionary);
+      }
+      parentQueryType.addChildren(queryType);
+      if (child.getNumberOfChild() > 0) {
+        fillChildren(carbontable, queryType, child, parentBlockIndex, cache);
+      }
+    }
   }
 
 }

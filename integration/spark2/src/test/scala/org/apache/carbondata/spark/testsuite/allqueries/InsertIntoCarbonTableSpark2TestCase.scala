@@ -34,6 +34,16 @@ class InsertIntoCarbonTableSpark2TestCase extends Spark2QueryTest with BeforeAnd
     checkAnswer(sql("select * from OneRowTable"), Seq(Row("0.1", "a.b", 1, 1.2)))
   }
 
+  test("insert double datatype with required precision ") {
+    sql("Drop table if exists t1 ")
+    sql("create table t1(id int, col1 Decimal(3,2), col2 string) stored by 'carbondata'")
+    sql("insert into t1 values(1, '2', 'ab')")
+    sql("insert into t1 values(2, '2.1', 'ab')")
+    sql("insert into t1 values(3, '2.11', 'ab')")
+    sql("insert into t1 values(4, '2.119', 'ab')")
+    checkAnswer(sql("select * from t1 where id=4 "), Seq(Row(4, 2.12, "ab")))
+  }
+
   override def afterAll {
     sql("drop table if exists OneRowTable")
   }

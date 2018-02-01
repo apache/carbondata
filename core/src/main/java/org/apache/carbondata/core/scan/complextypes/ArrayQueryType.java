@@ -104,4 +104,19 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     return new GenericArrayData(data);
   }
 
+  @Override public DataOutputStream getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData,
+           DataOutputStream out) throws IOException {
+    int dataLength = surrogateData.getInt();
+    if (dataLength == -1) {
+      return null;
+    }
+    out.writeInt(dataLength);
+    for (int i = 0; i < dataLength; i++) {
+      children.getDataBasedOnDataTypeFromSurrogates(surrogateData ,out);
+    }
+    return out;
+
+
+  };
+
 }
