@@ -45,7 +45,7 @@ public class CarbonColumn implements Serializable {
   /**
    * order in which user has created table
    */
-  protected int schemaOrdinal;
+  private int schemaOrdinal;
 
   /**
    * Column identifier

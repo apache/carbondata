@@ -40,7 +40,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private DataType blockDataType;
 
-  public ColumnarVectorWrapper(ColumnVector columnVector, boolean[] filteredRows) {
+  ColumnarVectorWrapper(ColumnVector columnVector, boolean[] filteredRows) {
     this.columnVector = columnVector;
     this.filteredRows = filteredRows;
     this.dataType = CarbonScalaUtil.convertSparkToCarbonDataType(columnVector.dataType());

@@ -94,10 +94,9 @@ public class SegmentProperties {
   private int[] complexDimColumnCardinality;
 
   /**
-   * mapping of dimension column to block in a file this will be used for
-   * reading the blocks from file
+   * mapping of dimension ordinal in schema to column chunk index in the data file
    */
-  private Map<Integer, Integer> dimensionOrdinalToBlockMapping;
+  private Map<Integer, Integer> dimensionOrdinalToChunkMapping;
 
   /**
    * a block can have multiple columns. This will have block index as key
@@ -106,10 +105,9 @@ public class SegmentProperties {
   private Map<Integer, Set<Integer>> blockTodimensionOrdinalMapping;
 
   /**
-   * mapping of measure column to block to in file this will be used while
-   * reading the block in a file
+   * mapping of measure ordinal in schema to column chunk index in the data file
    */
-  private Map<Integer, Integer> measuresOrdinalToBlockMapping;
+  private Map<Integer, Integer> measuresOrdinalToChunkMapping;
 
   /**
    * size of the each dimension column value in a block this can be used when
@@ -172,15 +170,15 @@ public class SegmentProperties {
         new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     measures = new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     fillDimensionAndMeasureDetails(columnsInTable, columnCardinality);
-    dimensionOrdinalToBlockMapping =
+    dimensionOrdinalToChunkMapping =
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     blockTodimensionOrdinalMapping =
         new HashMap<Integer, Set<Integer>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    measuresOrdinalToBlockMapping =
+    measuresOrdinalToChunkMapping =
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     intialiseColGroups();
     fillOrdinalToBlockMappingForDimension();
-    fillOrdinalToBlockIndexMappingForMeasureColumns();
+    fillOrdinalToChunkIndexMappingForMeasureColumns();
     fillColumnGroupAndItsCardinality(columnCardinality);
     fillKeyGeneratorDetails();
   }
@@ -237,7 +235,7 @@ public class SegmentProperties {
       if (dimension.isColumnar() || dimension.columnGroupId() != prvcolumnGroupId) {
         blockOrdinal++;
       }
-      dimensionOrdinalToBlockMapping.put(dimension.getOrdinal(), blockOrdinal);
+      dimensionOrdinalToChunkMapping.put(dimension.getOrdinal(), blockOrdinal);
       prvcolumnGroupId = dimension.columnGroupId();
       index++;
     }
@@ -245,7 +243,7 @@ public class SegmentProperties {
     // complex dimension will be stored at last
     while (index < complexDimensions.size()) {
       dimension = complexDimensions.get(index);
-      dimensionOrdinalToBlockMapping.put(dimension.getOrdinal(), ++blockOrdinal);
+      dimensionOrdinalToChunkMapping.put(dimension.getOrdinal(), ++blockOrdinal);
       blockOrdinal = fillComplexDimensionChildBlockIndex(blockOrdinal, dimension);
       index++;
     }
@@ -256,7 +254,7 @@ public class SegmentProperties {
    *
    */
   private void fillBlockToDimensionOrdinalMapping() {
-    Set<Entry<Integer, Integer>> blocks = dimensionOrdinalToBlockMapping.entrySet();
+    Set<Entry<Integer, Integer>> blocks = dimensionOrdinalToChunkMapping.entrySet();
     Iterator<Entry<Integer, Integer>> blockItr = blocks.iterator();
     while (blockItr.hasNext()) {
       Entry<Integer, Integer> block = blockItr.next();
@@ -280,7 +278,7 @@ public class SegmentProperties {
    */
   private int fillComplexDimensionChildBlockIndex(int blockOrdinal, CarbonDimension dimension) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
-      dimensionOrdinalToBlockMapping
+      dimensionOrdinalToChunkMapping
           .put(dimension.getListOfChildDimensions().get(i).getOrdinal(), ++blockOrdinal);
       if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
         blockOrdinal = fillComplexDimensionChildBlockIndex(blockOrdinal,
@@ -295,11 +293,11 @@ public class SegmentProperties {
    * of measure ordinal to its block index mapping in
    * file
    */
-  private void fillOrdinalToBlockIndexMappingForMeasureColumns() {
+  private void fillOrdinalToChunkIndexMappingForMeasureColumns() {
     int blockOrdinal = 0;
     int index = 0;
     while (index < measures.size()) {
-      measuresOrdinalToBlockMapping.put(measures.get(index).getOrdinal(), blockOrdinal);
+      measuresOrdinalToChunkMapping.put(measures.get(index).getOrdinal(), blockOrdinal);
       blockOrdinal++;
       index++;
     }
@@ -731,17 +729,17 @@ public class SegmentProperties {
   }
 
   /**
-   * @return the dimensionOrdinalToBlockMapping
+   * @return the dimensionOrdinalToChunkMapping
    */
-  public Map<Integer, Integer> getDimensionOrdinalToBlockMapping() {
-    return dimensionOrdinalToBlockMapping;
+  public Map<Integer, Integer> getDimensionOrdinalToChunkMapping() {
+    return dimensionOrdinalToChunkMapping;
   }
 
   /**
-   * @return the measuresOrdinalToBlockMapping
+   * @return the measuresOrdinalToChunkMapping
    */
-  public Map<Integer, Integer> getMeasuresOrdinalToBlockMapping() {
-    return measuresOrdinalToBlockMapping;
+  public Map<Integer, Integer> getMeasuresOrdinalToChunkMapping() {
+    return measuresOrdinalToChunkMapping;
   }
 
   /**
@@ -802,16 +800,6 @@ public class SegmentProperties {
    */
   public int getColumnGroupMdKeyOrdinal(int colGrpId, int ordinal) {
     return columnGroupOrdinalToMdkeymapping.get(colGrpId).get(ordinal);
-  }
-
-  /**
-   * It returns no of column availble in given column group
-   *
-   * @param colGrpId
-   * @return no of column in given column group
-   */
-  public int getNoOfColumnsInColumnGroup(int colGrpId) {
-    return columnGroupOrdinalToMdkeymapping.get(colGrpId).size();
   }
 
   /**

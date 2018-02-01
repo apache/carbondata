@@ -36,7 +36,6 @@ import org.apache.carbondata.core.scan.expression.logical.RangeExpression;
 import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.executer.RangeValueFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizerBasic;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 
 import mockit.Deencapsulation;
@@ -102,7 +101,7 @@ public class RangeFilterProcessorTest {
         new LessThanEqualToExpression(new ColumnExpression("a", DataTypes.STRING),
             new LiteralExpression("20", DataTypes.STRING))), new TrueExpression(null));
     FilterOptimizer rangeFilterOptimizer =
-        new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
+        new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
     result = checkBothTrees(inputFilter, output);
     Assert.assertTrue(result);
@@ -143,7 +142,7 @@ public class RangeFilterProcessorTest {
         new LessThanEqualToExpression(new ColumnExpression("a", DataTypes.STRING),
             new LiteralExpression("05", DataTypes.STRING)));
     FilterOptimizer rangeFilterOptimizer =
-        new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
+        new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
     result = checkBothTrees(inputFilter, output);
     // no change
@@ -218,7 +217,7 @@ public class RangeFilterProcessorTest {
     Expression Andb3 = new AndExpression(Andb2, new TrueExpression(null));
 
     FilterOptimizer rangeFilterOptimizer =
-        new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
+        new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
     result = checkBothTrees(inputFilter, new AndExpression(Andb3, new TrueExpression(null)));
     // no change
@@ -302,7 +301,7 @@ public class RangeFilterProcessorTest {
     Expression Orb3 = new OrExpression(Orb2, lessThanb2);
 
     FilterOptimizer rangeFilterOptimizer =
-        new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
+        new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
     result = checkBothTrees(inputFilter, new OrExpression(Orb3, lessThanb1));
     // no change

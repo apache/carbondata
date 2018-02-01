@@ -22,47 +22,47 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 /**
  * Interface for dimension column chunk.
  */
-public interface DimensionColumnDataChunk {
+public interface DimensionColumnPage {
 
   /**
    * Below method will be used to fill the data based on offset and row id
    *
-   * @param data   data to filed
    * @param offset offset from which data need to be filed
+   * @param data   data to filed
    * @return how many bytes was copied
    */
-  int fillChunkData(byte[] data, int offset, int columnIndex, KeyStructureInfo restructuringInfo);
+  int fillRawData(int rowId, int offset, byte[] data, KeyStructureInfo restructuringInfo);
 
   /**
    * It uses to convert column data to dictionary integer value
    *
    * @param rowId
-   * @param columnIndex
-   * @param row
+   * @param chunkIndex
+   * @param outputSurrogateKey
    * @param restructuringInfo @return
    */
-  int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+  int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey,
       KeyStructureInfo restructuringInfo);
 
   /**
    * Fill the data to vector
    * @param vectorInfo
-   * @param column
+   * @param chunkIndex
    * @param restructuringInfo
    * @return next column index
    */
-  int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+  int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex,
       KeyStructureInfo restructuringInfo);
 
   /**
    * Fill the data to vector
-   * @param rowMapping
+   * @param filteredRowId
    * @param vectorInfo
-   * @param column
+   * @param chunkIndex
    * @param restructuringInfo
    * @return next column index
    */
-  int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
+  int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo, int chunkIndex,
       KeyStructureInfo restructuringInfo);
 
   /**
@@ -70,29 +70,24 @@ public interface DimensionColumnDataChunk {
    *
    * @return chunk
    */
-  byte[] getChunkData(int columnIndex);
+  byte[] getChunkData(int rowId);
 
   /**
    * @return inverted index
    */
-  int getInvertedIndex(int index);
+  int getInvertedIndex(int rowId);
 
   /**
    *
-   * @param invertedIndex
+   * @param rowId
    * @return index reverse index
    */
-  int getInvertedReverseIndex(int invertedIndex);
+  int getInvertedReverseIndex(int rowId);
 
   /**
    * @return whether column is dictionary column or not
    */
   boolean isNoDicitionaryColumn();
-
-  /**
-   * @return length of each column
-   */
-  int getColumnValueSize();
 
   /**
    * @return whether columns where explictly sorted or not
@@ -102,11 +97,11 @@ public interface DimensionColumnDataChunk {
   /**
    * to compare the data
    *
-   * @param index        row index to be compared
+   * @param rowId        row index to be compared
    * @param compareValue value to compare
    * @return compare result
    */
-  int compareTo(int index, byte[] compareValue);
+  int compareTo(int rowId, byte[] compareValue);
 
   /**
    * below method will be used to free the allocated memory

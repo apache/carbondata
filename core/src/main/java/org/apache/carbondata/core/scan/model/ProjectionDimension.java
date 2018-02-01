@@ -14,22 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.scan.scanner.impl;
 
-import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.core.scan.scanner.AbstractBlockletScanner;
-import org.apache.carbondata.core.stats.QueryStatisticsModel;
+package org.apache.carbondata.core.scan.model;
+
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 
 /**
- * Non filter processor which will be used for non filter query
- * In case of non filter query we just need to read all the blocks requested in the
- * query and pass it to scanned result
+ * dimension column which holds the information about the column
+ * this is done to avoid heavy object serialization
  */
-public class NonFilterScanner extends AbstractBlockletScanner {
+public class ProjectionDimension extends ProjectionColumn {
 
-  public NonFilterScanner(BlockExecutionInfo blockExecutionInfo,
-                          QueryStatisticsModel queryStatisticsModel) {
-    super(blockExecutionInfo);
-    super.queryStatisticsModel = queryStatisticsModel;
+  /**
+   * actual dimension column
+   */
+  private CarbonDimension dimension;
+
+  public ProjectionDimension(CarbonDimension dimension) {
+    super(dimension.getColName());
+    this.dimension = dimension;
   }
+
+  /**
+   * @return the dimension
+   */
+  public CarbonDimension getDimension() {
+    return dimension;
+  }
+
 }
