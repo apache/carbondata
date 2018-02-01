@@ -328,34 +328,29 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
 
   test("test timeseries create table 19: should support if not exists") {
     sql("DROP DATAMAP IF EXISTS agg1 ON TABLE mainTable")
-    try {
-      sql(
-        s"""
-          | CREATE DATAMAP agg1 ON TABLE mainTable
-          | USING '$timeSeries'
-          | DMPROPERTIES (
-          |   'EVENT_TIME'='dataTime',
-          |   'MONTH_GRANULARITY'='1')
-          | AS SELECT dataTime, SUM(age) FROM mainTable
-          | GROUP BY dataTime
+
+    sql(
+      s"""
+         | CREATE DATAMAP agg1 ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         |   'EVENT_TIME'='dataTime',
+         |   'MONTH_GRANULARITY'='1')
+         | AS SELECT dataTime, SUM(age) FROM mainTable
+         | GROUP BY dataTime
         """.stripMargin)
-      sql(
-        s"""
-          | CREATE DATAMAP IF NOT EXISTS agg1 ON TABLE mainTable
-          | USING '$timeSeries'
-          | DMPROPERTIES (
-          |   'EVENT_TIME'='dataTime',
-          |   'MONTH_GRANULARITY'='1')
-          |AS SELECT dataTime, SUM(age) FROM mainTable
-          |GROUP BY dataTime
+    sql(
+      s"""
+         | CREATE DATAMAP IF NOT EXISTS agg1 ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         |   'EVENT_TIME'='dataTime',
+         |   'MONTH_GRANULARITY'='1')
+         |AS SELECT dataTime, SUM(age) FROM mainTable
+         |GROUP BY dataTime
         """.stripMargin)
-      checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), true, "agg1")
-      checkExistence(sql("DESC FORMATTED mainTable_agg1"), true, "maintable_age_sum")
-      assert(true)
-    } catch {
-      case _: Exception =>
-        assert(false)
-    }
+    checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), true, "agg1")
+    checkExistence(sql("DESC FORMATTED mainTable_agg1"), true, "maintable_age_sum")
   }
 
   test("test timeseries create table 20: don't support 'create datamap if exists'") {
