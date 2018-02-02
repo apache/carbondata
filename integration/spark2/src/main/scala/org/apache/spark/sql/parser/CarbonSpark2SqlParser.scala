@@ -142,17 +142,18 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * The syntax of datamap creation is as follows.
-   * CREATE DATAMAP datamapName ON TABLE tableName USING 'DataMapClassName'
+   * CREATE DATAMAP IF NOT EXISTS datamapName ON TABLE tableName USING 'DataMapClassName'
    * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
    */
   protected lazy val createDataMap: Parser[LogicalPlan] =
-    CREATE ~> DATAMAP ~> ident ~ (ON ~ TABLE) ~  (ident <~ ".").? ~ ident ~
+    CREATE ~> DATAMAP ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
+    (ON ~ TABLE) ~  (ident <~ ".").? ~ ident ~
     (USING ~> stringLit) ~ (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
     (AS ~> restInput).? <~ opt(";") ^^ {
-      case dmname ~ ontable ~ dbName ~ tableName ~ className ~ dmprops ~ query =>
+      case ifnotexists ~ dmname ~ ontable ~ dbName ~ tableName ~ className ~ dmprops ~ query =>
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
         CarbonCreateDataMapCommand(
-          dmname, TableIdentifier(tableName, dbName), className, map, query)
+          dmname, TableIdentifier(tableName, dbName), className, map, query, ifnotexists.isDefined)
     }
 
   /**

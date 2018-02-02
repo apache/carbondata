@@ -19,7 +19,7 @@ package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.CarbonDatasourceHadoopRelation
+import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
@@ -321,7 +321,60 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("show tables"), false, "tbl_1_agg2_day","tbl_1_agg2_hour","tbl_1_agg2_month","tbl_1_agg2_year")
   }
 
+  test("test pre agg create table 21: should support 'if not exists'") {
+    try {
+      sql(
+        """
+          | CREATE DATAMAP IF NOT EXISTS agg0 ON TABLE mainTable
+          | USING 'preaggregate'
+          | AS SELECT
+          |   column3,
+          |   sum(column3),
+          |   column5,
+          |   sum(column5)
+          | FROM maintable
+          | GROUP BY column3,column5,column2
+        """.stripMargin)
 
+      sql(
+        """
+          | CREATE DATAMAP IF NOT EXISTS agg0 ON TABLE mainTable
+          | USING 'preaggregate'
+          | AS SELECT
+          |   column3,
+          |   sum(column3),
+          |   column5,
+          |   sum(column5)
+          | FROM maintable
+          | GROUP BY column3,column5,column2
+        """.stripMargin)
+      assert(true)
+    } catch {
+      case _: Exception =>
+        assert(false)
+    }
+    sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
+  }
+
+  test("test pre agg create table 22: don't support 'create datamap if exists'") {
+    val e: Exception = intercept[AnalysisException] {
+      sql(
+        """
+          | CREATE DATAMAP IF EXISTS agg0 ON TABLE mainTable
+          | USING 'preaggregate'
+          | AS SELECT
+          |   column3,
+          |   sum(column3),
+          |   column5,
+          |   sum(column5)
+          | FROM maintable
+          | GROUP BY column3,column5,column2
+        """.stripMargin)
+      assert(true)
+    }
+    assert(e.getMessage.contains("identifier matching regex"))
+    sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
+  }
 
   def getCarbontable(plan: LogicalPlan) : CarbonTable ={
     var carbonTable : CarbonTable = null

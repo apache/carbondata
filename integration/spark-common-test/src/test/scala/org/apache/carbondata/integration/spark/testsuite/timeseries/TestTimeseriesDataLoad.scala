@@ -19,9 +19,10 @@ package org.apache.carbondata.integration.spark.testsuite.timeseries
 import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil4Test
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
@@ -237,6 +238,102 @@ class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
         Row(Timestamp.valueOf("2016-02-23 01:02:30.0"),40),
         Row(Timestamp.valueOf("2016-02-23 01:02:40.0"),50),
         Row(Timestamp.valueOf("2016-02-23 01:02:50.0"),50)))
+  }
+
+  test("create datamap without 'if not exists' after load data into mainTable and create datamap") {
+    sql("drop table if exists mainTable")
+    sql(
+      """
+        | CREATE TABLE mainTable(
+        |   mytime timestamp,
+        |   name string,
+        |   age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
+
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_second ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         |   'EVENT_TIME'='mytime',
+         |   'second_granularity'='1')
+         | AS SELECT mytime, SUM(age) FROM mainTable
+         | GROUP BY mytime
+        """.stripMargin)
+
+    checkAnswer(sql("select * from maintable_agg0_second"),
+      Seq(Row(Timestamp.valueOf("2016-02-23 01:01:30.0"), 10),
+        Row(Timestamp.valueOf("2016-02-23 01:01:40.0"), 20),
+        Row(Timestamp.valueOf("2016-02-23 01:01:50.0"), 30),
+        Row(Timestamp.valueOf("2016-02-23 01:02:30.0"), 40),
+        Row(Timestamp.valueOf("2016-02-23 01:02:40.0"), 50),
+        Row(Timestamp.valueOf("2016-02-23 01:02:50.0"), 50)))
+    val e: Exception = intercept[TableAlreadyExistsException] {
+      sql(
+        s"""
+           | CREATE DATAMAP agg0_second ON TABLE mainTable
+           | USING '$timeSeries'
+           | DMPROPERTIES (
+           |   'EVENT_TIME'='mytime',
+           |   'second_granularity'='1')
+           | AS SELECT mytime, SUM(age) FROM mainTable
+           | GROUP BY mytime
+        """.stripMargin)
+    }
+    assert(e.getMessage.contains("already exists in database"))
+  }
+
+  test("create datamap with 'if not exists' after load data into mainTable and create datamap") {
+    sql("drop table if exists mainTable")
+    sql(
+      """
+        | CREATE TABLE mainTable(
+        |   mytime timestamp,
+        |   name string,
+        |   age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
+
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_second ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         |   'EVENT_TIME'='mytime',
+         |   'second_granularity'='1')
+         | AS SELECT mytime, SUM(age) FROM mainTable
+         | GROUP BY mytime
+        """.stripMargin)
+
+    checkAnswer(sql("select * from maintable_agg0_second"),
+      Seq(Row(Timestamp.valueOf("2016-02-23 01:01:30.0"), 10),
+        Row(Timestamp.valueOf("2016-02-23 01:01:40.0"), 20),
+        Row(Timestamp.valueOf("2016-02-23 01:01:50.0"), 30),
+        Row(Timestamp.valueOf("2016-02-23 01:02:30.0"), 40),
+        Row(Timestamp.valueOf("2016-02-23 01:02:40.0"), 50),
+        Row(Timestamp.valueOf("2016-02-23 01:02:50.0"), 50)))
+
+    sql(
+      s"""
+         | CREATE DATAMAP IF NOT EXISTS  agg0_second ON TABLE mainTable
+         | USING '$timeSeries'
+         | DMPROPERTIES (
+         |   'EVENT_TIME'='mytime',
+         |   'second_granularity'='1')
+         | AS SELECT mytime, SUM(age) FROM mainTable
+         | GROUP BY mytime
+        """.stripMargin)
+
+    checkAnswer(sql("select * from maintable_agg0_second"),
+      Seq(Row(Timestamp.valueOf("2016-02-23 01:01:30.0"), 10),
+        Row(Timestamp.valueOf("2016-02-23 01:01:40.0"), 20),
+        Row(Timestamp.valueOf("2016-02-23 01:01:50.0"), 30),
+        Row(Timestamp.valueOf("2016-02-23 01:02:30.0"), 40),
+        Row(Timestamp.valueOf("2016-02-23 01:02:40.0"), 50),
+        Row(Timestamp.valueOf("2016-02-23 01:02:50.0"), 50)))
   }
 
   override def afterAll: Unit = {
