@@ -29,6 +29,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   var df: DataFrame = _
   var dataFrame: DataFrame = _
   var df2: DataFrame = _
+  var df3: DataFrame = _
   var booldf:DataFrame = _
 
 
@@ -52,6 +53,10 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .map(x => ("key_" + x, "str_" + x, x, x * 2, x * 3))
       .toDF("c1", "c2", "c3", "c4", "c5")
 
+    df3 = sqlContext.sparkContext.parallelize(1 to 3)
+      .map(x => (x.toString + "te,s\nt", x))
+      .toDF("c1", "c2")
+
     val boolrdd = sqlContext.sparkContext.parallelize(
       Row("anubhav",true) ::
         Row("prince",false) :: Nil)
@@ -74,6 +79,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon9")
     sql("DROP TABLE IF EXISTS carbon10")
     sql("DROP TABLE IF EXISTS carbon11")
+    sql("DROP TABLE IF EXISTS carbon12")
     sql("DROP TABLE IF EXISTS df_write_sort_column_not_specified")
     sql("DROP TABLE IF EXISTS df_write_specify_sort_column")
     sql("DROP TABLE IF EXISTS df_write_empty_sort_column")
@@ -260,6 +266,19 @@ test("test the boolean data type"){
     val descResult =sql("desc formatted carbon11")
     val isStreaming: String = descResult.collect().find(row=>row(0).asInstanceOf[String].trim.equalsIgnoreCase("streaming")).get.get(1).asInstanceOf[String]
     assert(isStreaming.contains("true"))
+  }
+
+  test("test datasource table with specified char") {
+
+    df3.write
+      .format("carbondata")
+      .option("tableName", "carbon12")
+      .option("tempCSV", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("select count(*) from carbon12"), Row(3)
+    )
   }
   private def getSortColumnValue(tableName: String): Array[String] = {
     val desc = sql(s"desc formatted $tableName")
