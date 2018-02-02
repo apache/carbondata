@@ -38,6 +38,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists agg5")
     sql("drop table if exists agg6")
     sql("drop table if exists agg7")
+    sql("DROP TABLE IF EXISTS maintabledict")
     sql("CREATE TABLE mainTable(id int, name string, city string, age string) STORED BY 'org.apache.carbondata.format'")
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select name from mainTable group by name")
     sql("create datamap agg1 on table mainTable using 'preaggregate' as select name,sum(age) from mainTable group by name")
@@ -320,11 +321,27 @@ test("test PreAggregate table selection with timeseries and normal together") {
     val df = sql("select avg(age) from mainTableavg")
     preAggTableValidator(df.queryExecution.analyzed, "mainTableavg_agg0")
   }
+
+  test("test PreAggregate table selection for avg with maintable containing dictionary include for group by column") {
+    sql(
+      "create table maintabledict(year int,month int,name string,salary int,dob string) stored" +
+      " by 'carbondata' tblproperties('DICTIONARY_INCLUDE'='year')")
+    sql("insert into maintabledict select 10,11,'x',12,'2014-01-01 00:00:00'")
+    sql("insert into maintabledict select 10,11,'x',12,'2014-01-01 00:00:00'")
+    sql(
+      "create datamap aggdict on table maintabledict using 'preaggregate' as select year,avg(year) from " +
+      "maintabledict group by year")
+    val df = sql("select year,avg(year) from maintabledict group by year")
+    checkAnswer(df, Seq(Row(10,10.0)))
+  }
+
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists mainTable_avg")
     sql("drop table if exists lineitem")
     sql("DROP TABLE IF EXISTS maintabletime")
+    sql("DROP TABLE IF EXISTS maintabledict")
   }
 
 }

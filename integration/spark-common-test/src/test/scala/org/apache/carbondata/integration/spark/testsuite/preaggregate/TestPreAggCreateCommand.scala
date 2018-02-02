@@ -200,8 +200,8 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select column1, count(column1),column6, count(column6) from maintable group by column6,column1")
     val df = sql("select * from maintable_agg0")
     val carbontable = getCarbontable(df.queryExecution.analyzed)
-    assert(carbontable.getAllMeasures.size()==1)
-    assert(carbontable.getAllDimensions.size()==4)
+    assert(carbontable.getAllMeasures.size()==2)
+    assert(carbontable.getAllDimensions.size()==2)
     carbontable.getAllDimensions.asScala.foreach{ f =>
       assert(f.getEncoder.contains(Encoding.DICTIONARY))
     }
