@@ -92,8 +92,9 @@ public class SessionParams implements Serializable {
    * @param key
    * @return properties value
    */
-  public SessionParams addProperty(String key, String value) throws InvalidConfigurationException {
-    return addProperty(key, value, true);
+  public SessionParams addProperty(String key, String value, boolean isSessionParams)
+      throws InvalidConfigurationException {
+    return addProperty(key, value, true, isSessionParams);
   }
 
   /**
@@ -102,9 +103,9 @@ public class SessionParams implements Serializable {
    * @param key
    * @return properties value
    */
-  public SessionParams addProperty(String key, String value, Boolean doAuditing)
-      throws InvalidConfigurationException {
-    boolean isValidConf = validateKeyValue(key, value);
+  public SessionParams addProperty(String key, String value, Boolean doAuditing,
+      boolean isSessionParams) throws InvalidConfigurationException {
+    boolean isValidConf = validateKeyValue(key, value, isSessionParams);
     if (isValidConf) {
       if (key.equals(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)) {
         value = value.toUpperCase();
@@ -137,7 +138,8 @@ public class SessionParams implements Serializable {
    * @return
    * @throws InvalidConfigurationException
    */
-  private boolean validateKeyValue(String key, String value) throws InvalidConfigurationException {
+  private boolean validateKeyValue(String key, String value, boolean isSessionParams)
+      throws InvalidConfigurationException {
     boolean isValid = false;
     switch (key) {
       case ENABLE_UNSAFE_SORT:
@@ -187,7 +189,7 @@ public class SessionParams implements Serializable {
       case CARBON_OPTIONS_TIMESTAMPFORMAT:
         try {
           new SimpleDateFormat(value);
-          isValid = true;
+          isValid = !isSessionParams;
         } catch (Exception e) {
           throw new InvalidConfigurationException(
               "The value \"" + value + "\" configured for key " + key + " is invalid.");

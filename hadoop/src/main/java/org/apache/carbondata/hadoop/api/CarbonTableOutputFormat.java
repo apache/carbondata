@@ -307,11 +307,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
     }
     model.setDateFormat(
         conf.get(
-            DATE_FORMAT, ""));
+            DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
 
     model.setTimestampformat(
         conf.get(
-            TIMESTAMP_FORMAT, ""));
+            TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
 
     model.setGlobalSortPartitions(
         conf.get(

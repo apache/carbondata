@@ -210,7 +210,7 @@ object CarbonSession {
       currentThreadSessionInfo = currentThreadSessionInfo.clone()
     }
     val threadParams = currentThreadSessionInfo.getThreadParams
-    CarbonSetCommand.validateAndSetValue(threadParams, key, value)
+    CarbonSetCommand.validateAndSetValue(threadParams, key, value, isSessionParams = false)
     ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
   }
 
@@ -245,7 +245,7 @@ object CarbonSession {
       val currentThreadSessionInfo = currentThreadSessionInfoOrig.clone()
       // copy all the thread parameters to apply to session parameters
       currentThreadSessionInfo.getThreadParams.getAll.asScala
-        .foreach(entry => carbonSessionInfo.getSessionParams.addProperty(entry._1, entry._2))
+        .foreach(entry => carbonSessionInfo.getSessionParams.addProperty(entry._1, entry._2, true))
       carbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
     }
     // preserve thread parameters across call
