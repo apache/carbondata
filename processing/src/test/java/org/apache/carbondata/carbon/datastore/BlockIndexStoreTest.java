@@ -49,8 +49,6 @@ public class BlockIndexStoreTest extends TestCase {
           LogServiceFactory.getLogService(BlockIndexStoreTest.class.getName());
 
   @BeforeClass public void setUp() {
-    CarbonProperties.getInstance().
-        addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
     StoreCreator.createCarbonStore();
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");

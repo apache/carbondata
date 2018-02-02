@@ -31,9 +31,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        new File("./target/test/badRecords").getCanonicalPath)
 
     sql("drop table if exists restructure")
     sql("drop table if exists table1")

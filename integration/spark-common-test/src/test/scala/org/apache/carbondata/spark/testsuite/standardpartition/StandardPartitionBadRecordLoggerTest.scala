@@ -38,11 +38,6 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
   override def beforeAll {
     drop()
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        new File("./target/test/badRecords")
-          .getCanonicalPath)
-
-    CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
   }
 
