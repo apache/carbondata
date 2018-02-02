@@ -35,7 +35,7 @@ case class CarbonCreateDataMapCommand(
     dataMapName: String,
     tableIdentifier: TableIdentifier,
     dmClassName: String,
-    dmproperties: Map[String, String],
+    dmProperties: Map[String, String],
     queryString: Option[String],
     ifNotExistsSet: Boolean = false)
   extends AtomicRunnableCommand {
@@ -54,6 +54,12 @@ case class CarbonCreateDataMapCommand(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = tableIdentifier.database.getOrElse("default")
     val tableName = tableIdentifier.table + "_" + dataMapName
+    val newDmProperties = if (dmProperties.get(TimeSeriesUtil.TIMESERIES_EVENTTIME).isDefined) {
+      dmProperties.updated(TimeSeriesUtil.TIMESERIES_EVENTTIME,
+        dmProperties.get(TimeSeriesUtil.TIMESERIES_EVENTTIME).get.trim)
+    } else {
+      dmProperties
+    }
 
     if (sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
@@ -66,12 +72,11 @@ case class CarbonCreateDataMapCommand(
       }
     } else if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
       dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
-      TimeSeriesUtil.validateTimeSeriesGranularity(dmproperties, dmClassName)
-
+      TimeSeriesUtil.validateTimeSeriesGranularity(newDmProperties, dmClassName)
       createPreAggregateTableCommands = if (dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
         val details = TimeSeriesUtil
-          .getTimeSeriesGranularityDetails(dmproperties, dmClassName)
-        val updatedDmProperties = dmproperties - details._1
+          .getTimeSeriesGranularityDetails(newDmProperties, dmClassName)
+        val updatedDmProperties = newDmProperties - details._1
         CreatePreAggregateTableCommand(dataMapName,
           tableIdentifier,
           dmClassName,
@@ -84,7 +89,7 @@ case class CarbonCreateDataMapCommand(
           dataMapName,
           tableIdentifier,
           dmClassName,
-          dmproperties,
+          newDmProperties,
           queryString.get,
           ifNotExistsSet = ifNotExistsSet)
       }
