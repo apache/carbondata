@@ -151,7 +151,8 @@ public class AggregationDataMapSchema extends DataMapSchema {
       List<ParentColumnTableRelation> parentColumnTableRelations =
           columnSchema.getParentColumnTableRelations();
       if (null != parentColumnTableRelations && parentColumnTableRelations.size() == 1
-          && parentColumnTableRelations.get(0).getColumnName().equals(columName)) {
+          && parentColumnTableRelations.get(0).getColumnName().equals(columName) &&
+          columnSchema.getColumnName().endsWith(columName)) {
         return columnSchema;
       }
     }
