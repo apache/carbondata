@@ -191,12 +191,26 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
 
   private def makeLoadString(csvFolder: String, options: CarbonOption): String = {
     val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
+    val sqlOptions = makeLoadOptionStr(options)
     s"""
        | LOAD DATA INPATH '$csvFolder'
        | INTO TABLE $dbName.${options.tableName}
        | OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}',
+       | $sqlOptions
        | 'SINGLE_PASS' = '${options.singlePass}')
      """.stripMargin
+  }
+
+  private def makeLoadOptionStr(carbonOption: CarbonOption): String = {
+    val options = carbonOption.toMap
+    val sqlParams = Set("QUOTECHAR", "IS_EMPTY_DATA_BAD_RECORD", "BAD_RECORDS_ACTION")
+    val sqlPart = new StringBuilder
+    sqlParams.foreach((sqlParam: String) => {
+      if (options.contains(sqlParam.toLowerCase)) {
+        sqlPart.append (s"""'$sqlParam' = '${options(sqlParam)}',""")
+      }
+    })
+    sqlPart.toString()
   }
 
 }
