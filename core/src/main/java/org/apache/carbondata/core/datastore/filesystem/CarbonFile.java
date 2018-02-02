@@ -88,12 +88,13 @@ public interface CarbonFile {
    * @param path
    * @param fileType
    * @param bufferSize
+   * @param configuration Configuration object provides access to configuration parameters.
    * @param compressor name of compressor to write this file
    * @return dataInputStream
    * @throws IOException
    */
   DataInputStream getDataInputStream(String path, FileFactory.FileType fileType, int bufferSize,
-      String compressor) throws IOException;
+      Configuration configuration, String compressor) throws IOException;
 
   DataInputStream getDataInputStream(String path, FileFactory.FileType fileType, int bufferSize,
       long offset) throws IOException;
