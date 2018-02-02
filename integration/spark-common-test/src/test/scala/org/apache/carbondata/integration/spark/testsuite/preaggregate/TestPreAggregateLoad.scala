@@ -405,4 +405,15 @@ test("check load and select for avg double datatype") {
     sql("drop table if exists maintable")
   }
 
+  test("check load and select for avg int datatype and group by") {
+    sql("drop table if exists maintable ")
+    sql("CREATE TABLE maintable(id int, city string, age int) stored by 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    val rows = sql("select age,avg(age) from maintable group by age").collect()
+    sql("create datamap maintbl_douoble on table maintable using 'preaggregate' as select avg(age) from maintable group by age")
+    checkAnswer(sql("select age,avg(age) from maintable group by age"), rows)
+  }
+
 }
