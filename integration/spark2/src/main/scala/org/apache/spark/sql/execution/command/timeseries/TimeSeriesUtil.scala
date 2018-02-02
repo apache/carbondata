@@ -140,7 +140,7 @@ object TimeSeriesUtil {
         val splits = f.split("=")
         // checking hierarchy name is valid or not
         if (!TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION.contains(splits(0).toLowerCase)) {
-          throw new MalformedCarbonCommandException(s"Not supported heirarchy type: ${ splits(0) }")
+          throw new MalformedCarbonCommandException(s"Not supported hierarchy type: ${ splits(0) }")
         }
         // validating hierarchy level is valid or not
         if (!splits(1).equals("1")) {
@@ -154,7 +154,6 @@ object TimeSeriesUtil {
     // get the index of first hierarchy
     val indexOfFirstHierarchy = TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION
       .indexOf(hierBuffer(0)._1.toLowerCase)
-    val index = 0
     // now iterating through complete hierarchy to check any of the hierarchy index
     // is less than first one
     for (index <- 1 to hierBuffer.size - 1) {
