@@ -59,7 +59,6 @@ class DoubleDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     df.write
       .format("carbondata")
       .option("tableName", "doubleTypeCarbonTable")
-      .option("tempCSV", "false")
       .option("single_pass", "true")
       .option("dictionary_exclude", "city")
       .option("table_blocksize", "32")

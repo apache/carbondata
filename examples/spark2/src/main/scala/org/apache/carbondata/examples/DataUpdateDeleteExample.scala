@@ -69,7 +69,6 @@ object DataUpdateDeleteExample {
     df.write
       .format("carbondata")
       .option("tableName", "t3")
-      .option("tempCSV", "true")
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
@@ -83,7 +82,6 @@ object DataUpdateDeleteExample {
     df.write
       .format("carbondata")
       .option("tableName", "t5")
-      .option("tempCSV", "true")
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()

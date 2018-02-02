@@ -94,12 +94,11 @@ object ExampleUtils {
         .map(x => ("a", "b", x))
         .toDF("c1", "c2", "c3")
 
-    // save dataframe directl to carbon file without tempCSV
+    // save dataframe directl to carbon file
     df.write
       .format("carbondata")
       .option("tableName", tableName)
       .option("compress", "true")
-      .option("tempCSV", "false")
       .mode(mode)
       .save()
   }
