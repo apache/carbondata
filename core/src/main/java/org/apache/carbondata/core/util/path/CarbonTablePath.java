@@ -75,7 +75,7 @@ public class CarbonTablePath extends Path {
    * @param carbonFilePath
    */
   public static String getFolderContainingFile(String carbonFilePath) {
-    return carbonFilePath.substring(0, carbonFilePath.lastIndexOf(File.separator));
+    return carbonFilePath.substring(0, carbonFilePath.lastIndexOf('/'));
   }
 
   /**
