@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -186,6 +187,18 @@ private[sql] case class CarbonProjectForUpdateCommand(
       (tableName == relation.identifier.getCarbonTableIdentifier.getTableName)
     }
 
+    // from the dataFrame schema iterate through all the column to be updated and
+    // check for the data type, if the data type is complex then throw exception
+    def checkForUnsupportedDataType(dataFrame: DataFrame): Unit = {
+      dataFrame.schema.foreach(col => {
+        // the new column to be updated will be appended with "-updatedColumn" suffix
+        if (col.name.endsWith(CarbonCommonConstants.UPDATED_COL_EXTENSION) &&
+            col.dataType.isInstanceOf[ArrayType]) {
+          throw new UnsupportedOperationException("Unsupported data type: Array")
+        }
+      })
+    }
+
     def getHeader(relation: CarbonDatasourceHadoopRelation, plan: LogicalPlan): String = {
       var header = ""
       var found = false
@@ -206,6 +219,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
       }
       header
     }
+
+    // check for the data type of the new value to be updated
+    checkForUnsupportedDataType(dataFrame)
     val ex = dataFrame.queryExecution.analyzed
     val res = ex find {
       case relation: LogicalRelation
