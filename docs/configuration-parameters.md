@@ -32,7 +32,7 @@ This section provides the details of all the configurations required for the Car
 
 | Property | Default Value | Description |
 |----------------------------|-------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| carbon.storelocation |  | Location where CarbonData will create the store, and write the data in its own format. NOTE: Store location should be in HDFS. |
+| carbon.storelocation |  | Location where CarbonData will create the store, and write the data in its own format. If not specified then it takes spark.sql.warehouse.dir path. NOTE: Store location should be in HDFS. |
 | carbon.ddl.base.hdfs.url |  | This property is used to configure the HDFS relative path, the path configured in carbon.ddl.base.hdfs.url will be appended to the HDFS path configured in fs.defaultFS. If this path is configured, then user need not pass the complete path while dataload. For example: If absolute path of the csv file is hdfs://10.18.101.155:54310/data/cnbc/2016/xyz.csv, the path "hdfs://10.18.101.155:54310" will come from property fs.defaultFS and user can configure the /data/cnbc/ as carbon.ddl.base.hdfs.url. Now while dataload user can specify the csv path as /2016/xyz.csv. |
 | carbon.badRecords.location |  | Path where the bad records are stored. |
 | carbon.data.file.version | V3 | If this parameter value is set to 1, then CarbonData will support the data load which is in old format(0.x version). If the value is set to 2(1.x onwards version), then CarbonData will support the data load of new format only.|
@@ -107,7 +107,6 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.concurrent.lock.retry.timeout.sec | 1 | Specifies the interval between the retries to obtain the lock for concurrent operations. |
 | carbon.lock.retries | 3 | Specifies the maximum number of retries to obtain the lock for any operations other than load. |
 | carbon.lock.retry.timeout.sec | 5 | Specifies the interval between the retries to obtain the lock for any operation other than load. |
-| carbon.tempstore.location | | Temporary store location. By default it takes System.getProperty("java.io.tmpdir"). |
 | carbon.skip.empty.line | false | Setting this property ignores the empty lines in the CSV file during the data load |
 | carbon.enable.calculate.size | true | **For Load Operation**: Setting this property calculates the size of the carbon data file (.carbondata) and carbon index file (.carbonindex) for every load and updates the table status file. **For Describe Formatted**: Setting this property calculates the total size of the carbon data files and carbon index files for the respective table and displays in describe formatted command. | 
 

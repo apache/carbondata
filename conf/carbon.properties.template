@@ -17,7 +17,8 @@
 #
 
 #################### System Configuration ##################
-#Optional. Carbon Store path
+##Optional. Location where CarbonData will create the store, and write the data in its own format.
+##If not specified then it takes spark.sql.warehouse.dir path.
 #carbon.storelocation
 #Base directory for Data files
 #carbon.ddl.base.hdfs.url
@@ -80,8 +81,7 @@ carbon.enable.quick.filter=false
 #carbon.blockletdistribution.min.blocklet.size=10
 ##Interval between the retries to get the lock
 #carbon.load.metadata.lock.retry.timeout.sec=5
-##Temporary store location, By default it will take System.getProperty("java.io.tmpdir")
-#carbon.tempstore.location
+
 ##To dissable/enable carbon block distribution
 #carbon.custom.block.distribution=false
 ######## Compaction Configuration ########
@@ -97,8 +97,6 @@ carbon.enable.quick.filter=false
 ##Min max is feature added to enhance query performance. To disable this feature, make it false.
 #carbon.enableMinMax=true
 ######## Global Dictionary Configurations ########
-##Percentage to identify whether column cardinality is more than configured percent of total row count
-#high.cardinality.row.count.percentage=80
 ##The property to set the date to be considered as start date for calculating the timestamp.
 #carbon.cutOffTimestamp
 ##The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR or DAY level.

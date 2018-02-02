@@ -448,11 +448,6 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String STORE_LOCATION_HDFS = "carbon.storelocation.hdfs";
   /**
-   * STORE_LOCATION_TEMP_PATH
-   */
-  @CarbonProperty
-  public static final String STORE_LOCATION_TEMP_PATH = "carbon.tempstore.location";
-  /**
    * IS_COLUMNAR_STORAGE_DEFAULTVALUE
    */
   public static final String IS_COLUMNAR_STORAGE_DEFAULTVALUE = "true";

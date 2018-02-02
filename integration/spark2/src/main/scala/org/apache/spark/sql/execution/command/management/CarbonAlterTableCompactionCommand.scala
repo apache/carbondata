@@ -128,9 +128,7 @@ case class CarbonAlterTableCompactionCommand(
       carbonLoadModel.setDatabaseName(table.getDatabaseName)
       carbonLoadModel.setTablePath(table.getTablePath)
 
-      var storeLocation = CarbonProperties.getInstance.getProperty(
-        CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
-        System.getProperty("java.io.tmpdir"))
+      var storeLocation = System.getProperty("java.io.tmpdir")
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
       // trigger event for compaction
       val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
