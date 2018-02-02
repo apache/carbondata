@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.spark.testsuite.filterexpr
 
-import java.sql.Timestamp
+import java.sql.{Date, Timestamp}
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{DataFrame, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -132,6 +132,11 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA INPATH '$resourcesPath/big_int_Decimal.csv'  INTO TABLE big_int_basicc_1 options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')""")
     sql(s"load data local inpath '$resourcesPath/big_int_Decimal.csv' into table big_int_basicc_Hive")
     sql(s"load data local inpath '$resourcesPath/big_int_Decimal.csv' into table big_int_basicc_Hive_1")
+
+    sql("create table if not exists date_test(name String, age int, dob date,doj timestamp) stored by 'carbondata' ")
+    sql("insert into date_test select 'name1',12,'2014-01-01','2014-01-01 00:00:00' ")
+    sql("insert into date_test select 'name2',13,'2015-01-01','2015-01-01 00:00:00' ")
+    sql("insert into date_test select 'name3',14,'2016-01-01','2016-01-01 00:00:00' ")
   }
 
   test("Is not null filter") {
@@ -287,6 +292,70 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists outofrange")
   }
 
+  test("check invalid  date value") {
+    val df=sql("select * from date_test where dob=''")
+    assert(df.count()==0,"Wrong data are displayed on invalid date ")
+  }
+
+  test("check invalid  date with and filter value ") {
+    val df=sql("select * from date_test where dob='' and age=13")
+    assert(df.count()==0,"Wrong data are displayed on invalid date ")
+  }
+
+  test("check invalid  date with or filter value ") {
+    val df=sql("select * from date_test where dob='' or age=13")
+    checkAnswer(df,Seq(Row("name2",13,Date.valueOf("2015-01-01"),Timestamp.valueOf("2015-01-01 00:00:00.0"))))
+  }
+
+  test("check invalid  date Geaterthan filter value ") {
+    val df=sql("select * from date_test where doj > '0' ")
+    checkAnswer(df,Seq(Row("name1",12,Date.valueOf("2014-01-01"),Timestamp.valueOf("2014-01-01 00:00:00.0")),
+      Row("name2",13,Date.valueOf("2015-01-01"),Timestamp.valueOf("2015-01-01 00:00:00.0")),
+      Row("name3",14,Date.valueOf("2016-01-01"),Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+  }
+  test("check invalid  date Geaterthan and lessthan filter value ") {
+    val df=sql("select * from date_test where doj > '0' and doj < '2015-01-01' ")
+    checkAnswer(df,Seq(Row("name1",12,Date.valueOf("2014-01-01"),Timestamp.valueOf("2014-01-01 00:00:00.0"))))
+  }
+  test("check invalid  date Geaterthan or lessthan filter value ") {
+    val df=sql("select * from date_test where doj > '0' or doj < '2015-01-01' ")
+    checkAnswer(df,Seq(Row("name1",12,Date.valueOf("2014-01-01"),Timestamp.valueOf("2014-01-01 00:00:00.0")),
+      Row("name2",13,Date.valueOf("2015-01-01"),Timestamp.valueOf("2015-01-01 00:00:00.0")),
+      Row("name3",14,Date.valueOf("2016-01-01"),Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+  }
+
+  test("check invalid  timestamp value") {
+    val df=sql("select * from date_test where dob=''")
+    assert(df.count()==0,"Wrong data are displayed on invalid timestamp ")
+  }
+
+  test("check invalid  timestamp with and filter value ") {
+    val df=sql("select * from date_test where doj='' and age=13")
+    assert(df.count()==0,"Wrong data are displayed on invalid timestamp ")
+  }
+
+  test("check invalid  timestamp with or filter value ") {
+    val df=sql("select * from date_test where doj='' or age=13")
+    checkAnswer(df,Seq(Row("name2",13,Date.valueOf("2015-01-01"),Timestamp.valueOf("2015-01-01 00:00:00.0"))))
+  }
+
+  test("check invalid  timestamp Geaterthan filter value ") {
+    val df=sql("select * from date_test where doj > '0' ")
+    checkAnswer(df,Seq(Row("name1",12,Date.valueOf("2014-01-01"),Timestamp.valueOf("2014-01-01 00:00:00.0")),
+      Row("name2",13,Date.valueOf("2015-01-01"),Timestamp.valueOf("2015-01-01 00:00:00.0")),
+    Row("name3",14,Date.valueOf("2016-01-01"),Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+  }
+  test("check invalid  timestamp Geaterthan and lessthan filter value ") {
+    val df=sql("select * from date_test where doj > '0' and doj < '2015-01-01 00:00:00' ")
+    checkAnswer(df,Seq(Row("name1",12,Date.valueOf("2014-01-01"),Timestamp.valueOf("2014-01-01 00:00:00.0"))))
+  }
+  test("check invalid  timestamp Geaterthan or lessthan filter value ") {
+    val df=sql("select * from date_test where doj > '0' or doj < '2015-01-01 00:00:00' ")
+    checkAnswer(df,Seq(Row("name1",12,Date.valueOf("2014-01-01"),Timestamp.valueOf("2014-01-01 00:00:00.0")),
+      Row("name2",13,Date.valueOf("2015-01-01"),Timestamp.valueOf("2015-01-01 00:00:00.0")),
+      Row("name3",14,Date.valueOf("2016-01-01"),Timestamp.valueOf("2016-01-01 00:00:00.0"))))
+  }
+
   test("like% test case with restructure") {
     sql("drop table if exists like_filter")
     sql(
@@ -319,6 +388,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS filtertestTablesWithNullJoin")
     sql("drop table if exists like_filter")
     CompactionSupportGlobalSortBigFileTest.deleteFile(file1)
+    sql("drop table if exists date_test")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
