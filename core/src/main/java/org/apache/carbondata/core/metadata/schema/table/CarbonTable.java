@@ -141,7 +141,7 @@ public class CarbonTable implements Serializable {
    *
    * @param tableInfo
    */
-  private static void updateTableInfo(TableInfo tableInfo) {
+  public static void updateTableInfo(TableInfo tableInfo) {
     List<DataMapSchema> dataMapSchemas = new ArrayList<>();
     for (DataMapSchema dataMapSchema : tableInfo.getDataMapSchemaList()) {
       DataMapSchema newDataMapSchema = DataMapSchemaFactory.INSTANCE
