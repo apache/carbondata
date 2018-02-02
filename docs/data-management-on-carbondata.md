@@ -49,8 +49,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
      ```
      TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
-	 TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column1, column2')
-     ```
+	 ```
      
 	 NOTE: DICTIONARY_EXCLUDE supports only int, string, timestamp, long, bigint, and varchar data types.
 	 
