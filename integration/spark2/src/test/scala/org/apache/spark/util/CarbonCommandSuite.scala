@@ -190,7 +190,4 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     dropTable(tableName)
   }
 
-  protected def dropTable(tableName: String): Unit ={
-    sql(s"DROP TABLE IF EXISTS $tableName")
-  }
 }

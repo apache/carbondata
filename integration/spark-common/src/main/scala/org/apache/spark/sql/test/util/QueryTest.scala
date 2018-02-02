@@ -100,6 +100,16 @@ class QueryTest extends PlanTest {
     checkAnswer(df, expectedAnswer.collect())
   }
 
+  protected def dropTable(tableName: String): Unit = {
+    sql(s"DROP TABLE IF EXISTS $tableName")
+  }
+
+  protected def dropDataMaps(tableName: String, dataMapNames: String*): Unit = {
+    for (dataMapName <- dataMapNames) {
+      sql(s"DROP DATAMAP IF EXISTS $dataMapName ON TABLE $tableName")
+    }
+  }
+
   def sql(sqlText: String): DataFrame = TestQueryExecutor.INSTANCE.sql(sqlText)
 
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
