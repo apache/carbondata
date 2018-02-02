@@ -17,16 +17,12 @@
 
 package org.apache.spark.sql
 
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonType}
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
 
 class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
@@ -46,90 +42,8 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
 
   private def writeToCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     val options = new CarbonOption(parameters)
-    if (options.tempCSV) {
-      loadTempCSV(options)
-    } else {
-      loadDataFrame(options)
-    }
+    loadDataFrame(options)
   }
-
-  /**
-   * Firstly, saving DataFrame to CSV files
-   * Secondly, load CSV files
-   * @param options
-   */
-  private def loadTempCSV(options: CarbonOption): Unit = {
-    // temporary solution: write to csv file, then load the csv into carbon
-    val storePath = CarbonProperties.getStorePath
-    val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
-      .append("tempCSV")
-      .append(CarbonCommonConstants.UNDERSCORE)
-      .append(CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession))
-      .append(CarbonCommonConstants.UNDERSCORE)
-      .append(options.tableName)
-      .append(CarbonCommonConstants.UNDERSCORE)
-      .append(System.nanoTime())
-      .toString
-    writeToTempCSVFile(tempCSVFolder, options)
-
-    val tempCSVPath = new Path(tempCSVFolder)
-    val fs = tempCSVPath.getFileSystem(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
-
-    def countSize(): Double = {
-      var size: Double = 0
-      val itor = fs.listFiles(tempCSVPath, true)
-      while (itor.hasNext) {
-        val f = itor.next()
-        if (f.getPath.getName.startsWith("part-")) {
-          size += f.getLen
-        }
-      }
-      size
-    }
-
-    LOGGER.info(s"temporary CSV file size: ${countSize / 1024 / 1024} MB")
-
-    try {
-      sqlContext.sql(makeLoadString(tempCSVFolder, options))
-    } finally {
-      fs.delete(tempCSVPath, true)
-    }
-  }
-
-  private def writeToTempCSVFile(tempCSVFolder: String, options: CarbonOption): Unit = {
-    val strRDD = dataFrame.rdd.mapPartitions { case iter =>
-      new Iterator[String] {
-        override def hasNext = iter.hasNext
-
-        def convertToCSVString(seq: Seq[Any]): String = {
-          val build = new java.lang.StringBuilder()
-          if (seq.head != null) {
-            build.append(seq.head.toString)
-          }
-          val itemIter = seq.tail.iterator
-          while (itemIter.hasNext) {
-            build.append(CarbonCommonConstants.COMMA)
-            val value = itemIter.next()
-            if (value != null) {
-              build.append(value.toString)
-            }
-          }
-          build.toString
-        }
-
-        override def next: String = {
-          convertToCSVString(iter.next.toSeq)
-        }
-      }
-    }
-
-    if (options.compress) {
-      strRDD.saveAsTextFile(tempCSVFolder, classOf[GzipCodec])
-    } else {
-      strRDD.saveAsTextFile(tempCSVFolder)
-    }
-  }
-
   /**
    * Loading DataFrame directly without saving DataFrame to CSV files.
    * @param options
@@ -186,16 +100,6 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
        | ${ if (options.tablePath.nonEmpty) s"LOCATION '${options.tablePath.get}'" else ""}
        |  ${ if (property.nonEmpty) "TBLPROPERTIES (" + property + ")" else "" }
        |
-     """.stripMargin
-  }
-
-  private def makeLoadString(csvFolder: String, options: CarbonOption): String = {
-    val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
-    s"""
-       | LOAD DATA INPATH '$csvFolder'
-       | INTO TABLE $dbName.${options.tableName}
-       | OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}',
-       | 'SINGLE_PASS' = '${options.singlePass}')
      """.stripMargin
   }
 
