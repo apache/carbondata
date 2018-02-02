@@ -39,7 +39,7 @@ public class TrueFilterExecutor implements FilterExecuter {
     BitSetGroup group = new BitSetGroup(numberOfPages);
     for (int i = 0; i < numberOfPages; i++) {
       BitSet set = new BitSet();
-      set.flip(0, blockChunkHolder.getDataBlock().nodeSize());
+      set.flip(0, blockChunkHolder.getDataBlock().getPageRowCount(i));
       group.setBitSet(set, i);
     }
     return group;
