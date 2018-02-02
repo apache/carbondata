@@ -404,4 +404,51 @@ object CarbonScalaUtil {
       })
     otherFields
   }
+
+  /**
+   * If the table is from an old store then the table parameters are in lowercase. In the current
+   * code we are reading the parameters as camel case.
+   * This method will convert all the schema parts to camel case
+   *
+   * @param parameters
+   * @return
+   */
+  def getDeserializedParameters(parameters: Map[String, String]): Map[String, String] = {
+    val keyParts = parameters.getOrElse("spark.sql.sources.options.keys.numparts", "0").toInt
+    if (keyParts == 0) {
+      parameters
+    } else {
+      val keyStr = 0 until keyParts map {
+        i => parameters(s"spark.sql.sources.options.keys.part.$i")
+      }
+      val finalProperties = scala.collection.mutable.Map.empty[String, String]
+      keyStr foreach {
+        key =>
+          var value = ""
+          for (numValues <- 0 until parameters(key.toLowerCase() + ".numparts").toInt) {
+            value += parameters(key.toLowerCase() + ".part" + numValues)
+          }
+          finalProperties.put(key, value)
+      }
+      // Database name would be extracted from the parameter first. There can be a scenario where
+      // the dbName is not written to the old schema therefore to be on a safer side we are
+      // extracting dbName from tableName if it exists.
+      val dbAndTableName = finalProperties("tableName").split(".")
+      if (dbAndTableName.length > 1) {
+        finalProperties.put("dbName", dbAndTableName(0))
+        finalProperties.put("tableName", dbAndTableName(1))
+      } else {
+        finalProperties.put("tableName", dbAndTableName(0))
+      }
+      // Overriding the tablePath in case tablepath already exists. This will happen when old
+      // table schema is updated by the new code then both `path` and `tablepath` will exist. In
+      // this case use tablepath
+      parameters.get("tablepath") match {
+        case Some(tablePath) => finalProperties.put("tablePath", tablePath)
+        case None =>
+      }
+      finalProperties.toMap
+    }
+  }
+
 }
