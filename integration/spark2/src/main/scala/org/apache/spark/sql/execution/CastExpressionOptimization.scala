@@ -25,6 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, EmptyRow, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, In, LessThan, LessThanOrEqual, Literal, Not}
 import org.apache.spark.sql.CastExpr
+import org.apache.spark.sql.FalseExpr
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
@@ -48,7 +49,7 @@ object CastExpressionOptimization {
           CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
       parser.setTimeZone(TimeZone.getTimeZone("GMT"))
     } else {
-      throw new UnsupportedOperationException ("Unsupported DataType being evaluated.")
+      throw new UnsupportedOperationException("Unsupported DataType being evaluated.")
     }
     try {
       val value = parser.parse(v.toString).getTime() * 1000L
@@ -123,6 +124,7 @@ object CastExpressionOptimization {
       tempList.asScala
     }
   }
+
   /**
    * This routines tries to apply rules on Cast Filter Predicates and if the rules applied and the
    * values can be toss back to native datatypes the cast is removed. Current two rules are applied
@@ -238,7 +240,7 @@ object CastExpressionOptimization {
       case c@GreaterThan(Cast(a: Attribute, _), Literal(v, t)) =>
         a.dataType match {
           case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
+            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -248,7 +250,7 @@ object CastExpressionOptimization {
       case c@GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
         a.dataType match {
           case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
+            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -258,7 +260,7 @@ object CastExpressionOptimization {
       case c@LessThan(Cast(a: Attribute, _), Literal(v, t)) =>
         a.dataType match {
           case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
+            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -268,7 +270,7 @@ object CastExpressionOptimization {
       case c@LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
         a.dataType match {
           case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
+            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -278,7 +280,7 @@ object CastExpressionOptimization {
       case c@GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
         a.dataType match {
           case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
+            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -288,7 +290,7 @@ object CastExpressionOptimization {
       case c@GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
         a.dataType match {
           case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
+            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -298,7 +300,7 @@ object CastExpressionOptimization {
       case c@LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
         a.dataType match {
           case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
+            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -308,7 +310,7 @@ object CastExpressionOptimization {
       case c@LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
         a.dataType match {
           case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
+            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -320,6 +322,7 @@ object CastExpressionOptimization {
 
   /**
    * the method removes the cast for short type columns
+   *
    * @param actualValue
    * @param exp
    * @return
@@ -350,6 +353,41 @@ object CastExpressionOptimization {
   }
 
   /**
+   *
+   * @param actualValue actual value of filter
+   * @param exp         expression
+   * @param filter      Filter Expression
+   * @return return CastExpression or same Filter
+   */
+  def updateFilterForNonEqualTimeStamp(actualValue: Any, exp: Expression, filter: Option[Filter]):
+  Option[sources.Filter] = {
+    filter.get match {
+      case FalseExpr() if (validTimeComparisionForSpark(actualValue)) =>
+        Some(CastExpr(exp))
+      case _ =>
+        filter
+    }
+  }
+
+  /**
+   * Spark compares data based on double also.
+   * Ex. slect * ...where time >0 , this will return all data
+   * So better  give to Spark as Cast Expression.
+   *
+   * @param numericTimeValue
+   * @return if valid double return true,else false
+   */
+  def validTimeComparisionForSpark(numericTimeValue: Any): Boolean = {
+    try {
+      numericTimeValue.toString.toDouble
+      true
+    } catch {
+      case _ => false
+    }
+  }
+
+
+  /**
    * the method removes the cast for timestamp type columns
    *
    * @param actualValue
@@ -362,9 +400,11 @@ object CastExpressionOptimization {
     if (!newValue.equals(actualValue)) {
       updateFilterBasedOnFilterType(exp, newValue)
     } else {
-      Some(CastExpr(exp))
+      Some(FalseExpr())
     }
+
   }
+
 
   /**
    * the method removes the cast for the respective filter type
