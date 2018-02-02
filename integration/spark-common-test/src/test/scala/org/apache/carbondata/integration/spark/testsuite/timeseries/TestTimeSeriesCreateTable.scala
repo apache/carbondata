@@ -201,7 +201,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | GROUP BY dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.equals("Unknown data map type abc"))
+    assert(e.getMessage.equals("Unknown datamap provider/class abc"))
   }
 
   test("test timeseries create table 12: USING and catch MalformedCarbonCommandException") {
@@ -216,7 +216,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | GROUP BY dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.equals("Unknown data map type abc"))
+    assert(e.getMessage.equals("Unknown datamap provider/class abc"))
   }
 
   test("test timeseries create table 13: Only one granularity level can be defined 1") {

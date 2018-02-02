@@ -24,6 +24,7 @@ import org.apache.spark.sql.execution.command.preaaggregate.CreatePreAggregateTa
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider._
 import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 
@@ -60,7 +61,14 @@ case class CarbonCreateDataMapCommand(
     } else {
       dmProperties
     }
-
+    val dataMapProvider = {
+      try {
+        DataMapProvider.getDataMapProvider(dmClassName)
+      } catch {
+        case e: UnsupportedOperationException =>
+          throw new MalformedDataMapCommandException(e.getMessage)
+      }
+    }
     if (sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
       LOGGER.audit(
@@ -70,16 +78,16 @@ case class CarbonCreateDataMapCommand(
       if (!ifNotExistsSet) {
         throw new TableAlreadyExistsException(dbName, tableName)
       }
-    } else if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
-      dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+    } else {
       TimeSeriesUtil.validateTimeSeriesGranularity(newDmProperties, dmClassName)
-      createPreAggregateTableCommands = if (dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+      createPreAggregateTableCommands = if (dataMapProvider == TIMESERIES) {
         val details = TimeSeriesUtil
           .getTimeSeriesGranularityDetails(newDmProperties, dmClassName)
         val updatedDmProperties = newDmProperties - details._1
-        CreatePreAggregateTableCommand(dataMapName,
+        CreatePreAggregateTableCommand(
+          dataMapName,
           tableIdentifier,
-          dmClassName,
+          dataMapProvider,
           updatedDmProperties,
           queryString.get,
           Some(details._1),
@@ -88,14 +96,12 @@ case class CarbonCreateDataMapCommand(
         CreatePreAggregateTableCommand(
           dataMapName,
           tableIdentifier,
-          dmClassName,
+          dataMapProvider,
           newDmProperties,
           queryString.get,
           ifNotExistsSet = ifNotExistsSet)
       }
       createPreAggregateTableCommands.processMetadata(sparkSession)
-    } else {
-      throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
     }
     LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${tableIdentifier.table}")
     Seq.empty
@@ -110,7 +116,7 @@ case class CarbonCreateDataMapCommand(
         Seq.empty
       }
     } else {
-      throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
+      throw new MalformedDataMapCommandException("Unknown datamap provider/class " + dmClassName)
     }
   }
 
@@ -123,7 +129,7 @@ case class CarbonCreateDataMapCommand(
         Seq.empty
       }
     } else {
-      throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
+      throw new MalformedDataMapCommandException("Unknown datamap provider/class " + dmClassName)
     }
   }
 }

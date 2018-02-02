@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.core.metadata.schema.table;
 
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.AGGREGATIONDATAMAPSCHEMA;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider;
 
 public class DataMapSchemaFactory {
   public static final DataMapSchemaFactory INSTANCE = new DataMapSchemaFactory();
@@ -28,11 +28,11 @@ public class DataMapSchemaFactory {
    * @return data map schema
    */
   public DataMapSchema getDataMapSchema(String dataMapName, String className) {
-    switch (className) {
-      case AGGREGATIONDATAMAPSCHEMA:
-        return new AggregationDataMapSchema(dataMapName, className);
-      default:
-        return new DataMapSchema(dataMapName, className);
+    if (DataMapProvider.PREAGGREGATE.getClassName().equals(className) ||
+        DataMapProvider.TIMESERIES.getClassName().equals(className)) {
+      return new AggregationDataMapSchema(dataMapName, className);
+    } else {
+      return new DataMapSchema(dataMapName, className);
     }
   }
 }

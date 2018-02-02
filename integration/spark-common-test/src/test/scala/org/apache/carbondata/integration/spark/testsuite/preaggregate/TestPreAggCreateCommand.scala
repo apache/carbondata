@@ -296,7 +296,8 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
           | GROUP BY column3,column5,column2
         """.stripMargin)
     }
-    assert(e.getMessage.contains("Unknown data map type abc"))
+    assert(e.getMessage.contains(
+      s"Unknown datamap provider/class abc"))
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 

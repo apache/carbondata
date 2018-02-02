@@ -27,6 +27,41 @@ package org.apache.carbondata.core.metadata.schema.datamap;
  */
 
 public enum DataMapProvider {
-  PREAGGREGATE,
-  TIMESERIES;
+  PREAGGREGATE("org.apache.carbondata.core.datamap.AggregateDataMap", "preaggregate"),
+  TIMESERIES("org.apache.carbondata.core.datamap.TimeSeriesDataMap", "timeseries");
+
+  /**
+   * Fully qualified class name of datamap
+   */
+  private String className;
+
+  /**
+   * Short name representation of datamap
+   */
+  private String shortName;
+
+  DataMapProvider(String className, String shortName) {
+    this.className = className;
+    this.shortName = shortName;
+  }
+
+  public String getClassName() {
+    return className;
+  }
+
+  private boolean isEqual(String dataMapClass) {
+    return (dataMapClass != null &&
+        (dataMapClass.equals(className) ||
+        dataMapClass.equalsIgnoreCase(shortName)));
+  }
+
+  public static DataMapProvider getDataMapProvider(String dataMapClass) {
+    if (TIMESERIES.isEqual(dataMapClass)) {
+      return TIMESERIES;
+    } else if (PREAGGREGATE.isEqual(dataMapClass)) {
+      return PREAGGREGATE;
+    } else {
+      throw new UnsupportedOperationException("Unknown datamap provider/class " + dataMapClass);
+    }
+  }
 }
