@@ -21,9 +21,12 @@ import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
 /**
   * Test Class for filter expression query on String datatypes
@@ -31,12 +34,17 @@ import org.apache.spark.sql.test.util.QueryTest
   */
 class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
+  val file1 = resourcesPath + "/filter/file1.csv"
+
   override def beforeAll {
     sql("drop table if exists filtertestTables")
     sql("drop table if exists filtertestTablesWithDecimal")
     sql("drop table if exists filtertestTablesWithNull")
     sql("drop table if exists filterTimestampDataType")
     sql("drop table if exists noloadtable")
+    sql("drop table if exists like_filter")
+
+    CompactionSupportGlobalSortBigFileTest.createFile(file1, 500000, 0)
 
     sql("CREATE TABLE filtertestTables (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
@@ -279,6 +287,21 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists outofrange")
   }
 
+  test("like% test case with restructure") {
+    sql("drop table if exists like_filter")
+    sql(
+      """
+        | CREATE TABLE like_filter(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE like_filter OPTIONS('header'='false')")
+    sql(
+      "ALTER TABLE like_filter ADD COLUMNS(filter STRING) TBLPROPERTIES ('DEFAULT.VALUE" +
+      ".FILTER'='altered column')")
+    checkAnswer(sql("select count(*) from like_filter where filter like '%column'"), Row(500000))
+  }
+
 
 
 
@@ -294,6 +317,8 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS big_int_basicc_Hive_1")
     sql("DROP TABLE IF EXISTS filtertestTablesWithNull")
     sql("DROP TABLE IF EXISTS filtertestTablesWithNullJoin")
+    sql("drop table if exists like_filter")
+    CompactionSupportGlobalSortBigFileTest.deleteFile(file1)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
