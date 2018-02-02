@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider
 import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
@@ -46,7 +47,7 @@ import org.apache.carbondata.spark.util.DataLoadingUtil
 case class CreatePreAggregateTableCommand(
     dataMapName: String,
     parentTableIdentifier: TableIdentifier,
-    dmClassName: String,
+    dataMapProvider: DataMapProvider,
     dmProperties: Map[String, String],
     queryString: String,
     timeSeriesFunction: Option[String] = None,
@@ -125,7 +126,7 @@ case class CreatePreAggregateTableCommand(
     // child schema object which will be updated on parent table about the
     val childSchema = tableInfo.getFactTable.buildChildSchema(
       dataMapName,
-      CarbonCommonConstants.AGGREGATIONDATAMAPSCHEMA,
+      dataMapProvider.getClassName,
       tableInfo.getDatabaseName,
       queryString,
       "AGGREGATION")

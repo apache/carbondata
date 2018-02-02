@@ -192,13 +192,13 @@ struct DataMapSchema  {
     1: required string dataMapName;
     // class name
     2: required string className;
+    // to maintain properties like select query, query type like groupby, join
+    3: optional map<string, string> properties;
     // relation indentifier
-    3: optional RelationIdentifier relationIdentifire;
+    4: optional RelationIdentifier childTableIdentifer;
     // in case of preaggregate it will be used to maintain the child schema
     // which will be usefull in case of query and data load
-    4: optional TableSchema childTableSchema;
-    // to maintain properties like select query, query type like groupby, join
-    5: optional map<string, string> properties;
+    5: optional TableSchema childTableSchema;
 }
 
 struct TableInfo{
