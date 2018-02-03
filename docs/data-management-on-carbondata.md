@@ -843,7 +843,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 ### Drop Partition
 
-  This command drops the specified Hive paritionOnly.
+  This command drops the specified Hive partition only.
   ```
   ALTER TABLE table_name DROP [IF EXISTS] (PARTITION part_spec, ...)
   ```
