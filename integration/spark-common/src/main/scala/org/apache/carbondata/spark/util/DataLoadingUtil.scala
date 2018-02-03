@@ -248,10 +248,10 @@ object DataLoadingUtil {
 
     if (bad_records_logger_enable.toBoolean ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
-      bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path)
       if (!CarbonUtil.isValidBadStorePath(bad_record_path)) {
         CarbonException.analysisException("Invalid bad records location.")
       }
+      bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path)
     }
     carbonLoadModel.setBadRecordsLocation(bad_record_path)
 

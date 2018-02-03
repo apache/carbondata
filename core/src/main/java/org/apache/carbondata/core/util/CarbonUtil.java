@@ -98,6 +98,7 @@ import com.google.gson.GsonBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -1891,7 +1892,11 @@ public final class CarbonUtil {
    * @return
    */
   public static boolean isValidBadStorePath(String badRecordsLocation) {
-    return !(null == badRecordsLocation || badRecordsLocation.length() == 0);
+    if (StringUtils.isEmpty(badRecordsLocation)) {
+      return false;
+    } else {
+      return isFileExists(checkAndAppendHDFSUrl(badRecordsLocation));
+    }
   }
 
   /**

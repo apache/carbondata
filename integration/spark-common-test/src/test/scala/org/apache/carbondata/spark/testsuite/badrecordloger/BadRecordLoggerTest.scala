@@ -56,11 +56,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
           actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
 
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-          new File("./target/test/badRecords")
-            .getCanonicalPath)
-
-      CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       var csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS"
