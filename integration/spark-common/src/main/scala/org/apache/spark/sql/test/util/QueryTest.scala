@@ -41,6 +41,9 @@ class QueryTest extends PlanTest {
   // Add Locale setting
   Locale.setDefault(Locale.US)
 
+  CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "false")
+
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
    * none of keywords are listed in the answer
