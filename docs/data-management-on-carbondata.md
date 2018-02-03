@@ -20,6 +20,7 @@
 This tutorial is going to introduce all commands and data operations on CarbonData.
 
 * [CREATE TABLE](#create-table)
+* [CREATE DATABASE] (#create-database)
 * [TABLE MANAGEMENT](#table-management)
 * [LOAD DATA](#load-data)
 * [UPDATE AND DELETE](#update-and-delete)
@@ -148,6 +149,17 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 				   'streaming'='true',
                    'ALLOWED_COMPACTION_DAYS'='5')
    ```
+
+## CREATE DATABASE 
+  This function creates a new database. By default the database is created in Carbon store location, but you can also specify custom location.
+  ```
+  CREATE DATABASE [IF NOT EXISTS] database_name [LOCATION path];
+  ```
+  
+### Example
+  ```
+  CREATE DATABASE carbon LOCATION “hdfs://name_cluster/dir1/carbonstore”;
+  ```
 
 ## CREATE TABLE As SELECT
   This function allows you to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
