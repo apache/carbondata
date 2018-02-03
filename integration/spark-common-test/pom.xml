@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.3.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -297,9 +297,9 @@
                         <fileset dir="${classes.directory.projectCore}" />
                         <fileset dir="${classes.directory.projectProcessing}" />
                         <fileset dir="${classes.directory.projectHadoop}" />
-                        <fileset dir="${classes.directory.projectFormat}" erroronmissingdir="false"/>
-                        <fileset dir="${classes.directory.projectSpark}" erroronmissingdir="false"/>
-                        <fileset dir="${classes.directory.projectSpark2}" erroronmissingdir="false"/>
+                        <fileset dir="${classes.directory.projectFormat}" erroronmissingdir="false" />
+                        <fileset dir="${classes.directory.projectSpark}" erroronmissingdir="false" />
+                        <fileset dir="${classes.directory.projectSpark2}" erroronmissingdir="false" />
                         <fileset dir="${classes.directory.projectSparkCommon}" />
                         <fileset dir="${classes.directory.projectSparkCommonTest}" />
                         <fileset dir="${classes.directory.projectHive}" erroronmissingdir="false" />
@@ -311,9 +311,9 @@
                         <fileset dir="${sources.directory.projectCore}" />
                         <fileset dir="${sources.directory.projectProcessing}" />
                         <fileset dir="${sources.directory.projectHadoop}" />
-                        <fileset dir="${sources.directory.projectFormat}" erroronmissingdir="false"/>
-                        <fileset dir="${sources.directory.projectSpark}" erroronmissingdir="false"/>
-                        <fileset dir="${sources.directory.projectSpark2}" erroronmissingdir="false"/>
+                        <fileset dir="${sources.directory.projectFormat}" erroronmissingdir="false" />
+                        <fileset dir="${sources.directory.projectSpark}" erroronmissingdir="false" />
+                        <fileset dir="${sources.directory.projectSpark2}" erroronmissingdir="false" />
                         <fileset dir="${sources.directory.projectSparkCommon}" />
                         <fileset dir="${sources.directory.projectHive}" erroronmissingdir="false" />
                         <fileset dir="${sources.directory.projectPresto}" erroronmissingdir="false" />
