@@ -20,7 +20,7 @@
 This tutorial is going to introduce all commands and data operations on CarbonData.
 
 * [CREATE TABLE](#create-table)
-* [CREATE DATABASE] (#create-database)
+* [CREATE DATABASE](#create-database)
 * [TABLE MANAGEMENT](#table-management)
 * [LOAD DATA](#load-data)
 * [UPDATE AND DELETE](#update-and-delete)
