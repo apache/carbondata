@@ -37,6 +37,11 @@ public class CarbonDataLoadSchema implements Serializable {
   private CarbonTable carbonTable;
 
   /**
+   * Used to determine if the dataTypes have already been updated or not.
+   */
+  private transient boolean updatedDataTypes;
+
+  /**
    * CarbonDataLoadSchema constructor which takes CarbonTable
    *
    * @param carbonTable
@@ -51,6 +56,10 @@ public class CarbonDataLoadSchema implements Serializable {
    * @return carbonTable
    */
   public CarbonTable getCarbonTable() {
+    if (!updatedDataTypes) {
+      CarbonTable.updateTableInfo(carbonTable.getTableInfo());
+      updatedDataTypes = true;
+    }
     return carbonTable;
   }
 
