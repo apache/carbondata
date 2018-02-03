@@ -56,7 +56,14 @@ object StandardPartitionExample {
 
     spark.sql(
       s"""
-         | SELECT country,id,vin,phonenumver,area,salary
+         | SELECT country,id,vin,phonenumber,area,salary
+         | FROM partitiontable0
+      """.stripMargin).show()
+
+    spark.sql("UPDATE partitiontable0 SET (salary) = (88888) WHERE country='UK'").show()
+    spark.sql(
+      s"""
+         | SELECT country,id,vin,phonenumber,area,salary
          | FROM partitiontable0
       """.stripMargin).show()
 
@@ -66,7 +73,7 @@ object StandardPartitionExample {
     import scala.util.Random
     import spark.implicits._
     val r = new Random()
-    val df = spark.sparkContext.parallelize(1 to 10 * 1000 * 10)
+    val df = spark.sparkContext.parallelize(1 to 10 * 100 * 1000)
       .map(x => ("No." + r.nextInt(1000), "country" + x % 8, "city" + x % 50, x % 300))
       .toDF("ID", "country", "city", "population")
 

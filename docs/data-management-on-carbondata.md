@@ -26,8 +26,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 * [UPDATE AND DELETE](#update-and-delete)
 * [COMPACTION](#compaction)
 * [PARTITION](#partition)
-* [HIVE STANDARD PARTITION](#hive-standard-partition)
-* [PRE-AGGREGATE TABLES](#agg-tables)
+* [PRE-AGGREGATE TABLES](#pre-aggregate-tables)
 * [BUCKETING](#bucketing)
 * [SEGMENT MANAGEMENT](#segment-management)
 
@@ -54,8 +53,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
      TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
 	 ```
-     
-	 NOTE: DICTIONARY_EXCLUDE supports only int, string, timestamp, long, bigint, and varchar data types.
 	 
    - **Inverted Index Configuration**
 
@@ -603,34 +600,109 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   CLEAN FILES FOR TABLE carbon_table
   ```
 
-## STANDARD PARTITION
+## PARTITION
 
-  The partition is same as Spark, the creation partition command as below:
+### STANDARD PARTITION
+
+  The partition is similar as spark and hive partition, user can use any column to build partition:
+  
+#### Create Partition Table
+
+  This command allows you to create table with partition.
   
   ```
-  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
-                    [(col_name data_type , ...)]
-  PARTITIONED BY (partition_col_name data_type)
-  STORED BY 'carbondata'
-  [TBLPROPERTIES (property_name=property_value, ...)]
+  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name 
+    [(col_name data_type , ...)]
+    [COMMENT table_comment]
+    [PARTITIONED BY (col_name data_type , ...)]
+    [STORED BY file_format]
+    [TBLPROPERTIES (property_name=property_value, ...)]
   ```
+  
+  Example:
+  ```
+   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
+                                productNumber Int,
+                                productName String,
+                                storeCity String,
+                                storeProvince String,
+                                saleQuantity Int,
+                                revenue Int)
+  PARTITIONED BY (productCategory String, productBatch String)
+  STORED BY 'carbondata'
+  ```
+		
+#### Load Data Using Static Partition 
+
+  This command allows you to load data using static partition.
+  
+  ```
+  LOAD DATA [LOCAL] INPATH 'folder_path' 
+    INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
+    OPTIONS(property_name=property_value, ...)
+  NSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) SELECT STATMENT 
+  ```
+  
+  Example:
+  ```
+  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.txt'
+    INTO TABLE locationTable
+    PARTITION (country = 'US', state = 'CA')
+    
+  INSERT INTO TABLE locationTable
+    PARTITION (country = 'US', state = 'AL')
+    SELECT * FROM another_user au 
+    WHERE au.country = 'US' AND au.state = 'AL';
+  ```
+
+#### Load Data Using Dynamic Partition
+
+  This command allows you to load data using dynamic partition. If partition spec is not specified, then the partition is considered as dynamic.
 
   Example:
   ```
-  CREATE TABLE partitiontable0
-                  (id Int,
-                  vin String,
-                  phonenumber Long,
-                  area String,
-                  salary Int)
-                  PARTITIONED BY (country String)
-                  STORED BY 'org.apache.carbondata.format'
-                  TBLPROPERTIES('SORT_COLUMNS'='id,vin')
-                  )
+  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.txt'
+    INTO TABLE locationTable
+          
+  INSERT INTO TABLE locationTable
+    SELECT * FROM another_user au 
+    WHERE au.country = 'US' AND au.state = 'AL';
   ```
 
+#### Show Partitions
 
-## CARBONDATA PARTITION(HASH,RANGE,LIST)
+  This command gets the Hive partition information of the table
+
+  ```
+  SHOW PARTITIONS [db_name.]table_name
+  ```
+
+#### Drop Partition
+
+  This command drops the specified Hive partition only.
+  ```
+  ALTER TABLE table_name DROP [IF EXISTS] (PARTITION part_spec, ...)
+  ```
+
+#### Insert OVERWRITE
+  
+  This command allows you to insert or load overwrite on a spcific partition.
+  
+  ```
+   INSERT OVERWRITE TABLE table_name
+    PARTITION (column = 'partition_name')
+    select_statement
+  ```
+  
+  Example:
+  ```
+  INSERT OVERWRITE TABLE partitioned_user
+    PARTITION (country = 'US')
+    SELECT * FROM another_user au 
+    WHERE au.country = 'US';
+  ```
+
+### CARBONDATA PARTITION(HASH,RANGE,LIST) -- Alpha feature, this partition not supports update and delete data.
 
   The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column.
 
@@ -766,106 +838,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * The partitioned column can be excluded from SORT_COLUMNS, this will let other columns to do the efficient sorting.
   * When writing SQL on a partition table, try to use filters on the partition column.
 
-## HIVE STANDARD PARTITION
-
-  Carbon supports the partition which is custom implemented by carbon but due to compatibility issue does not allow you to use the feature of Hive. By using this function, you can use the feature available in Hive.
-
-### Create Partition Table
-
-  This command allows you to create table with partition.
-  
-  ```
-  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name 
-    [(col_name data_type , ...)]
-    [COMMENT table_comment]
-    [PARTITIONED BY (col_name data_type , ...)]
-    [STORED BY file_format]
-    [TBLPROPERTIES (property_name=property_value, ...)]
-    [AS select_statement];
-  ```
-  
-  Example:
-  ```
-   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                                productNumber Int,
-                                productName String,
-                                storeCity String,
-                                storeProvince String,
-                                saleQuantity Int,
-                                revenue Int)
-  PARTITIONED BY (productCategory String, productBatch String)
-  STORED BY 'carbondata'
-  ```
-		
-### Load Data Using Static Partition
-
-  This command allows you to load data using static partition.
-  
-  ```
-  LOAD DATA [LOCAL] INPATH 'folder_path' 
-    INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
-    OPTIONS(property_name=property_value, ...)
-  NSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) SELECT STATMENT 
-  ```
-  
-  Example:
-  ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.txt'
-    INTO TABLE locationTable
-    PARTITION (country = 'US', state = 'CA')
-    
-  INSERT INTO TABLE locationTable
-    PARTITION (country = 'US', state = 'AL')
-    SELECT * FROM another_user au 
-    WHERE au.country = 'US' AND au.state = 'AL';
-  ```
-
-### Load Data Using Dynamic Partition
-
-  This command allows you to load data using dynamic partition. If partition spec is not specified, then the partition is considered as dynamic.
-
-  Example:
-  ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.txt'
-    INTO TABLE locationTable
-          
-  INSERT INTO TABLE locationTable
-    SELECT * FROM another_user au 
-    WHERE au.country = 'US' AND au.state = 'AL';
-  ```
-
-### Show Partitions
-
-  This command gets the Hive partition information of the table
-
-  ```
-  SHOW PARTITIONS [db_name.]table_name
-  ```
-
-### Drop Partition
-
-  This command drops the specified Hive partition only.
-  ```
-  ALTER TABLE table_name DROP [IF EXISTS] (PARTITION part_spec, ...)
-  ```
-
-### Insert OVERWRITE
-  
-  This command allows you to insert or load overwrite on a spcific partition.
-  
-  ```
-   INSERT OVERWRITE TABLE table_name
-    PARTITION (column = 'partition_name')
-    select_statement
-  ```
-  
-  Example:
-  ```
-  INSERT OVERWRITE TABLE partitioned_user
-    PARTITION (country = 'US')
-    SELECT * FROM another_user au 
-    WHERE au.country = 'US';
-  ```
 
 ## PRE-AGGREGATE TABLES
   Carbondata supports pre aggregating of data so that OLAP kind of queries can fetch data 
@@ -989,7 +961,7 @@ This functionality is not supported.
   before Alter Operations can be performed on the main table.Pre-aggregate tables can be rebuilt 
   manually after Alter Table operations are completed
   
-### Supporting timeseries data
+### Supporting timeseries data (Alpha feature in 1.3.0)
 Carbondata has built-in understanding of time hierarchy and levels: year, month, day, hour, minute.
 Multiple pre-aggregate tables can be created for the hierarchy and Carbondata can do automatic 
 roll-up for the queries on these hierarchies.
