@@ -544,7 +544,8 @@ class TableNewProcessor(cm: TableModel) {
       val encoders = if (getEncoderFromParent(field)) {
         isAggFunPresent =
           cm.dataMapRelation.get.get(field).get.aggregateFunction.equalsIgnoreCase("sum") ||
-          cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg")
+          cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg") ||
+          cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("count")
         if(!isAggFunPresent) {
           cm.parentTable.get.getColumnByName(
             cm.parentTable.get.getTableName,
