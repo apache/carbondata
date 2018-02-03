@@ -32,12 +32,13 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 ## CREATE TABLE
 
-  This command can be used to create a CarbonData table by specifying the list of fields along with the table properties.
+  This command can be used to create a CarbonData table by specifying the list of fields along with the table properties. You can also specify the location where the table needs to be stored.
   
   ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name[(col_name data_type , ...)]
   STORED BY 'carbondata'
   [TBLPROPERTIES (property_name=property_value, ...)]
+  [LOCATION 'path']
   ```  
   
 ### Usage Guidelines
