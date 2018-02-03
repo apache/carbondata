@@ -17,22 +17,10 @@
 
 package org.apache.carbondata.spark.exception;
 
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-
-public class ConcurrentOperationException extends MalformedCarbonCommandException {
-
-  public ConcurrentOperationException(String dbName, String tableName, String command1,
-      String command2) {
-    super(command1 + " is in progress for table " + dbName + "." + tableName + ", " + command2 +
-      " operation is not allowed");
+// This exception will be thrown when processMetaData failed in
+// Carbon's RunnableCommand
+public class ProcessMetaDataException extends MalformedCarbonCommandException {
+  public ProcessMetaDataException(String dbName, String tableName, String msg) {
+    super("operation failed for " + dbName + "." + tableName + ": " + msg);
   }
-
-  public ConcurrentOperationException(CarbonTable table, String command1, String command2) {
-    this(table.getDatabaseName(), table.getTableName(), command1, command2);
-  }
-
-  public String getMessage() {
-    return super.getMessage();
-  }
-
 }

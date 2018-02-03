@@ -26,6 +26,7 @@ import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 /**
  *
@@ -168,12 +169,8 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
       backUpData(dbLocationCustom, "carbontable_preagg1")
       sql("drop table carbontable")
       restoreData(dbLocationCustom, "carbontable")
-      try {
+      intercept[ProcessMetaDataException] {
         sql("refresh table carbontable")
-        assert(false)
-      } catch {
-        case e: AnalysisException =>
-          assert(true)
       }
       restoreData(dbLocationCustom, "carbontable_preagg1")
     }

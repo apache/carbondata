@@ -40,7 +40,7 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -65,12 +65,12 @@ case class CarbonAlterTableSplitPartitionCommand(
       .asInstanceOf[CarbonRelation]
     val tablePath = relation.carbonTable.getTablePath
     if (relation == null) {
-      sys.error(s"Table $dbName.$tableName does not exist")
+      throwMetadataException(dbName, tableName, "table not found")
     }
     carbonMetaStore.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     if (null == CarbonMetadata.getInstance.getCarbonTable(dbName, tableName)) {
       LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
-      sys.error(s"Alter table failed. table not found: $dbName.$tableName")
+      throwMetadataException(dbName, tableName, "table not found")
     }
     val table = relation.carbonTable
     val partitionInfo = table.getPartitionInfo(tableName)
@@ -80,16 +80,15 @@ case class CarbonAlterTableSplitPartitionCommand(
     oldPartitionIds.addAll(partitionIds.asJava)
 
     if (partitionInfo == null) {
-      sys.error(s"Table $tableName is not a partition table.")
+      throwMetadataException(dbName, tableName, "Table is not a partition table.")
     }
     if (partitionInfo.getPartitionType == PartitionType.HASH) {
-      sys.error(s"Hash partition table cannot be added or split!")
+      throwMetadataException(dbName, tableName, "Hash partition table cannot be added or split!")
     }
 
     updatePartitionInfo(partitionInfo, partitionIds)
 
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier)
-    val schemaFilePath = carbonTablePath.getSchemaFilePath
     // read TableInfo
     val tableInfo = carbonMetaStore.getThriftTableInfo(carbonTablePath)(sparkSession)
     val schemaConverter = new ThriftWrapperSchemaConverterImpl()

@@ -20,11 +20,10 @@ package org.apache.spark.sql.execution.command.table
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
-import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
@@ -34,6 +33,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
+import org.apache.carbondata.spark.exception.{ConcurrentOperationException, ProcessMetaDataException}
 
 case class CarbonDropTableCommand(
     ifExistsSet: Boolean,
@@ -55,8 +55,11 @@ case class CarbonDropTableCommand(
       locksToBeAcquired foreach {
         lock => carbonLocks += CarbonLockUtil.getLockObject(identifier, lock)
       }
-      LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
       carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+      if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
+        throw new ConcurrentOperationException(carbonTable, "loading", "drop table")
+      }
+      LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
       if (carbonTable.isStreamingTable) {
         // streaming table should acquire streaming.lock
         carbonLocks += CarbonLockUtil.getLockObject(identifier, LockUsage.STREAMING_LOCK)
@@ -65,8 +68,9 @@ case class CarbonDropTableCommand(
       if (relationIdentifiers != null && !relationIdentifiers.isEmpty) {
         if (!dropChildTable) {
           if (!ifExistsSet) {
-            throw new Exception("Child table which is associated with datamap cannot " +
-                                "be dropped, use DROP DATAMAP command to drop")
+            throwMetadataException(dbName, tableName,
+              "Child table which is associated with datamap cannot be dropped, " +
+              "use DROP DATAMAP command to drop")
           } else {
             return Seq.empty
           }
@@ -79,10 +83,7 @@ case class CarbonDropTableCommand(
           ifExistsSet,
           sparkSession)
       OperationListenerBus.getInstance.fireEvent(dropTablePreEvent, operationContext)
-      if (SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)) {
-        throw new AnalysisException(s"Data loading is in progress for table $tableName, drop " +
-                                    s"table operation is not allowed")
-      }
+
       CarbonEnv.getInstance(sparkSession).carbonMetastore.dropTable(identifier)(sparkSession)
 
       if (carbonTable.hasDataMapSchema) {
@@ -122,10 +123,12 @@ case class CarbonDropTableCommand(
         if (!ifExistsSet) {
           throw ex
         }
+      case ex: ConcurrentOperationException =>
+        throw ex
       case ex: Exception =>
-        LOGGER.error(ex, s"Dropping table $dbName.$tableName failed")
-        CarbonException.analysisException(
-          s"Dropping table $dbName.$tableName failed: ${ ex.getMessage }")
+        val msg = s"Dropping table $dbName.$tableName failed: ${ex.getMessage}"
+        LOGGER.error(ex, msg)
+        throwMetadataException(dbName, tableName, msg)
     } finally {
       if (carbonLocks.nonEmpty) {
         val unlocked = carbonLocks.forall(_.unlock())

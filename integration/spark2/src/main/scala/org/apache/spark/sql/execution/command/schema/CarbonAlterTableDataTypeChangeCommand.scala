@@ -62,7 +62,7 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       if (!carbonColumns.exists(_.getColName.equalsIgnoreCase(columnName))) {
         LOGGER.audit(s"Alter table change data type request has failed. " +
                      s"Column $columnName does not exist")
-        sys.error(s"Column does not exist: $columnName")
+        throwMetadataException(dbName, tableName, s"Column does not exist: $columnName")
       }
       val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(columnName))
       if (carbonColumn.size == 1) {
@@ -71,11 +71,11 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       } else {
         LOGGER.audit(s"Alter table change data type request has failed. " +
                      s"Column $columnName is invalid")
-        sys.error(s"Invalid Column: $columnName")
+        throwMetadataException(dbName, tableName, s"Invalid Column: $columnName")
       }
       // read the latest schema file
-      val carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+      val carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
       val tableInfo: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
       // maintain the added column for schema evolution history
       var addColumnSchema: ColumnSchema = null
@@ -107,12 +107,13 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for data type change is successful for table $dbName.$tableName")
     } catch {
-      case e: Exception => LOGGER
-        .error("Alter table change datatype failed : " + e.getMessage)
+      case e: Exception =>
+        LOGGER.error("Alter table change datatype failed : " + e.getMessage)
         if (carbonTable != null) {
           AlterTableUtil.revertDataTypeChanges(dbName, tableName, timeStamp)(sparkSession)
         }
-        sys.error(s"Alter table data type change operation failed: ${e.getMessage}")
+        throwMetadataException(dbName, tableName,
+          s"Alter table data type change operation failed: ${e.getMessage}")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)

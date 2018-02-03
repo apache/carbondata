@@ -63,7 +63,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
           tableColumn => partitionColumnSchemaList.contains(tableColumn)
         }
         if (partitionColumns.nonEmpty) {
-          throw new UnsupportedOperationException("Partition columns cannot be dropped: " +
+          throwMetadataException(dbName, tableName, "Partition columns cannot be dropped: " +
                                                   s"$partitionColumns")
         }
       }
@@ -85,7 +85,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
           }
         }
         if (!columnExist) {
-          sys.error(s"Column $column does not exists in the table $dbName.$tableName")
+          throwMetadataException(dbName, tableName,
+            s"Column $column does not exists in the table $dbName.$tableName")
         }
       }
 
@@ -137,13 +138,13 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       LOGGER.info(s"Alter table for drop columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for drop columns is successful for table $dbName.$tableName")
     } catch {
-      case e: Exception => LOGGER
-        .error("Alter table drop columns failed : " + e.getMessage)
+      case e: Exception =>
+        LOGGER.error("Alter table drop columns failed : " + e.getMessage)
         if (carbonTable != null) {
           AlterTableUtil.revertDropColumnChanges(dbName, tableName, timeStamp)(sparkSession)
         }
-        e.printStackTrace()
-        sys.error(s"Alter table drop column operation failed: ${e.getMessage}")
+        throwMetadataException(dbName, tableName,
+          s"Alter table drop column operation failed: ${e.getMessage}")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)

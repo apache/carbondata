@@ -23,6 +23,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+
 class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -154,10 +156,10 @@ class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql(
       "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
-    assert(intercept[RuntimeException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain change a a long").show
     }.getMessage.contains("exists in a pre-aggregate table"))
-    assert(intercept[RuntimeException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain_preagg1 change a a long").show
     }.getMessage.contains("Cannot change data type for columns in pre-aggregate table"))
     sql("drop table if exists preaggMain")
