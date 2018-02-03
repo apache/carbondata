@@ -232,6 +232,10 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     Thread.sleep(5000)
     thread.interrupt()
     checkAnswer(
+      sql("select name from streaming.stream_table_file where id in (100000003, 14, 34)"),
+        Seq(Row("batch_3"), Row("name_14"), Row("name_34")))
+    )
+    checkAnswer(
       sql("select count(*) from streaming.stream_table_file"),
       Seq(Row(25))
     )
@@ -250,8 +254,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       badRecordAction = "fail",
       autoHandoff = false
     )
-    val result = sql("select count(*) from streaming.bad_record_fail").collect()
-    assert(result(0).getLong(0) < 10 + 5)
+    // all the rows ingested by streaming are bad records
+    checkAnswer(sql("select count(*) from streaming.bad_record_fail"), Seq(Row(5)))
   }
 
   // ingest with different interval
@@ -870,16 +874,13 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     new Thread() {
       override def run(): Unit = {
         val inputSchema = new StructType()
-          .add("id", "integer")
-          .add("name", "string")
-          .add("city", "string")
-          .add("salary", "float")
-          .add("file", "string")
+          .add("content", "string")
         var qry: StreamingQuery = null
         try {
+          // read the csv line as one column
           val readSocketDF = spark.readStream
             .format("csv")
-            .option("sep", ",")
+            .option("sep", ";")
             .schema(inputSchema)
             .option("path", csvDataDir)
             .option("header", "false")
