@@ -616,6 +616,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         Some(CarbonEndsWith(c))
       case c@Contains(a: Attribute, Literal(v, t)) =>
         Some(CarbonContainsWith(c))
+      case c@Literal(v, t) if (v == null) =>
+        Some(FalseExpr())
       case others => None
     }
   }

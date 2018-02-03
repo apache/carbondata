@@ -135,6 +135,8 @@ object CarbonFilters {
           }))
         case CastExpr(expr: Expression) =>
           Some(transformExpression(expr))
+        case FalseExpr() =>
+          Some(new FalseExpression(null))
         case _ => None
       }
     }
@@ -269,6 +271,8 @@ object CarbonFilters {
           Some(CarbonContainsWith(c))
         case c@Cast(a: Attribute, _) =>
           Some(CastExpr(c))
+        case c@Literal(v, t) if v == null =>
+          Some(FalseExpr())
         case others =>
           if (!or) {
             others.collect {
