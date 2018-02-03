@@ -50,7 +50,8 @@ public enum DataMapProvider {
   }
 
   private boolean isEqual(String dataMapClass) {
-    return (dataMapClass != null && (dataMapClass.equals(className) ||
+    return (dataMapClass != null &&
+        (dataMapClass.equals(className) ||
         dataMapClass.equalsIgnoreCase(shortName)));
   }
 
@@ -60,7 +61,7 @@ public enum DataMapProvider {
     } else if (PREAGGREGATE.isEqual(dataMapClass)) {
       return PREAGGREGATE;
     } else {
-      throw new UnsupportedOperationException("Unknown data map type " + dataMapClass);
+      throw new UnsupportedOperationException("Unknown datamap provider/class " + dataMapClass);
     }
   }
 }

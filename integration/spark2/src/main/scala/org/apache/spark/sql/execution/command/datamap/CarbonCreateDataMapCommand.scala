@@ -116,7 +116,7 @@ case class CarbonCreateDataMapCommand(
         Seq.empty
       }
     } else {
-      throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
+      throw new MalformedDataMapCommandException("Unknown datamap provider/class " + dmClassName)
     }
   }
 
@@ -129,7 +129,7 @@ case class CarbonCreateDataMapCommand(
         Seq.empty
       }
     } else {
-      throw new MalformedDataMapCommandException("Unknown data map type " + dmClassName)
+      throw new MalformedDataMapCommandException("Unknown datamap provider/class " + dmClassName)
     }
   }
 }

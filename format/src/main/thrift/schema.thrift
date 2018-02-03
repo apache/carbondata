@@ -192,11 +192,13 @@ struct DataMapSchema  {
     1: required string dataMapName;
     // class name
     2: required string className;
-    // to maintain properties like select query, query type like groupby, join
+    // to maintain properties which are mentioned in DMPROPERTIES of DDL and also it
+    // stores properties of select query, query type like groupby, join in
+    // case of preaggregate/timeseries
     3: optional map<string, string> properties;
-    // relation indentifier
-    4: optional RelationIdentifier childTableIdentifer;
-    // in case of preaggregate it will be used to maintain the child schema
+    // relation identifier of a table which stores data of datamaps like preaggregate/timeseries.
+    4: optional RelationIdentifier childTableIdentifier;
+    // in case of preaggregate/timeseries datamap it will be used to maintain the child schema
     // which will be usefull in case of query and data load
     5: optional TableSchema childTableSchema;
 }
