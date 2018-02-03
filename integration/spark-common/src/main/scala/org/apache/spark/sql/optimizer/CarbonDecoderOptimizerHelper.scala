@@ -114,10 +114,10 @@ class CarbonDecoderProcessor {
       decoderNotDecode: util.HashSet[AttributeReferenceWrapper]): Unit = {
     scalaList.reverseMap {
       case Node(cd: CarbonDictionaryTempDecoder) =>
-        cd.notDecodeCarryForward.asScala.foreach(decoderNotDecode.remove)
         decoderNotDecode.asScala.foreach(cd.attrsNotDecode.add)
         decoderNotDecode.asScala.foreach(cd.attrList.remove)
         decoderNotDecode.addAll(cd.attrList)
+        cd.notDecodeCarryForward.asScala.foreach(decoderNotDecode.remove)
       case ArrayCarbonNode(children) =>
         children.foreach { child =>
           val notDecode = new util.HashSet[AttributeReferenceWrapper]

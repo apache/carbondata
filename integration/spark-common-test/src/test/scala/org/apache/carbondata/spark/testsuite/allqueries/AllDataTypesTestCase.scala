@@ -1199,4 +1199,18 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists ORDERS")
   }
 
+  test("test self join query fail") {
+    sql("DROP TABLE IF EXISTS uniqdata_INCLUDEDICTIONARY")
+
+    sql("CREATE TABLE uniqdata_INCLUDEDICTIONARY (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')")
+    sql(s"LOAD DATA INPATH '${resourcesPath + "/data_with_all_types.csv"}' into table" +
+              " uniqdata_INCLUDEDICTIONARY OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\"'," +
+              "'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION," +
+              "DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2," +
+              "Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')")
+
+    val count = sql("select b.BIGINT_COLUMN1,b.DECIMAL_COLUMN1,b.Double_COLUMN1,b.DOB,b.CUST_ID,b.CUST_NAME from uniqdata_INCLUDEDICTIONARY a join uniqdata_INCLUDEDICTIONARY b on a.cust_name=b.cust_name and a.cust_name RLIKE '10'").count()
+    assert(count > 0)
+    sql("DROP TABLE IF EXISTS uniqdata_INCLUDEDICTIONARY")
+    }
 }
