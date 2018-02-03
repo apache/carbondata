@@ -45,13 +45,15 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
    - **Dictionary Encoding Configuration**
 
-     Dictionary encoding is turned off for all columns by default from 1.3 onwards, you can use this command for including columns to do dictionary encoding.
+     Dictionary encoding is turned off for all columns by default from 1.3 onwards, you can use this command for including or excluding columns to do dictionary encoding.
      Suggested use cases : do dictionary encoding for low cardinality columns, it might help to improve data compression ratio and performance.
 
      ```
      TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
-     ```
+	 ```
      
+	 NOTE: DICTIONARY_EXCLUDE supports only int, string, timestamp, long, bigint, and varchar data types.
+	 
    - **Inverted Index Configuration**
 
      By default inverted index is enabled, it might help to improve compression ratio and query speed, especially for low cardinality columns which are in reward position.
@@ -64,8 +66,9 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    - **Sort Columns Configuration**
 
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
-     * If users don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex datatype column. 
-     * If this property is specified but with empty argument, then the table will be loaded without sort..
+     * If users don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex data type column. 
+     * If this property is specified but with empty argument, then the table will be loaded without sort.
+	 * This supports only string, date, timestamp, short, int, long, and boolean data types.
      Suggested use cases : Only build MDK index for required columns,it might help to improve the data loading performance.
 
      ```
