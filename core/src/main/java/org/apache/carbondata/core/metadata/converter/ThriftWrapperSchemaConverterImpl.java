@@ -343,7 +343,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
             .setDatabaseName(wrapperChildSchema.getRelationIdentifier().getDatabaseName());
         relationIdentifier.setTableName(wrapperChildSchema.getRelationIdentifier().getTableName());
         relationIdentifier.setTableId(wrapperChildSchema.getRelationIdentifier().getTableId());
-        thriftChildSchema.setRelationIdentifire(relationIdentifier);
+        thriftChildSchema.setChildTableIdentifier(relationIdentifier);
       }
       thriftChildSchema.setProperties(wrapperChildSchema.getProperties());
       thriftChildSchema.setClassName(wrapperChildSchema.getClassName());
@@ -648,11 +648,11 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     DataMapSchema childSchema = new DataMapSchema(thriftDataMapSchema.getDataMapName(),
         thriftDataMapSchema.getClassName());
     childSchema.setProperties(thriftDataMapSchema.getProperties());
-    if (null != thriftDataMapSchema.getRelationIdentifire()) {
+    if (null != thriftDataMapSchema.getChildTableIdentifier()) {
       RelationIdentifier relationIdentifier =
-          new RelationIdentifier(thriftDataMapSchema.getRelationIdentifire().getDatabaseName(),
-              thriftDataMapSchema.getRelationIdentifire().getTableName(),
-              thriftDataMapSchema.getRelationIdentifire().getTableId());
+          new RelationIdentifier(thriftDataMapSchema.getChildTableIdentifier().getDatabaseName(),
+              thriftDataMapSchema.getChildTableIdentifier().getTableName(),
+              thriftDataMapSchema.getChildTableIdentifier().getTableId());
       childSchema.setRelationIdentifier(relationIdentifier);
       childSchema.setChildSchema(
           fromExternalToWrapperTableSchema(thriftDataMapSchema.getChildTableSchema(),

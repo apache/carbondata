@@ -1455,8 +1455,6 @@ public final class CarbonCommonConstants {
 
   public static final String BITSET_PIPE_LINE_DEFAULT = "true";
 
-
-  public static final String AGGREGATIONDATAMAPSCHEMA = "AggregateDataMapHandler";
   /*
    * The total size of carbon data
    */
