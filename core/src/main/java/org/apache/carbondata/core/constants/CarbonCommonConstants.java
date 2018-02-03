@@ -1123,14 +1123,14 @@ public final class CarbonCommonConstants {
 
 
   /**
-   * to enable unsafe column page in write step
+   * to enable unsafe column page
    */
-  public static final String ENABLE_UNSAFE_COLUMN_PAGE_LOADING = "enable.unsafe.columnpage";
+  public static final String ENABLE_UNSAFE_COLUMN_PAGE = "enable.unsafe.columnpage";
 
   /**
-   * default value of ENABLE_UNSAFE_COLUMN_PAGE_LOADING
+   * default value of ENABLE_UNSAFE_COLUMN_PAGE
    */
-  public static final String ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT = "false";
+  public static final String ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT = "true";
 
   /**
    * to enable offheap sort
