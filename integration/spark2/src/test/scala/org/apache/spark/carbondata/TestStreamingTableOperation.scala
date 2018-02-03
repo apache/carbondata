@@ -233,6 +233,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from streaming.stream_table_file"),
       Seq(Row(25))
     )
+
+    val row = sql("select * from streaming.stream_table_file order by id").head()
+    assertResult(Row(10, "name_10", "city_10", 100000.0))(row)
   }
 
   // bad records
@@ -875,13 +878,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
           .add("file", "string")
         var qry: StreamingQuery = null
         try {
-          val readSocketDF = spark.readStream
-            .format("csv")
-            .option("sep", ",")
-            .schema(inputSchema)
-            .option("path", csvDataDir)
-            .option("header", "false")
-            .load()
+          val readSocketDF = spark.readStream.text(csvDataDir)
 
           // Write data from socket stream to carbondata file
           qry = readSocketDF.writeStream
