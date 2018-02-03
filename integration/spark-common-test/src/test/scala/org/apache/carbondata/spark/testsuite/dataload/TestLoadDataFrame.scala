@@ -90,7 +90,6 @@ test("test the boolean data type"){
   booldf.write
     .format("carbondata")
     .option("tableName", "carbon10")
-    .option("tempCSV", "true")
     .option("compress", "true")
     .mode(SaveMode.Overwrite)
     .save()
@@ -104,7 +103,6 @@ test("test the boolean data type"){
     df.write
       .format("carbondata")
       .option("tableName", "carbon1")
-      .option("tempCSV", "true")
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
@@ -118,7 +116,6 @@ test("test the boolean data type"){
     df.write
       .format("carbondata")
       .option("tableName", "carbon2")
-      .option("tempCSV", "true")
       .option("compress", "false")
       .mode(SaveMode.Overwrite)
       .save()
@@ -132,7 +129,6 @@ test("test the boolean data type"){
     df.write
       .format("carbondata")
       .option("tableName", "carbon3")
-      .option("tempCSV", "false")
       .mode(SaveMode.Overwrite)
       .save()
     checkAnswer(
@@ -201,7 +197,6 @@ test("test the boolean data type"){
     df2.write
       .format("carbondata")
       .option("tableName", "carbon8")
-      .option("tempCSV", "false")
       .option("single_pass", "true")
       .option("compress", "false")
       .mode(SaveMode.Overwrite)
@@ -216,7 +211,6 @@ test("test the boolean data type"){
     df2.write
       .format("carbondata")
       .option("tableName", "carbon9")
-      .option("tempCSV", "true")
       .option("single_pass", "false")
       .option("compress", "false")
       .mode(SaveMode.Overwrite)
@@ -249,7 +243,6 @@ test("test the boolean data type"){
     dataFrame.write
       .format("carbondata")
       .option("tableName", "carbon11")
-      .option("tempCSV", "true")
       .option("single_pass", "false")
       .option("compress", "false")
       .option("streaming", "true")
@@ -275,7 +268,6 @@ test("test the boolean data type"){
     df2.write
       .format("carbondata")
       .option("tableName", tableName)
-      .option("tempCSV", "false")
       .option("single_pass", "false")
       .option("table_blocksize", "256")
       .option("compress", "false")

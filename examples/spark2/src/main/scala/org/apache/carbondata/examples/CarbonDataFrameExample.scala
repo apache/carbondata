@@ -56,7 +56,6 @@ object CarbonDataFrameExample {
       .format("carbondata")
       .option("tableName", "carbon_table")
       .option("compress", "true")
-      .option("tempCSV", "false")
       .mode(SaveMode.Overwrite)
       .save()
 

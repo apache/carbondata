@@ -75,7 +75,6 @@ class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll wit
     df.write
       .format("carbondata")
       .option("tableName", tableName)
-      .option("tempCSV", "false")
       .mode(SaveMode.Overwrite)
       .save()
   }

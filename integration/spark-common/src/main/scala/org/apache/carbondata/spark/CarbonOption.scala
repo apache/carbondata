@@ -36,8 +36,6 @@ class CarbonOption(options: Map[String, String]) {
       "org.apache.carbondata.processing.partition.impl.SampleDataPartitionerImpl")
   }
 
-  def tempCSV: Boolean = options.getOrElse("tempCSV", "false").toBoolean
-
   def compress: Boolean = options.getOrElse("compress", "false").toBoolean
 
   def singlePass: Boolean = options.getOrElse("single_pass", "false").toBoolean
