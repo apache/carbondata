@@ -272,7 +272,7 @@ private class CarbonOutputWriter(path: String,
       val formattedPartitions = updatedPartitions.map {case (col, value) =>
         // Only convert the static partitions to the carbon format and use it while loading data
         // to carbon.
-        if (staticPartition.getOrDefault(col, false)) {
+        if (staticPartition.asScala.getOrElse(col, false)) {
           (col, CarbonScalaUtil.convertToCarbonFormat(value,
             CarbonScalaUtil.convertCarbonToSparkDataType(
               table.getColumnByName(table.getTableName, col).getDataType),
