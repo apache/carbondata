@@ -128,6 +128,28 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       Row(new BigDecimal("123.45").setScale(2, RoundingMode.HALF_UP)))
   }
 
+  // test alter add LONG datatype before load, see CARBONDATA-2131
+  test("test add long column before load") {
+    sql("drop table if exists alterLong")
+    sql("create table alterLong (name string) stored by 'carbondata'")
+    sql("alter table alterLong add columns(newCol long)")
+    sql("insert into alterLong select 'a',60000")
+    checkAnswer(sql("select * from alterLong"), Row("a", 60000))
+    sql("drop table if exists alterLong")
+  }
+
+  // test alter add LONG datatype after load, see CARBONDATA-2131
+  test("test add long column after load") {
+    sql("drop table if exists alterLong1")
+    sql("create table alterLong1 (name string) stored by 'carbondata'")
+    sql("insert into alterLong1 select 'a'")
+    sql("alter table alterLong1 add columns(newCol long)")
+    checkAnswer(sql("select * from alterLong1"), Row("a", null))
+    sql("insert into alterLong1 select 'b',70")
+    checkAnswer(sql("select * from alterLong1"), Seq(Row("a", null),Row("b", 70)))
+    sql("drop table if exists alterLong1")
+  }
+
   test("test add all datatype supported dictionary column") {
     sql(
       "alter table restructure add columns(strfld string, datefld date, tptfld timestamp, " +
