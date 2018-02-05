@@ -31,7 +31,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  * Below class is responsible to store variable length dimension data chunk in
  * memory Memory occupied can be on heap or offheap using unsafe interface
  */
-public class UnsafeVariableLengthDimesionDataChunkStore
+public class UnsafeVariableLengthDimensionDataChunkStore
     extends UnsafeAbstractDimensionDataChunkStore {
 
   /**
@@ -44,7 +44,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
    */
   private long dataPointersOffsets;
 
-  public UnsafeVariableLengthDimesionDataChunkStore(long totalSize, boolean isInvertedIdex,
+  public UnsafeVariableLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
       int numberOfRows) {
     super(totalSize, isInvertedIdex, numberOfRows);
     this.numberOfRows = numberOfRows;

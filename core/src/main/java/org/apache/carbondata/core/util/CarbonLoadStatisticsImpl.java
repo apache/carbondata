@@ -83,7 +83,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   private double totalTime = 0;
 
   @Override
-  public void initPartitonInfo(String PartitionId) {
+  public void initPartitionInfo(String PartitionId) {
     parDictionaryValuesTotalTimeMap.put(PartitionId, new Long[2]);
     parCsvInputStepTimeMap.put(PartitionId, new Long[2]);
     parSortRowsStepTotalTimeMap.put(PartitionId, new Long[2]);

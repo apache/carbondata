@@ -201,7 +201,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
 
     // validate partition clause
     val (partitionByStructFields, partitionFields) =
-      validateParitionFields(partitionColumns, colNames, tableProperties)
+      validatePartitionFields(partitionColumns, colNames, tableProperties)
 
     // validate partition clause
     if (partitionFields.nonEmpty) {
@@ -324,7 +324,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     }
   }
 
-  private def validateParitionFields(
+  private def validatePartitionFields(
       partitionColumns: ColTypeListContext,
       colNames: Seq[String],
       tableProperties: mutable.Map[String, String]): (Seq[StructField], Seq[PartitionerField]) = {

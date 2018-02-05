@@ -77,7 +77,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     // column other than last column we can subtract the offset of current column with
     // next column and get the total length.
     // but for last column we need to use lastDimensionOffset which is the end position
-    // of the last dimension, we can subtract current dimension offset from lastDimesionOffset
+    // of the last dimension, we can subtract current dimension offset from lastDimensionOffset
     if (measureColumnChunkOffsets.size() - 1 == columnIndex) {
       dataLength = (int) (measureOffsets - measureColumnChunkOffsets.get(columnIndex));
     } else {

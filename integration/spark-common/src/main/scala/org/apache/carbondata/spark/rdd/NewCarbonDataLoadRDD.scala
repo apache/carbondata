@@ -131,7 +131,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
       System.setProperty("carbon.properties.filepath",
         System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
     }
-    CarbonTimeStatisticsFactory.getLoadStatisticsInstance.initPartitonInfo(
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance.initPartitionInfo(
       CarbonTablePath.DEPRECATED_PATITION_ID)
     CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true")
     CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1")
