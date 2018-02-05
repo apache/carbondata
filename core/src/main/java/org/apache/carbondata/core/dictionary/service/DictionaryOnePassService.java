@@ -24,7 +24,7 @@ public class DictionaryOnePassService {
     dictionaryServiceProvider = dictionaryServiceProv;
   }
 
-  public static synchronized DictionaryServiceProvider getDictionayProvider() {
+  public static synchronized DictionaryServiceProvider getDictionaryProvider() {
     return dictionaryServiceProvider;
   }
 }

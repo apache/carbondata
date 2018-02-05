@@ -196,7 +196,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryStatistic = new QueryStatistic();
     // dictionary column unique column id to dictionary mapping
     // which will be used to get column actual data
-    queryProperties.columnToDictionayMapping =
+    queryProperties.columnToDictionaryMapping =
         QueryUtil.getDimensionDictionaryDetail(
             queryModel.getProjectionDimensions(),
             queryProperties.complexFilterDimension,
@@ -205,7 +205,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
-    queryModel.setColumnToDictionaryMapping(queryProperties.columnToDictionayMapping);
+    queryModel.setColumnToDictionaryMapping(queryProperties.columnToDictionaryMapping);
   }
 
   /**
@@ -333,7 +333,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .getComplexDimensionsMap(projectDimensions,
             segmentProperties.getDimensionOrdinalToChunkMapping(),
             segmentProperties.getEachComplexDimColumnValueSize(),
-            queryProperties.columnToDictionayMapping, queryProperties.complexFilterDimension));
+            queryProperties.columnToDictionaryMapping, queryProperties.complexFilterDimension));
     IndexKey startIndexKey = null;
     IndexKey endIndexKey = null;
     if (null != queryModel.getFilterExpressionResolverTree()) {

@@ -362,19 +362,19 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     List<org.apache.carbondata.format.ParentColumnTableRelation> thriftColumnRelationList =
         new ArrayList<>();
 
-    for (ParentColumnTableRelation wrapperColumnRealtion : wrapperColumnRelations) {
+    for (ParentColumnTableRelation wrapperColumnRelation : wrapperColumnRelations) {
       org.apache.carbondata.format.ParentColumnTableRelation thriftColumnTableRelation =
           new org.apache.carbondata.format.ParentColumnTableRelation();
-      thriftColumnTableRelation.setColumnId(wrapperColumnRealtion.getColumnId());
-      thriftColumnTableRelation.setColumnName(wrapperColumnRealtion.getColumnName());
+      thriftColumnTableRelation.setColumnId(wrapperColumnRelation.getColumnId());
+      thriftColumnTableRelation.setColumnName(wrapperColumnRelation.getColumnName());
       org.apache.carbondata.format.RelationIdentifier thriftRelationIdentifier =
           new org.apache.carbondata.format.RelationIdentifier();
       thriftRelationIdentifier
-          .setDatabaseName(wrapperColumnRealtion.getRelationIdentifier().getDatabaseName());
+          .setDatabaseName(wrapperColumnRelation.getRelationIdentifier().getDatabaseName());
       thriftRelationIdentifier
-          .setTableName(wrapperColumnRealtion.getRelationIdentifier().getTableName());
+          .setTableName(wrapperColumnRelation.getRelationIdentifier().getTableName());
       thriftRelationIdentifier
-          .setTableId(wrapperColumnRealtion.getRelationIdentifier().getTableId());
+          .setTableId(wrapperColumnRelation.getRelationIdentifier().getTableId());
       thriftColumnTableRelation.setRelationIdentifier(thriftRelationIdentifier);
       thriftColumnRelationList.add(thriftColumnTableRelation);
     }

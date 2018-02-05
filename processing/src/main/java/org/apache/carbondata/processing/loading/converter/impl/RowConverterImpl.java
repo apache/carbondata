@@ -128,7 +128,7 @@ public class RowConverterImpl implements RowConverter {
             @Override public DictionaryClient call() throws Exception {
               Thread.currentThread().setName("Dictionary client");
               DictionaryClient client =
-                  DictionaryOnePassService.getDictionayProvider().getDictionaryClient();
+                  DictionaryOnePassService.getDictionaryProvider().getDictionaryClient();
               client.startClient(configuration.getDictionaryServerSecretKey(),
                   configuration.getDictionaryServerHost(), configuration.getDictionaryServerPort(),
                   configuration.getDictionaryEncryptServerSecure());

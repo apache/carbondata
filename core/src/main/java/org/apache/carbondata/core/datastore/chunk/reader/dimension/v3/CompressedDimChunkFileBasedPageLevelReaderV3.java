@@ -80,7 +80,7 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
     // column other than last column we can subtract the offset of current column with
     // next column and get the total length.
     // but for last column we need to use lastDimensionOffset which is the end position
-    // of the last dimension, we can subtract current dimension offset from lastDimesionOffset
+    // of the last dimension, we can subtract current dimension offset from lastDimensionOffset
     if (dimensionChunksOffset.size() - 1 == blockletColumnIndex) {
       length = (int) (lastDimensionOffsets - currentDimensionOffset);
     } else {

@@ -525,7 +525,7 @@ case class CarbonLoadDataCommand(
 
   /**
    * Loads the data in a hive partition way. This method uses InsertIntoTable command to load data
-   * into partitoned data. The table relation would be converted to HadoopFSRelation to let spark
+   * into partitioned data. The table relation would be converted to HadoopFSRelation to let spark
    * handling the partitioning.
    */
   private def loadDataWithPartition(
