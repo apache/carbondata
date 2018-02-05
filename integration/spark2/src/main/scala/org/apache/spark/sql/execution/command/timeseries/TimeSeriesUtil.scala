@@ -96,6 +96,25 @@ object TimeSeriesUtil {
   }
 
   /**
+   * Validate old time series pre-aggregate create table syntax,
+   * carbon will give a remind if user use old syntax
+   *
+   * @param dmProperties datamap properties
+   */
+  def validateOldSyntax(dmProperties: java.util.Map[String, String]): Unit = {
+    val oldEventTime = "timeseries.eventtime"
+    val oldHierarchy = "timeseries.hierarchy"
+    if (dmProperties.containsKey(oldEventTime)) {
+      throw new MalformedDataMapCommandException(
+        s"Don't support old syntax: $oldEventTime, please use $TIMESERIES_EVENTTIME")
+    }
+    if (dmProperties.containsKey(oldHierarchy)) {
+      throw new MalformedDataMapCommandException(
+        s"Don't support old syntax: $oldHierarchy, please use different granularity")
+    }
+  }
+
+  /**
    * get TimeSeries Granularity key and value
    * check the value
    *
