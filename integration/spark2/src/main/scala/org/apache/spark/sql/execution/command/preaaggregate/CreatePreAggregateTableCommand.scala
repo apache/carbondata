@@ -97,8 +97,6 @@ case class CreatePreAggregateTableCommand(
       None,
       isAlterFlow = false,
       None)
-
-
     // updating the relation identifier, this will be stored in child table
     // which can be used during dropping of pre-aggreate table as parent table will
     // also get updated
@@ -138,16 +136,8 @@ case class CreatePreAggregateTableCommand(
       parentTableIdentifier.table,
       childSchema,
       sparkSession)
-    // After updating the parent carbon table with data map entry extract the latest table object
-    // to be used in further create process.
-    parentTable = CarbonEnv.getCarbonTable(parentTableIdentifier.database,
-      parentTableIdentifier.table)(sparkSession)
     val updatedLoadQuery = if (timeSeriesFunction.isDefined) {
-      val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
-        .filter(p => p.getDataMapName
-          .equalsIgnoreCase(dataMapName)).head
-        .asInstanceOf[AggregationDataMapSchema]
-      PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMap.getChildSchema,
+      PreAggregateUtil.createTimeSeriesSelectQueryFromMain(childSchema.getChildSchema,
         parentTable.getTableName,
         parentTable.getDatabaseName)
     }
@@ -156,11 +146,8 @@ case class CreatePreAggregateTableCommand(
     }
     val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
       updatedLoadQuery)).drop("preAggLoad")
-    val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
-      .filter(dataMap => dataMap.getDataMapName.equalsIgnoreCase(dataMapName)).head
-      .asInstanceOf[AggregationDataMapSchema]
     loadCommand = PreAggregateUtil.createLoadCommandForChild(
-      dataMap.getChildSchema.getListOfColumns,
+      childSchema.getChildSchema.getListOfColumns,
       tableIdentifier,
       dataFrame,
       false,
@@ -191,17 +178,6 @@ case class CreatePreAggregateTableCommand(
       throw new UnsupportedOperationException(
         "Cannot create pre-aggregate table when insert is in progress on main table")
     } else if (loadAvailable.nonEmpty) {
-      val updatedQuery = if (timeSeriesFunction.isDefined) {
-        val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
-          .filter(p => p.getDataMapName
-            .equalsIgnoreCase(dataMapName)).head
-          .asInstanceOf[AggregationDataMapSchema]
-        PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMap.getChildSchema,
-          parentTable.getTableName,
-          parentTable.getDatabaseName)
-      } else {
-        queryString
-      }
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.
       loadCommand.dataFrame = Some(PreAggregateUtil
