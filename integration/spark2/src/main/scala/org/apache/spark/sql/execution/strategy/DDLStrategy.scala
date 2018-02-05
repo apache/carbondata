@@ -84,7 +84,10 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             identifier.table.toLowerCase)) :: Nil
       case InsertIntoCarbonTable(relation: CarbonDatasourceHadoopRelation,
       partition, child: LogicalPlan, overwrite, _) =>
-        ExecutedCommandExec(CarbonInsertIntoCommand(relation, child, overwrite, partition)) :: Nil
+        ExecutedCommandExec(CarbonInsertIntoCommand(relation, child, overwrite,
+          partition.map {
+            case (key, value) =>
+              (key.toLowerCase, value) })) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
         val dbLocation = try {
           CarbonEnv.getDatabaseLocation(dbName, sparkSession)
