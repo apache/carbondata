@@ -17,11 +17,14 @@
 
 package org.apache.carbondata.spark
 
+import org.apache.carbondata.common.logging.LogServiceFactory
+
 
 /**
  * Contains all options for Spark data source
  */
 class CarbonOption(options: Map[String, String]) {
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def dbName: Option[String] = options.get("dbName")
 
@@ -36,9 +39,12 @@ class CarbonOption(options: Map[String, String]) {
       "org.apache.carbondata.processing.partition.impl.SampleDataPartitionerImpl")
   }
 
-  def tempCSV: Boolean = options.getOrElse("tempCSV", "false").toBoolean
-
-  def compress: Boolean = options.getOrElse("compress", "false").toBoolean
+  @Deprecated
+  def tempCSV: Boolean = {
+    LOGGER.warn("'tempCSV' option is deprecated," +
+                  " carbondata will skip writing temp csv files during loading data")
+    options.getOrElse("tempCSV", "false").toBoolean
+  }
 
   def singlePass: Boolean = options.getOrElse("single_pass", "false").toBoolean
 

@@ -73,7 +73,6 @@ class TestLoadWithSortTempCompressed extends QueryTest
     df.write
       .format("carbondata")
       .option("tableName", simpleTable)
-      .option("tempCSV", "true")
       .option("DICTIONARY_INCLUDE", "c1,c2")
       .option("SORT_COLUMNS", "c1,c3")
       .save()

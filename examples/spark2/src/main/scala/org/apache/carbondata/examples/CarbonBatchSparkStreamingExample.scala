@@ -173,8 +173,6 @@ object CarbonBatchSparkStreamingExample {
         df.write
           .format("carbondata")
           .option("tableName", tableName)
-          .option("tempCSV", "false")
-          .option("compress", "true")
           .option("single_pass", "true")
           .mode(SaveMode.Append)
           .save()

@@ -57,8 +57,6 @@ class TestUpdateAndDeleteWithLargeData extends QueryTest with BeforeAndAfterAll 
     df.write
       .format("carbondata")
       .option("tableName", "orders")
-      .option("tempCSV", "true")
-      .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
   }

@@ -119,7 +119,6 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
     input.write
       .format("carbondata")
       .option("tableName", "testBigData")
-      .option("tempCSV", "false")
       .option("single_pass", "true")
       .option("dictionary_exclude", "id") // id is high cardinality column
       .mode(SaveMode.Overwrite)
