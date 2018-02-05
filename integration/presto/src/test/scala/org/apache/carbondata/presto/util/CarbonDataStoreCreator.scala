@@ -137,6 +137,7 @@ object CarbonDataStoreCreator {
       loadModel.setSegmentId("0")
       loadModel.setFactTimeStamp(System.currentTimeMillis())
       loadModel.setMaxColumns("15")
+      loadModel.setWriteTempPath(Array("./tmp"))
       executeGraph(loadModel, storePath)
     } catch {
       case e: Exception => e.printStackTrace()
@@ -510,8 +511,7 @@ object CarbonDataStoreCreator {
       recordReader,
       blockDetails,
       hadoopAttemptContext)
-    new DataLoadExecutor()
-      .execute(loadModel, Array(storeLocation), Array(readerIterator))
+    DataLoadExecutor.newInstance(loadModel).execute(Array(readerIterator))
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema,
       loadModel.getTableName,
       loadModel.getTableName,

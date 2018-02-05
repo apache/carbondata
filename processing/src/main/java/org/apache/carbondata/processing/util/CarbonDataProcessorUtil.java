@@ -109,6 +109,9 @@ public final class CarbonDataProcessorUtil {
    * @param locations locations to create
    */
   public static void createLocations(String[] locations) {
+    if (locations == null) {
+      throw new NullPointerException();
+    }
     for (String loc : locations) {
       if (!new File(loc).mkdirs()) {
         LOGGER.warn("Error occurs while creating dirs: " + loc);
@@ -144,7 +147,6 @@ public final class CarbonDataProcessorUtil {
     for (int i = 0 ; i < baseTmpStorePathArray.length; i++) {
       String tmpStore = baseTmpStorePathArray[i];
       String carbonDataDirectoryPath = CarbonTablePath.getSegmentPath(tmpStore, segmentId);
-
       localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
     }
     return localDataFolderLocArray;

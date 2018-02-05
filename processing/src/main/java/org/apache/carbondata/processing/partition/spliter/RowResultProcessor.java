@@ -48,7 +48,7 @@ public class RowResultProcessor {
     this.segmentProperties = segProp;
     String tableName = carbonTable.getTableName();
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =
-        CarbonFactDataHandlerModel.getCarbonFactDataHandlerModel(loadModel, carbonTable,
+        CarbonFactDataHandlerModel.createModelForCompaction(loadModel, carbonTable,
             segProp, tableName, tempStoreLocation);
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(Long.parseLong(loadModel.getTaskNo()),

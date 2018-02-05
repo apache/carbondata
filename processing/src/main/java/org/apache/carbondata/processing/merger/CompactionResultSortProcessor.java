@@ -402,7 +402,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void initDataHandler() throws Exception {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
-        .getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
+        .createModelForCompaction(carbonLoadModel, carbonTable, segmentProperties, tableName,
             tempStoreLocation);
     setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonFactDataHandlerModel);
     dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel,

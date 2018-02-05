@@ -168,7 +168,6 @@ with Serializable {
           storeLocation =
             storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
         }
-        CarbonTableOutputFormat.setTempStoreLocations(context.getConfiguration, storeLocation)
         new CarbonOutputWriter(path, context, dataSchema.map(_.dataType), taskNumber)
       }
 

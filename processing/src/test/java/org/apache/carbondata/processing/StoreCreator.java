@@ -164,7 +164,7 @@ public class StoreCreator {
       loadModel.setSegmentId("0");
       loadModel.setFactTimeStamp(System.currentTimeMillis());
       loadModel.setMaxColumns("10");
-
+      loadModel.setWriteTempPath(new String[] {table.getTablePath() + "/_temp"});
       loadData(loadModel, storePath);
 
     } catch (Exception e) {
@@ -399,36 +399,10 @@ public class StoreCreator {
         format.createRecordReader(blockDetails, hadoopAttemptContext);
 
     CSVRecordReaderIterator readerIterator = new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
-    String[] storeLocationArray = new String[] {storeLocation + "/" + databaseName + "/" + tableName};
-    new DataLoadExecutor().execute(loadModel,
-        storeLocationArray,
-        new CarbonIterator[]{readerIterator});
+    DataLoadExecutor.newInstance(loadModel).execute(new CarbonIterator[]{readerIterator});
 
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<LoadMetadataDetails>());
-
-    String segLocation =
-        storeLocation + "/" + databaseName + "/" + tableName + "/Fact/Part0/Segment_0";
-    File file = new File(segLocation);
-    File factFile = null;
-    File[] folderList = file.listFiles();
-    File folder = null;
-    for (int i = 0; i < folderList.length; i++) {
-      if (folderList[i].isDirectory()) {
-        folder = folderList[i];
-      }
-    }
-    if (folder.isDirectory()) {
-      File[] files = folder.listFiles();
-      for (int i = 0; i < files.length; i++) {
-        if (!files[i].isDirectory() && files[i].getName().startsWith("part")) {
-          factFile = files[i];
-          break;
-        }
-      }
-      factFile.renameTo(new File(segLocation + "/" + factFile.getName()));
-      CarbonUtil.deleteFoldersAndFiles(folder);
-    }
   }
 
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,

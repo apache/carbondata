@@ -223,31 +223,26 @@ class NewCarbonDataLoadRDD[K, V](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val loadMetadataDetails = new LoadMetadataDetails()
-      val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      var model: CarbonLoadModel = _
-      val uniqueLoadStatusId =
+      val executionErrors = ExecutionErrors(FailureCauses.NONE, "")
+      val model: CarbonLoadModel = carbonLoadModel.getCopyWithTaskNo(theSplit.index.toString)
+      model.setPreFetch(
+        CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING,
+          CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT
+        ).toBoolean)
+
+      val uniqueLoadStatusId: String =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
         loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
 
-        val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-          .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
-        carbonLoadModel.setPreFetch(preFetch.toBoolean)
         val recordReaders = getInputIterators
-        val loader = new SparkPartitionLoader(model,
-          theSplit.index,
-          null,
-          loadMetadataDetails)
-        // Intialize to set carbon properties
-        loader.initialize()
-        val executor = new DataLoadExecutor()
+        val executor = DataLoadExecutor.newInstance(model)
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
-        executor.execute(model,
-          loader.storeLocation,
-          recordReaders)
+        executor.execute(recordReaders)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
@@ -285,12 +280,9 @@ class NewCarbonDataLoadRDD[K, V](
         logInfo("The Block Count in this node :" + split.nodeBlocksDetail.length)
         CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordHostBlockMap(
             split.serializableHadoopSplit, split.nodeBlocksDetail.length)
-        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         val fileList: java.util.List[String] = new java.util.ArrayList[String](
             CarbonCommonConstants.CONSTANT_SIZE_TEN)
         CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, fileList, ",")
-        model = carbonLoadModel.getCopyWithPartition(
-          carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
         StandardLogService.setThreadName(StandardLogService
           .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
           , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
@@ -375,15 +367,14 @@ class NewDataFrameLoaderRDD[K, V](
     val iter = new Iterator[(K, V)] {
       val loadMetadataDetails = new LoadMetadataDetails()
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      val model: CarbonLoadModel = carbonLoadModel
+      val model: CarbonLoadModel = carbonLoadModel.getCopyWithTaskNo(theSplit.index.toString)
+      model.setPreFetch(false)
       val uniqueLoadStatusId =
-        carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
+        model.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
 
         loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
-        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-        carbonLoadModel.setPreFetch(false)
 
         val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
         val partitionIterator = firstParent[DataLoadPartitionWrap[Row]].iterator(theSplit, context)
@@ -397,17 +388,11 @@ class NewDataFrameLoaderRDD[K, V](
           recordReaders += new LazyRddIterator(serializer, serializeBytes, value.partition,
               carbonLoadModel, context)
         }
-        val loader = new SparkPartitionLoader(model,
-          theSplit.index,
-          null,
-          loadMetadataDetails)
-        // Intialize to set carbon properties
-        loader.initialize()
-        val executor = new DataLoadExecutor
+        val executor = DataLoadExecutor.newInstance(model)
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
-        executor.execute(model, loader.storeLocation, recordReaders.toArray)
+        executor.execute(recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
@@ -564,32 +549,25 @@ class PartitionTableDataLoaderRDD[K, V](
     val iter = new Iterator[(K, V)] {
       val loadMetadataDetails = new LoadMetadataDetails()
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      val model: CarbonLoadModel = carbonLoadModel
+      val model: CarbonLoadModel = carbonLoadModel.getCopyWithTaskNo(theSplit.index.toString)
+      model.setPreFetch(false)
       val carbonTable = model.getCarbonDataLoadSchema.getCarbonTable
       val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
       val uniqueLoadStatusId =
-        carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
+        model.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
 
         loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
-        carbonLoadModel.setTaskNo(String.valueOf(partitionInfo.getPartitionId(theSplit.index)))
-        carbonLoadModel.setPreFetch(false)
         val recordReaders = Array[CarbonIterator[Array[AnyRef]]] {
           new NewRddIterator(firstParent[Row].iterator(theSplit, context), carbonLoadModel, context)
         }
 
-        val loader = new SparkPartitionLoader(model,
-          theSplit.index,
-          null,
-          loadMetadataDetails)
-        // Intialize to set carbon properties
-        loader.initialize()
-        val executor = new DataLoadExecutor
+        val executor = DataLoadExecutor.newInstance(model)
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
-        executor.execute(model, loader.storeLocation, recordReaders)
+        executor.execute(recordReaders)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
@@ -603,7 +581,8 @@ class PartitionTableDataLoaderRDD[K, V](
           throw e
       } finally {
         // clean up the folders and files created locally for data load operation
-        TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
+        // TODO
+        // TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
         if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {

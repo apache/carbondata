@@ -173,7 +173,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     // so only data loading flow will need to read from cardinality file.
     if (null == this.localCardinality) {
       this.localCardinality = CarbonMergerUtil
-          .getCardinalityFromLevelMetadata(this.model.getStoreLocation(),
+          .getCardinalityFromLevelMetadata(this.model.getWriteTempPath(),
               this.model.getTableName());
       List<Integer> cardinalityList = new ArrayList<Integer>();
       thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
@@ -271,13 +271,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     initFileCount();
 
     //each time we initialize writer, we choose a local temp location randomly
-    String[] tempFileLocations = model.getStoreLocation();
+    String[] tempFileLocations = model.getWriteTempPath();
     String chosenTempLocation = tempFileLocations[new Random().nextInt(tempFileLocations.length)];
     LOGGER.info("Randomly choose factdata temp location: " + chosenTempLocation);
 
     this.carbonDataFileName = CarbonTablePath
         .getCarbonDataFileName(fileCount, model.getCarbonDataFileAttributes().getTaskId(),
-            model.getBucketId(), model.getTaskExtension(),
+            model.getBucketId(), model.getBatchId(),
             "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
     this.carbonDataFileTempPath = chosenTempLocation + File.separator + carbonDataFileName;
     this.fileCount++;
@@ -305,7 +305,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     };
 
     List<File> dataFileList = new ArrayList<File>();
-    for (String tempLoc : model.getStoreLocation()) {
+    for (String tempLoc : model.getWriteTempPath()) {
       File[] subFiles = new File(tempLoc).listFiles(fileFilter);
       if (null != subFiles && subFiles.length > 0) {
         dataFileList.addAll(Arrays.asList(subFiles));
@@ -387,13 +387,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     // randomly choose a temp location for index file
-    String[] tempLocations = model.getStoreLocation();
+    String[] tempLocations = model.getWriteTempPath();
     String chosenTempLocation = tempLocations[new Random().nextInt(tempLocations.length)];
     LOGGER.info("Randomly choose index file location: " + chosenTempLocation);
 
     String fileName = chosenTempLocation + File.separator + CarbonTablePath
         .getCarbonIndexFileName(model.getCarbonDataFileAttributes().getTaskId(),
-            model.getBucketId(), model.getTaskExtension(),
+            model.getBucketId(), model.getBatchId(),
             "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
     // open file

@@ -19,36 +19,25 @@ package org.apache.carbondata.processing.loading.steps;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
-import org.apache.carbondata.processing.loading.BadRecordsLogger;
-import org.apache.carbondata.processing.loading.BadRecordsLoggerProvider;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.RowConverter;
-import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
 import org.apache.carbondata.processing.loading.partition.impl.HashPartitionerImpl;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
-import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
 /**
  * Replace row data fields with dictionary values if column is configured dictionary encoded.
  * And nondictionary columns as well as complex columns will be converted to byte[].
  */
-public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoadProcessorStep {
-
-  private List<RowConverter> converters;
+public class DataConverterProcessorWithBucketingStepImpl extends DataConverterProcessorStepImpl {
 
   private Partitioner<Object[]> partitioner;
-
-  private BadRecordsLogger badRecordLogger;
 
   public DataConverterProcessorWithBucketingStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -56,21 +45,8 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
   }
 
   @Override
-  public DataField[] getOutput() {
-    return child.getOutput();
-  }
-
-  @Override
   public void initialize() throws IOException {
     super.initialize();
-    child.initialize();
-    converters = new ArrayList<>();
-    badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
-    RowConverter converter =
-        new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
-    configuration.setCardinalityFinder(converter);
-    converters.add(converter);
-    converter.initialize();
     List<Integer> indexes = new ArrayList<>();
     List<ColumnSchema> columnSchemas = new ArrayList<>();
     DataField[] inputDataFields = getOutput();
@@ -87,32 +63,6 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
     }
     partitioner =
         new HashPartitionerImpl(indexes, columnSchemas, bucketingInfo.getNumberOfBuckets());
-  }
-
-  /**
-   * Create the iterator using child iterator.
-   *
-   * @param childIter
-   * @return new iterator with step specific processing.
-   */
-  @Override
-  protected Iterator<CarbonRowBatch> getIterator(final Iterator<CarbonRowBatch> childIter) {
-    return new CarbonIterator<CarbonRowBatch>() {
-      RowConverter localConverter;
-      private boolean first = true;
-      @Override public boolean hasNext() {
-        if (first) {
-          first = false;
-          localConverter = converters.get(0).createCopyForNewThread();
-          converters.add(localConverter);
-        }
-        return childIter.hasNext();
-      }
-
-      @Override public CarbonRowBatch next() {
-        return processRowBatch(childIter.next(), localConverter);
-      }
-    };
   }
 
   /**
@@ -135,27 +85,4 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
     return rowBatch;
   }
 
-  @Override
-  protected CarbonRow processRow(CarbonRow row) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void close() {
-    if (!closed) {
-      super.close();
-      if (null != badRecordLogger) {
-        badRecordLogger.closeStreams();
-        CarbonBadRecordUtil.renameBadRecord(configuration);
-      }
-      if (converters != null) {
-        for (RowConverter converter : converters) {
-          converter.finish();
-        }
-      }
-    }
-  }
-  @Override protected String getStepName() {
-    return "Data Converter with Bucketing";
-  }
 }

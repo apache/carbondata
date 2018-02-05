@@ -70,7 +70,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
-        .getCarbonFactDataHandlerModel(loadModel, carbonTable, segProp, tableName,
+        .createModelForCompaction(loadModel, carbonTable, segProp, tableName,
             tempStoreLocation);
     setDataFileAttributesInModel(loadModel, compactionType, carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setCompactionFlow(true);

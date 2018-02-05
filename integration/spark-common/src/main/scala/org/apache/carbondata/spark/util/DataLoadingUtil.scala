@@ -17,11 +17,15 @@
 
 package org.apache.carbondata.spark.util
 
+import java.io.File
+
 import scala.collection.{immutable, mutable}
 import scala.collection.JavaConverters._
+import scala.util.Random
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkEnv
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
@@ -325,6 +329,47 @@ object DataLoadingUtil {
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
+
+    carbonLoadModel.setWriteTempPath(genWriteTempPath)
+  }
+
+  /**
+   * Return temporary write directories for writer. It either generate one or pick from
+   * configured local directories in YARN.
+   */
+  private def genWriteTempPath: Array[String] = {
+
+    def tmpLocationSuffix = File.separator + System.nanoTime() + "_" + Random.nextInt()
+
+    var storeLocation: Array[String] = Array[String]()
+
+    // this property is used to determine whether temp location for carbon is inside
+    // container temp dir or is yarn application directory.
+    val isCarbonUseLocalDir = CarbonProperties.getInstance().getProperty(
+      "carbon.use.local.dir", "false").equalsIgnoreCase("true")
+
+    val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
+
+    if (isCarbonUseLocalDir) {
+      val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
+
+      if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
+        // use single dir
+        storeLocation = storeLocation :+
+                        (yarnStoreLocations(Random.nextInt(yarnStoreLocations.length)) +
+                         tmpLocationSuffix)
+        if (storeLocation == null || storeLocation.isEmpty) {
+          storeLocation = storeLocation :+
+                          (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+        }
+      } else {
+        // use all the yarn dirs
+        storeLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
+      }
+    } else {
+      storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+    }
+    storeLocation
   }
 
   private def isLoadDeletionRequired(metaDataLocation: String): Boolean = {

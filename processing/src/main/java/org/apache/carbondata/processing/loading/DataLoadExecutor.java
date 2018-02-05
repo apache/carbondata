@@ -20,11 +20,11 @@ package org.apache.carbondata.processing.loading;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.exception.NoRetryException;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.processing.loading.steps.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
 /**
@@ -37,13 +37,20 @@ public class DataLoadExecutor {
 
   private AbstractDataLoadProcessorStep loadProcessorStep;
 
+  private CarbonLoadModel loadModel;
   private boolean isClosed;
 
-  public void execute(CarbonLoadModel loadModel, String[] storeLocation,
-      CarbonIterator<Object[]>[] inputIterators) throws Exception {
+  private DataLoadExecutor(CarbonLoadModel loadModel) {
+    this.loadModel = loadModel;
+  }
+
+  public static DataLoadExecutor newInstance(CarbonLoadModel loadModel) {
+    return new DataLoadExecutor(loadModel);
+  }
+
+  public void execute(CarbonIterator<Object[]>[] inputIterators) {
     try {
-      loadProcessorStep =
-          new DataLoadProcessBuilder().build(loadModel, storeLocation, inputIterators);
+      loadProcessorStep = new DataLoadProcessBuilder().build(loadModel, inputIterators);
       // 1. initialize
       loadProcessorStep.initialize();
       LOGGER.info("Data Loading is started for table " + loadModel.getTableName());
@@ -66,21 +73,6 @@ public class DataLoadExecutor {
       throw new CarbonDataLoadingException(
           "Data Loading failed for table " + loadModel.getTableName(), e);
     }
-  }
-
-  /**
-   * This method will remove any bad record key from the map entry
-   *
-   * @param carbonTableIdentifier
-   * @return
-   */
-  private boolean badRecordFound(CarbonTableIdentifier carbonTableIdentifier) {
-    String badRecordLoggerKey = carbonTableIdentifier.getBadRecordLoggerKey();
-    boolean badRecordKeyFound = false;
-    if (null != BadRecordsLogger.hasBadRecord(badRecordLoggerKey)) {
-      badRecordKeyFound = true;
-    }
-    return badRecordKeyFound;
   }
 
   /**

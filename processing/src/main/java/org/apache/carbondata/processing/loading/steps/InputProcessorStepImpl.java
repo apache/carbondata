@@ -31,7 +31,6 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
-import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.parser.RowParser;
@@ -63,8 +62,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return configuration.getDataFields();
   }
 
-  @Override public void initialize() throws IOException {
-    super.initialize();
+  @Override
+  public void initialize() throws IOException {
     rowParser = new RowParserImpl(getOutput(), configuration);
     executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
         "InputProcessorPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
@@ -107,10 +106,6 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return iterators;
   }
 
-  @Override protected CarbonRow processRow(CarbonRow row) {
-    return null;
-  }
-
   @Override public void close() {
     if (!closed) {
       super.close();
@@ -119,10 +114,6 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
         inputIterator.close();
       }
     }
-  }
-
-  @Override protected String getStepName() {
-    return "Input Processor";
   }
 
   /**

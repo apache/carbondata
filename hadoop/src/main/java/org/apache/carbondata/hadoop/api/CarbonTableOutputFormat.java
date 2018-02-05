@@ -65,7 +65,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
   private static final String TABLE = "mapreduce.carbontable.table";
   private static final String TABLE_PATH = "mapreduce.carbontable.tablepath";
   private static final String INPUT_SCHEMA = "mapreduce.carbontable.inputschema";
-  private static final String TEMP_STORE_LOCATIONS = "mapreduce.carbontable.tempstore.locations";
   private static final String OVERWRITE_SET = "mapreduce.carbontable.set.overwrite";
   public static final String COMPLEX_DELIMITERS = "mapreduce.carbontable.complex_delimiters";
   public static final String SERIALIZATION_NULL_FORMAT =
@@ -198,25 +197,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
     configuration.set(OVERWRITE_SET, String.valueOf(overwrite));
   }
 
-  public static void setTempStoreLocations(Configuration configuration, String[] tempLocations)
-      throws IOException {
-    if (tempLocations != null && tempLocations.length > 0) {
-      configuration
-          .set(TEMP_STORE_LOCATIONS, ObjectSerializationUtil.convertObjectToString(tempLocations));
-    }
-  }
-
-  private static String[] getTempStoreLocations(TaskAttemptContext taskAttemptContext)
-      throws IOException {
-    String encodedString = taskAttemptContext.getConfiguration().get(TEMP_STORE_LOCATIONS);
-    if (encodedString != null) {
-      return (String[]) ObjectSerializationUtil.convertStringToObject(encodedString);
-    }
-    return new String[] {
-        System.getProperty("java.io.tmpdir") + "/" + System.nanoTime() + "_" + taskAttemptContext
-            .getTaskAttemptID().toString() };
-  }
-
   @Override
   public synchronized OutputCommitter getOutputCommitter(TaskAttemptContext context)
       throws IOException {
@@ -231,20 +211,16 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
   public RecordWriter<NullWritable, StringArrayWritable> getRecordWriter(
       TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
-    loadModel.setTaskNo(taskAttemptContext.getConfiguration().get(
-        "carbon.outputformat.taskno",
-        String.valueOf(System.nanoTime())));
-    final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
+    loadModel.setTaskNo(System.nanoTime() + "");
     final CarbonOutputIteratorWrapper iteratorWrapper = new CarbonOutputIteratorWrapper();
-    final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
+    final DataLoadExecutor dataLoadExecutor = DataLoadExecutor.newInstance(loadModel);
     ExecutorService executorService = Executors.newFixedThreadPool(1,
         new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));;
     // It should be started in new thread as the underlying iterator uses blocking queue.
     Future future = executorService.submit(new Thread() {
       @Override public void run() {
         try {
-          dataLoadExecutor
-              .execute(loadModel, tempStoreLocations, new CarbonIterator[] { iteratorWrapper });
+          dataLoadExecutor.execute(new CarbonIterator[] { iteratorWrapper });
         } catch (Exception e) {
           dataLoadExecutor.close();
           // clean up the folders and files created locally for data load operation

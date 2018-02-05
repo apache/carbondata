@@ -36,13 +36,12 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
-import org.apache.carbondata.processing.loading.steps.CarbonRowDataWriterProcessorStepImpl;
+import org.apache.carbondata.processing.loading.steps.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.steps.DataConverterProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.DataConverterProcessorWithBucketingStepImpl;
-import org.apache.carbondata.processing.loading.steps.DataWriterBatchProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.InputProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.SortProcessorStepImpl;
+import org.apache.carbondata.processing.loading.steps.WriterProcessorStepImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.commons.lang3.StringUtils;
@@ -52,9 +51,9 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class DataLoadProcessBuilder {
 
-  public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String[] storeLocation,
+  public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel,
       CarbonIterator[] inputIterators) throws Exception {
-    CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
+    CarbonDataLoadConfiguration configuration = createConfiguration(loadModel);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     if (!configuration.isSortTable() || sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
       return buildInternalForNoSort(inputIterators, configuration);
@@ -80,7 +79,7 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
-    return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
+    return new WriterProcessorStepImpl(configuration, sortProcessorStep, false);
   }
 
   private AbstractDataLoadProcessorStep buildInternalForNoSort(CarbonIterator[] inputIterators,
@@ -93,7 +92,7 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep converterProcessorStep =
         new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
     // 3. Writes the sorted data in carbondata format.
-    return new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
+    return new WriterProcessorStepImpl(configuration, converterProcessorStep, true);
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBatchSort(CarbonIterator[] inputIterators,
@@ -109,7 +108,7 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
-    return new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
+    return new WriterProcessorStepImpl(configuration, sortProcessorStep, false);
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBucketing(CarbonIterator[] inputIterators,
@@ -125,31 +124,26 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
-    return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
+    return new WriterProcessorStepImpl(configuration, sortProcessorStep, false);
   }
 
-  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
-      String[] storeLocation) {
-    CarbonDataProcessorUtil.createLocations(storeLocation);
-
+  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel) {
+    CarbonDataProcessorUtil.createLocations(loadModel.getWriteTempPath());
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     String tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
             loadModel.getTaskNo(), false, false);
     CarbonProperties.getInstance().addProperty(tempLocationKey,
-        StringUtils.join(storeLocation, File.pathSeparator));
+        StringUtils.join(loadModel.getWriteTempPath(), File.pathSeparator));
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getTablePath());
 
-    return createConfiguration(loadModel);
-  }
-
-  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel) {
     CarbonDataLoadConfiguration configuration = new CarbonDataLoadConfiguration();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     configuration.setTableIdentifier(identifier);
+    configuration.setWriteTempPath(loadModel.getWriteTempPath());
     configuration.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     configuration.setHeader(loadModel.getCsvHeaderColumns());
     configuration.setSegmentId(loadModel.getSegmentId());

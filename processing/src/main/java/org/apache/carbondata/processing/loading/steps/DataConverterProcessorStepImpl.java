@@ -24,13 +24,12 @@ import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
 import org.apache.carbondata.processing.loading.BadRecordsLoggerProvider;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
-import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.RowConverter;
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
@@ -40,8 +39,8 @@ import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
  */
 public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private List<RowConverter> converters;
-  private BadRecordsLogger badRecordLogger;
+  protected List<RowConverter> converters;
+  protected BadRecordsLogger badRecordLogger;
 
   public DataConverterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -49,13 +48,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   }
 
   @Override
-  public DataField[] getOutput() {
-    return child.getOutput();
-  }
-
-  @Override
   public void initialize() throws IOException {
-    super.initialize();
     child.initialize();
     converters = new ArrayList<>();
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
@@ -67,13 +60,28 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   }
 
   /**
+   * Tranform the data as per the implementation.
+   *
+   * @return Array of Iterator with data. It can be processed parallel if implementation class wants
+   * @throws CarbonDataLoadingException
+   */
+  @Override
+  public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
+    Iterator<CarbonRowBatch>[] childIters = child.execute();
+    Iterator<CarbonRowBatch>[] iterators = new Iterator[childIters.length];
+    for (int i = 0; i < childIters.length; i++) {
+      iterators[i] = getIterator(childIters[i]);
+    }
+    return iterators;
+  }
+
+  /**
    * Create the iterator using child iterator.
    *
    * @param childIter
    * @return new iterator with step specific processing.
    */
-  @Override
-  protected Iterator<CarbonRowBatch> getIterator(final Iterator<CarbonRowBatch> childIter) {
+  private Iterator<CarbonRowBatch> getIterator(final Iterator<CarbonRowBatch> childIter) {
     return new CarbonIterator<CarbonRowBatch>() {
       private boolean first = true;
       private RowConverter localConverter;
@@ -111,11 +119,6 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   }
 
   @Override
-  protected CarbonRow processRow(CarbonRow row) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public void close() {
     if (!closed) {
       if (null != badRecordLogger) {
@@ -133,7 +136,4 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     }
   }
 
-  @Override protected String getStepName() {
-    return "Data Converter";
-  }
 }

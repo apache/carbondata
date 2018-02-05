@@ -38,6 +38,8 @@ public class CarbonDataLoadConfiguration {
 
   private AbsoluteTableIdentifier tableIdentifier;
 
+  private String[] writeTempPath;
+
   private String[] header;
 
   private String segmentId;
@@ -352,5 +354,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setWritingCoresCount(short writingCoresCount) {
     this.writingCoresCount = writingCoresCount;
+  }
+
+  public String[] getWriteTempPath() {
+    return writeTempPath;
+  }
+
+  public void setWriteTempPath(String[] writeTempPath) {
+    this.writeTempPath = writeTempPath;
   }
 }

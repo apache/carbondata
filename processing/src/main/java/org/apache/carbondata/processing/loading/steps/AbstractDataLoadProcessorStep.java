@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.loading;
+package org.apache.carbondata.processing.loading.steps;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 
@@ -39,8 +39,8 @@ import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
  */
 public abstract class AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(AbstractDataLoadProcessorStep.class.getName());
+  private final LogService LOGGER =
+      LogServiceFactory.getLogService(this.getClass().getCanonicalName());
 
   protected CarbonDataLoadConfiguration configuration;
 
@@ -48,9 +48,9 @@ public abstract class AbstractDataLoadProcessorStep {
 
   protected AtomicLong rowCounter;
 
-  protected boolean closed;
+  boolean closed;
 
-  public AbstractDataLoadProcessorStep(CarbonDataLoadConfiguration configuration,
+  AbstractDataLoadProcessorStep(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     this.configuration = configuration;
     this.child = child;
@@ -60,33 +60,17 @@ public abstract class AbstractDataLoadProcessorStep {
 
   /**
    * The output meta for this step. The data returns from this step is as per this meta.
-   *
    */
-  public abstract DataField[] getOutput();
+  DataField[] getOutput() {
+    return child.getOutput();
+  }
 
   /**
    * Initialization process for this step.
    *
    * @throws IOException
    */
-  public void initialize() throws IOException {
-    if (LOGGER.isInfoEnabled()) {
-      // This thread prints the rows processed in each step for every 10 seconds.
-      new Thread() {
-        @Override public void run() {
-          while (!closed) {
-            try {
-              LOGGER.info("Rows processed in step " + getStepName() + " : " + rowCounter.get());
-              Thread.sleep(10000);
-            } catch (InterruptedException e) {
-              //ignore
-              LOGGER.error(e.getMessage());
-            }
-          }
-        }
-      }.start();
-    }
-  }
+  public abstract void initialize() throws IOException;
 
   /**
    * Tranform the data as per the implementation.
@@ -94,61 +78,14 @@ public abstract class AbstractDataLoadProcessorStep {
    * @return Array of Iterator with data. It can be processed parallel if implementation class wants
    * @throws CarbonDataLoadingException
    */
-  public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
-    Iterator<CarbonRowBatch>[] childIters = child.execute();
-    Iterator<CarbonRowBatch>[] iterators = new Iterator[childIters.length];
-    for (int i = 0; i < childIters.length; i++) {
-      iterators[i] = getIterator(childIters[i]);
-    }
-    return iterators;
-  }
-
-  /**
-   * Create the iterator using child iterator.
-   *
-   * @param childIter
-   * @return new iterator with step specific processing.
-   */
-  protected Iterator<CarbonRowBatch> getIterator(final Iterator<CarbonRowBatch> childIter) {
-    return new CarbonIterator<CarbonRowBatch>() {
-      @Override public boolean hasNext() {
-        return childIter.hasNext();
-      }
-
-      @Override public CarbonRowBatch next() {
-        return processRowBatch(childIter.next());
-      }
-    };
-  }
-
-  /**
-   * Process the batch of rows as per the step logic.
-   *
-   * @param rowBatch
-   * @return processed row.
-   */
-  protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch) {
-    CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
-    while (rowBatch.hasNext()) {
-      newBatch.addRow(processRow(rowBatch.next()));
-    }
-    return newBatch;
-  }
-
-  /**
-   * Process the row as per the step logic.
-   *
-   * @param row
-   * @return processed row.
-   */
-  protected abstract CarbonRow processRow(CarbonRow row);
+  public abstract Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException;
 
   /**
    * Get the step name for logging purpose.
-   * @return Step name
    */
-  protected abstract String getStepName();
-
+  private String getStepName() {
+    return this.getClass().getSimpleName();
+  }
 
   /**
    * Close all resources.This method is called after execute() is finished.
