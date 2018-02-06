@@ -330,6 +330,16 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     OPTIONS('COMMENTCHAR'='#')
     ```
 
+  - **HEADER:** When you load the CSV file without the file header and the file header is the same with the table schema, then add 'HEADER'='false' to load data SQL as user need not provide the file header. By default the value is 'true'.
+  false: CSV file is without file header.
+  true: CSV file is with file header.
+  
+    ```
+    OPTIONS('HEADER'='false') 
+    ```
+
+	NOTE: If the HEADER option exist and is set to 'true', then the FILEHEADER option is not required.
+	
   - **FILEHEADER:** Headers can be provided in the LOAD DATA command if headers are missing in the source files.
 
     ```
@@ -402,6 +412,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    ```
    LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
    options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
+   'HEADER'='false',
    'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,
    workgroupcategoryname,deptno,deptname,projectcode,
    projectjoindate,projectenddate,attendance,utilization,salary',
