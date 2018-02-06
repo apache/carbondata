@@ -55,12 +55,9 @@ public class CarbondataModule implements Module {
     binder.bind(CarbondataMetadata.class).in(Scopes.SINGLETON);
     binder.bind(CarbonTableReader.class).in(Scopes.SINGLETON);
     binder.bind(ConnectorSplitManager.class).to(CarbondataSplitManager.class).in(Scopes.SINGLETON);
-    binder.bind(ConnectorRecordSetProvider.class).to(CarbondataRecordSetProvider.class)
-        .in(Scopes.SINGLETON);
     binder.bind(ConnectorPageSourceProvider.class).to(CarbondataPageSourceProvider.class)
         .in(Scopes.SINGLETON);
     binder.bind(CarbondataHandleResolver.class).in(Scopes.SINGLETON);
-    binder.bind(CarbondataRecordSetProvider.class).in(Scopes.SINGLETON);
     configBinder(binder).bindConfig(CarbonTableConfig.class);
   }
 

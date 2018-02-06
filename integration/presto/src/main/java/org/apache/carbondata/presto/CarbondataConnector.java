@@ -33,17 +33,15 @@ public class CarbondataConnector implements Connector {
   private final LifeCycleManager lifeCycleManager;
   private final ConnectorMetadata metadata;
   private final ConnectorSplitManager splitManager;
-  private final ConnectorRecordSetProvider recordSetProvider;
   private final ClassLoader classLoader;
   private final ConnectorPageSourceProvider pageSourceProvider;
 
   public CarbondataConnector(LifeCycleManager lifeCycleManager, ConnectorMetadata metadata,
-      ConnectorSplitManager splitManager, ConnectorRecordSetProvider recordSetProvider,
+      ConnectorSplitManager splitManager,
       ClassLoader classLoader, ConnectorPageSourceProvider pageSourceProvider) {
     this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
     this.metadata = requireNonNull(metadata, "metadata is null");
     this.splitManager = requireNonNull(splitManager, "splitManager is null");
-    this.recordSetProvider = requireNonNull(recordSetProvider, "recordSetProvider is null");
     this.classLoader = requireNonNull(classLoader, "classLoader is null");
     this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
   }
@@ -62,9 +60,6 @@ public class CarbondataConnector implements Connector {
     return splitManager;
   }
 
-  @Override public ConnectorRecordSetProvider getRecordSetProvider() {
-    return recordSetProvider;
-  }
 
   @Override
   public ConnectorPageSourceProvider getPageSourceProvider()

@@ -49,10 +49,14 @@ public class IntegerStreamReader extends AbstractStreamReader {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if (columnVector.anyNullsSet()) {
-          handleNullInVector(type, numberOfRows, builder);
+        if(isDictionary) {
+          populateDictionaryVector(type, numberOfRows, builder);
         } else {
-          populateVector(type, numberOfRows, builder);
+          if (columnVector.anyNullsSet()) {
+            handleNullInVector(type, numberOfRows, builder);
+          } else {
+            populateVector(type, numberOfRows, builder);
+          }
         }
       }
     } else {
@@ -78,7 +82,13 @@ public class IntegerStreamReader extends AbstractStreamReader {
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
-    if (isDictionary) {
+      for (int i = 0; i < numberOfRows; i++) {
+        Integer value = (Integer) columnVector.getData(i);
+        type.writeLong(builder, value.longValue());
+      }
+  }
+
+  private void populateDictionaryVector(Type type, int numberOfRows, BlockBuilder builder) {
       for (int i = 0; i < numberOfRows; i++) {
         int value = (int) columnVector.getData(i);
         Object data = DataTypeUtil
@@ -90,11 +100,5 @@ public class IntegerStreamReader extends AbstractStreamReader {
           builder.appendNull();
         }
       }
-    } else {
-      for (int i = 0; i < numberOfRows; i++) {
-        Integer value = (Integer) columnVector.getData(i);
-        type.writeLong(builder, value.longValue());
-      }
-    }
   }
 }

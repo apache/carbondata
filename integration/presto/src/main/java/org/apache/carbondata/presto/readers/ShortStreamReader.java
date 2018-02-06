@@ -49,14 +49,17 @@ public class ShortStreamReader extends AbstractStreamReader {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if (columnVector.anyNullsSet()) {
-          handleNullInVector(type, numberOfRows, builder);
+        if(isDictionary) {
+          populateDictionaryVector(type, numberOfRows, builder);
         } else {
-          populateVector(type, numberOfRows, builder);
+          if (columnVector.anyNullsSet()) {
+            handleNullInVector(type, numberOfRows, builder);
+          } else {
+            populateVector(type, numberOfRows, builder);
+          }
         }
       }
-
-    } else {
+   } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (streamData != null) {
@@ -65,7 +68,6 @@ public class ShortStreamReader extends AbstractStreamReader {
         }
       }
     }
-
     return builder.build();
   }
 
@@ -80,20 +82,20 @@ public class ShortStreamReader extends AbstractStreamReader {
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
-    if (isDictionary) {
-      for (int i = 0; i < numberOfRows; i++) {
-        int value = (int) columnVector.getData(i);
-        Object data = DataTypeUtil
-            .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.SHORT);
-        if (data != null) {
-          type.writeLong(builder, (Short) data);
-        } else {
-          builder.appendNull();
-        }
-      }
-    } else {
-      for (int i = 0; i < numberOfRows; i++) {
-        type.writeLong(builder, (Short) columnVector.getData(i));
+    for (int i = 0; i < numberOfRows; i++) {
+      type.writeLong(builder, (Short) columnVector.getData(i));
+    }
+  }
+
+  private void populateDictionaryVector(Type type, int numberOfRows, BlockBuilder builder) {
+    for (int i = 0; i < numberOfRows; i++) {
+      int value = (int) columnVector.getData(i);
+      Object data = DataTypeUtil
+          .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.SHORT);
+      if (data != null) {
+        type.writeLong(builder, (Short) data);
+      } else {
+        builder.appendNull();
       }
     }
   }

@@ -20,6 +20,7 @@ package org.apache.carbondata.presto;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -28,6 +29,7 @@ import org.apache.carbondata.presto.readers.StreamReaders;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
 import com.facebook.presto.hadoop.$internal.com.google.common.base.Throwables;
+import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.Page;
 import com.facebook.presto.spi.PageBuilder;
@@ -50,31 +52,26 @@ class CarbondataPageSource implements ConnectorPageSource {
 
   private static final LogService logger =
       LogServiceFactory.getLogService(CarbondataPageSource.class.getName());
-  private final RecordCursor cursor;
   private final List<Type> types;
   private final PageBuilder pageBuilder;
   private boolean closed;
   private PrestoCarbonVectorizedRecordReader vectorReader;
   private CarbonDictionaryDecodeReadSupport<Object[]> readSupport;
+  List<ColumnHandle> columnHandles;
   private long sizeOfData = 0;
-
   private final StreamReader[] readers ;
   private int batchId;
-
   private long nanoStart;
   private long nanoEnd;
 
-  CarbondataPageSource(RecordSet recordSet) {
-    this(requireNonNull(recordSet, "recordSet is null").getColumnTypes(),
-        recordSet.cursor());
-  }
-
-  private CarbondataPageSource(List<Type> types, RecordCursor cursor) {
-    this.cursor = requireNonNull(cursor, "cursor is null");
-    this.types = unmodifiableList(new ArrayList<>(requireNonNull(types, "types is null")));
+  public CarbondataPageSource(CarbonDictionaryDecodeReadSupport readSupport,
+      PrestoCarbonVectorizedRecordReader vectorizedRecordReader,
+      List<ColumnHandle> columnHandles ) {
+    this.columnHandles = columnHandles;
+    this.types = getColumnTypes();
     this.pageBuilder = new PageBuilder(this.types);
-    this.readSupport = ((CarbondataRecordCursor) cursor).getReadSupport();
-    this.vectorReader = ((CarbondataRecordCursor) cursor).getVectorizedRecordReader();
+    this.readSupport = readSupport;
+    vectorReader = vectorizedRecordReader;
     this.readers = createStreamReaders();
   }
 
@@ -152,7 +149,6 @@ class CarbondataPageSource implements ConnectorPageSource {
     closed = true;
     try {
       vectorReader.close();
-      cursor.close();
       nanoEnd = System.nanoTime();
     } catch (Exception e) {
       throw Throwables.propagate(e);
@@ -208,6 +204,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       }
       loaded = true;
     }
+
   }
 
 
@@ -226,5 +223,11 @@ class CarbondataPageSource implements ConnectorPageSource {
     }
     return readers;
   }
+
+   private List<Type> getColumnTypes() {
+    return columnHandles.stream().map(a -> ((CarbondataColumnHandle)a).getColumnType())
+        .collect(Collectors.toList());
+  }
+
 
 }
