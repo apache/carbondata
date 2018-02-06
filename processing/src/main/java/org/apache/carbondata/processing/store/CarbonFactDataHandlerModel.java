@@ -251,14 +251,15 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
 
+    String[] tempPath = carbonFactDataHandlerModel.getWriteTempPath();
+    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
+    CarbonDataProcessorUtil.createLocations(tempPath);
+
     DataMapWriterListener listener = new DataMapWriterListener();
     listener.registerAllWriter(configuration.getTableIdentifier(), configuration.getSegmentId(),
-        storeLocation[new Random().nextInt(storeLocation.length)]);
+        tempPath[new Random().nextInt(tempPath.length)]);
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
-
-    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
-    CarbonDataProcessorUtil.createLocations(carbonFactDataHandlerModel.getWriteTempPath());
     return carbonFactDataHandlerModel;
   }
 
