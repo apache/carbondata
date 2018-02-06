@@ -85,7 +85,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
       return true;
 
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.info(e.getMessage());
       return false;
     }
   }
