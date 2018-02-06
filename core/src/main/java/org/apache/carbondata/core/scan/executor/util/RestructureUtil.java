@@ -295,6 +295,9 @@ public class RestructureUtil {
       } else if (dataType == DataTypes.INT) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         measureDefaultValue = Integer.parseInt(value);
+      } else if (dataType == DataTypes.BOOLEAN) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Boolean.valueOf(value);
       } else if (DataTypes.isDecimal(dataType)) {
         BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
         if (columnSchema.getScale() > decimal.scale()) {
@@ -323,7 +326,7 @@ public class RestructureUtil {
       byte[] defaultValue) {
     Object measureDefaultValue = null;
     if (!isDefaultValueNull(defaultValue)) {
-      String value = null;
+      String value;
       DataType dataType = columnSchema.getDataType();
       if (dataType == DataTypes.SHORT) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
@@ -334,6 +337,9 @@ public class RestructureUtil {
       } else if (dataType == DataTypes.LONG) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         measureDefaultValue = Long.parseLong(value);
+      } else if (dataType == DataTypes.BOOLEAN) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Boolean.valueOf(value);
       } else if (DataTypes.isDecimal(dataType)) {
         BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
         if (columnSchema.getScale() > decimal.scale()) {
