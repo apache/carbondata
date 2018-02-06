@@ -286,7 +286,40 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * If the table is aggregate table, then all the aggregate tables should be copied to the new database location.
   * For old store, the time zone of the source and destination cluster should be same.
   * If old cluster used HIVE meta store to store schema, refresh will not work as schema file does not exist in file system.
+
+### Table and Column Comment
+
+  You can provide more information on table by using table comment; similarly you can provide more information about a particular column using column comment. 
+  You can see the column comment of an existing table using describe formatted command.
   
+  ```
+  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name[(col_name data_type [COMMENT col_comment], ...)]
+    [COMMENT table_comment]
+  STORED BY 'carbondata'
+  [TBLPROPERTIES (property_name=property_value, ...)]
+  ```
+  
+  Example:
+  ```
+  CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
+                                productNumber Int COMMENT 'unique serial number for product')
+  COMMENT “This is table comment”
+   STORED BY 'carbondata'
+   TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber')
+  ```
+  You can also SET and UNSET table comment using ALTER command.
+
+  Example to SET table comment:
+  
+  ```
+  ALTER TABLE carbon SET TBLPROPERTIES ('comment'='this table comment is modified');
+  ```
+  
+  Example to UNSET table comment:
+  
+  ```
+  ALTER TABLE carbon UNSET TBLPROPERTIES ('comment');
+  ```
 
 ## LOAD DATA
 
@@ -954,9 +987,9 @@ roll-up for the queries on these hierarchies.
   ON TABLE sales
   USING "timeseries"
   DMPROPERTIES (
-  'event_time’=’order_time’,
-  'year_granularity’=’1’)
-  AS
+  'event_time'='order_time',
+  'year_granualrity'='1',
+  ) AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
     
@@ -964,9 +997,9 @@ roll-up for the queries on these hierarchies.
   ON TABLE sales
   USING "timeseries"
   DMPROPERTIES (
-  'event_time’=’order_time’,
-  'month_granularity’=’1’)
-  AS
+  'event_time'='order_time',
+  'month_granualrity'='1',
+  ) AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
     
@@ -974,9 +1007,9 @@ roll-up for the queries on these hierarchies.
   ON TABLE sales
   USING "timeseries"
   DMPROPERTIES (
-  'event_time’=’order_time’,
-  'day_granularity’=’1’)
-  AS
+  'event_time'='order_time',
+  'day_granualrity'='1',
+  ) AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
         
@@ -984,9 +1017,9 @@ roll-up for the queries on these hierarchies.
   ON TABLE sales
   USING "timeseries"
   DMPROPERTIES (
-  'event_time’=’order_time’,
-  'hour_granularity’=’1’)
-  AS
+  'event_time'='order_time',
+  'hour_granualrity'='1',
+  ) AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
   
@@ -994,9 +1027,19 @@ roll-up for the queries on these hierarchies.
   ON TABLE sales
   USING "timeseries"
   DMPROPERTIES (
-  'event_time’=’order_time’,
-  'minute_granularity’=’1’)
-  AS
+  'event_time'='order_time',
+  'minute_granualrity'='1',
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+    
+  CREATE DATAMAP agg_minute
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time'='order_time',
+  'minute_granualrity'='1',
+  ) AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
   ```
@@ -1004,11 +1047,11 @@ roll-up for the queries on these hierarchies.
   For Querying data and automatically roll-up to the desired aggregation level,Carbondata supports 
   UDF as
   ```
-  timeseries(timeseries column name, ‘aggregation level’)
+  timeseries(timeseries column name, 'aggregation level')
   ```
   ```
-  Select timeseries(order_time, ‘hour’), sum(quantity) from sales group by timeseries(order_time,
-  ’hour’)
+  Select timeseries(order_time, 'hour'), sum(quantity) from sales group by timeseries(order_time,
+  'hour')
   ```
   
   It is **not necessary** to create pre-aggregate tables for each granularity unless required for 
@@ -1021,9 +1064,9 @@ roll-up for the queries on these hierarchies.
     ON TABLE sales
     USING "timeseries"
     DMPROPERTIES (
-    'event_time’=’order_time’,
-    'day_granularity’=’1’)
-    AS
+    'event_time'='order_time',
+    'day_granualrity'='1',
+    ) AS
     SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
      avg(price) FROM sales GROUP BY order_time, country, sex
           
@@ -1031,20 +1074,20 @@ roll-up for the queries on these hierarchies.
     ON TABLE sales
     USING "timeseries"
     DMPROPERTIES (
-    'event_time’=’order_time’,
-    'hour_granularity’=’1’)
-    AS
+    'event_time'='order_time',
+    'hour_granualrity'='1',
+    ) AS
     SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
      avg(price) FROM sales GROUP BY order_time, country, sex
   ```
   
   Queries like below will be rolled-up and fetched from pre-aggregate tables
   ```
-  Select timeseries(order_time, ‘month’), sum(quantity) from sales group by timeseries(order_time,
-    ’month’)
+  Select timeseries(order_time, 'month'), sum(quantity) from sales group by timeseries(order_time,
+    'month')
     
-  Select timeseries(order_time, ‘year’), sum(quantity) from sales group by timeseries(order_time,
-    ’year’)
+  Select timeseries(order_time, 'year'), sum(quantity) from sales group by timeseries(order_time,
+    'year')
   ```
   
   NOTE (<b>RESTRICTION</b>):
