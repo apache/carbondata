@@ -40,6 +40,10 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists restructure_bad")
     sql("drop table if exists restructure_badnew")
     sql("drop table if exists allKeyCol")
+    sql("drop table if exists testalterwithboolean")
+    sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
+
+
     // clean data folder
     CarbonProperties.getInstance()
     sql(
@@ -566,7 +570,20 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists restructure1")
     sql("drop table if exists restructure")
   }
-
+test("test alter command for boolean data type with correct default measure value") {
+  sql("create table testalterwithboolean(id int,name string) stored by 'carbondata' ")
+  sql("insert into testalterwithboolean values(1,'anubhav')  ")
+  sql(
+    "alter table testalterwithboolean add columns(booleanfield boolean) tblproperties('default.value.booleanfield'='true')")
+  checkAnswer(sql("select * from testalterwithboolean"),Seq(Row(1,"anubhav",true)))
+}
+  test("test alter command for boolean data type with out default measure value") {
+    sql("create table testalterwithbooleanwithoutdefaultvalue(id int,name string) stored by 'carbondata' ")
+    sql("insert into testalterwithbooleanwithoutdefaultvalue values(1,'anubhav')  ")
+    sql(
+      "alter table testalterwithbooleanwithoutdefaultvalue add columns(booleanfield boolean)")
+    checkAnswer(sql("select * from testalterwithbooleanwithoutdefaultvalue"),Seq(Row(1,"anubhav",null)))
+  }
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("drop table if exists table1")
@@ -580,5 +597,8 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists defaultSortColumnsWithAlter")
     sql("drop table if exists specifiedSortColumnsWithAlter")
     sql("drop table if exists allKeyCol")
+    sql("drop table if exists testalterwithboolean")
+    sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
+
   }
 }
