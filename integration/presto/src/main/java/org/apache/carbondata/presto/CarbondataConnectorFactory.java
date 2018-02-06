@@ -70,12 +70,10 @@ public class CarbondataConnectorFactory implements ConnectorFactory {
       LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
       ConnectorMetadata metadata = injector.getInstance(CarbondataMetadata.class);
       ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
-      ConnectorRecordSetProvider connectorRecordSet =
-          injector.getInstance(ConnectorRecordSetProvider.class);
       ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
 
       return new CarbondataConnector(lifeCycleManager, new ClassLoaderSafeConnectorMetadata(metadata,classLoader),
-          new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader), connectorRecordSet,
+          new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
           classLoader,
           new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader)
       );

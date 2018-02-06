@@ -49,14 +49,16 @@ public class BooleanStreamReader extends AbstractStreamReader {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if(columnVector.anyNullsSet()) {
-          handleNullInVector(type, numberOfRows, builder);
-        }
-        else {
-          populateVector(type, numberOfRows, builder);
+        if (isDictionary) {
+          populateDictionaryVector(type, numberOfRows, builder);
+        } else {
+          if (columnVector.anyNullsSet()) {
+            handleNullInVector(type, numberOfRows, builder);
+          } else {
+            populateVector(type, numberOfRows, builder);
+          }
         }
       }
-
     } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
@@ -81,24 +83,24 @@ public class BooleanStreamReader extends AbstractStreamReader {
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
-    if(isDictionary) {
-      for (int i = 0; i < numberOfRows; i++) {
-        int value = (int) columnVector.getData(i);
-        Object data = DataTypeUtil
-            .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.BOOLEAN);
-        if (data != null) {
-          type.writeBoolean(builder,(boolean) data);
-        } else {
-          builder.appendNull();
-        }
-      }
-    }
-    else {
       for (int i = 0; i < numberOfRows; i++) {
         type.writeBoolean(builder, byteToBoolean(columnVector.getData(i)));
       }
+  }
+
+  private void populateDictionaryVector(Type type, int numberOfRows, BlockBuilder builder) {
+    for (int i = 0; i < numberOfRows; i++) {
+      int value = (int) columnVector.getData(i);
+      Object data = DataTypeUtil
+          .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.BOOLEAN);
+      if (data != null) {
+        type.writeBoolean(builder,(boolean) data);
+      } else {
+        builder.appendNull();
+      }
     }
   }
+
   private Boolean byteToBoolean(Object value){
     byte byteValue = (byte)value;
     return byteValue == 1;
