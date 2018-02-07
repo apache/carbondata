@@ -4239,7 +4239,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //PushUP_FILTER_uniqdata_TC075
   test("PushUP_FILTER_uniqdata_TC075", Include) {
 
-    checkAnswer(s"""select round(covar_samp(1,2),4) from uniqdata where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL """,
+    checkAnswer(s"""select round(covar_samp(1,2), 4) from uniqdata where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL """,
       s"""select covar_samp(1,2) from uniqdata_hive where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL """, "QueriesBasicTestCase_PushUP_FILTER_uniqdata_TC075")
 
   }
