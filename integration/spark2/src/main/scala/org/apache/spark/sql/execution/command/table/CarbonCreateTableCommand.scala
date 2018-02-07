@@ -124,7 +124,7 @@ case class CarbonCreateTableCommand(
             val msg = s"Create table'$tableName' in database '$dbName' failed"
             LOGGER.audit(msg.concat(", ").concat(e.getMessage))
             LOGGER.error(e, msg)
-            throwMetadataException(dbName, tableName, msg)
+            throwMetadataException(dbName, tableName, msg.concat(", ").concat(e.getMessage))
         }
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =
