@@ -139,6 +139,41 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                    'SORT_SCOPE'='NO_SORT')
    ```
 
+## CREATE TABLE AS SELECT
+  This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
+### Syntax
+  ```
+  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name 
+  STORED BY 'carbondata' 
+  [TBLPROPERTIES (key1=val1, key2=val2, ...)] 
+  AS select_statement;
+  ```
+
+### Examples
+  ```
+  carbon.sql("CREATE TABLE source_table(
+                             id INT,
+                             name STRING,
+                             city STRING,
+                             age INT)
+              STORED AS parquet")
+  carbon.sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+  carbon.sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
+  
+  carbon.sql("CREATE TABLE target_table
+              STORED BY 'carbondata'
+              AS SELECT city,avg(age) FROM source_table GROUP BY city")
+              
+  carbon.sql("SELECT * FROM target_table").show
+    // results:
+    //    +--------+--------+
+    //    |    city|avg(age)|
+    //    +--------+--------+
+    //    |shenzhen|    29.0|
+    //    +--------+--------+
+
+  ```
+
 ## CREATE DATABASE 
   This function creates a new database. By default the database is created in Carbon store location, but you can also specify custom location.
   ```
@@ -150,17 +185,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   CREATE DATABASE carbon LOCATION “hdfs://name_cluster/dir1/carbonstore”;
   ```
 
-## CREATE TABLE As SELECT
-  This function allows you to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
-  ```
-  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name STORED BY 'carbondata' [TBLPROPERTIES (key1=val1, key2=val2, ...)] AS select_statement;
-  ```
-
-### Examples
-  ```
-  CREATE TABLE ctas_select_parquet STORED BY 'carbondata' as select * from parquet_ctas_test;
-  ```
-   
 ## TABLE MANAGEMENT  
 
 ### SHOW TABLE
