@@ -35,7 +35,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
 
   private def createTablesAndInsertData {
     // create carbon table and insert data
-    sql("CREATE TABLE carbon_ctas_test(key INT, value STRING) STORED by 'carbondata'")
+    sql("CREATE TABLE carbon_ctas_test(key INT, value STRING) STORED BY 'carbondata'")
     sql("insert into carbon_ctas_test select 100,'spark'")
     sql("insert into carbon_ctas_test select 200,'hive'")
 
@@ -245,7 +245,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("show tables"), true, "ctas_if_table_name")
   }
 
-  test("Add example for documentation") {
+  test("add example for documentation") {
     sql("DROP TABLE IF EXISTS target_table")
     sql("DROP TABLE IF EXISTS source_table")
     // create carbon table and insert data
@@ -256,7 +256,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED by 'carbondata'
+        |     STORED AS parquet
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
@@ -288,7 +288,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        | STORED by 'carbondata'
+        | STORED BY 'carbondata'
       """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
@@ -314,7 +314,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED by 'carbondata'
+        |     STORED BY 'carbondata'
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
@@ -344,7 +344,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED by 'carbondata'
+        |     STORED BY 'carbondata'
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
@@ -384,7 +384,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED by 'carbondata'
+        |     STORED BY 'carbondata'
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
@@ -413,7 +413,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         |     name STRING,
         |     city STRING,
         |     age INT)
-        |     STORED by 'carbondata'
+        |     STORED BY 'carbondata'
         |     """.stripMargin)
     sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
     sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")

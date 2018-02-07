@@ -165,7 +165,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                              name STRING,
                              city STRING,
                              age INT)
-              STORED by 'carbondata'")
+              STORED AS parquet")
   carbon.sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
   carbon.sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
   
