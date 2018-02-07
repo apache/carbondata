@@ -338,6 +338,8 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     OPTIONS('HEADER'='false') 
     ```
 
+	NOTE: If the HEADER option exist and is set to 'true', then the FILEHEADER option is not required.
+	
   - **FILEHEADER:** Headers can be provided in the LOAD DATA command if headers are missing in the source files.
 
     ```
@@ -410,12 +412,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    ```
    LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
    options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
+   'HEADER'='false',
    'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,
    workgroupcategoryname,deptno,deptname,projectcode,
    projectjoindate,projectenddate,attendance,utilization,salary',
    'MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='$',
    'COMPLEX_DELIMITER_LEVEL_2'=':',
-   'HEADER'='false',
    'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary',
    'SINGLE_PASS'='TRUE')
    ```
