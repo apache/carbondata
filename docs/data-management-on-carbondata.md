@@ -150,7 +150,8 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    ```
 
 ## CREATE TABLE AS SELECT
-  This function allows you to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
+  This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
+### Syntax
   ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name 
   STORED BY 'carbondata' 
