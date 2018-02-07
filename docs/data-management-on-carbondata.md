@@ -627,21 +627,21 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   ```
   LOAD DATA [LOCAL] INPATH 'folder_path' 
-    INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
-    OPTIONS(property_name=property_value, ...)
-  NSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) SELECT STATMENT 
+  INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
+  OPTIONS(property_name=property_value, ...)
+    
+  INSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATMENT>
   ```
   
   Example:
   ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.txt'
-    INTO TABLE locationTable
-    PARTITION (country = 'US', state = 'CA')
+  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
+  INTO TABLE locationTable
+  PARTITION (country = 'US', state = 'CA')
     
   INSERT INTO TABLE locationTable
-    PARTITION (country = 'US', state = 'AL')
-    SELECT * FROM another_user au 
-    WHERE au.country = 'US' AND au.state = 'AL';
+  PARTITION (country = 'US', state = 'AL')
+  SELECT <columns list excluding partition columns> FROM another_user
   ```
 
 #### Load Data Using Dynamic Partition
@@ -650,12 +650,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   Example:
   ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.txt'
-    INTO TABLE locationTable
+  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
+  INTO TABLE locationTable
           
   INSERT INTO TABLE locationTable
-    SELECT * FROM another_user au 
-    WHERE au.country = 'US' AND au.state = 'AL';
+  SELECT <columns list excluding partition columns> FROM another_user
   ```
 
 #### Show Partitions
@@ -679,19 +678,19 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   ```
    INSERT OVERWRITE TABLE table_name
-    PARTITION (column = 'partition_name')
-    select_statement
+   PARTITION (column = 'partition_name')
+   select_statement
   ```
   
   Example:
   ```
   INSERT OVERWRITE TABLE partitioned_user
-    PARTITION (country = 'US')
-    SELECT * FROM another_user au 
-    WHERE au.country = 'US';
+  PARTITION (country = 'US')
+  SELECT * FROM another_user au 
+  WHERE au.country = 'US';
   ```
 
-### CARBONDATA PARTITION(HASH,RANGE,LIST) -- Alpha feature, this partition not supports update and delete data.
+### CARBONDATA PARTITION(HASH,RANGE,LIST) -- Alpha feature, this partition feature does not support update and delete data.
 
   The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column.
 
@@ -886,11 +885,11 @@ will be transformed by Query Planner to fetch data from pre-aggregate table **ag
 
 But queries of kind
 ```
-SELECT user_id, country, sex, sum(quantity), avg(price) from sales GROUP BY country, sex
+SELECT user_id, country, sex, sum(quantity), avg(price) from sales GROUP BY user_id, country, sex
 
 SELECT sex, avg(quantity) from sales GROUP BY sex
 
-SELECT max(price), country from sales GROUP BY country
+SELECT country, max(price) from sales GROUP BY country
 ```
 
 will fetch the data from the main table **sales**
@@ -910,18 +909,13 @@ pre-aggregate tables satisfy the query condition, the plan is transformed automa
 pre-aggregate table to fetch the data
 
 ##### Compacting pre-aggregate tables
-Compaction is an optional operation for pre-aggregate table. If compaction is performed on main 
-table but not performed on pre-aggregate table, all queries still can benefit from pre-aggregate 
-table.To further improve performance on pre-aggregate table, compaction can be triggered on 
-pre-aggregate tables directly, it will merge the segments inside pre-aggregation table. 
-To do that, use ALTER TABLE COMPACT command on the pre-aggregate table just like the main table
+Compaction command (ALTER TABLE COMPACT) need to be run separately on each pre-aggregate table.
+Running Compaction command on main table will **not automatically** compact the pre-aggregate 
+tables.Compaction is an optional operation for pre-aggregate table. If compaction is performed on
+main table but not performed on pre-aggregate table, all queries still can benefit from 
+pre-aggregate tables.To further improve performance on pre-aggregate tables, compaction can be 
+triggered on pre-aggregate tables directly, it will merge the segments inside pre-aggregate table. 
 
-  NOTE:
-  * If the aggregate function used in the pre-aggregate table creation included distinct-count,
-     during compaction, the pre-aggregate table values are recomputed.This would a costly 
-     operation as compared to the compaction of pre-aggregate tables containing other aggregate 
-     functions alone
- 
 ##### Update/Delete Operations on pre-aggregate tables
 This functionality is not supported.
 
@@ -1005,16 +999,6 @@ roll-up for the queries on these hierarchies.
   ) AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
-    
-  CREATE DATAMAP agg_minute
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-  'event_time’=’order_time’,
-  'minute_granualrity’=’1’,
-  ) AS
-  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-   avg(price) FROM sales GROUP BY order_time, country, sex
   ```
   
   For Querying data and automatically roll-up to the desired aggregation level,Carbondata supports 
@@ -1028,9 +1012,7 @@ roll-up for the queries on these hierarchies.
   ```
   
   It is **not necessary** to create pre-aggregate tables for each granularity unless required for 
-  query
-  .Carbondata
-   can roll-up the data and fetch it
+  query.Carbondata can roll-up the data and fetch it.
    
   For Example: For main table **sales** , If pre-aggregate tables were created as  
   
