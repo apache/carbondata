@@ -135,6 +135,30 @@ object PreAggregateTableExample {
     println("time for query on table without pre-aggregate table:" + time_without_aggTable.toString)
     // scalastyle:on
 
+    // 3. if avg function is defined for a column, sum also can be used on that;but not other way
+    // round
+    val time_without_aggTable_sum = time {
+      spark.sql(
+        s"""
+           | SELECT id, sum(age)
+           | FROM personTableWithoutAgg group by id
+      """.stripMargin).count()
+    }
+
+    val time_with_aggTable_sum = time {
+      spark.sql(
+        s"""
+           | SELECT id, sum(age)
+           | FROM personTable group by id
+      """.stripMargin).count()
+    }
+    // scalastyle:off
+    println("time for query with function sum on table with pre-aggregate table:" +
+      time_with_aggTable_sum.toString)
+    println("time for query with function sum on table without pre-aggregate table:" +
+      time_without_aggTable_sum.toString)
+    // scalastyle:on
+
     spark.sql("DROP TABLE IF EXISTS mainTable")
     spark.sql("DROP TABLE IF EXISTS personTable")
     spark.sql("DROP TABLE IF EXISTS personTableWithoutAgg")
