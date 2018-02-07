@@ -548,7 +548,7 @@ class TableNewProcessor(cm: TableModel) {
         cm.dataMapRelation.get.get(field).get.columnTableRelationList.get(0).parentColumnName)
 
       val isDictionaryColumn = columnName.hasEncoding(Encoding.DICTIONARY)
-      val isAggFunPresent = if(isDictionaryColumn) {
+      val isAggFunPresent = if (isDictionaryColumn) {
         cm.dataMapRelation.get.get(field).get.aggregateFunction.equalsIgnoreCase("sum") ||
         cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg") ||
         cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("count")
@@ -557,11 +557,11 @@ class TableNewProcessor(cm: TableModel) {
         cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg")
       }
 
-        if(!isAggFunPresent) {
+      if(!isAggFunPresent) {
           columnName.getEncoder
-        } else {
+      } else {
           new java.util.ArrayList[Encoding]()
-        }
+       }
       } else {
         new java.util.ArrayList[Encoding]()
       }
