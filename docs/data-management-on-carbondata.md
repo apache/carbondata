@@ -149,7 +149,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                    'ALLOWED_COMPACTION_DAYS'='5')
    ```
 
-## CREATE TABLE As SELECT
+## CREATE TABLE AS SELECT
   This function allows you to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
   ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name 
@@ -171,7 +171,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   carbon.sql("CREATE TABLE target_table
               STORED BY 'carbondata'
-              AS SELECT city,avg(age) FROM source_table group by city")
+              AS SELECT city,avg(age) FROM source_table GROUP BY city")
               
   carbon.sql("SELECT * FROM target_table").show
     // results:

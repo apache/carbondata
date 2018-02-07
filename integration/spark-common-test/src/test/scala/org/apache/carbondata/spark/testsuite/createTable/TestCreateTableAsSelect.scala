@@ -19,12 +19,14 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
-import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * test functionality for create table as select command
@@ -53,6 +55,9 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS parquet_ctas_test")
     sql("DROP TABLE IF EXISTS orc_ctas_test")
     createTablesAndInsertData
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
+        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
   }
 
   test("test create table as select with select from same table name when table exists") {
@@ -272,6 +277,160 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM target_table"), Seq(Row("shenzhen", 29)))
   }
 
+  test("test create table as select with sum,count,min,max") {
+    sql("DROP TABLE IF EXISTS target_table")
+    sql("DROP TABLE IF EXISTS source_table")
+    // create carbon table and insert data
+    sql(
+      """
+        | CREATE TABLE source_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED by 'carbondata'
+      """.stripMargin)
+    sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+    sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
+    sql(
+      """
+        | CREATE TABLE target_table
+        | STORED BY 'carbondata'
+        | AS
+        |   SELECT city,sum(age),count(age),min(age),max(age)
+        |   FROM source_table group by city
+      """.stripMargin)
+    checkAnswer(sql("SELECT * FROM target_table"), Seq(Row("shenzhen", 58, 2, 27, 31)))
+  }
+
+  test("test create table as select with insert data into source_table after CTAS") {
+    sql("DROP TABLE IF EXISTS target_table")
+    sql("DROP TABLE IF EXISTS source_table")
+    // create carbon table and insert data
+    sql(
+      """
+        | CREATE TABLE source_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        |     STORED by 'carbondata'
+        |     """.stripMargin)
+    sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+    sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
+    sql(
+      """
+        | CREATE TABLE target_table
+        | STORED BY 'carbondata'
+        | AS
+        |   SELECT city,sum(age),count(age),min(age),max(age)
+        |   FROM source_table group by city
+      """.stripMargin)
+    sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+    sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
+    checkAnswer(sql("SELECT * FROM target_table"), Seq(Row("shenzhen", 58, 2, 27, 31)))
+  }
+
+  test("test create table as select with auto merge") {
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql("DROP TABLE IF EXISTS target_table")
+    sql("DROP TABLE IF EXISTS source_table")
+    // create carbon table and insert data
+    sql(
+      """
+        | CREATE TABLE source_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        |     STORED by 'carbondata'
+        |     """.stripMargin)
+    sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+    sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
+    sql(
+      """
+        | CREATE TABLE target_table
+        | STORED BY 'carbondata'
+        | AS
+        |   SELECT city,avg(age)
+        |   FROM source_table group by city
+      """.stripMargin)
+    sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+    sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
+
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE source_table"), true, "Compacted")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE target_table"), false, "Compacted")
+
+    sql("INSERT INTO target_table SELECT 'shenzhen',8")
+    sql("INSERT INTO target_table SELECT 'shenzhen',9")
+    sql("INSERT INTO target_table SELECT 'shenzhen',3")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE target_table"), true, "Compacted")
+    checkAnswer(sql("SELECT * FROM target_table"),
+      Seq(Row("shenzhen", 29), Row("shenzhen", 8), Row("shenzhen", 9), Row("shenzhen", 3)))
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+  }
+
+  test("test create table as select with filter, <, and, >=") {
+    sql("DROP TABLE IF EXISTS target_table")
+    sql("DROP TABLE IF EXISTS source_table")
+    // create carbon table and insert data
+    sql(
+      """
+        | CREATE TABLE source_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        |     STORED by 'carbondata'
+        |     """.stripMargin)
+    sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+    sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
+    sql("INSERT INTO source_table SELECT 3,'jack','shenzhen',5")
+    sql("INSERT INTO source_table SELECT 4,'alice','shenzhen',35")
+    sql(
+      """
+        | CREATE TABLE target_table
+        | STORED BY 'carbondata'
+        | AS
+        |   SELECT city,avg(age)
+        |   FROM source_table where age > 20 and age <= 31 GROUP BY city
+      """.stripMargin)
+
+    checkAnswer(sql("SELECT * FROM target_table"), Seq(Row("shenzhen", 29)))
+  }
+
+  test("test create table as select with filter, >=, or, =") {
+    sql("DROP TABLE IF EXISTS target_table")
+    sql("DROP TABLE IF EXISTS source_table")
+    // create carbon table and insert data
+    sql(
+      """
+        | CREATE TABLE source_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        |     STORED by 'carbondata'
+        |     """.stripMargin)
+    sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+    sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
+    sql("INSERT INTO source_table SELECT 3,'jack','shenzhen',5")
+    sql("INSERT INTO source_table SELECT 4,'alice','shenzhen',35")
+    sql(
+      """
+        | CREATE TABLE target_table
+        | STORED BY 'carbondata'
+        | AS
+        |   SELECT city,avg(age)
+        |   FROM source_table where age >= 20 or age = 5 group by city
+      """.stripMargin)
+
+    checkAnswer(sql("SELECT * FROM target_table"), Seq(Row("shenzhen", 24.5)))
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS carbon_ctas_test")
     sql("DROP TABLE IF EXISTS parquet_ctas_test")
@@ -288,6 +447,5 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS ctas_if_table_name")
     sql("DROP TABLE IF EXISTS source_table")
     sql("DROP TABLE IF EXISTS target_table")
-
   }
 }
