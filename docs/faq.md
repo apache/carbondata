@@ -25,7 +25,8 @@
 * [What is Carbon Lock Type?](#what-is-carbon-lock-type)
 * [How to resolve Abstract Method Error?](#how-to-resolve-abstract-method-error)
 * [How Carbon will behave when execute insert operation in abnormal scenarios?](#how-carbon-will-behave-when-execute-insert-operation-in-abnormal-scenarios)
-* [Why aggregate query is not fetching data from aggregate table?] (#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
+* [Why aggregate query is not fetching data from aggregate table?](#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
+* [Why all executors are returning success even after some of the query failed?](Why-all-executors-are-returning-success-even-after-some-of-the-query-failed)
 
 ## What are Bad Records?
 Records that fail to get loaded into the CarbonData due to data type incompatibility or are empty or have incompatible format are classified as Bad Records.
@@ -177,5 +178,10 @@ create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondat
 create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp group by ctry;
 select cntry,sum(gdp) from gdp21,pop1 where cntry=ctry group by cntry;
 ```
+
+## Why all executors are returning success even after some of the query failed?
+The executor returns success for the following query event even after the query failed. This is because, in following cases, carbon do not retry in executor side but sends a signal to driver that this task is not completed.
+* Compaction query
+* Load query with Bad-Record
 
 
