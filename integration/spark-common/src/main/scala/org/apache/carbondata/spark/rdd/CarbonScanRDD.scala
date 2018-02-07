@@ -362,17 +362,20 @@ class CarbonScanRDD(
           }
       }
 
+      // add task completion before calling initialize as initialize method will internally call
+      // for usage of unsafe method for processing of one blocklet and if there is any exception
+      // while doing that the unsafe memory occupied for that task will not get cleared
+      context.addTaskCompletionListener { _ =>
+        reader.close()
+        close()
+        logStatistics(queryStartTime, model.getStatisticsRecorder)
+      }
+      // initialize the reader
       reader.initialize(inputSplit, attemptContext)
 
       new Iterator[Any] {
         private var havePair = false
         private var finished = false
-
-        context.addTaskCompletionListener { _ =>
-          reader.close()
-          close()
-          logStatistics(queryStartTime, model.getStatisticsRecorder)
-        }
 
         override def hasNext: Boolean = {
           if (context.isInterrupted) {
@@ -394,10 +397,6 @@ class CarbonScanRDD(
           value
         }
 
-        private def close() {
-          TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId)
-          inputMetricsStats.updateAndClose()
-        }
       }
     } else {
       new Iterator[Any] {
@@ -409,6 +408,11 @@ class CarbonScanRDD(
 
 
     iterator.asInstanceOf[Iterator[InternalRow]]
+  }
+
+  private def close() {
+    TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId)
+    inputMetricsStats.updateAndClose()
   }
 
   def prepareInputFormatForDriver(conf: Configuration): CarbonTableInputFormat[Object] = {
@@ -456,12 +460,14 @@ class CarbonScanRDD(
   }
 
   def logStatistics(queryStartTime: Long, recorder: QueryStatisticsRecorder): Unit = {
-    val queryStatistic = new QueryStatistic()
-    queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
-      System.currentTimeMillis - queryStartTime)
-    recorder.recordStatistics(queryStatistic)
-    // print executor query statistics for each task_id
-    recorder.logStatisticsAsTableExecutor()
+    if (null != recorder) {
+      val queryStatistic = new QueryStatistic()
+      queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
+        System.currentTimeMillis - queryStartTime)
+      recorder.recordStatistics(queryStatistic)
+      // print executor query statistics for each task_id
+      recorder.logStatisticsAsTableExecutor()
+    }
   }
 
   /**

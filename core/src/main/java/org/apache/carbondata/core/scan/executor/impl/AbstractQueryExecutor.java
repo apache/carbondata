@@ -586,15 +586,27 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   @Override public void finish() throws QueryExecutionException {
     CarbonUtil.clearBlockCache(queryProperties.dataBlocks);
+    Throwable exceptionOccurred = null;
     if (null != queryIterator) {
-      queryIterator.close();
+      // catch if there is any exception so that it can be rethrown after clearing all the resources
+      // else if any exception is thrown from this point executor service will not be terminated
+      try {
+        queryIterator.close();
+      } catch (Throwable e) {
+        exceptionOccurred = e;
+      }
     }
+    // clear all the unsafe memory used for the given task ID
     UnsafeMemoryManager.INSTANCE.freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
     if (null != queryProperties.executorService) {
       // In case of limit query when number of limit records is already found so executors
       // must stop all the running execution otherwise it will keep running and will hit
       // the query performance.
       queryProperties.executorService.shutdownNow();
+    }
+    // if there is any exception re throw the exception
+    if (null != exceptionOccurred) {
+      throw new QueryExecutionException(exceptionOccurred);
     }
   }
 
