@@ -26,7 +26,7 @@
 * [How to resolve Abstract Method Error?](#how-to-resolve-abstract-method-error)
 * [How Carbon will behave when execute insert operation in abnormal scenarios?](#how-carbon-will-behave-when-execute-insert-operation-in-abnormal-scenarios)
 * [Why aggregate query is not fetching data from aggregate table?](#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
-* [Why all executors are returning success even after some of the query failed?](Why-all-executors-are-returning-success-even-after-some-of-the-query-failed)
+* [Why all executors are returning success even after some of the query failed?](#Why-all-executors-are-returning-success-even-after-some-of-the-query-failed)
 
 ## What are Bad Records?
 Records that fail to get loaded into the CarbonData due to data type incompatibility or are empty or have incompatible format are classified as Bad Records.
