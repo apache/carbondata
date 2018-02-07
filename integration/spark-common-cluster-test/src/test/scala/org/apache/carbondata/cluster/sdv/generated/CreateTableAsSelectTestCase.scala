@@ -132,6 +132,34 @@ class CreateTableAsSelectTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS ctas_select_hugedata2").collect
   }
 
+  //Check create table as select with where clause in select from parquet table that does not return data
+  test("CreateTableAsSelect_001_14", Include) {
+    sql("DROP TABLE IF EXISTS ctas_select_where_parquet").collect
+    sql(
+      """
+        | CREATE TABLE ctas_select_where_parquet
+        | STORED BY 'carbondata'
+        | AS SELECT * FROM parquet_ctas_test
+        | WHERE key=300
+      """.stripMargin).collect
+    checkAnswer(sql("SELECT * FROM ctas_select_where_parquet"),
+      sql("SELECT * FROM parquet_ctas_test where key=300"))
+  }
+
+  //Check create table as select with where clause in select from hive/orc table that does not return data
+  test("CreateTableAsSelect_001_15", Include) {
+    sql("DROP TABLE IF EXISTS ctas_select_where_orc").collect
+    sql(
+      """
+        | CREATE TABLE ctas_select_where_orc
+        | STORED BY 'carbondata'
+        | AS SELECT * FROM orc_ctas_test
+        | WHERE key=100
+      """.stripMargin).collect
+    checkAnswer(sql("SELECT * FROM ctas_select_where_orc"), sql("SELECT * FROM orc_ctas_test WHERE key=100"))
+  }
+
+
   override protected def beforeAll() {
    // Dropping existing tables
    sql("DROP TABLE IF EXISTS carbon_ctas_test")
@@ -152,5 +180,22 @@ class CreateTableAsSelectTestCase extends QueryTest with BeforeAndAfterAll {
    sql("CREATE TABLE orc_ctas_test(key INT, value STRING) STORED as ORC")
    sql("insert into orc_ctas_test select 100,'spark'")
    sql("insert into orc_ctas_test select 200,'hive'")
+  }
+
+  override protected def afterAll(): Unit = {
+    sql("DROP TABLE IF EXISTS carbon_ctas_test")
+    sql("DROP TABLE IF EXISTS parquet_ctas_test")
+    sql("DROP TABLE IF EXISTS orc_ctas_test")
+    sql("DROP TABLE IF EXISTS ctas_same_table_name")
+    sql("DROP TABLE IF EXISTS ctas_select_carbon")
+    sql("DROP TABLE IF EXISTS ctas_select_direct_data")
+    sql("DROP TABLE IF EXISTS ctas_select_parquet")
+    sql("DROP TABLE IF EXISTS ctas_select_orc")
+    sql("DROP TABLE IF EXISTS ctas_select_where_carbon")
+    sql("DROP TABLE IF EXISTS ctas_select_where_parquet")
+    sql("DROP TABLE IF EXISTS ctas_select_where_orc")
+    sql("DROP TABLE IF EXISTS ctas_select_direct_data")
+    sql("DROP TABLE IF EXISTS ctas_select_hugedata1")
+    sql("DROP TABLE IF EXISTS ctas_select_hugedata2")
   }
 }
