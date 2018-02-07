@@ -542,15 +542,23 @@ class TableNewProcessor(cm: TableModel) {
       // getting the encoder from maintable so whatever encoding is applied in maintable
       // same encoder can be applied on aggregate table
       val encoders = if (getEncoderFromParent(field)) {
-        isAggFunPresent =
-          cm.dataMapRelation.get.get(field).get.aggregateFunction.equalsIgnoreCase("sum") ||
-          cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg") ||
-          cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("count")
+
+      val columnName = cm.parentTable.get.getColumnByName(
+        cm.parentTable.get.getTableName,
+        cm.dataMapRelation.get.get(field).get.columnTableRelationList.get(0).parentColumnName)
+
+      val isDictionaryColumn = columnName.hasEncoding(Encoding.DICTIONARY)
+      val isAggFunPresent = if(isDictionaryColumn) {
+        cm.dataMapRelation.get.get(field).get.aggregateFunction.equalsIgnoreCase("sum") ||
+        cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg") ||
+        cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("count")
+      } else {
+        cm.dataMapRelation.get.get(field).get.aggregateFunction.equalsIgnoreCase("sum") ||
+        cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg")
+      }
+
         if(!isAggFunPresent) {
-          cm.parentTable.get.getColumnByName(
-            cm.parentTable.get.getTableName,
-            cm.dataMapRelation.get.get(field).get.columnTableRelationList.get(0).parentColumnName)
-            .getEncoder
+          columnName.getEncoder
         } else {
           new java.util.ArrayList[Encoding]()
         }
