@@ -57,7 +57,7 @@ public class CarbonDataLoadSchema implements Serializable {
    */
   public CarbonTable getCarbonTable() {
     if (!updatedDataTypes) {
-      CarbonTable.updateTableInfo(carbonTable.getTableInfo());
+      carbonTable = CarbonTable.buildFromTableInfo(carbonTable.getTableInfo());
       updatedDataTypes = true;
     }
     return carbonTable;
