@@ -162,7 +162,8 @@ case class CreatePreAggregateTableCommand(
       dataMapName,
       ifExistsSet = true,
       parentTableIdentifier.database,
-      parentTableIdentifier.table).run(sparkSession)
+      parentTableIdentifier.table,
+      forceDrop = true).run(sparkSession)
     Seq.empty
   }
 
