@@ -210,7 +210,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val childSchemas = thriftTableInfo.dataMapSchemas
-    childSchemas.remove(childSchemas.size())
+    childSchemas.remove(childSchemas.size() - 1)
     val carbonTableIdentifier = absoluteTableIdentifier.getCarbonTableIdentifier
     updateHiveMetaStoreForAlter(carbonTableIdentifier,
       carbonTableIdentifier,
