@@ -546,7 +546,7 @@ object CarbonDataRDDFactory {
           LOGGER.error(ex, "Problem while committing data maps")
           false
       }
-      if (!done && !commitComplete) {
+      if (!done || !commitComplete) {
         CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uniqueTableStatusId)
         LOGGER.info("********starting clean up**********")
         CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
