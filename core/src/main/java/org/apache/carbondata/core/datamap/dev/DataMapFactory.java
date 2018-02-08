@@ -39,7 +39,7 @@ public interface DataMapFactory<T extends DataMap> {
   /**
    * Return a new write for this datamap
    */
-  AbstractDataMapWriter createWriter(Segment segment);
+  AbstractDataMapWriter createWriter(Segment segment, String writeDirectoryPath);
 
   /**
    * Get the datamap for segmentid
