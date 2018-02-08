@@ -30,6 +30,7 @@ class TestPreAggregateMisc extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table mainTable")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table mainTable")
   }
+
   test("test PreAggregate With Set Segments property") {
     sql("create datamap agg1 on table mainTable using 'preaggregate' as select name,sum(age) from mainTable group by name")
     sql("SET carbon.input.segments.default.mainTable=0")
@@ -40,6 +41,7 @@ class TestPreAggregateMisc extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap agg1 on table mainTable")
 
   }
+
   test("check preagg tbl properties sort columns inherit from main tbl") {
     sql("drop table if exists y ")
     sql(
@@ -71,8 +73,8 @@ class TestPreAggregateMisc extends QueryTest with BeforeAndAfterAll {
     assert(sortcolummatch && sortscopematch && blocksizematch)
   }
 
-
   override def afterAll: Unit = {
-    sql("drop table if exists mainTable")
+    sql("DROP TABLE IF EXISTS mainTable")
+    sql("DROP TABLE IF EXISTS y")
   }
 }

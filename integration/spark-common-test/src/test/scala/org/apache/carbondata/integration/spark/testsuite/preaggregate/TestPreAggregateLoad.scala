@@ -18,40 +18,68 @@
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil4Test
-import org.scalatest.{BeforeAndAfterAll, Ignore}
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.util.SparkQueryTest
 
-class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
+class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with BeforeAndAfterEach{
 
   val testData = s"$resourcesPath/sample.csv"
+  val p1 = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
+      CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
 
   override def beforeAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+      .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
+        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
+
     SparkUtil4Test.createTaskMockUp(sqlContext)
     sql("DROP TABLE IF EXISTS maintable")
   }
 
-  private def createAllAggregateTables(parentTableName: String): Unit = {
+  override protected def afterAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+      .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, p1)
+    sql("DROP TABLE IF EXISTS y ")
+    sql("DROP TABLE IF EXISTS maintable")
+    sql("DROP TABLE IF EXISTS maintbl")
+    sql("DROP TABLE IF EXISTS main_table")
+  }
+
+  override protected def beforeEach(): Unit = {
+    sql("DROP TABLE IF EXISTS main_table")
+    sql("DROP TABLE IF EXISTS segmaintable")
+  }
+
+  private def createAllAggregateTables(parentTableName: String, columnName: String = "age"): Unit = {
     sql(
-      s"""create datamap preagg_sum on table $parentTableName using 'preaggregate' as select id,sum(age) from $parentTableName group by id"""
+      s"""
+         | create datamap preagg_sum
+         | on table $parentTableName
+         | using 'preaggregate'
+         | as select id,sum($columnName)
+         | from $parentTableName
+         | group by id
+       """.stripMargin)
+    sql(
+      s"""create datamap preagg_avg on table $parentTableName using 'preaggregate' as select id,avg($columnName) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create datamap preagg_avg on table $parentTableName using 'preaggregate' as select id,avg(age) from $parentTableName group by id"""
+      s"""create datamap preagg_count on table $parentTableName using 'preaggregate' as select id,count($columnName) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create datamap preagg_count on table $parentTableName using 'preaggregate' as select id,count(age) from $parentTableName group by id"""
+      s"""create datamap preagg_min on table $parentTableName using 'preaggregate' as select id,min($columnName) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create datamap preagg_min on table $parentTableName using 'preaggregate' as select id,min(age) from $parentTableName group by id"""
-        .stripMargin)
-    sql(
-      s"""create datamap preagg_max on table $parentTableName using 'preaggregate' as select id,max(age) from $parentTableName group by id"""
+      s"""create datamap preagg_max on table $parentTableName using 'preaggregate' as select id,max($columnName) from $parentTableName group by id"""
         .stripMargin)
   }
 
@@ -264,24 +292,25 @@ class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id, sum(age) from maintable group by id,name"""
         .stripMargin)
+    sql("reset")
     checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 52, "xyz"))
   }
+
 test("check load and select for avg double datatype") {
   sql("drop table if exists maintbl ")
   sql("create table maintbl(year int,month int,name string,salary double) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
   sql("insert into maintbl select 10,11,'babu',12.89")
   sql("insert into maintbl select 10,11,'babu',12.89")
-  sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+  sql("create datamap maintbl_double on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
   checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.89))
 }
-
 
   test("check load and select for avg int datatype") {
     sql("drop table if exists maintbl ")
     sql("create table maintbl(year int,month int,name string,salary int) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
     sql("insert into maintbl select 10,11,'babu',12")
     sql("insert into maintbl select 10,11,'babu',12")
-    sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+    sql("create datamap maintbl_double on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
     checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.0))
   }
 
@@ -290,7 +319,7 @@ test("check load and select for avg double datatype") {
     sql("create table maintbl(year int,month int,name string,salary bigint) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
     sql("insert into maintbl select 10,11,'babu',12")
     sql("insert into maintbl select 10,11,'babu',12")
-    sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+    sql("create datamap maintbl_double on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
     checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.0))
   }
 
@@ -299,7 +328,7 @@ test("check load and select for avg double datatype") {
     sql("create table maintbl(year int,month int,name string,salary short) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
     sql("insert into maintbl select 10,11,'babu',12")
     sql("insert into maintbl select 10,11,'babu',12")
-    sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+    sql("create datamap maintbl_double on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
     checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.0))
   }
 
@@ -309,7 +338,7 @@ test("check load and select for avg double datatype") {
     sql("insert into maintbl select 10,11,'babu',12")
     sql("insert into maintbl select 10,11,'babu',12")
     val rows = sql("select name,avg(salary) from maintbl group by name").collect()
-    sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+    sql("create datamap maintbl_double on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
     checkAnswer(sql("select name,avg(salary) from maintbl group by name"), rows)
   }
 
@@ -415,8 +444,661 @@ test("check load and select for avg double datatype") {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
     val rows = sql("select age,avg(age) from maintable group by age").collect()
-    sql("create datamap maintbl_douoble on table maintable using 'preaggregate' as select avg(age) from maintable group by age")
+    sql("create datamap maintbl_double on table maintable using 'preaggregate' as select avg(age) from maintable group by age")
     checkAnswer(sql("select age,avg(age) from maintable group by age"), rows)
+    sql("drop table if exists maintable ")
+  }
+
+  def testFunction(): Unit = {
+    // check answer
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_sum"),
+      Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_avg"),
+      Seq(Row(1, 31, 1), Row(2, 27, 1), Row(3, 70, 2), Row(4, 55, 2)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_count"),
+      Seq(Row(1, 1), Row(2, 1), Row(3, 2), Row(4, 2)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_min"),
+      Seq(Row(1, 31), Row(2, 27), Row(3, 35), Row(4, 26)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_max"),
+      Seq(Row(1, 31), Row(2, 27), Row(3, 35), Row(4, 29)))
+
+    testPreAggTable()
+  }
+
+  def testPreAggTable(): Unit = {
+    // check select and match or not match pre-aggregate table
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_sum")
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_avg", "main_table")
+
+    checkPreAggTable(sql("SELECT id, AVG(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_avg")
+    checkPreAggTable(sql("SELECT id, AVG(age) from main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT id, COUNT(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_count")
+    checkPreAggTable(sql("SELECT id, COUNT(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT id, MIN(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_min")
+    checkPreAggTable(sql("SELECT id, MIN(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT id, MAX(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_max")
+    checkPreAggTable(sql("SELECT id, MAX(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    // sub query should match pre-aggregate table
+    checkPreAggTable(sql("SELECT SUM(age) FROM main_table"),
+      true, "main_table_preagg_sum")
+    checkPreAggTable(sql("SELECT SUM(age) FROM main_table"),
+      false, "main_table_preagg_avg", "main_table")
+
+    checkPreAggTable(sql("SELECT AVG(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_avg")
+    checkPreAggTable(sql("SELECT AVG(age) from main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT COUNT(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_count")
+    checkPreAggTable(sql("SELECT COUNT(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT MIN(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_min")
+    checkPreAggTable(sql("SELECT MIN(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT MAX(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_max")
+    checkPreAggTable(sql("SELECT MAX(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+  }
+
+  test("test load into main table with pre-aggregate table: double") {
+    sql(
+      """
+        | CREATE TABLE main_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age DOUBLE)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    createAllAggregateTables("main_table")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    testFunction()
+  }
+
+  test("test load into main table with pre-aggregate table: short") {
+    sql(
+      """
+        | CREATE TABLE main_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age SHORT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    createAllAggregateTables("main_table")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    testFunction()
+  }
+
+  test("test load into main table with pre-aggregate table: float") {
+    sql(
+      """
+        | CREATE TABLE main_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age FLOAT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    createAllAggregateTables("main_table")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    testFunction()
+  }
+
+  test("test load into main table with pre-aggregate table: bigint") {
+    sql(
+      """
+        | CREATE TABLE main_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age BIGINT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    createAllAggregateTables("main_table")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    testFunction()
+
+  }
+
+  test("test load into main table with pre-aggregate table: string") {
+    sql(
+      """
+        | CREATE TABLE main_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age STRING)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    createAllAggregateTables("main_table")
+
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_sum"),
+      Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_avg"),
+      Seq(Row(1, 31, 1), Row(2, 27, 1), Row(3, 70, 2), Row(4, 55, 2)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_count"),
+      Seq(Row(1, 1), Row(2, 1), Row(3, 2), Row(4, 2)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_min"),
+      Seq(Row(1, "31"), Row(2, "27"), Row(3, "35"), Row(4, "26")))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_max"),
+      Seq(Row(1, "31"), Row(2, "27"), Row(3, "35"), Row(4, "29")))
+
+    // check select and match or not match pre-aggregate table
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_sum")
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_avg", "main_table")
+
+    checkPreAggTable(sql("SELECT id, AVG(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_avg")
+    checkPreAggTable(sql("SELECT id, AVG(age) from main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT id, COUNT(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_count")
+    checkPreAggTable(sql("SELECT id, COUNT(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT id, MIN(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_min")
+    checkPreAggTable(sql("SELECT id, MIN(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT id, MAX(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_max")
+    checkPreAggTable(sql("SELECT id, MAX(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    // sub query should match pre-aggregate table
+    checkPreAggTable(sql("SELECT SUM(age) FROM main_table"),
+      true, "main_table_preagg_sum")
+    checkPreAggTable(sql("SELECT SUM(age) FROM main_table"),
+      false, "main_table_preagg_avg", "main_table")
+
+    checkPreAggTable(sql("SELECT AVG(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_avg")
+    checkPreAggTable(sql("SELECT AVG(age) from main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT COUNT(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_count")
+    checkPreAggTable(sql("SELECT COUNT(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT MIN(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_min")
+    checkPreAggTable(sql("SELECT MIN(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT MAX(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_max")
+    checkPreAggTable(sql("SELECT MAX(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+  }
+
+  test("test load into main table with pre-aggregate table: sum string column") {
+    sql(
+      """
+        | CREATE TABLE main_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age STRING)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    createAllAggregateTables("main_table", "name")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_sum"),
+      Seq(Row(1, null), Row(2, null), Row(3, null), Row(4, null)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_avg"),
+      Seq(Row(1, null, 0), Row(2, null, 0), Row(3, null, 0), Row(4, null, 0)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_count"),
+      Seq(Row(1, 1), Row(2, 1), Row(3, 2), Row(4, 2)))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_min"),
+      Seq(Row(1, "david"), Row(2, "eason"), Row(3, "jarry"), Row(4, "kunal")))
+    checkAnswer(sql(s"SELECT * FROM main_table_preagg_max"),
+      Seq(Row(1, "david"), Row(2, "eason"), Row(3, "jarry"), Row(4, "vishal")))
+
+    // check select and match or not match pre-aggregate table
+    checkPreAggTable(sql("SELECT id, SUM(name) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_sum")
+    checkPreAggTable(sql("SELECT id, SUM(name) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_avg", "main_table")
+
+    checkPreAggTable(sql("SELECT id, AVG(name) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_avg")
+    checkPreAggTable(sql("SELECT id, AVG(name) from main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT id, COUNT(name) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_count")
+    checkPreAggTable(sql("SELECT id, COUNT(name) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT id, MIN(name) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_min")
+    checkPreAggTable(sql("SELECT id, MIN(name) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT id, MAX(name) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_max")
+    checkPreAggTable(sql("SELECT id, MAX(name) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    // sub query should match pre-aggregate table
+    checkPreAggTable(sql("SELECT SUM(name) FROM main_table"),
+      true, "main_table_preagg_sum")
+    checkPreAggTable(sql("SELECT SUM(name) FROM main_table"),
+      false, "main_table_preagg_avg", "main_table")
+
+    checkPreAggTable(sql("SELECT AVG(name) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_avg")
+    checkPreAggTable(sql("SELECT AVG(name) from main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT COUNT(name) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_count")
+    checkPreAggTable(sql("SELECT COUNT(name) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT MIN(name) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_min")
+    checkPreAggTable(sql("SELECT MIN(name) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+
+    checkPreAggTable(sql("SELECT MAX(name) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_max")
+    checkPreAggTable(sql("SELECT MAX(name) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum", "main_table")
+  }
+
+  test("test whether all segments are loaded into pre-aggregate table if segments are set on main table 2") {
+    sql("DROP TABLE IF EXISTS segmaintable")
+    sql(
+      """
+        | CREATE TABLE segmaintable(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    sql("set carbon.input.segments.default.segmaintable=0")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 26)))
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE segmaintable
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM segmaintable
+         | GROUP BY id
+       """.stripMargin)
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      false, "segmaintable_preagg_sum")
+
+    sql("reset")
+    checkAnswer(sql("SELECT * FROM segmaintable_preagg_sum"), Seq(Row(1, 26)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+  }
+
+  test("test whether all segments are loaded into pre-aggregate table if segments are set on main table 3") {
+    sql("DROP TABLE IF EXISTS segmaintable")
+    sql(
+      """
+        | CREATE TABLE segmaintable(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    sql("set carbon.input.segments.default.segmaintable=0")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 26)))
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE segmaintable
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM segmaintable
+         | GROUP BY id
+       """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    sql("reset")
+    checkAnswer(sql("SELECT * FROM segmaintable_preagg_sum"), Seq(Row(1, 26), Row(1, 26)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+  }
+
+  test("test whether all segments are loaded into pre-aggregate table if segments are set on main table 4") {
+    sql("DROP TABLE IF EXISTS segmaintable")
+    sql(
+      """
+        | CREATE TABLE segmaintable(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    //  check value before set segments
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 52)))
+
+    sql("set carbon.input.segments.default.segmaintable=0")
+    //  check value after set segments
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 26)))
+
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE segmaintable
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM segmaintable
+         | GROUP BY id
+       """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    checkAnswer(sql("SELECT * FROM segmaintable_preagg_sum"), Seq(Row(1, 52), Row(1, 26)))
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 26)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      false, "segmaintable_preagg_sum")
+
+    // reset
+    sql("reset")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 78)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+  }
+
+  test("test whether all segments are loaded into pre-aggregate table: auto merge and input segment") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql("reset")
+    sql("DROP TABLE IF EXISTS segmaintable")
+    sql(
+      """
+        | CREATE TABLE segmaintable(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql("set carbon.input.segments.default.segmaintable=0")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    //  check value before auto merge
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 26)))
+
+
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    //  check value after set segments and auto merge
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq.empty)
+
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      false, "segmaintable_preagg_sum")
+
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE segmaintable
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM segmaintable
+         | GROUP BY id
+       """.stripMargin)
+
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    // reset
+    sql("reset")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 130)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+  }
+
+  //TODO: need to check and fix
+  ignore("test whether all segments are loaded into pre-aggregate table: auto merge and no input segment") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql("reset")
+    sql("DROP TABLE IF EXISTS segmaintable")
+    sql(
+      """
+        | CREATE TABLE segmaintable(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE segmaintable
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM segmaintable
+         | GROUP BY id
+       """.stripMargin)
+
+    //  check value before auto merge
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 78)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    //  check value after auto merge
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 130)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+  }
+
+  test("test whether all segments are loaded into pre-aggregate table: create after auto merge and no input segment") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql("reset")
+    sql("DROP TABLE IF EXISTS segmaintable")
+    sql(
+      """
+        | CREATE TABLE segmaintable(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE segmaintable
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM segmaintable
+         | GROUP BY id
+       """.stripMargin)
+
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 130)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 156)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+  }
+
+  //TODO: need to check and fix
+  ignore("test whether all segments are loaded into pre-aggregate table: mixed, load, auto merge and input segment") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql("reset")
+    sql("DROP TABLE IF EXISTS main_table")
+    sql(
+      """
+        | CREATE TABLE main_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    createAllAggregateTables("main_table", "age")
+    sql("set carbon.input.segments.default.main_table=0")
+
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      false, "main_table_preagg_sum")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      Seq(Row(1, 26)))
+
+    sql("reset")
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_sum")
+
+    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    testPreAggTable()
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      Seq(Row(1, 171), Row(2, 81), Row(3, 210), Row(4, 165)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_sum")
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+  }
+
+  //TODO: need to check and fix
+  ignore("test whether all segments are loaded into pre-aggregate table: auto merge and check pre-aggregate segment") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql("reset")
+    sql("DROP TABLE IF EXISTS main_table")
+    sql(
+      """
+        | CREATE TABLE main_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE main_table
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM main_table
+         | GROUP BY id
+       """.stripMargin)
+
+    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    checkExistence(sql("show segments for table main_table_preagg_sum"), false, "Compacted")
+    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    // check the data whether auto merge
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      Seq(Row(1, 109), Row(2, 27), Row(3, 70), Row(4, 55)))
+    checkExistence(sql("show segments for table main_table_preagg_sum"), true, "Compacted")
+
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      Seq(Row(1, 171), Row(2, 81), Row(3, 210), Row(4, 165)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM main_table GROUP BY id"),
+      true, "main_table_preagg_sum")
+
+    checkExistence(sql("show segments for table main_table_preagg_sum"), true, "Compacted")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }
 
 }

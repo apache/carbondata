@@ -70,7 +70,7 @@ object PreAggregateUtil {
   /**
    * Below method will be used to validate the select plan
    * and get the required fields from select plan
-   * Currently only aggregate query is support any other type of query will fail
+   * Currently only aggregate query is support, any other type of query will fail
    *
    * @param plan
    * @param selectStmt

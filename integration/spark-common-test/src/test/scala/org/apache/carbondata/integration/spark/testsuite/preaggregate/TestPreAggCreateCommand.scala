@@ -35,6 +35,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
+  val timeSeries = TIMESERIES.toString
+
   override def beforeAll {
     sql("drop database if exists otherDB cascade")
     sql("drop table if exists PreAggMain")
@@ -55,10 +57,31 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test pre agg create table 2") {
+    dropDataMaps("PreAggMain", "preagg2")
     sql("create datamap preagg2 on table PreAggMain using 'preaggregate' as select a as a1,sum(b) as udfsum from PreAggMain group by a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), true, "preaggmain_a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), true, "preaggmain_b_sum")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), false, "preaggmain_a1")
     sql("drop datamap preagg2 on table PreAggMain")
+  }
+
+  test("test pre agg create table 3") {
+    dropDataMaps("PreAggMain", "preagg3")
+    sql("create datamap preagg3 on table PreAggMain using 'preaggregate' as select a,sum(b) as sum from PreAggMain group by a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg3"), true, "preaggmain_a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg3"), true, "preaggmain_b_sum")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg3"), false, "preaggmain_sum")
+    sql("drop datamap preagg3 on table PreAggMain")
+  }
+
+  test("test pre agg create table 4") {
+    dropDataMaps("PreAggMain", "preagg4")
+    sql("create datamap preagg4 on table PreAggMain using 'preaggregate' as select a as a1,sum(b) as sum from PreAggMain group by a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), true, "preaggmain_a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), true, "preaggmain_b_sum")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), false, "preaggmain_a1")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), false, "preaggmain_sum")
+    sql("drop datamap preagg4 on table PreAggMain")
   }
 
   test("test pre agg create table 5") {
@@ -69,10 +92,30 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap preagg11 on table PreAggMain1")
   }
 
+  test("test pre agg create table 6") {
+    sql("create datamap preagg12 on table PreAggMain1 using 'preaggregate' as select a as a1,sum(b) from PreAggMain1 group by a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "preaggmain1_a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "preaggmain1_b_sum")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), false, "preaggmain1_a1")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "DICTIONARY")
+    sql("drop datamap preagg12 on table PreAggMain1")
+  }
+
+  test("test pre agg create table 7") {
+    sql("create datamap preagg13 on table PreAggMain1 using 'preaggregate' as select a,sum(b) as sum from PreAggMain1 group by a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), true, "preaggmain1_a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), true, "preaggmain1_b_sum")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), false, "preaggmain1_sum")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), true, "DICTIONARY")
+    sql("drop datamap preagg13 on table PreAggMain1")
+  }
+
   test("test pre agg create table 8") {
     sql("create datamap preagg14 on table PreAggMain1 using 'preaggregate' as select a as a1,sum(b) as sum from PreAggMain1 group by a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), true, "preaggmain1_a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), true, "preaggmain1_b_sum")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), false, "preaggmain1_a1")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), false, "preaggmain1_sum")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), true, "DICTIONARY")
     sql("drop datamap preagg14 on table PreAggMain1")
   }
@@ -82,6 +125,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg15"), true, "preaggmain_a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg15"), true, "preaggmain_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg15"), true, "preaggmain_b_count")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg15"), false, "preaggmain2_b_avg")
     sql("drop datamap preagg15 on table PreAggMain")
   }
 
@@ -132,7 +176,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage.equals("Distinct is not supported On Pre Aggregation"))
   }
 
-  test("test pre agg create table 15") {
+  test("test pre agg create table 15: don't support where") {
     intercept[Exception] {
       sql(
         s"""
@@ -149,7 +193,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   test("test pre agg create table 16") {
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select column4, sum(column4) from maintable group by column4")
     val df = sql("select * from maintable_agg0")
-    val carbontable = getCarbontable(df.queryExecution.analyzed)
+    val carbontable = getCarbonTable(df.queryExecution.analyzed)
     assert(carbontable.getAllMeasures.size()==2)
     assert(carbontable.getAllDimensions.size()==0)
     sql("drop datamap agg0 on table maintable")
@@ -158,7 +202,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   test("test pre agg create table 17") {
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select column1, sum(column1),column6, sum(column6) from maintable group by column6,column1")
     val df = sql("select * from maintable_agg0")
-    val carbontable = getCarbontable(df.queryExecution.analyzed)
+    val carbontable = getCarbonTable(df.queryExecution.analyzed)
     assert(carbontable.getAllMeasures.size()==2)
     assert(carbontable.getAllDimensions.size()==2)
     carbontable.getAllDimensions.asScala.foreach{ f =>
@@ -170,7 +214,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   test("test pre agg create table 18") {
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select column1, count(column1),column6, count(column6) from maintable group by column6,column1")
     val df = sql("select * from maintable_agg0")
-    val carbontable = getCarbontable(df.queryExecution.analyzed)
+    val carbontable = getCarbonTable(df.queryExecution.analyzed)
     assert(carbontable.getAllMeasures.size()==2)
     assert(carbontable.getAllDimensions.size()==2)
     carbontable.getAllDimensions.asScala.foreach{ f =>
@@ -182,7 +226,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   test("test pre agg create table 19") {
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select column3, sum(column3),column5, sum(column5) from maintable group by column3,column5")
     val df = sql("select * from maintable_agg0")
-    val carbontable = getCarbontable(df.queryExecution.analyzed)
+    val carbontable = getCarbonTable(df.queryExecution.analyzed)
     assert(carbontable.getAllMeasures.size()==2)
     assert(carbontable.getAllDimensions.size()==2)
     carbontable.getAllDimensions.asScala.foreach{ f =>
@@ -194,7 +238,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   test("test pre agg create table 20") {
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select column3, sum(column3),column5, sum(column5) from maintable group by column3,column5,column2")
     val df = sql("select * from maintable_agg0")
-    val carbontable = getCarbontable(df.queryExecution.analyzed)
+    val carbontable = getCarbonTable(df.queryExecution.analyzed)
     assert(carbontable.getAllMeasures.size()==2)
     assert(carbontable.getAllDimensions.size()==3)
     carbontable.getAllDimensions.asScala.foreach{ f =>
@@ -203,7 +247,6 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap agg0 on table maintable")
   }
 
-  val timeSeries = TIMESERIES.toString
   test("remove agg tables from show table command") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,"false")
     sql("DROP TABLE IF EXISTS tbl_1")
@@ -219,7 +262,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
   }
 
-  test("test pre agg  create table 21: create with preaggregate and hierarchy") {
+  test("test pre agg create table 22: create with preaggregate and granularity") {
     sql("DROP TABLE IF EXISTS maintabletime")
     sql(
       """
@@ -271,19 +314,18 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 
-  test("remove  agg tables from show table command") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,"false")
+  test("test pre agg create table 24: remove agg tables from show table command") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS, "false")
     sql("DROP TABLE IF EXISTS tbl_1")
     sql("create table if not exists  tbl_1(imei string,age int,mac string ,prodate timestamp,update timestamp,gamepoint double,contrid double) stored by 'carbondata' ")
     sql("create datamap agg1 on table tbl_1 using 'preaggregate' as select mac, sum(age) from tbl_1 group by mac")
     sql("create table if not exists  sparktable(imei string,age int,mac string ,prodate timestamp,update timestamp,gamepoint double,contrid double) ")
     checkExistence(sql("show tables"), false, "tbl_1_agg1")
-    checkExistence(sql("show tables"), true, "sparktable","tbl_1")
+    checkExistence(sql("show tables"), true, "sparktable", "tbl_1")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS, CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
   }
 
-
-  test("remove TimeSeries agg tables from show table command") {
+  test("test pre agg create table 25: remove TimeSeries agg tables from show table command") {
     sql("DROP TABLE IF EXISTS tbl_1")
     sql("create table if not exists  tbl_1(imei string,age int,mac string ,prodate timestamp,update timestamp,gamepoint double,contrid double) stored by 'carbondata' ")
     sql(
@@ -307,6 +349,25 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 
+  test("test pre agg create table 22: don't support create datamap if exists'") {
+    val e: Exception = intercept[AnalysisException] {
+      sql(
+        """
+          | CREATE DATAMAP IF EXISTS agg0 ON TABLE mainTable
+          | USING 'preaggregate'
+          | AS SELECT
+          |   column3,
+          |   sum(column3),
+          |   column5,
+          |   sum(column5)
+          | FROM maintable
+          | GROUP BY column3,column5,column2
+        """.stripMargin)
+      assert(true)
+    }
+    assert(e.getMessage.contains("identifier matching regex"))
+    sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
+  }
 
   test("test show tables filtered with datamaps") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,"false")
@@ -336,7 +397,65 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("use default")
   }
 
-  def getCarbontable(plan: LogicalPlan) : CarbonTable ={
+  // TODO: to be confirmed
+  test("test pre agg create table 26") {
+    sql("drop datamap if exists preagg2 on table PreAggMain")
+    sql("create datamap preagg2 on table PreAggMain using 'preaggregate' as select a as a1,sum(b) from PreAggMain group by a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), true, "preaggmain_a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), true, "preaggmain_b_sum")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), false, "preaggmain_a1")
+    intercept[Exception] {
+      sql("select a1 from PreAggMain_preagg2").show()
+    }
+    sql("drop datamap if exists preagg2 on table PreAggMain")
+  }
+
+  test("test pre agg create table 27: select * and no group by") {
+    intercept[Exception] {
+      sql(
+        """
+          | CREATE DATAMAP IF NOT EXISTS agg0 ON TABLE mainTable
+          | USING 'preaggregate'
+          | AS SELECT *  FROM maintable
+        """.stripMargin)
+    }
+  }
+
+  // TODO : to be confirmed
+  test("test pre agg create table 28: select *") {
+    intercept[Exception] {
+      sql(
+        """
+          | CREATE DATAMAP IF NOT EXISTS agg0 ON TABLE mainTable
+          | USING 'preaggregate'
+          | AS SELECT *  FROM maintable
+          | group by a
+        """.stripMargin)
+    }
+  }
+
+  test("test pre agg create table 29") {
+    intercept[Exception] {
+      sql(
+        s"""
+           | create datamap preagg21 on table PreAggMain2
+           | using 'preaggregate'
+           | as select a as a1,sum(b)
+           | from PreAggMain2
+           | where a>'vishal'
+           | group by a
+         """.stripMargin)
+    }
+  }
+
+  test("test pre agg create table 30: DESCRIBE FORMATTED") {
+    dropDataMaps("PreAggMain", "preagg2")
+    intercept[Exception] {
+      sql("DESCRIBE FORMATTED PreAggMain_preagg2").show()
+    }
+  }
+
+  def getCarbonTable(plan: LogicalPlan) : CarbonTable ={
     var carbonTable : CarbonTable = null
     plan.transform {
       // first check if any preaTable1 scala function is applied it is present is in plan
@@ -368,5 +487,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintabletime")
     sql("drop table if exists showTables")
     sql("drop table if exists Preagg_twodb")
+    sql("DROP TABLE IF EXISTS tbl_1")
+    sql("DROP TABLE IF EXISTS sparktable")
   }
 }
