@@ -26,7 +26,8 @@ import org.scalatest.BeforeAndAfterAll
 class TestPreAggregateWithSubQuery extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
-    sql("drop table if exists mainTable")
+    sql("DROP TABLE IF EXISTS mainTable")
+    sql("DROP TABLE IF EXISTS mainTable1")
     sql("CREATE TABLE mainTable(id int, name string, city string, age string) STORED BY 'org.apache.carbondata.format'")
     sql("CREATE TABLE mainTable1(id int, name string, city string, age string) STORED BY 'org.apache.carbondata.format'")
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select name,sum(age) from mainTable group by name")
@@ -35,7 +36,19 @@ class TestPreAggregateWithSubQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test sub query PreAggregate table selection 1") {
-    val df = sql("select t2.newnewname as newname from mainTable1 t1 join (select name as newnewname,sum(age) as sum from mainTable group by name )t2 on t1.name=t2.newnewname group by t2.newnewname")
+    val df = sql(
+      """
+        | SELECT t2.newnewname AS newname
+        | FROM mainTable1 t1
+        | JOIN (
+        |     select
+        |       name AS newnewname,
+        |       sum(age) AS sum
+        |     FROM mainTable
+        |     GROUP BY name ) t2
+        | ON t1.name = t2.newnewname
+        | GROUP BY t2.newnewname
+      """.stripMargin)
     matchTable(collectLogicalRelation(df.queryExecution.analyzed), "maintable_agg0")
   }
 
@@ -82,7 +95,8 @@ class TestPreAggregateWithSubQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll: Unit = {
-    sql("drop table if exists mainTable")
+    sql("DROP TABLE IF EXISTS mainTable")
+    sql("DROP TABLE IF EXISTS mainTable1")
   }
 
 }

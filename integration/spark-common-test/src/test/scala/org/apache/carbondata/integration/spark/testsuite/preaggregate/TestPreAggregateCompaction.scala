@@ -154,6 +154,9 @@ class TestPreAggregateCompaction extends QueryTest with BeforeAndAfterEach with 
     segmentNamesSum = sql("show segments for table maintable_preagg_sum").collect().map(_.get(0).toString)
     segmentNamesSum should equal (Array("11", "10", "9", "8.1", "8", "7", "6", "5", "4.1", "4", "3", "2", "1", "0.2", "0.1", "0"))
     checkAnswer(sql("select maintable_id, sum(maintable_age_sum) from maintable_preagg_sum group by maintable_id"), sumResult)
+    val mainTableSegment = sql("SHOW SEGMENTS FOR TABLE maintable")
+    val SegmentSequenceIds = mainTableSegment.collect().map { each => (each.toSeq) (0) }
+    assert(!SegmentSequenceIds.contains("0.1"))
   }
 
   test("test if minor/major compaction is successful for pre-agg table") {
