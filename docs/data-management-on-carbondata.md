@@ -39,7 +39,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   STORED BY 'carbondata'
   [TBLPROPERTIES (property_name=property_value, ...)]
   [LOCATION 'path']
-  ```  
+  ```
   
 ### Usage Guidelines
 
@@ -101,11 +101,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      These properties are table level compaction configurations, if not specified, system level configurations in carbon.properties will be used.
      Following are 5 configurations:
      
-     * MAJOR_COMPACTION_SIZE: same meaning with carbon.major.compaction.size, size in MB.
-     * AUTO_LOAD_MERGE: same meaning with carbon.enable.auto.load.merge.
-     * COMPACTION_LEVEL_THRESHOLD: same meaning with carbon.compaction.level.threshold.
-     * COMPACTION_PRESERVE_SEGMENTS: same meaning with carbon.numberof.preserve.segments.
-     * ALLOWED_COMPACTION_DAYS: same meaning with carbon.allowed.compaction.days.     
+     * MAJOR_COMPACTION_SIZE: same meaning as carbon.major.compaction.size, size in MB.
+     * AUTO_LOAD_MERGE: same meaning as carbon.enable.auto.load.merge.
+     * COMPACTION_LEVEL_THRESHOLD: same meaning as carbon.compaction.level.threshold.
+     * COMPACTION_PRESERVE_SEGMENTS: same meaning as carbon.numberof.preserve.segments.
+     * ALLOWED_COMPACTION_DAYS: same meaning as carbon.allowed.compaction.days.     
 
      ```
      TBLPROPERTIES ('MAJOR_COMPACTION_SIZE'='2048',
@@ -136,17 +136,8 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                                    saleQuantity Int,
                                    revenue Int)
     STORED BY 'carbondata'
-    TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber',
-                   'NO_INVERTED_INDEX'='productBatch',
-                   'SORT_COLUMNS'='productName,storeCity',
-                   'SORT_SCOPE'='NO_SORT',
-                   'TABLE_BLOCKSIZE'='512',
-                   'MAJOR_COMPACTION_SIZE'='2048',
-                   'AUTO_LOAD_MERGE'='true',
-                   'COMPACTION_LEVEL_THRESHOLD'='5,6',
-                   'COMPACTION_PRESERVE_SEGMENTS'='10',
-				   'streaming'='true',
-                   'ALLOWED_COMPACTION_DAYS'='5')
+    TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
+                   'SORT_SCOPE'='NO_SORT')
    ```
 
 ## CREATE DATABASE 
@@ -200,9 +191,9 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
      Examples:
      ```
-     ALTER TABLE carbon RENAME TO carbondata
+     ALTER TABLE carbon RENAME TO carbonTable
      OR
-     ALTER TABLE test_db.carbon RENAME TO test_db.carbondata
+     ALTER TABLE test_db.carbon RENAME TO test_db.carbonTable
      ```
 
    - **ADD COLUMNS**
@@ -294,7 +285,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * Before executing this command the old table schema and data should be copied into the new database location.
   * If the table is aggregate table, then all the aggregate tables should be copied to the new database location.
   * For old store, the time zone of the source and destination cluster should be same.
-  * If old cluster uses HIVE meta store, refresh will not work as schema file does not exist in file system.
+  * If old cluster used HIVE meta store to store schema, refresh will not work as schema file does not exist in file system.
   
 
 ## LOAD DATA
@@ -302,7 +293,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 ### LOAD FILES TO CARBONDATA TABLE
   
   This command is used to load csv files to carbondata, OPTIONS are not mandatory for data loading process. 
-  Inside OPTIONS user can provide either of any options like DELIMITER, QUOTECHAR, FILEHEADER, ESCAPECHAR, MULTILINE as per requirement.
+  Inside OPTIONS user can provide any options like DELIMITER, QUOTECHAR, FILEHEADER, ESCAPECHAR, MULTILINE as per requirement.
   
   ```
   LOAD DATA [LOCAL] INPATH 'folder_path' 
@@ -352,7 +343,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     OPTIONS('MULTILINE'='true') 
     ```
 
-  - **ESCAPECHAR:** Escape char can be provided if user want strict validation of escape character on CSV.
+  - **ESCAPECHAR:** Escape char can be provided if user want strict validation of escape character in CSV files.
 
     ```
     OPTIONS('ESCAPECHAR'='\') 
@@ -435,10 +426,10 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * BAD_RECORDS_ACTION property can have four type of actions for bad records FORCE, REDIRECT, IGNORE and FAIL.
   * FAIL option is its Default value. If the FAIL option is used, then data loading fails if any bad records are found.
   * If the REDIRECT option is used, CarbonData will add all bad records in to a separate CSV file. However, this file must not be used for subsequent data loading because the content may not exactly match the source record. You are advised to cleanse the original source record for further data ingestion. This option is used to remind you which records are bad records.
-  * If the FORCE option is used, then it auto-corrects the data by storing the bad records as NULL before Loading data.
+  * If the FORCE option is used, then it auto-converts the data by storing the bad records as NULL before Loading data.
   * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
   * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
-  * The maximum number of characters per column is 100000. If there are more than 100000 characters in a column, data loading will fail.
+  * The maximum number of characters per column is 32000. If there are more than 32000 characters in a column, data loading will fail.
 
   Example:
 
@@ -563,7 +554,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 ## COMPACTION
 
   Compaction improves the query performance significantly. 
-  During the load data, several CarbonData files are generated, this is because data is sorted only within each load (per load segment and one B+ tree index).
   
   There are two types of compaction, Minor and Major compaction.
   
@@ -587,6 +577,8 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   In Major compaction, multiple segments can be merged into one large segment. 
   User will specify the compaction size until which segments can be merged, Major compaction is usually done during the off-peak time.
+  Configure the property carbon.major.compaction.size with appropriate value in MB.
+  
   This command merges the specified number of segments into one segment: 
      
   ```
@@ -963,8 +955,8 @@ roll-up for the queries on these hierarchies.
   USING "timeseries"
   DMPROPERTIES (
   'event_time’=’order_time’,
-  'year_granualrity’=’1’,
-  ) AS
+  'year_granularity’=’1’)
+  AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
     
@@ -973,8 +965,8 @@ roll-up for the queries on these hierarchies.
   USING "timeseries"
   DMPROPERTIES (
   'event_time’=’order_time’,
-  'month_granualrity’=’1’,
-  ) AS
+  'month_granularity’=’1’)
+  AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
     
@@ -983,8 +975,8 @@ roll-up for the queries on these hierarchies.
   USING "timeseries"
   DMPROPERTIES (
   'event_time’=’order_time’,
-  'day_granualrity’=’1’,
-  ) AS
+  'day_granularity’=’1’)
+  AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
         
@@ -993,8 +985,8 @@ roll-up for the queries on these hierarchies.
   USING "timeseries"
   DMPROPERTIES (
   'event_time’=’order_time’,
-  'hour_granualrity’=’1’,
-  ) AS
+  'hour_granularity’=’1’)
+  AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
   
@@ -1003,8 +995,8 @@ roll-up for the queries on these hierarchies.
   USING "timeseries"
   DMPROPERTIES (
   'event_time’=’order_time’,
-  'minute_granualrity’=’1’,
-  ) AS
+  'minute_granularity’=’1’)
+  AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
   ```
@@ -1030,8 +1022,8 @@ roll-up for the queries on these hierarchies.
     USING "timeseries"
     DMPROPERTIES (
     'event_time’=’order_time’,
-    'day_granualrity’=’1’,
-    ) AS
+    'day_granularity’=’1’)
+    AS
     SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
      avg(price) FROM sales GROUP BY order_time, country, sex
           
@@ -1040,8 +1032,8 @@ roll-up for the queries on these hierarchies.
     USING "timeseries"
     DMPROPERTIES (
     'event_time’=’order_time’,
-    'hour_granualrity’=’1’,
-    ) AS
+    'hour_granularity’=’1’)
+    AS
     SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
      avg(price) FROM sales GROUP BY order_time, country, sex
   ```
@@ -1078,8 +1070,8 @@ roll-up for the queries on these hierarchies.
   ```
 
   NOTE:
-  * Bucketing can not be performed for columns of Complex Data Types.
-  * Columns in the BUCKETCOLUMN parameter must be only dimension. The BUCKETCOLUMN parameter can not be a measure or a combination of measures and dimensions.
+  * Bucketing cannot be performed for columns of Complex Data Types.
+  * Columns in the BUCKETCOLUMN parameter must be dimensions. The BUCKETCOLUMN parameter cannot be a measure or a combination of measures and dimensions.
 
   Example:
   ```
@@ -1100,7 +1092,7 @@ roll-up for the queries on these hierarchies.
 
 ### SHOW SEGMENT
 
-  This command is used to get the segments of CarbonData table.
+  This command is used to list the segments of CarbonData table.
 
   ```
   SHOW SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
