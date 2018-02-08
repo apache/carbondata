@@ -20,48 +20,53 @@ package org.apache.carbondata.processing.sort.sortdata;
 import java.util.Comparator;
 
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
+import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 
-public class NewRowComparator implements Comparator<Object[]> {
+/**
+ * This class is used as comparator for comparing intermediate sort temp row
+ */
+public class IntermediateSortTempRowComparator implements Comparator<IntermediateSortTempRow> {
+  /**
+   * isSortColumnNoDictionary whether the sort column is not dictionary or not
+   */
+  private boolean[] isSortColumnNoDictionary;
 
   /**
-   * mapping of dictionary dimensions and no dictionary of sort_column.
+   * @param isSortColumnNoDictionary isSortColumnNoDictionary
    */
-  private boolean[] noDictionarySortColumnMaping;
-
-  /**
-   * @param noDictionarySortColumnMaping
-   */
-  public NewRowComparator(boolean[] noDictionarySortColumnMaping) {
-    this.noDictionarySortColumnMaping = noDictionarySortColumnMaping;
+  public IntermediateSortTempRowComparator(boolean[] isSortColumnNoDictionary) {
+    this.isSortColumnNoDictionary = isSortColumnNoDictionary;
   }
 
   /**
-   * Below method will be used to compare two mdkey
+   * Below method will be used to compare two sort temp row
    */
-  public int compare(Object[] rowA, Object[] rowB) {
+  public int compare(IntermediateSortTempRow rowA, IntermediateSortTempRow rowB) {
     int diff = 0;
-    int index = 0;
+    int dictIndex = 0;
+    int nonDictIndex = 0;
 
-    for (boolean isNoDictionary : noDictionarySortColumnMaping) {
+    for (boolean isNoDictionary : isSortColumnNoDictionary) {
+
       if (isNoDictionary) {
-        byte[] byteArr1 = (byte[]) rowA[index];
-        byte[] byteArr2 = (byte[]) rowB[index];
+        byte[] byteArr1 = rowA.getNoDictSortDims()[nonDictIndex];
+        byte[] byteArr2 = rowB.getNoDictSortDims()[nonDictIndex];
+        nonDictIndex++;
 
         int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
         if (difference != 0) {
           return difference;
         }
       } else {
-        int dimFieldA = (int) rowA[index];
-        int dimFieldB = (int) rowB[index];
+        int dimFieldA = rowA.getDictSortDims()[dictIndex];
+        int dimFieldB = rowB.getDictSortDims()[dictIndex];
+        dictIndex++;
 
         diff = dimFieldA - dimFieldB;
         if (diff != 0) {
           return diff;
         }
       }
-
-      index++;
     }
     return diff;
   }
