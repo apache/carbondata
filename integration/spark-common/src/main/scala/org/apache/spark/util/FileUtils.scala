@@ -20,6 +20,7 @@ package org.apache.spark.util
 import java.io.{File, IOException}
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkContext
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -106,13 +107,13 @@ object FileUtils {
     }
   }
 
-  def createDatabaseDirectory(dbName: String, storePath: String) {
+  def createDatabaseDirectory(dbName: String, storePath: String, sparkContext: SparkContext) {
     val databasePath: String = storePath + File.separator + dbName.toLowerCase
     val fileType = FileFactory.getFileType(databasePath)
     FileFactory.mkdirs(databasePath, fileType)
     val operationContext = new OperationContext
     val createDatabasePostExecutionEvent = new CreateDatabasePostExecutionEvent(dbName,
-      databasePath)
+      databasePath, sparkContext)
     OperationListenerBus.getInstance.fireEvent(createDatabasePostExecutionEvent, operationContext)
   }
 

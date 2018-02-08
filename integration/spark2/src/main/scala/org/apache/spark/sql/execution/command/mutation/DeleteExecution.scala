@@ -134,7 +134,7 @@ object DeleteExecution {
     ).collect()
 
     // if no loads are present then no need to do anything.
-    if (res.isEmpty) {
+    if (res.flatten.isEmpty) {
       return segmentsTobeDeleted
     }
 
