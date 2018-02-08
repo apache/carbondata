@@ -44,17 +44,19 @@ public class FalseFilterExecutor implements FilterExecuter {
     return group;
   }
 
-  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+  @Override
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     return false;
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-
+  @Override
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
     return new BitSet();
   }
 
-  @Override public void readColumnChunks(RawBlockletColumnChunks blockChunkHolder) {
+  @Override
+  public void readColumnChunks(RawBlockletColumnChunks blockChunkHolder) {
     // Do Nothing
   }
 }
