@@ -168,7 +168,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
           updatedParts)
       }
 
-      newTablePath = metastore.updateTableSchemaForAlter(newTableIdentifier,
+      newTablePath = metastore.updateTableSchemaForAlter(
+        newTableIdentifier,
         carbonTable.getCarbonTableIdentifier,
         tableInfo,
         schemaEvolutionEntry,

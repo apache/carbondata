@@ -323,10 +323,10 @@ public final class CarbonLoaderUtil {
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
-  public static boolean updateSegmentFile(String tablePath, String segmentId, String segmentFile)
+  private static boolean updateSegmentFile(String tablePath, String segmentId, String segmentFile)
       throws IOException {
     boolean status = false;
-    String tableStatusPath = CarbonTablePath.getTableStatusPath(tablePath);
+    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
     String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
     AbsoluteTableIdentifier absoluteTableIdentifier =
         AbsoluteTableIdentifier.from(tablePath, null, null);

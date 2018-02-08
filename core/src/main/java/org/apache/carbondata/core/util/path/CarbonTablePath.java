@@ -36,13 +36,13 @@ public class CarbonTablePath {
   private static final String DICTIONARY_META_EXT = ".dictmeta";
   private static final String SORT_INDEX_EXT = ".sortindex";
   private static final String SCHEMA_FILE = "schema";
-  public static final String TABLE_STATUS_FILE = "tablestatus";
   private static final String FACT_DIR = "Fact";
   private static final String SEGMENT_PREFIX = "Segment_";
   private static final String PARTITION_PREFIX = "Part";
   private static final String DATA_PART_PREFIX = "part-";
   private static final String BATCH_PREFIX = "_batchno";
 
+  public static final String TABLE_STATUS_FILE = "tablestatus";
   public static final String CARBON_DATA_EXT = ".carbondata";
   public static final String INDEX_FILE_EXT = ".carbonindex";
   public static final String MERGE_INDEX_FILE_EXT = ".carbonindexmerge";
@@ -140,20 +140,6 @@ public class CarbonTablePath {
   }
 
   /**
-   * Return metadata path based on `tablePath`
-   */
-  public static String getTableStatusPath(String tablePath) {
-    return getMetadataPath(tablePath) + File.separator + TABLE_STATUS_FILE;
-  }
-
-  /**
-   * Return table status file path based on `tablePath`
-   */
-  public static String getTableStatusFilePath(String tablePath) {
-    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + TABLE_STATUS_FILE;
-  }
-
-  /**
    * Return absolute path of dictionary meta file
    */
   public static String getExternalDictionaryMetaFilePath(String dictionaryPath, String columnId) {
@@ -211,6 +197,13 @@ public class CarbonTablePath {
     } else {
       return metaPath + CarbonCommonConstants.FILE_SEPARATOR + SCHEMA_FILE;
     }
+  }
+
+  /**
+   * Return absolute path of table status file
+   */
+  public static String getTableStatusFilePath(String tablePath) {
+    return getMetadataPath(tablePath) + File.separator + TABLE_STATUS_FILE;
   }
 
   public static String getTableStatusFilePathWithUUID(String tablePath, String uuid) {
