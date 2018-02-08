@@ -47,7 +47,8 @@ case class CarbonDropDataMapCommand(
     dataMapName: String,
     ifExistsSet: Boolean,
     databaseNameOp: Option[String],
-    tableName: String)
+    tableName: String,
+    forceDrop: Boolean = false)
   extends AtomicRunnableCommand {
 
   var commandToRun: CarbonDropTableCommand = _
@@ -74,6 +75,10 @@ case class CarbonDropDataMapCommand(
         case ex: NoSuchTableException =>
           throw ex
       }
+      // If datamap to be dropped in parent table then drop the datamap from metastore and remove
+      // entry from parent table.
+      // If force drop is true then remove the datamap from hivemetastore. No need to remove from
+      // parent as the first condition would have taken care of it.
       if (carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList.size() > 0) {
         val dataMapSchema = carbonTable.get.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
           find(_._1.getDataMapName.equalsIgnoreCase(dataMapName))
@@ -85,7 +90,6 @@ case class CarbonDropDataMapCommand(
               ifExistsSet,
               sparkSession)
           OperationListenerBus.getInstance.fireEvent(dropDataMapPreEvent, operationContext)
-
           carbonTable.get.getTableInfo.getDataMapSchemaList.remove(dataMapSchema.get._2)
           val schemaConverter = new ThriftWrapperSchemaConverterImpl
           PreAggregateUtil.updateSchemaInfo(
@@ -111,13 +115,28 @@ case class CarbonDropDataMapCommand(
         } else if (!ifExistsSet) {
           throw new NoSuchDataMapException(dataMapName, tableName)
         }
-      } else if ((carbonTable.isDefined &&
-        carbonTable.get.getTableInfo.getDataMapSchemaList.size() == 0)) {
+      } else if (forceDrop) {
+        val childCarbonTable: Option[CarbonTable] = try {
+          val childTableName = tableName + "_" + dataMapName
+          Some(CarbonEnv.getCarbonTable(databaseNameOp, childTableName)(sparkSession))
+        } catch {
+          case _: Exception =>
+            None
+        }
+        if (childCarbonTable.isDefined) {
+          commandToRun = CarbonDropTableCommand(
+            ifExistsSet = true,
+            Some(childCarbonTable.get.getDatabaseName),
+            childCarbonTable.get.getTableName,
+            dropChildTable = true)
+          commandToRun.processMetadata(sparkSession)
+        }
+      } else if (carbonTable.isDefined &&
+        carbonTable.get.getTableInfo.getDataMapSchemaList.size() == 0) {
         if (!ifExistsSet) {
           throw new NoSuchDataMapException(dataMapName, tableName)
         }
       }
-
     } catch {
       case e: NoSuchDataMapException =>
         throw e

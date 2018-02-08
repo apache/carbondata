@@ -123,7 +123,7 @@ case class CarbonCreateDataMapCommand(
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
     if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
       dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
-      if (!tableIsExists) {
+      if (!tableIsExists && createPreAggregateTableCommands != null) {
         createPreAggregateTableCommands.undoMetadata(sparkSession, exception)
       } else {
         Seq.empty
