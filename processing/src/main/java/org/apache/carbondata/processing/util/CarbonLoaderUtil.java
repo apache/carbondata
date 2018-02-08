@@ -842,6 +842,7 @@ public final class CarbonLoaderUtil {
       }
     }
   }
+<<<<<<< c5aaf9b568a17076a2bc9fcb1197c2eb3fa451b8
 
   /**
    * allocate the blocks in round robin manner
@@ -874,6 +875,40 @@ public final class CarbonLoaderUtil {
     }
   }
 
+=======
+
+  /**
+   * allocate the blocks in round robin manner
+   */
+  private static void assignBlocksUseRoundRobin(ArrayList<NodeMultiBlockRelation> node2Blocks,
+      Set<Distributable> remainingBlocks, BlockAssignmentStrategy blockAssignmentStrategy) {
+    switch (blockAssignmentStrategy) {
+      case BLOCK_NUM_FIRST:
+        roundRobinAssignBlocksByNum(node2Blocks, remainingBlocks);
+        break;
+      case BLOCK_SIZE_FIRST:
+        roundRobinAssignBlocksBySize(node2Blocks, remainingBlocks);
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported block assignment strategy: "
+            + blockAssignmentStrategy);
+    }
+  }
+
+  private static void roundRobinAssignBlocksByNum(ArrayList<NodeMultiBlockRelation> outputMap,
+      Set<Distributable> remainingBlocks) {
+    for (NodeMultiBlockRelation relation: outputMap) {
+      Iterator<Distributable> blocks = remainingBlocks.iterator();
+      if (blocks.hasNext()) {
+        Distributable block = blocks.next();
+        List<Distributable> blockLst = relation.getBlocks();
+        blockLst.add(block);
+        blocks.remove();
+      }
+    }
+  }
+
+>>>>>>> [CARBONDATA-2023][DataLoad] Add size base block allocation in data loading
   private static void roundRobinAssignBlocksBySize(ArrayList<NodeMultiBlockRelation> outputMap,
       Set<Distributable> remainingBlocks) {
     Iterator<Distributable> blocks = remainingBlocks.iterator();
