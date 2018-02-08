@@ -19,10 +19,12 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
- * This example is dynamic partition, same as spark partition.
+ * This example is for standard partition, same as hive and spark partition
  */
 
 object StandardPartitionExample {
@@ -31,43 +33,96 @@ object StandardPartitionExample {
 
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
-    val testData = s"$rootPath/integration/spark-common-test/src/test/resources/partition_data.csv"
+    val testData = s"$rootPath/integration/spark-common-test/src/test/resources/" +
+                   s"partition_data_example.csv"
     val spark = ExampleUtils.createCarbonSession("StandardPartitionExample")
 
     spark.sparkContext.setLogLevel("ERROR")
 
-    // 1. simple usage for StandardPartition
-    spark.sql("DROP TABLE IF EXISTS partitiontable0")
-    spark.sql("""
-                | CREATE TABLE partitiontable0
-                | (id Int,
-                | vin String,
-                | phonenumber Long,
-                | area String,
-                | salary Int)
-                | PARTITIONED BY (country String)
-                | STORED BY 'org.apache.carbondata.format'
-                | TBLPROPERTIES('SORT_COLUMNS'='id,vin')
-              """.stripMargin)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "YYYY/MM/DD")
 
-    spark.sql(s"""
+    /**
+     * 1. Partition basic usages
+     */
+
+    spark.sql("DROP TABLE IF EXISTS origintable")
+    spark.sql(
+      """
+        | CREATE TABLE origintable
+        | (id Int,
+        | vin String,
+        | logdate Date,
+        | phonenumber Long,
+        | country String,
+        | area String,
+        | salary Int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    spark.sql(
+      s"""
+       LOAD DATA LOCAL INPATH '$testData' into table origintable
+       """)
+
+    // create partition table with logdate as partition column
+
+    spark.sql("DROP TABLE IF EXISTS partitiontable0")
+    spark.sql(
+      """
+        | CREATE TABLE partitiontable0
+        | (id Int,
+        | vin String,
+        | phonenumber Long,
+        | country String,
+        | area String,
+        | salary Int)
+        | PARTITIONED BY (logdate Date)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_COLUMNS'='id,vin')
+      """.stripMargin)
+
+    // load data and build partition with logdate value
+
+    spark.sql(
+      s"""
        LOAD DATA LOCAL INPATH '$testData' into table partitiontable0
        """)
 
     spark.sql(
       s"""
-         | SELECT country,id,vin,phonenumber,area,salary
-         | FROM partitiontable0
-      """.stripMargin).show()
+         | SELECT logdate,id,vin,phonenumber,country,area,salary
+         | FROM partitiontable0 where logdate = cast('2016-02-12' as date)
+      """.stripMargin).show(100, false)
 
-    spark.sql("UPDATE partitiontable0 SET (salary) = (88888) WHERE country='UK'").show()
+    spark.sql("show partitions default.partitiontable0").show()
+
+    // insert data to table partitiontable0 and build partition with static value '2018-02-15'
+    spark.sql("insert into table partitiontable0 partition(logdate='2018-02-15') " +
+              "select id,vin,phonenumber,country,area,salary from origintable")
+
     spark.sql(
       s"""
-         | SELECT country,id,vin,phonenumber,area,salary
+         | SELECT logdate,id,vin,phonenumber,country,area,salary
          | FROM partitiontable0
-      """.stripMargin).show()
+      """.stripMargin).show(100, false)
 
-    // 2.compare the performance : with partition VS without partition
+    // insert overwrite data to table partitiontable0
+
+    spark.sql("UPDATE origintable SET (salary) = (88888)").show()
+
+    spark.sql("insert overwrite table partitiontable0 partition(logdate='2018-02-15') " +
+              "select id,vin,phonenumber,country,area,salary from origintable")
+
+    spark.sql(
+      s"""
+         | SELECT logdate,id,vin,phonenumber,country,area,salary
+         | FROM partitiontable0
+      """.stripMargin).show(100, false)
+
+    /**
+     * 2.Compare the performance : with partition VS without partition
+     */
 
     // build test data, if set the data is larger than 100M, it will take 10+ mins.
     import scala.util.Random
@@ -85,14 +140,15 @@ object StandardPartitionExample {
 
     // Create table with partition
     spark.sql("DROP TABLE IF EXISTS withpartition")
-    spark.sql("""
-                | CREATE TABLE withpartition
-                | (ID String,
-                | city String,
-                | population Int)
-                | PARTITIONED BY (country String)
-                | STORED BY 'org.apache.carbondata.format'
-              """.stripMargin)
+    spark.sql(
+      """
+        | CREATE TABLE withpartition
+        | (ID String,
+        | city String,
+        | population Int)
+        | PARTITIONED BY (country String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
 
     df.write.format("carbondata")
       .option("tableName", "withpartition")
@@ -123,16 +179,16 @@ object StandardPartitionExample {
       """.stripMargin).count()
     }
     // scalastyle:off
-    println("time of without partition:" + time_without_partition.toString)
-    println("time of with partition:" + time_with_partition.toString)
+    println("----time of without partition----:" + time_without_partition.toString)
+    println("----time of with partition----:" + time_with_partition.toString)
     // scalastyle:on
 
     spark.sql("DROP TABLE IF EXISTS partitiontable0")
     spark.sql("DROP TABLE IF EXISTS withoutpartition")
     spark.sql("DROP TABLE IF EXISTS withpartition")
+    spark.sql("DROP TABLE IF EXISTS origintable")
 
     spark.close()
 
   }
-
 }
