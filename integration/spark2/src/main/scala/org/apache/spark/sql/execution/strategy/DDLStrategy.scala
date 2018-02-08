@@ -91,7 +91,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           case e: NoSuchDatabaseException =>
             CarbonProperties.getStorePath
         }
-        FileUtils.createDatabaseDirectory(dbName, dbLocation)
+        FileUtils.createDatabaseDirectory(dbName, dbLocation, sparkSession.sparkContext)
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
         ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
