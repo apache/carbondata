@@ -398,7 +398,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
     ConditionalExpression condExpression = null;
     switch (filterExpressionType) {
       case FALSE:
-        return new FalseConditionalResolverImpl(expression, false, false, tableIdentifier);
+        return new FalseConditionalResolverImpl(expression, false, false);
       case TRUE:
         return new TrueConditionalResolverImpl(expression, false, false);
       case EQUALS:

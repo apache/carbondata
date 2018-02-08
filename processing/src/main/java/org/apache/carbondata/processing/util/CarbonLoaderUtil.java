@@ -162,9 +162,10 @@ public final class CarbonLoaderUtil {
     }
     String tableStatusPath;
     if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !uuid.isEmpty()) {
-      tableStatusPath = CarbonTablePath.getTableStatusFilePathWithUUID(uuid);
+      tableStatusPath = CarbonTablePath.getTableStatusFilePathWithUUID(
+          identifier.getTablePath(), uuid);
     } else {
-      tableStatusPath = CarbonTablePath.getTableStatusFilePath();
+      tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
     }
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();

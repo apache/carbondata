@@ -84,8 +84,8 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
           case other => other
         }
         SegmentStatusManager.writeLoadDetailsIntoFile(
-          CarbonTablePath.getTableStatusFilePathWithUUID(uuid),
-            updatedLoadMetaDataDetails)
+          CarbonTablePath.getTableStatusFilePathWithUUID(carbonTable.getTablePath, uuid),
+          updatedLoadMetaDataDetails)
         carbonLoadModel.setLoadMetadataDetails(updatedLoadMetaDataDetails.toList.asJava)
       } finally {
         // check if any other segments needs compaction on in case of MINOR_COMPACTION.
@@ -105,11 +105,9 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         //  4. Therefore tablestatus file will be committed in between multiple commits.
         if (!compactionModel.compactionType.equals(CompactionType.MAJOR)) {
           if (!identifySegmentsToBeMerged().isEmpty) {
-            val carbonTablePath = CarbonStorePath
-              .getCarbonTablePath(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-                .getAbsoluteTableIdentifier)
-            val uuidTableStaus = carbonTablePath.getTableStatusFilePathWithUUID(uuid)
-            val tableStatus = carbonTablePath.getTableStatusFilePath
+            val uuidTableStaus = CarbonTablePath.getTableStatusFilePathWithUUID(
+              carbonTable.getTablePath, uuid)
+            val tableStatus = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
             if (!uuidTableStaus.equalsIgnoreCase(tableStatus)) {
               FileFactory.getCarbonFile(uuidTableStaus).renameForce(tableStatus)
             }

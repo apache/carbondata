@@ -138,7 +138,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
           sys.error(s"Folder rename failed for table $oldDatabaseName.$oldTableName")
         }
       }
-      newTablePath = metastore.updateTableSchemaForAlter(newTableIdentifier,
+      newTablePath = metastore.updateTableSchemaForAlter(
+        newTableIdentifier,
         carbonTable.getCarbonTableIdentifier,
         tableInfo,
         schemaEvolutionEntry,
