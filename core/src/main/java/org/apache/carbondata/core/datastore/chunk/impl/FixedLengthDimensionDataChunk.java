@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.chunk.impl;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
@@ -40,7 +41,7 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
    * @param columnValueSize      size of each column value
    */
   public FixedLengthDimensionDataChunk(byte[] dataChunk, int[] invertedIndex,
-      int[] invertedIndexReverse, int numberOfRows, int columnValueSize) {
+      int[] invertedIndexReverse, int numberOfRows, int columnValueSize) throws MemoryException {
     long totalSize = null != invertedIndex ?
         dataChunk.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
         dataChunk.length;

@@ -72,12 +72,12 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @param numberOfRows   total number of rows
    */
   public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows) {
+      int numberOfRows) throws MemoryException {
     try {
       // allocating the data page
       this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);
     } catch (MemoryException e) {
-      throw new RuntimeException(e);
+      throw e;
     }
     this.isExplicitSorted = isInvertedIdex;
   }

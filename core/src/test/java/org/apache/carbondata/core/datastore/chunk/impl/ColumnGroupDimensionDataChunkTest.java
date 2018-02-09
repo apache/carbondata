@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
@@ -40,7 +41,7 @@ public class ColumnGroupDimensionDataChunkTest {
   static ColumnGroupDimensionDataChunk columnGroupDimensionDataChunk;
   static KeyGenerator keyGenerator;
 
-  @BeforeClass public static void setup() {
+  @BeforeClass public static void setup()  throws MemoryException {
     int[] bitLength = CarbonUtil.getDimensionBitLength(new int[] { 10, 10, 10 }, new int[] { 3 });
     // create a key generator
     keyGenerator = new MultiDimKeyVarLengthGenerator(bitLength);

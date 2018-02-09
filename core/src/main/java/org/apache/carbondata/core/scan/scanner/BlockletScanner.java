@@ -18,6 +18,7 @@ package org.apache.carbondata.core.scan.scanner;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
@@ -44,7 +45,7 @@ public interface BlockletScanner {
    * result after processing
    */
   AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
-      throws IOException, FilterUnsupportedException;
+      throws IOException, MemoryException, FilterUnsupportedException;
 
   /**
    * Just reads the blocklet from file, does not uncompress it.

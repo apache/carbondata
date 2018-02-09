@@ -20,6 +20,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.junit.Assert;
@@ -99,7 +100,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
   }
 
   @Test
-  public void testPerformance() {
+  public void testPerformance() throws MemoryException {
 
     // dimension's data number in a blocklet, usually default is 32000
     int dataChunkSize = 32000; 
@@ -122,7 +123,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
    * Tests the filterKeys.length = 0  and filterKeys.length = 1
    */
   @Test
-  public void testBoundary() {
+  public void testBoundary() throws MemoryException {
 
 	// dimension's data number in a blocklet, usually default is 32000
     int dataChunkSize = 32000; 
@@ -149,7 +150,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
    * @return 
    */
   private void comparePerformance(int dataChunkSize, int filteredValueCnt,
-      int queryTimes, int repeatTimes) {
+      int queryTimes, int repeatTimes) throws MemoryException {
     long start;
     long oldTime = 0;
     long newTime = 0;
@@ -264,7 +265,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
   }
 
   @Test
-  public void testRangBinarySearch() {
+  public void testRangBinarySearch() throws MemoryException {
 
     long oldTime = 0;
     long newTime = 0;

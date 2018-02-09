@@ -24,6 +24,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -93,8 +94,12 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       }
       DimensionRawColumnChunk dimensionRawColumnChunk =
           blockChunkHolder.getDimensionRawDataChunk()[blockIndex];
-      DimensionColumnDataChunk[] dimensionColumnDataChunks =
-          dimensionRawColumnChunk.convertToDimColDataChunks();
+      DimensionColumnDataChunk[] dimensionColumnDataChunks;
+      try {
+        dimensionColumnDataChunks = dimensionRawColumnChunk.convertToDimColDataChunks();
+      } catch (IOException | MemoryException | RuntimeException e) {
+        throw new IOException(e);
+      }
       BitSetGroup bitSetGroup = new BitSetGroup(dimensionRawColumnChunk.getPagesCount());
       for (int i = 0; i < dimensionColumnDataChunks.length; i++) {
         BitSet bitSet = getFilteredIndexes(dimensionColumnDataChunks[i],

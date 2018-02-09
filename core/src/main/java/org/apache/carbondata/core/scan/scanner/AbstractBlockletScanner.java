@@ -24,6 +24,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -52,7 +53,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
   }
 
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
-      throws IOException, FilterUnsupportedException {
+      throws IOException, MemoryException, FilterUnsupportedException {
     long startTime = System.currentTimeMillis();
     AbstractScannedResult scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
     QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
@@ -96,7 +97,11 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     if (blockExecutionInfo.isPrefetchBlocklet()) {
       for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
         if (dimensionRawColumnChunks[i] != null) {
-          dimensionColumnDataChunks[i] = dimensionRawColumnChunks[i].convertToDimColDataChunks();
+          try {
+            dimensionColumnDataChunks[i] = dimensionRawColumnChunks[i].convertToDimColDataChunks();
+          } catch (IOException | MemoryException | RuntimeException e) {
+            throw e;
+          }
         }
       }
       for (int i = 0; i < measureRawColumnChunks.length; i++) {

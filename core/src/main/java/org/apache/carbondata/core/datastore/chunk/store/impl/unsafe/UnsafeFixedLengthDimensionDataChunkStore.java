@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.chunk.store.impl.unsafe;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.MemoryException;
 
 /**
  * Below class is responsible to store fixed length dimension data chunk in
@@ -40,7 +41,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    * @param numberOfRows    total number of rows
    */
   public UnsafeFixedLengthDimensionDataChunkStore(long totalDataSize, int columnValueSize,
-      boolean isInvertedIdex, int numberOfRows) {
+      boolean isInvertedIdex, int numberOfRows) throws MemoryException {
     super(totalDataSize, isInvertedIdex, numberOfRows);
     this.columnValueSize = columnValueSize;
   }
