@@ -19,7 +19,10 @@ package org.apache.carbondata.core.mutate;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -31,7 +34,7 @@ public class DeleteDeltaBlockDetails implements Serializable {
 
   private static final long serialVersionUID = 1206104914918495724L;
 
-  private List<DeleteDeltaBlockletDetails> blockletDetails;
+  private Map<String, DeleteDeltaBlockletDetails> blockletDetailsMap;
   private String blockName;
 
   /**
@@ -42,7 +45,7 @@ public class DeleteDeltaBlockDetails implements Serializable {
 
   public DeleteDeltaBlockDetails(String blockName) {
     this.blockName = blockName;
-    blockletDetails = new ArrayList<DeleteDeltaBlockletDetails>();
+    blockletDetailsMap = new TreeMap<>();
   }
 
   public String getBlockName() {
@@ -68,15 +71,25 @@ public class DeleteDeltaBlockDetails implements Serializable {
   }
 
   public List<DeleteDeltaBlockletDetails> getBlockletDetails() {
-    return blockletDetails;
+
+    List<DeleteDeltaBlockletDetails> deleteDeltaBlockletDetailsList = new ArrayList<>();
+    Iterator<Map.Entry<String, DeleteDeltaBlockletDetails>> iterator =
+        blockletDetailsMap.entrySet().iterator();
+    while (iterator.hasNext()) {
+      deleteDeltaBlockletDetailsList.add(iterator.next().getValue());
+    }
+    return deleteDeltaBlockletDetailsList;
   }
 
   public boolean addBlockletDetails(DeleteDeltaBlockletDetails blocklet) {
-    int index = blockletDetails.indexOf(blocklet);
-    if (blockletDetails.isEmpty() || index == -1) {
-      return blockletDetails.add(blocklet);
+    DeleteDeltaBlockletDetails deleteDeltaBlockletDetails =
+        blockletDetailsMap.get(blocklet.getBlockletKey());
+    if (null == deleteDeltaBlockletDetails) {
+      blockletDetailsMap.put(blocklet.getBlockletKey(), blocklet);
+      return true;
     } else {
-      return blockletDetails.get(index).addDeletedRows(blocklet.getDeletedRows());
+      deleteDeltaBlockletDetails.addDeletedRows(blocklet.getDeletedRows());
+      return true;
     }
   }
 
