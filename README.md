@@ -63,4 +63,3 @@ To get involved in CarbonData:
 
 ## About
 Apache CarbonData is an open source project of The Apache Software Foundation (ASF).
-
