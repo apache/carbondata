@@ -122,11 +122,11 @@ object DataLoadingUtil {
 
     optionsFinal.put(
       "complex_delimiter_level_1",
-      options.getOrElse("complex_delimiter_level_1", "\\$"))
+      options.getOrElse("complex_delimiter_level_1", "$"))
 
     optionsFinal.put(
       "complex_delimiter_level_2",
-      options.getOrElse("complex_delimiter_level_2", "\\:"))
+      options.getOrElse("complex_delimiter_level_2", ":"))
 
     optionsFinal.put(
       "dateformat",
@@ -323,10 +323,8 @@ object DataLoadingUtil {
         delimeter.equalsIgnoreCase(complex_delimeter_level2)) {
       CarbonException.analysisException(s"Field Delimiter and Complex types delimiter are same")
     } else {
-      carbonLoadModel.setComplexDelimiterLevel1(
-        CarbonUtil.delimiterConverter(complex_delimeter_level1))
-      carbonLoadModel.setComplexDelimiterLevel2(
-        CarbonUtil.delimiterConverter(complex_delimeter_level2))
+      carbonLoadModel.setComplexDelimiterLevel1(complex_delimeter_level1)
+      carbonLoadModel.setComplexDelimiterLevel2(complex_delimeter_level2)
     }
     // set local dictionary path, and dictionary file extension
     carbonLoadModel.setAllDictPath(all_dictionary_path)
