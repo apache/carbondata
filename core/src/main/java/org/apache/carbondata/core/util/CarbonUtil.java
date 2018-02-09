@@ -1887,9 +1887,11 @@ public final class CarbonUtil {
   }
 
   /**
-   * is valid store path
+   * check weather path is valid
+   *
    * @param badRecordsLocation
-   * @return
+   * @return <false> if the badRecordsLocation is empty, null, or the configured
+   * path does not exists.
    */
   public static boolean isValidBadStorePath(String badRecordsLocation) {
     if (StringUtils.isEmpty(badRecordsLocation)) {
@@ -2205,6 +2207,31 @@ public final class CarbonUtil {
     return -1;
   }
 
+
+  /**
+   * This method validate the global_sort_partition range
+   *
+   * @param key
+   * @param minValue
+   * @param maxValue
+   */
+  public static boolean validateRange(String key, int minValue, int maxValue)
+      throws InvalidConfigurationException {
+    boolean isValid;
+    int value1;
+    try {
+      value1 = Integer.parseInt(key);
+    } catch (NumberFormatException nfe) {
+      throw new InvalidConfigurationException(
+          "The configured value for key " + key + " must be valid integer.");
+    }
+    isValid = value1 < minValue || value1 > maxValue;
+    if (isValid) {
+      throw new InvalidConfigurationException(
+          "'GLOBAL_SORT_PARTITIONS' should be greater " + "than 0.");
+    }
+    return isValid;
+  }
   /**
    * get the parent folder of old table path and returns the new tablePath by appending new
    * tableName to the parent

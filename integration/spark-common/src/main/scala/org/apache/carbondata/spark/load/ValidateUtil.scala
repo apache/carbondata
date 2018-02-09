@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.load
 import java.text.SimpleDateFormat
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -57,15 +58,7 @@ object ValidateUtil {
 
   def validateGlobalSortPartitions(globalSortPartitions: String): Unit = {
     if (globalSortPartitions != null) {
-      try {
-        val num = globalSortPartitions.toInt
-        if (num <= 0) {
-          throw new MalformedCarbonCommandException("'GLOBAL_SORT_PARTITIONS' should be greater " +
-            "than 0.")
-        }
-      } catch {
-        case e: NumberFormatException => throw new MalformedCarbonCommandException(e.getMessage)
-      }
+      CarbonUtil.validateRange(globalSortPartitions, 1, Integer.MAX_VALUE)
     }
   }
 }

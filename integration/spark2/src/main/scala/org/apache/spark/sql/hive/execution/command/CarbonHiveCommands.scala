@@ -71,7 +71,7 @@ case class CarbonSetCommand(command: SetCommand)
     val sessionParms = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams
     command.kv match {
       case Some((key, Some(value))) =>
-        CarbonSetCommand.validateAndSetValue(sessionParms, key, value)
+        CarbonSetCommand.validateAndSetValue(sessionParms, key, value, isSessionParams = true)
       case _ =>
 
     }
@@ -80,15 +80,16 @@ case class CarbonSetCommand(command: SetCommand)
 }
 
 object CarbonSetCommand {
-  def validateAndSetValue(sessionParams: SessionParams, key: String, value: String): Unit = {
+  def validateAndSetValue(sessionParams: SessionParams, key: String, value: String,
+      isSessionParams: Boolean = true): Unit = {
 
     val isCarbonProperty: Boolean = CarbonProperties.getInstance().isCarbonProperty(key)
     if (isCarbonProperty) {
-      sessionParams.addProperty(key, value)
+      sessionParams.addProperty(key, value, isSessionParams)
     }
     else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
       if (key.split("\\.").length == 5) {
-        sessionParams.addProperty(key.toLowerCase(), value)
+        sessionParams.addProperty(key.toLowerCase(), value, isSessionParams)
       }
       else {
         throw new MalformedCarbonCommandException(
@@ -96,7 +97,7 @@ object CarbonSetCommand {
           ".<table_name>=<seg_id list> \" format.")
       }
     } else if (key.startsWith(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS)) {
-      sessionParams.addProperty(key.toLowerCase(), value)
+      sessionParams.addProperty(key.toLowerCase(), value, isSessionParams)
     }
   }
 

@@ -60,8 +60,6 @@ import org.junit.Test;
 public class CarbonTableInputFormatTest {
   // changed setUp to static init block to avoid un wanted multiple time store creation
   static {
-    CarbonProperties.getInstance().
-        addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
     try {
       StoreCreator.createCarbonStore();
     } catch (Exception e) {
