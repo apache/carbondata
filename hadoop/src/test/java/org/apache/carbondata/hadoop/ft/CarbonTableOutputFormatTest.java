@@ -25,6 +25,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
+import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.hadoop.test.util.StoreCreator;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable;
@@ -86,11 +87,13 @@ public class CarbonTableOutputFormatTest {
         .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false");
   }
 
- public static class Map extends Mapper<NullWritable, StringArrayWritable, NullWritable, StringArrayWritable> {
+ public static class Map extends Mapper<NullWritable, StringArrayWritable, NullWritable, ObjectArrayWritable> {
 
+   private ObjectArrayWritable writable = new ObjectArrayWritable();
    @Override protected void map(NullWritable key, StringArrayWritable value, Context context)
        throws IOException, InterruptedException {
-     context.write(key, value);
+     writable.set(value.get());
+     context.write(key, writable);
    }
  }
 
@@ -100,7 +103,7 @@ public class CarbonTableOutputFormatTest {
     Job job = Job.getInstance(configuration);
     job.setJarByClass(CarbonTableOutputFormatTest.class);
     job.setOutputKeyClass(NullWritable.class);
-    job.setOutputValueClass(StringArrayWritable.class);
+    job.setOutputValueClass(ObjectArrayWritable.class);
     job.setMapperClass(Map.class);
     job.setNumReduceTasks(0);
 

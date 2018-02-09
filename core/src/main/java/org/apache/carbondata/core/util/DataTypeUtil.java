@@ -104,6 +104,38 @@ public final class DataTypeUtil {
     }
   }
 
+  /**
+   * This method will convert a given value to its specific type
+   *
+   * @param msrValue
+   * @param dataType
+   * @param carbonMeasure
+   * @return
+   */
+  public static Object getConvertedMeasureValueBasedOnDataType(String msrValue, DataType dataType,
+      CarbonMeasure carbonMeasure) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return BooleanConvert.parseBoolean(msrValue);
+    } else if (DataTypes.isDecimal(dataType)) {
+      BigDecimal bigDecimal =
+          new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+      return converter
+          .convertToDecimal(normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision()));
+    } else if (dataType == DataTypes.SHORT) {
+      return Short.parseShort(msrValue);
+    } else if (dataType == DataTypes.INT) {
+      return Integer.parseInt(msrValue);
+    } else if (dataType == DataTypes.LONG) {
+      return Long.valueOf(msrValue);
+    } else {
+      Double parsedValue = Double.valueOf(msrValue);
+      if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
+        return null;
+      }
+      return parsedValue;
+    }
+  }
+
   public static Object getMeasureObjectFromDataType(byte[] data, DataType dataType) {
     if (data == null || data.length == 0) {
       return null;
@@ -329,6 +361,63 @@ public final class DataTypeUtil {
       }
     } else {
       return ByteUtil.toBytes(dimensionValue);
+    }
+  }
+
+  public static Object getDataDataTypeForNoDictionaryColumn(String dimensionValue,
+      DataType actualDataType, String dateFormat) {
+    if (actualDataType == DataTypes.BOOLEAN) {
+      return BooleanConvert.parseBoolean(dimensionValue);
+    } else if (actualDataType == DataTypes.STRING) {
+      return converter.convertFromStringToUTF8String(dimensionValue);
+    } else if (actualDataType == DataTypes.SHORT) {
+      return Short.parseShort(dimensionValue);
+    } else if (actualDataType == DataTypes.INT) {
+      return Integer.parseInt(dimensionValue);
+    } else if (actualDataType == DataTypes.LONG) {
+      return Long.parseLong(dimensionValue);
+    } else if (actualDataType == DataTypes.TIMESTAMP) {
+      Date dateToStr = null;
+      DateFormat dateFormatter = null;
+      try {
+        if (null != dateFormat && !dateFormat.trim().isEmpty()) {
+          dateFormatter = new SimpleDateFormat(dateFormat);
+        } else {
+          dateFormatter = timeStampformatter.get();
+        }
+        dateToStr = dateFormatter.parse(dimensionValue);
+        return dateToStr.getTime();
+      } catch (ParseException e) {
+        throw new NumberFormatException(e.getMessage());
+      }
+    } else {
+      return converter.convertFromStringToUTF8String(dimensionValue);
+    }
+  }
+
+  public static byte[] getBytesDataDataTypeForNoDictionaryColumn(Object dimensionValue,
+      DataType actualDataType) {
+    if (dimensionValue == null) {
+      if (actualDataType == DataTypes.STRING) {
+        return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      } else {
+        return new byte[0];
+      }
+    }
+    if (actualDataType == DataTypes.BOOLEAN) {
+      return ByteUtil.toBytes((Boolean) dimensionValue);
+    } else if (actualDataType == DataTypes.STRING) {
+      return ByteUtil.toBytes(dimensionValue.toString());
+    } else if (actualDataType == DataTypes.SHORT) {
+      return ByteUtil.toBytes((Short) dimensionValue);
+    } else if (actualDataType == DataTypes.INT) {
+      return ByteUtil.toBytes((Integer) dimensionValue);
+    } else if (actualDataType == DataTypes.LONG) {
+      return ByteUtil.toBytes((Long) dimensionValue);
+    } else if (actualDataType == DataTypes.TIMESTAMP) {
+      return ByteUtil.toBytes((Long)dimensionValue);
+    } else {
+      return ByteUtil.toBytes(dimensionValue.toString());
     }
   }
 

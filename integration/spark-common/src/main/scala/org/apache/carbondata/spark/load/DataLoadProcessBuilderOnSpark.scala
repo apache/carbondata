@@ -95,7 +95,8 @@ object DataLoadProcessBuilderOnSpark {
       }
     }
 
-    var numPartitions = CarbonDataProcessorUtil.getGlobalSortPartitions(configuration)
+    var numPartitions = CarbonDataProcessorUtil.getGlobalSortPartitions(
+      configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS))
     if (numPartitions <= 0) {
       numPartitions = convertRDD.partitions.length
     }

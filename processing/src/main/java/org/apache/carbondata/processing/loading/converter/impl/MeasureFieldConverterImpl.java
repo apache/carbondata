@@ -47,6 +47,8 @@ public class MeasureFieldConverterImpl implements FieldConverter {
 
   private boolean isEmptyBadRecord;
 
+  private DataField dataField;
+
   public MeasureFieldConverterImpl(DataField dataField, String nullformat, int index,
       boolean isEmptyBadRecord) {
     this.dataType = dataField.getColumn().getDataType();
@@ -54,6 +56,7 @@ public class MeasureFieldConverterImpl implements FieldConverter {
     this.nullformat = nullformat;
     this.index = index;
     this.isEmptyBadRecord = isEmptyBadRecord;
+    this.dataField = dataField;
   }
 
   @Override
@@ -85,7 +88,11 @@ public class MeasureFieldConverterImpl implements FieldConverter {
       row.update(null, index);
     } else {
       try {
-        output = DataTypeUtil.getMeasureValueBasedOnDataType(value, dataType, measure);
+        if (dataField.isUseActualData()) {
+          output = DataTypeUtil.getConvertedMeasureValueBasedOnDataType(value, dataType, measure);
+        } else {
+          output = DataTypeUtil.getMeasureValueBasedOnDataType(value, dataType, measure);
+        }
         row.update(output, index);
       } catch (NumberFormatException e) {
         LOGGER.warn(

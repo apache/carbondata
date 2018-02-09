@@ -279,18 +279,20 @@ public class PartitionMapFileStore {
    *                      dropped
    * @throws IOException
    */
-  public void dropPartitions(String segmentPath, List<String> partitionsToDrop, String uniqueId,
-      boolean partialMatch) throws IOException {
+  public void dropPartitions(String segmentPath, List<List<String>> partitionsToDrop,
+      String uniqueId, boolean partialMatch) throws IOException {
     readAllPartitionsOfSegment(segmentPath);
     List<String> indexesToDrop = new ArrayList<>();
     for (Map.Entry<String, List<String>> entry: partitionMap.entrySet()) {
-      if (partialMatch) {
-        if (entry.getValue().containsAll(partitionsToDrop)) {
-          indexesToDrop.add(entry.getKey());
-        }
-      } else {
-        if (partitionsToDrop.containsAll(entry.getValue())) {
-          indexesToDrop.add(entry.getKey());
+      for (List<String> partitions: partitionsToDrop) {
+        if (partialMatch) {
+          if (entry.getValue().containsAll(partitions)) {
+            indexesToDrop.add(entry.getKey());
+          }
+        } else {
+          if (partitions.containsAll(entry.getValue())) {
+            indexesToDrop.add(entry.getKey());
+          }
         }
       }
     }

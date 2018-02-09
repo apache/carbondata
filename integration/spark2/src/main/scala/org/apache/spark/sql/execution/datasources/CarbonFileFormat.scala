@@ -36,14 +36,17 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.DataSourceRegister
-import org.apache.spark.sql.types.{DataType, StructType}
+import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.PartitionMapFileStore
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonOutputCommitter, CarbonTableOutputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat.CarbonRecordWriter
+import org.apache.carbondata.hadoop.internal.ObjectArrayWritable
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -110,6 +113,7 @@ with Serializable {
     model.setDictionaryServerHost(options.getOrElse("dicthost", null))
     model.setDictionaryServerPort(options.getOrElse("dictport", "-1").toInt)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
+    model.setPartitionLoad(true)
     // Set the update timestamp if user sets in case of update query. It needs to be updated
     // in load status update time
     val updateTimeStamp = options.get("updatetimestamp")
@@ -231,7 +235,9 @@ private class CarbonOutputWriter(path: String,
     fieldTypes: Seq[DataType],
     taskNo : String)
   extends OutputWriter with AbstractCarbonOutputWriter {
-  val partitions = getPartitionsFromPath(path, context).map(ExternalCatalogUtils.unescapePathName)
+  val model = CarbonTableOutputFormat.getLoadModel(context.getConfiguration)
+  val partitions =
+    getPartitionsFromPath(path, context, model).map(ExternalCatalogUtils.unescapePathName)
   val staticPartition: util.HashMap[String, Boolean] = {
     val staticPart = context.getConfiguration.get("carbon.staticpartition")
     if (staticPart != null) {
@@ -272,24 +278,42 @@ private class CarbonOutputWriter(path: String,
       val formattedPartitions = updatedPartitions.map {case (col, value) =>
         // Only convert the static partitions to the carbon format and use it while loading data
         // to carbon.
-        if (staticPartition.asScala.getOrElse(col, false)) {
-          (col, CarbonScalaUtil.convertToCarbonFormat(value,
-            CarbonScalaUtil.convertCarbonToSparkDataType(
-              table.getColumnByName(table.getTableName, col).getDataType),
-            timeFormat,
-            dateFormat))
-        } else {
-          (col, value)
-        }
+        (col, value)
       }
-      (formattedPartitions, formattedPartitions.map(_._2))
+      (formattedPartitions, updatePartitions(formattedPartitions.map(_._2)))
     } else {
-      (updatedPartitions, updatedPartitions.map(_._2))
+      (updatedPartitions, updatePartitions(updatedPartitions.map(_._2)))
     }
   } else {
     (Map.empty[String, String].toArray, Array.empty)
   }
-  val writable = new StringArrayWritable()
+
+  val writable = new ObjectArrayWritable
+
+  private def updatePartitions(partitionData: Seq[String]): Array[AnyRef] = {
+    model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getFactTable.getPartitionInfo
+      .getColumnSchemaList.asScala.zipWithIndex.map { case (col, index) =>
+
+      val dataType = if (col.hasEncoding(Encoding.DICTIONARY)) {
+        DataTypes.INT
+      } else if (col.getDataType.equals(DataTypes.TIMESTAMP) ||
+                         col.getDataType.equals(DataTypes.DATE)) {
+        DataTypes.LONG
+      } else {
+        col.getDataType
+      }
+      if (staticPartition != null) {
+        DataTypeUtil.getDataBasedOnDataType(
+          CarbonScalaUtil.convertStaticPartitions(
+            partitionData(index),
+            col,
+            model.getCarbonDataLoadSchema.getCarbonTable),
+          dataType)
+      } else {
+        DataTypeUtil.getDataBasedOnDataType(partitionData(index), dataType)
+      }
+    }.toArray
+  }
 
   private val recordWriter: CarbonRecordWriter = {
     context.getConfiguration.set("carbon.outputformat.taskno", taskNo)
@@ -302,11 +326,18 @@ private class CarbonOutputWriter(path: String,
 
   // TODO Implement writesupport interface to support writing Row directly to recordwriter
   def writeCarbon(row: InternalRow): Unit = {
-    val data = new Array[String](fieldTypes.length + partitionData.length)
+    val data = new Array[AnyRef](fieldTypes.length + partitionData.length)
     var i = 0
     while (i < fieldTypes.length) {
       if (!row.isNullAt(i)) {
-        data(i) = row.getString(i)
+        fieldTypes(i) match {
+          case StringType =>
+            data(i) = row.getString(i)
+          case d: DecimalType =>
+            data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
+          case other =>
+            data(i) = row.get(i, other)
+        }
       }
       i += 1
     }
@@ -349,10 +380,7 @@ private class CarbonOutputWriter(path: String,
         updatedPartitions.toMap,
         table,
         timeFormat,
-        dateFormat,
-        serializeFormat,
-        badRecordAction,
-        isEmptyBadRecord)
+        dateFormat)
     formattedPartitions.foreach(p => partitonList.add(p._1 + "=" + p._2))
     new PartitionMapFileStore().writePartitionMapFile(
       segmentPath,
@@ -360,10 +388,13 @@ private class CarbonOutputWriter(path: String,
       partitonList)
   }
 
-  def getPartitionsFromPath(path: String, attemptContext: TaskAttemptContext): Array[String] = {
+  def getPartitionsFromPath(
+      path: String,
+      attemptContext: TaskAttemptContext,
+      model: CarbonLoadModel): Array[String] = {
     var attemptId = attemptContext.getTaskAttemptID.toString + "/"
     if (path.indexOf(attemptId) <= 0) {
-      val model = CarbonTableOutputFormat.getLoadModel(attemptContext.getConfiguration)
+
       attemptId = model.getTableName + "/"
     }
     val str = path.substring(path.indexOf(attemptId) + attemptId.length, path.lastIndexOf("/"))
