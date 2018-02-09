@@ -558,6 +558,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     @Override public Void call() throws Exception {
       try {
         TablePage tablePage = processDataRows(dataRows);
+        dataRows = null;
         tablePage.setIsLastPage(isLastPage);
         // insert the object in array according to sequence number
         int indexInNodeHolderArray = (pageId - 1) % numberOfCores;

@@ -26,14 +26,18 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
+import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.core.util.{ByteUtil, CarbonSessionInfo}
-import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
+import org.apache.carbondata.core.util.{CarbonSessionInfo, DataTypeUtil}
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -196,21 +200,85 @@ object CarbonScalaUtil {
   /**
    * Converts incoming value to String after converting data as per the data type.
    * @param value Input value to convert
-   * @param dataType Datatype to convert and then convert to String
-   * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
-   * @param dateFormat DataFormat to convert in case of DateType datatype
+   * @param column column which it value belongs to
    * @return converted String
    */
-  def convertToCarbonFormat(value: String,
-      dataType: DataType,
-      timeStampFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat): String = {
+  def convertToCarbonFormat(
+      value: String,
+      column: CarbonColumn,
+      forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary],
+      table: CarbonTable): String = {
+    if (column.hasEncoding(Encoding.DICTIONARY)) {
+      if (column.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (column.getDataType.equals(CarbonDataTypes.TIMESTAMP)) {
+          val time = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
+            column.getDataType,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+          ).getValueFromSurrogate(value.toInt).toString
+          return DateTimeUtils.timestampToString(time.toLong * 1000)
+        } else if (column.getDataType.equals(CarbonDataTypes.DATE)) {
+          val date = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
+            column.getDataType,
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
+          ).getValueFromSurrogate(value.toInt).toString
+          return DateTimeUtils.dateToString(date.toInt)
+        }
+      }
+      val dictionaryPath =
+        table.getTableInfo.getFactTable.getTableProperties.get(
+          CarbonCommonConstants.DICTIONARY_PATH)
+      val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
+        table.getAbsoluteTableIdentifier,
+        column.getColumnIdentifier, column.getDataType,
+        dictionaryPath)
+      return forwardDictionaryCache.get(
+        dictionaryColumnUniqueIdentifier).getDictionaryValueForKey(value.toInt)
+    }
     try {
-      dataType match {
-        case TimestampType =>
-          timeStampFormat.format(DateTimeUtils.stringToTime(value))
-        case DateType =>
-          dateFormat.format(DateTimeUtils.stringToTime(value))
+      column.getDataType match {
+        case CarbonDataTypes.TIMESTAMP =>
+          DateTimeUtils.timestampToString(value.toLong * 1000)
+        case CarbonDataTypes.DATE =>
+          DateTimeUtils.dateToString(DateTimeUtils.millisToDays(value.toLong))
+        case _ => value
+      }
+    } catch {
+      case e: Exception =>
+        value
+    }
+  }
+
+  /**
+   * Converts incoming value to String after converting data as per the data type.
+   * @param value Input value to convert
+   * @param column column which it value belongs to
+   * @return converted String
+   */
+  def convertStaticPartitions(
+      value: String,
+      column: ColumnSchema,
+      table: CarbonTable): String = {
+    try {
+      if (column.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (column.getDataType.equals(CarbonDataTypes.TIMESTAMP)) {
+          return DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
+            column.getDataType,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+          ).generateDirectSurrogateKey(value).toString
+        } else if (column.getDataType.equals(CarbonDataTypes.DATE)) {
+          return DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
+            column.getDataType,
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
+          ).generateDirectSurrogateKey(value).toString
+        }
+      }
+      column.getDataType match {
+        case CarbonDataTypes.TIMESTAMP =>
+          DataTypeUtil.getDataDataTypeForNoDictionaryColumn(value,
+            column.getDataType,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT).toString
+        case CarbonDataTypes.DATE =>
+          DateTimeUtils.stringToDate(UTF8String.fromString(value)).get.toString
         case _ => value
       }
     } catch {
@@ -229,11 +297,11 @@ object CarbonScalaUtil {
       partitionSpec: Map[String, String],
       table: CarbonTable,
       timeFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat,
-      serializationNullFormat: String,
-      badRecordAction: String,
-      isEmptyBadRecord: Boolean): Map[String, String] = {
+      dateFormat: SimpleDateFormat): Map[String, String] = {
     val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
+    val cacheProvider: CacheProvider = CacheProvider.getInstance
+    val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
+      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
     partitionSpec.map{ case (col, pvalue) =>
       // replace special string with empty value.
       val value = if (pvalue == null) {
@@ -246,17 +314,15 @@ object CarbonScalaUtil {
       val carbonColumn = table.getColumnByName(table.getTableName, col.toLowerCase)
       val dataType = CarbonScalaUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
       try {
-        if (isEmptyBadRecord && value.length == 0 &&
-            badRecordAction.equalsIgnoreCase(LoggerAction.IGNORE.toString) &&
-            dataType != StringType) {
-          (col, hiveignorepartition)
-        } else if (!isEmptyBadRecord && value.length == 0 && dataType != StringType) {
-          (col, hivedefaultpartition)
-        } else if (value.equals(hivedefaultpartition)) {
+        if (value.equals(hivedefaultpartition)) {
           (col, value)
         } else {
-          val convertedString = CarbonScalaUtil.convertToString(
-            value, dataType, timeFormat, dateFormat, serializationNullFormat)
+          val convertedString =
+            CarbonScalaUtil.convertToCarbonFormat(
+              value,
+              carbonColumn,
+              forwardDictionaryCache,
+              table)
           if (convertedString == null) {
             (col, hivedefaultpartition)
           } else {
@@ -265,13 +331,7 @@ object CarbonScalaUtil {
         }
       } catch {
         case e: Exception =>
-          // If it is bad record ignore case then add with special string so that it will be
-          // filtered after this.
-          if (badRecordAction.equalsIgnoreCase(LoggerAction.IGNORE.toString)) {
-            (col, hiveignorepartition)
-          } else {
-            (col, hivedefaultpartition)
-          }
+          (col, value)
       }
     }
   }
@@ -306,10 +366,7 @@ object CarbonScalaUtil {
           f.spec,
           table,
           timeFormat,
-          dateFormat,
-          serializeFormat,
-          badRecordAction,
-          isEmptyBadRecord)
+          dateFormat)
       f.copy(spec = changedSpec)
     }.filterNot{ p =>
       // Filter the special bad record ignore case string
