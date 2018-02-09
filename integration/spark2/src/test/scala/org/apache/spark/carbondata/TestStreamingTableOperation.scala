@@ -37,6 +37,8 @@ import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, ProcessMetaDataException}
+import org.apache.carbondata.streaming.CarbonStreamException
+import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
@@ -1225,6 +1227,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .option("bad_records_action", badRecordAction)
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
+            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+              "org.apache.carbondata.streaming.parser.CSVStreamParserImp")
             .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
             .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
             .option(CarbonCommonConstants.ENABLE_AUTO_HANDOFF, autoHandoff)
@@ -1339,6 +1343,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
             .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+              "org.apache.carbondata.streaming.parser.CSVStreamParserImp")
             .start()
 
           qry.awaitTermination()
