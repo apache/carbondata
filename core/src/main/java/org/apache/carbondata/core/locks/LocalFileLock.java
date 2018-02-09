@@ -118,7 +118,7 @@ public class LocalFileLock extends AbstractCarbonLock {
         return false;
       }
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.info(e.getMessage());
       return false;
     }
 
