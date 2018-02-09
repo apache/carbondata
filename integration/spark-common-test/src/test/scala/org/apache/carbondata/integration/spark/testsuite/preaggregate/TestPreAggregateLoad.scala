@@ -17,13 +17,16 @@
 
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, DataFrame, Row}
 import org.apache.spark.util.SparkUtil4Test
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 
 class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
 
@@ -471,6 +474,45 @@ test("check load and select for avg double datatype") {
       Seq(Row(1, 78)))
     checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
       true, "segmaintable_preagg_sum")
+  }
+
+  /**
+   * check whether the pre-aggregate tables are in DataFrame
+   * @param df
+   * @param exists
+   * @param preAggTableNames
+   */
+  def checkPreAggTable(df: DataFrame, exists: Boolean, preAggTableNames: String*): Unit = {
+    val plan = df.queryExecution.analyzed
+    for (preAggTableName <- preAggTableNames) {
+      var isValidPlan = false
+      plan.transform {
+        // first check if any preaTable1 scala function is applied it is present is in plan
+        // then call is from create preaTable1regate table class so no need to transform the query plan
+        case ca: CarbonRelation =>
+          if (ca.isInstanceOf[CarbonDatasourceHadoopRelation]) {
+            val relation = ca.asInstanceOf[CarbonDatasourceHadoopRelation]
+            if (relation.carbonTable.getTableName.equalsIgnoreCase(preAggTableName)) {
+              isValidPlan = true
+            }
+          }
+          ca
+        case logicalRelation: LogicalRelation =>
+          if (logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) {
+            val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+            if (relation.carbonTable.getTableName.equalsIgnoreCase(preAggTableName)) {
+              isValidPlan = true
+            }
+          }
+          logicalRelation
+      }
+
+      if (exists != isValidPlan) {
+        assert(false)
+      } else {
+        assert(true)
+      }
+    }
   }
 
 }
