@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.util
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.{Partition, SparkContext, TaskContext}
@@ -59,10 +61,12 @@ class CarbonDropPartitionRDD(
     val iter = new Iterator[String] {
       val split = theSplit.asInstanceOf[CarbonDropPartition]
       logInfo("Dropping partition information from : " + split.segmentPath)
-
+      partitions.toList.asJava
+      val partitionList = new util.ArrayList[util.List[String]]()
+      partitionList.add(partitions.toList.asJava)
       new PartitionMapFileStore().dropPartitions(
         split.segmentPath,
-        partitions.toList.asJava,
+        partitionList,
         uniqueId,
         partialMatch)
 

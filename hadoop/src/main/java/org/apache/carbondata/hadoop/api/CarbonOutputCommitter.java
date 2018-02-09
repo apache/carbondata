@@ -18,10 +18,7 @@
 package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -122,7 +119,11 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           throw new IOException(e);
         }
       }
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet);
+      String uniqueId = null;
+      if (overwriteSet) {
+        uniqueId = overwritePartitions(loadModel);
+      }
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false);
       if (operationContext != null) {
         LoadEvents.LoadTableMergePartitionEvent loadTableMergePartitionEvent =
             new LoadEvents.LoadTableMergePartitionEvent(segmentPath);
@@ -138,20 +139,76 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       String segmentsToBeDeleted =
           context.getConfiguration().get(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, "");
       List<String> segmentDeleteList = Arrays.asList(segmentsToBeDeleted.split(","));
+      Set<String> segmentSet = new HashSet<>(
+          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
+              .getValidAndInvalidSegments().getValidSegments());
       if (updateTime != null) {
-        Set<String> segmentSet = new HashSet<>(
-            new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
-                .getValidAndInvalidSegments().getValidSegments());
         CarbonUpdateUtil.updateTableMetadataStatus(
             segmentSet,
             carbonTable,
             updateTime,
             true,
             segmentDeleteList);
+      } else if (uniqueId != null) {
+        // Update the loadstatus with update time to clear cache from driver.
+        CarbonUpdateUtil.updateTableMetadataStatus(
+            segmentSet,
+            carbonTable,
+            uniqueId,
+            true,
+            new ArrayList<String>());
       }
     } else {
       CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
     }
+  }
+
+  /**
+   * Overwrite the partitions in case of overwrite query. It just updates the partition map files
+   * of all segment files.
+   *
+   * @param loadModel
+   * @return
+   * @throws IOException
+   */
+  private String overwritePartitions(CarbonLoadModel loadModel) throws IOException {
+    CarbonTable table = loadModel.getCarbonDataLoadSchema().getCarbonTable();
+    String currentSegmentPath =
+        CarbonTablePath.getSegmentPath(loadModel.getTablePath(), loadModel.getSegmentId());
+    PartitionMapFileStore partitionMapFileStore = new PartitionMapFileStore();
+    partitionMapFileStore.readAllPartitionsOfSegment(currentSegmentPath);
+    List<List<String>> partitionsToDrop =
+        new ArrayList<List<String>>(partitionMapFileStore.getPartitionMap().values());
+    if (partitionsToDrop.size() > 0) {
+      List<String> validSegments =
+          new SegmentStatusManager(table.getAbsoluteTableIdentifier()).getValidAndInvalidSegments()
+              .getValidSegments();
+      String uniqueId = String.valueOf(System.currentTimeMillis());
+      try {
+        // First drop the partitions from partition mapper files of each segment
+        for (String segment : validSegments) {
+          new PartitionMapFileStore()
+              .dropPartitions(CarbonTablePath.getSegmentPath(table.getTablePath(), segment),
+                  new ArrayList<List<String>>(partitionsToDrop), uniqueId, false);
+
+        }
+      } catch (Exception e) {
+        // roll back the drop partitions from carbon store
+        for (String segment : validSegments) {
+          new PartitionMapFileStore()
+              .commitPartitions(CarbonTablePath.getSegmentPath(table.getTablePath(), segment),
+                  uniqueId, false, table.getTablePath(), partitionsToDrop.get(0));
+        }
+      }
+      // Commit the removed partitions in carbon store.
+      for (String segment : validSegments) {
+        new PartitionMapFileStore()
+            .commitPartitions(CarbonTablePath.getSegmentPath(table.getTablePath(), segment),
+                uniqueId, true, table.getTablePath(), partitionsToDrop.get(0));
+      }
+      return uniqueId;
+    }
+    return null;
   }
 
   private Object getOperationContext() {
