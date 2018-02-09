@@ -416,4 +416,61 @@ test("check load and select for avg double datatype") {
     checkAnswer(sql("select age,avg(age) from maintable group by age"), rows)
   }
 
+  test("test whether all segments are loaded into pre-aggregate table if segments are set on main table 5") {
+    sql("DROP TABLE IF EXISTS segmaintable")
+    sql(
+      """
+        | CREATE TABLE segmaintable(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    //  check value before set segments
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 52)))
+
+    sql("set carbon.input.segments.default.segmaintable=0")
+    //  check value after set segments
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 26)))
+
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE segmaintable
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM segmaintable
+         | GROUP BY id
+       """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    checkAnswer(sql("SELECT * FROM segmaintable_preagg_sum"), Seq(Row(1, 52), Row(1, 26)))
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 26)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      false, "segmaintable_preagg_sum")
+
+    // set *
+    sql("set carbon.input.segments.default.segmaintable=*")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 78)))
+
+    // TODO: should support match pre-aggregate table when set carbon.input.segments.default.segmaintable=*
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+
+    // reset
+    sql("reset")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 78)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+  }
+
 }
