@@ -21,7 +21,7 @@ import java.io.{File, PrintWriter}
 import java.net.ServerSocket
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.streaming.{StreamingQuery, Trigger}
+import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 
@@ -165,7 +165,7 @@ object CarbonStructuredStreamingExample {
           // Write data from socket stream to carbondata file
           qry = readSocketDF.writeStream
             .format("carbondata")
-            .trigger(Trigger.ProcessingTime("5 seconds"))
+            .trigger(ProcessingTime("5 seconds"))
             .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
             .option("dbName", "default")
             .option("tableName", "stream_table")
