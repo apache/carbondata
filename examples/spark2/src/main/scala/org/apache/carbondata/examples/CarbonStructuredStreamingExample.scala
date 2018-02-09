@@ -21,11 +21,12 @@ import java.io.{File, PrintWriter}
 import java.net.ServerSocket
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
+import org.apache.spark.sql.streaming.{StreamingQuery, Trigger}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+
+case class FileElement(school: Array[String], age: Int)
+case class StreamData(id: Int, name: String, city: String, salary: Float, file: FileElement)
 
 // scalastyle:off println
 object CarbonStructuredStreamingExample {
@@ -34,23 +35,9 @@ object CarbonStructuredStreamingExample {
     // setup paths
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/examples/spark2/target/store"
-    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target"
+
+    val spark = ExampleUtils.createCarbonSession("CarbonStructuredStreamingExample", 4)
     val streamTableName = s"stream_table"
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
-    import org.apache.spark.sql.CarbonSession._
-    val spark = SparkSession
-      .builder()
-      .master("local")
-      .appName("CarbonStructuredStreamingExample")
-      .config("spark.sql.warehouse.dir", warehouse)
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
-
-    spark.sparkContext.setLogLevel("ERROR")
 
     val requireCreateTable = true
     val useComplexDataType = false
@@ -157,16 +144,28 @@ object CarbonStructuredStreamingExample {
       override def run(): Unit = {
         var qry: StreamingQuery = null
         try {
+          import spark.implicits._
           val readSocketDF = spark.readStream
             .format("socket")
             .option("host", "localhost")
             .option("port", 7071)
             .load()
+            .as[String]
+            .map(_.split(","))
+            .map { fields => {
+              val tmp = fields(4).split("\\$")
+              val file = FileElement(tmp(0).split(":"), tmp(1).toInt)
+              if (fields(0).toInt % 2 == 0) {
+                StreamData(fields(0).toInt, null, fields(2), fields(3).toFloat, file)
+              } else {
+                StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat, file)
+              }
+            } }
 
           // Write data from socket stream to carbondata file
           qry = readSocketDF.writeStream
             .format("carbondata")
-            .trigger(ProcessingTime("5 seconds"))
+            .trigger(Trigger.ProcessingTime("5 seconds"))
             .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
             .option("dbName", "default")
             .option("tableName", "stream_table")
