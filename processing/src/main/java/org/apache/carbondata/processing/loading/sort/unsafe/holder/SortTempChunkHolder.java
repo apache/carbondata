@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.processing.loading.sort.unsafe.holder;
 
-import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 
 /**
@@ -29,7 +28,7 @@ public interface SortTempChunkHolder extends Comparable<SortTempChunkHolder> {
 
   void readRow()  throws CarbonSortKeyAndGroupByException;
 
-  IntermediateSortTempRow getRow();
+  Object[] getRow();
 
   int numberOfRows();
 
