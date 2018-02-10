@@ -16,41 +16,15 @@
  */
 package org.apache.carbondata.processing.merger;
 
-import java.util.Comparator;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.Distributable;
-import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 
 public class NodeMultiBlockRelation implements Comparable<NodeMultiBlockRelation> {
 
   private final List<Distributable> blocks;
   private final String node;
 
-  /**
-   * comparator to sort by data size in descending order. This is used to assign big blocks to
-   * bigger nodes first.
-   */
-  public static final Comparator<NodeMultiBlockRelation> DATA_SIZE_DESC_COMPARATOR =
-      new Comparator<NodeMultiBlockRelation>() {
-        @Override
-        public int compare(NodeMultiBlockRelation o1, NodeMultiBlockRelation o2) {
-          long diff = o1.getTotalSizeOfBlocks() - o2.getTotalSizeOfBlocks();
-          return diff > 0 ? -1 : (diff < 0 ? 1 : 0);
-        }
-      };
-  /**
-   * comparator to sort by data size in ascending order. This is used to assign left over blocks to
-   * smaller nodes first.
-   */
-  public static final Comparator<NodeMultiBlockRelation> DATA_SIZE_ASC_COMPARATOR =
-      new Comparator<NodeMultiBlockRelation>() {
-        @Override
-        public int compare(NodeMultiBlockRelation o1, NodeMultiBlockRelation o2) {
-          long diff = o1.getTotalSizeOfBlocks() - o2.getTotalSizeOfBlocks();
-          return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
-        }
-      };
   public NodeMultiBlockRelation(String node, List<Distributable> blocks) {
     this.node = node;
     this.blocks = blocks;
@@ -63,20 +37,6 @@ public class NodeMultiBlockRelation implements Comparable<NodeMultiBlockRelation
 
   public String getNode() {
     return node;
-  }
-
-  /**
-   * get the total size of the blocks
-   * @return size in bytes
-   */
-  public long getTotalSizeOfBlocks() {
-    long totalSize = 0;
-    if (blocks.get(0) instanceof TableBlockInfo) {
-      for (Distributable block : blocks) {
-        totalSize += ((TableBlockInfo) block).getBlockLength();
-      }
-    }
-    return totalSize;
   }
 
   @Override public int compareTo(NodeMultiBlockRelation obj) {
