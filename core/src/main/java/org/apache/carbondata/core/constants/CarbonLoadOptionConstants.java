@@ -114,14 +114,4 @@ public final class CarbonLoadOptionConstants {
    */
   public static final int MAX_EXTERNAL_DICTIONARY_SIZE = 10000000;
 
-  /**
-   * enable block size based block allocation while loading data. By default, carbondata assigns
-   * blocks to node based on block number. If this option is set to `true`, carbondata will
-   * consider block size first and make sure that all the nodes will process almost equal size of
-   * data. This option is especially useful when you encounter skewed data.
-   */
-  @CarbonProperty
-  public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION
-      = "carbon.load.skewedDataOptimization.enabled";
-  public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION_DEFAULT = "false";
 }
