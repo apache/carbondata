@@ -17,21 +17,30 @@
 
 package org.apache.carbondata.processing.sort.sortdata;
 
+import java.nio.ByteBuffer;
 import java.util.Comparator;
 
+import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
+import org.apache.carbondata.core.util.NonDictionaryUtil;
 
-public class NewRowComparator implements Comparator<Object[]> {
+public class RowComparator implements Comparator<Object[]> {
+  /**
+   * noDictionaryCount represent number of no dictionary cols
+   */
+  private int noDictionaryCount;
 
   /**
-   * mapping of dictionary dimensions and no dictionary of sort_column.
+   * noDictionaryColMaping mapping of dictionary dimensions and no dictionary dimensions.
    */
   private boolean[] noDictionarySortColumnMaping;
 
   /**
    * @param noDictionarySortColumnMaping
+   * @param noDictionaryCount
    */
-  public NewRowComparator(boolean[] noDictionarySortColumnMaping) {
+  public RowComparator(boolean[] noDictionarySortColumnMaping, int noDictionaryCount) {
+    this.noDictionaryCount = noDictionaryCount;
     this.noDictionarySortColumnMaping = noDictionarySortColumnMaping;
   }
 
@@ -41,29 +50,43 @@ public class NewRowComparator implements Comparator<Object[]> {
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
 
-    int index = 0;
+    int normalIndex = 0;
+    int noDictionaryindex = 0;
 
     for (boolean isNoDictionary : noDictionarySortColumnMaping) {
 
       if (isNoDictionary) {
-        byte[] byteArr1 = (byte[]) rowA[index];
+        byte[] byteArr1 = (byte[]) rowA[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX];
 
-        byte[] byteArr2 = (byte[]) rowB[index];
+        ByteBuffer buff1 = ByteBuffer.wrap(byteArr1);
 
-        int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
+        // extract a high card dims from complete byte[].
+        NonDictionaryUtil
+            .extractSingleHighCardDims(byteArr1, noDictionaryindex, noDictionaryCount, buff1);
+
+        byte[] byteArr2 = (byte[]) rowB[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX];
+
+        ByteBuffer buff2 = ByteBuffer.wrap(byteArr2);
+
+        // extract a high card dims from complete byte[].
+        NonDictionaryUtil
+            .extractSingleHighCardDims(byteArr2, noDictionaryindex, noDictionaryCount, buff2);
+
+        int difference = UnsafeComparer.INSTANCE.compareTo(buff1, buff2);
         if (difference != 0) {
           return difference;
         }
+        noDictionaryindex++;
       } else {
-        int dimFieldA = (int) rowA[index];
-        int dimFieldB = (int) rowB[index];
+        int dimFieldA = NonDictionaryUtil.getDimension(normalIndex, rowA);
+        int dimFieldB = NonDictionaryUtil.getDimension(normalIndex, rowB);
         diff = dimFieldA - dimFieldB;
         if (diff != 0) {
           return diff;
         }
+        normalIndex++;
       }
 
-      index++;
     }
 
     return diff;

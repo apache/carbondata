@@ -19,9 +19,8 @@ package org.apache.carbondata.processing.loading.sort.unsafe.holder;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
-import org.apache.carbondata.processing.sort.sortdata.IntermediateSortTempRowComparator;
+import org.apache.carbondata.processing.sort.sortdata.NewRowComparator;
 
 public class UnsafeInmemoryHolder implements SortTempChunkHolder {
 
@@ -34,18 +33,21 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
 
   private UnsafeCarbonRowPage rowPage;
 
-  private IntermediateSortTempRow currentRow;
+  private Object[] currentRow;
 
   private long address;
 
-  private IntermediateSortTempRowComparator comparator;
+  private NewRowComparator comparator;
 
-  public UnsafeInmemoryHolder(UnsafeCarbonRowPage rowPage) {
+  private int columnSize;
+
+  public UnsafeInmemoryHolder(UnsafeCarbonRowPage rowPage, int columnSize,
+      int numberOfSortColumns) {
     this.actualSize = rowPage.getBuffer().getActualSize();
     this.rowPage = rowPage;
     LOGGER.audit("Processing unsafe inmemory rows page with size : " + actualSize);
-    this.comparator = new IntermediateSortTempRowComparator(
-        rowPage.getTableFieldStat().getIsSortColNoDictFlags());
+    this.comparator = new NewRowComparator(rowPage.getNoDictionarySortColumnMapping());
+    this.columnSize = columnSize;
   }
 
   public boolean hasNext() {
@@ -56,12 +58,13 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
   }
 
   public void readRow() {
+    currentRow = new Object[columnSize];
     address = rowPage.getBuffer().get(counter);
-    currentRow = rowPage.getRow(address + rowPage.getDataBlock().getBaseOffset());
+    rowPage.getRow(address + rowPage.getDataBlock().getBaseOffset(), currentRow);
     counter++;
   }
 
-  public IntermediateSortTempRow getRow() {
+  public Object[] getRow() {
     return currentRow;
   }
 
