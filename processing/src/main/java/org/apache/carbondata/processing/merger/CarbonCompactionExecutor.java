@@ -45,6 +45,7 @@ import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.BatchResult;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -205,11 +206,12 @@ public class CarbonCompactionExecutor {
     model.setForcedDetailRawQuery(true);
     model.setFilterExpressionResolverTree(null);
     model.setConverter(DataTypeUtil.getDataTypeConverter());
+    model.setReadPageByPage(enablePageLevelReaderForCompaction());
 
     List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     for (CarbonDimension dim : dimensions) {
       // check if dimension is deleted
       QueryDimension queryDimension = new QueryDimension(dim.getColName());
@@ -220,7 +222,7 @@ public class CarbonCompactionExecutor {
 
     List<QueryMeasure> msrs = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     for (CarbonMeasure carbonMeasure : measures) {
       // check if measure is deleted
       QueryMeasure queryMeasure = new QueryMeasure(carbonMeasure.getColName());
@@ -232,6 +234,23 @@ public class CarbonCompactionExecutor {
     model.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
     model.setTable(carbonTable);
     return model;
+  }
+
+  /**
+   * Whether to enable page level reader for compaction or not.
+   */
+  private boolean enablePageLevelReaderForCompaction() {
+    String enablePageReaderProperty = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION,
+            CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT);
+    boolean enablePageReader;
+    try {
+      enablePageReader = Boolean.parseBoolean(enablePageReaderProperty);
+    } catch (Exception e) {
+      enablePageReader = Boolean.parseBoolean(
+          CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT);
+    }
+    return enablePageReader;
   }
 
 }

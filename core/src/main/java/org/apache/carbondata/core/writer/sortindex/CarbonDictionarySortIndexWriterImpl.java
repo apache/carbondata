@@ -27,9 +27,6 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentif
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.service.CarbonCommonFactory;
-import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -43,19 +40,10 @@ import org.apache.carbondata.format.ColumnSortInfo;
 public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySortIndexWriter {
 
   /**
-   * carbonTable Identifier holding the info of databaseName and tableName
-   */
-  protected CarbonTableIdentifier carbonTableIdentifier;
-
-  /**
    * column name
    */
   protected DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
 
-  /**
-   * carbon store location
-   */
-  protected String carbonStorePath;
   /**
    * Path of dictionary sort index file for which the sortIndex to be written
    */
@@ -77,16 +65,11 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
       LogServiceFactory.getLogService(CarbonDictionarySortIndexWriterImpl.class.getName());
 
   /**
-   * @param carbonStorePath       Carbon store path
-   * @param carbonTableIdentifier table identifier which will give table name and database name
    * @param dictionaryColumnUniqueIdentifier      column unique identifier
    */
-  public CarbonDictionarySortIndexWriterImpl(final CarbonTableIdentifier carbonTableIdentifier,
-      final DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
-      final String carbonStorePath) {
-    this.carbonTableIdentifier = carbonTableIdentifier;
+  public CarbonDictionarySortIndexWriterImpl(
+      final DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
-    this.carbonStorePath = carbonStorePath;
   }
 
   /**
@@ -149,28 +132,20 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   }
 
   protected void initPath() {
-    PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(carbonStorePath, carbonTableIdentifier,
-            dictionaryColumnUniqueIdentifier);
-    String dictionaryPath = carbonTablePath.getDictionaryFilePath(
-        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
-    long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
-    this.sortIndexFilePath = carbonTablePath
-        .getSortIndexFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
-            dictOffset);
-    cleanUpOldSortIndex(carbonTablePath, dictionaryPath);
+    String dictionaryFilePath = dictionaryColumnUniqueIdentifier.getDictionaryFilePath();
+    long dictOffset = CarbonUtil.getFileSize(dictionaryFilePath);
+    this.sortIndexFilePath = dictionaryColumnUniqueIdentifier.getSortIndexFilePath(dictOffset);
+    cleanUpOldSortIndex(dictionaryFilePath);
   }
 
   /**
    * It cleans up old unused sortindex file
    *
-   * @param carbonTablePath
+   * @param dictPath
    */
-  protected void cleanUpOldSortIndex(CarbonTablePath carbonTablePath, String dictPath) {
-    CarbonFile dictFile =
-        FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath));
-    CarbonFile[] files = carbonTablePath.getSortIndexFiles(dictFile.getParentFile(),
+  protected void cleanUpOldSortIndex(String dictPath) {
+    CarbonFile dictFile = FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath));
+    CarbonFile[] files = CarbonTablePath.getSortIndexFiles(dictFile.getParentFile(),
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     int maxTime;
     try {

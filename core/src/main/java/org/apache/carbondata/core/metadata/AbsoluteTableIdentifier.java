@@ -32,10 +32,9 @@ public class AbsoluteTableIdentifier implements Serializable {
   private static final long serialVersionUID = 4695047103484427506L;
 
   /**
-   * path of the store
+   * path of the table
    */
-  private String storePath;
-
+  private String tablePath;
 
   private boolean isLocalPath;
 
@@ -45,18 +44,11 @@ public class AbsoluteTableIdentifier implements Serializable {
    */
   private CarbonTableIdentifier carbonTableIdentifier;
 
-  public AbsoluteTableIdentifier(String storePath, CarbonTableIdentifier carbonTableIdentifier) {
+  private AbsoluteTableIdentifier(String tablePath, CarbonTableIdentifier carbonTableIdentifier) {
     //TODO this should be moved to common place where path handling will be handled
-    this.storePath = FileFactory.getUpdatedFilePath(storePath);
-    isLocalPath = storePath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX);
+    this.tablePath = FileFactory.getUpdatedFilePath(tablePath);
+    isLocalPath = tablePath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX);
     this.carbonTableIdentifier = carbonTableIdentifier;
-  }
-
-  /**
-   * @return the storePath
-   */
-  public String getStorePath() {
-    return storePath;
   }
 
   /**
@@ -66,41 +58,24 @@ public class AbsoluteTableIdentifier implements Serializable {
     return carbonTableIdentifier;
   }
 
-  public static AbsoluteTableIdentifier from(String storePath, String dbName, String tableName) {
-    CarbonTableIdentifier identifier = new CarbonTableIdentifier(dbName, tableName, "");
-    return new AbsoluteTableIdentifier(storePath, identifier);
+  public static AbsoluteTableIdentifier from(String tablePath, String dbName, String tableName,
+      String tableId) {
+    CarbonTableIdentifier identifier = new CarbonTableIdentifier(dbName, tableName, tableId);
+    return new AbsoluteTableIdentifier(tablePath, identifier);
   }
 
-  /**
-   * By using the tablePath this method will prepare a AbsoluteTableIdentifier with
-   * dummy tableId(Long.toString(System.currentTimeMillis()).
-   * This instance could not be used to uniquely identify the table, this is just
-   * to get the database name, table name and store path to load the schema.
-   * @param tablePath
-   * @return returns AbsoluteTableIdentifier with dummy tableId
-   */
-  public static AbsoluteTableIdentifier fromTablePath(String tablePath) {
-    String formattedTablePath = tablePath.replace('\\', '/');
-    String[] names = formattedTablePath.split("/");
-    if (names.length < 3) {
-      throw new IllegalArgumentException("invalid table path: " + tablePath);
-    }
+  public static AbsoluteTableIdentifier from(String tablePath, String dbName, String tableName) {
+    return from(tablePath, dbName, tableName, "");
+  }
 
-    String tableName = names[names.length - 1];
-    String dbName = names[names.length - 2];
-    String storePath = formattedTablePath.substring(0,
-        formattedTablePath.lastIndexOf(dbName + CarbonCommonConstants.FILE_SEPARATOR + tableName)
-            - 1);
-
-    CarbonTableIdentifier identifier =
-        new CarbonTableIdentifier(dbName, tableName, Long.toString(System.currentTimeMillis()));
-    return new AbsoluteTableIdentifier(storePath, identifier);
+  public static AbsoluteTableIdentifier from(
+      String tablePath,
+      CarbonTableIdentifier carbonTableIdentifier) {
+    return new AbsoluteTableIdentifier(tablePath, carbonTableIdentifier);
   }
 
   public String getTablePath() {
-    return getStorePath() + CarbonCommonConstants.FILE_SEPARATOR + getCarbonTableIdentifier()
-        .getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + getCarbonTableIdentifier()
-        .getTableName();
+    return tablePath;
   }
 
   public String appendWithLocalPrefix(String path) {
@@ -119,7 +94,7 @@ public class AbsoluteTableIdentifier implements Serializable {
     int result = 1;
     result =
         prime * result + ((carbonTableIdentifier == null) ? 0 : carbonTableIdentifier.hashCode());
-    result = prime * result + ((storePath == null) ? 0 : storePath.hashCode());
+    result = prime * result + ((tablePath == null) ? 0 : tablePath.hashCode());
     return result;
   }
 
@@ -147,17 +122,25 @@ public class AbsoluteTableIdentifier implements Serializable {
     } else if (!carbonTableIdentifier.equals(other.carbonTableIdentifier)) {
       return false;
     }
-    if (storePath == null) {
-      if (other.storePath != null) {
+    if (tablePath == null) {
+      if (other.tablePath != null) {
         return false;
       }
-    } else if (!storePath.equals(other.storePath)) {
+    } else if (!tablePath.equals(other.tablePath)) {
       return false;
     }
     return true;
   }
 
   public String uniqueName() {
-    return storePath + "/" + carbonTableIdentifier.toString().toLowerCase();
+    return tablePath + "/" + carbonTableIdentifier.toString().toLowerCase();
+  }
+
+  public String getDatabaseName() {
+    return carbonTableIdentifier.getDatabaseName();
+  }
+
+  public String getTableName() {
+    return carbonTableIdentifier.getTableName();
   }
 }

@@ -25,10 +25,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
-
-import org.apache.hadoop.conf.Configuration;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
  * This class is used to handle the HDFS File locking.
@@ -47,26 +44,12 @@ public class HdfsFileLock extends AbstractCarbonLock {
 
   private static String tmpPath;
 
-  static {
-    Configuration conf = new Configuration(true);
-    String hdfsPath = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
-    // By default, we put the hdfs lock meta file for one table inside this table's store folder.
-    // If can not get the STORE_LOCATION, then use hadoop.tmp.dir .
-    tmpPath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
-               System.getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION));
-    if (!tmpPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) && !tmpPath
-        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) && !tmpPath
-        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
-      tmpPath = hdfsPath + tmpPath;
-    }
-  }
-
   /**
    * @param lockFileLocation
    * @param lockFile
    */
   public HdfsFileLock(String lockFileLocation, String lockFile) {
-    this.location = tmpPath + CarbonCommonConstants.FILE_SEPARATOR + lockFileLocation
+    this.location = lockFileLocation
         + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
     LOGGER.info("HDFS lock path:" + this.location);
     initRetry();
@@ -81,12 +64,11 @@ public class HdfsFileLock extends AbstractCarbonLock {
   }
 
   /**
-   * @param tableIdentifier
+   * @param absoluteTableIdentifier
    * @param lockFile
    */
-  public HdfsFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
-        .getTableName(), lockFile);
+  public HdfsFileLock(AbsoluteTableIdentifier absoluteTableIdentifier, String lockFile) {
+    this(absoluteTableIdentifier.getTablePath(), lockFile);
   }
 
   /* (non-Javadoc)
@@ -103,7 +85,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
       return true;
 
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.info(e.getMessage());
       return false;
     }
   }

@@ -42,6 +42,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -143,9 +144,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     this.tableIdentifier = tableIdentifier;
     this.complexDimensionInfoMap = complexDimensionInfoMap;
     this.dateDictionaryGenerator =
-        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.DATE);
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
     this.timestampDictionaryGenerator =
-        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.TIMESTAMP);
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.TIMESTAMP);
     initDimensionBlockIndexes();
     initMeasureBlockIndexes();
   }
@@ -186,7 +187,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
   }
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
+  @Override
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException {
     readBlocks(blockChunkHolder);
     // CHECKSTYLE:ON
@@ -203,7 +205,10 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       } else {
         // specific for restructure case where default values need to be filled
         pageNumbers = blockChunkHolder.getDataBlock().numberOfPages();
-        numberOfRows = new int[] { blockChunkHolder.getDataBlock().nodeSize() };
+        numberOfRows = new int[pageNumbers];
+        for (int i = 0; i < pageNumbers; i++) {
+          numberOfRows[i] = blockChunkHolder.getDataBlock().getPageRowCount(i);
+        }
       }
     }
     if (msrColEvalutorInfoList.size() > 0) {
@@ -215,32 +220,65 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       } else {
         // specific for restructure case where default values need to be filled
         pageNumbers = blockChunkHolder.getDataBlock().numberOfPages();
-        numberOfRows = new int[] { blockChunkHolder.getDataBlock().nodeSize() };
+        numberOfRows = new int[pageNumbers];
+        for (int i = 0; i < pageNumbers; i++) {
+          numberOfRows[i] = blockChunkHolder.getDataBlock().getPageRowCount(i);
+        }
       }
     }
     BitSetGroup bitSetGroup = new BitSetGroup(pageNumbers);
     for (int i = 0; i < pageNumbers; i++) {
       BitSet set = new BitSet(numberOfRows[i]);
       RowIntf row = new RowImpl();
-      for (int index = 0; index < numberOfRows[i]; index++) {
-        createRow(blockChunkHolder, row ,i, index);
-        Boolean rslt = false;
-        try {
-          rslt = exp.evaluate(row).getBoolean();
+      BitSet prvBitset = null;
+      // if bitset pipe line is enabled then use rowid from previous bitset
+      // otherwise use older flow
+      if (!useBitsetPipeLine || null == blockChunkHolder.getBitSetGroup() || null == bitSetGroup
+          .getBitSet(i) || blockChunkHolder.getBitSetGroup().getBitSet(i).isEmpty()) {
+        for (int index = 0; index < numberOfRows[i]; index++) {
+          createRow(blockChunkHolder, row, i, index);
+          Boolean rslt = false;
+          try {
+            rslt = exp.evaluate(row).getBoolean();
+          }
+          // Any invalid member while evaluation shall be ignored, system will log the
+          // error only once since all rows the evaluation happens so inorder to avoid
+          // too much log inforation only once the log will be printed.
+          catch (FilterIllegalMemberException e) {
+            FilterUtil.logError(e, false);
+          }
+          if (null != rslt && rslt) {
+            set.set(index);
+          }
         }
-        // Any invalid member while evaluation shall be ignored, system will log the
-        // error only once since all rows the evaluation happens so inorder to avoid
-        // too much log inforation only once the log will be printed.
-        catch (FilterIllegalMemberException e) {
-          FilterUtil.logError(e, false);
-        }
-        if (null != rslt && rslt) {
-          set.set(index);
+      } else {
+        prvBitset = blockChunkHolder.getBitSetGroup().getBitSet(i);
+        for (int index = prvBitset.nextSetBit(0);
+             index >= 0; index = prvBitset.nextSetBit(index + 1)) {
+          createRow(blockChunkHolder, row, i, index);
+          Boolean rslt = false;
+          try {
+            rslt = exp.evaluate(row).getBoolean();
+          } catch (FilterIllegalMemberException e) {
+            FilterUtil.logError(e, false);
+          }
+          if (null != rslt && rslt) {
+            set.set(index);
+          }
         }
       }
       bitSetGroup.setBitSet(set, i);
     }
     return bitSetGroup;
+  }
+
+  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+      throws FilterUnsupportedException, IOException {
+    try {
+      return exp.evaluate(value).getBoolean();
+    } catch (FilterIllegalMemberException e) {
+      throw new FilterUnsupportedException(e);
+    }
   }
 
   /**
@@ -265,8 +303,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             getDimensionDefaultValue(dimColumnEvaluatorInfo);
         continue;
       }
-      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
-          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
+      if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
         if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSilce()) {
           record[dimColumnEvaluatorInfo.getRowIndex()] =
               dimColumnEvaluatorInfo.getDimension().getDefaultValue();
@@ -289,8 +326,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataTypeForNoDictionaryColumn(memberBytes,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
-          } else {
-            continue;
           }
         } else {
           int dictionaryValue = readSurrogatesFromColumnBlock(blockChunkHolder, index, pageIndex,
@@ -329,21 +364,19 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     DataType msrType;
     for (int i = 0; i < msrColEvalutorInfoList.size(); i++) {
       MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo = msrColEvalutorInfoList.get(i);
-      switch (msrColumnEvalutorInfo.getType()) {
-        case SHORT:
-          msrType = DataType.SHORT;
-          break;
-        case INT:
-          msrType = DataType.INT;
-          break;
-        case LONG:
-          msrType = DataType.LONG;
-          break;
-        case DECIMAL:
-          msrType = DataType.DECIMAL;
-          break;
-        default:
-          msrType = DataType.DOUBLE;
+      DataType dataType = msrColumnEvalutorInfo.getType();
+      if (dataType == DataTypes.BOOLEAN) {
+        msrType = DataTypes.BOOLEAN;
+      } else if (dataType == DataTypes.SHORT) {
+        msrType = DataTypes.SHORT;
+      } else if (dataType == DataTypes.INT) {
+        msrType = DataTypes.INT;
+      } else if (dataType == DataTypes.LONG) {
+        msrType = DataTypes.LONG;
+      } else if (DataTypes.isDecimal(dataType)) {
+        msrType = DataTypes.createDefaultDecimalType();
+      } else {
+        msrType = DataTypes.DOUBLE;
       }
       // add default value for the measure in case filter measure is not present
       // in the current block measure list
@@ -359,30 +392,26 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       ColumnPage columnPage =
           blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]]
               .convertToColumnPage(pageIndex);
-      switch (msrType) {
-        case SHORT:
-          msrValue = (short) columnPage.getLong(index);
-          break;
-        case INT:
-          msrValue = (int) columnPage.getLong(index);
-          break;
-        case LONG:
-          msrValue = columnPage.getLong(index);
-          break;
-        case DECIMAL:
-          BigDecimal bigDecimalValue = columnPage.getDecimal(index);
-          if (null != bigDecimalValue &&
-              msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale() >
-                  bigDecimalValue.scale()) {
-            bigDecimalValue =
-                bigDecimalValue.setScale(
-                    msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale(),
-                    RoundingMode.HALF_UP);
-          }
-          msrValue = bigDecimalValue;
-          break;
-        default:
-          msrValue = columnPage.getDouble(index);
+      if (msrType == DataTypes.BOOLEAN) {
+        msrValue = columnPage.getBoolean(index);
+      } else if (msrType == DataTypes.SHORT) {
+        msrValue = (short) columnPage.getLong(index);
+      } else if (msrType == DataTypes.INT) {
+        msrValue = (int) columnPage.getLong(index);
+      } else if (msrType == DataTypes.LONG) {
+        msrValue = columnPage.getLong(index);
+      } else if (DataTypes.isDecimal(msrType)) {
+        BigDecimal bigDecimalValue = columnPage.getDecimal(index);
+        if (null != bigDecimalValue
+            && msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale()
+            > bigDecimalValue.scale()) {
+          bigDecimalValue = bigDecimalValue
+              .setScale(msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale(),
+                  RoundingMode.HALF_UP);
+        }
+        msrValue = bigDecimalValue;
+      } else {
+        msrValue = columnPage.getDouble(index);
       }
       record[msrColumnEvalutorInfo.getRowIndex()] =
           columnPage.getNullBits().get(index) ? null : msrValue;
@@ -422,13 +451,12 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   private Object getFilterActualValueFromDirectDictionaryValue(
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int dictionaryValue) {
-    switch (dimColumnEvaluatorInfo.getDimension().getDataType()) {
-      case DATE:
-        return dateDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
-      case TIMESTAMP:
-        return timestampDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
-      default:
-        throw new RuntimeException("Invalid data type for dierct dictionary");
+    if (dimColumnEvaluatorInfo.getDimension().getDataType() == DataTypes.DATE) {
+      return dateDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
+    } else if (dimColumnEvaluatorInfo.getDimension().getDataType() == DataTypes.TIMESTAMP) {
+      return timestampDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
+    } else {
+      throw new RuntimeException("Invalid data type for dierct dictionary");
     }
   }
 
@@ -511,8 +539,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
-      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
-          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
+      if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
         if (null == blockChunkHolder.getDimensionRawDataChunk()[dimensionBlocksIndex[i]]) {
           blockChunkHolder.getDimensionRawDataChunk()[dimensionBlocksIndex[i]] =
               blockChunkHolder.getDataBlock()

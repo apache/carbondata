@@ -17,22 +17,27 @@
 
 package org.apache.spark.sql.optimizer
 
+import scala.collection.JavaConverters._
+
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.CastExpressionOptimization
-import org.apache.spark.sql.CarbonBoundReference
-import org.apache.spark.sql.CastExpr
-import org.apache.spark.sql.SparkUnknownExpression
-import org.apache.spark.sql.sources
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonContainsWith
 import org.apache.spark.sql.CarbonEndsWith
+import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.hive.CarbonSessionCatalog
 
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.PartitionMapFileStore
+import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -41,7 +46,6 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * All filter conversions are done here.
  */
 object CarbonFilters {
-
 
   /**
    * Converts data sources filters to carbon filter predicates.
@@ -78,13 +82,22 @@ object CarbonFilters {
           Some(new LessThanEqualToExpression(getCarbonExpression(name),
             getCarbonLiteralExpression(name, value)))
         case sources.In(name, values) =>
-          Some(new InExpression(getCarbonExpression(name),
-            new ListExpression(
-              convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
+          if (values.length == 1 && values(0) == null) {
+            Some(new FalseExpression(getCarbonExpression(name)))
+          } else {
+            Some(new InExpression(getCarbonExpression(name),
+              new ListExpression(
+                convertToJavaList(values.filterNot(_ == null)
+                  .map(filterValues => getCarbonLiteralExpression(name, filterValues)).toList))))
+          }
         case sources.Not(sources.In(name, values)) =>
-          Some(new NotInExpression(getCarbonExpression(name),
-            new ListExpression(
-              convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
+          if (values.contains(null)) {
+            Some(new FalseExpression(getCarbonExpression(name)))
+          } else {
+            Some(new NotInExpression(getCarbonExpression(name),
+              new ListExpression(
+                convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
+          }
         case sources.IsNull(name) =>
           Some(new EqualToExpression(getCarbonExpression(name),
             getCarbonLiteralExpression(name, null), true))
@@ -122,6 +135,8 @@ object CarbonFilters {
           }))
         case CastExpr(expr: Expression) =>
           Some(transformExpression(expr))
+        case FalseExpr() =>
+          Some(new FalseExpression(null))
         case _ => None
       }
     }
@@ -134,9 +149,9 @@ object CarbonFilters {
     def getCarbonLiteralExpression(name: String, value: Any): CarbonExpression = {
       val dataTypeOfAttribute = CarbonScalaUtil.convertSparkToCarbonDataType(dataTypeOf(name))
       val dataType = if (Option(value).isDefined
-                         && dataTypeOfAttribute == DataType.STRING
+                         && dataTypeOfAttribute == CarbonDataTypes.STRING
                          && value.isInstanceOf[Double]) {
-        DataType.DOUBLE
+        CarbonDataTypes.DOUBLE
       } else {
         dataTypeOfAttribute
       }
@@ -256,6 +271,8 @@ object CarbonFilters {
           Some(CarbonContainsWith(c))
         case c@Cast(a: Attribute, _) =>
           Some(CastExpr(c))
+        case c@Literal(v, t) if v == null =>
+          Some(FalseExpr())
         case others =>
           if (!or) {
             others.collect {
@@ -396,24 +413,6 @@ object CarbonFilters {
     }
   }
 
-  private def getActualCarbonDataType(column: String, carbonTable: CarbonTable) = {
-    var carbonColumn: CarbonColumn =
-      carbonTable.getDimensionByName(carbonTable.getFactTableName, column)
-    val dataType = if (carbonColumn != null) {
-      carbonColumn.getDataType
-    } else {
-      carbonColumn = carbonTable.getMeasureByName(carbonTable.getFactTableName, column)
-      carbonColumn.getDataType match {
-        case DataType.INT => DataType.INT
-        case DataType.SHORT => DataType.SHORT
-        case DataType.LONG => DataType.LONG
-        case DataType.DECIMAL => DataType.DECIMAL
-        case _ => DataType.DOUBLE
-      }
-    }
-    CarbonScalaUtil.convertCarbonToSparkDataType(dataType)
-  }
-
   // Convert scala list to java list, Cannot use scalaList.asJava as while deserializing it is
   // not able find the classes inside scala list and gives ClassNotFoundException.
   private def convertToJavaList(
@@ -431,4 +430,95 @@ object CarbonFilters {
       case _ => expressions
     }
   }
+
+  def getCurrentPartitions(sparkSession: SparkSession,
+      carbonTable: CarbonTable): Seq[String] = {
+    if (carbonTable.isHivePartitionTable) {
+      CarbonFilters.getPartitions(
+        Seq.empty,
+        sparkSession,
+        TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName)))
+    } else {
+      Seq.empty
+    }
+  }
+
+  /**
+   * Fetches partition information from hive
+   * @param partitionFilters
+   * @param sparkSession
+   * @param identifier
+   * @return
+   */
+  def getPartitions(partitionFilters: Seq[Expression],
+      sparkSession: SparkSession,
+      identifier: TableIdentifier): Seq[String] = {
+    // first try to read partitions in case if the trigger comes from the aggregation table load.
+    val partitionsForAggTable = getPartitionsForAggTable(sparkSession, identifier)
+    if (partitionsForAggTable.isDefined) {
+      return partitionsForAggTable.get
+    }
+    val partitions = {
+      try {
+        if (CarbonProperties.getInstance().
+          getProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT,
+          CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT).toBoolean) {
+          // read partitions directly from hive metastore using filters
+          sparkSession.sessionState.catalog.listPartitionsByFilter(identifier, partitionFilters)
+        } else {
+          // Read partitions alternatively by firts get all partitions then filter them
+          sparkSession.sessionState.catalog.
+            asInstanceOf[CarbonSessionCatalog].getPartitionsAlternate(
+            partitionFilters,
+            sparkSession,
+            identifier)
+        }
+      } catch {
+        case e: Exception =>
+          // Get partition information alternatively.
+          sparkSession.sessionState.catalog.
+            asInstanceOf[CarbonSessionCatalog].getPartitionsAlternate(
+            partitionFilters,
+            sparkSession,
+            identifier)
+      }
+    }
+    partitions.toList.flatMap { partition =>
+      partition.spec.seq.map{case (column, value) => column + "=" + value}
+    }.toSet.toSeq
+  }
+
+  /**
+   * In case of loading aggregate tables it needs to be get only from the main table load in
+   * progress segment. So we should read from the partition map file of that segment.
+   */
+  def getPartitionsForAggTable(sparkSession: SparkSession,
+      identifier: TableIdentifier): Option[Seq[String]] = {
+    // when validate segments is disabled then only read from partitionmap
+    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (carbonSessionInfo != null) {
+      val validateSegments = carbonSessionInfo.getSessionParams
+        .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+                     CarbonEnv.getDatabaseName(identifier.database)(sparkSession) + "." +
+                     identifier.table, "true").toBoolean
+      if (!validateSegments) {
+        val segmentNumbersFromProperty = CarbonProperties.getInstance
+          .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+                       CarbonEnv.getDatabaseName(identifier.database)(sparkSession)
+                       + "." + identifier.table)
+        val carbonTable = CarbonEnv.getCarbonTable(identifier)(sparkSession)
+        val segmentPath =
+          CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentNumbersFromProperty)
+        val partitionMapper = new PartitionMapFileStore()
+        partitionMapper.readAllPartitionsOfSegment(segmentPath)
+        Some(partitionMapper.getPartitionMap.asScala.map(_._2).flatMap(_.asScala).toSet.toSeq)
+      } else {
+        None
+      }
+    } else {
+      None
+    }
+  }
+
+
 }

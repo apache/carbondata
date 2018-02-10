@@ -70,7 +70,7 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       FileFactory.createNewFile(filePath, fileType);
       dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
-          CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
+          CarbonCommonConstants.DEFAULT_CHARSET));
       brWriter.write(value);
     } catch (IOException ioe) {
       LOGGER.error("Error message: " + ioe.getLocalizedMessage());
@@ -98,7 +98,7 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
       Gson gsonObjectToWrite = new Gson();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
-          CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
+          CarbonCommonConstants.DEFAULT_CHARSET));
       String deletedData = gsonObjectToWrite.toJson(deleteDeltaBlockDetails);
       brWriter.write(deletedData);
     } catch (IOException ioe) {

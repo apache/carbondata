@@ -18,7 +18,7 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.api.CarbonStore
 
@@ -29,21 +29,30 @@ import org.apache.carbondata.api.CarbonStore
 object CleanFiles {
 
   /**
-   * Clean the stale segments from table
-   * @param spark
-   * @param dbName
-   * @param tableName
-   * @param storePath
-   * @param forceTableClean if true, it deletes the table and its contents with force.It does not
+   * The method deletes all data if forceTableCLean <true> and lean garbage segment
+   * (MARKED_FOR_DELETE state) if forceTableCLean <false>
+   *
+   * @param spark           : Database name
+   * @param dbName          : Table name
+   * @param tableName       : Table path
+   * @param forceTableClean : if true, it deletes the table and its contents with force.It does not
    *                        drop table from hive metastore so should be very careful to use it.
    */
   def cleanFiles(spark: SparkSession, dbName: String, tableName: String,
-      storePath: String, forceTableClean: Boolean = false): Unit = {
+     forceTableClean: Boolean = false): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.
-      lookupRelation(Some(dbName), tableName)(spark).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
-    CarbonStore.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean)
+    val tablePath = CarbonEnv.getTablePath(Some(dbName), tableName)(spark)
+    val carbonTable = if (!forceTableClean) {
+      CarbonEnv.getCarbonTable(Some(dbName), tableName)(spark)
+    } else {
+      null
+    }
+    CarbonStore.cleanFiles(
+      dbName = dbName,
+      tableName = tableName,
+      tablePath = tablePath,
+      carbonTable = carbonTable,
+      forceTableClean = forceTableClean)
   }
 
   def main(args: Array[String]): Unit = {
@@ -61,7 +70,8 @@ object CleanFiles {
     }
     val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
     CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(spark).storePath)
-    cleanFiles(spark, dbName, tableName, storePath, forceTableClean)
+      checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
+
+    cleanFiles(spark, dbName, tableName, forceTableClean)
   }
 }

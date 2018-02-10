@@ -28,11 +28,14 @@ import scala.collection.JavaConversions._
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.execution.command.LoadDataCommand
+import org.apache.spark.sql.hive.{CarbonSessionCatalog, HiveExternalCatalog}
 import org.apache.spark.sql.test.{ResourceRegisterAndCopier, TestQueryExecutor}
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{CarbonSession, DataFrame, Row, SQLContext}
 import org.scalatest.Suite
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 class QueryTest extends PlanTest with Suite {
 
@@ -42,6 +45,8 @@ class QueryTest extends PlanTest with Suite {
 
   // Add Locale setting
   Locale.setDefault(Locale.US)
+  CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "false")
 
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
@@ -136,6 +141,9 @@ class QueryTest extends PlanTest with Suite {
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
 
   val resourcesPath = TestQueryExecutor.resourcesPath
+
+  val hiveClient = sqlContext.sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
+    .getClient();
 }
 
 object QueryTest {

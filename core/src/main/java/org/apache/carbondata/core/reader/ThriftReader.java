@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.reader;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 
@@ -67,6 +68,14 @@ public class ThriftReader {
    */
   public ThriftReader(String fileName) {
     this.fileName = fileName;
+  }
+
+  /**
+   * Constructor.
+   */
+  public ThriftReader(byte[] fileData) {
+    dataInputStream = new DataInputStream(new ByteArrayInputStream(fileData));
+    binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
   }
 
   /**

@@ -119,7 +119,16 @@ public class CarbonCompactionUtil {
       DataFileFooter dataFileMatadata = null;
       // check if segId is already present in map
       List<DataFileFooter> metadataList = segmentBlockInfoMapping.get(segId);
-      dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo);
+      // check to decide whether to read file footer of carbondata file forcefully. This will help
+      // in getting the schema last updated time based on which compaction flow is decided that
+      // whether it will go to restructure compaction flow or normal compaction flow.
+      // This decision will impact the compaction performance so it needs to be decided carefully
+      if (null != blockInfo.getDetailInfo()
+          && blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp() == 0L) {
+        dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo, true);
+      } else {
+        dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo);
+      }
       if (null == metadataList) {
         // if it is not present
         eachSegmentBlocks.add(dataFileMatadata);
@@ -171,17 +180,17 @@ public class CarbonCompactionUtil {
     try {
       if (FileFactory.isFileExist(minorCompactionStatusFile,
           FileFactory.getFileType(minorCompactionStatusFile))) {
-        return CompactionType.MINOR_COMPACTION;
+        return CompactionType.MINOR;
       }
       if (FileFactory.isFileExist(majorCompactionStatusFile,
           FileFactory.getFileType(majorCompactionStatusFile))) {
-        return CompactionType.MAJOR_COMPACTION;
+        return CompactionType.MAJOR;
       }
 
     } catch (IOException e) {
       LOGGER.error("Exception in determining the compaction request file " + e.getMessage());
     }
-    return CompactionType.MINOR_COMPACTION;
+    return CompactionType.MINOR;
   }
 
   /**
@@ -193,7 +202,7 @@ public class CarbonCompactionUtil {
   public static boolean deleteCompactionRequiredFile(String metaFolderPath,
       CompactionType compactionType) {
     String compactionRequiredFile;
-    if (compactionType.equals(CompactionType.MINOR_COMPACTION)) {
+    if (compactionType.equals(CompactionType.MINOR)) {
       compactionRequiredFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.minorCompactionRequiredFile;
     } else {
@@ -229,7 +238,7 @@ public class CarbonCompactionUtil {
   public static boolean createCompactionRequiredFile(String metaFolderPath,
       CompactionType compactionType) {
     String statusFile;
-    if (compactionType.equals(CompactionType.MINOR_COMPACTION)) {
+    if (CompactionType.MINOR == compactionType) {
       statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.minorCompactionRequiredFile;
     } else {
@@ -308,7 +317,7 @@ public class CarbonCompactionUtil {
   public static int[] updateColumnSchemaAndGetCardinality(Map<String, Integer> columnCardinalityMap,
       CarbonTable carbonTable, List<ColumnSchema> updatedColumnSchemaList) {
     List<CarbonDimension> masterDimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<Integer> updatedCardinalityList = new ArrayList<>(columnCardinalityMap.size());
     for (CarbonDimension dimension : masterDimensions) {
       Integer value = columnCardinalityMap.get(dimension.getColumnId());
@@ -321,7 +330,7 @@ public class CarbonCompactionUtil {
     }
     // add measures to the column schema list
     List<CarbonMeasure> masterSchemaMeasures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     for (CarbonMeasure measure : masterSchemaMeasures) {
       updatedColumnSchemaList.add(measure.getColumnSchema());
     }

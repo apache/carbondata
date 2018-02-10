@@ -52,6 +52,12 @@ public interface DataRefNode {
   long nodeNumber();
 
   /**
+   * Method is used for retreiving the BlockletId.
+   * @return the blockletid related to the data block.
+   */
+  String blockletId();
+
+  /**
    * This method will be used to get the max value of all the columns this can
    * be used in case of filter query
    *
@@ -128,4 +134,12 @@ public interface DataRefNode {
    * @return
    */
   int numberOfPages();
+
+  /**
+   * Return the number of rows for a give page
+   *
+   * @param pageNumber
+   * @return
+   */
+  int getPageRowCount(int pageNumber);
 }

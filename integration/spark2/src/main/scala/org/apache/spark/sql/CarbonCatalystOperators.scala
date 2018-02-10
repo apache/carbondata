@@ -17,15 +17,20 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.TableIdentifier
+import scala.collection.mutable
+
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.HiveSessionCatalog
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types.{StringType, TimestampType}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 case class CarbonDictionaryCatalystDecoder(
@@ -65,31 +70,6 @@ case class IncludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attr
 
 case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
 
-object GetDB {
-
-  def getDatabaseName(dbName: Option[String], sparkSession: SparkSession): String = {
-    dbName.getOrElse(
-      sparkSession.sessionState.catalog.asInstanceOf[HiveSessionCatalog].getCurrentDatabase)
-  }
-}
-
-/**
- * Shows Loads in a table
- */
-case class ShowLoadsCommand(
-    databaseNameOp: Option[String],
-    table: String,
-    limit: Option[String])
-  extends Command {
-
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
-      AttributeReference("Status", StringType, nullable = false)(),
-      AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-      AttributeReference("Load End Time", TimestampType, nullable = false)())
-  }
-}
-
 case class ProjectForUpdate(
     table: UnresolvedRelation,
     columns: List[String],
@@ -101,6 +81,7 @@ case class UpdateTable(
     table: UnresolvedRelation,
     columns: List[String],
     selectStmt: String,
+    alias: Option[String] = None,
     filer: String) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq.empty
   override def output: Seq[AttributeReference] = Seq.empty
@@ -108,6 +89,7 @@ case class UpdateTable(
 
 case class DeleteRecords(
     statement: String,
+    alias: Option[String] = None,
     table: UnresolvedRelation) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq.empty
   override def output: Seq[AttributeReference] = Seq.empty
@@ -121,7 +103,7 @@ case class DeleteRecords(
 case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
     partition: Map[String, Option[String]],
     child: LogicalPlan,
-    overwrite: OverwriteOptions,
+    overwrite: Boolean,
     ifNotExists: Boolean)
   extends Command {
 
@@ -130,4 +112,66 @@ case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
     // This is the expected schema of the table prepared to be inserted into
     // including dynamic partition columns.
     val tableOutput = table.carbonRelation.output
+}
+
+/**
+ * It checks if query is count(*) then push down to carbon
+ *
+ * The returned values for this match are as follows:
+ * - whether its count star
+ * - count star attribute
+ * - child plan
+ */
+object CountStarPlan {
+  type ReturnType = (mutable.MutableList[Attribute], LogicalPlan)
+
+  /**
+   * It fill count star query attribute.
+   */
+  private def fillCountStarAttribute(
+      expr: Expression,
+      outputColumns: mutable.MutableList[Attribute]) {
+    expr match {
+      case par@Alias(_, _) =>
+        val head = par.children.head.children.head
+        head match {
+          case count: Count if count.children.head.isInstanceOf[Literal] =>
+            outputColumns += par.toAttribute
+          case _ =>
+        }
+    }
+  }
+
+  def unapply(plan: LogicalPlan): Option[ReturnType] = {
+    plan match {
+      case Aggregate(groupingExpressions, aggregateExpressions,
+      child) if strictCountStar(groupingExpressions, aggregateExpressions, child) =>
+        val outputColumns = scala.collection.mutable.MutableList[Attribute]()
+        fillCountStarAttribute(aggregateExpressions.head, outputColumns)
+        if (outputColumns.nonEmpty) {
+          Some(outputColumns, child)
+        } else {
+          None
+        }
+      case _ => None
+    }
+  }
+
+  /**
+   * check if child
+   */
+  def strictCountStar(groupingExpressions: Seq[Expression],
+      partialComputation: Seq[NamedExpression],
+      child: LogicalPlan): Boolean = {
+    if (groupingExpressions.nonEmpty) {
+      return false
+    }
+    if (partialComputation.size > 1 && partialComputation.nonEmpty) {
+      return false
+    }
+    child collect {
+      case cd: Filter => return false
+    }
+    true
+  }
 }

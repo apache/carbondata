@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -29,19 +28,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -52,10 +50,11 @@ import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
-import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
-import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
-import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
+import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.loading.DataField;
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
+import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -89,58 +88,6 @@ public final class CarbonDataProcessorUtil {
       fileBufferSize = CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
     }
     return fileBufferSize;
-  }
-
-  /**
-   * @param configuration
-   * @param storeLocation
-   */
-  public static void renameBadRecordsFromInProgressToNormal(
-      CarbonDataLoadConfiguration configuration, String storeLocation) {
-    // get the base store location
-    String badLogStoreLocation = (String) configuration
-        .getDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
-    if (null == badLogStoreLocation) {
-      badLogStoreLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
-    }
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
-    FileType fileType = FileFactory.getFileType(badLogStoreLocation);
-    try {
-      if (!FileFactory.isFileExist(badLogStoreLocation, fileType)) {
-        return;
-      }
-    } catch (IOException e1) {
-      LOGGER.info("bad record folder does not exist");
-    }
-    CarbonFile carbonFile = FileFactory.getCarbonFile(badLogStoreLocation, fileType);
-
-    CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile pathname) {
-        if (pathname.getName().indexOf(CarbonCommonConstants.FILE_INPROGRESS_STATUS) > -1) {
-          return true;
-        }
-        return false;
-      }
-    });
-
-    String badRecordsInProgressFileName = null;
-    String changedFileName = null;
-    for (CarbonFile badFiles : listFiles) {
-      badRecordsInProgressFileName = badFiles.getName();
-
-      changedFileName = badLogStoreLocation + File.separator + badRecordsInProgressFileName
-          .substring(0, badRecordsInProgressFileName.lastIndexOf('.'));
-
-      badFiles.renameTo(changedFileName);
-
-      if (badFiles.exists()) {
-        if (!badFiles.delete()) {
-          LOGGER.error("Unable to delete File : " + badFiles.getName());
-        }
-      }
-    }
   }
 
   /**
@@ -198,8 +145,7 @@ public final class CarbonDataProcessorUtil {
     String[] baseTmpStorePathArray = StringUtils.split(baseTempStorePath, File.pathSeparator);
     String[] localDataFolderLocArray = new String[baseTmpStorePathArray.length];
 
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     for (int i = 0 ; i < baseTmpStorePathArray.length; i++) {
       String tmpStore = baseTmpStorePathArray[i];
       CarbonTablePath carbonTablePath =
@@ -258,6 +204,23 @@ public final class CarbonDataProcessorUtil {
         .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
   }
 
+  public static boolean[] getNoDictionaryMapping(CarbonColumn[] carbonColumns) {
+    List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
+    for (CarbonColumn column : carbonColumns) {
+      // for  complex type need to break the loop
+      if (column.isComplex()) {
+        break;
+      }
+      if (!column.hasEncoding(Encoding.DICTIONARY) && column.isDimension()) {
+        noDictionaryMapping.add(true);
+      } else if (column.isDimension()) {
+        noDictionaryMapping.add(false);
+      }
+    }
+    return ArrayUtils
+        .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
+  }
+
   /**
    * Preparing the boolean [] to map whether the dimension use inverted index or not.
    */
@@ -276,10 +239,8 @@ public final class CarbonDataProcessorUtil {
 
   private static String getComplexTypeString(DataField[] dataFields) {
     StringBuilder dimString = new StringBuilder();
-    for (int i = 0; i < dataFields.length; i++) {
-      DataField dataField = dataFields[i];
-      if (dataField.getColumn().getDataType().equals(DataType.ARRAY) || dataField.getColumn()
-          .getDataType().equals(DataType.STRUCT)) {
+    for (DataField dataField : dataFields) {
+      if (dataField.getColumn().getDataType().isComplexType()) {
         addAllComplexTypeChildren((CarbonDimension) dataField.getColumn(), dimString, "");
         dimString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
       }
@@ -321,22 +282,19 @@ public final class CarbonDataProcessorUtil {
     for (int i = 0; i < hierarchies.length; i++) {
       String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
       String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-      GenericDataType g = levelInfo[1].equals(CarbonCommonConstants.ARRAY) ?
+      GenericDataType g = levelInfo[1].toLowerCase().contains(CarbonCommonConstants.ARRAY) ?
           new ArrayDataType(levelInfo[0], "", levelInfo[3]) :
           new StructDataType(levelInfo[0], "", levelInfo[3]);
       complexTypesMap.put(levelInfo[0], g);
       for (int j = 1; j < levels.length; j++) {
         levelInfo = levels[j].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-        switch (levelInfo[1]) {
-          case CarbonCommonConstants.ARRAY:
-            g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
-            break;
-          case CarbonCommonConstants.STRUCT:
-            g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
-            break;
-          default:
-            g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3],
-                Integer.parseInt(levelInfo[4])));
+        if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.ARRAY)) {
+          g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
+        } else if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.STRUCT)) {
+          g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
+        } else {
+          g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3],
+              Integer.parseInt(levelInfo[4])));
         }
       }
     }
@@ -368,7 +326,7 @@ public final class CarbonDataProcessorUtil {
    */
   public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema, String tableName) {
     Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    String factTableName = schema.getCarbonTable().getFactTableName();
+    String factTableName = schema.getCarbonTable().getTableName();
     if (tableName.equals(factTableName)) {
       List<CarbonDimension> dimensions =
           schema.getCarbonTable().getDimensionByTableName(factTableName);
@@ -396,10 +354,9 @@ public final class CarbonDataProcessorUtil {
       String tableName) {
     DataType[] type = new DataType[measureCount];
     for (int i = 0; i < type.length; i++) {
-      type[i] = DataType.DOUBLE;
+      type[i] = DataTypes.DOUBLE;
     }
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < type.length; i++) {
       type[i] = measures.get(i).getDataType();
@@ -416,32 +373,13 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * Creates map for columns which dateformats mentioned while loading the data.
-   * @param dataFormatString
-   * @return
-   */
-  public static Map<String, String> getDateFormatMap(String dataFormatString) {
-    Map<String, String> dateformatsHashMap = new HashMap<>();
-    if (dataFormatString != null && !dataFormatString.isEmpty()) {
-      String[] dateformats = dataFormatString.split(CarbonCommonConstants.COMMA);
-      for (String dateFormat : dateformats) {
-        String[] dateFormatSplits = dateFormat.split(":", 2);
-        dateformatsHashMap
-            .put(dateFormatSplits[0].toLowerCase().trim(), dateFormatSplits[1].trim());
-      }
-    }
-    return dateformatsHashMap;
-  }
-
-  /**
    * This method will get the store location for the given path, segment id and partition id
    *
    * @return data directory path
    */
   public static String checkAndCreateCarbonStoreLocation(String factStoreLocation,
       String databaseName, String tableName, String partitionId, String segmentId) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
@@ -458,7 +396,7 @@ public final class CarbonDataProcessorUtil {
       int measureCount) {
     DataType[] type = new DataType[measureCount];
     for (int i = 0; i < type.length; i++) {
-      type[i] = DataType.DOUBLE;
+      type[i] = DataTypes.DOUBLE;
     }
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < measureCount; i++) {
@@ -626,4 +564,30 @@ public final class CarbonDataProcessorUtil {
     }
     return errorMessage;
   }
+  /**
+   * The method returns true is either logger is enabled or action is redirect
+   * @param configuration
+   * @return
+   */
+  public static boolean isRawDataRequired(CarbonDataLoadConfiguration configuration) {
+    boolean isRawDataRequired = Boolean.parseBoolean(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
+            .toString());
+    // if logger is disabled then check if action is redirect then raw data will be required.
+    if (!isRawDataRequired) {
+      Object bad_records_action =
+          configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION);
+      if (null != bad_records_action) {
+        LoggerAction loggerAction = null;
+        try {
+          loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
+        } catch (IllegalArgumentException e) {
+          loggerAction = LoggerAction.FORCE;
+        }
+        isRawDataRequired = loggerAction == LoggerAction.REDIRECT;
+      }
+    }
+    return isRawDataRequired;
+  }
+
 }

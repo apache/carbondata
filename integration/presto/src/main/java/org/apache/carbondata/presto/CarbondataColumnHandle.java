@@ -25,8 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-//import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class CarbondataColumnHandle implements ColumnHandle {
@@ -76,8 +75,10 @@ public class CarbondataColumnHandle implements ColumnHandle {
     return columnUniqueId;
   }
 
-  @JsonCreator public CarbondataColumnHandle(@JsonProperty("connectorId") String connectorId,
-      @JsonProperty("columnName") String columnName, @JsonProperty("columnType") Type columnType,
+  @JsonCreator public CarbondataColumnHandle(
+      @JsonProperty("connectorId") String connectorId,
+      @JsonProperty("columnName") String columnName,
+      @JsonProperty("columnType") Type columnType,
       @JsonProperty("ordinalPosition") int ordinalPosition,
       @JsonProperty("keyOrdinal") int keyOrdinal,
       @JsonProperty("columnGroupOrdinal") int columnGroupOrdinal,

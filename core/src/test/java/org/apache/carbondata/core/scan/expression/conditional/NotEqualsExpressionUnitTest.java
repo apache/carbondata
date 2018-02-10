@@ -23,7 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -45,9 +45,9 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithBothStringISSame()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("left_name", DataType.STRING);
+    ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_name", DataType.STRING);
+    ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
     right.setColIndex(1);
     notEqualsExpression = new NotEqualsExpression(left, right);
     RowImpl value = new RowImpl();
@@ -77,9 +77,9 @@ public class NotEqualsExpressionUnitTest {
   @Test public void testEvaluateForNotEqualsExpressionWithShortDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
 
-    ColumnExpression left = new ColumnExpression("left_id", DataType.SHORT);
+    ColumnExpression left = new ColumnExpression("left_id", DataTypes.SHORT);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_id", DataType.SHORT);
+    ColumnExpression right = new ColumnExpression("right_id", DataTypes.SHORT);
     right.setColIndex(1);
     notEqualsExpression = new NotEqualsExpression(left, right);
     RowImpl value = new RowImpl();
@@ -111,9 +111,9 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithIntDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("right_number", DataType.INT);
+    ColumnExpression right = new ColumnExpression("right_number", DataTypes.INT);
     right.setColIndex(1);
-    ColumnExpression left = new ColumnExpression("left_number", DataType.INT);
+    ColumnExpression left = new ColumnExpression("left_number", DataTypes.INT);
     left.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(left, right);
     RowImpl value = new RowImpl();
@@ -142,9 +142,9 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("right_contact", DataType.DOUBLE);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);
     right.setColIndex(1);
-    ColumnExpression left = new ColumnExpression("left_contact", DataType.DOUBLE);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);
     left.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(left, right);
     RowImpl value = new RowImpl();
@@ -173,9 +173,9 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithLongDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("right_contact", DataType.LONG);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.LONG);
     right.setColIndex(1);
-    ColumnExpression left = new ColumnExpression("left_contact", DataType.LONG);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.LONG);
     left.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(left, right);
     RowImpl value = new RowImpl();
@@ -204,9 +204,9 @@ public class NotEqualsExpressionUnitTest {
   @Test public void testEvaluateForNotEqualsExpressionWithTimestampDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
-      ColumnExpression left = new ColumnExpression("left_timestamp", DataType.TIMESTAMP);
+      ColumnExpression left = new ColumnExpression("left_timestamp", DataTypes.TIMESTAMP);
       left.setColIndex(0);
-      ColumnExpression right = new ColumnExpression("right_timestamp", DataType.TIMESTAMP);
+      ColumnExpression right = new ColumnExpression("right_timestamp", DataTypes.TIMESTAMP);
       right.setColIndex(1);
 
       notEqualsExpression = new NotEqualsExpression(left, right);
@@ -246,9 +246,9 @@ public class NotEqualsExpressionUnitTest {
     }
   }
 
-  @Test(expected = FilterUnsupportedException.class) public void testForNotEqualsExpressionWithDefaultCase()
+  @Test public void testForNotEqualsExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("contact", DataType.BOOLEAN);
+    ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(right, right);
     RowImpl value = new RowImpl();
@@ -260,9 +260,9 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateWithForNotEqualsExpressionDecimalDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("contact", DataType.DECIMAL);
+    ColumnExpression right = new ColumnExpression("contact", DataTypes.createDefaultDecimalType());
     right.setColIndex(1);
-    ColumnExpression left = new ColumnExpression("contact", DataType.DECIMAL);
+    ColumnExpression left = new ColumnExpression("contact", DataTypes.createDefaultDecimalType());
     left.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(left, right);
     RowImpl value = new RowImpl();
@@ -290,7 +290,7 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithIsNullReturnTrue()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
+    ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(right, right);
     RowImpl value = new RowImpl();
@@ -317,9 +317,9 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("name", DataType.STRING);
+    ColumnExpression left = new ColumnExpression("name", DataTypes.STRING);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("number", DataType.INT);
+    ColumnExpression right = new ColumnExpression("number", DataTypes.INT);
     right.setColIndex(1);
     notEqualsExpression = new NotEqualsExpression(left, right);
     RowImpl value = new RowImpl();
@@ -346,8 +346,8 @@ public class NotEqualsExpressionUnitTest {
   }
 
   @Test public void testForNotEqualsExpressionWithGetString() throws Exception {
-    ColumnExpression right = new ColumnExpression("right_name", DataType.STRING);
-    ColumnExpression left = new ColumnExpression("left_name", DataType.STRING);
+    ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
+    ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     notEqualsExpression = new NotEqualsExpression(left, right);
     String expected_result = "NotEquals(ColumnExpression(left_name),ColumnExpression(right_name))";
     String result = notEqualsExpression.getString();
@@ -356,7 +356,7 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithNullWhileCreatingObject()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
+    ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(right, right, false);
     RowImpl value = new RowImpl();
@@ -377,13 +377,13 @@ public class NotEqualsExpressionUnitTest {
     };
 
     ExpressionResult result = notEqualsExpression.evaluate(value);
-    assertEquals(DataType.BOOLEAN, result.getDataType());
+    assertEquals(DataTypes.BOOLEAN, result.getDataType());
 
   }
 
   @Test public void testEvaluateForNotEqualsExpressionWithNullISTureWhileCreatingObject()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
+    ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(right, right, true);
     RowImpl value = new RowImpl();
@@ -398,7 +398,7 @@ public class NotEqualsExpressionUnitTest {
     };
 
     ExpressionResult result = notEqualsExpression.evaluate(value);
-    assertEquals(DataType.BOOLEAN, result.getDataType());
+    assertEquals(DataTypes.BOOLEAN, result.getDataType());
 
   }
 }

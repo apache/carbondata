@@ -23,7 +23,6 @@ import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.type.Type;
-import io.airlift.slice.Slice;
 
 /**
  * Class to read the Object Stream
@@ -52,7 +51,7 @@ public class ObjectStreamReader  extends AbstractStreamReader {
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
         for(int i = 0; i < numberOfRows ; i++ ){
-          type.writeObject(builder, columnVector.getByte(i));
+          type.writeObject(builder, columnVector.getData(i));
         }
       }
 

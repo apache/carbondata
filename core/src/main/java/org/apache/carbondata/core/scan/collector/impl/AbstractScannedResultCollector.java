@@ -23,6 +23,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -77,7 +78,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       } else {
         // if not then get the default value and use that value in aggregation
         Object defaultValue = measureInfo.getDefaultValues()[i];
-        if (null != defaultValue && measureInfo.getMeasureDataTypes()[i] == DataType.DECIMAL) {
+        if (null != defaultValue && DataTypes.isDecimal(measureInfo.getMeasureDataTypes()[i])) {
           // convert data type as per the computing engine
           defaultValue = DataTypeUtil.getDataTypeConverter().convertToDecimal(defaultValue);
         }
@@ -89,24 +90,25 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
   protected Object getMeasureData(ColumnPage dataChunk, int index,
       CarbonMeasure carbonMeasure) {
     if (!dataChunk.getNullBits().get(index)) {
-      switch (carbonMeasure.getDataType()) {
-        case SHORT:
-          return (short)dataChunk.getLong(index);
-        case INT:
-          return (int)dataChunk.getLong(index);
-        case LONG:
-          return dataChunk.getLong(index);
-        case DECIMAL:
-          BigDecimal bigDecimalMsrValue =
-              dataChunk.getDecimal(index);
-          if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
-            bigDecimalMsrValue =
-                bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-          }
-          // convert data type as per the computing engine
-          return DataTypeUtil.getDataTypeConverter().convertToDecimal(bigDecimalMsrValue);
-        default:
-          return dataChunk.getDouble(index);
+      DataType dataType = carbonMeasure.getDataType();
+      if (dataType == DataTypes.BOOLEAN) {
+        return dataChunk.getBoolean(index);
+      } else if (dataType == DataTypes.SHORT) {
+        return (short) dataChunk.getLong(index);
+      } else if (dataType == DataTypes.INT) {
+        return (int) dataChunk.getLong(index);
+      } else if (dataType == DataTypes.LONG) {
+        return dataChunk.getLong(index);
+      } else if (DataTypes.isDecimal(dataType)) {
+        BigDecimal bigDecimalMsrValue = dataChunk.getDecimal(index);
+        if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
+          bigDecimalMsrValue =
+              bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+        }
+        // convert data type as per the computing engine
+        return DataTypeUtil.getDataTypeConverter().convertToDecimal(bigDecimalMsrValue);
+      } else {
+        return dataChunk.getDouble(index);
       }
     }
     return null;

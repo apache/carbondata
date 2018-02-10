@@ -18,6 +18,7 @@ package org.apache.carbondata.core.metadata.converter;
 
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -98,6 +99,18 @@ public interface SchemaConverter {
    * @param tableName
    * @return
    */
-  TableInfo fromExternalToWrapperTableInfo(org.apache.carbondata.format.TableInfo externalTableInfo,
-      String dbName, String tableName, String storePath);
+  TableInfo fromExternalToWrapperTableInfo(
+      org.apache.carbondata.format.TableInfo externalTableInfo,
+      String dbName,
+      String tableName,
+      String storePath);
+
+  /**
+   * method to convert thrift datamap schema object to wrapper
+   * data map object
+   * @param thriftchildSchema
+   * @return CarbonRowSchema
+   */
+  DataMapSchema fromExternalToWrapperDataMapSchema(
+      org.apache.carbondata.format.DataMapSchema thriftchildSchema);
 }

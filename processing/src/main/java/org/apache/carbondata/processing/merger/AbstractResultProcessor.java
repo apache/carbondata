@@ -23,7 +23,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
-import org.apache.carbondata.processing.model.CarbonLoadModel;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 
@@ -45,17 +45,17 @@ public abstract class AbstractResultProcessor {
       CompactionType compactionType, CarbonTable carbonTable,
       CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
     CarbonDataFileAttributes carbonDataFileAttributes;
-    if (compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
-      int taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
-          CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
+    if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
+      long taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
+          CarbonStorePath.getCarbonTablePath(loadModel.getTablePath(),
               carbonTable.getCarbonTableIdentifier()));
       // Increase the Task Index as in IUD_UPDDEL_DELTA_COMPACTION the new file will
       // be written in same segment. So the TaskNo should be incremented by 1 from max val.
-      int index = taskNo + 1;
+      long index = taskNo + 1;
       carbonDataFileAttributes = new CarbonDataFileAttributes(index, loadModel.getFactTimeStamp());
     } else {
       carbonDataFileAttributes =
-          new CarbonDataFileAttributes(Integer.parseInt(loadModel.getTaskNo()),
+          new CarbonDataFileAttributes(Long.parseLong(loadModel.getTaskNo()),
               loadModel.getFactTimeStamp());
     }
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);

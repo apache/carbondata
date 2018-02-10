@@ -122,7 +122,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
     int[] invertedIndexesReverse = null;
     int[] rlePage = null;
     DataChunk2 dimensionColumnChunk = null;
-    int copySourcePoint = dimensionRawColumnChunk.getOffSet();
+    int copySourcePoint = (int) dimensionRawColumnChunk.getOffSet();
     int blockIndex = dimensionRawColumnChunk.getColumnIndex();
     ByteBuffer rawData = dimensionRawColumnChunk.getRawData();
     if (dimensionChunksOffset.size() - 1 == blockIndex) {

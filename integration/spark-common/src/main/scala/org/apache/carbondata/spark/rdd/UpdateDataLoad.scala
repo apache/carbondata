@@ -24,19 +24,18 @@ import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.DataLoadExecutor
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
+import org.apache.carbondata.processing.loading.{DataLoadExecutor, TableProcessingOperations}
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 /**
  * Data load in case of update command .
  */
 object UpdateDataLoad {
 
-  def DataLoadForUpdate(segId: String,
-      index: Int,
+  def DataLoadForUpdate(
+      segId: String,
+      index: Long,
       iter: Iterator[Row],
       carbonLoadModel: CarbonLoadModel,
       loadMetadataDetails: LoadMetadataDetails): Unit = {
@@ -54,7 +53,7 @@ object UpdateDataLoad {
       // Intialize to set carbon properties
       loader.initialize()
 
-      loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+      loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
       new DataLoadExecutor().execute(carbonLoadModel,
         loader.storeLocation,
         recordReaders.toArray)
@@ -64,7 +63,7 @@ object UpdateDataLoad {
         LOGGER.error(e)
         throw e
     } finally {
-      CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(carbonLoadModel, false, false)
+      TableProcessingOperations.deleteLocalDataLoadFolderLocation(carbonLoadModel, false, false)
     }
   }
 

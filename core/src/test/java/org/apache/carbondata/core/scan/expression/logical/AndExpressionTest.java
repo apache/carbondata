@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.scan.expression.logical;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -38,8 +38,8 @@ public class AndExpressionTest {
   private AndExpression andExpression;
 
   @Before public void setUp() {
-    ColumnExpression leftExpression = new ColumnExpression("IMEI", DataType.BOOLEAN);
-    ColumnExpression rightExpression = new ColumnExpression("IMEI", DataType.BOOLEAN);
+    ColumnExpression leftExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
+    ColumnExpression rightExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
     andExpression = new AndExpression(leftExpression, rightExpression);
   }
 
@@ -47,7 +47,7 @@ public class AndExpressionTest {
       throws FilterUnsupportedException, FilterIllegalMemberException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { true });
-    final ExpressionResult expressionResult = new ExpressionResult(DataType.STRING, "test");
+    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.STRING, "test");
     new MockUp<ColumnExpression>() {
       @Mock public ExpressionResult evaluate(RowIntf value)
           throws FilterUnsupportedException, FilterIllegalMemberException {
@@ -60,7 +60,7 @@ public class AndExpressionTest {
   @Test public void testEvaluate() throws FilterUnsupportedException, FilterIllegalMemberException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { false });
-    final ExpressionResult expressionResult = new ExpressionResult(DataType.BOOLEAN, "test");
+    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.BOOLEAN, "test");
     new MockUp<ColumnExpression>() {
       @Mock public ExpressionResult evaluate(RowIntf value)
           throws FilterUnsupportedException, FilterIllegalMemberException {

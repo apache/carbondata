@@ -20,6 +20,7 @@ package org.apache.spark.sql.hive
 import java.net.{InetAddress, InterfaceAddress, NetworkInterface}
 
 import scala.collection.JavaConverters._
+import scala.util.control.Breaks._
 
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
@@ -28,11 +29,31 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
+import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
 object DistributionUtil {
   @transient
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  /*
+   *  minimum required registered resource for starting block distribution
+   */
+  lazy val minRegisteredResourceRatio: Double = {
+    val value: String = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO,
+        CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT)
+    java.lang.Double.parseDouble(value)
+  }
+
+  /*
+   * node registration wait time
+   */
+  lazy val dynamicAllocationSchTimeOut: Integer = {
+    val value: String = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT,
+        CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_DEFAULT)
+    // milli second
+    java.lang.Integer.parseInt(value) * 1000
+  }
 
   /*
    * This method will return the list of executers in the cluster.
@@ -202,18 +223,25 @@ object DistributionUtil {
     var nodes = DistributionUtil.getNodeList(sparkContext)
     // calculate the number of times loop has to run to check for starting
     // the requested number of executors
-    val threadSleepTime = CarbonCommonConstants.CARBON_EXECUTOR_STARTUP_THREAD_SLEEP_TIME
-    val loopCounter = calculateCounterBasedOnExecutorStartupTime(threadSleepTime)
-    var maxTimes = loopCounter
-    while (nodes.length < requiredExecutors && maxTimes > 0) {
-      Thread.sleep(threadSleepTime)
-      nodes = DistributionUtil.getNodeList(sparkContext)
-      maxTimes = maxTimes - 1
+    val threadSleepTime =
+    CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_THREAD_SLEEP_TIME
+    val maxRetryCount = calculateMaxRetry
+    var maxTimes = maxRetryCount
+    breakable {
+      while (nodes.length < requiredExecutors && maxTimes > 0) {
+        Thread.sleep(threadSleepTime);
+        nodes = DistributionUtil.getNodeList(sparkContext)
+        maxTimes = maxTimes - 1;
+        val resourceRatio = (nodes.length.toDouble / requiredExecutors)
+        if (resourceRatio.compareTo(minRegisteredResourceRatio) >= 0) {
+          break
+        }
+      }
     }
     val timDiff = System.currentTimeMillis() - startTime
     LOGGER.info(s"Total Time taken to ensure the required executors : $timDiff")
     LOGGER.info(s"Time elapsed to allocate the required executors: " +
-      s"${(loopCounter - maxTimes) * threadSleepTime}")
+      s"${(maxRetryCount - maxTimes) * threadSleepTime}")
     nodes.distinct.toSeq
   }
 
@@ -245,21 +273,18 @@ object DistributionUtil {
   /**
    * This method will calculate how many times a loop will run with an interval of given sleep
    * time to wait for requested executors to come up
-   *
-   * @param threadSleepTime
-   * @return
+    *
+    * @return The max retry count
    */
-  private def calculateCounterBasedOnExecutorStartupTime(threadSleepTime: Int): Int = {
-    var executorStartUpTimeOut = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_EXECUTOR_STARTUP_TIMEOUT,
-        CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_DEFAULT).toInt
-    // convert seconds into milliseconds for loop counter calculation
-    executorStartUpTimeOut = executorStartUpTimeOut * 1000
-    // make executor start up time exactly divisible by thread sleep time
-    val remainder = executorStartUpTimeOut % threadSleepTime
+  def calculateMaxRetry(): Int = {
+    val remainder = dynamicAllocationSchTimeOut % CarbonCommonConstants
+      .CARBON_DYNAMIC_ALLOCATION_SCHEDULER_THREAD_SLEEP_TIME
+    val retryCount: Int = dynamicAllocationSchTimeOut / CarbonCommonConstants
+      .CARBON_DYNAMIC_ALLOCATION_SCHEDULER_THREAD_SLEEP_TIME
     if (remainder > 0) {
-      executorStartUpTimeOut = executorStartUpTimeOut + threadSleepTime - remainder
+      retryCount + 1
+    } else {
+      retryCount
     }
-    executorStartUpTimeOut / threadSleepTime
   }
 }

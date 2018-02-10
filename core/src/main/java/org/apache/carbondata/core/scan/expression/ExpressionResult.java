@@ -29,6 +29,7 @@ import java.util.TimeZone;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -71,48 +72,48 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
-      switch (this.getDataType()) {
-        case STRING:
-          try {
-            return Integer.parseInt(value.toString());
-          } catch (NumberFormatException e) {
-            throw new FilterIllegalMemberException(e);
-          }
-        case SHORT:
-          return ((Short) value).intValue();
-        case INT:
-        case DOUBLE:
-          if (value instanceof Double) {
-            return ((Double) value).intValue();
-          }
-          if (value instanceof Long) {
-            return ((Long) value).intValue();
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.STRING) {
+        try {
+          return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+          throw new FilterIllegalMemberException(e);
+        }
+      } else if (dataType == DataTypes.SHORT) {
+        return ((Short) value).intValue();
+      } else if (dataType == DataTypes.INT ||
+          dataType == DataTypes.DOUBLE) {
+        if (value instanceof Double) {
+          return ((Double) value).intValue();
+        }
+        if (value instanceof Long) {
+          return ((Long) value).intValue();
+        }
+        return (Integer) value;
+      } else if (dataType == DataTypes.DATE) {
+        if (value instanceof java.sql.Date) {
+          return (int) (((java.sql.Date) value).getTime());
+        } else {
+          return (Integer) value;
+        }
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        if (value instanceof Timestamp) {
+          return (int) (((Timestamp) value).getTime());
+        } else {
+          if (isLiteral) {
+            Long l = (Long) value / 1000;
+            return l.intValue();
           }
           return (Integer) value;
-        case DATE:
-          if (value instanceof java.sql.Date) {
-            return (int) (((java.sql.Date) value).getTime());
-          } else {
-            return (Integer) value;
-          }
-        case TIMESTAMP:
-          if (value instanceof Timestamp) {
-            return (int) (((Timestamp) value).getTime());
-          } else {
-            if (isLiteral) {
-              Long l = (Long) value / 1000;
-              return l.intValue();
-            }
-            return (Integer) value;
-          }
-        default:
-          throw new FilterIllegalMemberException(
-              "Cannot convert" + this.getDataType().name() + " to integer type value");
+        }
+      } else {
+        throw new FilterIllegalMemberException(
+            "Cannot convert" + this.getDataType().getName() + " to integer type value");
       }
 
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
-          "Cannot convert" + this.getDataType().name() + " to Integer type value");
+          "Cannot convert" + this.getDataType().getName() + " to Integer type value");
     }
   }
 
@@ -121,51 +122,46 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
-      switch (this.getDataType()) {
-        case STRING:
-          try {
-            return Short.parseShort(value.toString());
-          } catch (NumberFormatException e) {
-            throw new FilterIllegalMemberException(e);
-          }
-        case SHORT:
-        case INT:
-        case DOUBLE:
-
-          if (value instanceof Double) {
-            return ((Double) value).shortValue();
-          } else if (value instanceof Integer) {
-            return ((Integer) value).shortValue();
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.STRING) {
+        try {
+          return Short.parseShort(value.toString());
+        } catch (NumberFormatException e) {
+          throw new FilterIllegalMemberException(e);
+        }
+      } else if (dataType == DataTypes.SHORT ||
+          dataType == DataTypes.INT ||
+          dataType == DataTypes.DOUBLE) {
+        if (value instanceof Double) {
+          return ((Double) value).shortValue();
+        } else if (value instanceof Integer) {
+          return ((Integer) value).shortValue();
+        }
+        return (Short) value;
+      } else if (dataType == DataTypes.DATE) {
+        if (value instanceof java.sql.Date) {
+          return (short) (((java.sql.Date) value).getTime());
+        } else {
+          return (Short) value;
+        }
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        if (value instanceof Timestamp) {
+          return (short) (((Timestamp) value).getTime());
+        } else {
+          if (isLiteral) {
+            Long l = ((long) value / 1000);
+            return l.shortValue();
           }
           return (Short) value;
-
-        case DATE:
-
-          if (value instanceof java.sql.Date) {
-            return (short) (((java.sql.Date) value).getTime());
-          } else {
-            return (Short) value;
-          }
-        case TIMESTAMP:
-
-          if (value instanceof Timestamp) {
-            return (short) (((Timestamp) value).getTime());
-          } else {
-            if (isLiteral) {
-              Long l = ((long) value / 1000);
-              return l.shortValue();
-            }
-            return (Short) value;
-          }
-
-        default:
-          throw new FilterIllegalMemberException(
-              "Cannot convert" + this.getDataType().name() + " to integer type value");
+        }
+      } else {
+        throw new FilterIllegalMemberException(
+            "Cannot convert" + this.getDataType().getName() + " to integer type value");
       }
 
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
-          "Cannot convert" + this.getDataType().name() + " to Integer type value");
+          "Cannot convert" + this.getDataType().getName() + " to Integer type value");
     }
   }
 
@@ -174,34 +170,33 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
-      switch (this.getDataType()) {
-        case DATE:
-        case TIMESTAMP:
-          String format = CarbonUtil.getFormatFromProperty(this.getDataType());
-          SimpleDateFormat parser = new SimpleDateFormat(format);
-          if (this.getDataType() == DataType.DATE) {
-            parser.setTimeZone(TimeZone.getTimeZone("GMT"));
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+        String format = CarbonUtil.getFormatFromProperty(this.getDataType());
+        SimpleDateFormat parser = new SimpleDateFormat(format);
+        if (this.getDataType() == DataTypes.DATE) {
+          parser.setTimeZone(TimeZone.getTimeZone("GMT"));
+        }
+        if (value instanceof Timestamp) {
+          return parser.format((Timestamp) value);
+        } else if (value instanceof java.sql.Date) {
+          return parser.format((java.sql.Date) value);
+        } else if (value instanceof Long) {
+          if (isLiteral) {
+            return parser.format(new Timestamp((long) value / 1000));
           }
-          if (value instanceof Timestamp) {
-            return parser.format((Timestamp) value);
-          } else if (value instanceof java.sql.Date) {
-            return parser.format((java.sql.Date) value);
-          } else if (value instanceof Long) {
-            if (isLiteral) {
-              return parser.format(new Timestamp((long) value / 1000));
-            }
-            return parser.format(new Timestamp((long) value));
-          } else if (value instanceof Integer) {
-            long date = ((int) value) * DateDirectDictionaryGenerator.MILLIS_PER_DAY;
-            return parser.format(new java.sql.Date(date));
-          }
-          return value.toString();
-        default:
-          return value.toString();
+          return parser.format(new Timestamp((long) value));
+        } else if (value instanceof Integer) {
+          long date = ((int) value) * DateDirectDictionaryGenerator.MILLIS_PER_DAY;
+          return parser.format(new java.sql.Date(date));
+        }
+        return value.toString();
+      } else {
+        return value.toString();
       }
     } catch (Exception e) {
       throw new FilterIllegalMemberException(
-          "Cannot convert" + this.getDataType().name() + " to String type value");
+          "Cannot convert" + this.getDataType().getName() + " to String type value");
     }
   }
 
@@ -210,44 +205,44 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
-      switch (this.getDataType()) {
-        case STRING:
-          try {
-            return Double.parseDouble(value.toString());
-          } catch (NumberFormatException e) {
-            throw new FilterIllegalMemberException(e);
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.STRING) {
+        try {
+          return Double.parseDouble(value.toString());
+        } catch (NumberFormatException e) {
+          throw new FilterIllegalMemberException(e);
+        }
+      } else if (dataType == DataTypes.SHORT) {
+        return ((Short) value).doubleValue();
+      } else if (dataType == DataTypes.INT) {
+        return ((Integer) value).doubleValue();
+      } else if (dataType == DataTypes.LONG) {
+        return ((Long) value).doubleValue();
+      } else if (dataType == DataTypes.DOUBLE) {
+        return (Double) value;
+      } else if (dataType == DataTypes.DATE) {
+        if (value instanceof java.sql.Date) {
+          return (double) ((java.sql.Date) value).getTime();
+        } else {
+          return (Double) (value);
+        }
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        if (value instanceof Timestamp) {
+          return (double) ((Timestamp) value).getTime();
+        } else {
+          if (isLiteral) {
+            Long l = (Long) value / 1000;
+            return l.doubleValue();
           }
-        case SHORT:
-          return ((Short) value).doubleValue();
-        case INT:
-          return ((Integer) value).doubleValue();
-        case LONG:
-          return ((Long) value).doubleValue();
-        case DOUBLE:
-          return (Double) value;
-        case DATE:
-          if (value instanceof java.sql.Date) {
-            return (double) ((java.sql.Date) value).getTime();
-          } else {
-            return (Double) (value);
-          }
-        case TIMESTAMP:
-          if (value instanceof Timestamp) {
-            return (double) ((Timestamp) value).getTime();
-          } else {
-            if (isLiteral) {
-              Long l = (Long) value / 1000;
-              return l.doubleValue();
-            }
-            return (Double) (value);
-          }
-        default:
-          throw new FilterIllegalMemberException(
-              "Cannot convert" + this.getDataType().name() + " to double type value");
+          return (Double) (value);
+        }
+      } else {
+        throw new FilterIllegalMemberException(
+            "Cannot convert" + this.getDataType().getName() + " to double type value");
       }
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
-          "Cannot convert" + this.getDataType().name() + " to Double type value");
+          "Cannot convert" + this.getDataType().getName() + " to Double type value");
     }
   }
 
@@ -256,40 +251,40 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
-      switch (this.getDataType()) {
-        case STRING:
-          try {
-            return Long.parseLong(value.toString());
-          } catch (NumberFormatException e) {
-            throw new FilterIllegalMemberException(e);
-          }
-        case SHORT:
-          return ((Short) value).longValue();
-        case INT:
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.STRING) {
+        try {
+          return Long.parseLong(value.toString());
+        } catch (NumberFormatException e) {
+          throw new FilterIllegalMemberException(e);
+        }
+      } else if (dataType == DataTypes.SHORT) {
+        return ((Short) value).longValue();
+      } else if (dataType == DataTypes.INT) {
+        return (Long) value;
+      } else if (dataType == DataTypes.LONG) {
+        return (Long) value;
+      } else if (dataType == DataTypes.DOUBLE) {
+        return (Long) value;
+      } else if (dataType == DataTypes.DATE) {
+        if (value instanceof java.sql.Date) {
+          return ((java.sql.Date) value).getTime();
+        } else {
           return (Long) value;
-        case LONG:
+        }
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        if (value instanceof Timestamp) {
+          return ((Timestamp) value).getTime();
+        } else {
           return (Long) value;
-        case DOUBLE:
-          return (Long) value;
-        case DATE:
-          if (value instanceof java.sql.Date) {
-            return ((java.sql.Date) value).getTime();
-          } else {
-            return (Long) value;
-          }
-        case TIMESTAMP:
-          if (value instanceof Timestamp) {
-            return ((Timestamp) value).getTime();
-          } else {
-            return (Long) value;
-          }
-        default:
-          throw new FilterIllegalMemberException(
-              "Cannot convert" + this.getDataType().name() + " to Long type value");
+        }
+      } else {
+        throw new FilterIllegalMemberException(
+            "Cannot convert" + this.getDataType().getName() + " to Long type value");
       }
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(e.getMessage() + " " +
-          "Cannot convert" + this.getDataType().name() + " to Long type value");
+          "Cannot convert" + this.getDataType().getName() + " to Long type value");
     }
 
   }
@@ -300,44 +295,43 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
-      switch (this.getDataType()) {
-        case STRING:
-          try {
-            return new BigDecimal(value.toString());
-          } catch (NumberFormatException e) {
-            throw new FilterIllegalMemberException(e);
-          }
-        case SHORT:
-          return new BigDecimal((short) value);
-        case INT:
-          return new BigDecimal((int) value);
-        case LONG:
-          return new BigDecimal((long) value);
-        case DOUBLE:
-        case DECIMAL:
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.STRING) {
+        try {
           return new BigDecimal(value.toString());
-        case DATE:
-          if (value instanceof java.sql.Date) {
-            return new BigDecimal(((java.sql.Date) value).getTime());
-          } else {
-            return new BigDecimal((long) value);
+        } catch (NumberFormatException e) {
+          throw new FilterIllegalMemberException(e);
+        }
+      } else if (dataType == DataTypes.SHORT) {
+        return new BigDecimal((short) value);
+      } else if (dataType == DataTypes.INT) {
+        return new BigDecimal((int) value);
+      } else if (dataType == DataTypes.LONG) {
+        return new BigDecimal((long) value);
+      } else if (dataType == DataTypes.DOUBLE || DataTypes.isDecimal(dataType)) {
+        return new BigDecimal(value.toString());
+      } else if (dataType == DataTypes.DATE) {
+        if (value instanceof java.sql.Date) {
+          return new BigDecimal(((java.sql.Date) value).getTime());
+        } else {
+          return new BigDecimal((long) value);
+        }
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        if (value instanceof Timestamp) {
+          return new BigDecimal(((Timestamp) value).getTime());
+        } else {
+          if (isLiteral) {
+            return new BigDecimal((long) value / 1000);
           }
-        case TIMESTAMP:
-          if (value instanceof Timestamp) {
-            return new BigDecimal(((Timestamp) value).getTime());
-          } else {
-            if (isLiteral) {
-              return new BigDecimal((long) value / 1000);
-            }
-            return new BigDecimal((long) value);
-          }
-        default:
-          throw new FilterIllegalMemberException(
-              "Cannot convert" + this.getDataType().name() + " to Long type value");
+          return new BigDecimal((long) value);
+        }
+      } else {
+        throw new FilterIllegalMemberException(
+            "Cannot convert" + this.getDataType().getName() + " to Decimal type value");
       }
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
-          "Cannot convert" + this.getDataType().name() + " to Long type value");
+          "Cannot convert" + this.getDataType().getName() + " to Decimal type value");
     }
 
   }
@@ -347,51 +341,50 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
-      switch (this.getDataType()) {
-        case STRING:
-          // Currently the query engine layer only supports yyyy-MM-dd HH:mm:ss date format
-          // no matter in which format the data is been stored, so while retrieving the direct
-          // surrogate value for filter member first it should be converted in date form as per
-          // above format and needs to retrieve time stamp.
-          SimpleDateFormat parser =
-              new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-          Date dateToStr;
-          try {
-            dateToStr = parser.parse(value.toString());
-            return dateToStr.getTime();
-          } catch (ParseException e) {
-            throw new FilterIllegalMemberException(
-                "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
-          }
-        case SHORT:
-          return ((Short) value).longValue();
-        case INT:
-        case LONG:
-          return (Long) value;
-        case DOUBLE:
-          return (Long) value;
-        case DATE:
-          if (value instanceof java.sql.Date) {
-            return ((Date) value).getTime();
-          } else {
-            return (Long) value;
-          }
-        case TIMESTAMP:
-          if (value instanceof Timestamp) {
-            return ((Timestamp) value).getTime();
-          } else {
-            if (isLiteral) {
-              return (Long) value / 1000;
-            }
-            return (Long) value;
-          }
-        default:
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.STRING) {
+        // Currently the query engine layer only supports yyyy-MM-dd HH:mm:ss date format
+        // no matter in which format the data is been stored, so while retrieving the direct
+        // surrogate value for filter member first it should be converted in date form as per
+        // above format and needs to retrieve time stamp.
+        SimpleDateFormat parser =
+            new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        Date dateToStr;
+        try {
+          dateToStr = parser.parse(value.toString());
+          return dateToStr.getTime();
+        } catch (ParseException e) {
           throw new FilterIllegalMemberException(
-              "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
+              "Cannot convert" + this.getDataType().getName() + " to Time type value");
+        }
+      } else if (dataType == DataTypes.SHORT) {
+        return ((Short) value).longValue();
+      } else if (dataType == DataTypes.INT || dataType == DataTypes.LONG) {
+        return (Long) value;
+      } else if (dataType == DataTypes.DOUBLE) {
+        return (Long) value;
+      } else if (dataType == DataTypes.DATE) {
+        if (value instanceof java.sql.Date) {
+          return ((Date) value).getTime();
+        } else {
+          return (Long) value;
+        }
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        if (value instanceof Timestamp) {
+          return ((Timestamp) value).getTime();
+        } else {
+          if (isLiteral) {
+            return (Long) value / 1000;
+          }
+          return (Long) value;
+        }
+      } else {
+        throw new FilterIllegalMemberException(
+            "Cannot convert" + this.getDataType().getName() + " to Time type value");
       }
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
-          "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
+          "Cannot convert" + this.getDataType().getName() + " to Time type value");
     }
 
   }
@@ -401,24 +394,22 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
-      switch (this.getDataType()) {
-        case STRING:
-          try {
-            return Boolean.parseBoolean(value.toString());
-          } catch (NumberFormatException e) {
-            throw new FilterIllegalMemberException(e);
-          }
-
-        case BOOLEAN:
+      DataType dataType = this.getDataType();
+      if (dataType == DataTypes.STRING) {
+        try {
           return Boolean.parseBoolean(value.toString());
-
-        default:
-          throw new FilterIllegalMemberException(
-              "Cannot convert" + this.getDataType().name() + " to boolean type value");
+        } catch (NumberFormatException e) {
+          throw new FilterIllegalMemberException(e);
+        }
+      } else if (dataType == DataTypes.BOOLEAN) {
+        return Boolean.parseBoolean(value.toString());
+      } else {
+        throw new FilterIllegalMemberException(
+            "Cannot convert" + this.getDataType().getName() + " to boolean type value");
       }
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
-          "Cannot convert" + this.getDataType().name() + " to Boolean type value");
+          "Cannot convert" + this.getDataType().getName() + " to Boolean type value");
     }
   }
 
@@ -491,29 +482,20 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       dataType = objToCompare.getDataType();
     }
     try {
-      switch (dataType) {
-        case STRING:
-          result = this.getString().equals(objToCompare.getString());
-          break;
-        case SHORT:
-          result = this.getShort().equals(objToCompare.getShort());
-          break;
-        case INT:
-          result = this.getInt().equals(objToCompare.getInt());
-          break;
-        case LONG:
-        case DATE:
-        case TIMESTAMP:
-          result = this.getLong().equals(objToCompare.getLong());
-          break;
-        case DOUBLE:
-          result = this.getDouble().equals(objToCompare.getDouble());
-          break;
-        case DECIMAL:
-          result = this.getDecimal().equals(objToCompare.getDecimal());
-          break;
-        default:
-          break;
+      if (dataType == DataTypes.STRING) {
+        result = this.getString().equals(objToCompare.getString());
+      } else if (dataType == DataTypes.SHORT) {
+        result = this.getShort().equals(objToCompare.getShort());
+      } else if (dataType == DataTypes.INT) {
+        result = this.getInt().equals(objToCompare.getInt());
+      } else if (dataType == DataTypes.LONG ||
+          dataType == DataTypes.DATE ||
+          dataType == DataTypes.TIMESTAMP) {
+        result = this.getLong().equals(objToCompare.getLong());
+      } else if (dataType == DataTypes.DOUBLE) {
+        result = this.getDouble().equals(objToCompare.getDouble());
+      } else if (DataTypes.isDecimal(dataType)) {
+        result = this.getDecimal().equals(objToCompare.getDecimal());
       }
     } catch (FilterIllegalMemberException ex) {
       return false;
@@ -528,32 +510,28 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
 
   @Override public int compareTo(ExpressionResult o) {
     try {
-      switch (o.dataType) {
-        case SHORT:
-        case INT:
-        case LONG:
-        case DOUBLE:
-          Double d1 = this.getDouble();
-          Double d2 = o.getDouble();
-          return d1.compareTo(d2);
-        case DECIMAL:
-          java.math.BigDecimal val1 = this.getDecimal();
-          java.math.BigDecimal val2 = o.getDecimal();
-          return val1.compareTo(val2);
-        case DATE:
-        case TIMESTAMP:
-          String format = CarbonUtil.getFormatFromProperty(o.dataType);
-          SimpleDateFormat parser = new SimpleDateFormat(format);
-          Date date1 = parser.parse(this.getString());
-          Date date2 = parser.parse(o.getString());
-          return date1.compareTo(date2);
-        case STRING:
-        default:
-          return this.getString().compareTo(o.getString());
+      DataType type = o.dataType;
+      if (type == DataTypes.SHORT ||
+          type == DataTypes.INT ||
+          type == DataTypes.LONG ||
+          type == DataTypes.DOUBLE) {
+        Double d1 = this.getDouble();
+        Double d2 = o.getDouble();
+        return d1.compareTo(d2);
+      } else if (DataTypes.isDecimal(type)) {
+        java.math.BigDecimal val1 = this.getDecimal();
+        java.math.BigDecimal val2 = o.getDecimal();
+        return val1.compareTo(val2);
+      } else if (type == DataTypes.DATE || type == DataTypes.TIMESTAMP) {
+        String format = CarbonUtil.getFormatFromProperty(o.dataType);
+        SimpleDateFormat parser = new SimpleDateFormat(format);
+        Date date1 = parser.parse(this.getString());
+        Date date2 = parser.parse(o.getString());
+        return date1.compareTo(date2);
+      } else {
+        return this.getString().compareTo(o.getString());
       }
-    } catch (ParseException e) {
-      return -1;
-    } catch (FilterIllegalMemberException e) {
+    } catch (ParseException | FilterIllegalMemberException e) {
       return -1;
     }
   }

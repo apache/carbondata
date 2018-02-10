@@ -19,32 +19,49 @@ package org.apache.carbondata.spark.util
 
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
+import java.util
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType}
+import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.util.{ByteUtil, CarbonSessionInfo}
+import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 
 object CarbonScalaUtil {
-  def convertSparkToCarbonDataType(
-      dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
+  def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
     dataType match {
-      case StringType => CarbonDataType.STRING
-      case ShortType => CarbonDataType.SHORT
-      case IntegerType => CarbonDataType.INT
-      case LongType => CarbonDataType.LONG
-      case DoubleType => CarbonDataType.DOUBLE
-      case FloatType => CarbonDataType.FLOAT
-      case DateType => CarbonDataType.DATE
-      case BooleanType => CarbonDataType.BOOLEAN
-      case TimestampType => CarbonDataType.TIMESTAMP
-      case ArrayType(_, _) => CarbonDataType.ARRAY
-      case StructType(_) => CarbonDataType.STRUCT
-      case NullType => CarbonDataType.NULL
-      case _ => CarbonDataType.DECIMAL
+      case StringType => CarbonDataTypes.STRING
+      case ShortType => CarbonDataTypes.SHORT
+      case IntegerType => CarbonDataTypes.INT
+      case LongType => CarbonDataTypes.LONG
+      case DoubleType => CarbonDataTypes.DOUBLE
+      case FloatType => CarbonDataTypes.FLOAT
+      case DateType => CarbonDataTypes.DATE
+      case BooleanType => CarbonDataTypes.BOOLEAN
+      case TimestampType => CarbonDataTypes.TIMESTAMP
+      case ArrayType(elementType, _) =>
+        CarbonDataTypes.createArrayType(CarbonScalaUtil.convertSparkToCarbonDataType(elementType))
+      case StructType(fields) =>
+        val carbonFields = new util.ArrayList[CarbonStructField]
+        fields.map { field =>
+          carbonFields.add(
+            new CarbonStructField(
+              field.name,
+              CarbonScalaUtil.convertSparkToCarbonDataType(field.dataType)))
+        }
+        CarbonDataTypes.createStructType(carbonFields)
+      case NullType => CarbonDataTypes.NULL
+      case decimal: DecimalType =>
+        CarbonDataTypes.createDecimalType(decimal.precision, decimal.scale)
+      case _ => throw new UnsupportedOperationException("getting " + dataType + " from spark")
     }
   }
 
@@ -66,27 +83,19 @@ object CarbonScalaUtil {
   }
 
   def convertCarbonToSparkDataType(dataType: CarbonDataType): types.DataType = {
-    dataType match {
-      case CarbonDataType.STRING => StringType
-      case CarbonDataType.SHORT => ShortType
-      case CarbonDataType.INT => IntegerType
-      case CarbonDataType.LONG => LongType
-      case CarbonDataType.DOUBLE => DoubleType
-      case CarbonDataType.BOOLEAN => BooleanType
-      case CarbonDataType.DECIMAL => DecimalType.SYSTEM_DEFAULT
-      case CarbonDataType.TIMESTAMP => TimestampType
-      case CarbonDataType.DATE => DateType
-    }
-  }
-
-  def updateDataType(
-      currentDataType: org.apache.spark.sql.types.DataType): org.apache.spark.sql.types.DataType = {
-    currentDataType match {
-      case decimal: DecimalType =>
-        val scale = currentDataType.asInstanceOf[DecimalType].scale
-        DecimalType(DecimalType.MAX_PRECISION, scale)
-      case _ =>
-        currentDataType
+    if (CarbonDataTypes.isDecimal(dataType)) {
+      DecimalType.SYSTEM_DEFAULT
+    } else {
+      dataType match {
+        case CarbonDataTypes.STRING => StringType
+        case CarbonDataTypes.SHORT => ShortType
+        case CarbonDataTypes.INT => IntegerType
+        case CarbonDataTypes.LONG => LongType
+        case CarbonDataTypes.DOUBLE => DoubleType
+        case CarbonDataTypes.BOOLEAN => BooleanType
+        case CarbonDataTypes.TIMESTAMP => TimestampType
+        case CarbonDataTypes.DATE => DateType
+      }
     }
   }
 
@@ -101,7 +110,12 @@ object CarbonScalaUtil {
       serializationNullFormat
     } else {
       value match {
-        case s: String => s
+        case s: String => if (s.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+          throw new Exception("Dataload failed, String length cannot exceed " +
+                              CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
+        } else {
+          s
+        }
         case d: java.math.BigDecimal => d.toPlainString
         case i: java.lang.Integer => i.toString
         case d: java.lang.Double => d.toString
@@ -150,6 +164,166 @@ object CarbonScalaUtil {
         case other => other.toString
       }
     }
+  }
+
+  /**
+   * Converts incoming value to String after converting data as per the data type.
+   * @param value Input value to convert
+   * @param dataType Datatype to convert and then convert to String
+   * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
+   * @param dateFormat DataFormat to convert in case of DateType datatype
+   * @param serializationNullFormat if this encounters in input data then data will
+   *                                be treated as null
+   * @return converted String
+   */
+  def convertToString(
+      value: String,
+      dataType: DataType,
+      timeStampFormat: SimpleDateFormat,
+      dateFormat: SimpleDateFormat,
+      serializationNullFormat: String): String = {
+    if (value == null || serializationNullFormat.equals(value)) {
+      return null
+    }
+    dataType match {
+      case TimestampType if timeStampFormat != null =>
+        DateTimeUtils.timestampToString(timeStampFormat.parse(value).getTime * 1000)
+      case DateType if dateFormat != null =>
+        DateTimeUtils.dateToString(
+          (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt)
+      case ShortType => value.toShort.toString
+      case IntegerType => value.toInt.toString
+      case LongType => value.toLong.toString
+      case DoubleType => value.toDouble.toString
+      case FloatType => value.toFloat.toString
+      case d: DecimalType => new java.math.BigDecimal(value).toPlainString
+      case BooleanType => value.toBoolean.toString
+      case _ => value
+    }
+  }
+
+  /**
+   * Converts incoming value to String after converting data as per the data type.
+   * @param value Input value to convert
+   * @param dataType Datatype to convert and then convert to String
+   * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
+   * @param dateFormat DataFormat to convert in case of DateType datatype
+   * @return converted String
+   */
+  def convertToCarbonFormat(value: String,
+      dataType: DataType,
+      timeStampFormat: SimpleDateFormat,
+      dateFormat: SimpleDateFormat): String = {
+    try {
+      dataType match {
+        case TimestampType =>
+          timeStampFormat.format(DateTimeUtils.stringToTime(value))
+        case DateType =>
+          dateFormat.format(DateTimeUtils.stringToTime(value))
+        case _ => value
+      }
+    } catch {
+      case e: Exception =>
+        value
+    }
+  }
+
+  private val hiveignorepartition = "__HIVE_IGNORE_PARTITION__"
+
+  /**
+   * Update partition values as per the right date and time format
+   * @return updated partition spec
+   */
+  def updatePartitions(
+      partitionSpec: Map[String, String],
+      table: CarbonTable,
+      timeFormat: SimpleDateFormat,
+      dateFormat: SimpleDateFormat,
+      serializationNullFormat: String,
+      badRecordAction: String,
+      isEmptyBadRecord: Boolean): Map[String, String] = {
+    val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
+    partitionSpec.map{ case (col, pvalue) =>
+      // replace special string with empty value.
+      val value = if (pvalue == null) {
+        hivedefaultpartition
+      } else if (pvalue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+        ""
+      } else {
+        pvalue
+      }
+      val carbonColumn = table.getColumnByName(table.getTableName, col.toLowerCase)
+      val dataType = CarbonScalaUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
+      try {
+        if (isEmptyBadRecord && value.length == 0 &&
+            badRecordAction.equalsIgnoreCase(LoggerAction.IGNORE.toString) &&
+            dataType != StringType) {
+          (col, hiveignorepartition)
+        } else if (!isEmptyBadRecord && value.length == 0 && dataType != StringType) {
+          (col, hivedefaultpartition)
+        } else if (value.equals(hivedefaultpartition)) {
+          (col, value)
+        } else {
+          val convertedString = CarbonScalaUtil.convertToString(
+            value, dataType, timeFormat, dateFormat, serializationNullFormat)
+          if (convertedString == null) {
+            (col, hivedefaultpartition)
+          } else {
+            (col, convertedString)
+          }
+        }
+      } catch {
+        case e: Exception =>
+          // If it is bad record ignore case then add with special string so that it will be
+          // filtered after this.
+          if (badRecordAction.equalsIgnoreCase(LoggerAction.IGNORE.toString)) {
+            (col, hiveignorepartition)
+          } else {
+            (col, hivedefaultpartition)
+          }
+      }
+    }
+  }
+
+  /**
+   * Update partition values as per the right date and time format
+   */
+  def updatePartitions(
+      carbonSessionInfo: CarbonSessionInfo,
+      parts: Seq[CatalogTablePartition],
+      table: CarbonTable): Seq[CatalogTablePartition] = {
+    val dateFormatStr = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)
+    val dateFormat = new SimpleDateFormat(dateFormatStr)
+    val timeFormatStr = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)
+    val timeFormat = new SimpleDateFormat(timeFormatStr)
+    val serializeFormat = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT_DEFAULT)
+    val isEmptyBadRecord = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT).toBoolean
+    val badRecordAction = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
+      LoggerAction.FAIL.toString)
+    parts.map{ f =>
+      val changedSpec =
+        updatePartitions(
+          f.spec,
+          table,
+          timeFormat,
+          dateFormat,
+          serializeFormat,
+          badRecordAction,
+          isEmptyBadRecord)
+      f.copy(spec = changedSpec)
+    }.filterNot{ p =>
+      // Filter the special bad record ignore case string
+      p.spec.exists(_._2.equals(hiveignorepartition))
+    }.groupBy(p => p.spec).map(f => f._2.head).toSeq // Avoid duplicates by do groupby
   }
 
   /**
@@ -222,4 +396,68 @@ object CarbonScalaUtil {
           } cannot be modified. Only Int and Decimal data types are allowed for modification")
     }
   }
+
+  /**
+   * returns  all fields except tupleId field as it is not required in the value
+   *
+   * @param fields
+   * @return
+   */
+  def getAllFieldsWithoutTupleIdField(fields: Array[StructField]): Seq[Column] = {
+    // getting all fields except tupleId field as it is not required in the value
+    val otherFields = fields.toSeq
+      .filter(field => !field.name
+        .equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
+      .map(field => {
+        new Column(field.name)
+      })
+    otherFields
+  }
+
+  /**
+   * If the table is from an old store then the table parameters are in lowercase. In the current
+   * code we are reading the parameters as camel case.
+   * This method will convert all the schema parts to camel case
+   *
+   * @param parameters
+   * @return
+   */
+  def getDeserializedParameters(parameters: Map[String, String]): Map[String, String] = {
+    val keyParts = parameters.getOrElse("spark.sql.sources.options.keys.numparts", "0").toInt
+    if (keyParts == 0) {
+      parameters
+    } else {
+      val keyStr = 0 until keyParts map {
+        i => parameters(s"spark.sql.sources.options.keys.part.$i")
+      }
+      val finalProperties = scala.collection.mutable.Map.empty[String, String]
+      keyStr foreach {
+        key =>
+          var value = ""
+          for (numValues <- 0 until parameters(key.toLowerCase() + ".numparts").toInt) {
+            value += parameters(key.toLowerCase() + ".part" + numValues)
+          }
+          finalProperties.put(key, value)
+      }
+      // Database name would be extracted from the parameter first. There can be a scenario where
+      // the dbName is not written to the old schema therefore to be on a safer side we are
+      // extracting dbName from tableName if it exists.
+      val dbAndTableName = finalProperties("tableName").split(".")
+      if (dbAndTableName.length > 1) {
+        finalProperties.put("dbName", dbAndTableName(0))
+        finalProperties.put("tableName", dbAndTableName(1))
+      } else {
+        finalProperties.put("tableName", dbAndTableName(0))
+      }
+      // Overriding the tablePath in case tablepath already exists. This will happen when old
+      // table schema is updated by the new code then both `path` and `tablepath` will exist. In
+      // this case use tablepath
+      parameters.get("tablepath") match {
+        case Some(tablePath) => finalProperties.put("tablePath", tablePath)
+        case None =>
+      }
+      finalProperties.toMap
+    }
+  }
+
 }

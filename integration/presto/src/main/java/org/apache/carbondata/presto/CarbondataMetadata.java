@@ -17,10 +17,10 @@
 
 package org.apache.carbondata.presto;
 
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 import com.facebook.presto.spi.*;
-import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
 import com.facebook.presto.spi.connector.ConnectorMetadata;
 import com.facebook.presto.spi.type.*;
 import com.google.common.collect.ImmutableList;
@@ -41,7 +41,6 @@ import static java.util.Objects.requireNonNull;
 public class CarbondataMetadata implements ConnectorMetadata {
   private final String connectorId;
   private CarbonTableReader carbonTableReader;
-  private ClassLoader classLoader;
 
   private Map<String, ColumnHandle> columnHandleMap;
 
@@ -50,20 +49,13 @@ public class CarbondataMetadata implements ConnectorMetadata {
     this.carbonTableReader = requireNonNull(reader, "client is null");
   }
 
-  public void putClassLoader(ClassLoader classLoader) {
-    this.classLoader = classLoader;
-  }
 
   @Override public List<String> listSchemaNames(ConnectorSession session) {
     return listSchemaNamesInternal();
   }
 
   public List<String> listSchemaNamesInternal() {
-    List<String> schemaNameList;
-    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-      schemaNameList = carbonTableReader.getSchemaNames();
-    }
-    return schemaNameList;
+    return carbonTableReader.getSchemaNames();
   }
 
   @Override
@@ -221,32 +213,30 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
   public static Type carbonDataType2SpiMapper(ColumnSchema columnSchema) {
     DataType colType = columnSchema.getDataType();
-    switch (colType) {
-      case BOOLEAN:
-        return BooleanType.BOOLEAN;
-      case SHORT:
-        return SmallintType.SMALLINT;
-      case INT:
-        return IntegerType.INTEGER;
-      case LONG:
-        return BigintType.BIGINT;
-      case FLOAT:
-      case DOUBLE:
-        return DoubleType.DOUBLE;
-      case DECIMAL:
-        if(columnSchema.getPrecision() > 0){
-          return DecimalType.createDecimalType(columnSchema.getPrecision(), columnSchema.getScale());
-        } else {
-          return DecimalType.createDecimalType();
-        }
-      case STRING:
-        return VarcharType.VARCHAR;
-      case DATE:
-        return DateType.DATE;
-      case TIMESTAMP:
-        return TimestampType.TIMESTAMP;
-      default:
-        return VarcharType.VARCHAR;
+    if (colType == DataTypes.BOOLEAN) {
+      return BooleanType.BOOLEAN;
+    } else if (colType == DataTypes.SHORT) {
+      return SmallintType.SMALLINT;
+    } else if (colType == DataTypes.INT) {
+      return IntegerType.INTEGER;
+    } else if (colType == DataTypes.LONG) {
+      return BigintType.BIGINT;
+    } else if (colType == DataTypes.FLOAT || colType == DataTypes.DOUBLE) {
+      return DoubleType.DOUBLE;
+    } else if (DataTypes.isDecimal(colType)) {
+      if (columnSchema.getPrecision() > 0) {
+        return DecimalType.createDecimalType(columnSchema.getPrecision(), columnSchema.getScale());
+      } else {
+        return DecimalType.createDecimalType();
+      }
+    } else if (colType == DataTypes.STRING) {
+      return VarcharType.VARCHAR;
+    } else if (colType == DataTypes.DATE) {
+      return DateType.DATE;
+    } else if (colType == DataTypes.TIMESTAMP) {
+      return TimestampType.TIMESTAMP;
+    } else {
+      return VarcharType.VARCHAR;
     }
   }
 

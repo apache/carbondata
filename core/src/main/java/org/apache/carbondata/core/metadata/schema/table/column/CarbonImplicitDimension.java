@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 
 /**
@@ -114,7 +115,7 @@ public class CarbonImplicitDimension extends CarbonDimension {
    * @return the dataType
    */
   @Override public DataType getDataType() {
-    return DataType.STRING;
+    return DataTypes.STRING;
   }
 
   /**

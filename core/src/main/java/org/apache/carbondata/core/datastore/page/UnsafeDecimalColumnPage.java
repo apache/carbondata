@@ -24,6 +24,7 @@ import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -46,30 +47,24 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
   }
 
   private void initMemory() throws MemoryException {
-    switch (dataType) {
-      case BYTE:
-      case SHORT:
-      case INT:
-      case LONG:
-        int size = pageSize << dataType.getSizeBits();
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
-        baseAddress = memoryBlock.getBaseObject();
-        baseOffset = memoryBlock.getBaseOffset();
-        break;
-      case SHORT_INT:
-        size = pageSize * 3;
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
-        baseAddress = memoryBlock.getBaseObject();
-        baseOffset = memoryBlock.getBaseOffset();
-        break;
-      case DECIMAL:
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
-        baseAddress = memoryBlock.getBaseObject();
-        baseOffset = memoryBlock.getBaseOffset();
-        break;
-      default:
-        throw new UnsupportedOperationException("invalid data type: " + dataType);
+    if (dataType == DataTypes.BYTE ||
+        dataType == DataTypes.SHORT ||
+        dataType == DataTypes.INT ||
+        dataType == DataTypes.LONG) {
+      int size = pageSize << dataType.getSizeBits();
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
+    } else if (dataType == DataTypes.SHORT_INT) {
+      int size = pageSize * 3;
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
+    } else if (DataTypes.isDecimal(dataType)) {
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
+    } else {
+      throw new UnsupportedOperationException("invalid data type: " + dataType);
     }
+    baseAddress = memoryBlock.getBaseObject();
+    baseOffset = memoryBlock.getBaseOffset();
   }
 
   @Override
@@ -236,28 +231,22 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
   @Override
   public BigDecimal getDecimal(int rowId) {
     long value;
-    switch (dataType) {
-      case BYTE:
-        value = getByte(rowId);
-        break;
-      case SHORT:
-        value = getShort(rowId);
-        break;
-      case SHORT_INT:
-        value = getShortInt(rowId);
-        break;
-      case INT:
-        value = getInt(rowId);
-        break;
-      case LONG:
-        value = getLong(rowId);
-        break;
-      default:
-        int length = rowOffset[rowId + 1] - rowOffset[rowId];
-        byte[] bytes = new byte[length];
-        CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId], bytes,
-            CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
-        return decimalConverter.getDecimal(bytes);
+    if (dataType == DataTypes.BYTE) {
+      value = getByte(rowId);
+    } else if (dataType == DataTypes.SHORT) {
+      value = getShort(rowId);
+    } else if (dataType == DataTypes.SHORT_INT) {
+      value = getShortInt(rowId);
+    } else if (dataType == DataTypes.INT) {
+      value = getInt(rowId);
+    } else if (dataType == DataTypes.LONG) {
+      value = getLong(rowId);
+    } else {
+      int length = rowOffset[rowId + 1] - rowOffset[rowId];
+      byte[] bytes = new byte[length];
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId], bytes,
+          CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
+      return decimalConverter.getDecimal(bytes);
     }
     return decimalConverter.getDecimal(value);
   }

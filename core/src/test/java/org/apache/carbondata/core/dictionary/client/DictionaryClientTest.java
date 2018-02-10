@@ -26,7 +26,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 import org.apache.carbondata.core.dictionary.server.DictionaryServer;
+import org.apache.carbondata.core.dictionary.server.NonSecureDictionaryServer;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -39,7 +42,6 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -56,6 +58,7 @@ public class DictionaryClientTest {
   private static TableInfo tableInfo;
   private static String storePath;
   private static DictionaryServer server;
+  private static String host;
 
   @BeforeClass public static void setUp() throws Exception {
     // enable lru cache by setting cache size
@@ -67,11 +70,13 @@ public class DictionaryClientTest {
     empColumnSchema.setColumnName("empNameCol");
     empColumnSchema.setColumnUniqueId("empNameCol");
     empColumnSchema.setDimensionColumn(true);
+    empColumnSchema.setDataType(DataTypes.STRING);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
     empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
 
     ageColumnSchema = new ColumnSchema();
     ageColumnSchema.setColumnName("ageNameCol");
+    ageColumnSchema.setDataType(DataTypes.SHORT_INT);
     ageColumnSchema.setColumnUniqueId("ageNameCol");
     ageColumnSchema.setDimensionColumn(true);
     ageColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
@@ -89,19 +94,20 @@ public class DictionaryClientTest {
     tableInfo.setTableUniqueName("TestTable");
     tableInfo.setDatabaseName("test");
     storePath = System.getProperty("java.io.tmpdir") + "/tmp";
-    tableInfo.setStorePath(storePath);
+    tableInfo.setTablePath(storePath + "/" + "test" + "/" + "TestTable");
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
 
     // Add the created table to metadata
     metadata.addCarbonTable(carbonTable);
 
     // Start the server for testing the client
-    server = DictionaryServer.getInstance(5678, carbonTable);
+    server = NonSecureDictionaryServer.getInstance(5678, carbonTable);
+    host = server.getHost();
   }
 
   @Test public void testClient() throws Exception {
-    DictionaryClient client = new DictionaryClient();
-    client.startClient("localhost", 5678);
+    NonSecureDictionaryClient client = new NonSecureDictionaryClient();
+    client.startClient(null, host, 5678, false);
 
     Thread.sleep(1000);
     // Create a dictionary key

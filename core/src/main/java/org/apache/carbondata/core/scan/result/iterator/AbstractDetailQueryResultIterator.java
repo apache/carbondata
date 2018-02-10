@@ -106,8 +106,9 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     this.recorder = queryModel.getStatisticsRecorder();
     this.blockExecutionInfos = infos;
     this.fileReader = FileFactory.getFileHolder(
-        FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
+        FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getTablePath()));
     this.fileReader.setQueryId(queryModel.getQueryId());
+    this.fileReader.setReadPageByPage(queryModel.isReadPageByPage());
     this.execService = execService;
     intialiseInfos();
     initQueryStatiticsModel();

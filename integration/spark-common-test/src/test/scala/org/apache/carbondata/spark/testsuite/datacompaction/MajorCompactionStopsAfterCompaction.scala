@@ -19,11 +19,13 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 import scala.collection.JavaConverters._
 
 import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+
+import org.apache.spark.sql.test.util.QueryTest
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
   * FT for compaction scenario where major compaction will only compact the segments which are
@@ -77,14 +79,14 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     var status = false
     var noOfRetries = 0
     while (!status && noOfRetries < 10) {
+      val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+        "stopmajor"
+      )
+      val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
-      val identifier = new AbsoluteTableIdentifier(
-            CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-            new CarbonTableIdentifier(
-              CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", noOfRetries + "")
-          )
-
-      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
+        absoluteTableIdentifier)
 
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 //      segments.foreach(seg =>
@@ -111,12 +113,14 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     // delete merged segments
     sql("clean files for table stopmajor")
 
-    val identifier = new AbsoluteTableIdentifier(
-          CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", "rrr")
-        )
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "stopmajor"
+    )
+    val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
+      absoluteTableIdentifier)
 
     // merged segment should not be there
     val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList

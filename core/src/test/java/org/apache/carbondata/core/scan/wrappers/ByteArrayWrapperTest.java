@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.scan.wrappers;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,7 +47,7 @@ public class ByteArrayWrapperTest {
     byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
 
     int result = byteArrayWrapper.hashCode();
-    assert (29583456 == result);
+    Assert.assertTrue(29583456 == result);
   }
 
   @Test public void testEqualsWithOtherAsInstanceOfByteArrayWrapper() {

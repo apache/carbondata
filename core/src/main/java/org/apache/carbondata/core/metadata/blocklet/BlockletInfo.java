@@ -17,9 +17,13 @@
 
 package org.apache.carbondata.core.metadata.blocklet;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,6 +86,8 @@ public class BlockletInfo implements Serializable, Writable {
    * default value is one for V1 and V2 version
    */
   private int numberOfPages = 1;
+
+  private int[] numberOfRowsPerPage;
 
   /**
    * @return the numberOfRows
@@ -214,6 +220,49 @@ public class BlockletInfo implements Serializable, Writable {
     for (int i = 0; i < mSize; i++) {
       output.writeInt(measureChunksLength.get(i));
     }
+    writeChunkInfoForOlderVersions(output);
+
+  }
+
+  /**
+   * Serialize datachunks as well for older versions like V1 and V2
+   */
+  private void writeChunkInfoForOlderVersions(DataOutput output) throws IOException {
+    int dimChunksSize = dimensionColumnChunk != null ? dimensionColumnChunk.size() : 0;
+    output.writeShort(dimChunksSize);
+    for (int i = 0; i < dimChunksSize; i++) {
+      byte[] bytes = serializeDataChunk(dimensionColumnChunk.get(i));
+      output.writeInt(bytes.length);
+      output.write(bytes);
+    }
+    int msrChunksSize = measureColumnChunk != null ? measureColumnChunk.size() : 0;
+    output.writeShort(msrChunksSize);
+    for (int i = 0; i < msrChunksSize; i++) {
+      byte[] bytes = serializeDataChunk(measureColumnChunk.get(i));
+      output.writeInt(bytes.length);
+      output.write(bytes);
+    }
+  }
+
+  private byte[] serializeDataChunk(DataChunk chunk) throws IOException {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    ObjectOutputStream outputStream = new ObjectOutputStream(stream);
+    outputStream.writeObject(chunk);
+    outputStream.close();
+    return stream.toByteArray();
+  }
+
+  private DataChunk deserializeDataChunk(byte[] bytes) throws IOException {
+    ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+    ObjectInputStream inputStream = new ObjectInputStream(stream);
+    DataChunk dataChunk = null;
+    try {
+      dataChunk = (DataChunk) inputStream.readObject();
+    } catch (ClassNotFoundException e) {
+      throw new IOException(e);
+    }
+    inputStream.close();
+    return dataChunk;
   }
 
   @Override public void readFields(DataInput input) throws IOException {
@@ -238,6 +287,34 @@ public class BlockletInfo implements Serializable, Writable {
     for (int i = 0; i < measureChunkOffsetsSize; i++) {
       measureChunksLength.add(input.readInt());
     }
+    readChunkInfoForOlderVersions(input);
+  }
 
+  /**
+   * Deserialize datachunks as well for older versions like V1 and V2
+   */
+  private void readChunkInfoForOlderVersions(DataInput input) throws IOException {
+    short dimChunksSize = input.readShort();
+    dimensionColumnChunk = new ArrayList<>(dimChunksSize);
+    for (int i = 0; i < dimChunksSize; i++) {
+      byte[] bytes = new byte[input.readInt()];
+      input.readFully(bytes);
+      dimensionColumnChunk.add(deserializeDataChunk(bytes));
+    }
+    short msrChunksSize = input.readShort();
+    measureColumnChunk = new ArrayList<>(msrChunksSize);
+    for (int i = 0; i < msrChunksSize; i++) {
+      byte[] bytes = new byte[input.readInt()];
+      input.readFully(bytes);
+      measureColumnChunk.add(deserializeDataChunk(bytes));
+    }
+  }
+
+  public int[] getNumberOfRowsPerPage() {
+    return numberOfRowsPerPage;
+  }
+
+  public void setNumberOfRowsPerPage(int[] numberOfRowsPerPage) {
+    this.numberOfRowsPerPage = numberOfRowsPerPage;
   }
 }

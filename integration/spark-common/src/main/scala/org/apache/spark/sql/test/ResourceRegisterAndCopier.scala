@@ -16,8 +16,9 @@
  */
 package org.apache.spark.sql.test
 
-import java.io.{BufferedReader, File, FileReader}
+import java.io._
 import java.net.URL
+import java.util.zip.ZipFile
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -57,15 +58,30 @@ object ResourceRegisterAndCopier {
         resources.foreach { file =>
           val hdfsDataPath = hdfsPath + "/" + file
           val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
+          val target = resourcePath + "/" + file
           if (!rsFile.exists()) {
-            val target = resourcePath + "/" + file
             if (file.lastIndexOf("/") > -1) {
               new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/"))).mkdirs()
             }
             downloadFile(link, file, target)
             // copy it
             copyLocalFile(hdfsDataPath, target)
+            // Unzip the zip file to local directory
+            if (target.endsWith("zip")) {
+              unzip(target, new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/")))
+                .getAbsolutePath)
+            }
             new File(target).delete()
+          } else if (target.endsWith("zip")) {
+            if (new File(target).exists()) {
+              FileFactory.deleteAllFilesOfDir(new File(target))
+            }
+            if (file.lastIndexOf("/") > -1) {
+              new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/"))).mkdirs()
+            }
+            downloadFile(link, file, target)
+            unzip(target, new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/")))
+              .getAbsolutePath)
           }
         }
       }
@@ -88,7 +104,7 @@ object ResourceRegisterAndCopier {
         i += 1
       }
     } catch {
-      case e: InterruptedException =>
+      case _: InterruptedException =>
         return false
     }
     false
@@ -130,7 +146,7 @@ object ResourceRegisterAndCopier {
       "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705; .NET CLR 1.1.4322;" +
       " .NET CLR 1.2.30703)")
 
-    var input = c.getInputStream
+    val input = c.getInputStream
     val buffer = new Array[Byte](4096)
     var n = input.read(buffer)
 
@@ -141,6 +157,41 @@ object ResourceRegisterAndCopier {
     }
     output.close()
     input.close()
+  }
+
+  private def unzip(zipFilePath: String, destDir: String) = {
+    LOGGER.info(s"Uncompressing $zipFilePath to the directory $destDir")
+    try {
+      val zipFile = new ZipFile(zipFilePath)
+      val enu = zipFile.entries
+      while ( { enu.hasMoreElements }) {
+        val zipEntry = enu.nextElement
+        val name = destDir + "/" + zipEntry.getName
+        val file = new File(name)
+        if (name.endsWith("/")) {
+          file.mkdirs
+        } else {
+          val parent = file.getParentFile
+          if (parent != null) {
+            parent.mkdirs
+          }
+          val is = zipFile.getInputStream(zipEntry)
+          val fos = new FileOutputStream(file)
+          val bytes = new Array[Byte](1024)
+          var length = is.read(bytes)
+          while (length >= 0) {
+            fos.write(bytes, 0, length)
+            length = is.read(bytes)
+          }
+          is.close
+          fos.close()
+        }
+      }
+      zipFile.close
+    } catch {
+      case e: IOException =>
+        e.printStackTrace()
+    }
   }
 
 }

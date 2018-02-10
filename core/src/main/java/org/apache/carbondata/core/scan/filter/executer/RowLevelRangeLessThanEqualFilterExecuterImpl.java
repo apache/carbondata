@@ -30,6 +30,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -165,7 +166,8 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     return false;
   }
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
+  @Override
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException {
     // select all rows if dimension does not exists in the current block
     if (!isDimensionPresentInCurrentBlock[0] && !isMeasurePresentInCurrentBlock[0]) {
@@ -265,7 +267,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
           .getDirectDictionaryGenerator(
               dimColEvaluatorInfoList.get(0).getDimension().getDataType());
-      int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
+      int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
       CarbonDimension currentBlockDimension =
           segmentProperties.getDimensions().get(dimensionBlocksIndex[0]);
       if (currentBlockDimension.isSortColumn()) {
@@ -274,7 +276,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       } else {
         defaultValue = ByteUtil.toBytes(key);
       }
-    } else if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataType.STRING) {
+    } else if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.STRING) {
       defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
     }
     BitSet bitSet = null;
@@ -322,7 +324,9 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
           return bitSet;
         }
       } else {
-        skip = start;
+        // as start will be last index of null value inclusive
+        // so adding 1 to skip last null value
+        skip = start + 1;
       }
       startIndex = skip;
     }
@@ -390,7 +394,9 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
             return bitSet;
           }
         } else {
-          skip = start;
+          // as start will be last index of null value inclusive
+          // so adding 1 to skip last null value
+          skip = start + 1;
         }
         startIndex = skip;
       }

@@ -18,7 +18,11 @@
 package org.apache.carbondata.core.scan.filter;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public class ColumnFilterInfo implements Serializable {
 
@@ -31,12 +35,23 @@ public class ColumnFilterInfo implements Serializable {
   /**
    * Implicit column filter values to be used for block and blocklet pruning
    */
-  private List<String> implicitColumnFilterList;
+  private Set<String> implicitColumnFilterList;
+  private transient Set<String> implicitDriverColumnFilterList;
   private List<Integer> excludeFilterList;
   /**
    * maintain the no dictionary filter values list.
    */
   private List<byte[]> noDictionaryFilterValuesList;
+
+  public boolean isOptimized() {
+    return isOptimized;
+  }
+
+  public void setOptimized(boolean optimized) {
+    isOptimized = optimized;
+  }
+
+  private boolean isOptimized;
 
   private List<Object> measuresFilterValuesList;
 
@@ -70,12 +85,15 @@ public class ColumnFilterInfo implements Serializable {
   public void setExcludeFilterList(List<Integer> excludeFilterList) {
     this.excludeFilterList = excludeFilterList;
   }
-  public List<String> getImplicitColumnFilterList() {
+  public Set<String> getImplicitColumnFilterList() {
     return implicitColumnFilterList;
   }
 
   public void setImplicitColumnFilterList(List<String> implicitColumnFilterList) {
-    this.implicitColumnFilterList = implicitColumnFilterList;
+    // this is done to improve the query performance. As the list of size increases time taken to
+    // search in list will increase as list contains method uses equals check internally but set
+    // will be very fast as it will directly use the has code to find the bucket and search
+    this.implicitColumnFilterList = new HashSet<>(implicitColumnFilterList);
   }
 
   public List<Object> getMeasuresFilterValuesList() {
@@ -84,5 +102,24 @@ public class ColumnFilterInfo implements Serializable {
 
   public void setMeasuresFilterValuesList(List<Object> measuresFilterValuesList) {
     this.measuresFilterValuesList = measuresFilterValuesList;
+  }
+
+  public Set<String> getImplicitDriverColumnFilterList() {
+    // this list is required to be populated only n case of driver, so in executor this check will
+    // avoid unnecessary loading of the driver filter list
+    if (null == implicitDriverColumnFilterList) {
+      populateBlockIdListForDriverBlockPruning();
+    }
+    return implicitDriverColumnFilterList;
+  }
+
+  private void populateBlockIdListForDriverBlockPruning() {
+    implicitDriverColumnFilterList = new HashSet<>(implicitColumnFilterList.size());
+    String blockId = null;
+    for (String blockletId : implicitColumnFilterList) {
+      blockId =
+          blockletId.substring(0, blockletId.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+      implicitDriverColumnFilterList.add(blockId);
+    }
   }
 }

@@ -47,24 +47,29 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
   test("drop table Test with new DDL") {
     sql("drop table table1")
   }
-  
+
+  test("test drop database") {
+    var dbName = "dropdb_test"
+    sql(s"drop database if exists $dbName cascade")
+    sql(s"create database $dbName")
+    sql(s"drop database $dbName")
+    assert(intercept[Exception] {
+      sql(s"use $dbName")
+    }.getMessage.contains("Database 'dropdb_test' not found"))
+  }
+
   test("test drop database cascade command") {
+    sql("drop database if exists testdb cascade")
     sql("create database testdb")
     sql("use testdb")
     sql("CREATE TABLE IF NOT EXISTS testtable(empno Int, empname string, utilization Int,salary Int)"
         + " STORED BY 'org.apache.carbondata.format' ")
-    try {
+    intercept[Exception] {
       sql("drop database testdb")
-      assert(false)
-    } catch {
-      case _ : Exception =>
     }
     sql("drop database testdb cascade")
-    try {
+    intercept[Exception] {
       sql("use testdb")
-      assert(false)
-    } catch {
-      case _ : Exception =>
     }
     sql("use default")
   }
@@ -182,6 +187,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 
   test("drop table and create table with dictionary exclude string scenario") {
     try {
+
       sql("create database test")
       sql(
         "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
@@ -242,6 +248,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists dropTableTest4")
     sql("drop table if exists table1")
     sql("drop table if exists table2")
+    sql("drop database if exists test cascade")
   }
 
 }

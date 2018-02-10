@@ -258,13 +258,9 @@ public class RangeExpressionEvaluator {
    * @return
    */
   private boolean isLessThanGreaterThanExp(Expression expr) {
-    if ((expr instanceof LessThanEqualToExpression) || (expr instanceof LessThanExpression)
+    return (expr instanceof LessThanEqualToExpression) || (expr instanceof LessThanExpression)
         || (expr instanceof GreaterThanEqualToExpression)
-        || (expr instanceof GreaterThanExpression)) {
-      return true;
-    } else {
-      return false;
-    }
+        || (expr instanceof GreaterThanExpression);
   }
 
   /**
@@ -276,15 +272,8 @@ public class RangeExpressionEvaluator {
   private boolean eligibleForRangeExpConv(Expression expChild) {
     for (Expression exp : expChild.getChildren()) {
       if (exp instanceof ColumnExpression) {
-        if (((ColumnExpression) exp).isDimension() == false) {
-          return false;
-        }
-        if ((((ColumnExpression) exp).getDimension().getDataType() == DataType.ARRAY) || (
-            ((ColumnExpression) exp).getDimension().getDataType() == DataType.STRUCT)) {
-          return false;
-        } else {
-          return true;
-        }
+        return ((ColumnExpression) exp).isDimension() &&
+            ! (((ColumnExpression) exp).getDimension().getDataType().isComplexType());
       }
     }
     return false;
@@ -383,13 +372,9 @@ public class RangeExpressionEvaluator {
    * @return
    */
   private boolean matchExpType(ExpressionType src, ExpressionType tar) {
-    if ((((src == LESSTHAN) || (src == LESSTHAN_EQUALTO)) && ((tar == GREATERTHAN) || (tar
+    return (((src == LESSTHAN) || (src == LESSTHAN_EQUALTO)) && ((tar == GREATERTHAN) || (tar
         == GREATERTHAN_EQUALTO))) || (((src == GREATERTHAN) || (src == GREATERTHAN_EQUALTO)) && (
-        (tar == LESSTHAN) || (tar == LESSTHAN_EQUALTO)))) {
-      return true;
-    } else {
-      return false;
-    }
+        (tar == LESSTHAN) || (tar == LESSTHAN_EQUALTO)));
   }
 
   /**

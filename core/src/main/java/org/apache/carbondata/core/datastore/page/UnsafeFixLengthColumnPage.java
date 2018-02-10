@@ -27,10 +27,10 @@ import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
-import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
 
 // This extension uses unsafe memory to store page data, for fix length data type only (byte,
 // short, integer, long, float, double)
@@ -46,37 +46,34 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
-  private static final int byteBits = BYTE.getSizeBits();
-  private static final int shortBits = DataType.SHORT.getSizeBits();
-  private static final int intBits = DataType.INT.getSizeBits();
-  private static final int longBits = DataType.LONG.getSizeBits();
-  private static final int floatBits = DataType.FLOAT.getSizeBits();
-  private static final int doubleBits = DataType.DOUBLE.getSizeBits();
+  private static final int byteBits = DataTypes.BYTE.getSizeBits();
+  private static final int shortBits = DataTypes.SHORT.getSizeBits();
+  private static final int intBits = DataTypes.INT.getSizeBits();
+  private static final int longBits = DataTypes.LONG.getSizeBits();
+  private static final int floatBits = DataTypes.FLOAT.getSizeBits();
+  private static final int doubleBits = DataTypes.DOUBLE.getSizeBits();
 
   UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
       throws MemoryException {
     super(columnSpec, dataType, pageSize);
-    switch (dataType) {
-      case BYTE:
-      case SHORT:
-      case INT:
-      case LONG:
-      case FLOAT:
-      case DOUBLE:
-        int size = pageSize << dataType.getSizeBits();
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
-        baseAddress = memoryBlock.getBaseObject();
-        baseOffset = memoryBlock.getBaseOffset();
-        break;
-      case SHORT_INT:
-        size = pageSize * 3;
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
-        baseAddress = memoryBlock.getBaseObject();
-        baseOffset = memoryBlock.getBaseOffset();
-        break;
-      case DECIMAL:
-      case STRING:
-        throw new UnsupportedOperationException("invalid data type: " + dataType);
+    if (dataType == DataTypes.BOOLEAN ||
+        dataType == DataTypes.BYTE ||
+        dataType == DataTypes.SHORT ||
+        dataType == DataTypes.INT ||
+        dataType == DataTypes.LONG ||
+        dataType == DataTypes.FLOAT ||
+        dataType == DataTypes.DOUBLE) {
+      int size = pageSize << dataType.getSizeBits();
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
+      baseAddress = memoryBlock.getBaseObject();
+      baseOffset = memoryBlock.getBaseOffset();
+    } else if (dataType == DataTypes.SHORT_INT) {
+      int size = pageSize * 3;
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
+      baseAddress = memoryBlock.getBaseObject();
+      baseOffset = memoryBlock.getBaseOffset();
+    } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.STRING) {
+      throw new UnsupportedOperationException("invalid data type: " + dataType);
     }
   }
 
@@ -330,45 +327,38 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
     int pageSize = getPageSize();
-    switch (dataType) {
-      case BYTE:
-        for (int i = 0; i < pageSize; i++) {
-          long offset = i << byteBits;
-          codec.encode(i, CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset));
-        }
-        break;
-      case SHORT:
-        for (int i = 0; i < pageSize; i++) {
-          long offset = i << shortBits;
-          codec.encode(i, CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset));
-        }
-        break;
-      case INT:
-        for (int i = 0; i < pageSize; i++) {
-          long offset = i << intBits;
-          codec.encode(i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
-        }
-        break;
-      case LONG:
-        for (int i = 0; i < pageSize; i++) {
-          long offset = i << longBits;
-          codec.encode(i, CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset));
-        }
-        break;
-      case FLOAT:
-        for (int i = 0; i < pageSize; i++) {
-          long offset = i << floatBits;
-          codec.encode(i, CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset));
-        }
-        break;
-      case DOUBLE:
-        for (int i = 0; i < pageSize; i++) {
-          long offset = i << doubleBits;
-          codec.encode(i, CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset));
-        }
-        break;
-      default:
-        throw new UnsupportedOperationException("invalid data type: " + dataType);
+    if (dataType == DataTypes.BYTE) {
+      for (int i = 0; i < pageSize; i++) {
+        long offset = i << byteBits;
+        codec.encode(i, CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset));
+      }
+    } else if (dataType == DataTypes.SHORT) {
+      for (int i = 0; i < pageSize; i++) {
+        long offset = i << shortBits;
+        codec.encode(i, CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset));
+      }
+    } else if (dataType == DataTypes.INT) {
+      for (int i = 0; i < pageSize; i++) {
+        long offset = i << intBits;
+        codec.encode(i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
+      }
+    } else if (dataType == DataTypes.LONG) {
+      for (int i = 0; i < pageSize; i++) {
+        long offset = i << longBits;
+        codec.encode(i, CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset));
+      }
+    } else if (dataType == DataTypes.FLOAT) {
+      for (int i = 0; i < pageSize; i++) {
+        long offset = i << floatBits;
+        codec.encode(i, CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset));
+      }
+    } else if (dataType == DataTypes.DOUBLE) {
+      for (int i = 0; i < pageSize; i++) {
+        long offset = i << doubleBits;
+        codec.encode(i, CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset));
+      }
+    } else {
+      throw new UnsupportedOperationException("invalid data type: " + dataType);
     }
   }
 

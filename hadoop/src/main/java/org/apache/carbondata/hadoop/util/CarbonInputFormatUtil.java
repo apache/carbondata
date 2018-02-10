@@ -18,7 +18,9 @@
 package org.apache.carbondata.hadoop.util;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -39,8 +41,8 @@ import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-
 
 /**
  * Utility class
@@ -52,7 +54,7 @@ public class CarbonInputFormatUtil {
     if (columnString != null) {
       columns = columnString.split(",");
     }
-    String factTableName = carbonTable.getFactTableName();
+    String factTableName = carbonTable.getTableName();
     CarbonQueryPlan plan = new CarbonQueryPlan(carbonTable.getDatabaseName(), factTableName);
     // fill dimensions
     // If columns are null, set all dimensions and measures
@@ -82,6 +84,10 @@ public class CarbonInputFormatUtil {
       AbsoluteTableIdentifier identifier,
       Job job) throws IOException {
     CarbonTableInputFormat<V> carbonInputFormat = new CarbonTableInputFormat<>();
+    carbonInputFormat.setDatabaseName(job.getConfiguration(),
+        identifier.getCarbonTableIdentifier().getDatabaseName());
+    carbonInputFormat
+        .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
     return carbonInputFormat;
   }
@@ -90,6 +96,10 @@ public class CarbonInputFormatUtil {
       AbsoluteTableIdentifier identifier, List<String> partitionId, Job job) throws IOException {
     CarbonTableInputFormat<V> carbonTableInputFormat = new CarbonTableInputFormat<>();
     carbonTableInputFormat.setPartitionIdList(job.getConfiguration(), partitionId);
+    carbonTableInputFormat.setDatabaseName(job.getConfiguration(),
+        identifier.getCarbonTableIdentifier().getDatabaseName());
+    carbonTableInputFormat
+        .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
     return carbonTableInputFormat;
   }
@@ -109,12 +119,10 @@ public class CarbonInputFormatUtil {
     plan.addDimension(queryDimension);
   }
 
-  public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable) {
-    List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
-    List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
-    QueryModel.processFilterExpression(filterExpression, dimensions, measures);
+  public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable,
+      boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
+    QueryModel.processFilterExpression(carbonTable, filterExpression, isFilterDimensions,
+        isFilterMeasures);
 
     if (null != filterExpression) {
       // Optimize Filter Expression and fit RANGE filters is conditions apply.
@@ -141,5 +149,14 @@ public class CarbonInputFormatUtil {
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }
+  }
+
+  public static String createJobTrackerID(java.util.Date date) {
+    return new SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(date);
+  }
+
+  public static JobID getJobId(java.util.Date date, int batch) {
+    String jobtrackerID = createJobTrackerID(date);
+    return new JobID(jobtrackerID, batch);
   }
 }

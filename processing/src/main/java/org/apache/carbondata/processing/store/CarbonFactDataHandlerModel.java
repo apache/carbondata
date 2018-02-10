@@ -23,10 +23,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -34,16 +34,15 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
-import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
-import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
-import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
+import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 // This class contains all the data required for processing and writing the carbon data
@@ -162,6 +161,8 @@ public class CarbonFactDataHandlerModel {
 
   private DataMapWriterListener dataMapWriterlistener;
 
+  private short writingCoresCount;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -182,8 +183,8 @@ public class CarbonFactDataHandlerModel {
       }
     }
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        identifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + identifier
-            .getTableName());
+        identifier.getDatabaseName(), identifier.getTableName());
+
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getDimensionByTableName(identifier.getTableName()),
             carbonTable.getMeasureByTableName(identifier.getTableName()));
@@ -224,7 +225,7 @@ public class CarbonFactDataHandlerModel {
     }
 
     CarbonDataFileAttributes carbonDataFileAttributes =
-        new CarbonDataFileAttributes(Integer.parseInt(configuration.getTaskNo()),
+        new CarbonDataFileAttributes(Long.parseLong(configuration.getTaskNo()),
             (Long) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
     String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration);
 
@@ -261,6 +262,7 @@ public class CarbonFactDataHandlerModel {
     DataMapWriterListener listener = new DataMapWriterListener();
     listener.registerAllWriter(configuration.getTableIdentifier(), configuration.getSegmentId());
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
+    carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
 
     return carbonFactDataHandlerModel;
   }
@@ -299,14 +301,14 @@ public class CarbonFactDataHandlerModel {
     Map<Integer, GenericDataType> complexIndexMap =
         new HashMap<Integer, GenericDataType>(segmentProperties.getComplexDimensions().size());
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
-    DataType[] aggType = new DataType[segmentProperties.getMeasures().size()];
+    DataType[] measureDataTypes = new DataType[segmentProperties.getMeasures().size()];
     int i = 0;
     for (CarbonMeasure msr : segmentProperties.getMeasures()) {
-      aggType[i++] = msr.getDataType();
+      measureDataTypes[i++] = msr.getDataType();
     }
-    carbonFactDataHandlerModel.setMeasureDataType(aggType);
+    carbonFactDataHandlerModel.setMeasureDataType(measureDataTypes);
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .checkAndCreateCarbonStoreLocation(loadModel.getStorePath(), loadModel.getDatabaseName(),
+        .checkAndCreateCarbonStoreLocation(carbonTable.getTablePath(), loadModel.getDatabaseName(),
             tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
@@ -322,6 +324,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.tableSpec = new TableSpec(
         segmentProperties.getDimensions(),
         segmentProperties.getMeasures());
+
     return carbonFactDataHandlerModel;
   }
 
@@ -331,17 +334,13 @@ public class CarbonFactDataHandlerModel {
    * @return data directory path
    */
   private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration) {
-    String carbonStorePath =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
-    CarbonTableIdentifier tableIdentifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        tableIdentifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + tableIdentifier
-            .getTableName());
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTable.getCarbonTableIdentifier());
-    return carbonTablePath.getCarbonDataDirectoryPath(configuration.getPartitionId(),
-        configuration.getSegmentId() + "");
+    AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
+    String carbonDataDirectoryPath = carbonTablePath
+        .getCarbonDataDirectoryPath(configuration.getPartitionId(),
+            configuration.getSegmentId() + "");
+    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
+    return carbonDataDirectoryPath;
   }
 
   public int[] getColCardinality() {
@@ -566,6 +565,10 @@ public class CarbonFactDataHandlerModel {
 
   public SortScopeOptions.SortScope getSortScope() {
     return sortScope;
+  }
+
+  public short getWritingCoresCount() {
+    return writingCoresCount;
   }
 
   public DataMapWriterListener getDataMapWriterlistener() {

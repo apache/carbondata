@@ -24,6 +24,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
@@ -61,12 +62,13 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
               evaluateResultListFinal, metadata.isIncludeFilter(),
               metadata.getColumnExpression().getDimension().getDataType());
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
-          .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+          .getExcludeFilterList()
+          .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
         // Adding default surrogate key of null member inorder to not display the same while
         // displaying the report as per hive compatibility.
-        resolvedFilterObject.getFilterList()
+        resolvedFilterObject.getExcludeFilterList()
             .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-        Collections.sort(resolvedFilterObject.getFilterList());
+        Collections.sort(resolvedFilterObject.getExcludeFilterList());
       }
       resolveDimension.setFilterValues(resolvedFilterObject);
     }
@@ -87,7 +89,11 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
     if (surrogates.size() > 0) {
       columnFilterInfo = new ColumnFilterInfo();
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
-      columnFilterInfo.setFilterList(surrogates);
+      if (!isIncludeFilter) {
+        columnFilterInfo.setExcludeFilterList(surrogates);
+      } else {
+        columnFilterInfo.setFilterList(surrogates);
+      }
     }
     return columnFilterInfo;
   }
@@ -96,7 +102,7 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
       List<Integer> surrogates, DirectDictionaryGenerator directDictionaryGenerator,
       DataType dataType) {
     String timeFormat = null;
-    if (dataType == DataType.DATE) {
+    if (dataType == DataTypes.DATE) {
       timeFormat = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
               CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);

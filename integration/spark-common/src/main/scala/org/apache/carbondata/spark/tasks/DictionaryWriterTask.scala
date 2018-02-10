@@ -32,18 +32,14 @@ import org.apache.carbondata.core.writer.CarbonDictionaryWriter
  *
  * @param valuesBuffer
  * @param dictionary
- * @param carbonTableIdentifier
  * @param dictionaryColumnUniqueIdentifier
- * @param carbonStoreLocation
  * @param columnSchema
  * @param isDictionaryFileExist
  * @param writer
  */
 class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
     dictionary: Dictionary,
-    carbonTableIdentifier: CarbonTableIdentifier,
     dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier,
-    carbonStoreLocation: String,
     columnSchema: ColumnSchema,
     isDictionaryFileExist: Boolean,
     var writer: CarbonDictionaryWriter = null) {
@@ -57,10 +53,7 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
     val values = valuesBuffer.toArray
     java.util.Arrays.sort(values, Ordering[String])
     val dictService = CarbonCommonFactory.getDictionaryService
-    writer = dictService.getDictionaryWriter(
-      carbonTableIdentifier,
-      dictionaryColumnUniqueIdentifier,
-      carbonStoreLocation)
+    writer = dictService.getDictionaryWriter(dictionaryColumnUniqueIdentifier)
     val distinctValues: java.util.List[String] = new java.util.ArrayList()
 
     try {

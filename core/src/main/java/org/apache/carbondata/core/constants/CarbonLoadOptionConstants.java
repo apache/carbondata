@@ -46,12 +46,26 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT = "false";
 
   /**
-   * option to specify the load option
+   * option to specify whether to skip empty lines in load
+   */
+  @CarbonProperty public static final String CARBON_OPTIONS_SKIP_EMPTY_LINE =
+      "carbon.options.is.empty.data.bad.record";
+
+  /**
+   * option to specify the dateFormat in load option for all date columns in table
    */
   @CarbonProperty
   public static final String CARBON_OPTIONS_DATEFORMAT =
       "carbon.options.dateformat";
   public static final String CARBON_OPTIONS_DATEFORMAT_DEFAULT = "";
+
+  /**
+   * option to specify the timestampFormat in load option for all timestamp columns in table
+   */
+  @CarbonProperty
+  public static final String CARBON_OPTIONS_TIMESTAMPFORMAT =
+          "carbon.options.timestampformat";
+  public static final String CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT = "";
   /**
    * option to specify the sort_scope
    */
@@ -84,6 +98,16 @@ public final class CarbonLoadOptionConstants {
   @CarbonProperty
   public static final String CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS =
       "carbon.options.global.sort.partitions";
+
+  /**
+   * specify serialization null format, it is used describe which character in side the csv file
+   * is treated as null.
+   */
+  @CarbonProperty
+  public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT =
+      "carbon.options.serialization.null.format";
+
+  public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT_DEFAULT = "\\N";
 
   /**
    *  Max number of dictionary values that can be given with external dictionary

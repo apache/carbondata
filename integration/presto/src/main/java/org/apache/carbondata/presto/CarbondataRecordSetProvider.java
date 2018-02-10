@@ -93,8 +93,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       Configuration conf = new Configuration();
       conf.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
       String carbonTablePath = PathFactory.getInstance()
-          .getCarbonTablePath(targetTable.getAbsoluteTableIdentifier().getStorePath(),
-              targetTable.getCarbonTableIdentifier(), null).getPath();
+          .getCarbonTablePath(targetTable.getAbsoluteTableIdentifier(), null).getPath();
 
       conf.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
       JobConf jobConf = new JobConf(conf);
@@ -120,13 +119,13 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
-    try {
-      CarbonTableInputFormat
-          .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));
-    } catch (IOException e) {
-      throw new RuntimeException("Unable to create the CarbonTableInputFormat", e);
-    }
-    CarbonTableInputFormat.setFilterPredicates(conf, filterExpression);
+    CarbonTableInputFormat
+        .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));
+    CarbonTableInputFormat
+        .setDatabaseName(conf, identifier.getCarbonTableIdentifier().getDatabaseName());
+    CarbonTableInputFormat
+        .setTableName(conf, identifier.getCarbonTableIdentifier().getTableName());
+  CarbonTableInputFormat.setFilterPredicates(conf, filterExpression);
     CarbonTableInputFormat.setColumnProjection(conf, projection);
 
     return format;

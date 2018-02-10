@@ -31,7 +31,7 @@ public interface DataMap {
   /**
    * It is called to load the data map to memory or to initialize it.
    */
-  void init(String filePath) throws MemoryException, IOException;
+  void init(DataMapModel dataMapModel) throws MemoryException, IOException;
 
   /**
    * Prune the datamap with filter expression. It returns the list of
@@ -42,6 +42,24 @@ public interface DataMap {
    */
   List<Blocklet> prune(FilterResolverIntf filterExp);
 
+  // TODO Move this method to Abstract class
+  /**
+   * Prune the datamap with filter expression and partition information. It returns the list of
+   * blocklets where these filters can exist.
+   *
+   * @param filterExp
+   * @return
+   */
+  List<Blocklet> prune(FilterResolverIntf filterExp, List<String> partitions);
+
+  // TODO Move this method to Abstract class
+  /**
+   * Validate whether the current segment needs to be fetching the required data
+   *
+   * @param filterExp
+   * @return
+   */
+  boolean isScanRequired(FilterResolverIntf filterExp);
 
   /**
    * Clear complete index table and release memory.

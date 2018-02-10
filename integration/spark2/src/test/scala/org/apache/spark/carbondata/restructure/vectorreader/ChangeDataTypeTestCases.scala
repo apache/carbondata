@@ -23,6 +23,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+
 class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -145,6 +147,38 @@ class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     test_change_int_to_long()
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     test_change_int_to_long()
+  }
+
+  test("test data type change for with pre-aggregate table should throw exception") {
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists PreAggMain_preagg1")
+    sql("create table preaggMain (a int, b string, c string) stored by 'carbondata'")
+    sql(
+      "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
+      " a,sum(b) from PreAggMain group by a")
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table preaggmain change a a long").show
+    }.getMessage.contains("exists in a pre-aggregate table"))
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table preaggmain_preagg1 change a a long").show
+    }.getMessage.contains("Cannot change data type for columns in pre-aggregate table"))
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists PreAggMain_preagg1")
+  }
+
+  test("test data type change for dictionary exclude INT type column") {
+    sql("drop table if exists table_sort")
+    sql("CREATE TABLE table_sort (imei int,age int,mac string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='imei,age','SORT_COLUMNS'='imei,age')")
+    sql("insert into table_sort select 32674,32794,'MAC1'")
+    sql("alter table table_sort change age age bigint")
+    sql("insert into table_sort select 32675,9223372036854775807,'MAC2'")
+    try {
+      sqlContext.setConf("carbon.enable.vector.reader", "true")
+      checkAnswer(sql("select * from table_sort"),
+        Seq(Row(32674, 32794, "MAC1"), Row(32675, Long.MaxValue, "MAC2")))
+    } finally {
+      sqlContext.setConf("carbon.enable.vector.reader", "true")
+    }
   }
 
   override def afterAll {

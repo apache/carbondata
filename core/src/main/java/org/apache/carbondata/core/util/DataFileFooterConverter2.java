@@ -141,6 +141,6 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
   }
 
   @Override public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
-    return null;
+    return new DataFileFooterConverter().getSchema(tableBlockInfo);
   }
 }

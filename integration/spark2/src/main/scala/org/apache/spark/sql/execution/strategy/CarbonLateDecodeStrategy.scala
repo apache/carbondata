@@ -30,13 +30,15 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.optimizer.CarbonDecoderRelation
+import org.apache.spark.sql.optimizer.{CarbonDecoderRelation, CarbonFilters}
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
-import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
@@ -58,8 +60,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           l,
           projects,
           filters,
-          (a, f, needDecoder) => toCatalystRDD(l, a, relation.buildScan(
-            a.map(_.name).toArray, f), needDecoder)) :: Nil
+          (a, f, needDecoder, p) => toCatalystRDD(l, a, relation.buildScan(
+            a.map(_.name).toArray, f, p), needDecoder)) :: Nil
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -74,10 +76,33 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             SparkSession.getActiveSession.get
           ) :: Nil
         }
+      case CountStarPlan(colAttr, PhysicalOperation(projectList, predicates, l: LogicalRelation))
+        if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
+        val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+        CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
       case _ => Nil
     }
   }
 
+  /**
+   * Return true if driver-side count star optimization can be used.
+   * Following case can't use driver-side count star:
+   * 1. There is data update and delete
+   * 2. It is streaming table
+   */
+  private def driverSideCountStar(logicalRelation: LogicalRelation): Boolean = {
+    val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+    val segmentUpdateStatusManager = new SegmentUpdateStatusManager(
+      relation.carbonRelation.metaData.carbonTable.getAbsoluteTableIdentifier)
+    val updateDeltaMetadata = segmentUpdateStatusManager.readLoadMetadata()
+    if (updateDeltaMetadata != null && updateDeltaMetadata.nonEmpty) {
+      false
+    } else if (relation.carbonTable.isStreamingTable) {
+      false
+    } else {
+      true
+    }
+  }
 
   def getDecoderRDD(
       logicalRelation: LogicalRelation,
@@ -102,8 +127,56 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       CarbonAliasDecoderRelation(),
       rdd,
       output,
-      CarbonEnv.getInstance(SparkSession.getActiveSession.get).storePath,
       table.carbonTable.getTableInfo.serialize())
+  }
+
+  /**
+   * Converts to physical RDD of carbon after pushing down applicable filters.
+   * @param relation
+   * @param projects
+   * @param filterPredicates
+   * @param scanBuilder
+   * @return
+   */
+  private def pruneFilterProject(
+      relation: LogicalRelation,
+      projects: Seq[NamedExpression],
+      filterPredicates: Seq[Expression],
+      scanBuilder: (Seq[Attribute], Array[Filter],
+        ArrayBuffer[AttributeReference], Seq[String]) => RDD[InternalRow]) = {
+    val names = relation.catalogTable.get.partitionColumnNames
+    // Get the current partitions from table.
+    var partitions: Seq[String] = null
+    if (names.nonEmpty) {
+      val partitionSet = AttributeSet(names
+        .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
+      val partitionKeyFilters =
+        ExpressionSet(ExpressionSet(filterPredicates).filter(_.references.subsetOf(partitionSet)))
+      // Update the name with lower case as it is case sensitive while getting partition info.
+      val updatedPartitionFilters = partitionKeyFilters.map { exp =>
+        exp.transform {
+          case attr: AttributeReference =>
+            AttributeReference(
+              attr.name.toLowerCase,
+              attr.dataType,
+              attr.nullable,
+              attr.metadata)(attr.exprId, attr.qualifier, attr.isGenerated)
+        }
+      }
+      partitions =
+        CarbonFilters.getPartitions(
+          updatedPartitionFilters.toSeq,
+          SparkSession.getActiveSession.get,
+          relation.catalogTable.get.identifier)
+    }
+    pruneFilterProjectRaw(
+      relation,
+      projects,
+      filterPredicates,
+      partitions,
+      (requestedColumns, _, pushedFilters, a, p) => {
+        scanBuilder(requestedColumns, pushedFilters.toArray, a, p)
+      })
   }
 
   private[this] def toCatalystRDD(
@@ -122,27 +195,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
-  protected def pruneFilterProject(
-      relation: LogicalRelation,
-      projects: Seq[NamedExpression],
-      filterPredicates: Seq[Expression],
-      scanBuilder: (Seq[Attribute], Array[Filter],
-        ArrayBuffer[AttributeReference]) => RDD[InternalRow]) = {
-    pruneFilterProjectRaw(
-      relation,
-      projects,
-      filterPredicates,
-      (requestedColumns, _, pushedFilters, a) => {
-        scanBuilder(requestedColumns, pushedFilters.toArray, a)
-      })
-  }
-
   protected def pruneFilterProjectRaw(
       relation: LogicalRelation,
       rawProjects: Seq[NamedExpression],
       filterPredicates: Seq[Expression],
+      partitions: Seq[String],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
-        ArrayBuffer[AttributeReference]) => RDD[InternalRow]) = {
+        ArrayBuffer[AttributeReference], Seq[String]) => RDD[InternalRow]) = {
     val projects = rawProjects.map {p =>
       p.transform {
         case CustomDeterministicExpression(exp) => exp
@@ -239,6 +298,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       }
       val scan = getDataSourceScan(relation,
         updateProject,
+        partitions,
         scanBuilder,
         candidatePredicates,
         pushedFilters,
@@ -274,6 +334,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       val scan = getDataSourceScan(relation,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]],
+        partitions,
         scanBuilder,
         candidatePredicates,
         pushedFilters,
@@ -287,10 +348,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
-  def getDataSourceScan(relation: LogicalRelation,
+  private def getDataSourceScan(relation: LogicalRelation,
       output: Seq[Attribute],
+      partitions: Seq[String],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
-        ArrayBuffer[AttributeReference]) => RDD[InternalRow],
+        ArrayBuffer[AttributeReference], Seq[String]) => RDD[InternalRow],
       candidatePredicates: Seq[Expression],
       pushedFilters: Seq[Filter],
       metadata: Map[String, String],
@@ -301,14 +363,22 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         needDecoder.isEmpty) {
       BatchedDataSourceScanExec(
         output,
-        scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
+        scanBuilder(updateRequestedColumns,
+          candidatePredicates,
+          pushedFilters,
+          needDecoder,
+          partitions),
         relation.relation,
         getPartitioning(table.carbonTable, updateRequestedColumns),
         metadata,
-        relation.catalogTable.map(_.identifier))
+        relation.catalogTable.map(_.identifier), relation)
     } else {
       RowDataSourceScanExec(output,
-        scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
+        scanBuilder(updateRequestedColumns,
+          candidatePredicates,
+          pushedFilters,
+          needDecoder,
+          partitions),
         relation.relation,
         getPartitioning(table.carbonTable, updateRequestedColumns),
         metadata,
@@ -358,11 +428,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   private def getPartitioning(carbonTable: CarbonTable,
       output: Seq[Attribute]): Partitioning = {
-    val info: BucketingInfo = carbonTable.getBucketingInfo(carbonTable.getFactTableName)
+    val info: BucketingInfo = carbonTable.getBucketingInfo(carbonTable.getTableName)
     if (info != null) {
       val cols = info.getListOfColumns.asScala
       val sortColumn = carbonTable.
-        getDimensionByTableName(carbonTable.getFactTableName).get(0).getColName
+        getDimensionByTableName(carbonTable.getTableName).get(0).getColName
       val numBuckets = info.getNumberOfBuckets
       val bucketColumns = cols.flatMap { n =>
         val attrRef = output.find(_.name.equalsIgnoreCase(n.getColumnName))
@@ -385,9 +455,23 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
+  private def isComplexAttribute(attribute: Attribute) = attribute.dataType match {
+    case ArrayType(dataType, _) => true
+    case StructType(_) => true
+    case _ => false
+  }
+
   protected[sql] def selectFilters(
       relation: BaseRelation,
       predicates: Seq[Expression]): (Seq[Expression], Seq[Filter]) = {
+
+    // In case of ComplexType dataTypes no filters should be pushed down. IsNotNull is being
+    // explicitly added by spark and pushed. That also has to be handled and pushed back to
+    // Spark for handling.
+    val predicatesWithoutComplex = predicates.filter(predicate =>
+      predicate.collect {
+      case a: Attribute if isComplexAttribute(a) => a
+    }.size == 0 )
 
     // For conciseness, all Catalyst filter expressions of type `expressions.Expression` below are
     // called `predicate`s, while all data source filters of type `sources.Filter` are simply called
@@ -395,12 +479,14 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
     val translated: Seq[(Expression, Filter)] =
       for {
-        predicate <- predicates
+        predicate <- predicatesWithoutComplex
         filter <- translateFilter(predicate)
       } yield predicate -> filter
 
+
     // A map from original Catalyst expressions to corresponding translated data source filters.
     val translatedMap: Map[Expression, Filter] = translated.toMap
+
 
     // Catalyst predicate expressions that cannot be translated to data source filters.
     val unrecognizedPredicates = predicates.filterNot(translatedMap.contains)
@@ -429,7 +515,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
     (unrecognizedPredicates ++ unhandledPredicates, translatedFilters)
   }
-
 
   /**
    * Tries to translate a Catalyst [[Expression]] into data source [[Filter]].
@@ -531,6 +616,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         Some(CarbonEndsWith(c))
       case c@Contains(a: Attribute, Literal(v, t)) =>
         Some(CarbonContainsWith(c))
+      case c@Literal(v, t) if (v == null) =>
+        Some(FalseExpr())
       case others => None
     }
   }

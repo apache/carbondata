@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 import org.apache.hadoop.fs.Path;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
@@ -100,7 +101,7 @@ public class CarbonLocalInputSplit {
       @JsonProperty("version") short version,
       @JsonProperty("deleteDeltaFiles") String[] deleteDeltaFiles,
       @JsonProperty("detailInfo") String detailInfo
-      ) {
+  ) {
     this.path = path;
     this.start = start;
     this.length = length;
@@ -115,7 +116,7 @@ public class CarbonLocalInputSplit {
   }
 
   public static  CarbonInputSplit convertSplit(CarbonLocalInputSplit carbonLocalInputSplit) {
-    CarbonInputSplit inputSplit = new CarbonInputSplit(carbonLocalInputSplit.getSegmentId(),
+    CarbonInputSplit inputSplit = new CarbonInputSplit(carbonLocalInputSplit.getSegmentId(), "0",
         new Path(carbonLocalInputSplit.getPath()), carbonLocalInputSplit.getStart(),
         carbonLocalInputSplit.getLength(), carbonLocalInputSplit.getLocations()
         .toArray(new String[carbonLocalInputSplit.getLocations().size()]),
@@ -123,6 +124,11 @@ public class CarbonLocalInputSplit {
         carbonLocalInputSplit.getDeleteDeltaFiles());
     Gson gson = new Gson();
     BlockletDetailInfo blockletDetailInfo = gson.fromJson(carbonLocalInputSplit.detailInfo, BlockletDetailInfo.class);
+    try {
+      blockletDetailInfo.readColumnSchema(blockletDetailInfo.getColumnSchemaBinary());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
     inputSplit.setDetailInfo(blockletDetailInfo);
     return inputSplit;
   }

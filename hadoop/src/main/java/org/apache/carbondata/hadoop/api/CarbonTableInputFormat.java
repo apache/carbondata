@@ -19,26 +19,39 @@ package org.apache.carbondata.hadoop.api;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.exception.InvalidConfigurationException;
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.mutate.data.BlockMappingVO;
+import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.SingleTableProvider;
@@ -49,14 +62,17 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
+import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonProjection;
@@ -70,18 +86,19 @@ import org.apache.carbondata.hadoop.util.SchemaReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.BlockLocation;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.InvalidPathException;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.security.TokenCache;
-import org.apache.hadoop.util.StringUtils;
 
 /**
  * Input format of CarbonData file.
@@ -93,6 +110,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   // comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
+  public static final String VALIDATE_INPUT_SEGMENT_IDs =
+      "mapreduce.input.carboninputformat.validsegments";
   // comma separated list of input files
   public static final String INPUT_FILES = "mapreduce.input.carboninputformat.files";
   public static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
@@ -104,6 +123,12 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
   private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
+  public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
+  public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
+  public static final String PARTITIONS_TO_PRUNE =
+      "mapreduce.input.carboninputformat.partitions.to.prune";
+  public static final String UPADTE_T =
+      "mapreduce.input.carboninputformat.partitions.to.prune";
 
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
@@ -114,14 +139,14 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setTableInfo(Configuration configuration, TableInfo tableInfo)
       throws IOException {
     if (null != tableInfo) {
-      configuration.set(TABLE_INFO, ObjectSerializationUtil.encodeToString(tableInfo.serialize()));
+      configuration.set(TABLE_INFO, CarbonUtil.encodeToString(tableInfo.serialize()));
     }
   }
 
   /**
    * Get TableInfo object from `configuration`
    */
-  private TableInfo getTableInfo(Configuration configuration) throws IOException {
+  private static TableInfo getTableInfo(Configuration configuration) throws IOException {
     String tableInfoStr = configuration.get(TABLE_INFO);
     if (tableInfoStr == null) {
       return null;
@@ -129,7 +154,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       TableInfo output = new TableInfo();
       output.readFields(
           new DataInputStream(
-            new ByteArrayInputStream(ObjectSerializationUtil.decodeStringToBytes(tableInfoStr))));
+              new ByteArrayInputStream(CarbonUtil.decodeStringToBytes(tableInfoStr))));
       return output;
     }
   }
@@ -156,8 +181,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
-  public static void setTablePath(Configuration configuration, String tablePath)
-      throws IOException {
+  public static void setTablePath(Configuration configuration, String tablePath) {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
@@ -177,8 +201,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   private static DataMapJob getDataMapJob(Configuration configuration) throws IOException {
     String jobString = configuration.get(DATA_MAP_DSTR);
     if (jobString != null) {
-      DataMapJob dataMapJob = (DataMapJob) ObjectSerializationUtil.convertStringToObject(jobString);
-      return dataMapJob;
+      return (DataMapJob) ObjectSerializationUtil.convertStringToObject(jobString);
     }
     return null;
   }
@@ -234,24 +257,73 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    * Set list of segments to access
    */
   public static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
-    configuration.set(INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
+    configuration.set(INPUT_SEGMENT_NUMBERS, CarbonUtil.convertToString(validSegments));
   }
 
   /**
-   * Set list of files to access
+   * Set `CARBON_INPUT_SEGMENTS` from property to configuration
    */
-  public static void setFilesToAccess(Configuration configuration, List<String> validFiles) {
-    configuration.set(INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
+  public static void setQuerySegment(Configuration conf, AbsoluteTableIdentifier identifier) {
+    String dbName = identifier.getCarbonTableIdentifier().getDatabaseName().toLowerCase();
+    String tbName = identifier.getCarbonTableIdentifier().getTableName().toLowerCase();
+    String segmentNumbersFromProperty = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tbName, "*");
+    if (!segmentNumbersFromProperty.trim().equals("*")) {
+      CarbonTableInputFormat
+          .setSegmentsToAccess(conf, Arrays.asList(segmentNumbersFromProperty.split(",")));
+    }
   }
 
-  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
-      throws IOException {
-    String dirs = configuration.get(INPUT_DIR, "");
-    String[] inputPaths = StringUtils.split(dirs);
-    if (inputPaths.length == 0) {
-      throw new InvalidPathException("No input paths specified in job");
+  /**
+   * set list of segment to access
+   */
+  public static void setValidateSegmentsToAccess(Configuration configuration, Boolean validate) {
+    configuration.set(CarbonTableInputFormat.VALIDATE_INPUT_SEGMENT_IDs, validate.toString());
+  }
+
+  /**
+   * get list of segment to access
+   */
+  public static boolean getValidateSegmentsToAccess(Configuration configuration) {
+    return configuration.get(CarbonTableInputFormat.VALIDATE_INPUT_SEGMENT_IDs, "true")
+        .equalsIgnoreCase("true");
+  }
+
+  /**
+   * set list of partitions to prune
+   */
+  public static void setPartitionsToPrune(Configuration configuration, List<String> partitions) {
+    if (partitions == null) {
+      return;
     }
-    return AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
+    try {
+      String partitionString = ObjectSerializationUtil.convertObjectToString(partitions);
+      configuration.set(PARTITIONS_TO_PRUNE, partitionString);
+    } catch (Exception e) {
+      throw new RuntimeException("Error while setting patition information to Job", e);
+    }
+  }
+
+  /**
+   * get list of partitions to prune
+   */
+  public static List<String> getPartitionsToPrune(Configuration configuration) throws IOException {
+    String partitionString = configuration.get(PARTITIONS_TO_PRUNE);
+    if (partitionString != null) {
+      return (List<String>) ObjectSerializationUtil.convertStringToObject(partitionString);
+    }
+    return null;
+  }
+
+  public AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
+      throws IOException {
+    String tablePath = configuration.get(INPUT_DIR, "");
+    try {
+      return AbsoluteTableIdentifier
+          .from(tablePath, getDatabaseName(configuration), getTableName(configuration));
+    } catch (InvalidConfigurationException e) {
+      throw new IOException(e);
+    }
   }
 
   /**
@@ -265,23 +337,35 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    */
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
+    CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
+    if (null == carbonTable) {
+      throw new IOException("Missing/Corrupt schema file for table.");
+    }
     TableDataMap blockletMap =
         DataMapStoreManager.getInstance().getDataMap(identifier, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
     List<String> invalidSegments = new ArrayList<>();
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
-    List<String> validSegments = Arrays.asList(getSegmentsToAccess(job));
-    // get all valid segments and set them into the configuration
-    if (validSegments.size() == 0) {
+    List<String> streamSegments = null;
+
+    if (getValidateSegmentsToAccess(job.getConfiguration())) {
+      // get all valid segments and set them into the configuration
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
           segmentStatusManager.getValidAndInvalidSegments();
-      SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
-      validSegments = segments.getValidSegments();
+      List<String> validSegments = segments.getValidSegments();
+      streamSegments = segments.getStreamSegments();
       if (validSegments.size() == 0) {
-        return new ArrayList<>(0);
+        return getSplitsOfStreaming(job, identifier, streamSegments);
       }
 
+      List<String> filteredSegmentToAccess = getFilteredSegment(job, validSegments);
+      if (filteredSegmentToAccess.size() == 0) {
+        return new ArrayList<>(0);
+      } else {
+        setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
+      }
       // remove entry in the segment index if there are invalid segments
       invalidSegments.addAll(segments.getInvalidSegments());
       for (String invalidSegmentId : invalidSegments) {
@@ -292,20 +376,38 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       }
     }
 
+    // get updated filtered list
+    List<String> filteredSegmentToAccess = Arrays.asList(getSegmentsToAccess(job));
+    // Clean the updated segments from memory if the update happens on segments
+    List<String> toBeCleanedSegments = new ArrayList<>();
+    for (SegmentUpdateDetails segmentUpdateDetail : updateStatusManager
+        .getUpdateStatusDetails()) {
+      boolean refreshNeeded =
+          DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
+              .isRefreshNeeded(segmentUpdateDetail.getSegmentName(), updateStatusManager);
+      if (refreshNeeded) {
+        toBeCleanedSegments.add(segmentUpdateDetail.getSegmentName());
+      }
+    }
+    // Clean segments if refresh is needed
+    for (String segment : filteredSegmentToAccess) {
+      if (DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
+          .isRefreshNeeded(segment)) {
+        toBeCleanedSegments.add(segment);
+      }
+    }
+    blockletMap.clear(toBeCleanedSegments);
+
     // process and resolve the expression
     Expression filter = getFilterPredicates(job.getConfiguration());
-    CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
     TableProvider tableProvider = new SingleTableProvider(carbonTable);
     // this will be null in case of corrupt schema file.
-    if (null == carbonTable) {
-      throw new IOException("Missing/Corrupt schema file for table.");
-    }
-    PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
-    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
+    PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
+    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
 
     // prune partitions for filter query on partition table
     BitSet matchedPartitions = null;
-    if (partitionInfo != null) {
+    if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
       matchedPartitions = setMatchedPartitions(null, filter, partitionInfo, null);
       if (matchedPartitions != null) {
         if (matchedPartitions.cardinality() == 0) {
@@ -321,7 +423,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
     // do block filtering and get split
     List<InputSplit> splits =
-        getSplits(job, filterInterface, validSegments, matchedPartitions, partitionInfo, null);
+        getSplits(job, filterInterface, filteredSegmentToAccess, matchedPartitions, partitionInfo,
+            null);
     // pass the invalid segment to task side in order to remove index entry in task side
     if (invalidSegments.size() > 0) {
       for (InputSplit split : splits) {
@@ -330,7 +433,117 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
             .setInvalidTimestampRange(invalidTimestampsList);
       }
     }
+
+    // add all splits of streaming
+    List<InputSplit> splitsOfStreaming = getSplitsOfStreaming(job, identifier, streamSegments);
+    if (!splitsOfStreaming.isEmpty()) {
+      splits.addAll(splitsOfStreaming);
+    }
     return splits;
+  }
+
+  /**
+   * Return segment list after filtering out valid segments and segments set by user by
+   * `INPUT_SEGMENT_NUMBERS` in job configuration
+   */
+  private List<String> getFilteredSegment(JobContext job, List<String> validSegments) {
+    String[] segmentsToAccess = getSegmentsToAccess(job);
+    Set<String> segmentToAccessSet = new HashSet<>(Arrays.asList(segmentsToAccess));
+    List<String> filteredSegmentToAccess = new ArrayList<>();
+    if (segmentsToAccess.length == 0 || segmentsToAccess[0].equalsIgnoreCase("*")) {
+      filteredSegmentToAccess.addAll(validSegments);
+    } else {
+      for (String validSegment : validSegments) {
+        if (segmentToAccessSet.contains(validSegment)) {
+          filteredSegmentToAccess.add(validSegment);
+        }
+      }
+      if (!filteredSegmentToAccess.containsAll(segmentToAccessSet)) {
+        List<String> filteredSegmentToAccessTemp = new ArrayList<>(filteredSegmentToAccess);
+        filteredSegmentToAccessTemp.removeAll(segmentToAccessSet);
+        LOG.info(
+            "Segments ignored are : " + Arrays.toString(filteredSegmentToAccessTemp.toArray()));
+      }
+    }
+    return filteredSegmentToAccess;
+  }
+
+  /**
+   * use file list in .carbonindex file to get the split of streaming.
+   */
+  public List<InputSplit> getSplitsOfStreaming(JobContext job, AbsoluteTableIdentifier identifier,
+      List<String> streamSegments) throws IOException {
+    List<InputSplit> splits = new ArrayList<InputSplit>();
+    if (streamSegments != null && !streamSegments.isEmpty()) {
+
+      CarbonTablePath tablePath = CarbonStorePath.getCarbonTablePath(identifier);
+      long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
+      long maxSize = getMaxSplitSize(job);
+      for (String segmentId : streamSegments) {
+        String segmentDir = tablePath.getSegmentDir("0", segmentId);
+        FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
+        if (FileFactory.isFileExist(segmentDir, fileType)) {
+          String indexName = CarbonTablePath.getCarbonStreamIndexFileName();
+          String indexPath = segmentDir + File.separator + indexName;
+          CarbonFile index = FileFactory.getCarbonFile(indexPath, fileType);
+          // index file exists
+          if (index.exists()) {
+            // data file exists
+            CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
+            try {
+              // map block index
+              indexReader.openThriftReader(indexPath);
+              while (indexReader.hasNext()) {
+                BlockIndex blockIndex = indexReader.readBlockIndexInfo();
+                String filePath = segmentDir + File.separator + blockIndex.getFile_name();
+                Path path = new Path(filePath);
+                long length = blockIndex.getFile_size();
+                if (length != 0) {
+                  BlockLocation[] blkLocations;
+                  FileSystem fs = FileFactory.getFileSystem(path);
+                  FileStatus file = fs.getFileStatus(path);
+                  blkLocations = fs.getFileBlockLocations(path, 0, length);
+                  long blockSize = file.getBlockSize();
+                  long splitSize = computeSplitSize(blockSize, minSize, maxSize);
+                  long bytesRemaining = length;
+                  while (((double) bytesRemaining) / splitSize > 1.1) {
+                    int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+                    splits.add(makeSplit(segmentId, path, length - bytesRemaining, splitSize,
+                        blkLocations[blkIndex].getHosts(),
+                        blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
+                    bytesRemaining -= splitSize;
+                  }
+                  if (bytesRemaining != 0) {
+                    int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+                    splits.add(makeSplit(segmentId, path, length - bytesRemaining, bytesRemaining,
+                        blkLocations[blkIndex].getHosts(),
+                        blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
+                  }
+                } else {
+                  //Create empty hosts array for zero length files
+                  splits.add(makeSplit(segmentId, path, 0, length, new String[0],
+                      FileFormat.ROW_V1));
+                }
+              }
+            } finally {
+              indexReader.closeThriftReader();
+            }
+          }
+        }
+      }
+    }
+    return splits;
+  }
+
+  protected FileSplit makeSplit(String segmentId, Path file, long start, long length,
+      String[] hosts, FileFormat fileFormat) {
+    return new CarbonInputSplit(segmentId, file, start, length, hosts, fileFormat);
+  }
+
+
+  protected FileSplit makeSplit(String segmentId, Path file, long start, long length,
+      String[] hosts, String[] inMemoryHosts, FileFormat fileFormat) {
+    return new CarbonInputSplit(segmentId, file, start, length, hosts, inMemoryHosts, fileFormat);
   }
 
   /**
@@ -361,7 +574,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         throw new IOException("Missing/Corrupt schema file for table.");
       }
 
-      CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
+      CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
 
       TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // prune partitions for filter query on partition table
@@ -427,7 +640,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   }
   /**
    * {@inheritDoc}
-   * Configurations FileInputFormat.INPUT_DIR, CarbonInputFormat.INPUT_SEGMENT_NUMBERS
+   * Configurations FileInputFormat.INPUT_DIR, CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS
    * are used to get table path to read.
    *
    * @return
@@ -464,14 +677,14 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         // In case IUD is not performed in this table avoid searching for
         // invalidated blocks.
         if (CarbonUtil
-                .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getPath().toString(),
-                        invalidBlockVOForSegmentId, updateStatusManager)) {
+            .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getPath().toString(),
+                invalidBlockVOForSegmentId, updateStatusManager)) {
           continue;
         }
         // When iud is done then only get delete delta files for a block
         try {
           deleteDeltaFilePath =
-                  updateStatusManager.getDeleteDeltaFilePath(inputSplit.getPath().toString());
+              updateStatusManager.getDeleteDeltaFilePath(inputSplit.getPath().toString());
         } catch (Exception e) {
           throw new IOException(e);
         }
@@ -514,34 +727,36 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         .getDataMap(absoluteTableIdentifier, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
     DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
-    List<Blocklet> prunedBlocklets;
+    List<String> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
+    List<ExtendedBlocklet> prunedBlocklets;
     if (dataMapJob != null) {
       DistributableDataMapFormat datamapDstr =
           new DistributableDataMapFormat(absoluteTableIdentifier, BlockletDataMap.NAME,
-              segmentIds, BlockletDataMapFactory.class.getName());
+              segmentIds, partitionsToPrune,
+              BlockletDataMapFactory.class.getName());
       prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
     } else {
-      prunedBlocklets = blockletMap.prune(segmentIds, resolver);
+      prunedBlocklets = blockletMap.prune(segmentIds, resolver, partitionsToPrune);
     }
 
     List<org.apache.carbondata.hadoop.CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();
     int partitionIndex = 0;
     List<Integer> partitionIdList = new ArrayList<>();
-    if (partitionInfo != null) {
+    if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
       partitionIdList = partitionInfo.getPartitionIds();
     }
-    for (Blocklet blocklet : prunedBlocklets) {
-      int partitionId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(
-          CarbonTablePath.DataFileUtil.getTaskNo(blocklet.getPath().toString()));
+    for (ExtendedBlocklet blocklet : prunedBlocklets) {
+      long partitionId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(
+          CarbonTablePath.DataFileUtil.getTaskNo(blocklet.getPath()));
 
       // OldPartitionIdList is only used in alter table partition command because it change
       // partition info first and then read data.
       // For other normal query should use newest partitionIdList
-      if (partitionInfo != null) {
+      if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
         if (oldPartitionIdList != null) {
-          partitionIndex = oldPartitionIdList.indexOf(partitionId);
+          partitionIndex = oldPartitionIdList.indexOf((int)partitionId);
         } else {
-          partitionIndex = partitionIdList.indexOf(partitionId);
+          partitionIndex = partitionIdList.indexOf((int)partitionId);
         }
       }
       if (partitionIndex != -1) {
@@ -551,7 +766,10 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         // for partition table, the task id of carbaondata file name is the partition id.
         // if this partition is not required, here will skip it.
         if (matchedPartitions == null || matchedPartitions.get(partitionIndex)) {
-          resultFilterredBlocks.add(convertToCarbonInputSplit(blocklet));
+          CarbonInputSplit inputSplit = convertToCarbonInputSplit(blocklet);
+          if (inputSplit != null) {
+            resultFilterredBlocks.add(inputSplit);
+          }
         }
       }
     }
@@ -561,13 +779,11 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return resultFilterredBlocks;
   }
 
-  private org.apache.carbondata.hadoop.CarbonInputSplit convertToCarbonInputSplit(Blocklet blocklet)
-      throws IOException {
-    blocklet.updateLocations();
+  private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet) throws IOException {
     org.apache.carbondata.hadoop.CarbonInputSplit split =
         org.apache.carbondata.hadoop.CarbonInputSplit.from(blocklet.getSegmentId(),
-            new FileSplit(new Path(blocklet.getPath()), 0, blocklet.getLength(),
-                blocklet.getLocations()),
+            blocklet.getBlockletId(), new FileSplit(new Path(blocklet.getPath()), 0,
+                blocklet.getLength(), blocklet.getLocations()),
             ColumnarFormatVersion.valueOf((short) blocklet.getDetailInfo().getVersionNumber()));
     split.setDetailInfo(blocklet.getDetailInfo());
     return split;
@@ -598,7 +814,14 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
-    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
+    boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
+    // getAllMeasures returns list of visible and invisible columns
+    boolean[] isFilterMeasures =
+        new boolean[carbonTable.getAllMeasures().size()];
+    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, isFilterDimensions,
+        isFilterMeasures);
+    queryModel.setIsFilterDimensions(isFilterDimensions);
+    queryModel.setIsFilterMeasures(isFilterMeasures);
     FilterResolverIntf filterIntf = CarbonInputFormatUtil
         .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
     queryModel.setFilterExpressionResolverTree(filterIntf);
@@ -668,7 +891,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * return valid segment to access
    */
-  private String[] getSegmentsToAccess(JobContext job) {
+  public String[] getSegmentsToAccess(JobContext job) {
     String segmentString = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "");
     if (segmentString.trim().isEmpty()) {
       return new String[0];
@@ -679,26 +902,26 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get the row count of the Block and mapping of segment and Block count.
    *
-   * @param job
    * @param identifier
    * @return
    * @throws IOException
-   * @throws KeyGenException
    */
-  public BlockMappingVO getBlockRowCount(JobContext job, AbsoluteTableIdentifier identifier)
-      throws IOException, KeyGenException {
+  public BlockMappingVO getBlockRowCount(Job job, AbsoluteTableIdentifier identifier,
+      List<String> partitions) throws IOException {
     TableDataMap blockletMap = DataMapStoreManager.getInstance()
         .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
-    SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments =
+    SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
         new SegmentStatusManager(identifier).getValidAndInvalidSegments();
-    Map<String, Long> blockRowCountMapping =
-        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    Map<String, Long> segmentAndBlockCountMapping =
-        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    List<Blocklet> blocklets = blockletMap.prune(validAndInvalidSegments.getValidSegments(), null);
-    for (Blocklet blocklet : blocklets) {
-      String blockName = blocklet.getPath().toString();
+    Map<String, Long> blockRowCountMapping = new HashMap<>();
+    Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();
+
+    // TODO: currently only batch segment is supported, add support for streaming table
+    List<String> filteredSegment = getFilteredSegment(job, allSegments.getValidSegments());
+
+    List<ExtendedBlocklet> blocklets = blockletMap.prune(filteredSegment, null, partitions);
+    for (ExtendedBlocklet blocklet : blocklets) {
+      String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
       blockName = blockName + CarbonTablePath.getCarbonDataExtension();
 
@@ -709,7 +932,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       // if block is invalid then dont add the count
       SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
 
-      if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getStatus())) {
+      if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus())) {
         Long blockCount = blockRowCountMapping.get(key);
         if (blockCount == null) {
           blockCount = 0L;
@@ -723,6 +946,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         blockRowCountMapping.put(key, blockCount);
       }
     }
+
     return new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
   }
 
@@ -748,5 +972,35 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       return new DataTypeConverterImpl();
     }
     return (DataTypeConverter) ObjectSerializationUtil.convertStringToObject(converter);
+  }
+
+  public static void setDatabaseName(Configuration configuration, String databaseName) {
+    if (null != databaseName) {
+      configuration.set(DATABASE_NAME, databaseName);
+    }
+  }
+
+  public static String getDatabaseName(Configuration configuration)
+      throws InvalidConfigurationException {
+    String databseName = configuration.get(DATABASE_NAME);
+    if (null == databseName) {
+      throw new InvalidConfigurationException("Database name is not set.");
+    }
+    return databseName;
+  }
+
+  public static void setTableName(Configuration configuration, String tableName) {
+    if (null != tableName) {
+      configuration.set(TABLE_NAME, tableName);
+    }
+  }
+
+  public static String getTableName(Configuration configuration)
+      throws InvalidConfigurationException {
+    String tableName = configuration.get(TABLE_NAME);
+    if (tableName == null) {
+      throw new InvalidConfigurationException("Table name is not set");
+    }
+    return tableName;
   }
 }

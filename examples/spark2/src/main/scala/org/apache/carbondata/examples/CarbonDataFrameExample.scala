@@ -31,7 +31,6 @@ object CarbonDataFrameExample {
                             + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target"
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
@@ -74,6 +73,7 @@ object CarbonDataFrameExample {
     val carbondf = spark.read
       .format("carbondata")
       .schema(customSchema)
+      // .option("dbname", "db_name") the system will use "default" as dbname if not set this option
       .option("tableName", "carbon_table")
       .load()
 

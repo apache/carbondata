@@ -19,32 +19,36 @@ package org.apache.carbondata.spark.load
 
 import scala.util.Random
 
+import com.univocity.parsers.common.TextParsingException
 import org.apache.spark.{Accumulator, SparkEnv, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.processing.csvload.StringArrayWritable
-import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.DataLoadProcessBuilder
-import org.apache.carbondata.processing.newflow.converter.impl.RowConverterImpl
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
-import org.apache.carbondata.processing.newflow.parser.impl.RowParserImpl
-import org.apache.carbondata.processing.newflow.sort.SortStepRowUtil
-import org.apache.carbondata.processing.newflow.steps.{DataConverterProcessorStepImpl, DataWriterProcessorStepImpl}
-import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters
+import org.apache.carbondata.processing.loading.{BadRecordsLogger, BadRecordsLoggerProvider, CarbonDataLoadConfiguration, DataLoadProcessBuilder, TableProcessingOperations}
+import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.loading.parser.impl.RowParserImpl
+import org.apache.carbondata.processing.loading.sort.SortStepRowUtil
+import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImpl
+import org.apache.carbondata.processing.sort.sortdata.SortParameters
 import org.apache.carbondata.processing.store.{CarbonFactHandler, CarbonFactHandlerFactory}
+import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil}
 import org.apache.carbondata.spark.rdd.{NewRddIterator, StringArrayRow}
+import org.apache.carbondata.spark.util.Util
 
 object DataLoadProcessorStepOnSpark {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def toStringArrayRow(row: StringArrayWritable, columnCount: Int): StringArrayRow = {
+  def toStringArrayRow(row: InternalRow, columnCount: Int): StringArrayRow = {
     val outRow = new StringArrayRow(new Array[String](columnCount))
-    outRow.setValues(row.get())
+    outRow.setValues(row.asInstanceOf[GenericInternalRow].values.asInstanceOf[Array[String]])
   }
 
   def toRDDIterator(
@@ -67,7 +71,7 @@ object DataLoadProcessorStepOnSpark {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val rowParser = new RowParserImpl(conf.getDataFields, conf)
-
+    val isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(conf)
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
       wrapException(e, model)
     }
@@ -75,8 +79,16 @@ object DataLoadProcessorStepOnSpark {
     new Iterator[CarbonRow] {
       override def hasNext: Boolean = rows.hasNext
 
+
+
       override def next(): CarbonRow = {
-        val row = new CarbonRow(rowParser.parseRow(rows.next()))
+        var row : CarbonRow = null
+        if(isRawDataRequired) {
+          val rawRow = rows.next()
+           row = new CarbonRow(rowParser.parseRow(rawRow), rawRow)
+        } else {
+          row = new CarbonRow(rowParser.parseRow(rows.next()))
+        }
         rowCounter.add(1)
         row
       }
@@ -91,18 +103,20 @@ object DataLoadProcessorStepOnSpark {
       rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
-    val badRecordLogger = DataConverterProcessorStepImpl.createBadRecordLogger(conf)
+    val badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(conf)
     val rowConverter = new RowConverterImpl(conf.getDataFields, conf, badRecordLogger)
     rowConverter.initialize()
 
     TaskContext.get().addTaskCompletionListener { context =>
-      DataConverterProcessorStepImpl.close(badRecordLogger, conf, rowConverter)
-      GlobalSortHelper.badRecordsLogger(model, partialSuccessAccum)
+      val hasBadRecord: Boolean = CarbonBadRecordUtil.hasBadRecord(model)
+      close(conf, badRecordLogger, rowConverter)
+      GlobalSortHelper.badRecordsLogger(model, partialSuccessAccum, hasBadRecord)
     }
 
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
-      DataConverterProcessorStepImpl.close(badRecordLogger, conf, rowConverter)
-      GlobalSortHelper.badRecordsLogger(model, partialSuccessAccum)
+      val hasBadRecord : Boolean = CarbonBadRecordUtil.hasBadRecord(model)
+      close(conf, badRecordLogger, rowConverter)
+      GlobalSortHelper.badRecordsLogger(model, partialSuccessAccum, hasBadRecord)
 
       wrapException(e, model)
     }
@@ -118,6 +132,18 @@ object DataLoadProcessorStepOnSpark {
     }
   }
 
+  def close(conf: CarbonDataLoadConfiguration,
+      badRecordLogger: BadRecordsLogger,
+      rowConverter: RowConverterImpl): Unit = {
+    if (badRecordLogger != null) {
+      badRecordLogger.closeStreams()
+      CarbonBadRecordUtil.renameBadRecord(conf)
+    }
+    if (rowConverter != null) {
+      rowConverter.finish()
+    }
+  }
+
   def convertTo3Parts(
       rows: Iterator[CarbonRow],
       index: Int,
@@ -126,7 +152,7 @@ object DataLoadProcessorStepOnSpark {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val sortParameters = SortParameters.createSortParameters(conf)
-
+    val sortStepRowUtil = new SortStepRowUtil(sortParameters)
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
       wrapException(e, model)
     }
@@ -136,7 +162,7 @@ object DataLoadProcessorStepOnSpark {
 
       override def next(): CarbonRow = {
         val row =
-          new CarbonRow(SortStepRowUtil.convertRow(rows.next().getData, sortParameters, true))
+          new CarbonRow(sortStepRowUtil.convertRow(rows.next().getData))
         rowCounter.add(1)
         row
       }
@@ -204,7 +230,7 @@ object DataLoadProcessorStepOnSpark {
         dataWriter.close()
       }
       // clean up the folders and files created locally for data load operation
-      CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
+      TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
     }
   }
 
@@ -215,7 +241,7 @@ object DataLoadProcessorStepOnSpark {
     val carbonUseLocalDir = CarbonProperties.getInstance()
       .getProperty("carbon.use.local.dir", "false")
     if (carbonUseLocalDir.equalsIgnoreCase("true")) {
-      val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+      val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
       if (null != storeLocations && storeLocations.nonEmpty) {
         storeLocation = storeLocations(Random.nextInt(storeLocations.length))
       }
@@ -232,6 +258,10 @@ object DataLoadProcessorStepOnSpark {
   private def wrapException(e: Throwable, model: CarbonLoadModel): Unit = {
     e match {
       case e: CarbonDataLoadingException => throw e
+      case e: TextParsingException =>
+        LOGGER.error(e, "Data Loading failed for table " + model.getTableName)
+        throw new CarbonDataLoadingException("Data Loading failed for table " + model.getTableName,
+          e)
       case e: Exception =>
         LOGGER.error(e, "Data Loading failed for table " + model.getTableName)
         throw new CarbonDataLoadingException("Data Loading failed for table " + model.getTableName,

@@ -30,9 +30,9 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.BinaryExpression;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -48,6 +48,7 @@ import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.partition.AndFilterImpl;
 import org.apache.carbondata.core.scan.filter.partition.EqualToFilterImpl;
@@ -62,6 +63,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.LogicalFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolverImpl;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.FalseConditionalResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditionalResolverImpl;
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
@@ -397,18 +399,25 @@ public class FilterExpressionProcessor implements FilterProcessor {
     ConditionalExpression condExpression = null;
     switch (filterExpressionType) {
       case FALSE:
-        return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
+        return new FalseConditionalResolverImpl(expression, false, false, tableIdentifier);
       case TRUE:
         return new TrueConditionalResolverImpl(expression, false, false, tableIdentifier);
       case EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
-        if (currentCondExpression.isSingleColumn()
-            && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.ARRAY
-            && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.STRUCT) {
+        // check for implicit column in the expression
+        if (currentCondExpression instanceof InExpression) {
+          CarbonColumn carbonColumn =
+              currentCondExpression.getColumnList().get(0).getCarbonColumn();
+          if (carbonColumn.hasEncoding(Encoding.IMPLICIT)) {
+            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
+                tableIdentifier,
+                currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
+          }
+        }
 
-          if (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
+        CarbonColumn column = currentCondExpression.getColumnList().get(0).getCarbonColumn();
+        if (currentCondExpression.isSingleColumn() && ! column.getDataType().isComplexType()) {
+          if (column.isMeasure()) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
                 FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
@@ -463,13 +472,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
             tableIdentifier, false);
       case NOT_EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
-        if (currentCondExpression.isSingleColumn()
-            && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.ARRAY
-            && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.STRUCT) {
-
-          if (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
+        column = currentCondExpression.getColumnList().get(0).getCarbonColumn();
+        if (currentCondExpression.isSingleColumn() && ! column.getDataType().isComplexType()) {
+          if (column.isMeasure()) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
                 FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
@@ -522,11 +527,8 @@ public class FilterExpressionProcessor implements FilterProcessor {
       default:
         if (expression instanceof ConditionalExpression) {
           condExpression = (ConditionalExpression) expression;
-          if (condExpression.isSingleColumn()
-              && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-              != DataType.ARRAY
-              && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-              != DataType.STRUCT) {
+          column = condExpression.getColumnList().get(0).getCarbonColumn();
+          if (condExpression.isSingleColumn() && ! column.isComplex()) {
             condExpression = (ConditionalExpression) expression;
             if ((condExpression.getColumnList().get(0).getCarbonColumn()
                 .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)
@@ -539,5 +541,17 @@ public class FilterExpressionProcessor implements FilterProcessor {
         }
     }
     return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
+  }
+
+  public static boolean isScanRequired(FilterExecuter filterExecuter, byte[][] maxValue,
+      byte[][] minValue) {
+    if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
+      return ((ImplicitColumnFilterExecutor) filterExecuter)
+          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+    } else {
+      // otherwise decide based on min/max value
+      BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue);
+      return !bitSet.isEmpty();
+    }
   }
 }

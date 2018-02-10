@@ -17,13 +17,11 @@
 
 package org.apache.spark.carbondata.restructure.vectorreader
 
-import java.math.{BigDecimal, RoundingMode}
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -96,6 +94,22 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     test_drop_and_compaction()
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     test_drop_and_compaction()
+  }
+
+  test("test dropping of column in pre-aggregate should throw exception") {
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preaggMain_preagg1")
+    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
+    sql(
+      "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
+      " a,sum(b) from PreAggMain group by a")
+    sql("alter table preaggmain drop columns(c)")
+//    checkExistence(sql("desc table preaggmain"), false, "c")
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table preaggmain_preagg1 drop columns(preaggmain_b_sum)").show
+    }.getMessage.contains("Cannot drop columns in pre-aggreagate table"))
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preaggMain_preagg1")
   }
 
   override def afterAll {

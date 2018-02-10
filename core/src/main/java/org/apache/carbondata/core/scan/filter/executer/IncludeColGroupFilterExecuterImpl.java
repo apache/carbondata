@@ -84,7 +84,9 @@ public class IncludeColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl
     return bitSet;
   }
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
+  @Override
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
+      throws IOException {
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
         .get(dimColumnEvaluatorInfo.getColumnIndex());
     if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {

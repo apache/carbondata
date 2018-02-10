@@ -23,10 +23,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.service.CarbonCommonFactory;
-import org.apache.carbondata.core.service.PathService;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
 
 import org.apache.thrift.TBase;
@@ -35,16 +31,6 @@ import org.apache.thrift.TBase;
  * This class perform the functionality of reading the dictionary metadata file
  */
 public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetadataReader {
-
-  /**
-   * carbon table identifier
-   */
-  protected CarbonTableIdentifier carbonTableIdentifier;
-
-  /**
-   * carbon dictionary meta data store path
-   */
-  protected String storePath;
 
   /**
    * column identifier
@@ -64,15 +50,10 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   /**
    * Constructor
    *
-   * @param storePath             carbon dictionary meta data store path
-   * @param carbonTableIdentifier table identifier which will give table name and database name
-   * @param dictionaryColumnUniqueIdentifier      column unique identifier
+   * @param dictionaryColumnUniqueIdentifier column unique identifier
    */
-  public CarbonDictionaryMetadataReaderImpl(String storePath,
-      CarbonTableIdentifier carbonTableIdentifier,
+  public CarbonDictionaryMetadataReaderImpl(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    this.storePath = storePath;
-    this.carbonTableIdentifier = carbonTableIdentifier;
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
     initFileLocation();
   }
@@ -169,12 +150,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    * This method will form the path for dictionary metadata file for a given column
    */
   protected void initFileLocation() {
-    PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(this.storePath, carbonTableIdentifier,
-            dictionaryColumnUniqueIdentifier);
-    this.columnDictionaryMetadataFilePath = carbonTablePath.getDictionaryMetaFilePath(
-        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
+    this.columnDictionaryMetadataFilePath =
+        dictionaryColumnUniqueIdentifier.getDictionaryMetaFilePath();
   }
 
   /**

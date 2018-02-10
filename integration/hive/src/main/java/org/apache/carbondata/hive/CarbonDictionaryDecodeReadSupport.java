@@ -28,13 +28,14 @@ import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
@@ -71,10 +72,10 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
    * for column dictionary involved in decoding.
    *
    * @param carbonColumns           column list
-   * @param absoluteTableIdentifier table identifier
+   * @param carbonTable table identifier
    */
   @Override public void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
+      CarbonTable carbonTable) throws IOException {
     this.carbonColumns = carbonColumns;
     dictionaries = new Dictionary[carbonColumns.length];
     dataTypes = new DataType[carbonColumns.length];
@@ -83,12 +84,13 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
           .hasEncoding(Encoding.DIRECT_DICTIONARY) && !carbonColumns[i].isComplex()) {
         CacheProvider cacheProvider = CacheProvider.getInstance();
         Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
-            .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
+            .createCache(CacheType.FORWARD_DICTIONARY);
         dataTypes[i] = carbonColumns[i].getDataType();
+        String dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
+            .get(CarbonCommonConstants.DICTIONARY_PATH);
         dictionaries[i] = forwardDictionaryCache.get(
-            new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
-                carbonColumns[i].getColumnIdentifier(), dataTypes[i],
-                CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)));
+            new DictionaryColumnUniqueIdentifier(carbonTable.getAbsoluteTableIdentifier(),
+                carbonColumns[i].getColumnIdentifier(), dataTypes[i], dictionaryPath));
       } else {
         dataTypes[i] = carbonColumns[i].getDataType();
       }
@@ -136,13 +138,12 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
    */
   private Writable createWritableObject(Object obj, CarbonColumn carbonColumn) throws IOException {
     DataType dataType = carbonColumn.getDataType();
-    switch (dataType) {
-      case STRUCT:
-        return createStruct(obj, carbonColumn);
-      case ARRAY:
-        return createArray(obj, carbonColumn);
-      default:
-        return createWritablePrimitive(obj, carbonColumn);
+    if (DataTypes.isStructType(dataType)) {
+      return createStruct(obj, carbonColumn);
+    } else if (DataTypes.isArrayType(dataType)) {
+      return createArray(obj, carbonColumn);
+    } else {
+      return createWritablePrimitive(obj, carbonColumn);
     }
   }
 
@@ -219,77 +220,30 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
     if (obj == null) {
       return null;
     }
-    switch (dataType) {
-      case NULL:
-        return null;
-      case DOUBLE:
-        return new DoubleWritable((double) obj);
-      case INT:
-        return new IntWritable((int) obj);
-      case LONG:
-        return new LongWritable((long) obj);
-      case SHORT:
-        return new ShortWritable((short) obj);
-      case DATE:
-        Calendar c = Calendar.getInstance();
-        c.setTime(new Date(0));
-        c.add(Calendar.DAY_OF_YEAR, (Integer) obj);
-        Date date = new java.sql.Date(c.getTime().getTime());
-        return new DateWritable(date);
-      case TIMESTAMP:
-        return new TimestampWritable(new Timestamp((long) obj / 1000));
-      case STRING:
-        return new Text(obj.toString());
-      case DECIMAL:
-        return new HiveDecimalWritable(
-            HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
-      default:
-        throw new IOException("unsupported data type:" + dataType);
-    }
-  }
-
-  /**
-   * If we need to use the same Writable[] then we can use this method
-   *
-   * @param writable
-   * @param obj
-   * @param carbonColumn
-   * @throws IOException
-   */
-  private void setPrimitive(Writable writable, Object obj, CarbonColumn carbonColumn)
-      throws IOException {
-    DataType dataType = carbonColumn.getDataType();
-    if (obj == null) {
-      writable.write(null);
-    }
-    switch (dataType) {
-      case DOUBLE:
-        ((DoubleWritable) writable).set((double) obj);
-        break;
-      case INT:
-        ((IntWritable) writable).set((int) obj);
-        break;
-      case LONG:
-        ((LongWritable) writable).set((long) obj);
-        break;
-      case SHORT:
-        ((ShortWritable) writable).set((short) obj);
-        break;
-      case DATE:
-        ((DateWritable) writable).set(new Date((Long) obj));
-        break;
-      case TIMESTAMP:
-        ((TimestampWritable) writable).set(new Timestamp((long) obj));
-        break;
-      case STRING:
-        ((Text) writable).set(obj.toString());
-        break;
-      case DECIMAL:
-        ((HiveDecimalWritable) writable)
-            .set(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
-        break;
-      default:
-        throw new IOException("unsupported data type:" + dataType);
+    if (dataType == DataTypes.NULL) {
+      return null;
+    } else if (dataType == DataTypes.DOUBLE) {
+      return new DoubleWritable((double) obj);
+    } else if (dataType == DataTypes.INT) {
+      return new IntWritable((int) obj);
+    } else if (dataType == DataTypes.LONG) {
+      return new LongWritable((long) obj);
+    } else if (dataType == DataTypes.SHORT) {
+      return new ShortWritable((short) obj);
+    } else if (dataType == DataTypes.DATE) {
+      Calendar c = Calendar.getInstance();
+      c.setTime(new Date(0));
+      c.add(Calendar.DAY_OF_YEAR, (Integer) obj);
+      Date date = new java.sql.Date(c.getTime().getTime());
+      return new DateWritable(date);
+    } else if (dataType == DataTypes.TIMESTAMP) {
+      return new TimestampWritable(new Timestamp((long) obj / 1000));
+    } else if (dataType == DataTypes.STRING) {
+      return new Text(obj.toString());
+    } else if (DataTypes.isDecimal(dataType)) {
+      return new HiveDecimalWritable(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
+    } else {
+      throw new IOException("unsupported data type:" + dataType);
     }
   }
 

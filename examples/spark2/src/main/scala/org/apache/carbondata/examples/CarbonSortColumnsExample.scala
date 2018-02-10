@@ -31,7 +31,6 @@ object CarbonSortColumnsExample {
                             + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target"
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
@@ -46,9 +45,9 @@ object CarbonSortColumnsExample {
       .config("spark.driver.host", "localhost")
       .getOrCreateCarbonSession(storeLocation)
 
-    spark.sparkContext.setLogLevel("WARN")
+    spark.sparkContext.setLogLevel("ERROR")
 
-    spark.sql("DROP TABLE IF EXISTS sort_columns_table")
+    spark.sql("DROP TABLE IF EXISTS no_sort_columns_table")
 
     // Create table with no sort columns
     spark.sql(
@@ -73,6 +72,7 @@ object CarbonSortColumnsExample {
     // Create table with sort columns
     // you can specify any columns to sort columns for building MDX index, remark: currently
     // sort columns don't support "FLOAT, DOUBLE, DECIMAL"
+    spark.sql("DROP TABLE IF EXISTS sort_columns_table")
     spark.sql(
       s"""
          | CREATE TABLE sort_columns_table(

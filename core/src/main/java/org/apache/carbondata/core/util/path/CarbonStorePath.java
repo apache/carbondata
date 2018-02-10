@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.core.util.path;
 
-import java.io.File;
-
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
@@ -37,17 +35,14 @@ public class CarbonStorePath extends Path {
 
   /**
    * gets CarbonTablePath object to manage table paths
+   *
+   * @param tablePath the store path of the segment
+   * @param tableIdentifier identifier of carbon table that the segment belong to
+   * @return the store location of the segment
    */
-  public static CarbonTablePath getCarbonTablePath(String storePath,
+  public static CarbonTablePath getCarbonTablePath(String tablePath,
       CarbonTableIdentifier tableIdentifier) {
-    return new CarbonTablePath(tableIdentifier,
-        storePath + File.separator + tableIdentifier.getDatabaseName() + File.separator
-            + tableIdentifier.getTableName());
-  }
-
-  public static CarbonTablePath getCarbonTablePath(String storePath,
-      String dbName, String tableName) {
-    return new CarbonTablePath(storePath, dbName, tableName);
+    return new CarbonTablePath(tableIdentifier, tablePath);
   }
 
   public static CarbonTablePath getCarbonTablePath(AbsoluteTableIdentifier identifier) {

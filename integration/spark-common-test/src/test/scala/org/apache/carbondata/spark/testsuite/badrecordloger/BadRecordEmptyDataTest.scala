@@ -26,6 +26,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.common.constants.LoggerAction
+
 /**
  * Test Class for detailed query on timestamp datatypes
  *
@@ -33,6 +35,9 @@ import org.apache.spark.sql.test.util.QueryTest
  */
 class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
+
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
 
   override def beforeAll {
     try {
@@ -42,11 +47,8 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
       sql("drop table IF EXISTS empty_timestamp_false")
       sql("drop table IF EXISTS dataloadOptionTests")
       sql("drop table IF EXISTS bigtab")
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-          new File("./target/test/badRecords")
-            .getCanonicalPath)
-      CarbonProperties.getInstance()
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       var csvFilePath = ""
 
@@ -175,6 +177,10 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS empty_timestamp_false")
     sql("drop table IF EXISTS dataloadOptionTests")
     sql("drop table IF EXISTS bigtab")
+
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

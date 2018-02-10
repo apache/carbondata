@@ -21,9 +21,9 @@ package org.apache.carbondata.cluster.sdv.generated
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.TestQueryExecutor
 
 /**
  * Test Class for singlepassTestCase to verify all scenerios
@@ -55,80 +55,51 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //To check data loading from CSV with incomplete data
   test("Loading-004-01-01-01_001-TC_003", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""drop table if exists uniqdata""").collect
    sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/singlepass/2000_UniqData_incomplete.csv' INTO TABLE uniqdata OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"','SINGLE_PASS'='TRUE', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check data loading from CSV with bad records
   test("Loading-004-01-01-01_001-TC_004", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/singlepass/2000_UniqData_badrec.csv' INTO TABLE uniqdata OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"','SINGLE_PASS'='TRUE', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check data loading from CSV with no data
   test("Loading-004-01-01-01_001-TC_005", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/singlepass/2000_UniqData_nodata.csv' INTO TABLE uniqdata OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"','SINGLE_PASS'='TRUE', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check data loading from CSV with incomplete data
   test("Loading-004-01-01-01_001-TC_006", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/singlepass/2000_UniqData_incomplete.csv' INTO TABLE uniqdata OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"','SINGLE_PASS'='FALSE', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check data loading from CSV with wrong data
   test("Loading-004-01-01-01_001-TC_007", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/singlepass/2000_UniqData_incomplete.csv' INTO TABLE uniqdata OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"','SINGLE_PASS'='FALSE', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
   //To check data loading from CSV with no data and 'SINGLEPASS' = 'FALSE'
   test("Loading-004-01-01-01_001-TC_008", Include) {
-    try {
-
+    intercept[Exception] {
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/singlepass/2000_UniqData_nodata.csv.csv' INTO TABLE uniqdata OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"','SINGLE_PASS'='FALSE', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-
   }
 
 
@@ -555,22 +526,35 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
   //Verifying load data with single Pass true and BAD_RECORDS_ACTION= ='FAIL
   test("Loading-004-01-01-01_001-TC_067", Include) {
     sql(s"""drop table if exists uniqdata""").collect
-    try {
-
-      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""")
+    intercept[Exception] {
+      sql(s"""
+             | CREATE TABLE uniqdata(
+             | shortField SHORT,
+             | booleanField BOOLEAN,
+             | intField INT,
+             | bigintField LONG,
+             | doubleField DOUBLE,
+             | stringField STRING,
+             | decimalField DECIMAL(18,2),
+             | charField CHAR(5),
+             | floatField FLOAT,
+             | complexData ARRAY<STRING>,
+             | booleanField2 BOOLEAN
+             | )
+             | STORED BY 'carbondata'
+       """.stripMargin)
 
         .collect
 
 
-      sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/singlepass/data/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FAIL','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1','SINGLE_Pass'='true')""")
+      sql(
+        s"""LOAD DATA INPATH  '${TestQueryExecutor
+          .integrationPath}/spark2/src/test/resources/bool/supportBooleanBadRecords.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FAIL','FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2','SINGLE_Pass'='true')""".stripMargin)
         .collect
       checkAnswer(
         s"""select count(*) from uniqdata""",
         Seq(Row(2013)),
         "singlepassTestCase_Loading-004-01-01-01_001-TC_067")
-      assert(false)
-  } catch {
-    case _ => assert(true)
   }
      sql(s"""drop table uniqdata""").collect
   }
@@ -578,6 +562,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying load data with single Pass true and BAD_RECORDS_ACTION= ='REDIRECT'
   test("Loading-004-01-01-01_001-TC_071", Include) {
+    sql(s"""drop table if exists uniqdata""").collect
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
 
 
@@ -717,7 +702,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
   //Verifying load data with single pass=false and column dictionary path
   test("Loading-004-01-01-01_001-TC_084", Include) {
     dropTable("uniqdata")
-    try {
+    intercept[Exception] {
       sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String, DOB timestamp) STORED BY 'org.apache.carbondata.format'""")
 
         .collect
@@ -727,9 +712,6 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
         s"""select count(*) from uniqdata""",
         Seq(Row(10)),
         "singlepassTestCase_Loading-004-01-01-01_001-TC_084")
-      assert(false)
-  } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table uniqdata""").collect
   }

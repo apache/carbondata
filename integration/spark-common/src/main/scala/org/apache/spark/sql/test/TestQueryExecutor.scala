@@ -47,10 +47,11 @@ object TestQueryExecutor {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   val projectPath = new File(this.getClass.getResource("/").getPath + "../../../..")
-    .getCanonicalPath
+    .getCanonicalPath.replaceAll("\\\\", "/")
   LOGGER.info(s"project path: $projectPath")
   val integrationPath = s"$projectPath/integration"
   val metastoredb = s"$integrationPath/spark-common/target"
+  val location = s"$integrationPath/spark-common/target/dbpath"
   val masterUrl = {
     val property = System.getProperty("spark.master.url")
     if (property == null) {
@@ -59,7 +60,6 @@ object TestQueryExecutor {
       property
     }
   }
-
   val hdfsUrl = {
     val property = System.getProperty("hdfs.url")
     if (property == null) {
@@ -96,6 +96,13 @@ object TestQueryExecutor {
   } else {
     s"$integrationPath/spark-common/target/warehouse"
   }
+
+  val badStoreLocation = if (hdfsUrl.startsWith("hdfs://")) {
+       s"$hdfsUrl/bad_store_" + System.nanoTime()
+      } else {
+        s"$integrationPath/spark-common/target/bad_store"
+      }
+    createDirectory(badStoreLocation)
 
   val hiveresultpath = if (hdfsUrl.startsWith("hdfs://")) {
     val p = s"$hdfsUrl/hiveresultpath"
@@ -134,15 +141,18 @@ object TestQueryExecutor {
   val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
-    .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords")
+    .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, badStoreLocation)
     .addProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
       (CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT.toInt + Random.nextInt(100)) + "")
     .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "1024")
-      .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "1024")
+    .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "1024")
 
   private def lookupQueryExecutor: Class[_] = {
     ServiceLoader.load(classOf[TestQueryExecutorRegister], Utils.getContextOrSparkClassLoader)
       .iterator().next().getClass
   }
 
+  private def createDirectory(badStoreLocation: String) = {
+    FileFactory.mkdirs(badStoreLocation, FileFactory.getFileType(badStoreLocation))
+  }
 }

@@ -402,4 +402,52 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
     assert(actualResult.equals(expectedResult))
   }
+
+  test("test longDecimal type of presto") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery(
+        "SELECT ID from testdb.testtable WHERE bonus = DECIMAL '1234.5555'")
+    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 2))
+
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test shortDecimal type of presto") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery(
+        "SELECT ID from testdb.testtable WHERE monthlyBonus = 15.13")
+    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 2))
+
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test timestamp datatype using cast operator") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT NAME AS RESULT FROM TESTDB.TESTTABLE WHERE DOB = CAST('2016-04-14 15:00:09' AS TIMESTAMP)")
+    val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> "jatin"))
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test timestamp datatype using cast and in operator") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT ID AS RESULT FROM TESTDB.TESTTABLE WHERE DOB in (cast('2016-04-14 " +
+                    "15:00:09' as timestamp),cast('2015-10-07' as timestamp),cast('2015-10-07 01:00:03' as timestamp))")
+    val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> "2"))
+    assert(actualResult.toString() equals expectedResult.toString())
+  }
+  test("test the boolean data type") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT isCurrentEmployee AS RESULT FROM TESTDB.TESTTABLE WHERE ID=1")
+    assert(actualResult.head("RESULT").toString.toBoolean)
+  }
+  test("test the boolean data type for null value") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is null")
+    assert(actualResult.head("RESULT").toString.toInt==2)
+  }
+  test("test the boolean data type for not null value with filter ") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is NOT null AND ID>8")
+    assert(actualResult.head("RESULT").toString.toInt==9)
+  }
 }

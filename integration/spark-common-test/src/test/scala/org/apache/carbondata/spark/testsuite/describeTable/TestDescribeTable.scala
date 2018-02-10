@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.describeTable
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -35,12 +36,24 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test describe table") {
-    checkAnswer(sql("DESC Desc1"), sql("DESC Desc2"))
+    checkAnswer(sql("DESC Desc1"), Seq(Row("dec2col1","bigint",null),
+      Row("dec2col2","string",null),
+      Row("dec2col3","bigint",null),
+      Row("dec2col4","decimal(10,0)",null)))
   }
 
   test("test describe formatted table") {
     checkExistence(sql("DESC FORMATTED Desc1"), true,
-      "Table Block Size :")
+      "Table Block Size")
+  }
+
+  test("test describe formatted table desc1") {
+
+    val resultCol = Seq("", "", "##Detailed Column property", "##Detailed Table Information", "ADAPTIVE", "CARBON Store Path", "Comment", "Database Name", "Last Update Time",
+    "SORT_COLUMNS", "SORT_SCOPE", "Streaming", "Table Block Size", "Table Data Size", "Table Index Size", "Table Name", "dec2col1", "dec2col2", "dec2col3", "dec2col4")
+    val resultRow: Seq[Row] = resultCol map(propName => Row(f"$propName%-36s"))
+    checkAnswer(sql("desc formatted DESC1").select("col_name"), resultRow)
+    assert(sql("desc formatted desc1").count() == 20)
   }
 
   override def afterAll: Unit = {

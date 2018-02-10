@@ -22,6 +22,7 @@ import java.util.NoSuchElementException;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -42,7 +43,7 @@ public class BatchResultTest {
     BatchResult rows = new BatchResult();
     rows.setRows(rowsList);
     Object[] result = rows.next();
-    assert (result.equals(rowsList.get(0)));
+    Assert.assertTrue(result.equals(rowsList.get(0)));
   }
 
   @Test(expected = NoSuchElementException.class) public void testNextWithNoSuchElementException() {
@@ -69,7 +70,7 @@ public class BatchResultTest {
     list.add(1, new Integer[] { 1, 2 });
     batchResult.setRows(list);
     boolean result = batchResult.hasNext();
-    assert (result);
+    Assert.assertTrue(result);
   }
 
   @Test public void testGetRawRow() {
@@ -77,7 +78,7 @@ public class BatchResultTest {
     list.add(0, new Integer[] { 1, 2 });
     batchResult.setRows(list);
     Object[] actualValue = batchResult.getRawRow(0);
-    assert (list.get(0) == actualValue);
+    Assert.assertTrue(list.get(0) == actualValue);
   }
 
   @Test public void testGetSize() {

@@ -19,7 +19,7 @@ package org.apache.carbondata.hadoop.api;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -28,6 +28,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
  */
 public interface DataMapJob extends Serializable {
 
-  List<Blocklet> execute(DistributableDataMapFormat dataMapFormat, FilterResolverIntf resolverIntf);
+  List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
+      FilterResolverIntf resolverIntf);
 
 }

@@ -17,15 +17,15 @@
 
 package org.apache.carbondata.spark.testsuite.partition
 
-import java.sql.Timestamp
-
-import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
-import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll = {
@@ -138,16 +138,25 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   }
 
   test("show partition table: exception when show not partition table") {
-    val errorMessage =
-      intercept[AnalysisException] { sql("show partitions notPartitionTable").show() }
+    val errorMessage = intercept[ProcessMetaDataException] {
+      sql("show partitions notPartitionTable").show()
+    }
     assert(errorMessage.getMessage.contains(
-      "SHOW PARTITIONS is not allowed on a table that is not partitioned: notpartitiontable"))
+      "SHOW PARTITIONS is not allowed on a table that is not partitioned"))
   }
 
   test("show partition table: hash table") {
     // EqualTo
-    checkAnswer(sql("show partitions hashTable"), Seq(Row("empno = HASH_NUMBER(3)")))
+    checkAnswer(sql("show partitions hashTable"), Seq(Row("empno = HASH_NUMBER(3)"), Row("partitionIds = [0, 1, 2]")))
 
+  }
+
+  test("show partition table: desc formatted should show partition type"){
+    //check for partition type exist in desc formatted
+    val result:DataFrame = sql("describe formatted hashTable")
+    checkExistence(result,true,"Partition Type")
+    val row: Array[Row] = result.collect().filter{row: Row => row.getString(0).contains("Partition Type")}
+    assert(row(0).getString(1).contains("HASH"))
   }
 
   test("show partition table: range partition") {
@@ -164,7 +173,8 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   }
   test("show partition table: not default db") {
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("empno = HASH_NUMBER(3)")))
+    checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("empno = HASH_NUMBER(3)"),
+      Row("partitionIds = [0, 1, 2]")))
     // EqualTo
     checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("0, doj = DEFAULT"),
       Row("1, doj < 01-01-2010"), Row("2, 01-01-2010 <= doj < 01-01-2015")))

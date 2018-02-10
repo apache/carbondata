@@ -17,40 +17,49 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import java.sql.Timestamp
+import java.sql.{Date, Timestamp}
+import java.text.SimpleDateFormat
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.common.constants.LoggerAction
+
 class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterAll {
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
+
   override def beforeAll {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
+
     sql("DROP TABLE IF EXISTS t3")
     sql("""
            CREATE TABLE IF NOT EXISTS t3
-           (ID Int, date Timestamp, starttime Timestamp, country String,
+           (ID Int, date date, starttime Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'carbondata'
         """)
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
   }
 
   test("test load data with different timestamp format") {
       sql(s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
-           OPTIONS('dateformat' = 'starttime:yyyy-MM-dd HH:mm:ss')
+           OPTIONS('dateformat' = 'yyyy/MM/dd','timestampformat'='yyyy-MM-dd HH:mm:ss')
            """)
       sql(s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData2.csv' into table t3
-           OPTIONS('dateformat' = ' date : yyyy-MM-dd , StartTime : yyyy/MM/dd HH:mm:ss')
+           OPTIONS('dateformat' = 'yyyy-MM-dd','timestampformat'='yyyy/MM/dd HH:mm:ss')
            """)
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
       checkAnswer(
         sql("SELECT date FROM t3 WHERE ID = 1"),
-        Seq(Row(Timestamp.valueOf("2015-07-23 00:00:00.0")))
+        Seq(Row(new Date(sdf.parse("2015-07-23").getTime)))
       )
       checkAnswer(
         sql("SELECT starttime FROM t3 WHERE ID = 1"),
@@ -58,7 +67,7 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
       )
       checkAnswer(
         sql("SELECT date FROM t3 WHERE ID = 18"),
-        Seq(Row(Timestamp.valueOf("2015-07-25 00:00:00.0")))
+        Seq(Row(new Date(sdf.parse("2015-07-25").getTime)))
       )
       checkAnswer(
         sql("SELECT starttime FROM t3 WHERE ID = 18"),
@@ -67,69 +76,58 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
   }
 
   test("test load data with different timestamp format with wrong setting") {
-    try {
-      sql(s"""
+
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
            OPTIONS('dateformat' = 'date')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Option DateFormat is not provided for Column date.")
-      case _: Throwable=> assert(false)
     }
+    assertResult(ex.getMessage)("Error: Wrong option: date is provided for option DateFormat")
 
-    try {
-      sql(s"""
+    val ex0 = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
-           OPTIONS('dateformat' = 'fasfdas:yyyy/MM/dd')
+           OPTIONS('timestampformat' = 'timestamp')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Wrong Column Name fasfdas is provided in Option DateFormat.")
-      case _: Throwable => assert(false)
     }
+    assertResult(ex0.getMessage)("Error: Wrong option: timestamp is provided for option TimestampFormat")
 
-    try {
-      sql(s"""
+    val ex1 = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
            OPTIONS('dateformat' = 'date:  ')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Option DateFormat is not provided for Column date.")
-      case _: Throwable => assert(false)
     }
+    assertResult(ex1.getMessage)("Error: Wrong option: date:   is provided for option DateFormat")
 
-    try {
-      sql(s"""
+    val ex2 = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
            OPTIONS('dateformat' = 'date  ')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Option DateFormat is not provided for Column date  .")
-      case _: Throwable => assert(false)
     }
+    assertResult(ex2.getMessage)("Error: Wrong option: date   is provided for option DateFormat")
 
-    try {
-      sql(s"""
+    val ex3 = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
-           OPTIONS('dateformat' = ':yyyy/MM/dd  ')
+           OPTIONS('dateformat' = 'fasfdas:yyyy/MM/dd')
            """)
-      assert(false)
-    } catch {
-      case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Wrong Column Name  is provided in Option DateFormat.")
-      case _: Throwable => assert(false)
     }
+    assertResult(ex3.getMessage)("Error: Wrong option: fasfdas:yyyy/MM/dd is provided for option DateFormat")
 
   }
 
   override def afterAll {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)
     sql("DROP TABLE IF EXISTS t3")
   }
 }

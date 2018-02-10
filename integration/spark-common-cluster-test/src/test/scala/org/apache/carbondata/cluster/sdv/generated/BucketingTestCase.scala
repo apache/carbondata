@@ -40,28 +40,20 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test exception if bucketcolumns be measure column") {
-    try {
+    intercept[Exception] {
       sql("DROP TABLE IF EXISTS bucket_table")
       sql("CREATE TABLE bucket_table (ID Int, date Timestamp, country String, name String, phonetype String," +
           "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
           "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='ID')")
-      assert(false)
-    }
-    catch {
-      case _ => assert(true)
     }
   }
 
   test("test exception if bucketcolumns be complex data type column") {
-    try {
+    intercept[Exception] {
       sql("DROP TABLE IF EXISTS bucket_table")
       sql("CREATE TABLE bucket_table (Id int, number double, name string, " +
           "gamePoint array<double>, mac struct<num:double>) STORED BY 'carbondata' TBLPROPERTIES" +
           "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='gamePoint')")
-      assert(false)
-    }
-    catch {
-      case _ => assert(true)
     }
   }
 

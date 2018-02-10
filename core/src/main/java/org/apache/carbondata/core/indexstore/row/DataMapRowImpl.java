@@ -16,8 +16,8 @@
  */
 package org.apache.carbondata.core.indexstore.row;
 
-import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 /**
  * Data map row.
@@ -26,7 +26,9 @@ public class DataMapRowImpl extends DataMapRow {
 
   private Object[] data;
 
-  public DataMapRowImpl(DataMapSchema[] schemas) {
+  private int totalLengthInBytes;
+
+  public DataMapRowImpl(CarbonRowSchema[] schemas) {
     super(schemas);
     this.data = new Object[schemas.length];
   }
@@ -44,7 +46,7 @@ public class DataMapRowImpl extends DataMapRow {
   }
 
   @Override public void setByteArray(byte[] byteArray, int ordinal) {
-    assert (schemas[ordinal].getDataType() == DataType.BYTE_ARRAY);
+    assert (schemas[ordinal].getDataType() == DataTypes.BYTE_ARRAY);
     data[ordinal] = byteArray;
   }
 
@@ -53,12 +55,12 @@ public class DataMapRowImpl extends DataMapRow {
   }
 
   @Override public void setInt(int value, int ordinal) {
-    assert (schemas[ordinal].getDataType() == DataType.INT);
+    assert (schemas[ordinal].getDataType() == DataTypes.INT);
     data[ordinal] = value;
   }
 
   @Override public void setByte(byte value, int ordinal) {
-    assert (schemas[ordinal].getDataType() == DataType.BYTE);
+    assert (schemas[ordinal].getDataType() == DataTypes.BYTE);
     data[ordinal] = value;
   }
 
@@ -67,7 +69,7 @@ public class DataMapRowImpl extends DataMapRow {
   }
 
   @Override public void setShort(short value, int ordinal) {
-    assert (schemas[ordinal].getDataType() == DataType.SHORT);
+    assert (schemas[ordinal].getDataType() == DataTypes.SHORT);
     data[ordinal] = value;
   }
 
@@ -76,7 +78,7 @@ public class DataMapRowImpl extends DataMapRow {
   }
 
   @Override public void setLong(long value, int ordinal) {
-    assert (schemas[ordinal].getDataType() == DataType.LONG);
+    assert (schemas[ordinal].getDataType() == DataTypes.LONG);
     data[ordinal] = value;
   }
 
@@ -85,7 +87,7 @@ public class DataMapRowImpl extends DataMapRow {
   }
 
   @Override public void setFloat(float value, int ordinal) {
-    assert (schemas[ordinal].getDataType() == DataType.FLOAT);
+    assert (schemas[ordinal].getDataType() == DataTypes.FLOAT);
     data[ordinal] = value;
   }
 
@@ -94,12 +96,12 @@ public class DataMapRowImpl extends DataMapRow {
   }
 
   @Override public void setDouble(double value, int ordinal) {
-    assert (schemas[ordinal].getDataType() == DataType.DOUBLE);
+    assert (schemas[ordinal].getDataType() == DataTypes.DOUBLE);
     data[ordinal] = value;
   }
 
   @Override public void setRow(DataMapRow row, int ordinal) {
-    assert (schemas[ordinal].getDataType() == DataType.STRUCT);
+    assert (DataTypes.isStructType(schemas[ordinal].getDataType()));
     data[ordinal] = row;
   }
 
@@ -107,4 +109,15 @@ public class DataMapRowImpl extends DataMapRow {
     return (Double) data[ordinal];
   }
 
+  public void setTotalLengthInBytes(int totalLengthInBytes) {
+    this.totalLengthInBytes = totalLengthInBytes;
+  }
+
+  @Override public int getTotalSizeInBytes() {
+    if (totalLengthInBytes > 0) {
+      return totalLengthInBytes;
+    } else {
+      return super.getTotalSizeInBytes();
+    }
+  }
 }

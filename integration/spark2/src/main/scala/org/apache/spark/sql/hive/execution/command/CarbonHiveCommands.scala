@@ -19,10 +19,14 @@ package org.apache.spark.sql.hive.execution.command
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, SessionParams}
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
   extends RunnableCommand {
@@ -30,20 +34,30 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
   override val output: Seq[Attribute] = command.output
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    var rows: Seq[Row] = Seq()
     val dbName = command.databaseName
     var tablesInDB: Seq[TableIdentifier] = null
     if (sparkSession.sessionState.catalog.listDatabases().exists(_.equalsIgnoreCase(dbName))) {
       tablesInDB = sparkSession.sessionState.catalog.listTables(dbName)
     }
+    var databaseLocation = ""
+    try {
+      databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
+    } catch {
+      case e: NoSuchDatabaseException =>
+        // if database not found and ifExists true return empty
+        if (command.ifExists) {
+          return rows
+        }
+    }
     // DropHiveDB command will fail if cascade is false and one or more table exists in database
-    val rows = command.run(sparkSession)
     if (command.cascade && tablesInDB != null) {
       tablesInDB.foreach { tableName =>
         CarbonDropTableCommand(true, tableName.database, tableName.table).run(sparkSession)
       }
     }
-    CarbonUtil.dropDatabaseDirectory(dbName.toLowerCase,
-      CarbonEnv.getInstance(sparkSession).storePath)
+    rows = command.run(sparkSession)
+    CarbonUtil.dropDatabaseDirectory(databaseLocation)
     rows
   }
 }
@@ -57,14 +71,37 @@ case class CarbonSetCommand(command: SetCommand)
     val sessionParms = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams
     command.kv match {
       case Some((key, Some(value))) =>
-        val isCarbonProperty: Boolean = CarbonProperties.getInstance().isCarbonProperty(key)
-        if (isCarbonProperty) {
-          sessionParms.addProperty(key, value)
-        }
+        CarbonSetCommand.validateAndSetValue(sessionParms, key, value)
       case _ =>
 
     }
     command.run(sparkSession)
+  }
+}
+
+object CarbonSetCommand {
+  def validateAndSetValue(sessionParams: SessionParams, key: String, value: String): Unit = {
+
+    val isCarbonProperty: Boolean = CarbonProperties.getInstance().isCarbonProperty(key)
+    if (isCarbonProperty) {
+      sessionParams.addProperty(key, value)
+    }
+    else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
+      if (key.split("\\.").length == 5) {
+        sessionParams.addProperty(key.toLowerCase(), value)
+      }
+      else {
+        throw new MalformedCarbonCommandException(
+          "property should be in \" carbon.input.segments.<database_name>" +
+          ".<table_name>=<seg_id list> \" format.")
+      }
+    } else if (key.startsWith(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS)) {
+      sessionParams.addProperty(key.toLowerCase(), value)
+    }
+  }
+
+  def unsetValue(sessionParams: SessionParams, key: String): Unit = {
+    sessionParams.removeProperty(key)
   }
 }
 

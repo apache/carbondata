@@ -21,8 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-
-import org.apache.spark.sql.types.Decimal;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 public class MeasureDataVectorProcessor {
 
@@ -81,6 +80,63 @@ public class MeasureDataVectorProcessor {
             vector.putNull(vectorOffset);
           } else {
             vector.putInt(vectorOffset, (int)dataChunk.getLong(currentRow));
+          }
+          vectorOffset++;
+        }
+      }
+    }
+  }
+
+  /**
+   * Fill Measure Vector For Boolean data type
+   */
+  public static class BooleanMeasureVectorFiller implements MeasureVectorFiller {
+
+    @Override
+    public void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = offset + info.size;
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullBits();
+      if (nullBitSet.isEmpty()) {
+        for (int i = offset; i < len; i++) {
+          vector.putBoolean(vectorOffset, dataChunk.getBoolean(i));
+          vectorOffset++;
+        }
+      } else {
+        for (int i = offset; i < len; i++) {
+          if (nullBitSet.get(i)) {
+            vector.putNull(vectorOffset);
+          } else {
+            vector.putBoolean(vectorOffset, dataChunk.getBoolean(i));
+          }
+          vectorOffset++;
+        }
+      }
+    }
+
+    @Override
+    public void fillMeasureVectorForFilter(int[] rowMapping,
+        ColumnPage dataChunk, ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = offset + info.size;
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullBits();
+      if (nullBitSet.isEmpty()) {
+        for (int i = offset; i < len; i++) {
+          int currentRow = rowMapping[i];
+          vector.putBoolean(vectorOffset, dataChunk.getBoolean(currentRow));
+          vectorOffset++;
+        }
+      } else {
+        for (int i = offset; i < len; i++) {
+          int currentRow = rowMapping[i];
+          if (nullBitSet.get(currentRow)) {
+            vector.putNull(vectorOffset);
+          } else {
+            vector.putBoolean(vectorOffset, dataChunk.getBoolean(currentRow));
           }
           vectorOffset++;
         }
@@ -216,8 +272,7 @@ public class MeasureDataVectorProcessor {
           if (decimal.scale() < newMeasureScale) {
             decimal = decimal.setScale(newMeasureScale);
           }
-          Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(decimal);
-          vector.putDecimal(vectorOffset, toDecimal, precision);
+          vector.putDecimal(vectorOffset, decimal, precision);
         }
         vectorOffset++;
       }
@@ -241,8 +296,7 @@ public class MeasureDataVectorProcessor {
           if (info.measure.getMeasure().getScale() > decimal.scale()) {
             decimal = decimal.setScale(info.measure.getMeasure().getScale());
           }
-          Decimal toDecimal = Decimal.apply(decimal);
-          vector.putDecimal(vectorOffset, toDecimal, precision);
+          vector.putDecimal(vectorOffset, decimal, precision);
         }
         vectorOffset++;
       }
@@ -306,17 +360,18 @@ public class MeasureDataVectorProcessor {
   public static class MeasureVectorFillerFactory {
 
     public static MeasureVectorFiller getMeasureVectorFiller(DataType dataType) {
-      switch (dataType) {
-        case SHORT:
-          return new ShortMeasureVectorFiller();
-        case INT:
-          return new IntegralMeasureVectorFiller();
-        case LONG:
-          return new LongMeasureVectorFiller();
-        case DECIMAL:
-          return new DecimalMeasureVectorFiller();
-        default:
-          return new DefaultMeasureVectorFiller();
+      if (dataType == DataTypes.BOOLEAN) {
+        return new BooleanMeasureVectorFiller();
+      } else if (dataType == DataTypes.SHORT) {
+        return new ShortMeasureVectorFiller();
+      } else if (dataType == DataTypes.INT) {
+        return new IntegralMeasureVectorFiller();
+      } else if (dataType == DataTypes.LONG) {
+        return new LongMeasureVectorFiller();
+      } else if (DataTypes.isDecimal(dataType)) {
+        return new DecimalMeasureVectorFiller();
+      } else {
+        return new DefaultMeasureVectorFiller();
       }
     }
   }

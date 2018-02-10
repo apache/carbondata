@@ -17,9 +17,15 @@
 
 package org.apache.carbondata.core.datastore.filesystem;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -27,9 +33,22 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.BlockLocation;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.io.compress.BZip2Codec;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.io.compress.Lz4Codec;
+import org.apache.hadoop.io.compress.SnappyCodec;
 
 public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   /**
@@ -38,30 +57,42 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractDFSCarbonFile.class.getName());
   protected FileStatus fileStatus;
+  public FileSystem fs;
+  protected Configuration hadoopConf;
 
   public AbstractDFSCarbonFile(String filePath) {
+    this(filePath, FileFactory.getConfiguration());
+  }
+
+  public AbstractDFSCarbonFile(String filePath, Configuration hadoopConf) {
+    this.hadoopConf = hadoopConf;
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
-    FileSystem fs;
     try {
-      fs = path.getFileSystem(FileFactory.getConfiguration());
+      fs = path.getFileSystem(this.hadoopConf);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
-      LOGGER.error("Exception occurred:" + e.getMessage());
+      LOGGER.debug("Exception occurred:" + e.getMessage());
     }
   }
 
   public AbstractDFSCarbonFile(Path path) {
+    this(path, FileFactory.getConfiguration());
+  }
+
+  public AbstractDFSCarbonFile(Path path, Configuration hadoopConf) {
+    this.hadoopConf = hadoopConf;
     FileSystem fs;
     try {
-      fs = path.getFileSystem(FileFactory.getConfiguration());
+      fs = path.getFileSystem(this.hadoopConf);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
-      LOGGER.error("Exception occurred:" + e.getMessage());
+      LOGGER.debug("Exception occurred:" + e.getMessage());
     }
   }
 
   public AbstractDFSCarbonFile(FileStatus fileStatus) {
+    this.hadoopConf = FileFactory.getConfiguration();
     this.fileStatus = fileStatus;
   }
 
@@ -69,7 +100,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     Path path = fileStatus.getPath();
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(hadoopConf);
       return fs.createNewFile(path);
     } catch (IOException e) {
       return false;
@@ -92,7 +123,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     FileSystem fs;
     try {
       if (null != fileStatus) {
-        fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+        fs = fileStatus.getPath().getFileSystem(hadoopConf);
         return fs.exists(fileStatus.getPath());
       }
     } catch (IOException e) {
@@ -116,23 +147,29 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   public boolean renameTo(String changetoName) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
-      return fs.rename(fileStatus.getPath(), new Path(changetoName));
+      if (null != fileStatus) {
+        fs = fileStatus.getPath().getFileSystem(hadoopConf);
+        return fs.rename(fileStatus.getPath(), new Path(changetoName));
+      }
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
       return false;
     }
+    return false;
   }
 
   public boolean delete() {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
-      return fs.delete(fileStatus.getPath(), true);
+      if (null != fileStatus) {
+        fs = fileStatus.getPath().getFileSystem(hadoopConf);
+        return fs.delete(fileStatus.getPath(), true);
+      }
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
       return false;
     }
+    return false;
   }
 
   @Override public long getLastModifiedTime() {
@@ -142,8 +179,10 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   @Override public boolean setLastModifiedTime(long timestamp) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
-      fs.setTimes(fileStatus.getPath(), timestamp, timestamp);
+      if (null != fileStatus) {
+        fs = fileStatus.getPath().getFileSystem(hadoopConf);
+        fs.setTimes(fileStatus.getPath(), timestamp, timestamp);
+      }
     } catch (IOException e) {
       return false;
     }
@@ -217,5 +256,261 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
       isFileModified = true;
     }
     return isFileModified;
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, boolean append) throws IOException {
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    FSDataOutputStream stream = null;
+    if (append) {
+      // append to a file only if file already exists else file not found
+      // exception will be thrown by hdfs
+      if (CarbonUtil.isFileExists(path)) {
+        stream = fs.append(pt, bufferSize);
+      } else {
+        stream = fs.create(pt, true, bufferSize);
+      }
+    } else {
+      stream = fs.create(pt, true, bufferSize);
+    }
+    return stream;
+  }
+
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, Configuration hadoopConf) throws IOException {
+    return getDataInputStream(path, fileType, bufferSize,
+        CarbonUtil.inferCompressorFromFileName(path));
+  }
+
+  /**
+   * return the datainputStream which is seek to the offset of file
+   *
+   * @param path
+   * @param fileType
+   * @param bufferSize
+   * @param offset
+   * @return DataInputStream
+   * @throws IOException
+   */
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, long offset) throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    FSDataInputStream stream = fs.open(pt, bufferSize);
+    stream.seek(offset);
+    return new DataInputStream(new BufferedInputStream(stream));
+  }
+
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, String compressor) throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    InputStream inputStream;
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    if (bufferSize <= 0) {
+      inputStream = fs.open(pt);
+    } else {
+      inputStream = fs.open(pt, bufferSize);
+    }
+
+    String codecName = getCodecNameFromCompressor(compressor);
+    if (!codecName.isEmpty()) {
+      CompressionCodec codec = new CompressionCodecFactory(hadoopConf).getCodecByName(codecName);
+      inputStream = codec.createInputStream(inputStream);
+    }
+
+    return new DataInputStream(new BufferedInputStream(inputStream));
+  }
+
+  /**
+   * get codec name from user specified compressor name
+   * @param compressorName user specified compressor name
+   * @return name of codec
+   * @throws IOException
+   */
+  private String getCodecNameFromCompressor(String compressorName) throws IOException {
+    if (compressorName.isEmpty()) {
+      return "";
+    } else if ("GZIP".equalsIgnoreCase(compressorName)) {
+      return GzipCodec.class.getName();
+    } else if ("BZIP2".equalsIgnoreCase(compressorName)) {
+      return BZip2Codec.class.getName();
+    } else if ("SNAPPY".equalsIgnoreCase(compressorName)) {
+      return SnappyCodec.class.getName();
+    } else if ("LZ4".equalsIgnoreCase(compressorName)) {
+      return Lz4Codec.class.getName();
+    } else {
+      throw new IOException("Unsuppotted compressor: " + compressorName);
+    }
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
+      throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    return fs.create(pt, true);
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, long blockSize) throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    return fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, String compressor) throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    OutputStream outputStream;
+    if (bufferSize <= 0) {
+      outputStream = fs.create(pt);
+    } else {
+      outputStream = fs.create(pt, true, bufferSize);
+    }
+
+    String codecName = getCodecNameFromCompressor(compressor);
+    if (!codecName.isEmpty()) {
+      CompressionCodec codec = new CompressionCodecFactory(hadoopConf).getCodecByName(codecName);
+      outputStream = codec.createOutputStream(outputStream);
+    }
+
+    return new DataOutputStream(new BufferedOutputStream(outputStream));
+  }
+
+  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+      boolean performFileCheck) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    if (performFileCheck) {
+      return fs.exists(path) && fs.isFile(path);
+    } else {
+      return fs.exists(path);
+    }
+  }
+
+  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.exists(path);
+  }
+
+  @Override public boolean createNewFile(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.createNewFile(path);
+  }
+
+  @Override
+  public boolean createNewFile(String filePath, FileFactory.FileType fileType, boolean doAs,
+      final FsPermission permission) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    boolean result = fs.createNewFile(path);
+    if (null != permission) {
+      fs.setPermission(path, permission);
+    }
+    return result;
+  }
+
+  @Override public boolean deleteFile(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.delete(path, true);
+  }
+
+  @Override public boolean mkdirs(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.mkdirs(path);
+  }
+
+  @Override
+  public DataOutputStream getDataOutputStreamUsingAppend(String path, FileFactory.FileType fileType)
+      throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    return fs.append(pt);
+  }
+
+  @Override public boolean createNewLockFile(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    if (fs.createNewFile(path)) {
+      fs.deleteOnExit(path);
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public void setPermission(String directoryPath, FsPermission permission, String username,
+      String group) throws IOException {
+  }
+
+  @Override
+  public CarbonFile[] listFiles() {
+    FileStatus[] listStatus = null;
+    try {
+      if (null != fileStatus && fileStatus.isDirectory()) {
+        Path path = fileStatus.getPath();
+        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
+      } else {
+        return new CarbonFile[0];
+      }
+    } catch (IOException e) {
+      LOGGER.error("Exception occured: " + e.getMessage());
+      return new CarbonFile[0];
+    }
+    return getFiles(listStatus);
+  }
+
+  @Override
+  public CarbonFile[] locationAwareListFiles() throws IOException {
+    if (null != fileStatus && fileStatus.isDirectory()) {
+      List<FileStatus> listStatus = new ArrayList<>();
+      Path path = fileStatus.getPath();
+      RemoteIterator<LocatedFileStatus> iter =
+          path.getFileSystem(FileFactory.getConfiguration()).listLocatedStatus(path);
+      while (iter.hasNext()) {
+        listStatus.add(iter.next());
+      }
+      return getFiles(listStatus.toArray(new FileStatus[listStatus.size()]));
+    }
+    return new CarbonFile[0];
+  }
+
+  /**
+   * Get the CarbonFiles from filestatus array
+   */
+  protected abstract CarbonFile[] getFiles(FileStatus[] listStatus);
+
+  @Override public String[] getLocations() throws IOException {
+    BlockLocation[] blkLocations;
+    if (fileStatus instanceof LocatedFileStatus) {
+      blkLocations = ((LocatedFileStatus)fileStatus).getBlockLocations();
+    } else {
+      FileSystem fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      blkLocations = fs.getFileBlockLocations(fileStatus.getPath(), 0L, fileStatus.getLen());
+    }
+
+    return blkLocations[0].getHosts();
   }
 }

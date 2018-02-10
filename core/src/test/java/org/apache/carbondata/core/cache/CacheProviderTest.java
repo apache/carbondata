@@ -28,11 +28,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.BlockIndexStore;
 import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
 import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
-import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-import org.apache.avro.Schema;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -65,12 +63,12 @@ public class CacheProviderTest {
     // get cache provider instance
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictionaryCache =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, "carbonStore");
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
     // assert that dictionary cache is an instance of Forward dictionary cache
     assertTrue(dictionaryCache instanceof ForwardDictionaryCache);
     assertFalse(dictionaryCache instanceof ReverseDictionaryCache);
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> reverseDictionaryCache =
-        cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, "carbonStore");
+        cacheProvider.createCache(CacheType.REVERSE_DICTIONARY);
     // assert that dictionary cache is an instance of Reverse dictionary cache
     assertTrue(reverseDictionaryCache instanceof ReverseDictionaryCache);
     assertFalse(reverseDictionaryCache instanceof ForwardDictionaryCache);
@@ -88,9 +86,10 @@ public class CacheProviderTest {
       throws IOException, NoSuchFieldException, IllegalAccessException {
     // get cache provider instance
     CacheProvider cacheProvider = CacheProvider.getInstance();
+    cacheProvider.dropAllCache();
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true");
     Cache<TableSegmentUniqueIdentifier, SegmentTaskIndexStore> driverCache =
-        cacheProvider.createCache(CacheType.DRIVER_BTREE, "carbonStore");
+        cacheProvider.createCache(CacheType.DRIVER_BTREE);
     Field carbonLRUCacheField = SegmentTaskIndexStore.class.getDeclaredField("lruCache");
     carbonLRUCacheField.setAccessible(true);
     CarbonLRUCache carbonLRUCache = (CarbonLRUCache) carbonLRUCacheField.get(driverCache);
@@ -105,7 +104,7 @@ public class CacheProviderTest {
     // validation test for the executor memory.
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false");
     Cache<TableBlockUniqueIdentifier, BlockIndexStore> executorCache =
-        cacheProvider.createCache(CacheType.EXECUTOR_BTREE, "carbonStore");
+        cacheProvider.createCache(CacheType.EXECUTOR_BTREE);
     carbonLRUCacheField = BlockIndexStore.class.getSuperclass().getDeclaredField("lruCache");
     carbonLRUCacheField.setAccessible(true);
     carbonLRUCache = (CarbonLRUCache) carbonLRUCacheField.get(executorCache);

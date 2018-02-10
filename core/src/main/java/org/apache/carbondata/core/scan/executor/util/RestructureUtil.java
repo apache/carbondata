@@ -26,6 +26,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -81,8 +82,6 @@ public class RestructureUtil {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
           if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
             QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
-            tableDimension.getColumnSchema()
-                .setDataType(queryDimension.getDimension().getDataType());
             tableDimension.getColumnSchema()
                 .setPrecision(queryDimension.getDimension().getColumnSchema().getPrecision());
             tableDimension.getColumnSchema()
@@ -179,8 +178,7 @@ public class RestructureUtil {
     if (isDefaultValueNull(defaultValue)) {
       dictionaryDefaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
     } else {
-      dictionaryDefaultValue =
-          CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY + 1;
+      dictionaryDefaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY + 1;
     }
     return dictionaryDefaultValue;
   }
@@ -217,21 +215,17 @@ public class RestructureUtil {
     Object noDictionaryDefaultValue = null;
     String value = null;
     if (!isDefaultValueNull(defaultValue)) {
-      switch (datatype) {
-        case INT:
-          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          noDictionaryDefaultValue = Integer.parseInt(value);
-          break;
-        case LONG:
-          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          noDictionaryDefaultValue = Long.parseLong(value);
-          break;
-        case TIMESTAMP:
-          long timestampValue = ByteUtil.toLong(defaultValue, 0, defaultValue.length);
-          noDictionaryDefaultValue = timestampValue * 1000L;
-          break;
-        default:
-          noDictionaryDefaultValue = UTF8String.fromBytes(defaultValue);
+      if (datatype == DataTypes.INT) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        noDictionaryDefaultValue = Integer.parseInt(value);
+      } else if (datatype == DataTypes.LONG) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        noDictionaryDefaultValue = Long.parseLong(value);
+      } else if (datatype == DataTypes.TIMESTAMP) {
+        long timestampValue = ByteUtil.toLong(defaultValue, 0, defaultValue.length);
+        noDictionaryDefaultValue = timestampValue * 1000L;
+      } else {
+        noDictionaryDefaultValue = UTF8String.fromBytes(defaultValue);
       }
     }
     return noDictionaryDefaultValue;
@@ -244,10 +238,7 @@ public class RestructureUtil {
    * @return
    */
   private static boolean isDefaultValueNull(byte[] defaultValue) {
-    if (null == defaultValue) {
-      return true;
-    }
-    return false;
+    return null == defaultValue;
   }
 
   /**
@@ -293,29 +284,29 @@ public class RestructureUtil {
   public static Object getMeasureDefaultValue(ColumnSchema columnSchema, byte[] defaultValue) {
     Object measureDefaultValue = null;
     if (!isDefaultValueNull(defaultValue)) {
-      String value = null;
-      switch (columnSchema.getDataType()) {
-        case SHORT:
-        case INT:
-        case LONG:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          measureDefaultValue = Long.parseLong(value);
-          break;
-        case DECIMAL:
-          BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
-          if (columnSchema.getScale() > decimal.scale()) {
-            decimal = decimal.setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
-          }
-          measureDefaultValue = decimal;
-          break;
-        default:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          Double parsedValue = Double.valueOf(value);
-          if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
-            measureDefaultValue = parsedValue;
-          }
+      String value;
+      DataType dataType = columnSchema.getDataType();
+      if (dataType == DataTypes.SHORT) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Short.valueOf(value);
+      } else if (dataType == DataTypes.LONG) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Long.parseLong(value);
+      } else if (dataType == DataTypes.INT) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Integer.parseInt(value);
+      } else if (DataTypes.isDecimal(dataType)) {
+        BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
+        if (columnSchema.getScale() > decimal.scale()) {
+          decimal = decimal.setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
+        }
+        measureDefaultValue = decimal;
+      } else {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        Double parsedValue = Double.valueOf(value);
+        if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
+          measureDefaultValue = parsedValue;
+        }
       }
     }
     return measureDefaultValue;
@@ -333,36 +324,28 @@ public class RestructureUtil {
     Object measureDefaultValue = null;
     if (!isDefaultValueNull(defaultValue)) {
       String value = null;
-      switch (columnSchema.getDataType()) {
-        case SHORT:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          measureDefaultValue = Short.parseShort(value);
-          break;
-        case INT:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          measureDefaultValue = Integer.parseInt(value);
-          break;
-        case LONG:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          measureDefaultValue = Long.parseLong(value);
-          break;
-        case DECIMAL:
-          BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
-          if (columnSchema.getScale() > decimal.scale()) {
-            decimal = decimal.setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
-          }
-          measureDefaultValue = Decimal.apply(decimal);
-          break;
-        default:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          Double parsedValue = Double.valueOf(value);
-          if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
-            measureDefaultValue = parsedValue;
-          }
+      DataType dataType = columnSchema.getDataType();
+      if (dataType == DataTypes.SHORT) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Short.parseShort(value);
+      } else if (dataType == DataTypes.INT) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Integer.parseInt(value);
+      } else if (dataType == DataTypes.LONG) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Long.parseLong(value);
+      } else if (DataTypes.isDecimal(dataType)) {
+        BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
+        if (columnSchema.getScale() > decimal.scale()) {
+          decimal = decimal.setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
+        }
+        measureDefaultValue = Decimal.apply(decimal);
+      } else {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        Double parsedValue = Double.valueOf(value);
+        if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
+          measureDefaultValue = parsedValue;
+        }
       }
     }
     return measureDefaultValue;

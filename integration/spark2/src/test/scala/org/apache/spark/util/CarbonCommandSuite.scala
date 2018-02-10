@@ -22,14 +22,18 @@ import java.sql.Timestamp
 import java.util.Date
 
 import org.apache.spark.sql.common.util.Spark2QueryTest
-import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
+
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
 
   protected def createAndLoadInputTable(inputTableName: String, inputPath: String): Unit = {
     sql(
@@ -83,8 +87,11 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   override def beforeAll(): Unit = {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
     dropTable("csv_table")
     dropTable("carbon_table")
+    dropTable("carbon_table2")
     createAndLoadInputTable("csv_table", s"$resourcesPath/data_alltypes.csv")
     createAndLoadTestTable("carbon_table", "csv_table")
   }
@@ -92,17 +99,19 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   override def afterAll(): Unit = {
     dropTable("csv_table")
     dropTable("carbon_table")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)
+
   }
 
   private lazy val location =
     CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
-  test("show segment") {
-    ShowSegments.main(Array(s"${location}", "carbon_table"))
-  }
+
 
   test("delete segment by id") {
     DeleteSegmentById.main(Array(s"${location}", "carbon_table", "0"))
-    assert(!CarbonStore.isSegmentValid("default", "carbon_table",location,  "0"))
+    assert(!CarbonStore.isSegmentValid("default", "carbon_table", location, "0"))
   }
 
   test("delete segment by date") {
@@ -116,12 +125,10 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   test("clean files") {
     val table = "carbon_table3"
     createAndLoadTestTable(table, "csv_table")
-    ShowSegments.main(Array(s"${location}", table))
     DeleteSegmentById.main(Array(s"${location}", table, "0"))
-    ShowSegments.main(Array(s"${location}", table))
     CleanFiles.main(Array(s"${location}", table))
-    ShowSegments.main(Array(s"${location}", table))
-    val tablePath = s"${location}${File.separator}default${File.separator}$table"
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", table)
+    val tablePath = carbonTable.getAbsoluteTableIdentifier.getTablePath
     val f = new File(s"$tablePath/Fact/Part0")
     assert(f.isDirectory)
 
@@ -135,11 +142,27 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     dropTable(table)
     createAndLoadTestTable(table, "csv_table")
     CleanFiles.main(Array(s"${location}", table, "true"))
-    val tablePath = s"${location}${File.separator}default${File.separator}$table"
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", table)
+    val tablePath = carbonTable.getTablePath
     val f = new File(tablePath)
     assert(!f.exists())
 
     dropTable(table)
+  }
+
+  test("test if delete segments by id is unsupported for pre-aggregate tables") {
+    dropTable("preaggMain")
+    dropTable("preaggMain_preagg1")
+    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
+    sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
+    intercept[UnsupportedOperationException] {
+      sql("delete from table preaggMain where segment.id in (1,2)")
+    }.getMessage.contains("Delete segment operation is not supported on tables")
+    intercept[UnsupportedOperationException] {
+      sql("delete from table preaggMain_preagg1 where segment.id in (1,2)")
+    }.getMessage.contains("Delete segment operation is not supported on pre-aggregate tables")
+    dropTable("preaggMain")
+    dropTable("preagg1")
   }
 
   protected def dropTable(tableName: String): Unit ={

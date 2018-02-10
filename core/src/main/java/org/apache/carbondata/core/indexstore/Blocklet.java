@@ -16,15 +16,7 @@
  */
 package org.apache.carbondata.core.indexstore;
 
-import java.io.IOException;
 import java.io.Serializable;
-
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 
 /**
  * Blocklet
@@ -33,15 +25,7 @@ public class Blocklet implements Serializable {
 
   private String path;
 
-  private String segmentId;
-
   private String blockletId;
-
-  private BlockletDetailInfo detailInfo;
-
-  private long length;
-
-  private String[] location;
 
   public Blocklet(String path, String blockletId) {
     this.path = path;
@@ -54,39 +38,6 @@ public class Blocklet implements Serializable {
 
   public String getBlockletId() {
     return blockletId;
-  }
-
-  public BlockletDetailInfo getDetailInfo() {
-    return detailInfo;
-  }
-
-  public void setDetailInfo(BlockletDetailInfo detailInfo) {
-    this.detailInfo = detailInfo;
-  }
-
-  public void updateLocations() throws IOException {
-    Path path = new Path(this.path);
-    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-    RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
-    LocatedFileStatus fileStatus = iter.next();
-    location = fileStatus.getBlockLocations()[0].getHosts();
-    length = fileStatus.getLen();
-  }
-
-  public String[] getLocations() throws IOException {
-    return location;
-  }
-
-  public long getLength() throws IOException {
-    return length;
-  }
-
-  public String getSegmentId() {
-    return segmentId;
-  }
-
-  public void setSegmentId(String segmentId) {
-    this.segmentId = segmentId;
   }
 
 }

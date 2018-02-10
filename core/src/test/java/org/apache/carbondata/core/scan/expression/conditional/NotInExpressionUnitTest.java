@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -44,9 +45,9 @@ public class NotInExpressionUnitTest {
 
   @Test public void testEvaluateForNotInExpressionWithString()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("left_name", DataType.STRING);
+    ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_name", DataType.STRING);
+    ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
     right.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     RowImpl value = new RowImpl();
@@ -57,7 +58,7 @@ public class NotInExpressionUnitTest {
     new MockUp<ExpressionResult>() {
 
       @Mock public DataType getDataType() {
-        return DataType.STRING;
+        return DataTypes.STRING;
       }
 
       @Mock public String getString() {
@@ -73,9 +74,9 @@ public class NotInExpressionUnitTest {
   @Test public void testEvaluateForNotInExpressionWithShortDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
 
-    ColumnExpression left = new ColumnExpression("left_id", DataType.SHORT);
+    ColumnExpression left = new ColumnExpression("left_id", DataTypes.SHORT);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_id", DataType.SHORT);
+    ColumnExpression right = new ColumnExpression("right_id", DataTypes.SHORT);
     right.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     RowImpl value = new RowImpl();
@@ -91,16 +92,16 @@ public class NotInExpressionUnitTest {
     };
 
     ExpressionResult result = notInExpression.evaluate(value);
-    assertEquals(result.getDataType(), DataType.BOOLEAN);
+    assertEquals(result.getDataType(), DataTypes.BOOLEAN);
 
   }
 
   @Test public void testEvaluateForNotInExpressionWithIntDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
 
-    ColumnExpression left = new ColumnExpression("left_id", DataType.INT);
+    ColumnExpression left = new ColumnExpression("left_id", DataTypes.INT);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_id", DataType.INT);
+    ColumnExpression right = new ColumnExpression("right_id", DataTypes.INT);
     right.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     RowImpl value = new RowImpl();
@@ -116,15 +117,15 @@ public class NotInExpressionUnitTest {
     };
 
     ExpressionResult result = notInExpression.evaluate(value);
-    assertEquals(result.getDataType(), DataType.BOOLEAN);
+    assertEquals(result.getDataType(), DataTypes.BOOLEAN);
 
   }
 
   @Test public void testEvaluateForNotInExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("left_contact", DataType.DOUBLE);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_contact", DataType.DOUBLE);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);
     right.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     RowImpl value = new RowImpl();
@@ -145,9 +146,9 @@ public class NotInExpressionUnitTest {
 
   @Test public void testEvaluateForNotInExpressionWithLongDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("left_contact", DataType.LONG);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.LONG);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_contact", DataType.LONG);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.LONG);
     right.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     RowImpl value = new RowImpl();
@@ -169,9 +170,9 @@ public class NotInExpressionUnitTest {
   @Test public void testEvaluateForNotInExpressionWithTimestampDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
-      ColumnExpression left = new ColumnExpression("left_timestamp", DataType.TIMESTAMP);
+      ColumnExpression left = new ColumnExpression("left_timestamp", DataTypes.TIMESTAMP);
       left.setColIndex(0);
-      ColumnExpression right = new ColumnExpression("right_timestamp", DataType.TIMESTAMP);
+      ColumnExpression right = new ColumnExpression("right_timestamp", DataTypes.TIMESTAMP);
       right.setColIndex(1);
       notInExpression = new NotInExpression(right, right);
 
@@ -201,9 +202,9 @@ public class NotInExpressionUnitTest {
 
   @Test public void testEvaluateForNotInExpressionWithDecimalDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("left_contact", DataType.DECIMAL);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.createDefaultDecimalType());
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_contact", DataType.DECIMAL);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.createDefaultDecimalType());
     right.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     RowImpl value = new RowImpl();
@@ -222,11 +223,11 @@ public class NotInExpressionUnitTest {
     assertTrue(result.getBoolean());
   }
 
-  @Test(expected = FilterUnsupportedException.class) public void testDefaultCaseForNotInExpression()
+  @Test public void testDefaultCaseForNotInExpression()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("contact", DataType.BOOLEAN);
+    ColumnExpression left = new ColumnExpression("contact", DataTypes.BOOLEAN);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("contact", DataType.BOOLEAN);
+    ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     RowImpl value = new RowImpl();
@@ -238,9 +239,9 @@ public class NotInExpressionUnitTest {
   }
 
   @Test public void testForNotInExpressionWithGetString() throws Exception {
-    ColumnExpression left = new ColumnExpression("left_name", DataType.STRING);
+    ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_name", DataType.STRING);
+    ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
     right.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     String expected_result = "NOT IN(ColumnExpression(left_name),ColumnExpression(right_name))";
@@ -249,9 +250,9 @@ public class NotInExpressionUnitTest {
   }
   @Test public void testEvaluateForNotInExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("name", DataType.STRING);
+    ColumnExpression right = new ColumnExpression("name", DataTypes.STRING);
     right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("number", DataType.INT);
+    ColumnExpression left = new ColumnExpression("number", DataTypes.INT);
     left.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     RowImpl value = new RowImpl();

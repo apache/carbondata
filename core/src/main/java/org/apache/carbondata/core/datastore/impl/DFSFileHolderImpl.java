@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.core.datastore.impl;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -39,6 +37,8 @@ public class DFSFileHolderImpl implements FileHolder {
 
   private String queryId;
 
+  private boolean readPageByPage;
+
 
   public DFSFileHolderImpl() {
     this.fileNameAndStreamCache =
@@ -59,7 +59,7 @@ public class DFSFileHolderImpl implements FileHolder {
    * @param filePath fully qualified file path
    * @return channel
    */
-  private FSDataInputStream updateCache(String filePath) throws IOException {
+  public FSDataInputStream updateCache(String filePath) throws IOException {
     FSDataInputStream fileChannel = fileNameAndStreamCache.get(filePath);
     if (null == fileChannel) {
       Path pt = new Path(filePath);
@@ -151,10 +151,16 @@ public class DFSFileHolderImpl implements FileHolder {
     return queryId;
   }
 
-  @Override public DataInputStream getDataInputStream(String filePath, long offset)
-      throws IOException {
-    FSDataInputStream fsDataInputStream = updateCache(filePath);
-    fsDataInputStream.seek(offset);
-    return new DataInputStream(new BufferedInputStream(fsDataInputStream, 1 * 1024 * 1024));
+  @Override public void setReadPageByPage(boolean isReadPageByPage) {
+    this.readPageByPage = isReadPageByPage;
   }
+
+  @Override public boolean isReadPageByPage() {
+    return readPageByPage;
+  }
+
+  public Map<String, FSDataInputStream> getFileNameAndStreamCache() {
+    return fileNameAndStreamCache;
+  }
+
 }

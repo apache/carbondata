@@ -26,27 +26,31 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.strategy.CarbonLateDecodeStrategy
-import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonRelation}
+import org.apache.spark.sql.execution.streaming.Sink
+import org.apache.spark.sql.hive.CarbonMetaStore
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.sources._
+import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.streaming.{CarbonStreamException, StreamSinkFactory}
 
 /**
  * Carbon relation provider compliant to data source api.
  * Creates carbon relations
  */
 class CarbonSource extends CreatableRelationProvider with RelationProvider
-  with SchemaRelationProvider with DataSourceRegister {
+  with SchemaRelationProvider with StreamSinkProvider with DataSourceRegister {
 
   override def shortName(): String = "carbondata"
 
@@ -56,17 +60,20 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     CarbonEnv.getInstance(sqlContext.sparkSession)
     // if path is provided we can directly create Hadoop relation. \
     // Otherwise create datasource relation
-    parameters.get("tablePath") match {
+    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
+    newParameters.get("tablePath") match {
       case Some(path) => CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
         Array(path),
-        parameters,
+        newParameters,
         None)
       case _ =>
-        val options = new CarbonOption(parameters)
-        val storePath = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.STORE_LOCATION)
-        val tablePath = storePath + "/" + options.dbName + "/" + options.tableName
-        CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(tablePath), parameters, None)
+        val options = new CarbonOption(newParameters)
+        val tablePath =
+          CarbonEnv.getTablePath(options.dbName, options.tableName)(sqlContext.sparkSession)
+        CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
+          Array(tablePath),
+          newParameters,
+          None)
     }
   }
 
@@ -77,23 +84,25 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       parameters: Map[String, String],
       data: DataFrame): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
+    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
-    require(!parameters.contains("path"), "'path' should not be specified, " +
+    require(!newParameters.contains("path"), "'path' should not be specified, " +
                                           "the path to store carbon file is the 'storePath' " +
                                           "specified when creating CarbonContext")
 
-    val options = new CarbonOption(parameters)
-    val storePath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
-    val tablePath = new Path(storePath + "/" + options.dbName + "/" + options.tableName)
+    val options = new CarbonOption(newParameters)
+    val tablePath = new Path(
+      CarbonEnv.getTablePath(options.dbName, options.tableName)(sqlContext.sparkSession))
     val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
       .exists(tablePath)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
-        sys.error(s"ErrorIfExists mode, path $storePath already exists.")
+        CarbonException.analysisException(s"table path already exists.")
       case (SaveMode.Overwrite, true) =>
+        val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
         sqlContext.sparkSession
-          .sql(s"DROP TABLE IF EXISTS ${ options.dbName }.${ options.tableName }")
+          .sql(s"DROP TABLE IF EXISTS $dbName.${options.tableName}")
         (true, false)
       case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
         (true, false)
@@ -105,12 +114,12 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
     if (doSave) {
       // save data when the save mode is Overwrite.
-      new CarbonDataFrameWriter(sqlContext, data).saveAsCarbonFile(parameters)
+      new CarbonDataFrameWriter(sqlContext, data).saveAsCarbonFile(newParameters)
     } else if (doAppend) {
-      new CarbonDataFrameWriter(sqlContext, data).appendToCarbonFile(parameters)
+      new CarbonDataFrameWriter(sqlContext, data).appendToCarbonFile(newParameters)
     }
 
-    createRelation(sqlContext, parameters, data.schema)
+    createRelation(sqlContext, newParameters, data.schema)
   }
 
   // called by DDL operation with a USING clause
@@ -120,21 +129,23 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       dataSchema: StructType): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
-    val dbName: String = parameters.getOrElse("dbName",
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
-    val tableOption: Option[String] = parameters.get("tableName")
+    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
+    val dbName: String =
+      CarbonEnv.getDatabaseName(newParameters.get("dbName"))(sqlContext.sparkSession)
+    val tableOption: Option[String] = newParameters.get("tableName")
     if (tableOption.isEmpty) {
-      sys.error("Table creation failed. Table name is not specified")
+      CarbonException.analysisException("Table creation failed. Table name is not specified")
     }
     val tableName = tableOption.get.toLowerCase()
     if (tableName.contains(" ")) {
-      sys.error("Table creation failed. Table name cannot contain blank space")
+      CarbonException.analysisException(
+        "Table creation failed. Table name cannot contain blank space")
     }
     val (path, updatedParams) = if (sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
-        getPathForTable(sqlContext.sparkSession, dbName, tableName, parameters)
+        getPathForTable(sqlContext.sparkSession, dbName, tableName, newParameters)
     } else {
-        createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
+        createTableIfNotExists(sqlContext.sparkSession, newParameters, dataSchema)
     }
 
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), updatedParams,
@@ -149,27 +160,27 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
   }
 
 
-  private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
-      dataSchema: StructType) = {
+  private def createTableIfNotExists(
+      sparkSession: SparkSession,
+      parameters: Map[String, String],
+      dataSchema: StructType): (String, Map[String, String]) = {
 
-    val dbName: String = parameters.getOrElse("dbName",
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
+    val dbName: String = CarbonEnv.getDatabaseName(parameters.get("dbName"))(sparkSession)
     val tableName: String = parameters.getOrElse("tableName", "").toLowerCase
 
     try {
-      if (parameters.contains("carbonSchemaPartsNo")) {
-        getPathForTable(sparkSession, dbName, tableName, parameters)
-      } else {
-        CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .lookupRelation(Option(dbName), tableName)(sparkSession)
-        (CarbonEnv.getInstance(sparkSession).storePath + s"/$dbName/$tableName", parameters)
-      }
+      val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      (carbonTable.getTablePath, parameters)
     } catch {
-      case ex: NoSuchTableException =>
+      case _: NoSuchTableException =>
         val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-        val updatedParams =
-          CarbonSource.updateAndCreateTable(dataSchema, sparkSession, metaStore, parameters)
-        getPathForTable(sparkSession, dbName, tableName, updatedParams)
+        val identifier = AbsoluteTableIdentifier.from(
+          CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession),
+          dbName,
+          tableName)
+        val updatedParams = CarbonSource.updateAndCreateTable(
+          identifier, dataSchema, sparkSession, metaStore, parameters)
+        (CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession), updatedParams)
       case ex: Exception =>
         throw new Exception("do not have dbname and tablename for carbon table", ex)
     }
@@ -196,11 +207,9 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       if (parameters.contains("tablePath")) {
         (parameters("tablePath"), parameters)
       } else if (!sparkSession.isInstanceOf[CarbonSession]) {
-        (CarbonEnv.getInstance(sparkSession).storePath + "/" + dbName + "/" + tableName, parameters)
+        (CarbonProperties.getStorePath + "/" + dbName + "/" + tableName, parameters)
       } else {
-        val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-        (relation.tableMeta.tablePath, parameters)
+        (CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession), parameters)
       }
     } catch {
       case ex: Exception =>
@@ -208,22 +217,54 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
   }
 
+  /**
+   * produce a streaming `Sink` for a specific format
+   * now it will create a default sink(CarbonAppendableStreamSink) for row format
+   */
+  override def createSink(sqlContext: SQLContext,
+      parameters: Map[String, String],
+      partitionColumns: Seq[String],
+      outputMode: OutputMode): Sink = {
+
+    // check "tablePath" option
+    val options = new CarbonOption(parameters)
+    val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
+    val tableName = options.tableName
+    if (tableName.contains(" ")) {
+      throw new CarbonStreamException("Table creation failed. Table name cannot contain blank " +
+                                      "space")
+    }
+    val sparkSession = sqlContext.sparkSession
+    val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+    if (!carbonTable.isStreamingTable) {
+      throw new CarbonStreamException(s"Table ${carbonTable.getDatabaseName}." +
+                                      s"${carbonTable.getTableName} is not a streaming table")
+    }
+
+    // create sink
+    StreamSinkFactory.createStreamTableSink(
+      sqlContext.sparkSession,
+      sqlContext.sparkSession.sessionState.newHadoopConf(),
+      carbonTable,
+      parameters)
+  }
+
 }
 
 object CarbonSource {
 
-  def createTableInfoFromParams(parameters: Map[String, String],
+  def createTableInfoFromParams(
+      parameters: Map[String, String],
       dataSchema: StructType,
-      dbName: String,
-      tableName: String): TableModel = {
+      identifier: AbsoluteTableIdentifier): TableModel = {
     val sqlParser = new CarbonSpark2SqlParser
     val fields = sqlParser.getFields(dataSchema)
     val map = scala.collection.mutable.Map[String, String]()
     parameters.foreach { case (key, value) => map.put(key, value.toLowerCase()) }
     val options = new CarbonOption(parameters)
     val bucketFields = sqlParser.getBucketFields(map, fields, options)
-    sqlParser.prepareTableModel(ifNotExistPresent = false, Option(dbName),
-      tableName, fields, Nil, map, bucketFields)
+    sqlParser.prepareTableModel(ifNotExistPresent = false, Option(identifier.getDatabaseName),
+      identifier.getTableName, fields, Nil, map, bucketFields)
   }
 
   /**
@@ -232,13 +273,23 @@ object CarbonSource {
    * @param sparkSession
    * @return
    */
-  def updateCatalogTableWithCarbonSchema(tableDesc: CatalogTable,
+  def updateCatalogTableWithCarbonSchema(
+      tableDesc: CatalogTable,
       sparkSession: SparkSession): CatalogTable = {
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val storageFormat = tableDesc.storage
     val properties = storageFormat.properties
     if (!properties.contains("carbonSchemaPartsNo")) {
-      val map = updateAndCreateTable(tableDesc.schema, sparkSession, metaStore, properties)
+      val tablePath = CarbonEnv.getTablePath(
+        tableDesc.identifier.database, tableDesc.identifier.table)(sparkSession)
+      val dbName = CarbonEnv.getDatabaseName(tableDesc.identifier.database)(sparkSession)
+      val identifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableDesc.identifier.table)
+      val map = updateAndCreateTable(
+        identifier,
+        tableDesc.schema,
+        sparkSession,
+        metaStore,
+        properties)
       // updating params
       val updatedFormat = storageFormat.copy(properties = map)
       tableDesc.copy(storage = updatedFormat)
@@ -246,7 +297,7 @@ object CarbonSource {
       val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
       if (!metaStore.isReadFromHiveMetaStore) {
         // save to disk
-        metaStore.saveToDisk(tableInfo, properties.get("tablePath").get)
+        metaStore.saveToDisk(tableInfo, properties("tablePath"))
         // remove schema string from map as we don't store carbon schema to hive metastore
         val map = CarbonUtil.removeSchemaFromMap(properties.asJava)
         val updatedFormat = storageFormat.copy(properties = map.asScala.toMap)
@@ -257,34 +308,28 @@ object CarbonSource {
     }
   }
 
-  def updateAndCreateTable(dataSchema: StructType,
+  def updateAndCreateTable(
+      identifier: AbsoluteTableIdentifier,
+      dataSchema: StructType,
       sparkSession: SparkSession,
       metaStore: CarbonMetaStore,
       properties: Map[String, String]): Map[String, String] = {
-    val dbName: String = properties.getOrElse("dbName",
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
-    val tableName: String = properties.getOrElse("tableName", "").toLowerCase
-    val model = createTableInfoFromParams(properties, dataSchema, dbName, tableName)
+    val model = createTableInfoFromParams(properties, dataSchema, identifier)
     val tableInfo: TableInfo = TableNewProcessor(model)
-    val tablePath = CarbonEnv.getInstance(sparkSession).storePath + "/" + dbName + "/" + tableName
+    tableInfo.setTablePath(identifier.getTablePath)
+    tableInfo.setDatabaseName(identifier.getDatabaseName)
     val schemaEvolutionEntry = new SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
-    tableInfo.getFactTable.getSchemaEvalution.
-      getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
+    tableInfo.getFactTable.getSchemaEvalution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
     val map = if (metaStore.isReadFromHiveMetaStore) {
-      val tableIdentifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(tableIdentifier)
-      val schemaMetadataPath =
-        CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
-      tableInfo.setMetaDataFilepath(schemaMetadataPath)
-      tableInfo.setStorePath(tableIdentifier.getStorePath)
       CarbonUtil.convertToMultiStringMap(tableInfo)
     } else {
-      metaStore.saveToDisk(tableInfo, tablePath)
+      metaStore.saveToDisk(tableInfo, identifier.getTablePath)
       new java.util.HashMap[String, String]()
     }
     properties.foreach(e => map.put(e._1, e._2))
-    map.put("tablePath", tablePath)
+    map.put("tablepath", identifier.getTablePath)
+    map.put("dbname", identifier.getDatabaseName)
     map.asScala.toMap
   }
 }

@@ -21,15 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -46,13 +38,15 @@ import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.reader.CarbonDeleteFilesDataReader;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl;
-import org.apache.carbondata.processing.model.CarbonLoadModel;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 /**
  * utility class for load merging.
@@ -76,7 +70,8 @@ public final class CarbonDataMergerUtil {
     // carbon data file case.
     CarbonFile[] factFile = carbonFile.listFiles(new CarbonFileFilter() {
 
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         return CarbonTablePath.isCarbonDataFile(file.getName());
       }
     });
@@ -91,17 +86,22 @@ public final class CarbonDataMergerUtil {
   /**
    * To check whether the merge property is enabled or not.
    *
+   * @Params carbonTable
    * @return
    */
-
-  public static boolean checkIfAutoLoadMergingRequired() {
+  public static boolean checkIfAutoLoadMergingRequired(CarbonTable carbonTable) {
     // load merge is not supported as per new store format
     // moving the load merge check in early to avoid unnecessary load listing causing IOException
     // check whether carbons segment merging operation is enabled or not.
     // default will be false.
+    Map<String, String> tblProps = carbonTable.getTableInfo().getFactTable().getTableProperties();
+
     String isLoadMergeEnabled = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-            CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE);
+            .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+                    CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE);
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE)) {
+      isLoadMergeEnabled = tblProps.get(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE);
+    }
     if (isLoadMergeEnabled.equalsIgnoreCase("false")) {
       return false;
     }
@@ -129,24 +129,6 @@ public final class CarbonDataMergerUtil {
 
   }
 
-
-  /**
-   * Form the Name of the New Merge Folder
-   *
-   * @param segmentToBeMerged
-   * @return
-   */
-  public static String getMergedLoadName(final String segmentToBeMerged) {
-    if (segmentToBeMerged.contains(".")) {
-      String beforeDecimal = segmentToBeMerged.substring(0, segmentToBeMerged.indexOf("."));
-      String afterDecimal = segmentToBeMerged.substring(segmentToBeMerged.indexOf(".") + 1);
-      int fraction = Integer.parseInt(afterDecimal) + 1;
-      return beforeDecimal + "." + fraction;
-    } else {
-      return segmentToBeMerged + "." + 1;
-    }
-
-  }
 
   /**
    * Update Both Segment Update Status and Table Status for the case of IUD Delete
@@ -188,9 +170,7 @@ public final class CarbonDataMergerUtil {
     AbsoluteTableIdentifier absoluteTableIdentifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
 
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
 
     SegmentUpdateStatusManager segmentUpdateStatusManager =
         new SegmentUpdateStatusManager(absoluteTableIdentifier);
@@ -234,10 +214,9 @@ public final class CarbonDataMergerUtil {
             // Check is the compactedBlocks name matches with oldDetails
             for (int i = 0; i < updateLists.length; i++) {
               if (updateLists[i].getBlockName().equalsIgnoreCase(compactedBlocks)
-                  && !CarbonCommonConstants.COMPACTED.equalsIgnoreCase(updateLists[i].getStatus())
-                  && !CarbonCommonConstants.MARKED_FOR_DELETE
-                  .equalsIgnoreCase(updateLists[i].getStatus())) {
-                updateLists[i].setStatus(CarbonCommonConstants.COMPACTED);
+                  && updateLists[i].getSegmentStatus() != SegmentStatus.COMPACTED
+                  && updateLists[i].getSegmentStatus() != SegmentStatus.MARKED_FOR_DELETE) {
+                updateLists[i].setSegmentStatus(SegmentStatus.COMPACTED);
               }
             }
           }
@@ -294,15 +273,14 @@ public final class CarbonDataMergerUtil {
    * method to update table status in case of IUD Update Delta Compaction.
    * @param loadsToMerge
    * @param metaDataFilepath
-   * @param MergedLoadName
+   * @param mergedLoadNumber
    * @param carbonLoadModel
    * @param compactionType
    * @return
    */
   public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
-      String metaDataFilepath, String MergedLoadName, CarbonLoadModel carbonLoadModel,
-      long mergeLoadStartTime, CompactionType compactionType) {
-
+      String metaDataFilepath, String mergedLoadNumber, CarbonLoadModel carbonLoadModel,
+      CompactionType compactionType) throws IOException {
     boolean tableStatusUpdationStatus = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
@@ -316,16 +294,11 @@ public final class CarbonDataMergerUtil {
             + carbonLoadModel.getTableName() + " for table status updation ");
 
         CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-                absoluteTableIdentifier.getCarbonTableIdentifier());
+            .getCarbonTablePath(absoluteTableIdentifier);
 
         String statusFilePath = carbonTablePath.getTableStatusFilePath();
 
         LoadMetadataDetails[] loadDetails = SegmentStatusManager.readLoadMetadata(metaDataFilepath);
-
-        String mergedLoadNumber = MergedLoadName.substring(
-            MergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER)
-                + CarbonCommonConstants.LOAD_FOLDER.length(), MergedLoadName.length());
 
         long modificationOrDeletionTimeStamp = CarbonUpdateUtil.readCurrentTime();
         for (LoadMetadataDetails loadDetail : loadDetails) {
@@ -333,13 +306,12 @@ public final class CarbonDataMergerUtil {
           if (loadsToMerge.contains(loadDetail)) {
             // if the compacted load is deleted after the start of the compaction process,
             // then need to discard the compaction process and treat it as failed compaction.
-            if (loadDetail.getLoadStatus()
-                .equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_DELETE)) {
+            if (loadDetail.getSegmentStatus() == SegmentStatus.MARKED_FOR_DELETE) {
               LOGGER.error("Compaction is aborted as the segment " + loadDetail.getLoadName()
                   + " is deleted after the compaction is started.");
               return false;
             }
-            loadDetail.setLoadStatus(CarbonCommonConstants.COMPACTED);
+            loadDetail.setSegmentStatus(SegmentStatus.COMPACTED);
             loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
             loadDetail.setMergedLoadName(mergedLoadNumber);
           }
@@ -348,14 +320,17 @@ public final class CarbonDataMergerUtil {
         // create entry for merged one.
         LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
         loadMetadataDetails.setPartitionCount(carbonLoadModel.getPartitionId());
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS);
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS);
         long loadEnddate = CarbonUpdateUtil.readCurrentTime();
         loadMetadataDetails.setLoadEndTime(loadEnddate);
+        CarbonTable carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
         loadMetadataDetails.setLoadName(mergedLoadNumber);
-        loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
+        CarbonLoaderUtil
+            .addDataIndexSizeIntoMetaEntry(loadMetadataDetails, mergedLoadNumber, carbonTable);
+        loadMetadataDetails.setLoadStartTime(carbonLoadModel.getFactTimeStamp());
         loadMetadataDetails.setPartitionCount("0");
         // if this is a major compaction then set the segment as major compaction.
-        if (compactionType == CompactionType.MAJOR_COMPACTION) {
+        if (CompactionType.MAJOR == compactionType) {
           loadMetadataDetails.setMajorCompacted("true");
         }
 
@@ -391,6 +366,17 @@ public final class CarbonDataMergerUtil {
   }
 
   /**
+   * Get the load number from load name.
+   * @param loadName
+   * @return
+   */
+  public static String getLoadNumberFromLoadName(String loadName) {
+    return loadName.substring(
+        loadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) + CarbonCommonConstants.LOAD_FOLDER
+            .length(), loadName.length());
+  }
+
+  /**
    * To identify which all segments can be merged.
    *
    * @param carbonLoadModel
@@ -398,15 +384,17 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static List<LoadMetadataDetails> identifySegmentsToBeMerged(
-      CarbonLoadModel carbonLoadModel, long compactionSize,
-      List<LoadMetadataDetails> segments, CompactionType compactionType) {
-    String storeLocation = carbonLoadModel.getStorePath();
+          CarbonLoadModel carbonLoadModel, long compactionSize,
+          List<LoadMetadataDetails> segments, CompactionType compactionType) {
+    String tablePath = carbonLoadModel.getTablePath();
+    Map<String, String> tableLevelProperties = carbonLoadModel.getCarbonDataLoadSchema()
+            .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
     List<LoadMetadataDetails> sortedSegments = new ArrayList<LoadMetadataDetails>(segments);
 
     sortSegments(sortedSegments);
 
     // Check for segments which are qualified for IUD compaction.
-    if (compactionType.equals(CompactionType.IUD_UPDDEL_DELTA_COMPACTION)) {
+    if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
 
       return identifySegmentsToBeMergedBasedOnIUD(sortedSegments, carbonLoadModel);
     }
@@ -414,22 +402,24 @@ public final class CarbonDataMergerUtil {
     // check preserve property and preserve the configured number of latest loads.
 
     List<LoadMetadataDetails> listOfSegmentsAfterPreserve =
-        checkPreserveSegmentsPropertyReturnRemaining(sortedSegments);
+            checkPreserveSegmentsPropertyReturnRemaining(sortedSegments, tableLevelProperties);
 
     // filter the segments if the compaction based on days is configured.
 
     List<LoadMetadataDetails> listOfSegmentsLoadedInSameDateInterval =
-        identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsAfterPreserve);
+            identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsAfterPreserve,
+                    tableLevelProperties);
     List<LoadMetadataDetails> listOfSegmentsToBeMerged;
     // identify the segments to merge based on the Size of the segments across partition.
-    if (compactionType.equals(CompactionType.MAJOR_COMPACTION)) {
+    if (CompactionType.MAJOR == compactionType) {
 
       listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSize(compactionSize,
-          listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, storeLocation);
+              listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, tablePath);
     } else {
 
       listOfSegmentsToBeMerged =
-          identifySegmentsToBeMergedBasedOnSegCount(listOfSegmentsLoadedInSameDateInterval);
+              identifySegmentsToBeMergedBasedOnSegCount(listOfSegmentsLoadedInSameDateInterval,
+                      tableLevelProperties);
     }
 
     return listOfSegmentsToBeMerged;
@@ -442,7 +432,8 @@ public final class CarbonDataMergerUtil {
   public static void sortSegments(List segments) {
     // sort the segment details.
     Collections.sort(segments, new Comparator<LoadMetadataDetails>() {
-      @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
+      @Override
+      public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
         double seg1Id = Double.parseDouble(seg1.getLoadName());
         double seg2Id = Double.parseDouble(seg2.getLoadName());
         return Double.compare(seg1Id, seg2Id);
@@ -455,19 +446,26 @@ public final class CarbonDataMergerUtil {
    * This property is configurable.
    *
    * @param listOfSegmentsBelowThresholdSize
+   * @param tblProps
    * @return
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnLoadedDate(
-      List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize) {
+      List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize, Map<String, String> tblProps) {
 
     List<LoadMetadataDetails> loadsOfSameDate =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     long numberOfDaysAllowedToMerge = 0;
     try {
+      // overwrite system level option by table level option if exists
       numberOfDaysAllowedToMerge = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
-              CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT));
+              .getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
+                      CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT));
+      if (tblProps.containsKey(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS)) {
+        numberOfDaysAllowedToMerge = Long.parseLong(
+                tblProps.get(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS));
+      }
+
       if (numberOfDaysAllowedToMerge < 0 || numberOfDaysAllowedToMerge > 100) {
         LOGGER.error(
             "The specified value for property " + CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT
@@ -489,6 +487,11 @@ public final class CarbonDataMergerUtil {
       Date segDate1 = null;
       SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
       for (LoadMetadataDetails segment : listOfSegmentsBelowThresholdSize) {
+        // compaction should skip streaming segments
+        if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
+            segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
+          continue;
+        }
 
         if (first) {
           segDate1 = initializeFirstSegment(loadsOfSameDate, segment, sdf);
@@ -517,7 +520,14 @@ public final class CarbonDataMergerUtil {
         }
       }
     } else {
-      return listOfSegmentsBelowThresholdSize;
+      for (LoadMetadataDetails segment : listOfSegmentsBelowThresholdSize) {
+        // compaction should skip streaming segments
+        if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
+            segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
+          continue;
+        }
+        loadsOfSameDate.add(segment);
+      }
     }
 
     return loadsOfSameDate;
@@ -570,15 +580,17 @@ public final class CarbonDataMergerUtil {
   /**
    * Identify the segments to be merged based on the Size in case of Major compaction.
    *
-   * @param compactionSize
-   * @param listOfSegmentsAfterPreserve
-   * @param carbonLoadModel
-   * @param storeLocation
-   * @return
+   * @param compactionSize compaction size in MB format
+   * @param listOfSegmentsAfterPreserve  the segments list after
+   *        preserving the configured number of latest loads
+   * @param carbonLoadModel carbon load model
+   * @param tablePath the store location of the segment
+   * @return the list of segments that need to be merged
+   *         based on the Size in case of Major compaction
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSize(
       long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
-      CarbonLoadModel carbonLoadModel, String storeLocation) {
+      CarbonLoadModel carbonLoadModel, String tablePath) {
 
     List<LoadMetadataDetails> segmentsToBeMerged =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -592,11 +604,16 @@ public final class CarbonDataMergerUtil {
 
     // check size of each segment , sum it up across partitions
     for (LoadMetadataDetails segment : listOfSegmentsAfterPreserve) {
+      // compaction should skip streaming segments
+      if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
+          segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
+        continue;
+      }
 
       String segId = segment.getLoadName();
       // variable to store one  segment size across partition.
       long sizeOfOneSegmentAcrossPartition =
-          getSizeOfSegment(storeLocation, tableIdentifier, segId);
+          getSizeOfSegment(tablePath, tableIdentifier, segId);
 
       // if size of a segment is greater than the Major compaction size. then ignore it.
       if (sizeOfOneSegmentAcrossPartition > (compactionSize * 1024 * 1024)) {
@@ -634,14 +651,14 @@ public final class CarbonDataMergerUtil {
 
   /**
    * For calculating the size of the specified segment
-   * @param storeLocation
-   * @param tableIdentifier
-   * @param segId
-   * @return
+   * @param tablePath the store path of the segment
+   * @param tableIdentifier identifier of table that the segment belong to
+   * @param segId segment id
+   * @return the data size of the segment
    */
-  private static long getSizeOfSegment(String storeLocation,
+  private static long getSizeOfSegment(String tablePath,
       CarbonTableIdentifier tableIdentifier, String segId) {
-    String loadPath = getStoreLocation(storeLocation, tableIdentifier, segId);
+    String loadPath = getStoreLocation(tablePath, tableIdentifier, segId);
     CarbonFile segmentFolder =
         FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
     return getSizeOfFactFileInLoad(segmentFolder);
@@ -650,15 +667,15 @@ public final class CarbonDataMergerUtil {
   /**
    * This method will get the store location for the given path, segemnt id and partition id
    *
-   * @param storePath
-   * @param carbonTableIdentifier
-   * @param segmentId
-   * @return
+   * @param tablePath
+   * @param carbonTableIdentifier identifier of catbon table that the segment belong to
+   * @param segmentId segment id
+   * @return the store location of the segment
    */
-  private static String getStoreLocation(String storePath,
+  private static String getStoreLocation(String tablePath,
       CarbonTableIdentifier carbonTableIdentifier, String segmentId) {
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(tablePath, carbonTableIdentifier);
     return carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
   }
 
@@ -666,19 +683,29 @@ public final class CarbonDataMergerUtil {
   /**
    * Identify the segments to be merged based on the segment count
    *
-   * @param listOfSegmentsAfterPreserve
-   * @return
+   * @param listOfSegmentsAfterPreserve the list of segments after
+   *        preserve and before filtering by minor compaction level
+   * @param tblProps
+   * @return the list of segments to be merged after filtering by minor compaction level
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSegCount(
-      List<LoadMetadataDetails> listOfSegmentsAfterPreserve) {
+          List<LoadMetadataDetails> listOfSegmentsAfterPreserve, Map<String, String> tblProps) {
 
     List<LoadMetadataDetails> mergedSegments =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<LoadMetadataDetails> unMergedSegments =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    int[] noOfSegmentLevelsCount =
-        CarbonProperties.getInstance().getCompactionSegmentLevelCount();
+    int[] noOfSegmentLevelsCount = CarbonProperties.getInstance()
+            .getCompactionSegmentLevelCount();
+    // overwrite system level option by table level option if exists
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD)) {
+      noOfSegmentLevelsCount = CarbonProperties.getInstance()
+              .getIntArray(tblProps.get(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD));
+      if (0 == noOfSegmentLevelsCount.length) {
+        noOfSegmentLevelsCount = CarbonProperties.getInstance().getCompactionSegmentLevelCount();
+      }
+    }
 
     int level1Size = 0;
     int level2Size = 0;
@@ -696,7 +723,11 @@ public final class CarbonDataMergerUtil {
 
     // check size of each segment , sum it up across partitions
     for (LoadMetadataDetails segment : listOfSegmentsAfterPreserve) {
-
+      // compaction should skip streaming segments
+      if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
+          segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
+        continue;
+      }
       String segName = segment.getLoadName();
 
       // if a segment is already merged 2 levels then it s name will become .2
@@ -730,8 +761,8 @@ public final class CarbonDataMergerUtil {
 
   /**
    * To check if the segment is merged or not.
-   * @param segName
-   * @return
+   * @param segName segment name
+   * @return the status whether the segment has been Merged
    */
   private static boolean isMergedSegment(String segName) {
     if (segName.contains(".")) {
@@ -744,14 +775,21 @@ public final class CarbonDataMergerUtil {
    * checks number of loads to be preserved and returns remaining valid segments
    *
    * @param segments
+   * @param tblProps
    * @return
    */
   private static List<LoadMetadataDetails> checkPreserveSegmentsPropertyReturnRemaining(
-      List<LoadMetadataDetails> segments) {
+      List<LoadMetadataDetails> segments, Map<String, String> tblProps) {
     // check whether the preserving of the segments from merging is enabled or not.
-    // get the number of loads to be preserved.
-    int numberOfSegmentsToBePreserved =
-        CarbonProperties.getInstance().getNumberOfSegmentsToBePreserved();
+    // get the number of loads to be preserved. default value is system level option
+    // overwrite system level option by table level option if exists
+    int numberOfSegmentsToBePreserved = CarbonProperties.getInstance()
+            .getNumberOfSegmentsToBePreserved();
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS)) {
+      numberOfSegmentsToBePreserved = Integer.parseInt(
+              tblProps.get(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS));
+    }
+
     // get the number of valid segments and retain the latest loads from merging.
     return CarbonDataMergerUtil
         .getValidLoadDetailsWithRetaining(segments, numberOfSegmentsToBePreserved);
@@ -796,14 +834,23 @@ public final class CarbonDataMergerUtil {
    * This will give the compaction sizes configured based on compaction type.
    *
    * @param compactionType
+   * @param carbonLoadModel
    * @return
    */
-  public static long getCompactionSize(CompactionType compactionType) {
-
+  public static long getCompactionSize(CompactionType compactionType,
+                                       CarbonLoadModel carbonLoadModel) {
     long compactionSize = 0;
     switch (compactionType) {
-      case MAJOR_COMPACTION:
+      case MAJOR:
+        // default value is system level option
         compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
+        // if table level option is identified, use it to overwrite system level option
+        Map<String, String> tblProps = carbonLoadModel.getCarbonDataLoadSchema()
+                .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
+        if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
+          compactionSize = Long.parseLong(
+                  tblProps.get(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE));
+        }
         break;
       default: // this case can not come.
     }
@@ -896,10 +943,9 @@ public final class CarbonDataMergerUtil {
   }
 
   private static boolean isSegmentValid(LoadMetadataDetails seg) {
-    return seg.getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
-            || seg.getLoadStatus()
-            .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) || seg
-            .getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_UPDATE);
+    return seg.getSegmentStatus() == SegmentStatus.SUCCESS ||
+        seg.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS ||
+        seg.getSegmentStatus() == SegmentStatus.MARKED_FOR_UPDATE;
   }
 
   /**
@@ -915,7 +961,7 @@ public final class CarbonDataMergerUtil {
 
     List<String> validSegments = new ArrayList<>();
 
-    if (compactionTypeIUD.equals(CompactionType.IUD_DELETE_DELTA_COMPACTION)) {
+    if (CompactionType.IUD_DELETE_DELTA == compactionTypeIUD) {
       int numberDeleteDeltaFilesThreshold =
           CarbonProperties.getInstance().getNoDeleteDeltaFilesThresholdForIUDCompaction();
       List<String> deleteSegments = new ArrayList<>();
@@ -932,12 +978,10 @@ public final class CarbonDataMergerUtil {
         for (String segName : deleteSegments) {
           List<String> tempSegments = getDeleteDeltaFilesInSeg(segName, segmentUpdateStatusManager,
               numberDeleteDeltaFilesThreshold);
-          for (String tempSeg : tempSegments) {
-            validSegments.add(tempSeg);
-          }
+          validSegments.addAll(tempSegments);
         }
       }
-    } else if (compactionTypeIUD.equals(CompactionType.IUD_UPDDEL_DELTA_COMPACTION)) {
+    } else if (CompactionType.IUD_UPDDEL_DELTA == compactionTypeIUD) {
       int numberUpdateDeltaFilesThreshold =
           CarbonProperties.getInstance().getNoUpdateDeltaFilesThresholdForIUDCompaction();
       for (String seg : Segments) {
@@ -990,9 +1034,7 @@ public final class CarbonDataMergerUtil {
     CarbonFile[] updateDeltaFiles = null;
     Set<String> uniqueBlocks = new HashSet<String>();
 
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
 
     String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", seg);
     CarbonFile segDir =
@@ -1223,7 +1265,7 @@ public final class CarbonDataMergerUtil {
                   .equalsIgnoreCase(carbonDataMergerUtilResult.getSegmentName())) {
 
             tempSegmentUpdateDetails.setDeletedRowsInBlock(origDetails.getDeletedRowsInBlock());
-            tempSegmentUpdateDetails.setStatus(origDetails.getStatus());
+            tempSegmentUpdateDetails.setSegmentStatus(origDetails.getSegmentStatus());
             break;
           }
         }
@@ -1244,8 +1286,7 @@ public final class CarbonDataMergerUtil {
     AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-                    absoluteTableIdentifier.getCarbonTableIdentifier());
+            .getCarbonTablePath(absoluteTableIdentifier);
 
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
 
@@ -1259,7 +1300,7 @@ public final class CarbonDataMergerUtil {
       lockStatus = carbonLock.lockWithRetries();
       if (lockStatus) {
         LOGGER.info(
-                "Acquired lock for table" + table.getDatabaseName() + "." + table.getFactTableName()
+                "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
                         + " for table status updation");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
@@ -1279,18 +1320,18 @@ public final class CarbonDataMergerUtil {
         }
       } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + table
-                .getDatabaseName() + "." + table.getFactTableName());
+                .getDatabaseName() + "." + table.getTableName());
       }
     } finally {
       if (lockStatus) {
         if (carbonLock.unlock()) {
           LOGGER.info(
                  "Table unlocked successfully after table status updation" + table.getDatabaseName()
-                          + "." + table.getFactTableName());
+                          + "." + table.getTableName());
         } else {
           LOGGER.error(
                   "Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
-                          .getFactTableName() + " during table status updation");
+                          .getTableName() + " during table status updation");
         }
       }
     }

@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.format.BlockIndex;
@@ -92,7 +93,7 @@ public class CarbonMetadataUtil {
     return footer;
   }
 
-  private static BlockletIndex getBlockletIndex(
+  public static BlockletIndex getBlockletIndex(
       org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex info) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
 
@@ -233,10 +234,12 @@ public class CarbonMetadataUtil {
    *
    * @param columnCardinality cardinality of each column
    * @param columnSchemaList  list of column present in the table
+   * @param bucketNumber
+   * @param schemaTimeStamp current timestamp of schema
    * @return Index header object
    */
   public static IndexHeader getIndexHeader(int[] columnCardinality,
-      List<ColumnSchema> columnSchemaList, int bucketNumber) {
+      List<ColumnSchema> columnSchemaList, int bucketNumber, long schemaTimeStamp) {
     // create segment info object
     SegmentInfo segmentInfo = new SegmentInfo();
     // set the number of columns
@@ -253,6 +256,8 @@ public class CarbonMetadataUtil {
     indexHeader.setTable_columns(columnSchemaList);
     // set the bucket number
     indexHeader.setBucket_id(bucketNumber);
+    // set the current schema time stamp which will used for deciding the restructured block
+    indexHeader.setSchema_time_stamp(schemaTimeStamp);
     return indexHeader;
   }
 
@@ -281,7 +286,7 @@ public class CarbonMetadataUtil {
     return thriftBlockIndexList;
   }
 
-  private static BlockletInfo3 getBlocletInfo3(
+  public static BlockletInfo3 getBlocletInfo3(
       org.apache.carbondata.core.metadata.blocklet.BlockletInfo blockletInfo) {
     List<Long> dimensionChunkOffsets = blockletInfo.getDimensionChunkOffsets();
     dimensionChunkOffsets.addAll(blockletInfo.getMeasureChunkOffsets());
@@ -340,33 +345,32 @@ public class CarbonMetadataUtil {
     return CarbonMetadataUtil.getDataChunk3(dataChunksList);
   }
 
-  public static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
+  private static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
     ByteBuffer firstBuffer = null;
     ByteBuffer secondBuffer = null;
-    switch (dataType) {
-      case DOUBLE:
-        firstBuffer = ByteBuffer.allocate(8);
-        firstBuffer.put(first);
-        secondBuffer = ByteBuffer.allocate(8);
-        secondBuffer.put(second);
-        firstBuffer.flip();
-        secondBuffer.flip();
-        return (int) (firstBuffer.getDouble() - secondBuffer.getDouble());
-      case LONG:
-      case INT:
-      case SHORT:
-        firstBuffer = ByteBuffer.allocate(8);
-        firstBuffer.put(first);
-        secondBuffer = ByteBuffer.allocate(8);
-        secondBuffer.put(second);
-        firstBuffer.flip();
-        secondBuffer.flip();
-        return (int) (firstBuffer.getLong() - secondBuffer.getLong());
-      case DECIMAL:
-        return DataTypeUtil.byteToBigDecimal(first)
-            .compareTo(DataTypeUtil.byteToBigDecimal(second));
-      default:
-        throw new IllegalArgumentException("Invalid data type");
+    if (dataType == DataTypes.BOOLEAN) {
+      return first[0] - second[0];
+    } else if (dataType == DataTypes.DOUBLE) {
+      firstBuffer = ByteBuffer.allocate(8);
+      firstBuffer.put(first);
+      secondBuffer = ByteBuffer.allocate(8);
+      secondBuffer.put(second);
+      firstBuffer.flip();
+      secondBuffer.flip();
+      return (int) (firstBuffer.getDouble() - secondBuffer.getDouble());
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.INT
+        || dataType == DataTypes.SHORT) {
+      firstBuffer = ByteBuffer.allocate(8);
+      firstBuffer.put(first);
+      secondBuffer = ByteBuffer.allocate(8);
+      secondBuffer.put(second);
+      firstBuffer.flip();
+      secondBuffer.flip();
+      return (int) (firstBuffer.getLong() - secondBuffer.getLong());
+    } else if (DataTypes.isDecimal(dataType)) {
+      return DataTypeUtil.byteToBigDecimal(first).compareTo(DataTypeUtil.byteToBigDecimal(second));
+    } else {
+      throw new IllegalArgumentException("Invalid data type");
     }
   }
 

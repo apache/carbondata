@@ -23,9 +23,11 @@ package org.apache.carbondata.processing.merger;
  * called IUD compaction.
  */
 public enum CompactionType {
-    MINOR_COMPACTION,
-    MAJOR_COMPACTION,
-    IUD_UPDDEL_DELTA_COMPACTION,
-    IUD_DELETE_DELTA_COMPACTION,
+    MINOR,
+    MAJOR,
+    IUD_UPDDEL_DELTA,
+    IUD_DELETE_DELTA,
+    STREAMING,
+    CLOSE_STREAMING,
     NONE
 }

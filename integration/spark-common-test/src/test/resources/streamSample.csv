@@ -1,0 +1,6 @@
+id,name,city,salary,file
+100000001,batch_1,city_1,0.1,school_1:school_11$20
+100000002,batch_2,city_2,0.2,school_2:school_22$30
+100000003,batch_3,city_3,0.3,school_3:school_33$40
+100000004,batch_4,city_4,0.4,school_4:school_44$50
+100000005,batch_5,city_5,0.5,school_5:school_55$60

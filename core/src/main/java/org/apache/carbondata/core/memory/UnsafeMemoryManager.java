@@ -47,7 +47,7 @@ public class UnsafeMemoryManager {
           .getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
               CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT));
     } catch (Exception e) {
-      size = Long.parseLong(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
+      size = Long.parseLong(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
       LOGGER.info("Wrong memory size given, "
           + "so setting default value to " + size);
     }

@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.keygenerator.directdictionary;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,13 +30,13 @@ public class DirectDictionaryKeyGeneratorFactoryUnitTest {
 
     int expectedResult = 1;
     DirectDictionaryGenerator result =
-        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.TIMESTAMP);
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.TIMESTAMP);
     assertEquals (expectedResult,result.generateDirectSurrogateKey("TimeStamp"));
   }
 
   @Test public void testGetDirectDictionaryGeneratorReturnNull() throws Exception {
     DirectDictionaryGenerator result =
-        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.ARRAY);
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.STRING);
     Assert.assertNull(result);
   }
 }

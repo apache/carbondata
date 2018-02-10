@@ -19,11 +19,13 @@ package org.apache.spark.util
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.{LongWritable, Text}
+import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkContext, TaskContext}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.{NewHadoopPartition, NewHadoopRDD}
 
-import org.apache.carbondata.processing.csvload.BlockDetails
+import org.apache.carbondata.processing.loading.csvinput.BlockDetails
 
 /*
  * this object use to handle file splits
@@ -37,37 +39,4 @@ object SparkUtil {
     }
   }
 
-  /**
-   * get file splits,return Array[BlockDetails], if file path is empty,then return empty Array
-   *
-   */
-  def getSplits(path: String, sc: SparkContext): Array[BlockDetails] = {
-    val filePath = FileUtils.getPaths(path)
-    if (filePath == null || filePath.isEmpty) {
-      // return a empty block details
-      Array[BlockDetails]()
-    } else {
-      // clone the hadoop configuration
-      val hadoopConfiguration = new Configuration(sc.hadoopConfiguration)
-      // set folder or file
-      hadoopConfiguration.set(FileInputFormat.INPUT_DIR, filePath)
-      hadoopConfiguration.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true")
-      val newHadoopRDD = new NewHadoopRDD[LongWritable, Text](
-        sc,
-        classOf[org.apache.hadoop.mapreduce.lib.input.TextInputFormat],
-        classOf[LongWritable],
-        classOf[Text],
-        hadoopConfiguration)
-      val splits: Array[FileSplit] = newHadoopRDD.getPartitions.map { part =>
-        part.asInstanceOf[NewHadoopPartition].serializableHadoopSplit.value.asInstanceOf[FileSplit]
-      }
-      splits.map { block =>
-        new BlockDetails(block.getPath,
-          block.getStart,
-          block.getLength,
-          block.getLocations
-        )
-      }
-    }
-  }
 }

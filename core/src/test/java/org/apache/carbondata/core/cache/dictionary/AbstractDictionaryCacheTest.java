@@ -30,9 +30,10 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -46,6 +47,8 @@ public class AbstractDictionaryCacheTest {
   protected static final String PROPERTY_FILE_NAME = "carbonTest.properties";
 
   protected CarbonTableIdentifier carbonTableIdentifier;
+
+  protected AbsoluteTableIdentifier absoluteTableIdentifier;
 
   protected String databaseName;
 
@@ -103,10 +106,9 @@ public class AbstractDictionaryCacheTest {
 
   protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
       String columnId) {
-	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.STRING);
-    return new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-        DataType.STRING,
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataTypes.STRING);
+    return new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
+        DataTypes.STRING);
   }
 
   /**
@@ -128,13 +130,12 @@ public class AbstractDictionaryCacheTest {
       throws IOException {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, null);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(),
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType());
     CarbonDictionaryWriter carbonDictionaryWriter =
-        new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
+        new CarbonDictionaryWriterImpl(dictionaryColumnUniqueIdentifier);
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     CarbonUtil.checkAndCreateFolder(carbonTablePath.getMetadataDirectoryPath());
     List<byte[]> valueList = convertStringListToByteArray(data);
     try {

@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.scan.expression.conditional;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -43,7 +44,7 @@ public class LessThanExpression extends BinaryConditionalExpression {
     boolean result = false;
 
     if (elRes.isNull() || erRes.isNull()) {
-      elRes.set(DataType.BOOLEAN, false);
+      elRes.set(DataTypes.BOOLEAN, false);
       return elRes;
     }
     if (elRes.getDataType() != erRes.getDataType()) {
@@ -52,34 +53,28 @@ public class LessThanExpression extends BinaryConditionalExpression {
       }
 
     }
-    switch (val1.getDataType()) {
-      case STRING:
-        result = elRes.getString().compareTo(erRes.getString()) < 0;
-        break;
-      case SHORT:
-        result = elRes.getShort() < (erRes.getShort());
-        break;
-      case INT:
-        result = elRes.getInt() < (erRes.getInt());
-        break;
-      case DOUBLE:
-        result = elRes.getDouble() < (erRes.getDouble());
-        break;
-      case DATE:
-      case TIMESTAMP:
-        result = elRes.getTime() < (erRes.getTime());
-        break;
-      case LONG:
-        result = elRes.getLong() < (erRes.getLong());
-        break;
-      case DECIMAL:
-        result = elRes.getDecimal().compareTo(erRes.getDecimal()) < 0;
-        break;
-      default:
-        throw new FilterUnsupportedException(
-            "DataType: " + val1.getDataType() + " not supported for the filter expression");
+    DataType dataType = val1.getDataType();
+    if (dataType == DataTypes.BOOLEAN) {
+      result = elRes.getBoolean().compareTo(erRes.getBoolean()) < 0;
+    } else if (dataType == DataTypes.STRING) {
+      result = elRes.getString().compareTo(erRes.getString()) < 0;
+    } else if (dataType == DataTypes.SHORT) {
+      result = elRes.getShort() < (erRes.getShort());
+    } else if (dataType == DataTypes.INT) {
+      result = elRes.getInt() < (erRes.getInt());
+    } else if (dataType == DataTypes.DOUBLE) {
+      result = elRes.getDouble() < (erRes.getDouble());
+    } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+      result = elRes.getTime() < (erRes.getTime());
+    } else if (dataType == DataTypes.LONG) {
+      result = elRes.getLong() < (erRes.getLong());
+    } else if (DataTypes.isDecimal(dataType)) {
+      result = elRes.getDecimal().compareTo(erRes.getDecimal()) < 0;
+    } else {
+      throw new FilterUnsupportedException("DataType: " + val1.getDataType() +
+          " not supported for the filter expression");
     }
-    val1.set(DataType.BOOLEAN, result);
+    val1.set(DataTypes.BOOLEAN, result);
     return val1;
   }
 

@@ -58,6 +58,16 @@ public final class CarbonMetadata {
   }
 
   /**
+   * removed the table information
+   *
+   * @param databaseName
+   * @param tableName
+   */
+  public void removeTable(String databaseName, String tableName) {
+    removeTable(CarbonTable.buildUniqueName(databaseName, tableName));
+  }
+
+  /**
    * Below method will be used to set the carbon table
    * This method will be used in executor side as driver will always have
    * updated table so from driver during query execution and data loading
@@ -76,8 +86,8 @@ public final class CarbonMetadata {
    */
   public void loadTableMetadata(TableInfo tableInfo) {
     CarbonTable carbonTable = tableInfoMap.get(convertToLowerCase(tableInfo.getTableUniqueName()));
-    if (null == carbonTable || carbonTable.getTableLastUpdatedTime() < tableInfo
-        .getLastUpdatedTime()) {
+    if (null == carbonTable ||
+        carbonTable.getTableLastUpdatedTime() < tableInfo.getLastUpdatedTime()) {
       carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
       tableInfoMap.put(convertToLowerCase(tableInfo.getTableUniqueName()), carbonTable);
     }
@@ -91,6 +101,17 @@ public final class CarbonMetadata {
    */
   public CarbonTable getCarbonTable(String tableUniqueName) {
     return tableInfoMap.get(convertToLowerCase(tableUniqueName));
+  }
+
+  /**
+   * Below method to get the loaded carbon table
+   *
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  public CarbonTable getCarbonTable(String databaseName, String tableName) {
+    return getCarbonTable(CarbonTable.buildUniqueName(databaseName, tableName));
   }
 
   /**
@@ -120,7 +141,7 @@ public final class CarbonMetadata {
   public CarbonDimension getCarbonDimensionBasedOnColIdentifier(CarbonTable carbonTable,
       String columnIdentifier) {
     List<CarbonDimension> listOfCarbonDims =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     for (CarbonDimension dimension : listOfCarbonDims) {
       if (dimension.getColumnId().equals(columnIdentifier)) {
         return dimension;

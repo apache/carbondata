@@ -16,10 +16,12 @@
  */
 package org.apache.spark.sql.hive
 
-import org.apache.spark.sql.{RuntimeConfig, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, DataFrame, Dataset, RuntimeConfig, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.types.StructType
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema
@@ -27,7 +29,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.processing.merger.TableMeta
+
 
 /**
  * Interface for Carbonmetastore
@@ -42,6 +44,7 @@ trait CarbonMetaStore {
 
   /**
    * Create spark session from paramters.
+   *
    * @param parameters
    * @param absIdentifier
    * @param sparkSession
@@ -52,8 +55,8 @@ trait CarbonMetaStore {
 
 
   def tableExists(
-    table: String,
-    databaseOp: Option[String] = None)(sparkSession: SparkSession): Boolean
+      table: String,
+      databaseOp: Option[String] = None)(sparkSession: SparkSession): Boolean
 
   def tableExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean
 
@@ -66,10 +69,23 @@ trait CarbonMetaStore {
    * @param carbonStorePath
    * @param sparkSession
    */
-  def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
+  def updateTableSchemaForAlter(newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
+      carbonStorePath: String)(sparkSession: SparkSession): String
+
+  /**
+   * This method will overwrite the existing schema and update it with the given details
+   *
+   * @param newTableIdentifier
+   * @param thriftTableInfo
+   * @param carbonStorePath
+   * @param sparkSession
+   */
+  def updateTableSchemaForDataMap(newTableIdentifier: CarbonTableIdentifier,
+      oldTableIdentifier: CarbonTableIdentifier,
+      thriftTableInfo: org.apache.carbondata.format.TableInfo,
       carbonStorePath: String)(sparkSession: SparkSession): String
 
   /**
@@ -77,13 +93,17 @@ trait CarbonMetaStore {
    *
    * @param carbonTableIdentifier
    * @param thriftTableInfo
-   * @param tablePath
+   * @param absoluteTableIdentifier
    * @param sparkSession
    */
-  def revertTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
+  def revertTableSchemaInAlterFailure(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      tablePath: String)
+      absoluteTableIdentifier: AbsoluteTableIdentifier)
     (sparkSession: SparkSession): String
+
+
+  def revertTableSchemaForPreAggCreationFailure(absoluteTableIdentifier: AbsoluteTableIdentifier,
+      thriftTableInfo: org.apache.carbondata.format.TableInfo)(sparkSession: SparkSession): String
 
   /**
    * Prepare Thrift Schema from wrapper TableInfo and write to disk
@@ -92,11 +112,12 @@ trait CarbonMetaStore {
 
   /**
    * Generates schema string to save it in hive metastore
+   *
    * @param tableInfo
    * @return
    */
   def generateTableSchemaString(tableInfo: schema.table.TableInfo,
-      tablePath: String): String
+      absoluteTableIdentifier: AbsoluteTableIdentifier): String
 
   /**
    * This method will remove the table meta from catalog metadata array
@@ -111,33 +132,60 @@ trait CarbonMetaStore {
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean
 
-  def dropTable(tablePath: String, tableIdentifier: TableIdentifier)
+  def dropTable(tableIdentifier: AbsoluteTableIdentifier)
     (sparkSession: SparkSession)
 
-  def updateAndTouchSchemasUpdatedTime(basePath: String)
+  def updateAndTouchSchemasUpdatedTime()
 
-  def checkSchemasModifiedTimeAndReloadTables(storePath: String)
+  def checkSchemasModifiedTimeAndReloadTable(tableIdentifier: TableIdentifier): Boolean
 
-  def isReadFromHiveMetaStore : Boolean
+  def isReadFromHiveMetaStore: Boolean
 
   def listAllTables(sparkSession: SparkSession): Seq[CarbonTable]
 
   def getThriftTableInfo(tablePath: CarbonTablePath)(sparkSession: SparkSession): TableInfo
 
-  def getTableFromMetadataCache(database: String, tableName: String): Option[TableMeta]
+  def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable]
 
+  /**
+   * Method will be used to retrieve or create carbon data source relation
+   *
+   * @param sparkSession
+   * @param tableIdentifier
+   * @return
+   */
+  def createCarbonDataSourceHadoopRelation(
+      sparkSession: SparkSession,
+      tableIdentifier: TableIdentifier): CarbonDatasourceHadoopRelation
+
+  /**
+   * Method will be used retrieve the schema from unresolved relation
+   *
+   * @param sparkSession
+   * @param query
+   * @return
+   */
+  def getSchemaFromUnresolvedRelation(
+      sparkSession: SparkSession,
+      query: LogicalPlan): StructType = {
+    val df: DataFrame = Dataset.ofRows(sparkSession, query)
+    df.schema
+  }
 }
-
 /**
  * Factory for Carbon metastore
  */
 object CarbonMetaStoreFactory {
 
+  val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.hive.CarbonMetaStoreFactory")
+
   def createCarbonMetaStore(conf: RuntimeConfig): CarbonMetaStore = {
     val readSchemaFromHiveMetaStore = readSchemaFromHive(conf)
     if (readSchemaFromHiveMetaStore) {
+      LOGGER.audit("Hive based carbon metastore is enabled")
       new CarbonHiveMetaStore()
     } else {
+      LOGGER.audit("File based carbon metastore is enabled")
       new CarbonFileMetastore()
     }
   }

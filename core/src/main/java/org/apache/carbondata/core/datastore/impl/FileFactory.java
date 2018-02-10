@@ -17,35 +17,32 @@
 
 package org.apache.carbondata.core.datastore.impl;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.zip.GZIPInputStream;
+import java.lang.reflect.Method;
+import java.nio.channels.FileChannel;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.filesystem.*;
-import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.compress.BZip2Codec;
-import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.hadoop.io.compress.CompressionCodecFactory;
-import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.fs.permission.FsPermission;
 
 public final class FileFactory {
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(FileFactory.class.getName());
   private static Configuration configuration = null;
 
   static {
@@ -53,6 +50,10 @@ public final class FileFactory {
     configuration.addResource(new Path("../core-default.xml"));
   }
 
+  private static FileTypeInerface fileFileTypeInerface = new DefaultFileTypeProvider();
+  public static void setFileTypeInerface(FileTypeInerface fileTypeInerface) {
+    fileFileTypeInerface = fileTypeInerface;
+  }
   private FileFactory() {
 
   }
@@ -62,48 +63,34 @@ public final class FileFactory {
   }
 
   public static FileHolder getFileHolder(FileType fileType) {
-    switch (fileType) {
-      case LOCAL:
-        return new FileHolderImpl();
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        return new DFSFileHolderImpl();
-      default:
-        return new FileHolderImpl();
-    }
+    return fileFileTypeInerface.getFileHolder(fileType);
   }
 
   public static FileType getFileType(String path) {
-    if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+    String lowerPath = path.toLowerCase();
+    if (lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
       return FileType.HDFS;
-    }
-    else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+    } else if (lowerPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
       return FileType.ALLUXIO;
-    }
-    else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+    } else if (lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
       return FileType.VIEWFS;
+    } else if (lowerPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      return FileType.S3;
     }
     return FileType.LOCAL;
   }
 
   public static CarbonFile getCarbonFile(String path) {
-    return getCarbonFile(path, getFileType(path));
+    return fileFileTypeInerface.getCarbonFile(path, getFileType(path));
   }
-
   public static CarbonFile getCarbonFile(String path, FileType fileType) {
-    switch (fileType) {
-      case LOCAL:
-        return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
-      case HDFS:
-        return new HDFSCarbonFile(path);
-      case ALLUXIO:
-        return new AlluxioCarbonFile(path);
-      case VIEWFS:
-        return new ViewFSCarbonFile(path);
-      default:
-        return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
-    }
+    return fileFileTypeInerface.getCarbonFile(path, fileType);
+  }
+  public static CarbonFile getCarbonFile(String path, FileType fileType,
+      Configuration hadoopConf) {
+    return fileFileTypeInerface.getCarbonFile(path, fileType, hadoopConf);
   }
 
   public static DataInputStream getDataInputStream(String path, FileType fileType)
@@ -113,49 +100,26 @@ public final class FileFactory {
 
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
       throws IOException {
-    path = path.replace("\\", "/");
-    boolean gzip = path.endsWith(".gz");
-    boolean bzip2 = path.endsWith(".bz2");
-    InputStream stream;
-    switch (fileType) {
-      case LOCAL:
-        path = getUpdatedFilePath(path, fileType);
-        if (gzip) {
-          stream = new GZIPInputStream(new FileInputStream(path));
-        } else if (bzip2) {
-          stream = new BZip2CompressorInputStream(new FileInputStream(path));
-        } else {
-          stream = new FileInputStream(path);
-        }
-        break;
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
-        if (bufferSize == -1) {
-          stream = fs.open(pt);
-        } else {
-          stream = fs.open(pt, bufferSize);
-        }
-        String codecName = null;
-        if (gzip) {
-          codecName = GzipCodec.class.getName();
-        } else if (bzip2) {
-          codecName = BZip2Codec.class.getName();
-        }
-        if (null != codecName) {
-          CompressionCodecFactory ccf = new CompressionCodecFactory(configuration);
-          CompressionCodec codec = ccf.getCodecByClassName(codecName);
-          stream = codec.createInputStream(stream);
-        }
-        break;
-      default:
-        throw new UnsupportedOperationException("unsupported file system");
-    }
-    return new DataInputStream(new BufferedInputStream(stream));
+    return getDataInputStream(path, fileType, bufferSize, configuration);
+  }
+  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
+      Configuration configuration) throws IOException {
+    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, configuration);
   }
 
+  /**
+   * get data input stream
+   * @param path
+   * @param fileType
+   * @param bufferSize
+   * @param compressorName name of compressor to read this file
+   * @return data input stream
+   * @throws IOException
+   */
+  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
+      String compressorName) throws IOException {
+    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, compressorName);
+  }
   /**
    * return the datainputStream which is seek to the offset of file
    *
@@ -168,100 +132,37 @@ public final class FileFactory {
    */
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
       long offset) throws IOException {
-    path = path.replace("\\", "/");
-    switch (fileType) {
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
-        FSDataInputStream stream = fs.open(pt, bufferSize);
-        stream.seek(offset);
-        return new DataInputStream(new BufferedInputStream(stream));
-      default:
-        path = getUpdatedFilePath(path, fileType);
-        FileInputStream fis = new FileInputStream(path);
-        long actualSkipSize = 0;
-        long skipSize = offset;
-        while (actualSkipSize != offset) {
-          actualSkipSize += fis.skip(skipSize);
-          skipSize = skipSize - actualSkipSize;
-        }
-        return new DataInputStream(new BufferedInputStream(fis));
-    }
+    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, offset);
   }
 
   public static DataOutputStream getDataOutputStream(String path, FileType fileType)
       throws IOException {
-    path = path.replace("\\", "/");
-    switch (fileType) {
-      case LOCAL:
-        return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
-        return fs.create(pt, true);
-      default:
-        return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
-    }
+    return getCarbonFile(path).getDataOutputStream(path, fileType);
   }
 
   public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
       boolean append) throws IOException {
-    path = path.replace("\\", "/");
-    switch (fileType) {
-      case LOCAL:
-        path = getUpdatedFilePath(path, fileType);
-        return new DataOutputStream(
-            new BufferedOutputStream(new FileOutputStream(path, append), bufferSize));
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
-        FSDataOutputStream stream = null;
-        if (append) {
-          // append to a file only if file already exists else file not found
-          // exception will be thrown by hdfs
-          if (CarbonUtil.isFileExists(path)) {
-            stream = fs.append(pt, bufferSize);
-          } else {
-            stream = fs.create(pt, true, bufferSize);
-          }
-        } else {
-          stream = fs.create(pt, true, bufferSize);
-        }
-        return stream;
-      default:
-        path = getUpdatedFilePath(path, fileType);
-        return new DataOutputStream(
-            new BufferedOutputStream(new FileOutputStream(path), bufferSize));
-    }
+    return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, append);
   }
 
   public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
       long blockSize) throws IOException {
-    path = path.replace("\\", "/");
-    switch (fileType) {
-      case LOCAL:
-        path = getUpdatedFilePath(path, fileType);
-        return new DataOutputStream(
-            new BufferedOutputStream(new FileOutputStream(path), bufferSize));
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
-        return fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
-      default:
-        path = getUpdatedFilePath(path, fileType);
-        return new DataOutputStream(
-            new BufferedOutputStream(new FileOutputStream(path), bufferSize));
-    }
+    return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, blockSize);
   }
 
+  /**
+   * get data out put stream
+   * @param path
+   * @param fileType
+   * @param bufferSize
+   * @param compressorName name of compressor to write this file
+   * @return data out put stram
+   * @throws IOException
+   */
+  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
+      String compressorName) throws IOException {
+    return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, compressorName);
+  }
   /**
    * This method checks the given path exists or not and also is it file or
    * not if the performFileCheck is true
@@ -272,30 +173,7 @@ public final class FileFactory {
    */
   public static boolean isFileExist(String filePath, FileType fileType, boolean performFileCheck)
       throws IOException {
-    filePath = filePath.replace("\\", "/");
-    switch (fileType) {
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path path = new Path(filePath);
-        FileSystem fs = path.getFileSystem(configuration);
-        if (performFileCheck) {
-          return fs.exists(path) && fs.isFile(path);
-        } else {
-          return fs.exists(path);
-        }
-
-      case LOCAL:
-      default:
-        filePath = getUpdatedFilePath(filePath, fileType);
-        File defaultFile = new File(filePath);
-
-        if (performFileCheck) {
-          return defaultFile.exists() && defaultFile.isFile();
-        } else {
-          return defaultFile.exists();
-        }
-    }
+    return getCarbonFile(filePath).isFileExist(filePath, fileType, performFileCheck);
   }
 
   /**
@@ -306,57 +184,21 @@ public final class FileFactory {
    * @param fileType - FileType Local/HDFS
    */
   public static boolean isFileExist(String filePath, FileType fileType) throws IOException {
-    filePath = filePath.replace("\\", "/");
-    switch (fileType) {
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path path = new Path(filePath);
-        FileSystem fs = path.getFileSystem(configuration);
-        return fs.exists(path);
-
-      case LOCAL:
-      default:
-        filePath = getUpdatedFilePath(filePath, fileType);
-        File defaultFile = new File(filePath);
-        return defaultFile.exists();
-    }
+    return getCarbonFile(filePath).isFileExist(filePath, fileType);
   }
 
   public static boolean createNewFile(String filePath, FileType fileType) throws IOException {
-    filePath = filePath.replace("\\", "/");
-    switch (fileType) {
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path path = new Path(filePath);
-        FileSystem fs = path.getFileSystem(configuration);
-        return fs.createNewFile(path);
-
-      case LOCAL:
-      default:
-        filePath = getUpdatedFilePath(filePath, fileType);
-        File file = new File(filePath);
-        return file.createNewFile();
-    }
+    return createNewFile(filePath, fileType, true, null);
   }
-
+  public static boolean createNewFile(
+      String filePath,
+      FileType fileType,
+      boolean doAs,
+      final FsPermission permission) throws IOException {
+    return getCarbonFile(filePath).createNewFile(filePath, fileType, doAs, permission);
+  }
   public static boolean deleteFile(String filePath, FileType fileType) throws IOException {
-    filePath = filePath.replace("\\", "/");
-    switch (fileType) {
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path path = new Path(filePath);
-        FileSystem fs = path.getFileSystem(configuration);
-        return fs.delete(path, true);
-
-      case LOCAL:
-      default:
-        filePath = getUpdatedFilePath(filePath, fileType);
-        File file = new File(filePath);
-        return deleteAllFilesOfDir(file);
-    }
+    return getCarbonFile(filePath).deleteFile(filePath, fileType);
   }
 
   public static boolean deleteAllFilesOfDir(File path) {
@@ -391,20 +233,7 @@ public final class FileFactory {
   }
 
   public static boolean mkdirs(String filePath, FileType fileType) throws IOException {
-    filePath = filePath.replace("\\", "/");
-    switch (fileType) {
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path path = new Path(filePath);
-        FileSystem fs = path.getFileSystem(configuration);
-        return fs.mkdirs(path);
-      case LOCAL:
-      default:
-        filePath = getUpdatedFilePath(filePath, fileType);
-        File file = new File(filePath);
-        return file.mkdirs();
-    }
+    return getCarbonFile(filePath).mkdirs(filePath, fileType);
   }
 
   /**
@@ -417,19 +246,62 @@ public final class FileFactory {
    */
   public static DataOutputStream getDataOutputStreamUsingAppend(String path, FileType fileType)
       throws IOException {
+    return getCarbonFile(path).getDataOutputStreamUsingAppend(path, fileType);
+  }
+
+  /**
+   * this method will truncate the file to the new size.
+   * @param path
+   * @param fileType
+   * @param newSize
+   * @throws IOException
+   */
+  public static void truncateFile(String path, FileType fileType, long newSize) throws IOException {
     path = path.replace("\\", "/");
+    FileChannel fileChannel = null;
     switch (fileType) {
       case LOCAL:
         path = getUpdatedFilePath(path, fileType);
-        return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path, true)));
+        fileChannel = new FileOutputStream(path, true).getChannel();
+        try {
+          fileChannel.truncate(newSize);
+        } finally {
+          if (fileChannel != null) {
+            fileChannel.close();
+          }
+        }
+        return;
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
-        return fs.append(pt);
+      case S3:
+        // if hadoop version >= 2.7, it can call method 'FileSystem.truncate' to truncate file,
+        // this method was new in hadoop 2.7, otherwise use CarbonFile.truncate to do this.
+        try {
+          Path pt = new Path(path);
+          FileSystem fs = pt.getFileSystem(configuration);
+          Method truncateMethod = fs.getClass().getDeclaredMethod("truncate",
+              new Class[]{Path.class, long.class});
+          truncateMethod.invoke(fs, new Object[]{pt, newSize});
+        } catch (NoSuchMethodException e) {
+          LOGGER.error("the version of hadoop is below 2.7, there is no 'truncate'"
+              + " method in FileSystem, It needs to use 'CarbonFile.truncate'.");
+          CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
+          carbonFile.truncate(path, newSize);
+        } catch (Exception e) {
+          LOGGER.error("Other exception occurred while truncating the file " + e.getMessage());
+        }
+        return;
       default:
-        return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+        fileChannel = new FileOutputStream(path, true).getChannel();
+        try {
+          fileChannel.truncate(newSize);
+        } finally {
+          if (fileChannel != null) {
+            fileChannel.close();
+          }
+        }
+        return;
     }
   }
 
@@ -443,28 +315,11 @@ public final class FileFactory {
    * @throws IOException
    */
   public static boolean createNewLockFile(String filePath, FileType fileType) throws IOException {
-    filePath = filePath.replace("\\", "/");
-    switch (fileType) {
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path path = new Path(filePath);
-        FileSystem fs = path.getFileSystem(configuration);
-        if (fs.createNewFile(path)) {
-          fs.deleteOnExit(path);
-          return true;
-        }
-        return false;
-      case LOCAL:
-      default:
-        filePath = getUpdatedFilePath(filePath, fileType);
-        File file = new File(filePath);
-        return file.createNewFile();
-    }
+    return getCarbonFile(filePath).createNewLockFile(filePath, fileType);
   }
 
   public enum FileType {
-    LOCAL, HDFS, ALLUXIO, VIEWFS
+    LOCAL, HDFS, ALLUXIO, VIEWFS, S3
   }
 
   /**
@@ -476,11 +331,12 @@ public final class FileFactory {
    * @param fileType
    * @return updated file path without url for local
    */
-  private static String getUpdatedFilePath(String filePath, FileType fileType) {
+  public static String getUpdatedFilePath(String filePath, FileType fileType) {
     switch (fileType) {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         return filePath;
       case LOCAL:
       default:
@@ -529,6 +385,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.getContentSummary(path).getLength();
@@ -559,6 +416,41 @@ public final class FileFactory {
    */
   public static FileSystem getFileSystem(Path path) throws IOException {
     return path.getFileSystem(configuration);
+  }
+
+
+  public static void createDirectoryAndSetPermission(String directoryPath, FsPermission permission)
+      throws IOException {
+    FileFactory.FileType fileType = FileFactory.getFileType(directoryPath);
+    switch (fileType) {
+      case HDFS:
+      case VIEWFS:
+        try {
+          Path path = new Path(directoryPath);
+          FileSystem fs = path.getFileSystem(FileFactory.configuration);
+          if (!fs.exists(path)) {
+            fs.mkdirs(path);
+            fs.setPermission(path, permission);
+          }
+        } catch (IOException e) {
+          LOGGER.error("Exception occurred : " + e.getMessage());
+          throw e;
+        }
+        return;
+      case LOCAL:
+      default:
+        directoryPath = FileFactory.getUpdatedFilePath(directoryPath, fileType);
+        File file = new File(directoryPath);
+        if (!file.mkdirs()) {
+          LOGGER.error(" Failed to create directory path " + directoryPath);
+        }
+
+    }
+  }
+
+  public static void setPermission(String directoryPath, FsPermission permission, String username,
+      String group) throws IOException {
+    getCarbonFile(directoryPath).setPermission(directoryPath, permission, username, group);
   }
 
 }

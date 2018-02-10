@@ -25,15 +25,15 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Partition, SparkContext}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.execution.command.CarbonMergerMapping
 
-import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
-import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.MergeResult
 
 /**
@@ -53,27 +53,21 @@ class CarbonIUDMergerRDD[K, V](
 
   override def getPartitions: Array[Partition] = {
     val startTime = System.currentTimeMillis()
-    val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(
-      hdfsStoreLocation, new CarbonTableIdentifier(databaseName, factTableName, tableId)
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
+      tablePath, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
     val jobConf: JobConf = new JobConf(new Configuration)
+    SparkHadoopUtil.get.addCredentials(jobConf)
     val job: Job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
-    var defaultParallelism = sparkContext.defaultParallelism
-    val result = new util.ArrayList[Partition](defaultParallelism)
-
-    // mapping of the node and block list.
-    var nodeMapping: util.Map[String, util.List[Distributable]] = new
-        util.HashMap[String, util.List[Distributable]]
-
-    var noOfBlocks = 0
-
-    val taskInfoList = new util.ArrayList[Distributable]
-
-    var blocksOfLastSegment: List[TableBlockInfo] = null
+    val defaultParallelism = sparkContext.defaultParallelism
+    val noOfBlocks = 0
 
     CarbonTableInputFormat.setSegmentsToAccess(
       job.getConfiguration, carbonMergerMapping.validSegments.toList.asJava)
+    CarbonTableInputFormat.setTableInfo(
+      job.getConfiguration,
+      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)
 
     // get splits
     val splits = format.getSplits(job)
@@ -90,25 +84,22 @@ class CarbonIUDMergerRDD[K, V](
     val updateStatusManager = carbonLoadModel.getSegmentUpdateStatusManager
 
     // make one spark partition for one segment
-    val resultSplits = splitsGroupedMySegment.map(entry => {
+    val resultSplits = splitsGroupedMySegment.map { entry =>
       val (segName, splits) = (entry._1, entry._2)
-      val invalidBlocks = updateStatusManager.getInvalidBlockList(segName)
-      val validSplits = splits.filter( inputSplit =>
+      val validSplits = splits.filter { inputSplit =>
         CarbonDataMergerUtil
           .checkUpdateDeltaMatchBlock(segName, inputSplit.getBlockPath, updateStatusManager)
-      )
+      }
 
-      if (!validSplits.isEmpty) {
-        val locations = validSplits(0).getLocations
+      if (validSplits.nonEmpty) {
+        val locations = validSplits.head.getLocations
         i += 1
         new CarbonSparkPartition(id, i,
-          new CarbonMultiBlockSplit(absoluteTableIdentifier, validSplits.asJava, locations))
-      }
-      else {
+          new CarbonMultiBlockSplit(validSplits.asJava, locations))
+      } else {
         null
       }
-    }
-    ).filter( _ != null)
+    }.filter( _ != null)
 
     // max segment cardinality is calculated in executor for each segment
     carbonMergerMapping.maxSegmentColCardinality = null
@@ -123,9 +114,8 @@ class CarbonIUDMergerRDD[K, V](
                                                             .currentTimeMillis() - startTime)
     )
     resultSplits.foreach { partition =>
-      val cp = partition.asInstanceOf[CarbonSparkPartition]
-      logInfo(s"Node : " + cp.multiBlockSplit.getLocations.toSeq.mkString(",")
-              + ", No.Of Blocks : " + cp.multiBlockSplit.getLength
+      logInfo(s"Node : " + partition.multiBlockSplit.getLocations.toSeq.mkString(",")
+              + ", No.Of Blocks : " + partition.multiBlockSplit.getLength
       )
     }
     resultSplits.toArray

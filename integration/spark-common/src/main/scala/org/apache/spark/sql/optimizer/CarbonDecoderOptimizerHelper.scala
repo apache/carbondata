@@ -22,8 +22,10 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
@@ -41,6 +43,9 @@ case class CarbonDictionaryTempDecoder(
     isOuter: Boolean = false,
     aliasMap: Option[CarbonAliasDecoderRelation] = None) extends UnaryNode {
   var processed = false
+  // In case of join plan and project does not include the notDecode attributes then we should not
+  // carry forward to above plan.
+  val notDecodeCarryForward = new util.HashSet[AttributeReferenceWrapper]()
 
   def getAttrsNotDecode: util.Set[Attribute] = {
     val set = new util.HashSet[Attribute]()
@@ -84,7 +89,17 @@ class CarbonDecoderProcessor {
         }
         nodeList.add(ArrayCarbonNode(nodeListSeq))
       case e: UnaryNode => process(e.child, nodeList)
-      case i: InsertIntoTable => process(i.child, nodeList)
+      case i: InsertIntoTable =>
+        val version = SPARK_VERSION
+
+        val child: LogicalPlan = if (version.startsWith("2.1")) {
+          CarbonReflectionUtils.getField("child", i).asInstanceOf[LogicalPlan]
+        } else if (version.startsWith("2.2")) {
+          CarbonReflectionUtils.getField("query", i).asInstanceOf[LogicalPlan]
+        } else {
+          throw new UnsupportedOperationException(s"Spark version $version is not supported")
+        }
+        process(child, nodeList)
       case _ =>
     }
   }
@@ -102,6 +117,7 @@ class CarbonDecoderProcessor {
         decoderNotDecode.asScala.foreach(cd.attrsNotDecode.add)
         decoderNotDecode.asScala.foreach(cd.attrList.remove)
         decoderNotDecode.addAll(cd.attrList)
+        cd.notDecodeCarryForward.asScala.foreach(decoderNotDecode.remove)
       case ArrayCarbonNode(children) =>
         children.foreach { child =>
           val notDecode = new util.HashSet[AttributeReferenceWrapper]

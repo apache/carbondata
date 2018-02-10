@@ -22,6 +22,7 @@ import java.util.Date;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
@@ -61,68 +62,64 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
    * Compare
    */
   @Override public int compareTo(CarbonDictionarySortModel o) {
-    switch (dataType) {
-      case SHORT:
-      case INT:
-      case LONG:
-      case DOUBLE:
-
-        Double d1 = null;
-        Double d2 = null;
-        try {
-          d1 = new Double(memberValue);
-        } catch (NumberFormatException e) {
-          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
-            return -1;
-          }
-          return 1;
-        }
-        try {
-          d2 = new Double(o.memberValue);
-        } catch (NumberFormatException e) {
+    if (dataType == DataTypes.SHORT ||
+        dataType == DataTypes.INT ||
+        dataType == DataTypes.LONG ||
+        dataType == DataTypes.DOUBLE) {
+      Double d1 = null;
+      Double d2 = null;
+      try {
+        d1 = new Double(memberValue);
+      } catch (NumberFormatException e) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
           return -1;
         }
-        return d1.compareTo(d2);
-      case DECIMAL:
-        java.math.BigDecimal val1 = null;
-        java.math.BigDecimal val2 = null;
-        try {
-          val1 = new java.math.BigDecimal(memberValue);
-        } catch (NumberFormatException e) {
-          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
-            return -1;
-          }
-          return 1;
-        }
-        try {
-          val2 = new java.math.BigDecimal(o.memberValue);
-        } catch (NumberFormatException e) {
+        return 1;
+      }
+      try {
+        d2 = new Double(o.memberValue);
+      } catch (NumberFormatException e) {
+        return -1;
+      }
+      return d1.compareTo(d2);
+    } else if (DataTypes.isDecimal(dataType)) {
+      java.math.BigDecimal val1 = null;
+      java.math.BigDecimal val2 = null;
+      try {
+        val1 = new java.math.BigDecimal(memberValue);
+      } catch (NumberFormatException e) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
           return -1;
         }
-        return val1.compareTo(val2);
-      case DATE:
-      case TIMESTAMP:
-        String format = CarbonUtil.getFormatFromProperty(dataType);
-        SimpleDateFormat parser = new SimpleDateFormat(format);
-        Date date1 = null;
-        Date date2 = null;
-        try {
-          date1 = parser.parse(memberValue);
-        } catch (ParseException e) {
-          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
-            return -1;
-          }
-          return 1;
-        }
-        try {
-          date2 = parser.parse(o.memberValue);
-        } catch (ParseException e) {
+        return 1;
+      }
+      try {
+        val2 = new java.math.BigDecimal(o.memberValue);
+      } catch (NumberFormatException e) {
+        return -1;
+      }
+      return val1.compareTo(val2);
+    } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+      String format = CarbonUtil.getFormatFromProperty(dataType);
+      SimpleDateFormat parser = new SimpleDateFormat(format);
+      Date date1 = null;
+      Date date2 = null;
+      try {
+        date1 = parser.parse(memberValue);
+      } catch (ParseException e) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
           return -1;
         }
-        return date1.compareTo(date2);
-      case STRING:
-      default:
-        return this.memberValue.compareTo(o.memberValue);
+        return 1;
+      }
+      try {
+        date2 = parser.parse(o.memberValue);
+      } catch (ParseException e) {
+        return -1;
+      }
+      return date1.compareTo(date2);
+    } else {
+      return this.memberValue.compareTo(o.memberValue);
     }
   }
 

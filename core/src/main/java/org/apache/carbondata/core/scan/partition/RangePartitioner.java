@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -50,7 +51,7 @@ public class RangePartitioner implements Partitioner {
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
     numPartitions = values.size();
     bounds = new Object[numPartitions];
-    if (partitionColumnDataType == DataType.STRING) {
+    if (partitionColumnDataType == DataTypes.STRING) {
       for (int i = 0; i < numPartitions; i++) {
         bounds[i] = ByteUtil.toBytes(values.get(i));
       }

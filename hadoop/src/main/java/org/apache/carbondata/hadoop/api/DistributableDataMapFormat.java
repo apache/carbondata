@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
@@ -40,7 +40,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 /**
  * Input format for datamaps, it makes the datamap pruning distributable.
  */
-public class DistributableDataMapFormat extends FileInputFormat<Void, Blocklet> implements
+public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBlocklet> implements
     Serializable {
 
   private static final String FILTER_EXP = "mapreduce.input.distributed.datamap.filter";
@@ -53,12 +53,15 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, Blocklet> 
 
   private String className;
 
+  private List<String> partitions;
+
   public DistributableDataMapFormat(AbsoluteTableIdentifier identifier,
-      String dataMapName, List<String> validSegments, String className) {
+      String dataMapName, List<String> validSegments, List<String> partitions, String className) {
     this.identifier = identifier;
     this.dataMapName = dataMapName;
     this.validSegments = validSegments;
     this.className = className;
+    this.partitions = partitions;
   }
 
   public static void setFilterExp(Configuration configuration, FilterResolverIntf filterExp)
@@ -89,24 +92,22 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, Blocklet> 
   }
 
   @Override
-  public RecordReader<Void, Blocklet> createRecordReader(InputSplit inputSplit,
+  public RecordReader<Void, ExtendedBlocklet> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
-    return new RecordReader<Void, Blocklet>() {
-      private Iterator<Blocklet> blockletIterator;
-      private Blocklet currBlocklet;
+    return new RecordReader<Void, ExtendedBlocklet>() {
+      private Iterator<ExtendedBlocklet> blockletIterator;
+      private ExtendedBlocklet currBlocklet;
 
       @Override
       public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
           throws IOException, InterruptedException {
         DataMapDistributable distributable = (DataMapDistributable)inputSplit;
-        AbsoluteTableIdentifier identifier =
-            AbsoluteTableIdentifier.fromTablePath(distributable.getTablePath());
         TableDataMap dataMap = DataMapStoreManager.getInstance()
             .getDataMap(identifier, distributable.getDataMapName(),
                 distributable.getDataMapFactoryClass());
-        blockletIterator =
-            dataMap.prune(distributable, getFilterExp(taskAttemptContext.getConfiguration()))
-                .iterator();
+        blockletIterator = dataMap.prune(
+            distributable, getFilterExp(taskAttemptContext.getConfiguration()), partitions)
+            .iterator();
       }
 
       @Override
@@ -124,7 +125,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, Blocklet> 
       }
 
       @Override
-      public Blocklet getCurrentValue() throws IOException, InterruptedException {
+      public ExtendedBlocklet getCurrentValue() throws IOException, InterruptedException {
         return currBlocklet;
       }
 

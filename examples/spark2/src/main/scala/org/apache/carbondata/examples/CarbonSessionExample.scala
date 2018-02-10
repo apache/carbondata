@@ -19,34 +19,10 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.spark.sql.SparkSession
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-
 object CarbonSessionExample {
 
   def main(args: Array[String]) {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/examples/spark2/target/store"
-    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target"
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
-
-    import org.apache.spark.sql.CarbonSession._
-    val spark = SparkSession
-      .builder()
-      .master("local")
-      .appName("CarbonSessionExample")
-      .config("spark.sql.warehouse.dir", warehouse)
-      .config("spark.driver.host", "localhost")
-      .getOrCreateCarbonSession(storeLocation)
-
+    val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
     spark.sparkContext.setLogLevel("WARN")
 
     spark.sql("DROP TABLE IF EXISTS carbon_table")
@@ -71,6 +47,8 @@ object CarbonSessionExample {
          | TBLPROPERTIES('SORT_COLUMNS'='', 'DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
+    val rootPath = new File(this.getClass.getResource("/").getPath
+                            + "../../../..").getCanonicalPath
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
 
     // scalastyle:off
@@ -84,9 +62,9 @@ object CarbonSessionExample {
 
     spark.sql(
       s"""
-        | SELECT *
-        | FROM carbon_table
-        | WHERE stringfield = 'spark' AND decimalField > 40
+         | SELECT *
+         | FROM carbon_table
+         | WHERE stringfield = 'spark' AND decimalField > 40
       """.stripMargin).show()
 
     spark.sql(
@@ -112,21 +90,21 @@ object CarbonSessionExample {
 
     spark.sql(
       s"""
-        | SELECT t1.*, t2.*
-        | FROM carbon_table t1, carbon_table t2
-        | WHERE t1.stringField = t2.stringField
+         | SELECT t1.*, t2.*
+         | FROM carbon_table t1, carbon_table t2
+         | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
 
     spark.sql(
       s"""
-        | WITH t1 AS (
-        | SELECT * FROM carbon_table
-        | UNION ALL
-        | SELECT * FROM carbon_table
-        | )
-        | SELECT t1.*, t2.*
-        | FROM t1, carbon_table t2
-        | WHERE t1.stringField = t2.stringField
+         | WITH t1 AS (
+         | SELECT * FROM carbon_table
+         | UNION ALL
+         | SELECT * FROM carbon_table
+         | )
+         | SELECT t1.*, t2.*
+         | FROM t1, carbon_table t2
+         | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
 
     spark.sql(

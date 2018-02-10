@@ -26,7 +26,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 /**
  * The class provides the method to generate dictionary key and getting the actual value from
@@ -43,19 +43,36 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   private String dateFormat;
 
   /**
+   * min value supported for date type column
+   */
+  private static final long MIN_VALUE;
+  /**
+   * MAx value supported for date type column
+   */
+  private static final long MAX_VALUE;
+  /**
    * Logger instance
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DateDirectDictionaryGenerator.class.getName());
 
+  static {
+    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+    df.setTimeZone(TimeZone.getTimeZone("GMT"));
+    long minValue = 0;
+    long maxValue = 0;
+    try {
+      minValue = df.parse("0001-01-01").getTime();
+      maxValue = df.parse("9999-12-31").getTime();
+    } catch (ParseException e) {
+      // the Exception will not occur as constant value is being parsed
+    }
+    MIN_VALUE = minValue;
+    MAX_VALUE = maxValue;
+  }
   public DateDirectDictionaryGenerator(String dateFormat) {
     this.dateFormat = dateFormat;
     initialize();
-  }
-
-  public DateDirectDictionaryGenerator() {
-    this(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
   }
 
   /**
@@ -147,6 +164,12 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   }
 
   private int generateKey(long timeValue) {
+    if (timeValue < MIN_VALUE || timeValue > MAX_VALUE) {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Value for date type column is not in valid range. Value considered as null.");
+      }
+      return 1;
+    }
     return (int) Math.floor((double) timeValue / MILLIS_PER_DAY) + cutOffDate;
   }
 
@@ -159,6 +182,6 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   }
 
   @Override public DataType getReturnType() {
-    return DataType.INT;
+    return DataTypes.INT;
   }
 }

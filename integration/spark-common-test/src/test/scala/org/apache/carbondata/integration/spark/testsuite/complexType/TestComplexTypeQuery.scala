@@ -286,6 +286,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists structusingstructHive")
     sql("drop table if exists structusingarraycarbon")
     sql("drop table if exists structusingarrayhive")
-
+    sql("drop table if exists complex_filter")
+    sql("drop table if exists carbon_table")
   }
 }

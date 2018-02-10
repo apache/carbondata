@@ -22,6 +22,7 @@ import java.util.Arrays;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
@@ -50,6 +51,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
         .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
     ColumnSchema columnSchema = new ColumnSchema();
     columnSchema.setColumnName("empName");
+    columnSchema.setDataType(DataTypes.STRING);
     TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName("TestTable");
     tableSchema.setListOfColumns(Arrays.asList(columnSchema));
@@ -58,7 +60,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
     tableInfo.setTableUniqueName("TestTable");
     tableInfo.setDatabaseName("test");
     String storePath = System.getProperty("java.io.tmpdir") + "/tmp";
-    tableInfo.setStorePath(storePath);
+    tableInfo.setTablePath(storePath + "/test" + "/TestTable");
     carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
     carbonDimension = new CarbonDimension(columnSchema,0,0,0,0,0);
   }
@@ -131,6 +133,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
     //Create required column schema
     ColumnSchema columnSchema = new ColumnSchema();
     columnSchema.setColumnName("empNameCol");
+    columnSchema.setDataType(DataTypes.STRING);
     columnSchema.setColumnUniqueId("empNameCol");
     CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0, 0, 0);
 
@@ -152,7 +155,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
     File dictPath = new File(storePath + "/test/TestTable/Metadata/");
     System.out.print(dictPath.mkdirs());
 
-    tableInfo.setStorePath(storePath);
+    tableInfo.setTablePath(storePath + "/test" + "/TestTable");
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
 
     // Add the table to metadata

@@ -76,14 +76,12 @@ public class CarbondataRecordSet implements RecordSet {
     try {
 
       readSupport
-          .initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
+          .initialize(queryModel.getProjectionColumns(), queryModel.getTable());
       CarbonIterator iterator = queryExecutor.execute(queryModel);
       CarbonVectorizedRecordReader vectorReader =
           new CarbonVectorizedRecordReader(queryExecutor, queryModel,
               (AbstractDetailQueryResultIterator) iterator);
-      RecordCursor rc =
-          new CarbondataRecordCursor(readSupport, vectorReader, columns, split);
-      return rc;
+      return new CarbondataRecordCursor(readSupport, vectorReader, columns, split);
     } catch (QueryExecutionException e) {
       throw new RuntimeException(e.getMessage(), e);
     } catch (Exception ex) {

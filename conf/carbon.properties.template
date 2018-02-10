@@ -107,10 +107,6 @@ carbon.enable.quick.filter=false
 ##Min max is feature added to enhance query performance. To disable this feature, make it false.
 #carbon.enableMinMax=true
 ######## Global Dictionary Configurations ########
-##To enable/disable identify high cardinality during first data loading
-#high.cardinality.identify.enable=true
-##threshold to identify whether high cardinality column
-#high.cardinality.threshold=1000000
 ##Percentage to identify whether column cardinality is more than configured percent of total row count
 #high.cardinality.row.count.percentage=80
 ##The property to set the date to be considered as start date for calculating the timestamp.

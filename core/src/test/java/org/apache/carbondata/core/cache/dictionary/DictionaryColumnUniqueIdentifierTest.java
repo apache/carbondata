@@ -16,20 +16,22 @@
  */
 package org.apache.carbondata.core.cache.dictionary;
 
-import mockit.Mock;
-import mockit.MockUp;
-
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.HashMap;
 import java.util.Map;
 
-import static junit.framework.TestCase.*;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+
+import mockit.Mock;
+import mockit.MockUp;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 
 public class DictionaryColumnUniqueIdentifierTest {
 
@@ -42,22 +44,26 @@ public class DictionaryColumnUniqueIdentifierTest {
         new CarbonTableIdentifier("testDatabase", "testTable", "1");
     CarbonTableIdentifier carbonTableIdentifier2 =
         new CarbonTableIdentifier("testDatabase", "testTable", "2");
+    AbsoluteTableIdentifier absoluteTableIdentifier1 = AbsoluteTableIdentifier.from("storepath",
+        carbonTableIdentifier1);
+    AbsoluteTableIdentifier absoluteTableIdentifier2 = AbsoluteTableIdentifier.from("storepath",
+        carbonTableIdentifier2);
     Map<String, String> properties = new HashMap<>();
-    ColumnIdentifier columnIdentifier = new ColumnIdentifier("2", properties, DataType.STRING);
-    ColumnIdentifier columnIdentifier2 = new ColumnIdentifier("1", properties, DataType.INT);
+    ColumnIdentifier columnIdentifier = new ColumnIdentifier("2", properties, DataTypes.STRING);
+    ColumnIdentifier columnIdentifier2 = new ColumnIdentifier("1", properties, DataTypes.INT);
     dictionaryColumnUniqueIdentifier1 =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier1, columnIdentifier,
-            DataType.MAP, null);
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier1, columnIdentifier,
+            DataTypes.STRING, null);
     dictionaryColumnUniqueIdentifier2 =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier2,
-            DataType.MAP, null);
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier2, columnIdentifier2,
+            DataTypes.STRING, null);
     dictionaryColumnUniqueIdentifier3 =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier,
-            DataType.MAP, null);
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier2, columnIdentifier,
+            DataTypes.STRING, null);
   }
 
   @Test public void testToGetDataType() {
-    assertEquals(dictionaryColumnUniqueIdentifier1.getDataType(), DataType.MAP);
+    assertEquals(dictionaryColumnUniqueIdentifier1.getDataType(), DataTypes.STRING);
   }
 
   @Test public void testForEqualsWithDifferentObjectsWithDifferentColumnIdentifier() {
@@ -91,6 +97,6 @@ public class DictionaryColumnUniqueIdentifierTest {
         return 2;
       }
     };
-    assertEquals(dictionaryColumnUniqueIdentifier1.hashCode(), 33);
+    assertEquals(dictionaryColumnUniqueIdentifier1.hashCode(), 937100380);
   }
 }

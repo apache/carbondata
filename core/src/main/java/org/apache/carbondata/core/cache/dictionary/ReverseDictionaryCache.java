@@ -64,11 +64,10 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
 
 
   /**
-   * @param carbonStorePath
    * @param carbonLRUCache
    */
-  public ReverseDictionaryCache(String carbonStorePath, CarbonLRUCache carbonLRUCache) {
-    super(carbonStorePath, carbonLRUCache);
+  public ReverseDictionaryCache(CarbonLRUCache carbonLRUCache) {
+    super(carbonLRUCache);
   }
 
   /**

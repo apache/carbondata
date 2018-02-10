@@ -29,6 +29,7 @@ import junit.framework.TestCase;
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -135,14 +136,14 @@ public class QueryUtilTest extends TestCase {
     int[] dummyArray = { 1, 2, 3, 4, 5 };
     int searchInput = 6;
     boolean result = QueryUtil.searchInArray(dummyArray, searchInput);
-    assert (!result);
+    Assert.assertTrue(!result);
   }
 
   @Test public void testSearchInArrayWithSearchInputPresentInArray() {
     int[] dummyArray = { 1, 2, 3, 4, 5 };
     int searchInput = 1;
     boolean result = QueryUtil.searchInArray(dummyArray, searchInput);
-    assert (result);
+    Assert.assertTrue(result);
   }
 
   @Test public void testGetColumnGroupIdWhenOrdinalValueNotPresentInArrayIndex() {
@@ -218,15 +219,6 @@ public class QueryUtilTest extends TestCase {
     }
     byte[] actualValue = QueryUtil.getSortDimensionIndexes(sortedDimensions, queryDimensions);
     byte[] expectedValue = { 0, 0 };
-    assertArrayEquals(expectedValue, actualValue);
-  }
-
-  @Test public void testGetActualTypeIndex() {
-    List<String> dummyList = new ArrayList<>();
-    dummyList.add("test1");
-    dummyList.add("test2");
-    int[] actualValue = QueryUtil.getActualTypeIndex(dummyList);
-    int[] expectedValue = { 0, 1 };
     assertArrayEquals(expectedValue, actualValue);
   }
 

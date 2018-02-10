@@ -17,16 +17,20 @@
 
 package org.apache.carbondata.spark.vectorreader;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
@@ -57,6 +61,9 @@ import org.apache.spark.sql.types.StructType;
  * carbondata column APIs and fills the data directly into columns.
  */
 class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(VectorizedCarbonRecordReader.class.getName());
 
   private int batchIdx = 0;
 
@@ -115,7 +122,26 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
       iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
     } catch (QueryExecutionException e) {
+      Throwable ext = e;
+      while (ext != null) {
+        if (ext instanceof FileNotFoundException) {
+          throw new InterruptedException(
+              "Insert overwrite may be in progress.Please check " + e.getMessage());
+        }
+        ext = ext.getCause();
+      }
       throw new InterruptedException(e.getMessage());
+    } catch (Exception e) {
+      Throwable ext = e;
+      while (ext != null) {
+        if (ext instanceof FileNotFoundException) {
+          LOGGER.error(e);
+          throw new InterruptedException(
+              "Insert overwrite may be in progress.Please check " + e.getMessage());
+        }
+        ext = ext.getCause();
+      }
+      throw e;
     }
   }
 
@@ -155,7 +181,9 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     if (returnColumnarBatch) {
       int value = columnarBatch.numValidRows();
       rowCount += value;
-      inputMetricsStats.incrementRecordRead((long)value);
+      if (inputMetricsStats != null) {
+        inputMetricsStats.incrementRecordRead((long) value);
+      }
       return columnarBatch;
     }
     rowCount += 1;
@@ -198,28 +226,25 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
             null);
       } else {
         fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
-            CarbonScalaUtil.convertCarbonToSparkDataType(DataType.INT), true, null);
+            CarbonScalaUtil.convertCarbonToSparkDataType(DataTypes.INT), true, null);
       }
     }
 
     for (int i = 0; i < queryMeasures.size(); i++) {
       QueryMeasure msr = queryMeasures.get(i);
-      switch (msr.getMeasure().getDataType()) {
-        case SHORT:
-        case INT:
-        case LONG:
-          fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-              CarbonScalaUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
-              null);
-          break;
-        case DECIMAL:
-          fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-              new DecimalType(msr.getMeasure().getPrecision(),
-                  msr.getMeasure().getScale()), true, null);
-          break;
-        default:
-          fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-              CarbonScalaUtil.convertCarbonToSparkDataType(DataType.DOUBLE), true, null);
+      DataType dataType = msr.getMeasure().getDataType();
+      if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT ||
+          dataType == DataTypes.INT || dataType == DataTypes.LONG) {
+        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
+            CarbonScalaUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
+            null);
+      } else if (DataTypes.isDecimal(dataType)) {
+        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
+            new DecimalType(msr.getMeasure().getPrecision(), msr.getMeasure().getScale()), true,
+            null);
+      } else {
+        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
+            CarbonScalaUtil.convertCarbonToSparkDataType(DataTypes.DOUBLE), true, null);
       }
     }
 

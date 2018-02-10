@@ -103,6 +103,14 @@ public class ColumnGroupDimensionDataChunk extends AbstractDimensionDataChunk {
   }
 
   /**
+   * @param invertedIndex
+   * @return inverted index reverse
+   */
+  @Override public int getInvertedReverseIndex(int invertedIndex) {
+    throw new UnsupportedOperationException("Operation not supported in case of cloumn group");
+  }
+
+  /**
    * @return whether columns where explictly sorted or not
    */
   @Override public boolean isExplicitSorted() {

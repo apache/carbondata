@@ -21,7 +21,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -54,7 +54,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
       // for no dictionary cases
       // 3 cases: is NUll, is Not Null and filter on default value of newly added column
-      if (null == defaultValue && dimension.getDataType() == DataType.STRING) {
+      if (null == defaultValue && dimension.getDataType() == DataTypes.STRING) {
         // default value for case where user gives is Null condition
         defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL
             .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
@@ -76,7 +76,12 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
       if (null != defaultValue) {
         defaultSurrogateValueToCompare++;
       }
-      List<Integer> filterList = filterValues.getFilterList();
+      List<Integer> filterList = null;
+      if (filterValues.isIncludeFilter() && !filterValues.isOptimized()) {
+        filterList = filterValues.getFilterList();
+      } else {
+        filterList = filterValues.getExcludeFilterList();
+      }
       for (Integer filterValue : filterList) {
         if (defaultSurrogateValueToCompare == filterValue) {
           isDefaultValuePresentInFilterValues = true;

@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.core.indexstore.row;
 
-import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
+import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 
 /**
  * It is just a normal row to store data. Implementation classes could be safe and unsafe.
@@ -24,9 +24,9 @@ import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
  */
 public abstract class DataMapRow {
 
-  protected DataMapSchema[] schemas;
+  protected CarbonRowSchema[] schemas;
 
-  public DataMapRow(DataMapSchema[] schemas) {
+  public DataMapRow(CarbonRowSchema[] schemas) {
     this.schemas = schemas;
   }
 

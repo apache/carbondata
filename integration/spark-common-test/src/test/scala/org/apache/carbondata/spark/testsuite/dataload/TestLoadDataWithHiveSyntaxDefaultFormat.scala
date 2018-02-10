@@ -19,19 +19,26 @@ package org.apache.carbondata.spark.testsuite.dataload
 
 import java.io.File
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.common.constants.LoggerAction
 
 /**
   * Test Class for data loading with hive syntax and old syntax
   *
   */
 class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAfterAll {
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
 
   override def beforeAll {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
     sql("drop table if exists escapechar1")
     sql("drop table if exists escapechar2")
     sql("drop table if exists escapechar3")
@@ -681,6 +688,47 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     checkAnswer(sql("select salary from double_test limit 1"),Row(7.756787654567891E23))
   }
 
+  test("test table with specified table path") {
+    val path = "./source"
+    sql("drop table if exists table_path_test")
+    sql(
+      "CREATE table table_path_test (empno string, salary double) STORED BY 'carbondata' " +
+      s"LOCATION '$path'"
+    )
+    sql(
+      s"load data local inpath '$resourcesPath/double.csv' into table table_path_test options" +
+      "('FILEHEADER'='empno,salary')")
+    assert(new File(path).exists())
+    checkAnswer(sql("select salary from table_path_test limit 1"),Row(7.756787654567891E23))
+    sql("drop table table_path_test")
+    assert(! new File(path).exists())
+    assert(intercept[AnalysisException](
+      sql("select salary from table_path_test limit 1"))
+      .message
+      .contains("not found"))
+  }
+
+  test("test table with specified database and table path") {
+    val path = "./source"
+    sql("drop database if exists test cascade")
+    sql("create database if not exists test")
+    sql("CREATE table test.table_path_test (empno string, salary double) " +
+        "STORED BY 'carbondata'" +
+        s"LOCATION '$path'")
+    sql(
+      s"load data local inpath '$resourcesPath/double.csv' into table test.table_path_test options" +
+      "('FILEHEADER'='empno,salary')")
+    assert(new File(path).exists())
+    checkAnswer(sql("select salary from test.table_path_test limit 1"),Row(7.756787654567891E23))
+    sql("drop table test.table_path_test")
+    assert(! new File(path).exists())
+    assert(intercept[AnalysisException](
+      sql("select salary from test.table_path_test limit 1"))
+      .message
+      .contains("not found"))
+    sql("drop database if exists test cascade")
+  }
+
   override def afterAll {
     sql("drop table if exists escapechar1")
     sql("drop table if exists escapechar2")
@@ -708,5 +756,9 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("drop table if exists carbontable1")
     sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
-  }
+    sql("drop table if exists double_test")
+
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)  }
 }

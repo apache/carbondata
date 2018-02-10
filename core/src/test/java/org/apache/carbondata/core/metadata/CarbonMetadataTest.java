@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -48,7 +48,7 @@ public class CarbonMetadataTest {
   @BeforeClass public static void setUp() {
     carbonMetadata = CarbonMetadata.getInstance();
     carbonMetadata.loadTableMetadata(getTableInfo(10000));
-    tableUniqueName = "carbonTestDatabase_carbonTestTable";
+    tableUniqueName = CarbonTable.buildUniqueName("carbonTestDatabase", "carbonTestTable");
   }
 
   @AfterClass public static void tearDown() {
@@ -93,7 +93,7 @@ public class CarbonMetadataTest {
 
   @Test public void testGetCarbonTableReturingProperTableWithProperFactTableName() {
     String expectedResult = "carbonTestTable";
-    assertEquals(expectedResult, carbonMetadata.getCarbonTable(tableUniqueName).getFactTableName());
+    assertEquals(expectedResult, carbonMetadata.getCarbonTable(tableUniqueName).getTableName());
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperTableUniqueName() {
@@ -120,7 +120,7 @@ public class CarbonMetadataTest {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -134,7 +134,7 @@ public class CarbonMetadataTest {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     return dimColumn;
   }
 
@@ -155,7 +155,7 @@ public class CarbonMetadataTest {
     info.setLastUpdatedTime(timeStamp);
     info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
     info.setFactTable(getTableSchema());
-    info.setStorePath("/test/store");
+    info.setTablePath("/test/store/carbonTestDatabase/carbonTestTable");
     return info;
   }
 
@@ -170,7 +170,7 @@ public class CarbonMetadataTest {
     carbonDimensions.add(new CarbonDimension(colSchema1, 1, 1, 2, 1));
     carbonDimensions.add(new CarbonDimension(colSchema2, 2, 2, 2, 2));
     new MockUp<CarbonTable>() {
-      @Mock public String getFactTableName() {
+      @Mock public String getTableName() {
         return "carbonTestTable";
       }
 
@@ -199,7 +199,7 @@ public class CarbonMetadataTest {
     colSchema2.setColumnUniqueId("2");
     carbonChildDimensions.add(new CarbonDimension(colSchema3, 1, 1, 2, 1));
     new MockUp<CarbonTable>() {
-      @Mock public String getFactTableName() {
+      @Mock public String getTableName() {
         return "carbonTestTable";
       }
 
@@ -241,7 +241,7 @@ public class CarbonMetadataTest {
     carbonChildDimensions.add(new CarbonDimension(colSchema2, 1, 1, 2, 1));
 
     new MockUp<CarbonTable>() {
-      @Mock public String getFactTableName() {
+      @Mock public String getTableName() {
         return "carbonTestTable";
       }
 

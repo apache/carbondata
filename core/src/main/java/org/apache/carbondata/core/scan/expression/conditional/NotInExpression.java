@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -51,7 +52,7 @@ public class NotInExpression extends BinaryConditionalExpression {
 
     ExpressionResult leftRsult = left.evaluate(value);
     if (leftRsult.isNull()) {
-      leftRsult.set(DataType.BOOLEAN, false);
+      leftRsult.set(DataTypes.BOOLEAN, false);
       return leftRsult;
     }
 
@@ -62,8 +63,8 @@ public class NotInExpression extends BinaryConditionalExpression {
       for (ExpressionResult exprResVal : rightRsult.getList()) {
 
         if (exprResVal.isNull()) {
-          nullValuePresent = new ExpressionResult(DataType.BOOLEAN, false);
-          leftRsult.set(DataType.BOOLEAN, false);
+          nullValuePresent = new ExpressionResult(DataTypes.BOOLEAN, false);
+          leftRsult.set(DataTypes.BOOLEAN, false);
           return leftRsult;
         }
 
@@ -73,39 +74,33 @@ public class NotInExpression extends BinaryConditionalExpression {
         } else {
           val = exprResVal;
         }
-        switch (val.getDataType()) {
-          case STRING:
-            val = new ExpressionResult(val.getDataType(), exprResVal.getString());
-            break;
-          case SHORT:
-            val = new ExpressionResult(val.getDataType(), exprResVal.getShort());
-            break;
-          case INT:
-            val = new ExpressionResult(val.getDataType(), exprResVal.getInt());
-            break;
-          case DOUBLE:
-            val = new ExpressionResult(val.getDataType(), exprResVal.getDouble());
-            break;
-          case DATE:
-          case TIMESTAMP:
-            val = new ExpressionResult(val.getDataType(), exprResVal.getTime());
-            break;
-          case LONG:
-            val = new ExpressionResult(val.getDataType(), exprResVal.getLong());
-            break;
-          case DECIMAL:
-            val = new ExpressionResult(val.getDataType(), exprResVal.getDecimal());
-            break;
-          default:
-            throw new FilterUnsupportedException(
-                "DataType: " + val.getDataType() + " not supported for the filter expression");
+        DataType dataType = val.getDataType();
+        if (dataType == DataTypes.BOOLEAN) {
+          val = new ExpressionResult(val.getDataType(), exprResVal.getBoolean());
+        } else if (dataType == DataTypes.STRING) {
+          val = new ExpressionResult(val.getDataType(), exprResVal.getString());
+        } else if (dataType == DataTypes.SHORT) {
+          val = new ExpressionResult(val.getDataType(), exprResVal.getShort());
+        } else if (dataType == DataTypes.INT) {
+          val = new ExpressionResult(val.getDataType(), exprResVal.getInt());
+        } else if (dataType == DataTypes.DOUBLE) {
+          val = new ExpressionResult(val.getDataType(), exprResVal.getDouble());
+        } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+          val = new ExpressionResult(val.getDataType(), exprResVal.getTime());
+        } else if (dataType == DataTypes.LONG) {
+          val = new ExpressionResult(val.getDataType(), exprResVal.getLong());
+        } else if (DataTypes.isDecimal(dataType)) {
+          val = new ExpressionResult(val.getDataType(), exprResVal.getDecimal());
+        } else {
+          throw new FilterUnsupportedException(
+              "DataType: " + val.getDataType() + " not supported for the filter expression");
         }
 
         setOfExprResult.add(val);
       }
     }
 
-    leftRsult.set(DataType.BOOLEAN, !setOfExprResult.contains(leftRsult));
+    leftRsult.set(DataTypes.BOOLEAN, !setOfExprResult.contains(leftRsult));
     return leftRsult;
   }
 

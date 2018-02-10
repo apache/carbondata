@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import org.apache.spark.sql.AnalysisException
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
@@ -86,6 +88,16 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
     checkAnswer(
       sql("select ID from exclude_include_t3"), sql("select ID from exclude_include_hive_t3")
     )
+  }
+
+  test("test create external table should fail") {
+    assert(intercept[AnalysisException](
+      sql(
+        """
+          | CREATE EXTERNAL TABLE t1 (id string, value int)
+          | STORED BY 'carbondata'
+        """.stripMargin)
+    ).message.contains("Operation not allowed: CREATE EXTERNAL TABLE"))
   }
 
   override def afterAll {

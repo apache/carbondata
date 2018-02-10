@@ -19,7 +19,8 @@ package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * This class contains all carbon lock utilities
@@ -66,19 +67,42 @@ public class CarbonLockUtil {
    * Given a lock type this method will return a new lock object if not acquired by any other
    * operation
    *
-   * @param identifier
+   * @param absoluteTableIdentifier
    * @param lockType
    * @return
    */
-  public static ICarbonLock getLockObject(CarbonTableIdentifier identifier, String lockType) {
-    ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(identifier, lockType);
+  public static ICarbonLock getLockObject(AbsoluteTableIdentifier absoluteTableIdentifier,
+      String lockType, String errorMsg) {
+    ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, lockType);
     LOGGER.info("Trying to acquire lock: " + carbonLock);
     if (carbonLock.lockWithRetries()) {
       LOGGER.info("Successfully acquired the lock " + carbonLock);
     } else {
-      throw new RuntimeException("Table is locked for updation. Please try after some time");
+      LOGGER.error(errorMsg);
+      throw new RuntimeException(errorMsg);
     }
     return carbonLock;
+  }
+
+  /**
+   * Get and lock with default error message
+   */
+  public static ICarbonLock getLockObject(AbsoluteTableIdentifier identifier, String lockType) {
+    return getLockObject(identifier,
+        lockType,
+        "Acquire table lock failed after retry, please try after some time");
+  }
+
+  /**
+   * Get the value for the property. If NumberFormatException is thrown then return default value.
+   */
+  public static int getLockProperty(String property, int defaultValue) {
+    try {
+      return Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(property));
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
   }
 
 }

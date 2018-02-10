@@ -139,15 +139,24 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   private AbstractScannedResult getNextScannedResult() throws Exception {
     AbstractScannedResult result = null;
-    if (dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get()) {
-      if (future == null) {
-        future = execute();
+    if (blockExecutionInfo.isPrefetchBlocklet()) {
+      if (dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get()) {
+        if (future == null) {
+          future = execute();
+        }
+        result = future.get();
+        nextBlock.set(false);
+        if (dataBlockIterator.hasNext() || nextRead.get()) {
+          nextBlock.set(true);
+          future = execute();
+        }
       }
-      result = future.get();
-      nextBlock.set(false);
-      if (dataBlockIterator.hasNext() || nextRead.get()) {
-        nextBlock.set(true);
-        future = execute();
+    } else {
+      if (dataBlockIterator.hasNext()) {
+        BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
+        if (blocksChunkHolder != null) {
+          result = blockletScanner.scanBlocklet(blocksChunkHolder);
+        }
       }
     }
     return result;

@@ -28,8 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
  * This class handles the file locking in the local file system.
@@ -61,8 +60,6 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   private String lockFile;
 
-  public static final String tmpPath;
-
   private  String lockFilePath;
 
   /**
@@ -71,17 +68,14 @@ public class LocalFileLock extends AbstractCarbonLock {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LocalFileLock.class.getName());
 
-  static {
-    tmpPath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
-        System.getProperty("java.io.tmpdir"));
-  }
+
 
   /**
    * @param lockFileLocation
    * @param lockFile
    */
   public LocalFileLock(String lockFileLocation, String lockFile) {
-    this.location = tmpPath + CarbonCommonConstants.FILE_SEPARATOR + lockFileLocation;
+    this.location = lockFileLocation;
     this.lockFile = lockFile;
     initRetry();
   }
@@ -90,9 +84,8 @@ public class LocalFileLock extends AbstractCarbonLock {
    * @param tableIdentifier
    * @param lockFile
    */
-  public LocalFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
-        .getTableName(), lockFile);
+  public LocalFileLock(AbsoluteTableIdentifier tableIdentifier, String lockFile) {
+    this(tableIdentifier.getTablePath(), lockFile);
     initRetry();
   }
 
@@ -103,8 +96,8 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      if (!FileFactory.isFileExist(location, FileFactory.getFileType(tmpPath))) {
-        FileFactory.mkdirs(location, FileFactory.getFileType(tmpPath));
+      if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
+        FileFactory.mkdirs(location, FileFactory.getFileType(location));
       }
       lockFilePath = location + CarbonCommonConstants.FILE_SEPARATOR +
           lockFile;
@@ -125,7 +118,7 @@ public class LocalFileLock extends AbstractCarbonLock {
         return false;
       }
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.info(e.getMessage());
       return false;
     }
 
@@ -151,7 +144,7 @@ public class LocalFileLock extends AbstractCarbonLock {
           fileOutputStream.close();
           // deleting the lock file after releasing the lock.
           CarbonFile lockFile = FileFactory
-                  .getCarbonFile(lockFilePath, FileFactory.getFileType(lockFilePath));
+              .getCarbonFile(lockFilePath, FileFactory.getFileType(lockFilePath));
           if (!lockFile.exists() || lockFile.delete()) {
             LOGGER.info("Successfully deleted the lock file " + lockFilePath);
           } else {

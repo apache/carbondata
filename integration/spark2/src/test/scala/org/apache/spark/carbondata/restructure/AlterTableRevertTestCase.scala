@@ -24,7 +24,9 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.util.AlterTableUtil
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -38,7 +40,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to revert new added columns on failure") {
-    intercept[RuntimeException] {
+    intercept[ProcessMetaDataException] {
       hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
       sql(
         "Alter table reverttest add columns(newField string) TBLPROPERTIES" +
@@ -51,17 +53,18 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to revert table name on failure") {
-    intercept[RuntimeException] {
+    val exception = intercept[ProcessMetaDataException] {
       new File(TestQueryExecutor.warehouse + "/reverttest_fail").mkdir()
       sql("alter table reverttest rename to reverttest_fail")
       new File(TestQueryExecutor.warehouse + "/reverttest_fail").delete()
     }
     val result = sql("select * from reverttest").count()
     assert(result.equals(1L))
+    sql("drop table if exists reverttest_fail")
   }
 
   test("test to revert drop columns on failure") {
-    intercept[Exception] {
+    intercept[ProcessMetaDataException] {
       hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
       sql("Alter table reverttest drop columns(decimalField)")
       hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
@@ -70,7 +73,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to revert changed datatype on failure") {
-    intercept[Exception] {
+    intercept[ProcessMetaDataException] {
       hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
       sql("Alter table reverttest change intField intfield bigint")
       hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
@@ -80,7 +83,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check if dictionary files are deleted for new column if query fails") {
-    intercept[RuntimeException] {
+    intercept[ProcessMetaDataException] {
       hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
       sql(
         "Alter table reverttest add columns(newField string) TBLPROPERTIES" +
@@ -89,7 +92,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       intercept[AnalysisException] {
         sql("select newField from reverttest")
       }
-      val carbonTable = CarbonMetadata.getInstance.getCarbonTable("default_reverttest")
+      val carbonTable = CarbonMetadata.getInstance.getCarbonTable("default", "reverttest")
 
       assert(new File(carbonTable.getMetaDataFilepath).listFiles().length < 6)
     }
@@ -99,16 +102,18 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     val locks = AlterTableUtil
       .validateTableAndAcquireLock("default", "reverttest", List("meta.lock"))(sqlContext
         .sparkSession)
-    val exception = intercept[RuntimeException] {
+    val exception = intercept[ProcessMetaDataException] {
       sql("alter table reverttest rename to revert")
     }
     AlterTableUtil.releaseLocks(locks)
-    assert(exception.getMessage == "Alter table rename table operation failed: Table is locked for updation. Please try after some time")
+    assert(exception.getMessage.contains(
+      "Alter table rename table operation failed: Acquire table lock failed after retry, please try after some time"))
   }
 
   override def afterAll() {
     hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
     sql("drop table if exists reverttest")
+    sql("drop table if exists reverttest_fail")
   }
 
 }

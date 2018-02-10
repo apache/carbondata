@@ -1,20 +1,18 @@
 <!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more 
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership. 
+    The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with 
+    the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and 
+    limitations under the License.
 -->
 
 # Quick Start
@@ -87,7 +85,8 @@ scala>carbon.sql("CREATE TABLE
 scala>carbon.sql("LOAD DATA INPATH '/path/to/sample.csv'
                   INTO TABLE test_table")
 ```
-**NOTE**: Please provide the real file path of `sample.csv` for the above script.
+**NOTE**: Please provide the real file path of `sample.csv` for the above script. 
+If you get "tablestatus.lock" issue, please refer to [troubleshooting](troubleshooting.md)
 
 ###### Query Data from a Table
 
@@ -97,66 +96,4 @@ scala>carbon.sql("SELECT * FROM test_table").show()
 scala>carbon.sql("SELECT city, avg(age), sum(age)
                   FROM test_table
                   GROUP BY city").show()
-```
-
-## Interactive Analysis with Spark Shell Version 1.6
-
-#### Basics
-
-Start Spark shell by running the following command in the Spark directory:
-
-```
-./bin/spark-shell --jars <carbondata assembly jar path>
-```
-**NOTE**: Assembly jar will be available after [building CarbonData](https://github.com/apache/carbondata/blob/master/build/README.md) and can be copied from `./assembly/target/scala-2.1x/carbondata_xxx.jar`
-
-**NOTE**: In this shell, SparkContext is readily available as `sc`.
-
-* In order to execute the Queries we need to import CarbonContext:
-
-```
-import org.apache.spark.sql.CarbonContext
-```
-
-* Create an instance of CarbonContext in the following manner :
-
-```
-val cc = new CarbonContext(sc, "<hdfs store path>")
-```
-**NOTE**: If running on local machine without hdfs, configure the local machine's store path instead of hdfs store path
-
-#### Executing Queries
-
-###### Creating a Table
-
-```
-scala>cc.sql("CREATE TABLE
-              IF NOT EXISTS test_table (
-                         id string,
-                         name string,
-                         city string,
-                         age Int)
-              STORED BY 'carbondata'")
-```
-To see the table created :
-
-```
-scala>cc.sql("SHOW TABLES").show()
-```
-
-###### Loading Data to a Table
-
-```
-scala>cc.sql("LOAD DATA INPATH 'sample.csv file path'
-              INTO TABLE test_table")
-```
-**NOTE**: Please provide the real file path of `sample.csv` for the above script.
-
-###### Querying Data from a Table
-
-```
-scala>cc.sql("SELECT * FROM test_table").show()
-scala>cc.sql("SELECT city, avg(age), sum(age)
-              FROM test_table
-              GROUP BY city").show()
 ```

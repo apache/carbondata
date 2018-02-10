@@ -21,9 +21,8 @@ import java.util.List;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
-import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.events.Event;
 
 /**
  * Interface for datamap factory, it is responsible for creating the datamap.
@@ -46,9 +45,9 @@ public interface DataMapFactory {
   List<DataMap> getDataMaps(String segmentId) throws IOException;
 
   /**
-   * Get datamap for distributable object.
+   * Get datamaps for distributable object.
    */
-  DataMap getDataMap(DataMapDistributable distributable);
+  List<DataMap> getDataMaps(DataMapDistributable distributable) throws IOException;
 
   /**
    * Get all distributable objects of a segmentid
@@ -60,7 +59,7 @@ public interface DataMapFactory {
    *
    * @param event
    */
-  void fireEvent(ChangeEvent event);
+  void fireEvent(Event event);
 
   /**
    * Clears datamap of the segment

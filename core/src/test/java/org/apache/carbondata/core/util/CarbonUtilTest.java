@@ -39,6 +39,7 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -49,6 +50,7 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -308,8 +310,12 @@ public class CarbonUtilTest {
 
   @Test public void testToGetCardinalityFromLevelMetadataFileForInvalidPath()
       throws IOException, InterruptedException {
-    int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile("");
-    assertEquals(cardinality, null);
+    try {
+      int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile("");
+      assertTrue(false);
+    } catch (Exception e) {
+      assertTrue(true);
+    }
   }
 
   @Test public void testToUnescapeChar() {
@@ -507,14 +513,14 @@ public class CarbonUtilTest {
   }
 
   @Test public void testForHasDataTypes() {
-    DataType[] dataTypes = { DataType.DECIMAL, DataType.BOOLEAN, DataType.INT };
-    assertTrue(CarbonUtil.hasDataType(DataType.BOOLEAN, dataTypes));
-    assertTrue(!CarbonUtil.hasDataType(DataType.DATE, dataTypes));
+    DataType[] dataTypes = {DataTypes.createDefaultDecimalType(), DataTypes.BOOLEAN, DataTypes.INT };
+    assertTrue(CarbonUtil.hasDataType(DataTypes.BOOLEAN, dataTypes));
+    assertTrue(!CarbonUtil.hasDataType(DataTypes.DATE, dataTypes));
   }
 
   @Test public void testForHasComplexDataTypes() {
-    assertTrue(CarbonUtil.hasComplexDataType(DataType.ARRAY));
-    assertTrue(!CarbonUtil.hasComplexDataType(DataType.DATE));
+    assertTrue(DataTypes.createDefaultArrayType().isComplexType());
+    assertTrue(!DataTypes.DATE.isComplexType());
   }
 
   @Test public void testToGetDictionaryEncodingArray() {
@@ -575,11 +581,11 @@ public class CarbonUtilTest {
     ColumnSchema column1Schema = new ColumnSchema();
     ColumnSchema column2Schema = new ColumnSchema();
     column1Schema.setColumnName("Column1");
-    column1Schema.setDataType(DataType.DATE);
+    column1Schema.setDataType(DataTypes.DATE);
     column1.setDimension(new CarbonDimension(column1Schema, 1, 1, 1, 1));
 
     column2Schema.setColumnName("Column2");
-    column2Schema.setDataType(DataType.ARRAY);
+    column2Schema.setDataType(DataTypes.createDefaultArrayType());
     column2.setDimension(new CarbonDimension(column2Schema, 1, 1, 1, 1));
 
     QueryDimension[] queryDimensions = { column1, column2 };
@@ -711,13 +717,13 @@ public class CarbonUtilTest {
     List<String> list = new ArrayList<>();
     list.add("1");
     list.add("2");
-    String segments = CarbonUtil.getSegmentString(list);
+    String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "1,2");
   }
 
   @Test public void testToGetSegmentStringWithEmptySegmentList() {
     List<String> list = new ArrayList<>();
-    String segments = CarbonUtil.getSegmentString(list);
+    String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "");
   }
 
@@ -1007,36 +1013,82 @@ public class CarbonUtilTest {
   public void testSplitSchemaStringToMapWithLessThanSplitLen() {
     String schema = generateString(399);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 2);
+    Assert.assertTrue(map.size() == 2);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   @Test
   public void testSplitSchemaStringToMapWithEqualThanSplitLen() {
     String schema = generateString(4000);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 2);
+    Assert.assertTrue(map.size() == 2);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   @Test
   public void testSplitSchemaStringToMapWithMoreThanSplitLen() {
     String schema = generateString(7999);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 3);
+    Assert.assertTrue(map.size() == 3);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   @Test
   public void testSplitSchemaStringToMapWithMultiplesOfSplitLen() {
     String schema = generateString(12000);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 4);
+    Assert.assertTrue(map.size() == 4);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
+  }
+
+  @Test
+  public void testUpdateMinMaxValues() {
+    // create dimension and measure column schema
+    ColumnSchema dimensionColumnSchema = createColumnSchema(DataTypes.STRING, true);
+    ColumnSchema measureColumnSchema = createColumnSchema(DataTypes.DOUBLE, false);
+    List<ColumnSchema> columnSchemas = new ArrayList<>(2);
+    columnSchemas.add(dimensionColumnSchema);
+    columnSchemas.add(measureColumnSchema);
+    // create data file footer object
+    DataFileFooter fileFooter = new DataFileFooter();
+    fileFooter.setColumnInTable(columnSchemas);
+    // initialise the expected values
+    int expectedMaxValue = 5;
+    int expectedMinValue = 2;
+    double expectedMeasureMaxValue = 28.74;
+    double expectedMeasureMinValue = -21.46;
+    // initialise the minValues
+    byte[][] minValues = new byte[2][];
+    minValues[0] = new byte[] { 2 };
+    ByteBuffer buffer = ByteBuffer.allocate(8);
+    minValues[1] = (byte[]) buffer.putDouble(28.74).flip().array();
+    buffer = ByteBuffer.allocate(8);
+    // initialise the maxValues
+    byte[][] maxValues = new byte[2][];
+    maxValues[0] = new byte[] { 5 };
+    maxValues[1] = (byte[]) buffer.putDouble(-21.46).flip().array();
+    byte[][] updateMaxValues =
+        CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
+    byte[][] updateMinValues =
+        CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, true);
+    // compare max values
+    assert (expectedMaxValue == ByteBuffer.wrap(updateMaxValues[0]).get());
+    assert (expectedMeasureMaxValue == ByteBuffer.wrap(updateMaxValues[1]).getDouble());
+
+    // compare min values
+    assert (expectedMinValue == ByteBuffer.wrap(updateMinValues[0]).get());
+    assert (expectedMeasureMinValue == ByteBuffer.wrap(updateMinValues[1]).getDouble());
+  }
+
+  private ColumnSchema createColumnSchema(DataType dataType, boolean isDimensionColumn) {
+    ColumnSchema columnSchema = new ColumnSchema();
+    columnSchema.setDataType(dataType);
+    columnSchema.setDimensionColumn(isDimensionColumn);
+    return columnSchema;
   }
 
   private String generateString(int length) {

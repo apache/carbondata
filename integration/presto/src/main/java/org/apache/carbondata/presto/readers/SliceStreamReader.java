@@ -18,12 +18,6 @@
 package org.apache.carbondata.presto.readers;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -31,8 +25,6 @@ import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.block.DictionaryBlock;
 import com.facebook.presto.spi.block.SliceArrayBlock;
 import com.facebook.presto.spi.type.Type;
-import io.airlift.slice.Slice;
-import io.airlift.slice.Slices;
 
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.airlift.slice.Slices.wrappedBuffer;
@@ -42,49 +34,46 @@ import static io.airlift.slice.Slices.wrappedBuffer;
  */
 public class SliceStreamReader extends AbstractStreamReader {
 
-
   private boolean isDictionary;
 
-  private SliceArrayBlock dictionaryBlock;
+  private SliceArrayBlock dictionarySliceArrayBlock;
 
-  public SliceStreamReader() {}
+  public SliceStreamReader() {
+  }
 
-  public SliceStreamReader(boolean isDictionary, SliceArrayBlock dictionaryBlock) {
+  public SliceStreamReader(boolean isDictionary, SliceArrayBlock dictionarySliceArrayBlock) {
     this.isDictionary = isDictionary;
-    this.dictionaryBlock = dictionaryBlock;
+    this.dictionarySliceArrayBlock = dictionarySliceArrayBlock;
   }
 
   /**
    * Function to create the Slice Block
+   *
    * @param type
    * @return
    * @throws IOException
    */
-  public Block readBlock(Type type)
-      throws IOException
-  {
-    int numberOfRows = 0;
-    BlockBuilder builder = null;
-    if(isVectorReader) {
+  public Block readBlock(Type type) throws IOException {
+    int numberOfRows;
+    BlockBuilder builder;
+    if (isVectorReader) {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if(isDictionary) {
+        if (isDictionary) {
           int[] values = new int[numberOfRows];
           for (int i = 0; i < numberOfRows; i++) {
             if (!columnVector.isNullAt(i)) {
-              values[i] = columnVector.getInt(i);
+              values[i] = (Integer) columnVector.getData(i);
             }
           }
-          Block block = new DictionaryBlock(batchSize, dictionaryBlock, values);
-
-          return block;
+          return new DictionaryBlock(batchSize, dictionarySliceArrayBlock, values);
         } else {
           for (int i = 0; i < numberOfRows; i++) {
             if (columnVector.isNullAt(i)) {
               builder.appendNull();
             } else {
-              type.writeSlice(builder, wrappedBuffer(columnVector.getArray(i).toByteArray()));
+              type.writeSlice(builder, wrappedBuffer((byte[]) columnVector.getData(i)));
             }
           }
         }
@@ -93,15 +82,13 @@ public class SliceStreamReader extends AbstractStreamReader {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (streamData != null) {
-        for(int i = 0; i < numberOfRows ; i++ ){
+        for (int i = 0; i < numberOfRows; i++) {
           type.writeSlice(builder, utf8Slice(streamData[i].toString()));
         }
       }
     }
 
     return builder.build();
-
   }
-
 
 }

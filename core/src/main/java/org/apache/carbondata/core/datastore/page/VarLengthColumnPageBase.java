@@ -27,19 +27,17 @@ import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
-import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
-import static org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL;
-
 public abstract class VarLengthColumnPageBase extends ColumnPage {
 
-  static final int byteBits = BYTE.getSizeBits();
-  static final int shortBits = DataType.SHORT.getSizeBits();
-  static final int intBits = DataType.INT.getSizeBits();
-  static final int longBits = DataType.LONG.getSizeBits();
+  static final int byteBits = DataTypes.BYTE.getSizeBits();
+  static final int shortBits = DataTypes.SHORT.getSizeBits();
+  static final int intBits = DataTypes.INT.getSizeBits();
+  static final int longBits = DataTypes.LONG.getSizeBits();
   // default size for each row, grows as needed
   static final int DEFAULT_ROW_SIZE = 8;
 
@@ -64,6 +62,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   // size of the allocated memory, in bytes
   int capacity;
+
   VarLengthColumnPageBase(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
     super(columnSpec, dataType, pageSize);
     rowOffset = new int[pageSize + 1];
@@ -115,7 +114,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
             columnSpec.getScale());
     int size = decimalConverter.getSize();
     if (size < 0) {
-      return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataType.DECIMAL);
+      return getLVBytesColumnPage(columnSpec, lvEncodedBytes,
+          DataTypes.createDecimalType(columnSpec.getPrecision(), columnSpec.getScale()));
     } else {
       // Here the size is always fixed.
       return getDecimalColumnPage(columnSpec, lvEncodedBytes, size);
@@ -127,7 +127,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    */
   static ColumnPage newLVBytesColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes)
       throws MemoryException {
-    return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataType.BYTE_ARRAY);
+    return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataTypes.BYTE_ARRAY);
   }
 
   private static ColumnPage getDecimalColumnPage(TableSpec.ColumnSpec columnSpec,
@@ -143,9 +143,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     VarLengthColumnPageBase page;
     if (unsafe) {
-      page = new UnsafeDecimalColumnPage(columnSpec, DECIMAL, rowId);
+      page = new UnsafeDecimalColumnPage(columnSpec, columnSpec.getSchemaDataType(), rowId);
     } else {
-      page = new SafeDecimalColumnPage(columnSpec, DECIMAL, rowId);
+      page = new SafeDecimalColumnPage(columnSpec, columnSpec.getSchemaDataType(), rowId);
     }
 
     // set total length and rowOffset in page
@@ -186,7 +186,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     VarLengthColumnPageBase page;
     int inputDataLength = offset;
     if (unsafe) {
-      page = new UnsafeDecimalColumnPage(columnSpec, DECIMAL, numRows, inputDataLength);
+      page = new UnsafeDecimalColumnPage(columnSpec, dataType, numRows, inputDataLength);
     } else {
       page = new SafeDecimalColumnPage(columnSpec, dataType, numRows);
     }

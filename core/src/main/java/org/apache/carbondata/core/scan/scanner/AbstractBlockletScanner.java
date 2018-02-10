@@ -76,26 +76,35 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
         totalPagesScanned.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
-            .getDataBlock().nodeNumber());
+            .getDataBlock().blockletId());
+    if (!blockExecutionInfo.isPrefetchBlocklet()) {
+      readBlocklet(blocksChunkHolder);
+    }
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         blocksChunkHolder.getDimensionRawDataChunk();
     DimensionColumnDataChunk[][] dimensionColumnDataChunks =
-        new DimensionColumnDataChunk[dimensionRawColumnChunks.length][];
-    for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
-      if (dimensionRawColumnChunks[i] != null) {
-        dimensionColumnDataChunks[i] = dimensionRawColumnChunks[i].convertToDimColDataChunks();
-      }
-    }
-    scannedResult.setDimensionChunks(dimensionColumnDataChunks);
+        new DimensionColumnDataChunk[dimensionRawColumnChunks.length][blocksChunkHolder
+            .getDataBlock().numberOfPages()];
     MeasureRawColumnChunk[] measureRawColumnChunks = blocksChunkHolder.getMeasureRawDataChunk();
     ColumnPage[][] columnPages =
-        new ColumnPage[measureRawColumnChunks.length][];
-    for (int i = 0; i < measureRawColumnChunks.length; i++) {
-      if (measureRawColumnChunks[i] != null) {
-        columnPages[i] = measureRawColumnChunks[i].convertToColumnPage();
+        new ColumnPage[measureRawColumnChunks.length][blocksChunkHolder.getDataBlock()
+                       .numberOfPages()];
+    scannedResult.setDimensionChunks(dimensionColumnDataChunks);
+    scannedResult.setMeasureChunks(columnPages);
+    scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
+    scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
+    if (blockExecutionInfo.isPrefetchBlocklet()) {
+      for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
+        if (dimensionRawColumnChunks[i] != null) {
+          dimensionColumnDataChunks[i] = dimensionRawColumnChunks[i].convertToDimColDataChunks();
+        }
+      }
+      for (int i = 0; i < measureRawColumnChunks.length; i++) {
+        if (measureRawColumnChunks[i] != null) {
+          columnPages[i] = measureRawColumnChunks[i].convertToColumnPage();
+        }
       }
     }
-    scannedResult.setMeasureChunks(columnPages);
     int[] numberOfRows = null;
     if (blockExecutionInfo.getAllSelectedDimensionBlocksIndexes().length > 0) {
       for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
@@ -112,6 +121,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
         }
       }
     }
+
     // count(*)  case there would not be any dimensions are measures selected.
     if (numberOfRows == null) {
       numberOfRows = new int[blocksChunkHolder.getDataBlock().numberOfPages()];
@@ -127,7 +137,9 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
       }
     }
     scannedResult.setNumberOfRows(numberOfRows);
-    scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
+    if (!blockExecutionInfo.isPrefetchBlocklet()) {
+      scannedResult.fillDataChunks();
+    }
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);

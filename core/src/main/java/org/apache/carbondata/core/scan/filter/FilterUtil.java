@@ -53,23 +53,33 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
+import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.executer.AndFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.DimColumnExecuterFilterInfo;
 import org.apache.carbondata.core.scan.filter.executer.ExcludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.ExcludeFilterExecuterImpl;
+import org.apache.carbondata.core.scan.filter.executer.FalseFilterExecutor;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.IncludeFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.MeasureColumnExecuterFilterInfo;
@@ -97,8 +107,9 @@ import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.roaringbitmap.RoaringBitmap;
 
 public final class FilterUtil {
   private static final LogService LOGGER =
@@ -125,6 +136,14 @@ public final class FilterUtil {
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
         case INCLUDE:
+          if (null != filterExpressionResolverTree.getDimColResolvedFilterInfo()
+              && null != filterExpressionResolverTree.getDimColResolvedFilterInfo()
+              .getFilterValues() && filterExpressionResolverTree.getDimColResolvedFilterInfo()
+              .getFilterValues().isOptimized()) {
+            return getExcludeFilterExecuter(
+                filterExpressionResolverTree.getDimColResolvedFilterInfo(),
+                filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
+          }
           return getIncludeFilterExecuter(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
               filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
@@ -161,6 +180,8 @@ public final class FilterUtil {
                   .getFilterRangeValues(segmentProperties), segmentProperties);
         case TRUE:
           return new TrueFilterExecutor();
+        case FALSE:
+          return new FalseFilterExecutor();
         case ROWLEVEL:
         default:
           return new RowLevelFilterExecuterImpl(
@@ -211,23 +232,30 @@ public final class FilterUtil {
             msrColResolvedFilterInfo, true);
       }
     }
-    if (null != dimColResolvedFilterInfo && dimColResolvedFilterInfo.getDimension().isColumnar()) {
-      CarbonDimension dimensionFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
-      if (null != dimensionFromCurrentBlock) {
-        // update dimension and column index according to the dimension position in current block
-        DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
-            dimColResolvedFilterInfo.getCopyObject();
-        dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
-        dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-        return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
-            segmentProperties, false);
+    if (null != dimColResolvedFilterInfo) {
+      CarbonDimension dimension = dimColResolvedFilterInfo.getDimension();
+      if (dimension.hasEncoding(Encoding.IMPLICIT)) {
+        return new ImplicitIncludeFilterExecutorImpl(dimColResolvedFilterInfo);
+      } else if (dimension.isColumnar()) {
+        CarbonDimension dimensionFromCurrentBlock =
+            segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
+        if (null != dimensionFromCurrentBlock) {
+          // update dimension and column index according to the dimension position in current block
+          DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
+              dimColResolvedFilterInfo.getCopyObject();
+          dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
+          dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
+          return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+              segmentProperties, false);
+        } else {
+          return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
+              msrColResolvedFilterInfo, false);
+        }
       } else {
-        return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            msrColResolvedFilterInfo, false);
+        return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
       }
     } else {
-      return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+      return new IncludeColGroupFilterExecuterImpl(null, segmentProperties);
     }
   }
 
@@ -329,7 +357,7 @@ public final class FilterUtil {
     if (expression.getFilterExpressionType() == ExpressionType.LITERAL
         && expression instanceof LiteralExpression) {
       DataType dataType = ((LiteralExpression) expression).getLiteralExpDataType();
-      if (!(dataType == DataType.TIMESTAMP || dataType == DataType.DATE)) {
+      if (!(dataType == DataTypes.TIMESTAMP || dataType == DataTypes.DATE)) {
         return true;
       }
     }
@@ -420,7 +448,7 @@ public final class FilterUtil {
       for (int i = 0; i < length; i++) {
         result = evaluateResultListFinal.get(i);
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
-          if (dataType == DataType.STRING) {
+          if (dataType == DataTypes.STRING) {
             filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
           } else {
             filterValuesList.add(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
@@ -505,23 +533,33 @@ public final class FilterUtil {
    * @param evaluateResultList
    * @param isIncludeFilter
    * @return
-   * @throws IOException
+   * @throws QueryExecutionException
    */
   public static ColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter,
       TableProvider tableProvider)
-      throws IOException {
+      throws QueryExecutionException, FilterUnsupportedException, IOException {
     Dictionary forwardDictionary = null;
+    ColumnFilterInfo filterInfo = null;
+    List<Integer> surrogates =
+        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     try {
       // Reading the dictionary value from cache.
       forwardDictionary =
           getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
               tableProvider);
-      return getFilterValues(columnExpression, evaluateResultList, forwardDictionary,
-          isIncludeFilter);
+      sortFilterModelMembers(columnExpression, evaluateResultList);
+      getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
+      filterInfo =
+          getFilterValues(columnExpression, forwardDictionary, isIncludeFilter, null, surrogates);
+      if (filterInfo.isOptimized()) {
+        return getDimColumnFilterInfoAfterApplyingCBO(columnExpression,
+            forwardDictionary, filterInfo);
+      }
     } finally {
       CarbonUtil.clearDictionaryCache(forwardDictionary);
     }
+    return filterInfo;
   }
 
   /**
@@ -529,27 +567,127 @@ public final class FilterUtil {
    * expression value to its respective surrogates.
    *
    * @param columnExpression
-   * @param evaluateResultList
    * @param forwardDictionary
    * @param isIncludeFilter
+   * @param filterInfo
+   * @param surrogates
    * @return
    */
   private static ColumnFilterInfo getFilterValues(ColumnExpression columnExpression,
-      List<String> evaluateResultList, Dictionary forwardDictionary, boolean isIncludeFilter) {
-    sortFilterModelMembers(columnExpression, evaluateResultList);
-    List<Integer> surrogates =
-        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    // Reading the dictionary value from cache.
-    getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
+      Dictionary forwardDictionary, boolean isIncludeFilter, ColumnFilterInfo filterInfo,
+      List<Integer> surrogates) throws QueryExecutionException {
+    // Default value has to be added
+    if (surrogates.isEmpty()) {
+      surrogates.add(0);
+    }
+    boolean isExcludeFilterNeedsToApply = false;
+    if (null == filterInfo && isIncludeFilter) {
+      isExcludeFilterNeedsToApply =
+          isExcludeFilterNeedsToApply(forwardDictionary, surrogates.size());
+    }
     Collections.sort(surrogates);
     ColumnFilterInfo columnFilterInfo = null;
     if (surrogates.size() > 0) {
       columnFilterInfo = new ColumnFilterInfo();
+      if (isExcludeFilterNeedsToApply) {
+        columnFilterInfo.setOptimized(true);
+      }
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
-      columnFilterInfo.setFilterList(surrogates);
+      if (null != filterInfo) {
+        filterInfo.setIncludeFilter(isIncludeFilter);
+        filterInfo.setOptimized(true);
+        filterInfo.setExcludeFilterList(surrogates);
+        return filterInfo;
+      } else {
+        if (!isIncludeFilter) {
+          columnFilterInfo.setExcludeFilterList(surrogates);
+        } else {
+          columnFilterInfo.setFilterList(surrogates);
+        }
+      }
     }
     return columnFilterInfo;
   }
+
+  private static boolean isExcludeFilterNeedsToApply(Dictionary forwardDictionary,
+      int size) {
+    if ((size * 100) / forwardDictionary.getDictionaryChunks().getSize() >= 60) {
+      LOGGER.info("Applying CBO to convert include filter to exclude filter.");
+      return true;
+    }
+    return false;
+  }
+
+  private static ColumnFilterInfo getDimColumnFilterInfoAfterApplyingCBO(
+      ColumnExpression columnExpression, Dictionary forwardDictionary,
+      ColumnFilterInfo filterInfo) throws FilterUnsupportedException, QueryExecutionException {
+    List<Integer> excludeMemberSurrogates =
+        prepareExcludeFilterMembers(forwardDictionary, filterInfo.getFilterList());
+    filterInfo.setExcludeFilterList(excludeMemberSurrogates);
+    return filterInfo;
+  }
+
+  private static void prepareIncludeFilterMembers(Expression expression,
+      final ColumnExpression columnExpression, boolean isIncludeFilter,
+      Dictionary forwardDictionary, List<Integer> surrogates)
+      throws FilterUnsupportedException {
+    DictionaryChunksWrapper dictionaryWrapper;
+    dictionaryWrapper = forwardDictionary.getDictionaryChunks();
+    int surrogateCount = 0;
+    while (dictionaryWrapper.hasNext()) {
+      byte[] columnVal = dictionaryWrapper.next();
+      ++surrogateCount;
+      try {
+        RowIntf row = new RowImpl();
+        String stringValue =
+            new String(columnVal, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        if (stringValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+          stringValue = null;
+        }
+        row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
+            columnExpression.getCarbonColumn().getDataType()) });
+        Boolean rslt = expression.evaluate(row).getBoolean();
+        if (null != rslt) {
+          if (rslt) {
+            if (null == stringValue) {
+              // this is for query like select name from table unknowexpr(name,1)
+              // != 'value' -> for null dictionary value
+              surrogates.add(CarbonCommonConstants.DICT_VALUE_NULL);
+            } else if (isIncludeFilter) {
+              // this is for query like select ** from * where unknwonexpr(*) == 'value'
+              surrogates.add(surrogateCount);
+            }
+          } else if (null != stringValue && !isIncludeFilter) {
+            // this is for isNot null or not in query( e.x select ** from t where name is not null
+            surrogates.add(surrogateCount);
+          }
+        }
+      } catch (FilterIllegalMemberException e) {
+        LOGGER.debug(e.getMessage());
+      }
+    }
+  }
+
+  private static List<Integer> prepareExcludeFilterMembers(
+      Dictionary forwardDictionary,List<Integer> includeSurrogates)
+      throws FilterUnsupportedException {
+    DictionaryChunksWrapper dictionaryWrapper;
+    RoaringBitmap bitMapOfSurrogates = RoaringBitmap.bitmapOf(
+        ArrayUtils.toPrimitive(includeSurrogates.toArray(new Integer[includeSurrogates.size()])));
+    dictionaryWrapper = forwardDictionary.getDictionaryChunks();
+    List<Integer> excludeFilterList = new ArrayList<Integer>(includeSurrogates.size());
+    int surrogateCount = 0;
+    while (dictionaryWrapper.hasNext()) {
+      dictionaryWrapper.next();
+      ++surrogateCount;
+      if (!bitMapOfSurrogates.contains(surrogateCount)) {
+        excludeFilterList.add(surrogateCount);
+      }
+    }
+    return excludeFilterList;
+  }
+
+
 
   /**
    * This API will get the Dictionary value for the respective filter member
@@ -576,45 +714,30 @@ public final class FilterUtil {
    * @throws FilterUnsupportedException
    * @throws IOException
    */
-  public static ColumnFilterInfo getFilterListForAllValues(
-      AbsoluteTableIdentifier tableIdentifier, Expression expression,
-      final ColumnExpression columnExpression, boolean isIncludeFilter, TableProvider tableProvider)
-      throws IOException, FilterUnsupportedException {
+  public static ColumnFilterInfo getFilterListForAllValues(AbsoluteTableIdentifier tableIdentifier,
+      Expression expression, final ColumnExpression columnExpression, boolean isIncludeFilter,
+      TableProvider tableProvider, boolean isExprEvalReqd)
+      throws FilterUnsupportedException, IOException {
     Dictionary forwardDictionary = null;
-    List<String> evaluateResultListFinal = new ArrayList<String>(20);
-    DictionaryChunksWrapper dictionaryWrapper = null;
+    List<Integer> surrogates = new ArrayList<Integer>(20);
     try {
       forwardDictionary =
           getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
               tableProvider);
-      dictionaryWrapper = forwardDictionary.getDictionaryChunks();
-      while (dictionaryWrapper.hasNext()) {
-        byte[] columnVal = dictionaryWrapper.next();
-        try {
-          RowIntf row = new RowImpl();
-          String stringValue =
-              new String(columnVal, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          if (stringValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-            stringValue = null;
-          }
-          row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
-              columnExpression.getCarbonColumn().getDataType()) });
-          Boolean rslt = expression.evaluate(row).getBoolean();
-          if (null != rslt && rslt == isIncludeFilter) {
-            if (null == stringValue) {
-              evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
-            } else {
-              evaluateResultListFinal.add(stringValue);
-            }
-          }
-        } catch (FilterIllegalMemberException e) {
-          if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(e.getMessage());
-          }
-        }
+      if (isExprEvalReqd && !isIncludeFilter) {
+        surrogates.add(CarbonCommonConstants.DICT_VALUE_NULL);
       }
-      return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,
-          isIncludeFilter);
+      prepareIncludeFilterMembers(expression, columnExpression, isIncludeFilter, forwardDictionary,
+          surrogates);
+      ColumnFilterInfo filterInfo =
+          getFilterValues(columnExpression, forwardDictionary, isIncludeFilter, null, surrogates);
+      if (filterInfo.isOptimized()) {
+        return getDimColumnFilterInfoAfterApplyingCBO(columnExpression, forwardDictionary,
+            filterInfo);
+      }
+      return filterInfo;
+    } catch (QueryExecutionException e) {
+      throw new FilterUnsupportedException(e.getMessage());
     } finally {
       CarbonUtil.clearDictionaryCache(forwardDictionary);
     }
@@ -743,7 +866,7 @@ public final class FilterUtil {
    * @return
    */
   public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
-      CarbonDimension carbonDimension, SegmentProperties segmentProperties) {
+      CarbonDimension carbonDimension, SegmentProperties segmentProperties,  boolean isExclude) {
     if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
       return columnFilterInfo.getNoDictionaryFilterValuesList()
           .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
@@ -757,20 +880,27 @@ public final class FilterUtil {
     if (null != columnFilterInfo) {
       int[] rangesForMaskedByte =
           getRangesForMaskedByte(keyOrdinalOfDimensionFromCurrentBlock, blockLevelKeyGenerator);
-      for (Integer surrogate : columnFilterInfo.getFilterList()) {
-        try {
-          if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
-            keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
-            filterValuesList
-                .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
-          } else {
-            break;
+      List<Integer> listOfsurrogates = null;
+      if (!isExclude && columnFilterInfo.isIncludeFilter()) {
+        listOfsurrogates = columnFilterInfo.getFilterList();
+      } else if (isExclude || !columnFilterInfo.isIncludeFilter()) {
+        listOfsurrogates = columnFilterInfo.getExcludeFilterList();
+      }
+      if (null != listOfsurrogates) {
+        for (Integer surrogate : listOfsurrogates) {
+          try {
+            if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
+              keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
+              filterValuesList
+                  .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
+            } else {
+              break;
+            }
+          } catch (KeyGenException e) {
+            LOGGER.error(e.getMessage());
           }
-        } catch (KeyGenException e) {
-          LOGGER.error(e.getMessage());
         }
       }
-
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
 
@@ -1111,26 +1241,38 @@ public final class FilterUtil {
   }
 
   /**
-   * @param tableIdentifier
    * @param carbonDimension
    * @param tableProvider
    * @return
    */
-  public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
+  public static Dictionary getForwardDictionaryCache(
+      AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
       CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
-    CarbonTablePath carbonTablePath = null;
+    String dictionaryPath = null;
+    ColumnIdentifier columnIdentifier = carbonDimension.getColumnIdentifier();
     if (null != tableProvider) {
-      CarbonTable carbonTable =
-          tableProvider.getCarbonTable(tableIdentifier.getCarbonTableIdentifier());
-      carbonTablePath =
-          CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+      CarbonTable carbonTable = tableProvider
+          .getCarbonTable(dictionarySourceAbsoluteTableIdentifier.getCarbonTableIdentifier());
+      dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
+          .get(CarbonCommonConstants.DICTIONARY_PATH);
+      if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations() &&
+          carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
+        dictionarySourceAbsoluteTableIdentifier =
+            QueryUtil.getTableIdentifierForColumn(carbonDimension,
+                carbonTable.getAbsoluteTableIdentifier());
+        columnIdentifier = new ColumnIdentifier(
+            carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
+            carbonDimension.getColumnProperties(), carbonDimension.getDataType());
+      } else {
+        dictionarySourceAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+      }
     }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), carbonTablePath);
+        new DictionaryColumnUniqueIdentifier(dictionarySourceAbsoluteTableIdentifier,
+            columnIdentifier, carbonDimension.getDataType(), dictionaryPath);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
     // get the forward dictionary object
     return forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
   }
@@ -1186,8 +1328,16 @@ public final class FilterUtil {
       }
       msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
     } else {
-      byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, segmentProperties);
-      dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+      if (filterValues == null) {
+        dimColumnExecuterInfo.setFilterKeys(new byte[0][]);
+      } else {
+        byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, segmentProperties, false);
+        if (!filterValues.isIncludeFilter() || filterValues.isOptimized()) {
+          dimColumnExecuterInfo
+              .setExcludeFilterKeys(getKeyArray(filterValues, dimension, segmentProperties, true));
+        }
+        dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+      }
     }
   }
 
@@ -1295,39 +1445,36 @@ public final class FilterUtil {
   public static int compareFilterKeyBasedOnDataType(String dictionaryVal, String memberVal,
       DataType dataType) {
     try {
-      switch (dataType) {
-        case SHORT:
-          return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
-        case INT:
-          return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
-        case DOUBLE:
-          return Double
-              .compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
-        case LONG:
-          return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
-        case BOOLEAN:
-          return Boolean
-              .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
-        case DATE:
-        case TIMESTAMP:
-          String format = CarbonUtil.getFormatFromProperty(dataType);
-          SimpleDateFormat parser = new SimpleDateFormat(format);
-          Date dateToStr;
-          Date dictionaryDate;
-          dateToStr = parser.parse(memberVal);
-          dictionaryDate = parser.parse(dictionaryVal);
-          return dictionaryDate.compareTo(dateToStr);
-
-        case DECIMAL:
-          java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
-          java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
-          return javaDecValForDictVal.compareTo(javaDecValForMemberVal);
-        default:
-          return -1;
+      if (dataType == DataTypes.BOOLEAN) {
+        return Boolean.compare((Boolean.parseBoolean(dictionaryVal)),
+                (Boolean.parseBoolean(memberVal)));
+      } else if (dataType == DataTypes.SHORT) {
+        return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
+      } else if (dataType == DataTypes.INT) {
+        return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
+      } else if (dataType == DataTypes.DOUBLE) {
+        return Double.compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
+      } else if (dataType == DataTypes.LONG) {
+        return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
+      } else if (dataType == DataTypes.BOOLEAN) {
+        return Boolean.compare(
+            (Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
+      } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+        String format = CarbonUtil.getFormatFromProperty(dataType);
+        SimpleDateFormat parser = new SimpleDateFormat(format);
+        Date dateToStr;
+        Date dictionaryDate;
+        dateToStr = parser.parse(memberVal);
+        dictionaryDate = parser.parse(dictionaryVal);
+        return dictionaryDate.compareTo(dateToStr);
+      } else if (DataTypes.isDecimal(dataType)) {
+        java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
+        java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
+        return javaDecValForDictVal.compareTo(javaDecValForMemberVal);
+      } else {
+        return -1;
       }
-    } catch (ParseException e) {
-      return -1;
-    } catch (NumberFormatException e) {
+    } catch (ParseException | NumberFormatException e) {
       return -1;
     }
   }
@@ -1422,53 +1569,47 @@ public final class FilterUtil {
   private static int compareFilterMembersBasedOnActualDataType(String filterMember1,
       String filterMember2, DataType dataType) {
     try {
-      switch (dataType) {
-        case SHORT:
-        case INT:
-        case LONG:
-        case DOUBLE:
-
-          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
-            return 1;
-          }
-          Double d1 = Double.parseDouble(filterMember1);
-          Double d2 = Double.parseDouble(filterMember2);
-          return d1.compareTo(d2);
-        case DECIMAL:
-          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
-            return 1;
-          }
-          java.math.BigDecimal val1 = new BigDecimal(filterMember1);
-          java.math.BigDecimal val2 = new BigDecimal(filterMember2);
-          return val1.compareTo(val2);
-        case DATE:
-        case TIMESTAMP:
-          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
-            return 1;
-          }
-          String format = null;
-          if (dataType == DataType.DATE) {
-            format = CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-                    CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
-          } else {
-            format = CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                    CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-          }
-          SimpleDateFormat parser = new SimpleDateFormat(format);
-          Date date1 = null;
-          Date date2 = null;
-          date1 = parser.parse(filterMember1);
-          date2 = parser.parse(filterMember2);
-          return date1.compareTo(date2);
-        case STRING:
-        default:
-          return filterMember1.compareTo(filterMember2);
+      if (dataType == DataTypes.SHORT ||
+          dataType == DataTypes.INT ||
+          dataType == DataTypes.LONG ||
+          dataType == DataTypes.DOUBLE) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
+          return 1;
+        }
+        Double d1 = Double.parseDouble(filterMember1);
+        Double d2 = Double.parseDouble(filterMember2);
+        return d1.compareTo(d2);
+      } else if (DataTypes.isDecimal(dataType)) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
+          return 1;
+        }
+        java.math.BigDecimal val1 = new BigDecimal(filterMember1);
+        java.math.BigDecimal val2 = new BigDecimal(filterMember2);
+        return val1.compareTo(val2);
+      } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
+          return 1;
+        }
+        String format = null;
+        if (dataType == DataTypes.DATE) {
+          format = CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+                  CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+        } else {
+          format = CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        }
+        SimpleDateFormat parser = new SimpleDateFormat(format);
+        Date date1 = null;
+        Date date2 = null;
+        date1 = parser.parse(filterMember1);
+        date2 = parser.parse(filterMember2);
+        return date1.compareTo(date2);
+      } else {
+        return filterMember1.compareTo(filterMember2);
       }
-    } catch (ParseException e) {
-      return -1;
-    } catch (NumberFormatException e) {
+    } catch (ParseException | NumberFormatException e) {
       return -1;
     }
   }
@@ -1562,7 +1703,7 @@ public final class FilterUtil {
    */
   public static boolean isExpressionNeedsToResolved(Expression rightExp, boolean isIncludeFilter) {
     if (!isIncludeFilter && rightExp instanceof LiteralExpression && (
-        DataType.NULL == ((LiteralExpression) rightExp)
+        DataTypes.NULL == ((LiteralExpression) rightExp)
             .getLiteralExpDataType())) {
       return true;
     }
@@ -1643,6 +1784,75 @@ public final class FilterUtil {
       for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
         if (dimensionColumnDataChunk.compareTo(i, defaultValue) == 0) {
           bitSet.flip(i);
+        }
+      }
+    }
+  }
+
+  public static void updateIndexOfColumnExpression(Expression exp, int dimOridnalMax) {
+    if (exp.getChildren() == null || exp.getChildren().size() == 0) {
+      if (exp instanceof ColumnExpression) {
+        ColumnExpression ce = (ColumnExpression) exp;
+        CarbonColumn column = ce.getCarbonColumn();
+        if (column.isDimension()) {
+          ce.setColIndex(column.getOrdinal());
+        } else {
+          ce.setColIndex(dimOridnalMax + column.getOrdinal());
+        }
+      }
+    } else {
+      if (exp.getChildren().size() > 0) {
+        List<Expression> children = exp.getChildren();
+        for (int i = 0; i < children.size(); i++) {
+          updateIndexOfColumnExpression(children.get(i), dimOridnalMax);
+        }
+      }
+    }
+  }
+
+  /**
+   * This method will get the no dictionary data based on filters and same
+   * will be in DimColumnFilterInfo
+   *
+   * @param evaluateResultListFinal
+   * @param isIncludeFilter
+   * @return
+   */
+  public static ColumnFilterInfo getImplicitColumnFilterList(List<String> evaluateResultListFinal,
+      boolean isIncludeFilter) {
+    ColumnFilterInfo columnFilterInfo = new ColumnFilterInfo();
+    columnFilterInfo.setIncludeFilter(isIncludeFilter);
+    if (null != evaluateResultListFinal) {
+      columnFilterInfo.setImplicitColumnFilterList(evaluateResultListFinal);
+    }
+    return columnFilterInfo;
+  }
+
+  /**
+   * This method will check for ColumnExpression with column name positionID and if found will
+   * replace the InExpression with true expression. This is done to stop serialization of List
+   * expression which is right children of InExpression as it can impact the query performance
+   * as the size of list grows bigger.
+   *
+   * @param expression
+   */
+  public static void removeInExpressionNodeWithPositionIdColumn(Expression expression) {
+    ExpressionType filterExpressionType = expression.getFilterExpressionType();
+    if (ExpressionType.AND == filterExpressionType) {
+      Expression rightExpression = ((AndExpression) expression).getRight();
+      if (rightExpression instanceof InExpression) {
+        List<Expression> children = rightExpression.getChildren();
+        if (null != children && !children.isEmpty()) {
+          Expression childExpression = children.get(0);
+          // check for the positionId as the column name in ColumnExpression
+          if (childExpression instanceof ColumnExpression && ((ColumnExpression) childExpression)
+              .getColumnName().equalsIgnoreCase(CarbonCommonConstants.POSITION_ID)) {
+            // Remove the right expression node and point the expression to left node expression
+            expression
+                .findAndSetChild(((AndExpression) expression).getRight(), new TrueExpression(null));
+            LOGGER.info("In expression removed from the filter expression list to prevent it from"
+                + " serializing on executor");
+          }
         }
       }
     }
