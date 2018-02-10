@@ -37,8 +37,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
-import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -73,12 +71,12 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * tableName
    */
   private String tableName;
-  private SortParameters sortParameters;
-  private SortStepRowHandler sortStepRowHandler;
+
   /**
    * tempFileLocation
    */
   private String[] tempFileLocation;
+  private SortParameters sortParameters;
 
   private int maxThreadForSorting;
 
@@ -91,7 +89,6 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     this.tempFileLocation = tempFileLocation;
     this.tableName = tableName;
     this.sortParameters = sortParameters;
-    this.sortStepRowHandler = new SortStepRowHandler(sortParameters);
     try {
       maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD,
@@ -110,7 +107,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    */
   public void startFinalMerge() throws CarbonDataWriterException {
     List<File> filesToMerge = getFilesToMergeSort();
-    if (filesToMerge.size() == 0) {
+    if (filesToMerge.size() == 0)
+    {
       LOGGER.info("No file to merge in final merge stage");
       return;
     }
@@ -127,9 +125,11 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
 
     // get all the merged files
     List<File> files = new ArrayList<File>(tempFileLocation.length);
-    for (String tempLoc : tempFileLocation) {
+    for (String tempLoc : tempFileLocation)
+    {
       File[] subFiles = new File(tempLoc).listFiles(fileFilter);
-      if (null != subFiles && subFiles.length > 0) {
+      if (null != subFiles && subFiles.length > 0)
+      {
         files.addAll(Arrays.asList(subFiles));
       }
     }
@@ -226,14 +226,13 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   }
 
   /**
-   * This method will be used to get the sorted sort temp row from the sort temp files
+   * This method will be used to get the sorted row
    *
    * @return sorted row
    * @throws CarbonSortKeyAndGroupByException
    */
   public Object[] next() {
-    IntermediateSortTempRow sortTempRow = getSortedRecordFromFile();
-    return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(sortTempRow);
+    return getSortedRecordFromFile();
   }
 
   /**
@@ -242,8 +241,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * @return sorted record sorted record
    * @throws CarbonSortKeyAndGroupByException
    */
-  private IntermediateSortTempRow getSortedRecordFromFile() throws CarbonDataWriterException {
-    IntermediateSortTempRow row = null;
+  private Object[] getSortedRecordFromFile() throws CarbonDataWriterException {
+    Object[] row = null;
 
     // poll the top object from heap
     // heap maintains binary tree which is based on heap condition that will

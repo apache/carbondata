@@ -14,46 +14,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.carbondata.processing.loading.sort.unsafe.comparator;
+package org.apache.carbondata.processing.sort.sortdata;
 
 import java.util.Comparator;
 
-import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
-import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeCarbonRow;
+import org.apache.carbondata.core.util.NonDictionaryUtil;
 
-public class UnsafeRowComparatorForNormalDims implements Comparator<UnsafeCarbonRow> {
-
-  private Object baseObject;
-
+/**
+ * This class is used as comparator for comparing dims which are non high cardinality dims.
+ * Here the dims will be in form of int[] (surrogates) so directly comparing the integers.
+ */
+public class RowComparatorForNormalDims implements Comparator<Object[]> {
+  /**
+   * dimension count
+   */
   private int numberOfSortColumns;
 
-  public UnsafeRowComparatorForNormalDims(UnsafeCarbonRowPage rowPage) {
-    this.baseObject = rowPage.getDataBlock().getBaseObject();
-    this.numberOfSortColumns = rowPage.getTableFieldStat().getIsSortColNoDictFlags().length;
+  /**
+   * RowComparatorForNormalDims Constructor
+   *
+   * @param numberOfSortColumns
+   */
+  public RowComparatorForNormalDims(int numberOfSortColumns) {
+    this.numberOfSortColumns = numberOfSortColumns;
   }
 
   /**
-   * Below method will be used to compare two mdkey
+   * Below method will be used to compare two surrogate keys
+   *
+   * @see Comparator#compare(Object, Object)
    */
-  public int compare(UnsafeCarbonRow rowL, UnsafeCarbonRow rowR) {
+  public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
-    long rowA = rowL.address;
-    long rowB = rowR.address;
-    int sizeA = 0;
-    int sizeB = 0;
+
     for (int i = 0; i < numberOfSortColumns; i++) {
-      int dimFieldA = CarbonUnsafe.getUnsafe().getInt(baseObject, rowA + sizeA);
-      sizeA += 4;
-      int dimFieldB = CarbonUnsafe.getUnsafe().getInt(baseObject, rowB + sizeB);
-      sizeB += 4;
+
+      int dimFieldA = NonDictionaryUtil.getDimension(i, rowA);
+      int dimFieldB = NonDictionaryUtil.getDimension(i, rowB);
+
       diff = dimFieldA - dimFieldB;
       if (diff != 0) {
         return diff;
       }
     }
-
     return diff;
   }
 }
