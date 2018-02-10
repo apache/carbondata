@@ -19,8 +19,6 @@ package org.apache.carbondata.core.datastore.block;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -99,20 +97,6 @@ public class TableBlockInfo implements Distributable, Serializable {
   private BlockletDetailInfo detailInfo;
 
   private String dataMapWriterPath;
-
-  /**
-   * comparator to sort by block size in descending order.
-   * Since each line is not exactly the same, the size of a InputSplit may differs,
-   * so we allow some deviation for these splits.
-   */
-  public static final Comparator<Distributable> DATA_SIZE_DESC_COMPARATOR =
-      new Comparator<Distributable>() {
-        @Override public int compare(Distributable o1, Distributable o2) {
-          long diff =
-              ((TableBlockInfo) o1).getBlockLength() - ((TableBlockInfo) o2).getBlockLength();
-          return diff < 0 ? 1 : (diff == 0 ? 0 : -1);
-        }
-      };
 
   public TableBlockInfo(String filePath, long blockOffset, String segmentId,
       String[] locations, long blockLength, ColumnarFormatVersion version,
@@ -449,18 +433,5 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setDataMapWriterPath(String dataMapWriterPath) {
     this.dataMapWriterPath = dataMapWriterPath;
-  }
-
-  @Override
-  public String toString() {
-    final StringBuilder sb = new StringBuilder("TableBlockInfo{");
-    sb.append("filePath='").append(filePath).append('\'');
-    sb.append(", blockOffset=").append(blockOffset);
-    sb.append(", blockLength=").append(blockLength);
-    sb.append(", segmentId='").append(segmentId).append('\'');
-    sb.append(", blockletId='").append(blockletId).append('\'');
-    sb.append(", locations=").append(Arrays.toString(locations));
-    sb.append('}');
-    return sb.toString();
   }
 }

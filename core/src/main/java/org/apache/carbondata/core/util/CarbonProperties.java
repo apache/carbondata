@@ -1235,17 +1235,6 @@ public final class CarbonProperties {
       return CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT;
     }
   }
-
-  /**
-   * whether optimization for skewed data is enabled
-   * @return true, if enabled; false for not enabled.
-   */
-  public boolean isLoadSkewedDataOptimizationEnabled() {
-    String skewedEnabled = getProperty(
-        CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION,
-        CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION_DEFAULT);
-    return skewedEnabled.equalsIgnoreCase("true");
-  }
   /**
    * returns true if carbon property
    * @param key

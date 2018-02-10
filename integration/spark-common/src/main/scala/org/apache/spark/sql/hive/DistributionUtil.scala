@@ -128,7 +128,7 @@ object DistributionUtil {
    */
   def ensureExecutorsAndGetNodeList(blockList: Seq[Distributable],
       sparkContext: SparkContext): Seq[String] = {
-    val nodeMapping = CarbonLoaderUtil.nodeBlockMapping(blockList.asJava)
+    val nodeMapping = CarbonLoaderUtil.getRequiredExecutors(blockList.asJava)
     ensureExecutorsByNumberAndGetNodeList(nodeMapping, blockList, sparkContext)
   }
 
