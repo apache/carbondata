@@ -533,66 +533,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists preaggMain")
     sql("drop table if exists preaggMain_preagg1")
   }
-  test("update table with struct data ") {
-    sql("DROP TABLE IF EXISTS st")
 
-    sql("create table st (id int, structelem struct<id1:int, structelem: struct<id2:int, name:string>>)" +
-      "stored by 'carbondata'").show
-
-    sql(s"load data local inpath '$resourcesPath/structinstructnull.csv' into table st options('delimiter'=',' ,  " +
-      s"'fileheader'='id,structelem','COMPLEX_DELIMITER_LEVEL_1'='#', 'COMPLEX_DELIMITER_LEVEL_2'='|')")
-
-    sql("update st set (structelem) = (\"118$1005:xyz1\")").show
-    println("After update -")
-
-
-    checkAnswer(sql("select structelem.id1, structelem.structelem.id2, structelem.structelem.name from st limit 1")
-      ,Seq(Row(118,1005,"xyz1")) )
-
-    sql("select * from st ").show
-
-    sql("update st set (structelem) = (struct(structelem.id1+1, struct(structelem.structelem.id2+1," +
-      " structelem.structelem.name))) ").show
-
-    sql("select (struct(structelem.id1+1, struct(structelem.structelem.id2+1, structelem.structelem.name)))  from st ").show
-
-    checkAnswer(sql("select structelem.id1, structelem.structelem.id2, structelem.structelem.name from st limit 1")
-      ,Seq(Row(119,1006,"xyz1")) )
-
-    sql("update st set (structelem) = (struct(structelem.id1, structelem.structelem)) ").show
-    checkAnswer(sql("select structelem.id1, structelem.structelem.id2, structelem.structelem.name from st limit 1")
-      ,Seq(Row(119,1006,"xyz1")) )
-
-    sql("update st set (structelem) = (\"NULL\")").show
-    checkAnswer(sql("select structelem.id1, structelem.structelem.id2, structelem.structelem.name from st limit 1")
-      ,Seq(Row(null,null,null)) )
-    sql("DROP TABLE IF EXISTS st")
-  }
-
-  test("update table with struct of array data ") {
-    sql("DROP TABLE IF EXISTS STRUCT_OF_ARRAY_update1")
-
-    sql("create table STRUCT_OF_ARRAY_update1 (CUST_ID string, YEAR int, MONTH int, AGE int, " +
-      "GENDER string, EDUCATED string, IS_MARRIED string, STRUCT_OF_ARRAY struct<ID: int," +
-      "CHECK_DATE: timestamp,SNo: array<int>,sal1: array<double>,state: array<string>,date1: " +
-      "array<timestamp>>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT double, " +
-      "HQ_DEPOSIT double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
-      "('NO_INVERTED_INDEX'='STRUCT_OF_ARRAY')").show
-
-    sql(s"LOAD DATA INPATH '${resourcesPath}/structofarray.csv' INTO table STRUCT_OF_ARRAY_update1 " +
-      "options ('DELIMITER'=',', 'FILEHEADER'='CUST_ID,YEAR,MONTH,AGE,GENDER,EDUCATED," +
-      "IS_MARRIED,STRUCT_OF_ARRAY,CARD_COUNT,DEBIT_COUNT,CREDIT_COUNT,DEPOSIT,HQ_DEPOSIT'," +
-      "'COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'='&')")
-
-    sql("update STRUCT_OF_ARRAY_update1 set(struct_of_array)=(\"123457788$2017-09-26  " +
-      "000000$1099:3000$1099.123:3999.234$United States:HI$2019-09-26 000000:2016-09-26 000000\") where " +
-      "cust_id in ('Cust00000000000000000999') ").show
-    sql("select STRUCT_OF_ARRAY.date1[0] from struct_of_array_update1 where cust_id in ('Cust00000000000000000999')").show(false);
-    checkExistence(sql("select STRUCT_OF_ARRAY.date1[0] from struct_of_array_update1 where cust_id in ('Cust00000000000000000999')") , true,
-      "2019-09-26 00:00:00.0")
-
-    sql("DROP TABLE IF EXISTS STRUCT_OF_ARRAY_update1")
-  }
 
   test("test struct optimization ") {
     sql("DROP TABLE IF EXISTS st ")
