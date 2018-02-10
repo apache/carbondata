@@ -20,17 +20,15 @@ import scala.collection.JavaConverters._
 
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
-import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier
-import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper
-import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper
+import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.hadoop.CacheClient
 import org.apache.spark.sql.test.util.QueryTest
-
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
   * FT for compaction scenario where major segment should not be included in minor.
@@ -59,16 +57,16 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     // compaction will happen here.
-    sql("alter table ignoremajor compact 'major'"
+    sql("alter table ignoremajor compact 'major'")
+
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE ignoremajor OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-      sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE ignoremajor OPTIONS" +
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE ignoremajor  OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
-      )
-      sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE ignoremajor  OPTIONS" +
-        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
-      )
-      sql("alter table ignoremajor compact 'minor'"
-      )
+    )
+    sql("alter table ignoremajor compact 'minor'"
+    )
 
   }
 
@@ -106,12 +104,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     * Delete should not work on compacted segment.
     */
   test("delete compacted segment and check status") {
-    try {
+    intercept[Throwable] {
       sql("delete from table ignoremajor where segment.id in (2)")
-      assert(false)
-    }
-    catch {
-      case _:Throwable => assert(true)
     }
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(

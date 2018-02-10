@@ -83,8 +83,6 @@ public class RestructureUtil {
           if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
             QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
             tableDimension.getColumnSchema()
-                .setDataType(queryDimension.getDimension().getDataType());
-            tableDimension.getColumnSchema()
                 .setPrecision(queryDimension.getDimension().getColumnSchema().getPrecision());
             tableDimension.getColumnSchema()
                 .setScale(queryDimension.getDimension().getColumnSchema().getScale());
@@ -180,8 +178,7 @@ public class RestructureUtil {
     if (isDefaultValueNull(defaultValue)) {
       dictionaryDefaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
     } else {
-      dictionaryDefaultValue =
-          CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY + 1;
+      dictionaryDefaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY + 1;
     }
     return dictionaryDefaultValue;
   }
@@ -287,11 +284,17 @@ public class RestructureUtil {
   public static Object getMeasureDefaultValue(ColumnSchema columnSchema, byte[] defaultValue) {
     Object measureDefaultValue = null;
     if (!isDefaultValueNull(defaultValue)) {
-      String value = null;
+      String value;
       DataType dataType = columnSchema.getDataType();
-      if (dataType == DataTypes.SHORT || dataType == DataTypes.INT || dataType == DataTypes.LONG) {
+      if (dataType == DataTypes.SHORT) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Short.valueOf(value);
+      } else if (dataType == DataTypes.LONG) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         measureDefaultValue = Long.parseLong(value);
+      } else if (dataType == DataTypes.INT) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Integer.parseInt(value);
       } else if (DataTypes.isDecimal(dataType)) {
         BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
         if (columnSchema.getScale() > decimal.scale()) {

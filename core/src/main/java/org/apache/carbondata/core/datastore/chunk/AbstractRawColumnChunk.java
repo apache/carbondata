@@ -39,13 +39,13 @@ public abstract class AbstractRawColumnChunk {
 
   protected int columnIndex;
 
-  private int offSet;
+  private long offSet;
 
   protected int length;
 
   private DataChunk3 dataChunkV3;
 
-  public AbstractRawColumnChunk(int columnIndex, ByteBuffer rawData, int offSet, int length) {
+  public AbstractRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length) {
     this.columnIndex = columnIndex;
     this.rawData = rawData;
     this.offSet = offSet;
@@ -102,7 +102,7 @@ public abstract class AbstractRawColumnChunk {
     return columnIndex;
   }
 
-  public int getOffSet() {
+  public long getOffSet() {
     return offSet;
   }
 

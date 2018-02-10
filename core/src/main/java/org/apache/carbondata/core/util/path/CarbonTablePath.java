@@ -42,12 +42,13 @@ public class CarbonTablePath extends Path {
   private static final String FACT_DIR = "Fact";
   private static final String SEGMENT_PREFIX = "Segment_";
   private static final String PARTITION_PREFIX = "Part";
-  private static final String CARBON_DATA_EXT = ".carbondata";
   private static final String DATA_PART_PREFIX = "part-";
   private static final String BATCH_PREFIX = "_batchno";
 
+  public static final String CARBON_DATA_EXT = ".carbondata";
   public static final String INDEX_FILE_EXT = ".carbonindex";
   public static final String MERGE_INDEX_FILE_EXT = ".carbonindexmerge";
+  public static final String PARTITION_MAP_EXT = ".partitionmap";
 
   private static final String STREAMING_DIR = ".streaming";
   private static final String STREAMING_LOG_DIR = "log";
@@ -74,7 +75,7 @@ public class CarbonTablePath extends Path {
    * @param carbonFilePath
    */
   public static String getFolderContainingFile(String carbonFilePath) {
-    return carbonFilePath.substring(0, carbonFilePath.lastIndexOf(File.separator));
+    return carbonFilePath.substring(0, carbonFilePath.lastIndexOf('/'));
   }
 
   /**
@@ -105,6 +106,17 @@ public class CarbonTablePath extends Path {
     int pos = fileNameWithPath.lastIndexOf('.');
     if (pos != -1) {
       return fileNameWithPath.substring(pos).startsWith(CARBON_DATA_EXT);
+    }
+    return false;
+  }
+
+  /**
+   * Return true if the fileNameWithPath ends with partition map file extension name
+   */
+  public static boolean isPartitionMapFile(String fileNameWithPath) {
+    int pos = fileNameWithPath.lastIndexOf('.');
+    if (pos != -1) {
+      return fileNameWithPath.substring(pos).startsWith(PARTITION_MAP_EXT);
     }
     return false;
   }
@@ -221,7 +233,7 @@ public class CarbonTablePath extends Path {
    * @return absolute path of schema file
    */
   public String getSchemaFilePath() {
-    return getMetaDataDir() + File.separator + SCHEMA_FILE;
+    return getActualSchemaFilePath(tablePath);
   }
 
   /**
@@ -230,7 +242,22 @@ public class CarbonTablePath extends Path {
    * @return schema file path
    */
   public static String getSchemaFilePath(String tablePath) {
-    return tablePath + File.separator + METADATA_DIR + File.separator + SCHEMA_FILE;
+    return getActualSchemaFilePath(tablePath);
+  }
+
+  private static String getActualSchemaFilePath(String tablePath) {
+    String metaPath = tablePath + CarbonCommonConstants.FILE_SEPARATOR + METADATA_DIR;
+    CarbonFile carbonFile = FileFactory.getCarbonFile(metaPath);
+    CarbonFile[] schemaFile = carbonFile.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return file.getName().startsWith(SCHEMA_FILE);
+      }
+    });
+    if (schemaFile != null && schemaFile.length > 0) {
+      return schemaFile[0].getAbsolutePath();
+    } else {
+      return metaPath + CarbonCommonConstants.FILE_SEPARATOR + SCHEMA_FILE;
+    }
   }
 
   /**
@@ -238,6 +265,14 @@ public class CarbonTablePath extends Path {
    */
   public String getTableStatusFilePath() {
     return getMetaDataDir() + File.separator + TABLE_STATUS_FILE;
+  }
+
+  public String getTableStatusFilePathWithUUID(String uuid) {
+    if (!uuid.isEmpty()) {
+      return getTableStatusFilePath() + CarbonCommonConstants.UNDERSCORE + uuid;
+    } else {
+      return getTableStatusFilePath();
+    }
   }
 
   /**
@@ -250,7 +285,7 @@ public class CarbonTablePath extends Path {
    * @return absolute path of data file stored in carbon data format
    */
   public String getCarbonDataFilePath(String partitionId, String segmentId, Integer filePartNo,
-      Integer taskNo, int batchNo, int bucketNumber, String factUpdateTimeStamp) {
+      Long taskNo, int batchNo, int bucketNumber, String factUpdateTimeStamp) {
     return getSegmentDir(partitionId, segmentId) + File.separator + getCarbonDataFileName(
         filePartNo, taskNo, bucketNumber, batchNo, factUpdateTimeStamp);
   }
@@ -324,13 +359,16 @@ public class CarbonTablePath extends Path {
         return getCarbonIndexFilePath(taskId, partitionId, segmentId, bucketNumber);
       default:
         String segmentDir = getSegmentDir(partitionId, segmentId);
-        return segmentDir + File.separator + getCarbonIndexFileName(Integer.parseInt(taskId),
+        return segmentDir + File.separator + getCarbonIndexFileName(Long.parseLong(taskId),
             Integer.parseInt(bucketNumber), batchNo, timeStamp);
     }
   }
 
   private static String getCarbonIndexFileName(String taskNo, int bucketNumber,
       String factUpdatedtimeStamp) {
+    if (bucketNumber == -1) {
+      return taskNo + "-" + factUpdatedtimeStamp + INDEX_FILE_EXT;
+    }
     return taskNo + "-" + bucketNumber + "-" + factUpdatedtimeStamp + INDEX_FILE_EXT;
   }
 
@@ -353,7 +391,7 @@ public class CarbonTablePath extends Path {
    * @param factUpdateTimeStamp unique identifier to identify an update
    * @return gets data file name only with out path
    */
-  public static String getCarbonDataFileName(Integer filePartNo, Integer taskNo, int bucketNumber,
+  public static String getCarbonDataFileName(Integer filePartNo, Long taskNo, int bucketNumber,
       int batchNo, String factUpdateTimeStamp) {
     return DATA_PART_PREFIX + filePartNo + "-" + taskNo + BATCH_PREFIX + batchNo + "-"
         + bucketNumber + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
@@ -366,7 +404,7 @@ public class CarbonTablePath extends Path {
    * @param factUpdatedTimeStamp time stamp
    * @return filename
    */
-  public static String getCarbonIndexFileName(int taskNo, int bucketNumber, int batchNo,
+  public static String getCarbonIndexFileName(long taskNo, int bucketNumber, int batchNo,
       String factUpdatedTimeStamp) {
     return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + factUpdatedTimeStamp
         + INDEX_FILE_EXT;
@@ -505,8 +543,8 @@ public class CarbonTablePath extends Path {
      * @param taskNo
      * @return
      */
-    public static int getTaskIdFromTaskNo(String taskNo) {
-      return Integer.parseInt(taskNo.split(BATCH_PREFIX)[0]);
+    public static long getTaskIdFromTaskNo(String taskNo) {
+      return Long.parseLong(taskNo.split(BATCH_PREFIX)[0]);
     }
 
     public static int getBatchNoFromTaskNo(String taskNo) {

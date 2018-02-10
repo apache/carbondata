@@ -21,10 +21,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
@@ -96,6 +96,24 @@ public class DataTypeUtilTest {
     assertEquals(null, normalizeIntAndLongValues("INT", DataTypes.INT));
     assertEquals("1", normalizeIntAndLongValues("1", DataTypes.STRING));
 
+  }
+
+  @Test public void testGetDataBasedOnDataTypeForNoDictionaryColumn() {
+    Object result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.INT);
+    Assert.assertTrue(result == null);
+    result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.SHORT);
+    Assert.assertTrue(result == null);
+    result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.LONG);
+    Assert.assertTrue(result == null);
+    result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.TIMESTAMP);
+    Assert.assertTrue(result == null);
+    result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.STRING);
+    Assert.assertTrue(result != null);
   }
 
 }

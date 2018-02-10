@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.datastore.impl;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,6 +35,8 @@ public class FileHolderImpl implements FileHolder {
    */
   private Map<String, FileChannel> fileNameAndStreamCache;
   private String queryId;
+
+  private boolean readPageByPage;
 
   /**
    * FileHolderImpl Constructor
@@ -214,16 +214,11 @@ public class FileHolderImpl implements FileHolder {
     return queryId;
   }
 
-  @Override public DataInputStream getDataInputStream(String filePath, long offset)
-      throws IOException {
-    FileInputStream stream = new FileInputStream(filePath);
-    long skipped = stream.skip(offset);
-    long toSkip = offset - skipped;
-    while (toSkip <= 0) {
-      skipped = stream.skip(toSkip);
-      toSkip = toSkip - skipped;
-    }
+  @Override public void setReadPageByPage(boolean isReadPageByPage) {
+    this.readPageByPage = isReadPageByPage;
+  }
 
-    return new DataInputStream(new BufferedInputStream(stream));
+  @Override public boolean isReadPageByPage() {
+    return readPageByPage;
   }
 }

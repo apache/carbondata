@@ -24,11 +24,12 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
+import scala.util.Random
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.sql.{Row, RowFactory}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
@@ -38,26 +39,24 @@ import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.rdd.CarbonMergeFilesRDD
+
 
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -155,7 +154,6 @@ object CommonUtil {
   }
 
   def validateTblProperties(tableProperties: Map[String, String], fields: Seq[Field]): Boolean = {
-    val itr = tableProperties.keys
     var isValid: Boolean = true
     tableProperties.foreach {
       case (key, value) =>
@@ -186,7 +184,7 @@ object CommonUtil {
     val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
 
     if (partitionType.isEmpty) {
-      isValid = false
+      isValid = true
     } else {
       partitionType.get.toUpperCase() match {
         case "HASH" => if (!numPartitions.isDefined
@@ -207,10 +205,12 @@ object CommonUtil {
             isValid &= validateTypeConvert(partitionerFields(0), _))
         }
         case "RANGE_INTERVAL" => isValid = false
-        case _ => isValid = false
+        case _ => isValid = true
       }
       // only support one partition column for now
-      if (partitionerFields.length > 1) isValid = false
+      if (partitionerFields.length > 1 && !partitionType.get.toUpperCase.equals("NATIVE_HIVE")) {
+        isValid = false
+      }
     }
     isValid
   }
@@ -469,6 +469,125 @@ object CommonUtil {
   }
 
   /**
+   * validate table level properties for compaction
+   *
+   * @param tableProperties
+   */
+  def validateTableLevelCompactionProperties(tableProperties: Map[String, String]): Unit = {
+    validateMajorCompactionSize(tableProperties)
+    validateAutoLoadMerge(tableProperties)
+    validateCompactionLevelThreshold(tableProperties)
+    validateCompactionPreserveSegmentsOrAllowedDays(tableProperties,
+      CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS)
+    validateCompactionPreserveSegmentsOrAllowedDays(tableProperties,
+      CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS)
+  }
+
+  /**
+   * This method will validate the major compaction size specified by the user
+   * the property is used while doing major compaction
+   *
+   * @param tableProperties
+   */
+  def validateMajorCompactionSize(tableProperties: Map[String, String]): Unit = {
+    var majorCompactionSize: Integer = 0
+    val tblPropName = CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE
+    if (tableProperties.get(tblPropName).isDefined) {
+      val majorCompactionSizeStr: String =
+        parsePropertyValueStringInMB(tableProperties(tblPropName))
+      try {
+        majorCompactionSize = Integer.parseInt(majorCompactionSizeStr)
+      } catch {
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+            s"$majorCompactionSizeStr, only int value greater than 0 is supported.")
+      }
+      if (majorCompactionSize < 0) {
+        throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+          s"$majorCompactionSizeStr, only int value greater than 0 is supported.")
+      }
+      tableProperties.put(tblPropName, majorCompactionSizeStr)
+    }
+  }
+
+  /**
+   * This method will validate the auto merge load property specified by the user
+   * the property is used while doing minor compaction
+   *
+   * @param tableProperties
+   */
+  def validateAutoLoadMerge(tableProperties: Map[String, String]): Unit = {
+    val tblPropName = CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE
+    if (tableProperties.get(tblPropName).isDefined) {
+      val trimStr = tableProperties(tblPropName).trim
+      if (!trimStr.equalsIgnoreCase("true") && !trimStr.equalsIgnoreCase("false")) {
+        throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+          s"$trimStr, only true|false is supported.")
+      }
+      tableProperties.put(tblPropName, trimStr)
+    }
+  }
+
+  /**
+   * This method will validate the compaction level threshold property specified by the user
+   * the property is used while doing minor compaction
+   *
+   * @param tableProperties
+   */
+  def validateCompactionLevelThreshold(tableProperties: Map[String, String]): Unit = {
+    val tblPropName = CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD
+    if (tableProperties.get(tblPropName).isDefined) {
+      val regularedStr = tableProperties(tblPropName).replace(" ", "")
+      try {
+        val levels: Array[String] = regularedStr.split(",")
+        val thresholds = regularedStr.split(",").map(levelThresholdStr => levelThresholdStr.toInt)
+        if (!thresholds.forall(t => t < 100 && t > 0)) {
+          throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+            s"$regularedStr, only int values separated by comma and between 0 " +
+            s"and 100 are supported.")
+        }
+      }
+      catch {
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+            s"$regularedStr, only int values separated by comma and between 0 " +
+            s"and 100 are supported.")
+      }
+      tableProperties.put(tblPropName, regularedStr)
+    }
+  }
+
+  /**
+   * This method will validate the compaction preserve segments property
+   * or compaction allowed days property
+   *
+   * @param tableProperties
+   * @param tblPropName
+   */
+  def validateCompactionPreserveSegmentsOrAllowedDays(tableProperties: Map[String, String],
+                                                      tblPropName: String): Unit = {
+    if (tblPropName.equals(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS) ||
+      tblPropName.equals(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS)) {
+      var propValue: Integer = 0
+      if (tableProperties.get(tblPropName).isDefined) {
+        val propValueStr = tableProperties(tblPropName).trim
+        try {
+          propValue = Integer.parseInt(propValueStr)
+        } catch {
+          case e: NumberFormatException =>
+            throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+              s"$propValueStr, only int value between 0 and 100 is supported.")
+        }
+        if (propValue < 0 || propValue > 100) {
+          throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+            s"$propValueStr, only int value between 0 and 100 is supported.")
+        }
+        tableProperties.put(tblPropName, propValueStr)
+      }
+    }
+  }
+
+  /**
    * This method will validate the table block size specified by the user
    *
    * @param tableProperties
@@ -514,56 +633,11 @@ object CommonUtil {
     parsedPropertyValueString
   }
 
-  def readAndUpdateLoadProgressInTableMeta(model: CarbonLoadModel,
-      insertOverwrite: Boolean): Unit = {
-    val newLoadMetaEntry = new LoadMetadataDetails
-    val status = if (insertOverwrite) {
-      SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
-    } else {
-      SegmentStatus.INSERT_IN_PROGRESS
-    }
-
-    // reading the start time of data load.
-    val loadStartTime = CarbonUpdateUtil.readCurrentTime
-    model.setFactTimeStamp(loadStartTime)
-    CarbonLoaderUtil.populateNewLoadMetaEntry(
-      newLoadMetaEntry, status, model.getFactTimeStamp, false)
-    val entryAdded: Boolean =
-      CarbonLoaderUtil.recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite)
-    if (!entryAdded) {
-      sys.error(s"Failed to add entry in table status for " +
-                s"${ model.getDatabaseName }.${model.getTableName}")
-    }
-  }
-
-  /**
-   * This method will update the load failure entry in the table status file
-   *
-   * @param model
-   */
-  def updateTableStatusForFailure(
-      model: CarbonLoadModel): Unit = {
-    // in case if failure the load status should be "Marked for delete" so that it will be taken
-    // care during clean up
-    val loadStatus = SegmentStatus.MARKED_FOR_DELETE
-    // always the last entry in the load metadata details will be the current load entry
-    val loadMetaEntry = model.getLoadMetadataDetails.get(model.getLoadMetadataDetails.size - 1)
-    CarbonLoaderUtil
-      .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp, true)
-    val updationStatus = CarbonLoaderUtil.recordNewLoadMetadata(loadMetaEntry, model, false, false)
-    if (!updationStatus) {
-      sys
-        .error(s"Failed to update failure entry in table status for ${
-          model
-            .getDatabaseName
-        }.${ model.getTableName }")
-    }
-  }
 
   def readLoadMetadataDetails(model: CarbonLoadModel): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
     val details = SegmentStatusManager.readLoadMetadata(metadataPath)
-    model.setLoadMetadataDetails(details.toList.asJava)
+    model.setLoadMetadataDetails(new util.ArrayList[LoadMetadataDetails](details.toList.asJava))
   }
 
   def configureCSVInputFormat(configuration: Configuration,
@@ -734,6 +808,7 @@ object CommonUtil {
       case PartitionType.HASH =>
         val hashNumber = partitionInfo.getNumPartitions
         result.+=(RowFactory.create(columnName + " = HASH_NUMBER(" + hashNumber.toString() + ")"))
+        result.+=(RowFactory.create(s"partitionIds = ${partitionInfo.getPartitionIds}"))
       case others =>
         result.+=(RowFactory.create(columnName + " = "))
     }
@@ -758,12 +833,12 @@ object CommonUtil {
   }
 
   /**
-   * The in-progress segments which are left when the driver is down will be marked as deleted
+   * The in-progress segments which are in stale state will be marked as deleted
    * when driver is initializing.
-   * @param storePath
-   * @param sparkContext
+   * @param databaseLocation
+   * @param dbName
    */
-  def cleanInProgressSegments(storePath: String, sparkContext: SparkContext): Unit = {
+  def cleanInProgressSegments(databaseLocation: String, dbName: String): Unit = {
     val loaderDriver = CarbonProperties.getInstance().
       getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
         CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
@@ -771,57 +846,31 @@ object CommonUtil {
       return
     }
     try {
-      val fileType = FileFactory.getFileType(storePath)
-      if (FileFactory.isFileExist(storePath, fileType)) {
-        val file = FileFactory.getCarbonFile(storePath, fileType)
-        val databaseFolders = file.listFiles()
-        databaseFolders.foreach { databaseFolder =>
-          if (databaseFolder.isDirectory) {
-            val tableFolders = databaseFolder.listFiles()
+      val fileType = FileFactory.getFileType(databaseLocation)
+      if (FileFactory.isFileExist(databaseLocation, fileType)) {
+        val file = FileFactory.getCarbonFile(databaseLocation, fileType)
+          if (file.isDirectory) {
+            val tableFolders = file.listFiles()
             tableFolders.foreach { tableFolder =>
               if (tableFolder.isDirectory) {
+                val tablePath = databaseLocation +
+                                CarbonCommonConstants.FILE_SEPARATOR + tableFolder.getName
                 val identifier =
-                  AbsoluteTableIdentifier.from(storePath,
-                    databaseFolder.getName, tableFolder.getName)
+                  AbsoluteTableIdentifier.from(tablePath, dbName, tableFolder.getName)
                 val carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier)
                 val tableStatusFile = carbonTablePath.getTableStatusFilePath
                 if (FileFactory.isFileExist(tableStatusFile, fileType)) {
                   val segmentStatusManager = new SegmentStatusManager(identifier)
                   val carbonLock = segmentStatusManager.getTableStatusLock
                   try {
-                    if (carbonLock.lockWithRetries) {
-                      LOGGER.info("Acquired lock for table" +
-                        identifier.getCarbonTableIdentifier.getTableUniqueName
-                        + " for table status updation")
-                      val listOfLoadFolderDetailsArray =
-                        SegmentStatusManager.readLoadMetadata(
-                          carbonTablePath.getMetadataDirectoryPath)
-                      var loadInprogressExist = false
-                      val staleFolders: Seq[CarbonFile] = Seq()
-                      listOfLoadFolderDetailsArray.foreach { load =>
-                        if (load.getSegmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
-                            load.getSegmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
-                          load.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
-                          staleFolders :+ FileFactory.getCarbonFile(
-                            carbonTablePath.getCarbonDataDirectoryPath("0", load.getLoadName))
-                          loadInprogressExist = true
-                        }
-                      }
-                      if (loadInprogressExist) {
-                        SegmentStatusManager
-                          .writeLoadDetailsIntoFile(tableStatusFile, listOfLoadFolderDetailsArray)
-                        staleFolders.foreach(CarbonUtil.deleteFoldersAndFiles(_))
-                      }
-                    }
-                  } finally {
-                    if (carbonLock.unlock) {
-                      LOGGER.info(s"Released table status lock for table " +
-                                  s"${identifier.getCarbonTableIdentifier.getTableUniqueName}")
-                    } else {
-                      LOGGER.error(s"Error while releasing table status lock for table " +
-                                  s"${identifier.getCarbonTableIdentifier.getTableUniqueName}")
-                    }
-                  }
+                  val carbonTable = CarbonMetadata.getInstance
+                    .getCarbonTable(identifier.getCarbonTableIdentifier.getTableUniqueName)
+                  DataLoadingUtil.deleteLoadsAndUpdateMetadata(
+                    isForceDeletion = true, carbonTable)
+                } catch {
+                  case _: Exception =>
+                    LOGGER.warn(s"Error while cleaning table " +
+                                s"${ identifier.getCarbonTableIdentifier.getTableUniqueName }")
                 }
               }
             }
@@ -843,38 +892,42 @@ object CommonUtil {
     (Integer.parseInt(scaleAndPrecision(0).trim), Integer.parseInt(scaleAndPrecision(1).trim))
   }
 
-  /**
-   * Merge the carbonindex files with in the segment to carbonindexmerge file inside same segment
-   */
-  def mergeIndexFiles(sparkContext: SparkContext,
-      segmentIds: Seq[String],
-      tablePath: String,
-      carbonTable: CarbonTable,
-      mergeIndexProperty: Boolean): Unit = {
-    if (mergeIndexProperty) {
-      new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
-        carbonTable.getDatabaseName, carbonTable.getTableName).getTablePath,
-        segmentIds).collect()
-    } else {
-      try {
-        CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT).toBoolean
-        if (CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
-          new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
-            carbonTable.getDatabaseName, carbonTable.getTableName).getTablePath,
-            segmentIds).collect()
-        }
-      } catch {
-        case _: Exception =>
-          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
-            new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
-              carbonTable.getDatabaseName, carbonTable.getTableName).getTablePath,
-              segmentIds).collect()
-          }
+
+  def setTempStoreLocation(
+      index: Int,
+      carbonLoadModel: CarbonLoadModel,
+      isCompactionFlow: Boolean,
+      isAltPartitionFlow: Boolean) : Unit = {
+    var storeLocation: String = null
+
+    // this property is used to determine whether temp location for carbon is inside
+    // container temp dir or is yarn application directory.
+    val carbonUseLocalDir = CarbonProperties.getInstance()
+      .getProperty("carbon.use.local.dir", "false")
+
+    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
+
+      val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
+      if (null != storeLocations && storeLocations.nonEmpty) {
+        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
       }
+      if (storeLocation == null) {
+        storeLocation = System.getProperty("java.io.tmpdir")
+      }
+    } else {
+      storeLocation = System.getProperty("java.io.tmpdir")
     }
+    storeLocation = storeLocation + CarbonCommonConstants.FILE_SEPARATOR + "carbon" +
+      System.nanoTime() + CarbonCommonConstants.UNDERSCORE + index
+
+    val tempLocationKey = CarbonDataProcessorUtil
+      .getTempStoreLocationKey(carbonLoadModel.getDatabaseName,
+        carbonLoadModel.getTableName,
+        carbonLoadModel.getSegmentId,
+        carbonLoadModel.getTaskNo,
+        isCompactionFlow,
+        isAltPartitionFlow)
+    CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
   }
 
 }

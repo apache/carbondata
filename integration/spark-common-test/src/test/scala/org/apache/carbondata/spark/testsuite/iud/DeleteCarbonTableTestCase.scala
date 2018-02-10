@@ -17,8 +17,10 @@
 package org.apache.carbondata.spark.testsuite.iud
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{Row, SaveMode}
+import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.datastore.impl.FileFactory
 
 
 class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
@@ -104,6 +106,27 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("partition delete data from carbon table with alias [where clause ]") {
+    sql("drop table if exists iud_db.dest")
+    sql("""create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
+    sql("""delete from iud_db.dest d where d.c1 = 'a'""").show
+    checkAnswer(
+      sql("""select c2 from iud_db.dest"""),
+      Seq(Row(2), Row(3),Row(4), Row(5))
+    )
+  }
+  test("partition delete data from  carbon table[where clause ]") {
+    sql("""drop table if exists iud_db.dest""")
+    sql("""create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
+    sql("""delete from iud_db.dest where c2 = 2""").show
+    checkAnswer(
+      sql("""select c1 from iud_db.dest"""),
+      Seq(Row("a"), Row("c"), Row("d"), Row("e"))
+    )
+  }
+
   test("Records more than one pagesize after delete operation ") {
     sql("DROP TABLE IF EXISTS carbon2")
     import sqlContext.implicits._
@@ -142,6 +165,39 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     }.getMessage.contains("Delete operation is not supported for pre-aggregate table")
     sql("drop table if exists preaggMain")
     sql("drop table if exists preaggmain_preagg1")
+  }
+
+  test("test select query after compaction, delete and clean files") {
+    sql("drop table if exists select_after_clean")
+    sql("create table select_after_clean(id int, name string) stored by 'carbondata'")
+    sql("insert into select_after_clean select 1,'abc'")
+    sql("insert into select_after_clean select 2,'def'")
+    sql("insert into select_after_clean select 3,'uhj'")
+    sql("insert into select_after_clean select 4,'frg'")
+    sql("alter table select_after_clean compact 'minor'")
+    sql("clean files for table select_after_clean")
+    sql("delete from select_after_clean where name='def'")
+    sql("clean files for table select_after_clean")
+    checkAnswer(sql("""select * from select_after_clean"""),
+      Seq(Row(1, "abc"), Row(3, "uhj"), Row(4, "frg")))
+  }
+
+  test("test number of update table status files after delete query where no records are deleted") {
+    sql("drop table if exists update_status_files")
+    sql("create table update_status_files(name string,age int) stored by 'carbondata'")
+    sql("insert into update_status_files select 'abc',1")
+    sql("insert into update_status_files select 'def',2")
+    sql("insert into update_status_files select 'xyz',4")
+    sql("insert into update_status_files select 'abc',6")
+    sql("alter table update_status_files compact 'minor'")
+    sql("delete from update_status_files where age=3").show()
+    sql("delete from update_status_files where age=5").show()
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Some("iud_db"), "update_status_files")(sqlContext.sparkSession)
+    val metaPath = carbonTable.getMetaDataFilepath
+    val files = FileFactory.getCarbonFile(metaPath)
+    assert(files.listFiles().length == 2)
+    sql("drop table update_status_files")
   }
 
 

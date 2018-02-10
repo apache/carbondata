@@ -24,8 +24,10 @@ import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -65,6 +67,7 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypeAdapter;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema;
@@ -82,16 +85,20 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.util.comparator.Comparator;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -760,6 +767,21 @@ public final class CarbonUtil {
     return defaultFsUrl + currentPath;
   }
 
+  /**
+   * infer compress name from file name
+   * @param path file name
+   * @return compressor name
+   */
+  public static String inferCompressorFromFileName(String path) {
+    if (path.endsWith(".gz")) {
+      return "GZIP";
+    } else if (path.endsWith("bz2")) {
+      return "BZIP2";
+    } else {
+      return "";
+    }
+  }
+
   private static boolean checkIfPrefixExists(String path) {
     final String lowerPath = path.toLowerCase(Locale.getDefault());
     return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) ||
@@ -949,8 +971,27 @@ public final class CarbonUtil {
    * Below method will be used to read the data file matadata
    */
   public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo) throws IOException {
+    return getDataFileFooter(tableBlockInfo, false);
+  }
+
+  /**
+   * Below method will be used to read the data file matadata
+   *
+   * @param tableBlockInfo
+   * @param forceReadDataFileFooter flag to decide whether to read the footer of
+   *                                carbon data file forcefully
+   * @return
+   * @throws IOException
+   */
+  public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo,
+      boolean forceReadDataFileFooter) throws IOException {
+    return getDataFileFooter(tableBlockInfo, forceReadDataFileFooter);
+  }
+
+  private static DataFileFooter getDataFileFooter(TableBlockInfo tableBlockInfo,
+      boolean forceReadDataFileFooter) throws IOException {
     BlockletDetailInfo detailInfo = tableBlockInfo.getDetailInfo();
-    if (detailInfo == null) {
+    if (detailInfo == null || forceReadDataFileFooter) {
       AbstractDataFileFooterConverter fileFooterConverter =
           DataFileFooterConverterFactory.getInstance()
               .getDataFileFooterConverter(tableBlockInfo.getVersion());
@@ -958,8 +999,7 @@ public final class CarbonUtil {
     } else {
       DataFileFooter fileFooter = new DataFileFooter();
       fileFooter.setSchemaUpdatedTimeStamp(detailInfo.getSchemaUpdatedTimeStamp());
-      ColumnarFormatVersion version =
-          ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
+      ColumnarFormatVersion version = ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
       AbstractDataFileFooterConverter dataFileFooterConverter =
           DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
       List<ColumnSchema> schema = dataFileFooterConverter.getSchema(tableBlockInfo);
@@ -1391,23 +1431,23 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to get the list of segment in
+   * Below method will be used to get the list of values in
    * comma separated string format
    *
-   * @param segmentList
+   * @param values
    * @return comma separated segment string
    */
-  public static String getSegmentString(List<String> segmentList) {
-    if (segmentList.isEmpty()) {
+  public static String convertToString(List<String> values) {
+    if (values == null || values.isEmpty()) {
       return "";
     }
     StringBuilder segmentStringbuilder = new StringBuilder();
-    for (int i = 0; i < segmentList.size() - 1; i++) {
-      String segmentNo = segmentList.get(i);
+    for (int i = 0; i < values.size() - 1; i++) {
+      String segmentNo = values.get(i);
       segmentStringbuilder.append(segmentNo);
       segmentStringbuilder.append(",");
     }
-    segmentStringbuilder.append(segmentList.get(segmentList.size() - 1));
+    segmentStringbuilder.append(values.get(values.size() - 1));
     return segmentStringbuilder.toString();
   }
 
@@ -1447,6 +1487,22 @@ public final class CarbonUtil {
         return new DataChunk3();
       }
     }, offset, length);
+  }
+
+  public static DataChunk3 readDataChunk3(InputStream stream) throws IOException {
+    TBaseCreator creator = new ThriftReader.TBaseCreator() {
+      @Override public TBase create() {
+        return new DataChunk3();
+      }
+    };
+    TProtocol binaryIn = new TCompactProtocol(new TIOStreamTransport(stream));
+    TBase t = creator.create();
+    try {
+      t.read(binaryIn);
+    } catch (TException e) {
+      throw new IOException(e);
+    }
+    return (DataChunk3) t;
   }
 
   public static DataChunk2 readDataChunk(ByteBuffer dataChunkBuffer, int offset, int length)
@@ -1666,6 +1722,16 @@ public final class CarbonUtil {
               && blockTimeStamp < invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()))) {
         return true;
       }
+      // aborted files case.
+      if (invalidBlockVOForSegmentId.getLatestUpdateTimestamp() != null
+          && blockTimeStamp > invalidBlockVOForSegmentId.getLatestUpdateTimestamp()) {
+        return true;
+      }
+      // for 1st time starttime stamp will be empty so need to consider fact time stamp.
+      if (null == invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()
+          && blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp()) {
+        return true;
+      }
     }
     return false;
   }
@@ -1826,7 +1892,11 @@ public final class CarbonUtil {
    * @return
    */
   public static boolean isValidBadStorePath(String badRecordsLocation) {
-    return !(null == badRecordsLocation || badRecordsLocation.length() == 0);
+    if (StringUtils.isEmpty(badRecordsLocation)) {
+      return false;
+    } else {
+      return isFileExists(checkAndAppendHDFSUrl(badRecordsLocation));
+    }
   }
 
   /**
@@ -1924,7 +1994,6 @@ public final class CarbonUtil {
 
   // TODO: move this to carbon store API as it is related to TableInfo creation
   public static TableInfo convertGsonToTableInfo(Map<String, String> properties) {
-    Gson gson = new Gson();
     String partsNo = properties.get("carbonSchemaPartsNo");
     if (partsNo == null) {
       return null;
@@ -1938,6 +2007,13 @@ public final class CarbonUtil {
       }
       builder.append(part);
     }
+
+    // Datatype GSON adapter is added to support backward compatibility for tableInfo
+    // deserialization
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    gsonBuilder.registerTypeAdapter(DataType.class, new DataTypeAdapter());
+
+    Gson gson = gsonBuilder.create();
     TableInfo tableInfo = gson.fromJson(builder.toString(), TableInfo.class);
 
     // The tableInfo is deserialized from GSON string, need to update the scale and
@@ -1974,8 +2050,7 @@ public final class CarbonUtil {
    * @return
    */
   public static Map<String, String> removeSchemaFromMap(Map<String, String> properties) {
-    Map<String, String> newMap = new HashMap<>();
-    newMap.putAll(properties);
+    Map<String, String> newMap = new HashMap<>(properties);
     String partsNo = newMap.get("carbonSchemaPartsNo");
     if (partsNo == null) {
       return newMap;
@@ -2009,20 +2084,9 @@ public final class CarbonUtil {
     return tableInfo;
   }
 
-  public static void writeThriftTableToSchemaFile(String schemaFilePath,
-      org.apache.carbondata.format.TableInfo tableInfo) throws IOException {
-    ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);
-    try {
-      thriftWriter.open();
-      thriftWriter.write(tableInfo);
-    } finally {
-      thriftWriter.close();
-    }
-  }
 
-  public static void dropDatabaseDirectory(String dbName, String storePath)
+  public static void dropDatabaseDirectory(String databasePath)
       throws IOException, InterruptedException {
-    String databasePath = storePath + File.separator + dbName;
     FileFactory.FileType fileType = FileFactory.getFileType(databasePath);
     if (FileFactory.isFileExist(databasePath, fileType)) {
       CarbonFile dbPath = FileFactory.getCarbonFile(databasePath, fileType);
@@ -2156,21 +2220,6 @@ public final class CarbonUtil {
     return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + newTableName;
   }
 
-  /*
-   * This method will add data size and index size into tablestatus for each segment
-   */
-  public static void addDataIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
-      String segmentId, CarbonTable carbonTable) throws IOException {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath((carbonTable.getAbsoluteTableIdentifier()));
-    Map<String, Long> dataIndexSize =
-        CarbonUtil.getDataSizeAndIndexSize(carbonTablePath, segmentId);
-    loadMetadataDetails
-        .setDataSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString());
-    loadMetadataDetails
-        .setIndexSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE).toString());
-  }
-
   /**
    * This method will calculate the data size and index size for carbon table
    */
@@ -2263,15 +2312,17 @@ public final class CarbonUtil {
       case S3:
         Path path = new Path(segmentPath);
         FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-        FileStatus[] fileStatuses = fs.listStatus(path);
-        if (null != fileStatuses) {
-          for (FileStatus dataAndIndexStatus : fileStatuses) {
-            String pathName = dataAndIndexStatus.getPath().getName();
-            if (pathName.endsWith(CarbonTablePath.getCarbonIndexExtension()) || pathName
-                .endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
-              carbonIndexSize += dataAndIndexStatus.getLen();
-            } else if (pathName.endsWith(CarbonTablePath.getCarbonDataExtension())) {
-              carbonDataSize += dataAndIndexStatus.getLen();
+        if (fs.exists(path)) {
+          FileStatus[] fileStatuses = fs.listStatus(path);
+          if (null != fileStatuses) {
+            for (FileStatus dataAndIndexStatus : fileStatuses) {
+              String pathName = dataAndIndexStatus.getPath().getName();
+              if (pathName.endsWith(CarbonTablePath.getCarbonIndexExtension()) || pathName
+                  .endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
+                carbonIndexSize += dataAndIndexStatus.getLen();
+              } else if (pathName.endsWith(CarbonTablePath.getCarbonDataExtension())) {
+                carbonDataSize += dataAndIndexStatus.getLen();
+              }
             }
           }
         }
@@ -2308,7 +2359,9 @@ public final class CarbonUtil {
     List<DataMapSchema> dataMapSchemaList = carbonTable.getTableInfo().getDataMapSchemaList();
     for (DataMapSchema dataMapSchema : dataMapSchemaList) {
       if (dataMapSchema instanceof AggregationDataMapSchema) {
-        return ((AggregationDataMapSchema) dataMapSchema).isTimeseriesDataMap();
+        if (((AggregationDataMapSchema) dataMapSchema).isTimeseriesDataMap()) {
+          return true;
+        }
       }
     }
     return false;
@@ -2327,6 +2380,73 @@ public final class CarbonUtil {
       }
     }
     return false;
+  }
+
+  /**
+   * Convert the bytes to base64 encode string
+   * @param bytes
+   * @return
+   * @throws UnsupportedEncodingException
+   */
+  public static String encodeToString(byte[] bytes) throws UnsupportedEncodingException {
+    return new String(Base64.encodeBase64(bytes),
+        CarbonCommonConstants.DEFAULT_CHARSET);
+  }
+
+  /**
+   * Deoce
+   * @param objectString
+   * @return
+   * @throws UnsupportedEncodingException
+   */
+  public static byte[] decodeStringToBytes(String objectString)
+      throws UnsupportedEncodingException {
+    return Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
+  }
+
+  /**
+   * This method will be used to update the min and max values and this will be used in case of
+   * old store where min and max values for measures are written opposite
+   * (i.e max values in place of min and min in place of max values)
+   *
+   * @param dataFileFooter
+   * @param maxValues
+   * @param minValues
+   * @param isMinValueComparison
+   * @return
+   */
+  public static byte[][] updateMinMaxValues(DataFileFooter dataFileFooter, byte[][] maxValues,
+      byte[][] minValues, boolean isMinValueComparison) {
+    byte[][] updatedMinMaxValues = new byte[maxValues.length][];
+    if (isMinValueComparison) {
+      System.arraycopy(minValues, 0, updatedMinMaxValues, 0, minValues.length);
+    } else {
+      System.arraycopy(maxValues, 0, updatedMinMaxValues, 0, maxValues.length);
+    }
+    for (int i = 0; i < maxValues.length; i++) {
+      // update min and max values only for measures
+      if (!dataFileFooter.getColumnInTable().get(i).isDimensionColumn()) {
+        DataType dataType = dataFileFooter.getColumnInTable().get(i).getDataType();
+        SerializableComparator comparator = Comparator.getComparator(dataType);
+        int compare;
+        if (isMinValueComparison) {
+          compare = comparator
+              .compare(DataTypeUtil.getMeasureObjectFromDataType(maxValues[i], dataType),
+                  DataTypeUtil.getMeasureObjectFromDataType(minValues[i], dataType));
+          if (compare < 0) {
+            updatedMinMaxValues[i] = maxValues[i];
+          }
+        } else {
+          compare = comparator
+              .compare(DataTypeUtil.getMeasureObjectFromDataType(minValues[i], dataType),
+                  DataTypeUtil.getMeasureObjectFromDataType(maxValues[i], dataType));
+          if (compare > 0) {
+            updatedMinMaxValues[i] = minValues[i];
+          }
+        }
+      }
+    }
+    return updatedMinMaxValues;
   }
 
 }

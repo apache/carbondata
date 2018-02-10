@@ -41,6 +41,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.FileHeader;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
+import org.apache.carbondata.processing.loading.BadRecordsLoggerProvider;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.DataLoadProcessBuilder;
@@ -49,7 +50,6 @@ import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.parser.RowParser;
 import org.apache.carbondata.processing.loading.parser.impl.RowParserImpl;
-import org.apache.carbondata.processing.loading.steps.DataConverterProcessorStepImpl;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -119,7 +119,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     String segmentId = CarbonStreamOutputFormat.getSegmentId(hadoopConf);
     carbonLoadModel.setSegmentId(segmentId);
     carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
-    int taskNo = TaskID.forName(hadoopConf.get("mapred.tip.id")).getId();
+    long taskNo = TaskID.forName(hadoopConf.get("mapred.tip.id")).getId();
     carbonLoadModel.setTaskNo("" + taskNo);
     configuration = DataLoadProcessBuilder.createConfiguration(carbonLoadModel);
     maxRowNums = hadoopConf.getInt(CarbonStreamOutputFormat.CARBON_STREAM_BLOCKLET_ROW_NUMS,
@@ -134,7 +134,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   }
 
   private void initializeAtFirstRow() throws IOException, InterruptedException {
-    isFirstRow = false;
 
     // initialize metadata
     isNoDictionaryDimensionColumn =
@@ -150,7 +149,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
     // initialize parser and converter
     rowParser = new RowParserImpl(dataFields, configuration);
-    badRecordLogger = DataConverterProcessorStepImpl.createBadRecordLogger(configuration);
+    badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     converter = new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger);
     configuration.setCardinalityFinder(converter);
     converter.initialize();
@@ -173,6 +172,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       outputStream = FileFactory.getDataOutputStream(filePath, fileType);
       writeFileHeader();
     }
+
+    isFirstRow = false;
   }
 
   @Override public void write(Void key, Object value) throws IOException, InterruptedException {
@@ -318,5 +319,9 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
   public String getFileName() {
     return fileName;
+  }
+
+  public void setHasException(boolean hasException) {
+    this.hasException = hasException;
   }
 }

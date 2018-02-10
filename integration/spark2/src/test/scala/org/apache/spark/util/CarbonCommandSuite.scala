@@ -28,7 +28,7 @@ import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -142,7 +142,8 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     dropTable(table)
     createAndLoadTestTable(table, "csv_table")
     CleanFiles.main(Array(s"${location}", table, "true"))
-    val tablePath = s"${location}${File.separator}default${File.separator}$table"
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", table)
+    val tablePath = carbonTable.getTablePath
     val f = new File(tablePath)
     assert(!f.exists())
 

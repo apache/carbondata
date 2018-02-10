@@ -17,8 +17,8 @@
 
 package org.apache.spark.sql.util
 
-  import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.AnalysisException
 
-  object CarbonException {
-    def analysisException(message: String): Nothing = throw new AnalysisException(message)
-  }
+object CarbonException {
+  def analysisException(message: String): Nothing = throw new AnalysisException(message)
+}

@@ -353,12 +353,26 @@ public final class DataTypeUtil {
       } else if (actualDataType == DataTypes.STRING) {
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       } else if (actualDataType == DataTypes.SHORT) {
+        // for non string type no dictionary column empty byte array is empty value
+        // so no need to parse
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
         return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.INT) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
         return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.LONG) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
         return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.TIMESTAMP) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
         return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length) * 1000L;
       } else {
         return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
@@ -370,6 +384,16 @@ public final class DataTypeUtil {
       LOGGER.error("Problem while converting data type" + data);
       return null;
     }
+  }
+
+  /**
+   * Method to check if byte array is empty
+   *
+   * @param dataInBytes
+   * @return
+   */
+  private static boolean isEmptyByteArray(byte[] dataInBytes) {
+    return dataInBytes.length == 0;
   }
 
 
@@ -709,6 +733,120 @@ public final class DataTypeUtil {
       converter = new DataTypeConverterImpl();
     }
     return converter;
+  }
+
+  public static DataType valueOf(String name) {
+    if (DataTypes.STRING.getName().equalsIgnoreCase(name)) {
+      return DataTypes.STRING;
+    } else if (DataTypes.DATE.getName().equalsIgnoreCase(name)) {
+      return DataTypes.DATE;
+    } else if (DataTypes.TIMESTAMP.getName().equalsIgnoreCase(name)) {
+      return DataTypes.TIMESTAMP;
+    } else if (DataTypes.BOOLEAN.getName().equalsIgnoreCase(name)) {
+      return DataTypes.BOOLEAN;
+    } else if (DataTypes.BYTE.getName().equalsIgnoreCase(name)) {
+      return DataTypes.BYTE;
+    } else if (DataTypes.SHORT.getName().equalsIgnoreCase(name)) {
+      return DataTypes.SHORT;
+    } else if (DataTypes.SHORT_INT.getName().equalsIgnoreCase(name)) {
+      return DataTypes.SHORT_INT;
+    } else if (DataTypes.INT.getName().equalsIgnoreCase(name)) {
+      return DataTypes.INT;
+    } else if (DataTypes.LONG.getName().equalsIgnoreCase(name)) {
+      return DataTypes.LONG;
+    } else if (DataTypes.LEGACY_LONG.getName().equalsIgnoreCase(name)) {
+      return DataTypes.LEGACY_LONG;
+    } else if (DataTypes.FLOAT.getName().equalsIgnoreCase(name)) {
+      return DataTypes.FLOAT;
+    } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(name)) {
+      return DataTypes.DOUBLE;
+    } else if (DataTypes.NULL.getName().equalsIgnoreCase(name)) {
+      return DataTypes.NULL;
+    } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
+      return DataTypes.BYTE_ARRAY;
+    } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
+      return DataTypes.BYTE_ARRAY;
+    } else if (name.equalsIgnoreCase("decimal")) {
+      return DataTypes.createDefaultDecimalType();
+    } else if (name.equalsIgnoreCase("array")) {
+      return DataTypes.createDefaultArrayType();
+    } else if (name.equalsIgnoreCase("struct")) {
+      return DataTypes.createDefaultStructType();
+    } else if (name.equalsIgnoreCase("map")) {
+      return DataTypes.createDefaultMapType();
+    } else {
+      throw new RuntimeException("create DataType with invalid name: " + name);
+    }
+  }
+
+  /**
+   * @param dataType extracted from the json data
+   * @return returns the datatype based on the input string from json to deserialize the tableInfo
+   */
+  public static DataType valueOf(DataType dataType, int precision, int scale) {
+    if (DataTypes.STRING.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.STRING;
+    } else if (DataTypes.DATE.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.DATE;
+    } else if (DataTypes.TIMESTAMP.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.TIMESTAMP;
+    } else if (DataTypes.BOOLEAN.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.BOOLEAN;
+    } else if (DataTypes.BYTE.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.BYTE;
+    } else if (DataTypes.SHORT.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.SHORT;
+    } else if (DataTypes.SHORT_INT.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.SHORT_INT;
+    } else if (DataTypes.INT.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.INT;
+    } else if (DataTypes.LONG.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.LONG;
+    } else if (DataTypes.LEGACY_LONG.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.LEGACY_LONG;
+    } else if (DataTypes.FLOAT.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.FLOAT;
+    } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.DOUBLE;
+    } else if (DataTypes.NULL.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.NULL;
+    } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.BYTE_ARRAY;
+    } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.BYTE_ARRAY;
+    } else if (dataType.getName().equalsIgnoreCase("decimal")) {
+      return DataTypes.createDecimalType(precision, scale);
+    } else if (dataType.getName().equalsIgnoreCase("array")) {
+      return DataTypes.createDefaultArrayType();
+    } else if (dataType.getName().equalsIgnoreCase("struct")) {
+      return DataTypes.createDefaultStructType();
+    } else if (dataType.getName().equalsIgnoreCase("map")) {
+      return DataTypes.createDefaultMapType();
+    } else {
+      throw new RuntimeException(
+          "create DataType with invalid dataType.getName(): " + dataType.getName());
+    }
+  }
+
+  /**
+   * Method to type case the data based on modified data type. This method will used for
+   * retrieving the data after change in data type restructure operation
+   *
+   * @param data
+   * @param restructuredDataType
+   * @param currentDataOffset
+   * @param length
+   * @return
+   */
+  public static long getDataBasedOnRestructuredDataType(byte[] data, DataType restructuredDataType,
+      int currentDataOffset, int length) {
+    long value = 0L;
+    if (restructuredDataType == DataTypes.INT) {
+      value = ByteUtil.toInt(data, currentDataOffset, length);
+    } else if (restructuredDataType == DataTypes.LONG) {
+      value = ByteUtil.toLong(data, currentDataOffset, length);
+    }
+    return value;
   }
 
 }

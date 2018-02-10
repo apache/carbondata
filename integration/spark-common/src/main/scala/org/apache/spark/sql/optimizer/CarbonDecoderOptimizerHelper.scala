@@ -43,6 +43,9 @@ case class CarbonDictionaryTempDecoder(
     isOuter: Boolean = false,
     aliasMap: Option[CarbonAliasDecoderRelation] = None) extends UnaryNode {
   var processed = false
+  // In case of join plan and project does not include the notDecode attributes then we should not
+  // carry forward to above plan.
+  val notDecodeCarryForward = new util.HashSet[AttributeReferenceWrapper]()
 
   def getAttrsNotDecode: util.Set[Attribute] = {
     val set = new util.HashSet[Attribute]()
@@ -114,6 +117,7 @@ class CarbonDecoderProcessor {
         decoderNotDecode.asScala.foreach(cd.attrsNotDecode.add)
         decoderNotDecode.asScala.foreach(cd.attrList.remove)
         decoderNotDecode.addAll(cd.attrList)
+        cd.notDecodeCarryForward.asScala.foreach(decoderNotDecode.remove)
       case ArrayCarbonNode(children) =>
         children.foreach { child =>
           val notDecode = new util.HashSet[AttributeReferenceWrapper]

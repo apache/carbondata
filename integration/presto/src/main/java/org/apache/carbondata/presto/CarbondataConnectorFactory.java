@@ -20,6 +20,7 @@ package org.apache.carbondata.presto;
 import com.facebook.presto.spi.ConnectorHandleResolver;
 import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
 import com.facebook.presto.spi.connector.*;
+import com.facebook.presto.spi.connector.classloader.ClassLoaderSafeConnectorMetadata;
 import com.facebook.presto.spi.connector.classloader.ClassLoaderSafeConnectorPageSourceProvider;
 import com.facebook.presto.spi.connector.classloader.ClassLoaderSafeConnectorSplitManager;
 import com.google.common.base.Throwables;
@@ -67,13 +68,13 @@ public class CarbondataConnectorFactory implements ConnectorFactory {
               .initialize();
 
       LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
-      CarbondataMetadata metadata = injector.getInstance(CarbondataMetadata.class);
+      ConnectorMetadata metadata = injector.getInstance(CarbondataMetadata.class);
       ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
       ConnectorRecordSetProvider connectorRecordSet =
           injector.getInstance(ConnectorRecordSetProvider.class);
       ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
 
-      return new CarbondataConnector(lifeCycleManager, metadata,
+      return new CarbondataConnector(lifeCycleManager, new ClassLoaderSafeConnectorMetadata(metadata,classLoader),
           new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader), connectorRecordSet,
           classLoader,
           new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader)

@@ -21,22 +21,17 @@ import java.io.File
 import java.math.{BigDecimal, RoundingMode}
 import java.sql.Timestamp
 
-import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
-import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
-import org.apache.spark.sql.test.Spark2TestQueryExecutor
-import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        new File("./target/test/badRecords").getCanonicalPath)
 
     sql("drop table if exists restructure")
     sql("drop table if exists table1")
@@ -131,6 +126,28 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("select distinct(msrField) from restructure").show(2000,false)
     checkAnswer(sql("select distinct(msrField) from restructure"),
       Row(new BigDecimal("123.45").setScale(2, RoundingMode.HALF_UP)))
+  }
+
+  // test alter add LONG datatype before load, see CARBONDATA-2131
+  test("test add long column before load") {
+    sql("drop table if exists alterLong")
+    sql("create table alterLong (name string) stored by 'carbondata'")
+    sql("alter table alterLong add columns(newCol long)")
+    sql("insert into alterLong select 'a',60000")
+    checkAnswer(sql("select * from alterLong"), Row("a", 60000))
+    sql("drop table if exists alterLong")
+  }
+
+  // test alter add LONG datatype after load, see CARBONDATA-2131
+  test("test add long column after load") {
+    sql("drop table if exists alterLong1")
+    sql("create table alterLong1 (name string) stored by 'carbondata'")
+    sql("insert into alterLong1 select 'a'")
+    sql("alter table alterLong1 add columns(newCol long)")
+    checkAnswer(sql("select * from alterLong1"), Row("a", null))
+    sql("insert into alterLong1 select 'b',70")
+    checkAnswer(sql("select * from alterLong1"), Seq(Row("a", null),Row("b", 70)))
+    sql("drop table if exists alterLong1")
   }
 
   test("test add all datatype supported dictionary column") {
@@ -230,7 +247,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   test("test adding complex datatype column") {
     try {
       sql("alter table restructure add columns(arr array<string>)")
-      sys.error("Exception should be thrown for complex column add")
+      assert(false, "Exception should be thrown for complex column add")
     } catch {
       case e: Exception =>
         println(e.getMessage)
@@ -305,6 +322,8 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   }
 
   test ("test drop & add same column multiple times as dict, nodict, timestamp and msr") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     // drop and add dict column
     sql("alter table restructure drop columns(designation)")
     sql(
@@ -338,13 +357,13 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     checkExistence(sql("desc restructure"), true, "intfield", "bigint")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(11,3)")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
-    intercept[RuntimeException] {
+    intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
     }
-    intercept[RuntimeException] {
+    intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,1)")
     }
-    intercept[RuntimeException] {
+    intercept[ProcessMetaDataException] {
       sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,5)")
     }
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,4)")
@@ -517,15 +536,35 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql(
       "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
-    assert(intercept[RuntimeException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preAggmain_preagg1 rename to preagg2")
     }.getMessage.contains("Rename operation for pre-aggregate table is not supported."))
-    assert(intercept[RuntimeException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain rename to preaggmain_new")
     }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables"))
     sql("drop table if exists preaggMain")
     sql("drop table if exists preaggmain_new")
     sql("drop table if exists preaggMain_preagg1")
+  }
+  test("test to check select columns after alter commands with null values"){
+    sql("drop table if exists restructure")
+    sql("drop table if exists restructure1")
+    sql(
+      "CREATE TABLE restructure (empno int, empname String, designation String, doj Timestamp, " +
+      "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+      "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
+      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
+    sql("ALTER TABLE restructure rename to restructure1")
+    sql("ALTER TABLE restructure1 ADD COLUMNS (projId int)")
+    sql("ALTER TABLE restructure1 DROP COLUMNS (projId)")
+    sql("ALTER TABLE restructure1 CHANGE empno empno BIGINT")
+    sql("ALTER TABLE restructure1 ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DICTIONARY_EXCLUDE'='b1')")
+    checkAnswer(sql("select a1,b1,empname from restructure1 where a1 is null and b1 is null and empname='arvind'"),Row(null,null,"arvind"))
+    sql("drop table if exists restructure1")
+    sql("drop table if exists restructure")
   }
 
   override def afterAll {

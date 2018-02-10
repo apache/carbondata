@@ -25,9 +25,12 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
-import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
 import org.apache.spark.sql.catalyst.parser.AstBuilder
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.sources.BaseRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -37,9 +40,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
  */
 
 object CarbonReflectionUtils {
-
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
   private val rm = universe.runtimeMirror(getClass.getClassLoader)
 
   /**
@@ -94,6 +94,57 @@ object CarbonReflectionUtils {
     }
   }
 
+  def getInsertIntoCommand(table: LogicalPlan,
+      partition: Map[String, Option[String]],
+      query: LogicalPlan,
+      overwrite: Boolean,
+      ifPartitionNotExists: Boolean): InsertIntoTable = {
+    val className = "org.apache.spark.sql.catalyst.plans.logical.InsertIntoTable"
+    if (SPARK_VERSION.startsWith("2.1")) {
+      val overwriteOptions = createObject(
+        "org.apache.spark.sql.catalyst.plans.logical.OverwriteOptions",
+        overwrite.asInstanceOf[Object], Map.empty.asInstanceOf[Object])._1.asInstanceOf[Object]
+      createObject(
+        className,
+        table,
+        partition,
+        query,
+        overwriteOptions,
+        ifPartitionNotExists.asInstanceOf[Object])._1.asInstanceOf[InsertIntoTable]
+    } else if (SPARK_VERSION.startsWith("2.2")) {
+      createObject(
+        className,
+        table,
+        partition,
+        query,
+        overwrite.asInstanceOf[Object],
+        ifPartitionNotExists.asInstanceOf[Object])._1.asInstanceOf[InsertIntoTable]
+    } else {
+      throw new UnsupportedOperationException("Unsupported Spark version")
+    }
+  }
+
+  def getLogicalRelation(relation: BaseRelation,
+      expectedOutputAttributes: Seq[Attribute],
+      catalogTable: Option[CatalogTable]): LogicalRelation = {
+    val className = "org.apache.spark.sql.execution.datasources.LogicalRelation"
+    if (SPARK_VERSION.startsWith("2.1")) {
+      createObject(
+        className,
+        relation,
+        Some(expectedOutputAttributes),
+        catalogTable)._1.asInstanceOf[LogicalRelation]
+    } else if (SPARK_VERSION.startsWith("2.2")) {
+      createObject(
+        className,
+        relation,
+        expectedOutputAttributes,
+        catalogTable)._1.asInstanceOf[LogicalRelation]
+    } else {
+      throw new UnsupportedOperationException("Unsupported Spark version")
+    }
+  }
+
 
   def getOverWriteOption[T: TypeTag : reflect.ClassTag](name: String, obj: T): Boolean = {
     var overwriteboolean: Boolean = false
@@ -135,7 +186,7 @@ object CarbonReflectionUtils {
       createObject(
         "org.apache.spark.sql.hive.CarbonSqlAstBuilder",
         conf,
-        sqlParser)._1.asInstanceOf[AstBuilder]
+        sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]
     } else {
       throw new UnsupportedOperationException("Spark version not supported")
     }

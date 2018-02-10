@@ -110,7 +110,8 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
             carbonTable.getAbsoluteTableIdentifier).collect()
           AlterTableUtil.revertAddColumnChanges(dbName, tableName, timeStamp)(sparkSession)
         }
-        sys.error(s"Alter table add operation failed: ${e.getMessage}")
+        throwMetadataException(dbName, tableName,
+          s"Alter table add operation failed: ${e.getMessage}")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)

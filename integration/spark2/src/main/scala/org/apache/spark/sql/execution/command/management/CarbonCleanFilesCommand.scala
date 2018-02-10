@@ -18,11 +18,18 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.api.CarbonStore
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{CleanFilesPostEvent, CleanFilesPreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.spark.exception.ConcurrentOperationException
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Clean data in table
@@ -40,6 +47,11 @@ case class CarbonCleanFilesCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
+    // if insert overwrite in progress, do not allow delete segment
+    if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
+    }
+
     val operationContext = new OperationContext
     val cleanFilesPreEvent: CleanFilesPreEvent =
       CleanFilesPreEvent(carbonTable,
@@ -65,27 +77,48 @@ case class CarbonCleanFilesCommand(
       databaseNameOp: Option[String], tableName: String): Unit = {
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
+    val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
     CarbonStore.cleanFiles(
-      dbName,
-      tableName,
-      databaseLocation,
-      null,
-      forceTableClean)
+      dbName = dbName,
+      tableName = tableName,
+      tablePath = tablePath,
+      carbonTable = null, // in case of delete all data carbonTable is not required.
+      forceTableClean = forceTableClean)
   }
 
   private def cleanGarbageData(sparkSession: SparkSession,
       databaseNameOp: Option[String], tableName: String): Unit = {
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-
+    val partitions: Option[Seq[String]] = if (carbonTable.isHivePartitionTable) {
+      Some(CarbonFilters.getPartitions(
+        Seq.empty[Expression],
+        sparkSession,
+        TableIdentifier(tableName, databaseNameOp)))
+    } else {
+      None
+    }
     CarbonStore.cleanFiles(
-      CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
-      tableName,
-      CarbonProperties.getStorePath,
-      carbonTable,
-      forceTableClean)
+      dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
+      tableName = tableName,
+      tablePath = carbonTable.getTablePath,
+      carbonTable = carbonTable,
+      forceTableClean = forceTableClean,
+      currentTablePartitions = partitions)
   }
 
+  // Clean garbage data in all tables in all databases
   private def cleanGarbageDataInAllTables(sparkSession: SparkSession): Unit = {
-    // Waiting to implement
+    try {
+      val databases = sparkSession.sessionState.catalog.listDatabases()
+      databases.foreach(dbName => {
+        val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
+        CommonUtil.cleanInProgressSegments(databaseLocation, dbName)
+      })
+    } catch {
+      case e: Throwable =>
+        // catch all exceptions to avoid failure
+        LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+          .error(e, "Failed to clean in progress segments")
+    }
   }
 }

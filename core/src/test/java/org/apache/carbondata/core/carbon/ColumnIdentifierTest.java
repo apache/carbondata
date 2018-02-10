@@ -19,6 +19,7 @@ package org.apache.carbondata.core.carbon;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,43 +47,43 @@ public class ColumnIdentifierTest {
 
   @Test public void equalsTestwithSameObject() {
     Boolean res = columnIdentifier.equals(columnIdentifier);
-    assert (res);
+    Assert.assertTrue(res);
   }
 
   @Test public void equalsTestwithSimilarObject() {
     ColumnIdentifier columnIdentifierTest =
         new ColumnIdentifier("columnId", columnProperties, DataTypes.INT);
     Boolean res = columnIdentifier.equals(columnIdentifierTest);
-    assert (res);
+    Assert.assertTrue(res);
   }
 
   @Test public void equalsTestwithNullObject() {
     Boolean res = columnIdentifier.equals(null);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestwithStringObject() {
     Boolean res = columnIdentifier.equals("String Object");
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestwithNullColumnId() {
     ColumnIdentifier columnIdentifierTest =
         new ColumnIdentifier(null, columnProperties, DataTypes.INT);
     Boolean res = columnIdentifierTest.equals(columnIdentifier);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestwithDiffColumnId() {
     ColumnIdentifier columnIdentifierTest =
         new ColumnIdentifier("diffColumnId", columnProperties, DataTypes.INT);
     Boolean res = columnIdentifierTest.equals(columnIdentifier);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void toStringTest() {
     String res = columnIdentifier.toString();
-    assert (res.equals("ColumnIdentifier [columnId=columnId]"));
+    Assert.assertTrue(res.equals("ColumnIdentifier [columnId=columnId]"));
   }
 
   @Test public void getColumnPropertyTest() {
@@ -93,6 +94,6 @@ public class ColumnIdentifierTest {
   }
 
   @Test public void getColumnPropertyTestwithNull() {
-    assert (columnIdentifier.getColumnProperty("key").equals("value"));
+    Assert.assertTrue(columnIdentifier.getColumnProperty("key").equals("value"));
   }
 }

@@ -24,18 +24,13 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
-import org.apache.spark.sql.execution.command.datamap.{DataMapDropTablePostListener, DropDataMapPostListener}
-import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.streaming.CarbonStreamingQueryListener
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
-import org.apache.carbondata.events._
-import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
@@ -58,7 +53,7 @@ class CarbonSession(@transient val sc: SparkContext,
    * and a catalog that interacts with external systems.
    */
   @transient
- override lazy val sharedState: SharedState = {
+  override lazy val sharedState: SharedState = {
     existingSharedState match {
       case Some(_) =>
         val ss = existingSharedState.get
@@ -74,10 +69,6 @@ class CarbonSession(@transient val sc: SparkContext,
 
   override def newSession(): SparkSession = {
     new CarbonSession(sparkContext, Some(sharedState))
-  }
-
-  if (existingSharedState.isEmpty) {
-    CarbonSession.initListeners()
   }
 
 }
@@ -181,15 +172,6 @@ object CarbonSession {
         }
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
-        try {
-          CommonUtil.cleanInProgressSegments(
-            carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION), sparkContext)
-        } catch {
-          case e: Throwable =>
-            // catch all exceptions to avoid CarbonSession initialization failure
-          LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-            .error(e, "Failed to clean in progress segments")
-        }
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
         // exception in the construction of the instance.
@@ -232,17 +214,31 @@ object CarbonSession {
     ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
   }
 
+
+  def threadSet(key: String, value: Object): Unit = {
+    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfo == null) {
+      currentThreadSessionInfo = new CarbonSessionInfo()
+    }
+    else {
+      currentThreadSessionInfo = currentThreadSessionInfo.clone()
+    }
+    currentThreadSessionInfo.getThreadParams.setExtraInfo(key, value)
+    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
+  }
+
   def threadUnset(key: String): Unit = {
     val currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfo != null) {
       val currentThreadSessionInfoClone = currentThreadSessionInfo.clone()
       val threadParams = currentThreadSessionInfoClone.getThreadParams
       CarbonSetCommand.unsetValue(threadParams, key)
+      threadParams.removeExtraInfo(key)
       ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfoClone)
     }
   }
 
-  private[spark] def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
+  def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
     val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
     val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfoOrig != null) {
@@ -256,22 +252,4 @@ object CarbonSession {
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
   }
 
-  def initListeners(): Unit = {
-    OperationListenerBus.getInstance()
-      .addListener(classOf[DropTablePostEvent], DataMapDropTablePostListener)
-      .addListener(classOf[LoadTablePreStatusUpdateEvent], LoadPostAggregateListener)
-      .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
-      .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
-      .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
-      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
-      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
-      .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
-      .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
-      .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
-      .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
-      .addListener(classOf[DropDataMapPostEvent], DropDataMapPostListener)
-      .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
-      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
-        AlterPreAggregateTableCompactionPostListener)
-  }
 }

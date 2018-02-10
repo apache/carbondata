@@ -28,15 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -56,6 +52,7 @@ import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 
@@ -91,58 +88,6 @@ public final class CarbonDataProcessorUtil {
       fileBufferSize = CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
     }
     return fileBufferSize;
-  }
-
-  /**
-   * @param configuration
-   * @param storeLocation
-   */
-  public static void renameBadRecordsFromInProgressToNormal(
-      CarbonDataLoadConfiguration configuration, String storeLocation) {
-    // get the base store location
-    String badLogStoreLocation = (String) configuration
-        .getDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
-    if (null == badLogStoreLocation) {
-      badLogStoreLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
-    }
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
-    FileType fileType = FileFactory.getFileType(badLogStoreLocation);
-    try {
-      if (!FileFactory.isFileExist(badLogStoreLocation, fileType)) {
-        return;
-      }
-    } catch (IOException e1) {
-      LOGGER.info("bad record folder does not exist");
-    }
-    CarbonFile carbonFile = FileFactory.getCarbonFile(badLogStoreLocation, fileType);
-
-    CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile pathname) {
-        if (pathname.getName().indexOf(CarbonCommonConstants.FILE_INPROGRESS_STATUS) > -1) {
-          return true;
-        }
-        return false;
-      }
-    });
-
-    String badRecordsInProgressFileName = null;
-    String changedFileName = null;
-    for (CarbonFile badFiles : listFiles) {
-      badRecordsInProgressFileName = badFiles.getName();
-
-      changedFileName = badLogStoreLocation + File.separator + badRecordsInProgressFileName
-          .substring(0, badRecordsInProgressFileName.lastIndexOf('.'));
-
-      badFiles.renameTo(changedFileName);
-
-      if (badFiles.exists()) {
-        if (!badFiles.delete()) {
-          LOGGER.error("Unable to delete File : " + badFiles.getName());
-        }
-      }
-    }
   }
 
   /**
@@ -619,4 +564,30 @@ public final class CarbonDataProcessorUtil {
     }
     return errorMessage;
   }
+  /**
+   * The method returns true is either logger is enabled or action is redirect
+   * @param configuration
+   * @return
+   */
+  public static boolean isRawDataRequired(CarbonDataLoadConfiguration configuration) {
+    boolean isRawDataRequired = Boolean.parseBoolean(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
+            .toString());
+    // if logger is disabled then check if action is redirect then raw data will be required.
+    if (!isRawDataRequired) {
+      Object bad_records_action =
+          configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION);
+      if (null != bad_records_action) {
+        LoggerAction loggerAction = null;
+        try {
+          loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
+        } catch (IllegalArgumentException e) {
+          loggerAction = LoggerAction.FORCE;
+        }
+        isRawDataRequired = loggerAction == LoggerAction.REDIRECT;
+      }
+    }
+    return isRawDataRequired;
+  }
+
 }

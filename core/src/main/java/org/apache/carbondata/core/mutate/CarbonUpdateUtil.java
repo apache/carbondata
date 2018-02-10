@@ -18,11 +18,8 @@
 package org.apache.carbondata.core.mutate;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -382,7 +379,7 @@ public class CarbonUpdateUtil {
     return segmentName.split(CarbonCommonConstants.UNDERSCORE)[1];
   }
 
-  public static int getLatestTaskIdForSegment(String segmentId, CarbonTablePath tablePath) {
+  public static long getLatestTaskIdForSegment(String segmentId, CarbonTablePath tablePath) {
     String segmentDirPath = tablePath.getCarbonDataDirectoryPath("0", segmentId);
 
     // scan all the carbondata files and get the latest task ID.
@@ -397,11 +394,11 @@ public class CarbonUpdateUtil {
         return false;
       }
     });
-    int max = 0;
+    long max = 0;
     if (null != dataFiles) {
       for (CarbonFile file : dataFiles) {
-        int taskNumber =
-            Integer.parseInt(CarbonTablePath.DataFileUtil.getTaskNo(file.getName()).split("_")[0]);
+        long taskNumber =
+            Long.parseLong(CarbonTablePath.DataFileUtil.getTaskNo(file.getName()).split("_")[0]);
         if (taskNumber > max) {
           max = taskNumber;
         }
@@ -411,75 +408,6 @@ public class CarbonUpdateUtil {
     return max;
 
   }
-
-  public static String getLatestBlockNameForSegment(String segmentId, CarbonTablePath tablePath) {
-    String segmentDirPath = tablePath.getCarbonDataDirectoryPath("0", segmentId);
-
-    // scan all the carbondata files and get the latest task ID.
-    CarbonFile segment =
-            FileFactory.getCarbonFile(segmentDirPath, FileFactory.getFileType(segmentDirPath));
-
-    CarbonFile[] dataFiles = segment.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-        int max = 0;
-        if (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-          int taskNumber = Integer.parseInt(CarbonTablePath.DataFileUtil.getTaskNo(file.getName()));
-          if (taskNumber >= max) {
-            return true;
-          }
-        }
-        return false;
-      }
-    });
-
-    // get the latest among the data files. highest task number will be at the last.
-    return dataFiles[dataFiles.length - 1].getName();
-  }
-
-  /**
-   * This method will convert a given timestamp to long value and then to string back
-   *
-   * @param factTimeStamp
-   * @return
-   */
-  public static String convertTimeStampToString(String factTimeStamp) {
-    SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
-    Date dateToStr = null;
-    try {
-      dateToStr = parser.parse(factTimeStamp);
-      return Long.toString(dateToStr.getTime());
-    } catch (ParseException e) {
-      LOGGER.error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e.getMessage());
-      return null;
-    }
-  }
-
-  /**
-   * This method will convert a given timestamp to long value and then to string back
-   *
-   * @param factTimeStamp
-   * @return
-   */
-  public static long convertTimeStampToLong(String factTimeStamp) {
-    SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
-    Date dateToStr = null;
-    try {
-      dateToStr = parser.parse(factTimeStamp);
-      return dateToStr.getTime();
-    } catch (ParseException e) {
-      LOGGER.error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e.getMessage());
-      parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
-      try {
-        dateToStr = parser.parse(factTimeStamp);
-        return dateToStr.getTime();
-      } catch (ParseException e1) {
-        LOGGER
-            .error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e1.getMessage());
-        return 0;
-      }
-    }
-  }
-
 
   /**
    * Handling of the clean up of old carbondata files, index files , delte delta,
@@ -498,6 +426,10 @@ public class CarbonUpdateUtil {
     LoadMetadataDetails[] details = ssm.readLoadMetadata(table.getMetaDataFilepath());
 
     String validUpdateStatusFile = "";
+
+    boolean isAbortedFile = true;
+
+    boolean isInvalidFile = false;
 
     // scan through each segment.
 
@@ -522,10 +454,14 @@ public class CarbonUpdateUtil {
         SegmentUpdateStatusManager updateStatusManager =
                 new SegmentUpdateStatusManager(table.getAbsoluteTableIdentifier());
 
+        // deleting of the aborted file scenario.
+        deleteStaleCarbonDataFiles(segment, allSegmentFiles, updateStatusManager);
+
         // get Invalid update  delta files.
         CarbonFile[] invalidUpdateDeltaFiles = updateStatusManager
-                .getUpdateDeltaFilesList(segment.getLoadName(), false,
-                        CarbonCommonConstants.UPDATE_DELTA_FILE_EXT, true, allSegmentFiles);
+            .getUpdateDeltaFilesList(segment.getLoadName(), false,
+                CarbonCommonConstants.UPDATE_DELTA_FILE_EXT, true, allSegmentFiles,
+                isInvalidFile);
 
         // now for each invalid delta file need to check the query execution time out
         // and then delete.
@@ -537,8 +473,9 @@ public class CarbonUpdateUtil {
 
         // do the same for the index files.
         CarbonFile[] invalidIndexFiles = updateStatusManager
-                .getUpdateDeltaFilesList(segment.getLoadName(), false,
-                        CarbonCommonConstants.UPDATE_INDEX_FILE_EXT, true, allSegmentFiles);
+            .getUpdateDeltaFilesList(segment.getLoadName(), false,
+                CarbonCommonConstants.UPDATE_INDEX_FILE_EXT, true, allSegmentFiles,
+                isInvalidFile);
 
         // now for each invalid index file need to check the query execution time out
         // and then delete.
@@ -564,11 +501,20 @@ public class CarbonUpdateUtil {
             continue;
           }
 
+          // aborted scenario.
+          invalidDeleteDeltaFiles = updateStatusManager
+              .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, false,
+                  allSegmentFiles, isAbortedFile);
+          for (CarbonFile invalidFile : invalidDeleteDeltaFiles) {
+            boolean doForceDelete = true;
+            compareTimestampsAndDelete(invalidFile, doForceDelete, false);
+          }
+
           // case 1
           if (CarbonUpdateUtil.isBlockInvalid(block.getSegmentStatus())) {
             completeListOfDeleteDeltaFiles = updateStatusManager
                     .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, true,
-                            allSegmentFiles);
+                            allSegmentFiles, isInvalidFile);
             for (CarbonFile invalidFile : completeListOfDeleteDeltaFiles) {
 
               compareTimestampsAndDelete(invalidFile, forceDelete, false);
@@ -590,7 +536,7 @@ public class CarbonUpdateUtil {
           } else {
             invalidDeleteDeltaFiles = updateStatusManager
                     .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, false,
-                            allSegmentFiles);
+                            allSegmentFiles, isInvalidFile);
             for (CarbonFile invalidFile : invalidDeleteDeltaFiles) {
 
               compareTimestampsAndDelete(invalidFile, forceDelete, false);
@@ -627,6 +573,38 @@ public class CarbonUpdateUtil {
 
         compareTimestampsAndDelete(invalidFile, forceDelete, true);
       }
+    }
+  }
+
+  /**
+   * This function deletes all the stale carbondata files during clean up before update operation
+   * one scenario is if update operation is ubruptly stopped before updation of table status then
+   * the carbondata file created during update operation is stale file and it will be deleted in
+   * this function in next update operation
+   * @param segment
+   * @param allSegmentFiles
+   * @param updateStatusManager
+   */
+  private static void deleteStaleCarbonDataFiles(LoadMetadataDetails segment,
+      CarbonFile[] allSegmentFiles, SegmentUpdateStatusManager updateStatusManager) {
+    CarbonFile[] invalidUpdateDeltaFiles = updateStatusManager
+        .getUpdateDeltaFilesList(segment.getLoadName(), false,
+            CarbonCommonConstants.UPDATE_DELTA_FILE_EXT, true, allSegmentFiles,
+            true);
+    // now for each invalid delta file need to check the query execution time out
+    // and then delete.
+    for (CarbonFile invalidFile : invalidUpdateDeltaFiles) {
+      compareTimestampsAndDelete(invalidFile, true, false);
+    }
+    // do the same for the index files.
+    CarbonFile[] invalidIndexFiles = updateStatusManager
+        .getUpdateDeltaFilesList(segment.getLoadName(), false,
+            CarbonCommonConstants.UPDATE_INDEX_FILE_EXT, true, allSegmentFiles,
+            true);
+    // now for each invalid index file need to check the query execution time out
+    // and then delete.
+    for (CarbonFile invalidFile : invalidIndexFiles) {
+      compareTimestampsAndDelete(invalidFile, true, false);
     }
   }
 

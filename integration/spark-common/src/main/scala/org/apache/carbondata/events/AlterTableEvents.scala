@@ -16,16 +16,11 @@
  */
 package org.apache.carbondata.events
 
-import java.util
-
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel, CarbonMergerMapping}
+import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.merger.CompactionType
 
 /**
  *
@@ -187,6 +182,16 @@ case class AlterTableCompactionPreStatusUpdateEvent(sparkSession: SparkSession,
     mergedLoadName: String) extends Event with AlterTableCompactionStatusUpdateEventInfo
 
 /**
+ * Compaction Event for handling post update status file operations, like committing child
+ * datamaps in one transaction
+ */
+case class AlterTableCompactionPostStatusUpdateEvent(
+    carbonTable: CarbonTable,
+    carbonMergerMapping: CarbonMergerMapping,
+    carbonLoadModel: CarbonLoadModel,
+    mergedLoadName: String) extends Event with AlterTableCompactionStatusUpdateEventInfo
+
+/**
  * Compaction Event for handling clean up in case of any compaction failure and abort the
  * operation, lister has to implement this event to handle failure scenarios
  *
@@ -198,3 +203,15 @@ case class AlterTableCompactionAbortEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     carbonMergerMapping: CarbonMergerMapping,
     mergedLoadName: String) extends Event with AlterTableCompactionEventInfo
+
+
+/**
+ * Compaction Event for handling exception in compaction
+ *
+ * @param sparkSession
+ * @param carbonTable
+ * @param alterTableModel
+ */
+case class AlterTableCompactionExceptionEvent(sparkSession: SparkSession,
+    carbonTable: CarbonTable,
+    alterTableModel: AlterTableModel) extends Event with AlterTableCompactionEventInfo

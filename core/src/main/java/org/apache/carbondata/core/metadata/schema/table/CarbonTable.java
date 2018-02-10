@@ -27,12 +27,14 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -132,10 +134,62 @@ public class CarbonTable implements Serializable {
   }
 
   /**
+   * During creation of TableInfo from hivemetastore the DataMapSchemas and the columns
+   * DataTypes are not converted to the appropriate child classes.
+   *
+   * This method will cast the same to the appropriate classes
+   *
+   * @param tableInfo
+   */
+  public static void updateTableInfo(TableInfo tableInfo) {
+    List<DataMapSchema> dataMapSchemas = new ArrayList<>();
+    for (DataMapSchema dataMapSchema : tableInfo.getDataMapSchemaList()) {
+      DataMapSchema newDataMapSchema = DataMapSchemaFactory.INSTANCE
+          .getDataMapSchema(dataMapSchema.getDataMapName(), dataMapSchema.getClassName());
+      newDataMapSchema.setChildSchema(dataMapSchema.getChildSchema());
+      newDataMapSchema.setProperties(dataMapSchema.getProperties());
+      newDataMapSchema.setRelationIdentifier(dataMapSchema.getRelationIdentifier());
+      dataMapSchemas.add(newDataMapSchema);
+    }
+    tableInfo.setDataMapSchemaList(dataMapSchemas);
+    for (ColumnSchema columnSchema : tableInfo.getFactTable().getListOfColumns()) {
+      columnSchema.setDataType(DataTypeUtil.valueOf(columnSchema.getDataType(),
+          columnSchema.getPrecision(), columnSchema.getScale()));
+    }
+    List<DataMapSchema> childSchema = tableInfo.getDataMapSchemaList();
+    for (DataMapSchema dataMapSchema : childSchema) {
+      if (dataMapSchema.childSchema != null
+          && dataMapSchema.childSchema.getListOfColumns().size() > 0) {
+        for (ColumnSchema columnSchema : dataMapSchema.childSchema.getListOfColumns()) {
+          columnSchema.setDataType(DataTypeUtil
+              .valueOf(columnSchema.getDataType(), columnSchema.getPrecision(),
+                  columnSchema.getScale()));
+        }
+      }
+    }
+    if (tableInfo.getFactTable().getBucketingInfo() != null) {
+      for (ColumnSchema columnSchema : tableInfo.getFactTable()
+          .getBucketingInfo().getListOfColumns()) {
+        columnSchema.setDataType(DataTypeUtil.valueOf(columnSchema.getDataType(),
+            columnSchema.getPrecision(), columnSchema.getScale()));
+      }
+    }
+    if (tableInfo.getFactTable().getPartitionInfo() != null) {
+      for (ColumnSchema columnSchema : tableInfo.getFactTable().getPartitionInfo()
+          .getColumnSchemaList()) {
+        columnSchema.setDataType(DataTypeUtil
+            .valueOf(columnSchema.getDataType(), columnSchema.getPrecision(),
+                columnSchema.getScale()));
+      }
+    }
+  }
+
+  /**
    * @param tableInfo
    */
   public static CarbonTable buildFromTableInfo(TableInfo tableInfo) {
     CarbonTable table = new CarbonTable();
+    updateTableInfo(tableInfo);
     table.tableInfo = tableInfo;
     table.blockSize = tableInfo.getTableBlockSizeInMB();
     table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
@@ -163,18 +217,11 @@ public class CarbonTable implements Serializable {
     List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
     List<CarbonDimension> dimensions = this.tableDimensionsMap.get(tableName);
     List<CarbonMeasure> measures = this.tableMeasuresMap.get(tableName);
-    Iterator<CarbonDimension> dimItr = dimensions.iterator();
-    while (dimItr.hasNext()) {
-      columns.add(dimItr.next());
-    }
-    Iterator<CarbonMeasure> msrItr = measures.iterator();
-    while (msrItr.hasNext()) {
-      columns.add(msrItr.next());
-    }
+    columns.addAll(dimensions);
+    columns.addAll(measures);
     Collections.sort(columns, new Comparator<CarbonColumn>() {
 
       @Override public int compare(CarbonColumn o1, CarbonColumn o2) {
-
         return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
       }
 
@@ -570,7 +617,13 @@ public class CarbonTable implements Serializable {
   }
 
   public boolean isPartitionTable() {
-    return null != tablePartitionMap.get(getTableName());
+    return null != tablePartitionMap.get(getTableName())
+        && tablePartitionMap.get(getTableName()).getPartitionType() != PartitionType.NATIVE_HIVE;
+  }
+
+  public boolean isHivePartitionTable() {
+    PartitionInfo partitionInfo = tablePartitionMap.get(getTableName());
+    return null != partitionInfo && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE;
   }
 
   /**
@@ -697,6 +750,21 @@ public class CarbonTable implements Serializable {
   public boolean isStreamingTable() {
     String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
     return streaming != null && streaming.equalsIgnoreCase("true");
+  }
+
+  /**
+   * whether this table has aggregation DataMap or not
+   */
+  public boolean hasAggregationDataMap() {
+    List<DataMapSchema> dataMapSchemaList = tableInfo.getDataMapSchemaList();
+    if (dataMapSchemaList != null && !dataMapSchemaList.isEmpty()) {
+      for (DataMapSchema dataMapSchema : dataMapSchemaList) {
+        if (dataMapSchema instanceof AggregationDataMapSchema) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   public int getDimensionOrdinalMax() {

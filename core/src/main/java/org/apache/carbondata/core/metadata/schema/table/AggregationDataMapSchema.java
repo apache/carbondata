@@ -62,6 +62,8 @@ public class AggregationDataMapSchema extends DataMapSchema {
    */
   private int ordinal = Integer.MAX_VALUE;
 
+  private Set aggExpToColumnMapping;
+
   public AggregationDataMapSchema(String dataMapName, String className) {
     super(dataMapName, className);
   }
@@ -149,7 +151,8 @@ public class AggregationDataMapSchema extends DataMapSchema {
       List<ParentColumnTableRelation> parentColumnTableRelations =
           columnSchema.getParentColumnTableRelations();
       if (null != parentColumnTableRelations && parentColumnTableRelations.size() == 1
-          && parentColumnTableRelations.get(0).getColumnName().equals(columName)) {
+          && parentColumnTableRelations.get(0).getColumnName().equals(columName) &&
+          columnSchema.getColumnName().endsWith(columName)) {
         return columnSchema;
       }
     }
@@ -201,23 +204,6 @@ public class AggregationDataMapSchema extends DataMapSchema {
     }
     return null;
   }
-
-  /**
-   * Below method is to check if parent column with matching aggregate function
-   * @param parentColumnName
-   *                    parent column name
-   * @param aggFunction
-   *                    aggregate function
-   * @return is matching
-   */
-  public boolean isColumnWithAggFunctionExists(String parentColumnName, String aggFunction) {
-    Set<String> aggFunctions = parentColumnToAggregationsMapping.get(parentColumnName);
-    if (null != aggFunctions && aggFunctions.contains(aggFunction)) {
-      return true;
-    }
-    return false;
-  }
-
 
   /**
    * Method to prepare mapping of parent to list of aggregation function applied on that column
@@ -329,6 +315,10 @@ public class AggregationDataMapSchema extends DataMapSchema {
             return false;
           }
         }
+      } else {
+        // in case of any expression one column can be derived from multiple column
+        // in that case we cannot do rollup so hit the maintable
+        return false;
       }
     }
     return true;
@@ -336,5 +326,37 @@ public class AggregationDataMapSchema extends DataMapSchema {
 
   public int getOrdinal() {
     return ordinal;
+  }
+
+  /**
+   * Below method will be used to get the aggregation column based on index
+   * It will return the first aggregation column found based on index
+   * @param searchStartIndex
+   *  start index
+   * @param sortedColumnSchema
+   * list of sorted table columns
+   * @return found column list
+   *
+   */
+  public ColumnSchema getAggColumnBasedOnIndex(int searchStartIndex,
+      List<ColumnSchema> sortedColumnSchema) {
+    ColumnSchema columnSchema = null;
+    for (int i = searchStartIndex; i < sortedColumnSchema.size(); i++) {
+      if (!sortedColumnSchema.get(i).getAggFunction().isEmpty()) {
+        columnSchema = sortedColumnSchema.get(i);
+        break;
+      }
+    }
+    return columnSchema;
+  }
+
+  public synchronized Set getAggExpToColumnMapping() {
+    return aggExpToColumnMapping;
+  }
+
+  public synchronized void setAggExpToColumnMapping(Set aggExpToColumnMapping) {
+    if (null == this.aggExpToColumnMapping) {
+      this.aggExpToColumnMapping = aggExpToColumnMapping;
+    }
   }
 }

@@ -378,6 +378,10 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
     byte[][] filterValues = dimColumnExecuterInfo.getExcludeFilterKeys();
+    // filterValues can be null when the dictionary chunk and surrogate size both are one
+    if (filterValues.length == 0) {
+      return bitSet;
+    }
     // binary search can only be applied if column is sorted
     if (isNaturalSorted) {
       int startIndex = 0;

@@ -81,9 +81,7 @@ public class CarbondataRecordSet implements RecordSet {
       CarbonVectorizedRecordReader vectorReader =
           new CarbonVectorizedRecordReader(queryExecutor, queryModel,
               (AbstractDetailQueryResultIterator) iterator);
-      RecordCursor rc =
-          new CarbondataRecordCursor(readSupport, vectorReader, columns, split);
-      return rc;
+      return new CarbondataRecordCursor(readSupport, vectorReader, columns, split);
     } catch (QueryExecutionException e) {
       throw new RuntimeException(e.getMessage(), e);
     } catch (Exception ex) {

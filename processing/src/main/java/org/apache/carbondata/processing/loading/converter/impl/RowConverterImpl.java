@@ -36,6 +36,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
+import org.apache.carbondata.core.dictionary.service.DictionaryOnePassService;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
@@ -119,16 +120,22 @@ public class RowConverterImpl implements RowConverter {
             "DictionaryClientPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
                 .getTableName()));
       }
-      Future<DictionaryClient> result = executorService.submit(new Callable<DictionaryClient>() {
-        @Override
-        public DictionaryClient call() throws Exception {
-          Thread.currentThread().setName("Dictionary client");
-          DictionaryClient dictionaryClient = new DictionaryClient();
-          dictionaryClient.startClient(configuration.getDictionaryServerHost(),
-              configuration.getDictionaryServerPort());
-          return dictionaryClient;
-        }
-      });
+      DictionaryOnePassService
+          .setDictionaryServiceProvider(configuration.getDictionaryServiceProvider());
+
+      Future<DictionaryClient> result =
+          executorService.submit(new Callable<DictionaryClient>() {
+            @Override public DictionaryClient call() throws Exception {
+              Thread.currentThread().setName("Dictionary client");
+              DictionaryClient client =
+                  DictionaryOnePassService.getDictionayProvider().getDictionaryClient();
+              client.startClient(configuration.getDictionaryServerSecretKey(),
+                  configuration.getDictionaryServerHost(), configuration.getDictionaryServerPort(),
+                  configuration.getDictionaryEncryptServerSecure());
+              return client;
+            }
+          });
+
 
       try {
         // wait for client initialization finished, or will raise null pointer exception
@@ -149,17 +156,17 @@ public class RowConverterImpl implements RowConverter {
 
   @Override
   public CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException {
-    //TODO: only copy if it is bad record
-    CarbonRow copy = row.getCopy();
     logHolder.setLogged(false);
     logHolder.clear();
     for (int i = 0; i < fieldConverters.length; i++) {
       fieldConverters[i].convert(row, logHolder);
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
-        badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
+        badRecordLogger.addBadRecordsToBuilder(row.getRawData(), logHolder.getReason());
         if (badRecordLogger.isDataLoadFail()) {
-          String error = "Data load failed due to bad record: " + logHolder.getReason() +
-              "Please enable bad record logger to know the detail reason.";
+          String error = "Data load failed due to bad record: " + logHolder.getReason();
+          if (!badRecordLogger.isBadRecordLoggerEnable()) {
+            error += "Please enable bad record logger to know the detail reason.";
+          }
           throw new BadRecordFoundException(error);
         }
         logHolder.clear();
@@ -169,11 +176,17 @@ public class RowConverterImpl implements RowConverter {
         }
       }
     }
+    // rawData will not be required after this so reset the entry to null.
+    row.setRawData(null);
     return row;
   }
 
   @Override
   public void finish() {
+    // Clear up dictionary cache access count.
+    for (int i = 0; i < fieldConverters.length; i ++) {
+      fieldConverters[i].clear();
+    }
     // close dictionary client when finish write
     if (configuration.getUseOnePass()) {
       for (DictionaryClient client : dictClients) {

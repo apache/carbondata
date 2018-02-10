@@ -20,7 +20,7 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{DeleteRecords, UpdateTable}
+import org.apache.spark.sql.{CarbonEnv, DeleteRecords, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -71,8 +71,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    loadManagement|showLoads|alterTable|restructure|updateTable|deleteRecords|
-    alterPartition|datamapManagement
+    loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
+    alterPartition | datamapManagement | alterTableFinishStreaming
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -130,18 +130,30 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   /**
+   * The below syntax is used to change the status of the segment
+   * from "streaming" to "streaming finish".
+   * ALTER TABLE tableName FINISH STREAMING
+   */
+  protected lazy val alterTableFinishStreaming: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident <~ FINISH <~ STREAMING <~ opt(";") ^^ {
+      case dbName ~ table =>
+        CarbonAlterTableFinishStreaming(dbName, table)
+    }
+
+  /**
    * The syntax of datamap creation is as follows.
-   * CREATE DATAMAP datamapName ON TABLE tableName USING 'DataMapClassName'
+   * CREATE DATAMAP IF NOT EXISTS datamapName ON TABLE tableName USING 'DataMapClassName'
    * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
    */
   protected lazy val createDataMap: Parser[LogicalPlan] =
-    CREATE ~> DATAMAP ~> ident ~ (ON ~ TABLE) ~  (ident <~ ".").? ~ ident ~
+    CREATE ~> DATAMAP ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
+    (ON ~ TABLE) ~  (ident <~ ".").? ~ ident ~
     (USING ~> stringLit) ~ (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
     (AS ~> restInput).? <~ opt(";") ^^ {
-      case dmname ~ ontable ~ dbName ~ tableName ~ className ~ dmprops ~ query =>
+      case ifnotexists ~ dmname ~ ontable ~ dbName ~ tableName ~ className ~ dmprops ~ query =>
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
         CarbonCreateDataMapCommand(
-          dmname, TableIdentifier(tableName, dbName), className, map, query)
+          dmname, TableIdentifier(tableName, dbName), className, map, query, ifnotexists.isDefined)
     }
 
   /**
@@ -201,8 +213,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             val relation : UnresolvedRelation = tab._1 match {
               case r@CarbonUnresolvedRelation(tableIdentifier) =>
                 tab._3 match {
-                  case Some(a) => (updateRelation(r, tableIdentifier, tab._4, Some(tab._3.get)))
-                  case None => (updateRelation(r, tableIdentifier, tab._4, None))
+                  case Some(a) => updateRelation(r, tableIdentifier, tab._4, Some(tab._3.get))
+                  case None => updateRelation(r, tableIdentifier, tab._4, None)
                 }
               case _ => tab._1
             }
@@ -340,8 +352,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val loadDataNew: Parser[LogicalPlan] =
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
     (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
+    (PARTITION ~>"("~> repsep(partitions, ",") <~ ")").? ~
     (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-      case filePath ~ isOverwrite ~ table ~ optionsList =>
+      case filePath ~ isOverwrite ~ table ~ partitions ~ optionsList =>
         val (databaseNameOp, tableName) = table match {
           case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
         }
@@ -349,13 +362,20 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           validateOptions(optionsList)
         }
         val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
+        val partitionSpec = partitions.getOrElse(List.empty[(String, Option[String])]).toMap
         CarbonLoadDataCommand(
-          convertDbNameToLowerCase(databaseNameOp),
-          tableName,
-          filePath,
-          Seq(),
-          optionsMap,
-          isOverwrite.isDefined)
+          databaseNameOp = convertDbNameToLowerCase(databaseNameOp),
+          tableName = tableName,
+          factPathFromUser = filePath,
+          dimFilesPath = Seq(),
+          options = optionsMap,
+          isOverwriteTable = isOverwrite.isDefined,
+          inputSqlString = null,
+          dataFrame = None,
+          updateModel = None,
+          tableInfoOp = None,
+          internalOptions = Map.empty,
+          partition = partitionSpec)
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =

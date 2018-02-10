@@ -25,13 +25,14 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SerializableWritable, SparkContext, TaskContext}
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
@@ -46,6 +47,7 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.{HandoffResult, HandoffResultImpl}
 import org.apache.carbondata.spark.rdd.CarbonRDD
 import org.apache.carbondata.spark.util.CommonUtil
+
 
 /**
  * partition of the handoff segment
@@ -75,11 +77,14 @@ class StreamingRawResultIterator(
   }
 
   override def next(): Array[Object] = {
-    recordReader
+    val rowTmp = recordReader
       .getCurrentValue
       .asInstanceOf[GenericInternalRow]
       .values
       .asInstanceOf[Array[Object]]
+    val row = new Array[Object](rowTmp.length)
+    System.arraycopy(rowTmp, 0, row, 0, rowTmp.length)
+    row
   }
 }
 
@@ -105,8 +110,11 @@ class StreamHandoffRDD[K, V](
     carbonLoadModel.setPartitionId("0")
     carbonLoadModel.setTaskNo("" + split.index)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    CarbonMetadata.getInstance().addCarbonTable(carbonTable)
     // the input iterator is using raw row
     val iteratorList = prepareInputIterator(split, carbonTable)
+
+    CommonUtil.setTempStoreLocation(split.index, carbonLoadModel, true, false)
     // use CompactionResultSortProcessor to sort data dan write to columnar files
     val processor = prepareHandoffProcessor(carbonTable)
     val status = processor.execute(iteratorList)
@@ -144,6 +152,7 @@ class StreamHandoffRDD[K, V](
       projection.addColumn(dataFields.get(index).getColName)
     }
     CarbonTableInputFormat.setColumnProjection(hadoopConf, projection)
+    CarbonTableInputFormat.setTableInfo(hadoopConf, carbonTable.getTableInfo)
     val attemptContext = new TaskAttemptContextImpl(hadoopConf, attemptId)
     val format = new CarbonTableInputFormat[Array[Object]]()
     val model = format.getQueryModel(inputSplit, attemptContext)
@@ -177,7 +186,8 @@ class StreamHandoffRDD[K, V](
       carbonTable,
       segmentProperties,
       CompactionType.STREAMING,
-      carbonTable.getTableName
+      carbonTable.getTableName,
+      null
     )
   }
 
@@ -205,68 +215,73 @@ object StreamHandoffRDD {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
+  def iterateStreamingHandoff(
+      carbonLoadModel: CarbonLoadModel,
+      sparkSession: SparkSession
+  ): Unit = {
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val identifier = carbonTable.getAbsoluteTableIdentifier
+    val tablePath = CarbonStorePath.getCarbonTablePath(identifier)
+    var continueHandoff = false
+    // require handoff lock on table
+    val lock = CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.HANDOFF_LOCK)
+    try {
+      if (lock.lockWithRetries()) {
+        LOGGER.info("Acquired the handoff lock for table" +
+                    s" ${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
+        // handoff streaming segment one by one
+        do {
+          val segmentStatusManager = new SegmentStatusManager(identifier)
+          var loadMetadataDetails: Array[LoadMetadataDetails] = null
+          // lock table to read table status file
+          val statusLock = segmentStatusManager.getTableStatusLock
+          try {
+            if (statusLock.lockWithRetries()) {
+              loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
+                tablePath.getMetadataDirectoryPath)
+            }
+          } finally {
+            if (null != statusLock) {
+              statusLock.unlock()
+            }
+          }
+          if (null != loadMetadataDetails) {
+            val streamSegments =
+              loadMetadataDetails.filter(_.getSegmentStatus == SegmentStatus.STREAMING_FINISH)
+
+            continueHandoff = streamSegments.length > 0
+            if (continueHandoff) {
+              // handoff a streaming segment
+              val loadMetadataDetail = streamSegments(0)
+              executeStreamingHandoff(
+                carbonLoadModel,
+                sparkSession,
+                loadMetadataDetail.getLoadName
+              )
+            }
+          } else {
+            continueHandoff = false
+          }
+        } while (continueHandoff)
+      }
+    } finally {
+      if (null != lock) {
+        lock.unlock()
+      }
+    }
+  }
+
   /**
    * start new thread to execute stream segment handoff
    */
   def startStreamingHandoffThread(
       carbonLoadModel: CarbonLoadModel,
-      sqlContext: SQLContext,
-      storeLocation: String
+      sparkSession: SparkSession
   ): Unit = {
     // start a new thread to execute streaming segment handoff
     val handoffThread = new Thread() {
       override def run(): Unit = {
-        val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-        val identifier = carbonTable.getAbsoluteTableIdentifier
-        val tablePath = CarbonStorePath.getCarbonTablePath(identifier)
-        var continueHandoff = false
-        // require handoff lock on table
-        val lock = CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.HANDOFF_LOCK)
-        try {
-          if (lock.lockWithRetries()) {
-            LOGGER.info("Acquired the handoff lock for table" +
-                        s" ${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
-            // handoff streaming segment one by one
-            do {
-              val segmentStatusManager = new SegmentStatusManager(identifier)
-              var loadMetadataDetails: Array[LoadMetadataDetails] = null
-              // lock table to read table status file
-              val statusLock = segmentStatusManager.getTableStatusLock
-              try {
-                if (statusLock.lockWithRetries()) {
-                  loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
-                    tablePath.getMetadataDirectoryPath)
-                }
-              } finally {
-                if (null != statusLock) {
-                  statusLock.unlock()
-                }
-              }
-              if (null != loadMetadataDetails) {
-                val streamSegments =
-                  loadMetadataDetails.filter(_.getSegmentStatus == SegmentStatus.STREAMING_FINISH)
-
-                continueHandoff = streamSegments.length > 0
-                if (continueHandoff) {
-                  // handoff a streaming segment
-                  val loadMetadataDetail = streamSegments(0)
-                  executeStreamingHandoff(
-                    carbonLoadModel,
-                    sqlContext,
-                    storeLocation,
-                    loadMetadataDetail.getLoadName
-                  )
-                }
-              } else {
-                continueHandoff = false
-              }
-            } while (continueHandoff)
-          }
-        } finally {
-          if (null != lock) {
-            lock.unlock()
-          }
-        }
+        iterateStreamingHandoff(carbonLoadModel, sparkSession)
       }
     }
     handoffThread.start()
@@ -277,11 +292,9 @@ object StreamHandoffRDD {
    */
   def executeStreamingHandoff(
       carbonLoadModel: CarbonLoadModel,
-      sqlContext: SQLContext,
-      storeLocation: String,
+      sparkSession: SparkSession,
       handoffSegmenId: String
   ): Unit = {
-    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var loadStatus = SegmentStatus.SUCCESS
     var errorMessage: String = "Handoff failure"
     try {
@@ -296,7 +309,7 @@ object StreamHandoffRDD {
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, carbonLoadModel, true, false)
       // convert a streaming segment to columnar segment
       val status = new StreamHandoffRDD(
-        sqlContext.sparkContext,
+        sparkSession.sparkContext,
         new HandoffResultImpl(),
         carbonLoadModel,
         handoffSegmenId).collect()
@@ -307,7 +320,7 @@ object StreamHandoffRDD {
         }
       }
     } catch {
-      case ex =>
+      case ex: Exception =>
         loadStatus = SegmentStatus.LOAD_FAILURE
         errorMessage = errorMessage + ": " + ex.getCause.getMessage
         LOGGER.error(errorMessage)
@@ -315,7 +328,7 @@ object StreamHandoffRDD {
     }
 
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
-      CommonUtil.updateTableStatusForFailure(carbonLoadModel)
+      CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
       LOGGER.info("********starting clean up**********")
       CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
       LOGGER.info("********clean up done**********")

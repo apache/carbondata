@@ -124,8 +124,7 @@ public class TablePage {
       measurePages[i] = page;
     }
     boolean hasNoDictionary = noDictDimensionPages.length > 0;
-    this.key = new TablePageKey(pageSize, model.getMDKeyGenerator(), model.getSegmentProperties(),
-        hasNoDictionary);
+    this.key = new TablePageKey(pageSize, model.getSegmentProperties(), hasNoDictionary);
 
     // for complex type, `complexIndexMap` is used in multithread (in multiple Producer),
     // we need to clone the index map to make it thread safe

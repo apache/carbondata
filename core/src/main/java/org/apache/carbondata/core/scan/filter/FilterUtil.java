@@ -53,6 +53,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -61,17 +62,22 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
+import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.executer.AndFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.DimColumnExecuterFilterInfo;
 import org.apache.carbondata.core.scan.filter.executer.ExcludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.ExcludeFilterExecuterImpl;
+import org.apache.carbondata.core.scan.filter.executer.FalseFilterExecutor;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
@@ -174,6 +180,8 @@ public final class FilterUtil {
                   .getFilterRangeValues(segmentProperties), segmentProperties);
         case TRUE:
           return new TrueFilterExecutor();
+        case FALSE:
+          return new FalseFilterExecutor();
         case ROWLEVEL:
         default:
           return new RowLevelFilterExecuterImpl(
@@ -1241,15 +1249,27 @@ public final class FilterUtil {
       AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
       CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
     String dictionaryPath = null;
+    ColumnIdentifier columnIdentifier = carbonDimension.getColumnIdentifier();
     if (null != tableProvider) {
       CarbonTable carbonTable = tableProvider
           .getCarbonTable(dictionarySourceAbsoluteTableIdentifier.getCarbonTableIdentifier());
       dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
           .get(CarbonCommonConstants.DICTIONARY_PATH);
+      if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations() &&
+          carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
+        dictionarySourceAbsoluteTableIdentifier =
+            QueryUtil.getTableIdentifierForColumn(carbonDimension,
+                carbonTable.getAbsoluteTableIdentifier());
+        columnIdentifier = new ColumnIdentifier(
+            carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
+            carbonDimension.getColumnProperties(), carbonDimension.getDataType());
+      } else {
+        dictionarySourceAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+      }
     }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(dictionarySourceAbsoluteTableIdentifier,
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), dictionaryPath);
+            columnIdentifier, carbonDimension.getDataType(), dictionaryPath);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
@@ -1806,5 +1826,35 @@ public final class FilterUtil {
       columnFilterInfo.setImplicitColumnFilterList(evaluateResultListFinal);
     }
     return columnFilterInfo;
+  }
+
+  /**
+   * This method will check for ColumnExpression with column name positionID and if found will
+   * replace the InExpression with true expression. This is done to stop serialization of List
+   * expression which is right children of InExpression as it can impact the query performance
+   * as the size of list grows bigger.
+   *
+   * @param expression
+   */
+  public static void removeInExpressionNodeWithPositionIdColumn(Expression expression) {
+    ExpressionType filterExpressionType = expression.getFilterExpressionType();
+    if (ExpressionType.AND == filterExpressionType) {
+      Expression rightExpression = ((AndExpression) expression).getRight();
+      if (rightExpression instanceof InExpression) {
+        List<Expression> children = rightExpression.getChildren();
+        if (null != children && !children.isEmpty()) {
+          Expression childExpression = children.get(0);
+          // check for the positionId as the column name in ColumnExpression
+          if (childExpression instanceof ColumnExpression && ((ColumnExpression) childExpression)
+              .getColumnName().equalsIgnoreCase(CarbonCommonConstants.POSITION_ID)) {
+            // Remove the right expression node and point the expression to left node expression
+            expression
+                .findAndSetChild(((AndExpression) expression).getRight(), new TrueExpression(null));
+            LOGGER.info("In expression removed from the filter expression list to prevent it from"
+                + " serializing on executor");
+          }
+        }
+      }
+    }
   }
 }

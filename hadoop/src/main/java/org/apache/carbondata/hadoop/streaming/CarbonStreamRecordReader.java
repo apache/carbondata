@@ -699,7 +699,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           col.putByteArray(rowId, v.getBytes());
         } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
           DecimalType dt = (DecimalType)t;
-          Decimal d = (Decimal) value;
+          Decimal d = Decimal.fromDecimal(value);
           if (dt.precision() <= Decimal.MAX_INT_DIGITS()) {
             col.putInt(rowId, (int)d.toUnscaledLong());
           } else if (dt.precision() <= Decimal.MAX_LONG_DIGITS()) {

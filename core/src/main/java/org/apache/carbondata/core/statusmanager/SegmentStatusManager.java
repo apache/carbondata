@@ -165,14 +165,7 @@ public class SegmentStatusManager {
       LOG.error(e);
       throw e;
     } finally {
-      try {
-        if (null != dataInputStream) {
-          dataInputStream.close();
-        }
-      } catch (Exception e) {
-        LOG.error(e);
-        throw e;
-      }
+      CarbonUtil.closeStreams(dataInputStream);
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
             listOfInvalidSegments, listOfStreamSegments);
@@ -185,23 +178,42 @@ public class SegmentStatusManager {
    * @return
    */
   public static LoadMetadataDetails[] readLoadMetadata(String metadataFolderPath) {
+    String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonCommonConstants.LOADMETADATA_FILENAME;
+    return readTableStatusFile(metadataFileName);
+  }
+
+  /**
+   * Reads the table status file with the specified UUID if non empty.
+   */
+  public static LoadMetadataDetails[] readLoadMetadata(String metaDataFolderPath, String uuid) {
+    String tableStatusFileName;
+    if (uuid.isEmpty()) {
+      tableStatusFileName = metaDataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonCommonConstants.LOADMETADATA_FILENAME;
+    } else {
+      tableStatusFileName = metaDataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonCommonConstants.LOADMETADATA_FILENAME + CarbonCommonConstants.UNDERSCORE + uuid;
+    }
+    return readTableStatusFile(tableStatusFileName);
+  }
+
+  public static LoadMetadataDetails[] readTableStatusFile(String tableStatusPath) {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
-    String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.LOADMETADATA_FILENAME;
     LoadMetadataDetails[] listOfLoadFolderDetailsArray;
     AtomicFileOperations fileOperation =
-        new AtomicFileOperationsImpl(metadataFileName, FileFactory.getFileType(metadataFileName));
+        new AtomicFileOperationsImpl(tableStatusPath, FileFactory.getFileType(tableStatusPath));
 
     try {
-      if (!FileFactory.isFileExist(metadataFileName, FileFactory.getFileType(metadataFileName))) {
+      if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
         return new LoadMetadataDetails[0];
       }
       dataInputStream = fileOperation.openForRead();
       inStream = new InputStreamReader(dataInputStream,
-              Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       buffReader = new BufferedReader(inStream);
       listOfLoadFolderDetailsArray =
           gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
@@ -299,7 +311,7 @@ public class SegmentStatusManager {
         // read existing metadata details in load metadata.
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
         if (listOfLoadFolderDetailsArray.length != 0) {
-          updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
+          updateDeletionStatus(identifier, loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if (invalidLoadIds.isEmpty()) {
             // All or None , if anything fails then dont write
             if (carbonTableStatusLock.lockWithRetries()) {
@@ -383,8 +395,8 @@ public class SegmentStatusManager {
         // read existing metadata details in load metadata.
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
         if (listOfLoadFolderDetailsArray.length != 0) {
-          updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray, invalidLoadTimestamps,
-              loadStartTime);
+          updateDeletionStatus(identifier, loadDate, listOfLoadFolderDetailsArray,
+              invalidLoadTimestamps, loadStartTime);
           if (invalidLoadTimestamps.isEmpty()) {
             if (carbonTableStatusLock.lockWithRetries()) {
               LOG.info("Table status lock has been successfully acquired.");
@@ -478,8 +490,10 @@ public class SegmentStatusManager {
    * @param invalidLoadIds
    * @return invalidLoadIds
    */
-  private static List<String> updateDeletionStatus(List<String> loadIds,
-      LoadMetadataDetails[] listOfLoadFolderDetailsArray, List<String> invalidLoadIds) {
+  private static List<String> updateDeletionStatus(AbsoluteTableIdentifier absoluteTableIdentifier,
+      List<String> loadIds, LoadMetadataDetails[] listOfLoadFolderDetailsArray,
+      List<String> invalidLoadIds) {
+    SegmentStatus segmentStatus = null;
     for (String loadId : loadIds) {
       boolean loadFound = false;
       // For each load id loop through data and if the
@@ -488,26 +502,31 @@ public class SegmentStatusManager {
       for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
         if (loadId.equalsIgnoreCase(loadMetadata.getLoadName())) {
-          // if the segment is compacted then no need to delete that.
-          if (SegmentStatus.COMPACTED == loadMetadata.getSegmentStatus()) {
+          segmentStatus = loadMetadata.getSegmentStatus();
+          if (SegmentStatus.COMPACTED == segmentStatus) {
+            // if the segment is compacted then no need to delete that.
             LOG.error("Cannot delete the Segment which is compacted. Segment is " + loadId);
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
-          }
-          // if the segment status is in progress then no need to delete that.
-          if (SegmentStatus.INSERT_IN_PROGRESS == loadMetadata.getSegmentStatus()) {
+          } else if (SegmentStatus.INSERT_IN_PROGRESS == segmentStatus
+              && isLoadInProgress(absoluteTableIdentifier, loadId)) {
+            // if the segment status is in progress then no need to delete that.
             LOG.error("Cannot delete the segment " + loadId + " which is load in progress");
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
-          }
-          // if the segment status is overwrite in progress, then no need to delete that.
-          if (SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == loadMetadata.getSegmentStatus()) {
-            LOG.error("Cannot delete the segemnt " + loadId + " which is load overwrite " +
+          } else if (SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == segmentStatus
+              && isLoadInProgress(absoluteTableIdentifier, loadId)) {
+            // if the segment status is overwrite in progress, then no need to delete that.
+            LOG.error("Cannot delete the segment " + loadId + " which is load overwrite " +
                     "in progress");
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
-          }
-          if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus()) {
+          } else if (SegmentStatus.STREAMING == segmentStatus) {
+            // if the segment status is streaming, the segment can't be deleted directly.
+            LOG.error("Cannot delete the segment " + loadId + " which is streaming in progress");
+            invalidLoadIds.add(loadId);
+            return invalidLoadIds;
+          } else if (SegmentStatus.MARKED_FOR_DELETE != segmentStatus) {
             loadFound = true;
             loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
             loadMetadata.setModificationOrdeletionTimesStamp(CarbonUpdateUtil.readCurrentTime());
@@ -534,33 +553,40 @@ public class SegmentStatusManager {
    * @param invalidLoadTimestamps
    * @return invalidLoadTimestamps
    */
-  public static List<String> updateDeletionStatus(String loadDate,
-      LoadMetadataDetails[] listOfLoadFolderDetailsArray, List<String> invalidLoadTimestamps,
-      Long loadStartTime) {
+  public static List<String> updateDeletionStatus(AbsoluteTableIdentifier absoluteTableIdentifier,
+      String loadDate, LoadMetadataDetails[] listOfLoadFolderDetailsArray,
+      List<String> invalidLoadTimestamps, Long loadStartTime) {
     // For each load timestamp loop through data and if the
     // required load timestamp is found then mark
     // the metadata as deleted.
     boolean loadFound = false;
     String loadStartTimeString = "Load Start Time: ";
+    SegmentStatus segmentStatus = null;
     for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
       Integer result = compareDateValues(loadMetadata.getLoadStartTimeAsLong(), loadStartTime);
       if (result < 0) {
-        if (SegmentStatus.COMPACTED == loadMetadata.getSegmentStatus()) {
+        segmentStatus = loadMetadata.getSegmentStatus();
+        if (SegmentStatus.COMPACTED == segmentStatus) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment has been compacted.");
-          continue;
-        }
-        if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus() &&
-            SegmentStatus.INSERT_IN_PROGRESS != loadMetadata.getSegmentStatus() &&
-            SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS != loadMetadata.getSegmentStatus()) {
+        } else if (SegmentStatus.STREAMING == segmentStatus) {
+          LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
+              + "as the segment is streaming in progress.");
+        } else if (SegmentStatus.INSERT_IN_PROGRESS == segmentStatus && isLoadInProgress(
+            absoluteTableIdentifier, loadMetadata.getLoadName())) {
+          LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
+              + "as the segment is insert in progress.");
+        } else if (SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == segmentStatus
+            && isLoadInProgress(absoluteTableIdentifier, loadMetadata.getLoadName())) {
+          LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
+              + "as the segment is insert overwrite in progress.");
+        } else if (SegmentStatus.MARKED_FOR_DELETE != segmentStatus) {
           loadFound = true;
           updateSegmentMetadataDetails(loadMetadata);
-          LOG.info("Info: " +
-              loadStartTimeString + loadMetadata.getLoadStartTime() +
-              " Marked for Delete");
+          LOG.info("Info: " + loadStartTimeString + loadMetadata.getLoadStartTime()
+              + " Marked for Delete");
         }
       }
-
     }
 
     if (!loadFound) {
@@ -688,24 +714,66 @@ public class SegmentStatusManager {
   }
 
   /**
-   * This function checks if any load or insert overwrite is in progress before dropping that table
-   * @return
+   * Return true if any load or insert overwrite is in progress for specified table
    */
-  public static Boolean checkIfAnyLoadInProgressForTable(CarbonTable carbonTable) {
-    Boolean loadInProgress = false;
+  public static Boolean isLoadInProgressInTable(CarbonTable carbonTable) {
+    if (carbonTable == null) {
+      return false;
+    }
+    boolean loadInProgress = false;
     String metaPath = carbonTable.getMetaDataFilepath();
     LoadMetadataDetails[] listOfLoadFolderDetailsArray =
               SegmentStatusManager.readLoadMetadata(metaPath);
     if (listOfLoadFolderDetailsArray.length != 0) {
       for (LoadMetadataDetails loaddetail :listOfLoadFolderDetailsArray) {
         SegmentStatus segmentStatus = loaddetail.getSegmentStatus();
-        if (segmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
-                segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
-          loadInProgress = true;
+        if (segmentStatus == SegmentStatus.INSERT_IN_PROGRESS
+            || segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+          loadInProgress =
+              isLoadInProgress(carbonTable.getAbsoluteTableIdentifier(),
+                  loaddetail.getLoadName());
         }
       }
     }
     return loadInProgress;
+  }
+
+  /**
+   * Return true if insert overwrite is in progress for specified table
+   */
+  public static Boolean isOverwriteInProgressInTable(CarbonTable carbonTable) {
+    if (carbonTable == null) {
+      return false;
+    }
+    boolean loadInProgress = false;
+    String metaPath = carbonTable.getMetaDataFilepath();
+    LoadMetadataDetails[] listOfLoadFolderDetailsArray =
+        SegmentStatusManager.readLoadMetadata(metaPath);
+    if (listOfLoadFolderDetailsArray.length != 0) {
+      for (LoadMetadataDetails loaddetail :listOfLoadFolderDetailsArray) {
+        SegmentStatus segmentStatus = loaddetail.getSegmentStatus();
+        if (segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+          loadInProgress =
+              isLoadInProgress(carbonTable.getAbsoluteTableIdentifier(),
+                  loaddetail.getLoadName());
+        }
+      }
+    }
+    return loadInProgress;
+  }
+
+  /**
+   * Return true if the specified `loadName` is in progress, by checking the load lock.
+   */
+  public static Boolean isLoadInProgress(AbsoluteTableIdentifier absoluteTableIdentifier,
+      String loadName) {
+    ICarbonLock segmentLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
+        CarbonTablePath.addSegmentPrefix(loadName) + LockUsage.LOCK);
+    try {
+      return !segmentLock.lockWithRetries(1, 0);
+    } finally {
+      segmentLock.unlock();
+    }
   }
 
 }

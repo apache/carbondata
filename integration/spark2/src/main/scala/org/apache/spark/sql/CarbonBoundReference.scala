@@ -29,6 +29,10 @@ case class CastExpr(expr: Expression) extends Filter {
   override def references: Array[String] = null
 }
 
+case class FalseExpr() extends Filter {
+  override def references: Array[String] = null
+}
+
 case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nullable: Boolean)
   extends LeafExpression with NamedExpression with CodegenFallback {
 
@@ -56,4 +60,3 @@ case class CarbonEndsWith(expr: Expression) extends Filter {
 case class CarbonContainsWith(expr: Expression) extends Filter {
   override def references: Array[String] = null
 }
-

@@ -22,6 +22,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+
 class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
 
   test("Creating table: Duplicate dimensions found with name, it should throw AnalysisException") {
@@ -53,20 +55,15 @@ class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
          | STORED BY 'carbondata'
        """.stripMargin)
 
-    try {
+    val ex = intercept[ProcessMetaDataException] {
       sql(
         s"""
            | alter TABLE carbon_table add columns(
            | bb char(10)
             )
        """.stripMargin)
-      Assert.assertTrue(false)
-    } catch {
-      case _: RuntimeException => Assert.assertTrue(true)
-      case _: Exception => Assert.assertTrue(false)
-    } finally {
-      sql("DROP TABLE IF EXISTS carbon_table")
     }
+    sql("DROP TABLE IF EXISTS carbon_table")
   }
 
 }

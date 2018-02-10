@@ -18,13 +18,14 @@
 package org.apache.carbondata.spark.testsuite.allqueries
 
 import java.io.File
-import java.math.{BigDecimal, RoundingMode}
 
-import org.apache.spark.sql.{Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.test.util.QueryTest
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
   * Test Class for all query on multiple datatypes
@@ -375,7 +376,7 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonunion")
     import sqlContext.implicits._
     val df = sqlContext.sparkContext.parallelize(1 to 1000).map(x => (x, (x+100))).toDF("c1", "c2")
-    df.registerTempTable("sparkunion")
+    df.createOrReplaceTempView("sparkunion")
     df.write
       .format("carbondata")
       .mode(SaveMode.Overwrite)

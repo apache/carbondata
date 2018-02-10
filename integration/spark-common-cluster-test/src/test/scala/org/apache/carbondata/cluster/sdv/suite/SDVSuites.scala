@@ -20,6 +20,7 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.{BeforeAndAfterAll, Suites}
 
 import org.apache.carbondata.cluster.sdv.generated._
+import org.apache.carbondata.cluster.sdv.register.TestRegisterCarbonTable
 
 /**
  * Suite class for all tests.
@@ -32,6 +33,7 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                               new BatchSortLoad2TestCase ::
                               new BatchSortQueryTestCase ::
                               new ColumndictTestCase ::
+                              new CreateTableAsSelectTestCase ::
                               new DataLoadingTestCase ::
                               new DataLoadingV3TestCase ::
                               new InvertedindexTestCase ::
@@ -51,6 +53,7 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                               new ShowLoadsTestCase ::
                               new SinglepassTestCase ::
                               new SortColumnTestCase ::
+                              new TableCommentAlterTableTestCase ::
                               new TimestamptypesTestCase ::
                               new V3offheapvectorTestCase ::
                               new Vector1TestCase ::
@@ -117,6 +120,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
   val suites =      new AlterTableTestCase ::
                     new BatchSortLoad2TestCase ::
                     new BucketingTestCase ::
+                    new CreateTableAsSelectTestCase ::
                     new InvertedindexTestCase ::
                     new OffheapQuery1TestCase ::
                     new OffheapQuery2TestCase ::
@@ -133,7 +137,9 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new QueriesRangeFilterTestCase ::
                     new QueriesSparkBlockDistTestCase ::
                     new DataLoadingV3TestCase ::
-                    new QueriesIncludeDictionaryTestCase :: Nil
+                    new QueriesIncludeDictionaryTestCase ::
+                    new TestRegisterCarbonTable ::
+                    new TableCommentAlterTableTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 

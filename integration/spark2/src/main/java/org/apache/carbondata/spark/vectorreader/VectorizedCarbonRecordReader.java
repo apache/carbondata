@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
@@ -59,6 +61,9 @@ import org.apache.spark.sql.types.StructType;
  * carbondata column APIs and fills the data directly into columns.
  */
 class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(VectorizedCarbonRecordReader.class.getName());
 
   private int batchIdx = 0;
 
@@ -121,11 +126,22 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       while (ext != null) {
         if (ext instanceof FileNotFoundException) {
           throw new InterruptedException(
-              e.getMessage() + ". insert overwrite may be in progress.Please check");
+              "Insert overwrite may be in progress.Please check " + e.getMessage());
         }
         ext = ext.getCause();
       }
       throw new InterruptedException(e.getMessage());
+    } catch (Exception e) {
+      Throwable ext = e;
+      while (ext != null) {
+        if (ext instanceof FileNotFoundException) {
+          LOGGER.error(e);
+          throw new InterruptedException(
+              "Insert overwrite may be in progress.Please check " + e.getMessage());
+        }
+        ext = ext.getCause();
+      }
+      throw e;
     }
   }
 

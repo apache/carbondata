@@ -45,7 +45,7 @@ case class CarbonDatasourceHadoopRelation(
     isSubquery: ArrayBuffer[Boolean] = new ArrayBuffer[Boolean]())
   extends BaseRelation with InsertableRelation {
 
-  var caseInsensitiveMap = parameters.map(f => (f._1.toLowerCase, f._2))
+  val caseInsensitiveMap: Map[String, String] = parameters.map(f => (f._1.toLowerCase, f._2))
   lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
     paths.head,
     CarbonEnv.getDatabaseName(caseInsensitiveMap.get("dbname"))(sparkSession),
@@ -65,54 +65,26 @@ case class CarbonDatasourceHadoopRelation(
 
   override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
-  def appendRequiredChildColumnNames(colName : String,
-                                     projectedFields :
-                                     java.util.List[java.util.Map[String, String]] )
-  : String = {
-    var colNamewithChildFields : String = colName
-    var childFieldsSet : java.util.HashSet[String] = new java.util.HashSet[String]();
-
-    val itr = projectedFields.iterator()
-    while (itr.hasNext) {
-      val m = itr.next()
-      if (m.get(CarbonCommonConstants.ATTRIBUTE_REFRENCE).equals(colName)) {
-        childFieldsSet.add(m.get(CarbonCommonConstants.FIELD_NAME));
-        colNamewithChildFields = colNamewithChildFields + "#" +
-          m.get(CarbonCommonConstants.FIELD_NAME)
-      }
-    }
-    if(childFieldsSet.contains(CarbonCommonConstants.NEED_ALL_FIELDS)) {
-      colNamewithChildFields = colName;
-    }
-    return colNamewithChildFields;
-  }
-
   def buildScan(requiredColumns: Array[String],
-                projectedFields : java.util.List[java.util.Map[String, String]],
-                filters: Array[Filter]): RDD[InternalRow] = {
+      filters: Array[Filter],
+      partitions: Seq[String]): RDD[InternalRow] = {
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(schema, filter)
     }.reduceOption(new AndExpression(_, _))
 
     val projection = new CarbonProjection
-    var requiredColumnsUpdated = new java.util.ArrayList[String]()
-    requiredColumns.foreach((s : String ) => requiredColumnsUpdated.add(
-      appendRequiredChildColumnNames(s, projectedFields)))
-
-    var itr : java.util.Iterator[String] = requiredColumnsUpdated.iterator();
-    while (itr.hasNext) {
-      var colName = itr.next()
-      projection.addColumn(colName)
-    }
+    requiredColumns.foreach(projection.addColumn)
+    CarbonSession.threadUnset(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP)
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     new CarbonScanRDD(
-      sparkSession.sparkContext,
+      sparkSession,
       projection,
       filterExpression.orNull,
       identifier,
       carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo,
-      inputMetricsStats)
+      inputMetricsStats,
+      partitions)
   }
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
@@ -130,7 +102,7 @@ case class CarbonDatasourceHadoopRelation(
         CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
     }
     if (data.logicalPlan.output.size >= carbonRelation.output.size) {
-      CarbonInsertIntoCommand(this, data.logicalPlan, overwrite).run(sparkSession)
+      CarbonInsertIntoCommand(this, data.logicalPlan, overwrite, Map.empty).run(sparkSession)
     } else {
       CarbonException.analysisException(
         "Cannot insert into target table because number of columns mismatch")

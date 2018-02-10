@@ -38,23 +38,6 @@ private[sql] case class CarbonDescribeFormattedCommand(
     tblIdentifier: TableIdentifier)
   extends MetadataCommand {
 
-  private def getColumnGroups(dimensions: List[CarbonDimension]): Seq[(String, String, String)] = {
-    var results: Seq[(String, String, String)] =
-      Seq(("", "", ""), ("##Column Group Information", "", ""))
-    val groupedDimensions = dimensions.groupBy(x => x.columnGroupId()).filter {
-      case (groupId, _) => groupId != -1
-    }.toSeq.sortBy(_._1)
-    val groups = groupedDimensions.map(colGroups => {
-      colGroups._2.map(dim => dim.getColName).mkString(", ")
-    })
-    var index = 1
-    groups.foreach { x =>
-      results = results :+ (s"Column Group $index", x, "")
-      index = index + 1
-    }
-    results
-  }
-
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
@@ -104,9 +87,11 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("Table Name", relation.carbonTable.getTableName, ""))
     results ++= Seq(("CARBON Store Path ", CarbonProperties.getStorePath, ""))
     val carbonTable = relation.carbonTable
+
+    val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties
+
     // Carbon table support table comment
-    val tableComment = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse(CarbonCommonConstants.TABLE_COMMENT, "")
+    val tableComment = tblProps.asScala.getOrElse(CarbonCommonConstants.TABLE_COMMENT, "")
     results ++= Seq(("Comment", tableComment, ""))
     results ++= Seq(("Table Block Size ", carbonTable.getBlockSizeInMB + " MB", ""))
     val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable)
@@ -118,12 +103,40 @@ private[sql] case class CarbonDescribeFormattedCommand(
       results ++= Seq((CarbonCommonConstants.LAST_UPDATE_TIME,
         dataIndexSize.get(CarbonCommonConstants.LAST_UPDATE_TIME).toString, ""))
     }
-    results ++= Seq(("SORT_SCOPE", carbonTable.getTableInfo.getFactTable
-      .getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
-      .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
-    val isStreaming = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse("streaming", "false")
+
+    results ++= Seq(("SORT_SCOPE", tblProps.asScala.getOrElse("sort_scope", CarbonCommonConstants
+      .LOAD_SORT_SCOPE_DEFAULT), tblProps.asScala.getOrElse("sort_scope", CarbonCommonConstants
+      .LOAD_SORT_SCOPE_DEFAULT)))
+    val isStreaming = tblProps.asScala.getOrElse("streaming", "false")
     results ++= Seq(("Streaming", isStreaming, ""))
+
+    // show table level compaction options
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE.toUpperCase
+        , tblProps.get(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE),
+        CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE))
+    }
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE.toUpperCase,
+        tblProps.get(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE),
+        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE))
+    }
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD.toUpperCase,
+        tblProps.get(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD),
+        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD))
+    }
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS.toUpperCase,
+        tblProps.get(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS),
+        CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER))
+    }
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS.toUpperCase,
+        tblProps.get(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS),
+        CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT))
+    }
+
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
       results ++= Seq((colPropStr, "", ""))
@@ -133,13 +146,13 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns(
       relation.carbonTable.getTableName).asScala
       .map(column => column).mkString(","), ""))
-    val dimension = carbonTable
-      .getDimensionByTableName(relation.carbonTable.getTableName)
-    results ++= getColumnGroups(dimension.asScala.toList)
     if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
       results ++=
       Seq(("Partition Columns", carbonTable.getPartitionInfo(carbonTable.getTableName)
         .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
+      results ++=
+      Seq(("Partition Type", carbonTable.getPartitionInfo(carbonTable.getTableName)
+        .getPartitionType.toString, ""))
     }
     results.map {
       case (name, dataType, null) =>

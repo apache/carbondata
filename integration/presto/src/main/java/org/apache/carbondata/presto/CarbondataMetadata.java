@@ -21,7 +21,6 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 import com.facebook.presto.spi.*;
-import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
 import com.facebook.presto.spi.connector.ConnectorMetadata;
 import com.facebook.presto.spi.type.*;
 import com.google.common.collect.ImmutableList;
@@ -42,7 +41,6 @@ import static java.util.Objects.requireNonNull;
 public class CarbondataMetadata implements ConnectorMetadata {
   private final String connectorId;
   private CarbonTableReader carbonTableReader;
-  private ClassLoader classLoader;
 
   private Map<String, ColumnHandle> columnHandleMap;
 
@@ -51,20 +49,13 @@ public class CarbondataMetadata implements ConnectorMetadata {
     this.carbonTableReader = requireNonNull(reader, "client is null");
   }
 
-  public void putClassLoader(ClassLoader classLoader) {
-    this.classLoader = classLoader;
-  }
 
   @Override public List<String> listSchemaNames(ConnectorSession session) {
     return listSchemaNamesInternal();
   }
 
   public List<String> listSchemaNamesInternal() {
-    List<String> schemaNameList;
-    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-      schemaNameList = carbonTableReader.getSchemaNames();
-    }
-    return schemaNameList;
+    return carbonTableReader.getSchemaNames();
   }
 
   @Override

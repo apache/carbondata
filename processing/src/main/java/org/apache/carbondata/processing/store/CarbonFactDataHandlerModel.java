@@ -161,6 +161,8 @@ public class CarbonFactDataHandlerModel {
 
   private DataMapWriterListener dataMapWriterlistener;
 
+  private short writingCoresCount;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -223,7 +225,7 @@ public class CarbonFactDataHandlerModel {
     }
 
     CarbonDataFileAttributes carbonDataFileAttributes =
-        new CarbonDataFileAttributes(Integer.parseInt(configuration.getTaskNo()),
+        new CarbonDataFileAttributes(Long.parseLong(configuration.getTaskNo()),
             (Long) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
     String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration);
 
@@ -260,6 +262,7 @@ public class CarbonFactDataHandlerModel {
     DataMapWriterListener listener = new DataMapWriterListener();
     listener.registerAllWriter(configuration.getTableIdentifier(), configuration.getSegmentId());
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
+    carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
 
     return carbonFactDataHandlerModel;
   }
@@ -321,6 +324,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.tableSpec = new TableSpec(
         segmentProperties.getDimensions(),
         segmentProperties.getMeasures());
+
     return carbonFactDataHandlerModel;
   }
 
@@ -561,6 +565,10 @@ public class CarbonFactDataHandlerModel {
 
   public SortScopeOptions.SortScope getSortScope() {
     return sortScope;
+  }
+
+  public short getWritingCoresCount() {
+    return writingCoresCount;
   }
 
   public DataMapWriterListener getDataMapWriterlistener() {

@@ -17,8 +17,9 @@
 
 package org.apache.carbondata.core.scan.result.vector;
 
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.Decimal;
+import java.math.BigDecimal;
+
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 public interface CarbonColumnVector {
 
@@ -38,9 +39,9 @@ public interface CarbonColumnVector {
 
   void putLongs(int rowId, int count, long value);
 
-  void putDecimal(int rowId, Decimal value, int precision);
+  void putDecimal(int rowId, BigDecimal value, int precision);
 
-  void putDecimals(int rowId, int count, Decimal value, int precision);
+  void putDecimals(int rowId, int count, BigDecimal value, int precision);
 
   void putDouble(int rowId, double value);
 
@@ -65,6 +66,20 @@ public interface CarbonColumnVector {
   void reset();
 
   DataType getType();
+
+  /**
+   * Method to be used for getting the restructured data type. This method will used for
+   * retrieving the data after change in data type restructure operation
+   *
+   * @return
+   */
+  DataType getBlockDataType();
+
+  /**
+   * Method to be used for setting the restructured data type. This method will used for
+   * retrieving the data after change in data type restructure operation
+   */
+  void setBlockDataType(DataType blockDataType);
 
   void setFilteredRowsExist(boolean filteredRowsExist);
 

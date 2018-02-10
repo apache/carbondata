@@ -35,8 +35,11 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
+import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 import org.apache.carbondata.core.util.BitSetGroup;
 
@@ -398,5 +401,50 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     bitSetGroupWithDefaultValue =
         FilterUtil.createBitSetGroupWithDefaultValue(15, 448200, true);
     assertTrue(bitSetGroupWithDefaultValue.getNumberOfPages() == 15);
+  }
+
+  @Test public void testRemoveInExpressionNodeWithPositionIdColumn() {
+    List<Expression> children = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    // create literal expression
+    LiteralExpression literalExpression =
+        new LiteralExpression("0/1/0-0_batchno0-0-1517808273200/0", DataTypes.STRING);
+    children.add(literalExpression);
+    // create list expression
+    ListExpression listExpression = new ListExpression(children);
+    // create column expression with column name as positionId
+    ColumnExpression columnExpression =
+        new ColumnExpression(CarbonCommonConstants.POSITION_ID, DataTypes.STRING);
+    // create InExpression as right node
+    InExpression inExpression = new InExpression(columnExpression, listExpression);
+    // create a dummy true expression as left node
+    TrueExpression trueExpression = new TrueExpression(null);
+    // create and expression as the root node
+    Expression expression = new AndExpression(trueExpression, inExpression);
+    // test remove expression method
+    FilterUtil.removeInExpressionNodeWithPositionIdColumn(expression);
+    // after removing the right node instance of right node should be of true expression
+    assert (((AndExpression) expression).getRight() instanceof TrueExpression);
+  }
+
+  @Test public void testRemoveInExpressionNodeWithDifferentColumn() {
+    List<Expression> children = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    // create literal expression
+    LiteralExpression literalExpression =
+        new LiteralExpression("testName", DataTypes.STRING);
+    children.add(literalExpression);
+    // create list expression
+    ListExpression listExpression = new ListExpression(children);
+    // create column expression with column name as positionId
+    ColumnExpression columnExpression = new ColumnExpression("name", DataTypes.STRING);
+    // create InExpression as right node
+    InExpression inExpression = new InExpression(columnExpression, listExpression);
+    // create a dummy true expression as left node
+    TrueExpression trueExpression = new TrueExpression(null);
+    // create and expression as the root node
+    Expression expression = new AndExpression(trueExpression, inExpression);
+    // test remove expression method
+    FilterUtil.removeInExpressionNodeWithPositionIdColumn(expression);
+    // after removing the right node instance of right node should be of true expression
+    assert (((AndExpression) expression).getRight() instanceof InExpression);
   }
 }

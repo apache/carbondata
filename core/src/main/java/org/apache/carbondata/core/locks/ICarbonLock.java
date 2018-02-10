@@ -37,6 +37,13 @@ public interface ICarbonLock {
   boolean lockWithRetries();
 
   /**
+   * This will acquire the lock and if it doesnt get then it will retry after retryInterval.
+   *
+   * @return
+   */
+  boolean lockWithRetries(int retryCount, int retryInterval);
+
+  /**
    * This method will delete the lock file at the specified location.
    *
    * @param lockFile The path of the lock file.

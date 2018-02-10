@@ -20,13 +20,8 @@ package org.apache.carbondata.spark.load
 import java.util.Comparator
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.io.NullWritable
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
-import org.apache.spark.{SparkContext, TaskContext}
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.NewHadoopRDD
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.TaskContext
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.storage.StorageLevel
 
@@ -36,11 +31,10 @@ import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.loading.{DataLoadProcessBuilder, FailureCauses}
-import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, StringArrayWritable}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.DataLoadingUtil
 
 /**
  * Use sortBy operator in spark to load the data
@@ -49,7 +43,7 @@ object DataLoadProcessBuilderOnSpark {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def loadDataUsingGlobalSort(
-      sc: SparkContext,
+      sparkSession: SparkSession,
       dataFrame: Option[DataFrame],
       model: CarbonLoadModel,
       hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
@@ -57,21 +51,13 @@ object DataLoadProcessBuilderOnSpark {
       dataFrame.get.rdd
     } else {
       // input data from files
-      CommonUtil.configureCSVInputFormat(hadoopConf, model)
-      hadoopConf.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
       val columnCount = model.getCsvHeaderColumns.length
-      val jobConf = new JobConf(hadoopConf)
-      SparkHadoopUtil.get.addCredentials(jobConf)
-      new NewHadoopRDD[NullWritable, StringArrayWritable](
-        sc,
-        classOf[CSVInputFormat],
-        classOf[NullWritable],
-        classOf[StringArrayWritable],
-        jobConf)
-        .map(x => DataLoadProcessorStepOnSpark.toStringArrayRow(x._2, columnCount))
+      DataLoadingUtil.csvFileScanRDD(sparkSession, model, hadoopConf)
+        .map(DataLoadProcessorStepOnSpark.toStringArrayRow(_, columnCount))
     }
 
     model.setPartitionId("0")
+    val sc = sparkSession.sparkContext
     val modelBroadcast = sc.broadcast(model)
     val partialSuccessAccum = sc.accumulator(0, "Partial Success Accumulator")
 
@@ -134,8 +120,12 @@ object DataLoadProcessBuilderOnSpark {
       DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, modelBroadcast,
         writeStepRowCounter))
 
-    // clean cache
-    convertRDD.unpersist()
+    // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
+    // not have any functional impact as spark automatically monitors the cache usage on each node
+    // and drops out old data partiotions in a least-recently used (LRU) fashion.
+    if (numPartitions > 1) {
+      convertRDD.unpersist(false)
+    }
 
     // Log the number of rows in each step
     LOGGER.info("Total rows processed in step Input Processor: " + inputStepRowCounter.value)

@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.processing.merger;
 
+import java.io.IOException;
 import java.util.AbstractQueue;
 import java.util.Comparator;
 import java.util.List;
@@ -29,10 +30,12 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.PartitionMapFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.exception.SliceMergerException;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
@@ -47,6 +50,8 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
   private CarbonFactHandler dataHandler;
   private SegmentProperties segprop;
+  private CarbonLoadModel loadModel;
+  private List<String> partitionNames;
   /**
    * record holder heap
    */
@@ -57,8 +62,10 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
   public RowResultMergerProcessor(String databaseName,
       String tableName, SegmentProperties segProp, String[] tempStoreLocation,
-      CarbonLoadModel loadModel, CompactionType compactionType) {
+      CarbonLoadModel loadModel, CompactionType compactionType, List<String> partitionNames) {
     this.segprop = segProp;
+    this.partitionNames = partitionNames;
+    this.loadModel = loadModel;
     CarbonDataProcessorUtil.createLocations(tempStoreLocation);
 
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
@@ -150,8 +157,14 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         if (isDataPresent) {
           this.dataHandler.closeHandler();
         }
-      } catch (CarbonDataWriterException e) {
-        LOGGER.error("Exception while closing the handler in compaction merger " + e.getMessage());
+        if (partitionNames != null) {
+          new PartitionMapFileStore().writePartitionMapFile(
+              CarbonTablePath.getSegmentPath(loadModel.getTablePath(), loadModel.getSegmentId()),
+              loadModel.getTaskNo(),
+              partitionNames);
+        }
+      } catch (CarbonDataWriterException | IOException e) {
+        LOGGER.error(e,"Exception in compaction merger");
         mergeStatus = false;
       }
     }

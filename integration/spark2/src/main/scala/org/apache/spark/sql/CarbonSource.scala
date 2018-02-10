@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.streaming.{CarbonStreamException, StreamSinkFactory}
 
 /**
@@ -59,16 +60,20 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     CarbonEnv.getInstance(sqlContext.sparkSession)
     // if path is provided we can directly create Hadoop relation. \
     // Otherwise create datasource relation
-    parameters.get("tablePath") match {
+    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
+    newParameters.get("tablePath") match {
       case Some(path) => CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
         Array(path),
-        parameters,
+        newParameters,
         None)
       case _ =>
-        val options = new CarbonOption(parameters)
+        val options = new CarbonOption(newParameters)
         val tablePath =
           CarbonEnv.getTablePath(options.dbName, options.tableName)(sqlContext.sparkSession)
-        CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(tablePath), parameters, None)
+        CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
+          Array(tablePath),
+          newParameters,
+          None)
     }
   }
 
@@ -79,13 +84,14 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       parameters: Map[String, String],
       data: DataFrame): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
+    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
-    require(!parameters.contains("path"), "'path' should not be specified, " +
+    require(!newParameters.contains("path"), "'path' should not be specified, " +
                                           "the path to store carbon file is the 'storePath' " +
                                           "specified when creating CarbonContext")
 
-    val options = new CarbonOption(parameters)
+    val options = new CarbonOption(newParameters)
     val tablePath = new Path(
       CarbonEnv.getTablePath(options.dbName, options.tableName)(sqlContext.sparkSession))
     val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
@@ -108,12 +114,12 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
     if (doSave) {
       // save data when the save mode is Overwrite.
-      new CarbonDataFrameWriter(sqlContext, data).saveAsCarbonFile(parameters)
+      new CarbonDataFrameWriter(sqlContext, data).saveAsCarbonFile(newParameters)
     } else if (doAppend) {
-      new CarbonDataFrameWriter(sqlContext, data).appendToCarbonFile(parameters)
+      new CarbonDataFrameWriter(sqlContext, data).appendToCarbonFile(newParameters)
     }
 
-    createRelation(sqlContext, parameters, data.schema)
+    createRelation(sqlContext, newParameters, data.schema)
   }
 
   // called by DDL operation with a USING clause
@@ -123,9 +129,10 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       dataSchema: StructType): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
+    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
     val dbName: String =
-      CarbonEnv.getDatabaseName(parameters.get("dbName"))(sqlContext.sparkSession)
-    val tableOption: Option[String] = parameters.get("tableName")
+      CarbonEnv.getDatabaseName(newParameters.get("dbName"))(sqlContext.sparkSession)
+    val tableOption: Option[String] = newParameters.get("tableName")
     if (tableOption.isEmpty) {
       CarbonException.analysisException("Table creation failed. Table name is not specified")
     }
@@ -136,9 +143,9 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
     val (path, updatedParams) = if (sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
-        getPathForTable(sqlContext.sparkSession, dbName, tableName, parameters)
+        getPathForTable(sqlContext.sparkSession, dbName, tableName, newParameters)
     } else {
-        createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
+        createTableIfNotExists(sqlContext.sparkSession, newParameters, dataSchema)
     }
 
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), updatedParams,

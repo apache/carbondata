@@ -35,7 +35,7 @@ class CarbonStreamingQueryListener(spark: SparkSession) extends StreamingQueryLi
 
   override def onQueryStarted(event: StreamingQueryListener.QueryStartedEvent): Unit = {
     val streamQuery = spark.streams.get(event.id)
-    val qry = if (SPARK_VERSION.startsWith("2.1")) {
+    val qry = if (streamQuery.isInstanceOf[StreamExecution]) {
       // adapt spark 2.1
       streamQuery.asInstanceOf[StreamExecution]
     } else {

@@ -17,14 +17,18 @@
 
 package org.apache.carbondata.spark.testsuite.badrecordloger
 
-import java.io.File
+import java.io.{File, FileFilter}
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.datastore.impl.FileFactory
 
 /**
  * Test Class for detailed query on timestamp datatypes
@@ -46,14 +50,10 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
       sql("drop table IF EXISTS empty_timestamp")
       sql("drop table IF EXISTS empty_timestamp_false")
       sql("drop table IF EXISTS dataloadOptionTests")
+      sql("drop table IF EXISTS sales_test")
       sql(
         """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
           actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
-
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-          new File("./target/test/badRecords")
-            .getCanonicalPath)
 
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
@@ -247,8 +247,69 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("validate redirected data") {
+    cleanBadRecordPath("default", "sales_test")
+    val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
+    sql(
+      """CREATE TABLE IF NOT EXISTS sales_test(ID BigInt, date long, country int,
+          actual_price Double, Quantity String, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    try {
+      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_test OPTIONS" +
+          "('bad_records_logger_enable'='false','bad_records_action'='redirect', 'DELIMITER'=" +
+          " ',', 'QUOTECHAR'= '\"')");
+    } catch {
+      case e: Exception => {
+        assert(true)
+      }
+    }
+    val redirectCsvPath = getRedirectCsvPath("default", "sales_test", "0", "0")
+    assert(checkRedirectedCsvContentAvailableInSource(csvFilePath, redirectCsvPath))
+  }
+
+  def getRedirectCsvPath(dbName: String, tableName: String, segment: String, task: String) = {
+    var badRecordLocation = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
+    badRecordLocation = badRecordLocation + "/" + dbName + "/" + tableName + "/" + segment + "/" +
+                        task
+    val listFiles = new File(badRecordLocation).listFiles(new FileFilter {
+      override def accept(pathname: File): Boolean = {
+        pathname.getPath.endsWith(".csv")
+      }
+    })
+    listFiles(0)
+  }
+
+  /**
+   *
+   * @param csvFilePath
+   * @param redirectCsvPath
+   */
+  def checkRedirectedCsvContentAvailableInSource(csvFilePath: String,
+      redirectCsvPath: File): Boolean = {
+    val origFileLineList = FileUtils.readLines(new File(csvFilePath))
+    val redirectedFileLineList = FileUtils.readLines(redirectCsvPath)
+    val iterator = redirectedFileLineList.iterator()
+    while (iterator.hasNext) {
+      if (!origFileLineList.contains(iterator.next())) {
+        return false;
+      }
+    }
+    return true
+  }
+
+  def cleanBadRecordPath(dbName: String, tableName: String) = {
+    var badRecordLocation = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
+    badRecordLocation = badRecordLocation + "/" + dbName + "/" + tableName
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(badRecordLocation))
+  }
+
   override def afterAll {
     sql("drop table sales")
+    sql("drop table sales_test")
     sql("drop table serializable_values")
     sql("drop table serializable_values_false")
     sql("drop table insufficientColumn")
@@ -258,6 +319,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table empty_timestamp")
     sql("drop table empty_timestamp_false")
     sql("drop table dataloadOptionTests")
+    sql("drop table IF EXISTS loadIssue")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

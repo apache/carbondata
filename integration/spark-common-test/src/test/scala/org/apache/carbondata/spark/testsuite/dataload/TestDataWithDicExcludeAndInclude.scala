@@ -100,17 +100,6 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
     ).message.contains("Operation not allowed: CREATE EXTERNAL TABLE"))
   }
 
-  test("test CTAS should fail") {
-    assert(intercept[AnalysisException](
-      sql(
-        """
-          | CREATE TABLE t1 (id string, value int)
-          | STORED BY 'carbondata'
-          | AS SELECT 'ABC', 1 FROM t2
-        """.stripMargin)
-    ).message.contains("Operation not allowed: CREATE TABLE AS SELECT"))
-  }
-
   override def afterAll {
     dropTable
     CarbonProperties.getInstance()

@@ -17,13 +17,28 @@
 
 package org.apache.carbondata.spark.util
 
-import scala.collection.immutable
+import java.text.SimpleDateFormat
+import java.util.{Date, Locale}
+
+import scala.collection.{immutable, mutable}
 import scala.collection.JavaConverters._
-import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.mapred.JobConf
+import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
+import org.apache.hadoop.mapreduce.task.{JobContextImpl, TaskAttemptContextImpl}
+import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.execution.datasources.{FilePartition, FileScanRDD, PartitionedFile}
 import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -33,10 +48,13 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
+import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.{CarbonLoaderUtil, DeleteLoadFolders, TableOptionConstant}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark.LOGGER
 import org.apache.carbondata.spark.load.ValidateUtil
+import org.apache.carbondata.spark.rdd.SerializableConfiguration
 
 /**
  * the util object of data loading
@@ -55,9 +73,12 @@ object DataLoadingUtil {
     optionsFinal.put("delimiter", options.getOrElse("delimiter", ","))
     optionsFinal.put("quotechar", options.getOrElse("quotechar", "\""))
     optionsFinal.put("fileheader", options.getOrElse("fileheader", ""))
-    optionsFinal.put("escapechar", options.getOrElse("escapechar", "\\"))
     optionsFinal.put("commentchar", options.getOrElse("commentchar", "#"))
     optionsFinal.put("columndict", options.getOrElse("columndict", null))
+
+    optionsFinal.put("escapechar",
+      CarbonLoaderUtil.getEscapeChar(options.getOrElse("escapechar", "\\")))
+
     optionsFinal.put(
       "serialization_null_format",
       options.getOrElse("serialization_null_format", "\\N"))
@@ -227,10 +248,10 @@ object DataLoadingUtil {
 
     if (bad_records_logger_enable.toBoolean ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
-      bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path)
       if (!CarbonUtil.isValidBadStorePath(bad_record_path)) {
         CarbonException.analysisException("Invalid bad records location.")
       }
+      bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path)
     }
     carbonLoadModel.setBadRecordsLocation(bad_record_path)
 
@@ -284,7 +305,7 @@ object DataLoadingUtil {
         TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName + "," + bad_records_logger_enable)
 
     carbonLoadModel.setBadRecordsAction(
-        TableOptionConstant.BAD_RECORDS_ACTION.getName + "," + bad_records_action)
+        TableOptionConstant.BAD_RECORDS_ACTION.getName + "," + bad_records_action.toUpperCase)
 
     carbonLoadModel.setIsEmptyDataBadRecord(
         DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," +
@@ -329,7 +350,9 @@ object DataLoadingUtil {
     val details = SegmentStatusManager.readLoadMetadata(metaDataLocation)
     if (details != null && details.nonEmpty) for (oneRow <- details) {
       if ((SegmentStatus.MARKED_FOR_DELETE == oneRow.getSegmentStatus ||
-           SegmentStatus.COMPACTED == oneRow.getSegmentStatus) &&
+           SegmentStatus.COMPACTED == oneRow.getSegmentStatus ||
+           SegmentStatus.INSERT_IN_PROGRESS == oneRow.getSegmentStatus ||
+           SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneRow.getSegmentStatus) &&
           oneRow.getVisibility.equalsIgnoreCase("true")) {
         return true
       }
@@ -354,8 +377,11 @@ object DataLoadingUtil {
         DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
           absoluteTableIdentifier,
           isForceDeletion,
-          details
+          details,
+          carbonTable.getMetaDataFilepath
         )
+
+      var updationCompletionStaus = false
 
       if (isUpdationRequired) {
         try {
@@ -383,11 +409,125 @@ object DataLoadingUtil {
             LOGGER.error(errorMsg)
             throw new Exception(errorMsg + " Please try after some time.")
           }
+          updationCompletionStaus = true
         } finally {
           CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)
         }
+        if (updationCompletionStaus) {
+          DeleteLoadFolders
+            .physicalFactAndMeasureMetadataDeletion(absoluteTableIdentifier,
+              carbonTable.getMetaDataFilepath, isForceDeletion)
+        }
       }
     }
+  }
+
+  /**
+   * creates a RDD that does reading of multiple CSV files
+   */
+  def csvFileScanRDD(
+      spark: SparkSession,
+      model: CarbonLoadModel,
+      hadoopConf: Configuration
+  ): RDD[InternalRow] = {
+    // 1. partition
+    val defaultMaxSplitBytes = sessionState(spark).conf.filesMaxPartitionBytes
+    val openCostInBytes = sessionState(spark).conf.filesOpenCostInBytes
+    val defaultParallelism = spark.sparkContext.defaultParallelism
+    CommonUtil.configureCSVInputFormat(hadoopConf, model)
+    hadoopConf.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
+    val jobConf = new JobConf(hadoopConf)
+    SparkHadoopUtil.get.addCredentials(jobConf)
+    val jobContext = new JobContextImpl(jobConf, null)
+    val inputFormat = new CSVInputFormat()
+    val rawSplits = inputFormat.getSplits(jobContext).toArray
+    val splitFiles = rawSplits.map { split =>
+      val fileSplit = split.asInstanceOf[FileSplit]
+      PartitionedFile(
+        InternalRow.empty,
+        fileSplit.getPath.toString,
+        fileSplit.getStart,
+        fileSplit.getLength,
+        fileSplit.getLocations)
+    }.sortBy(_.length)(implicitly[Ordering[Long]].reverse)
+    val totalBytes = splitFiles.map(_.length + openCostInBytes).sum
+    val bytesPerCore = totalBytes / defaultParallelism
+
+    val maxSplitBytes = Math.min(defaultMaxSplitBytes, Math.max(openCostInBytes, bytesPerCore))
+    LOGGER.info(s"Planning scan with bin packing, max size: $maxSplitBytes bytes, " +
+                s"open cost is considered as scanning $openCostInBytes bytes.")
+
+    val partitions = new ArrayBuffer[FilePartition]
+    val currentFiles = new ArrayBuffer[PartitionedFile]
+    var currentSize = 0L
+
+    def closePartition(): Unit = {
+      if (currentFiles.nonEmpty) {
+        val newPartition =
+          FilePartition(
+            partitions.size,
+            currentFiles.toArray.toSeq)
+        partitions += newPartition
+      }
+      currentFiles.clear()
+      currentSize = 0
+    }
+
+    splitFiles.foreach { file =>
+      if (currentSize + file.length > maxSplitBytes) {
+        closePartition()
+      }
+      // Add the given file to the current partition.
+      currentSize += file.length + openCostInBytes
+      currentFiles += file
+    }
+    closePartition()
+
+    // 2. read function
+    val serializableConfiguration = new SerializableConfiguration(jobConf)
+    val readFunction = new (PartitionedFile => Iterator[InternalRow]) with Serializable {
+      override def apply(file: PartitionedFile): Iterator[InternalRow] = {
+        new Iterator[InternalRow] {
+          val hadoopConf = serializableConfiguration.value
+          val jobTrackerId: String = {
+            val formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
+            formatter.format(new Date())
+          }
+          val attemptId = new TaskAttemptID(jobTrackerId, 0, TaskType.MAP, 0, 0)
+          val hadoopAttemptContext = new TaskAttemptContextImpl(hadoopConf, attemptId)
+          val inputSplit =
+            new FileSplit(new Path(file.filePath), file.start, file.length, file.locations)
+          var finished = false
+          val inputFormat = new CSVInputFormat()
+          val reader = inputFormat.createRecordReader(inputSplit, hadoopAttemptContext)
+          reader.initialize(inputSplit, hadoopAttemptContext)
+
+          override def hasNext: Boolean = {
+            if (!finished) {
+              if (reader != null) {
+                if (reader.nextKeyValue()) {
+                  true
+                } else {
+                  finished = true
+                  reader.close()
+                  false
+                }
+              } else {
+                finished = true
+                false
+              }
+            } else {
+              false
+            }
+          }
+
+          override def next(): InternalRow = {
+            new GenericInternalRow(reader.getCurrentValue.get().asInstanceOf[Array[Any]])
+          }
+        }
+      }
+    }
+    new FileScanRDD(spark, readFunction, partitions)
   }
 
 }

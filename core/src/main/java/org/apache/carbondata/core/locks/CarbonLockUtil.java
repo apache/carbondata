@@ -20,6 +20,7 @@ package org.apache.carbondata.core.locks;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * This class contains all carbon lock utilities
@@ -90,6 +91,18 @@ public class CarbonLockUtil {
     return getLockObject(identifier,
         lockType,
         "Acquire table lock failed after retry, please try after some time");
+  }
+
+  /**
+   * Get the value for the property. If NumberFormatException is thrown then return default value.
+   */
+  public static int getLockProperty(String property, int defaultValue) {
+    try {
+      return Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(property));
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
   }
 
 }

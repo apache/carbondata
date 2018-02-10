@@ -26,13 +26,17 @@ import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sin
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.dictionary.server.DictionaryServer
+import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
+import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
+import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.spark.util.DataLoadingUtil
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -48,34 +52,55 @@ object StreamSinkFactory {
       parameters: Map[String, String]): Sink = {
     validateParameters(parameters)
 
-    // prepare the stream segment
-    val segmentId = getStreamSegmentId(carbonTable)
     // build load model
     val carbonLoadModel = buildCarbonLoadModelForStream(
       sparkSession,
       hadoopConf,
       carbonTable,
       parameters,
-      segmentId)
+      "")
+    // fire pre event before streamin is started
+    val operationContext = new OperationContext
+    val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
+      carbonTable.getCarbonTableIdentifier,
+      carbonLoadModel,
+      carbonLoadModel.getFactFilePath,
+      false,
+      parameters.asJava,
+      null,
+      false
+    )
+    OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
+    // prepare the stream segment
+    val segmentId = getStreamSegmentId(carbonTable)
+    carbonLoadModel.setSegmentId(segmentId)
+
     // start server if necessary
     val server = startDictionaryServer(
       sparkSession,
       carbonTable,
-      carbonLoadModel.getDictionaryServerPort)
+      carbonLoadModel)
     if (server.isDefined) {
       carbonLoadModel.setUseOnePass(true)
-      carbonLoadModel.setDictionaryServerPort(server.get.getPort)
     } else {
       carbonLoadModel.setUseOnePass(false)
     }
     // default is carbon appended stream sink
-    new CarbonAppendableStreamSink(
+    val carbonAppendableStreamSink = new CarbonAppendableStreamSink(
       sparkSession,
       carbonTable,
       segmentId,
       parameters,
       carbonLoadModel,
       server)
+
+    // fire post event before streamin is started
+    val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
+      carbonTable.getCarbonTableIdentifier,
+      carbonLoadModel
+    )
+    OperationListenerBus.getInstance().fireEvent(loadTablePostExecutionEvent, operationContext)
+    carbonAppendableStreamSink
   }
 
   private def validateParameters(parameters: Map[String, String]): Unit = {
@@ -89,7 +114,7 @@ object StreamSinkFactory {
                                     CarbonCommonConstants.HANDOFF_SIZE_MIN)
         }
       } catch {
-        case ex: NumberFormatException =>
+        case _: NumberFormatException =>
           new CarbonStreamException(CarbonCommonConstants.HANDOFF_SIZE +
                                     s" $segmentSize is an illegal number")
       }
@@ -101,11 +126,16 @@ object StreamSinkFactory {
    * @return
    */
   private def getStreamSegmentId(carbonTable: CarbonTable): String = {
-    val segmentId = StreamSegment.open(carbonTable)
     val carbonTablePath = CarbonStorePath
       .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+    val fileType = FileFactory.getFileType(carbonTablePath.getMetadataDirectoryPath)
+    if (!FileFactory.isFileExist(carbonTablePath.getMetadataDirectoryPath, fileType)) {
+      // Create table directory path, in case of enabling hive metastore first load may not have
+      // table folder created.
+      FileFactory.mkdirs(carbonTablePath.getMetadataDirectoryPath, fileType)
+    }
+    val segmentId = StreamSegment.open(carbonTable)
     val segmentDir = carbonTablePath.getSegmentDir("0", segmentId)
-    val fileType = FileFactory.getFileType(segmentDir)
     if (FileFactory.isFileExist(segmentDir, fileType)) {
       // recover fault
       StreamSegment.recoverSegmentIfRequired(segmentDir)
@@ -118,7 +148,7 @@ object StreamSinkFactory {
   def startDictionaryServer(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
-      port: Int): Option[DictionaryServer] = {
+      carbonLoadModel: CarbonLoadModel): Option[DictionaryServer] = {
     // start dictionary server when use one pass load and dimension with DICTIONARY
     // encoding is present.
     val allDimensions = carbonTable.getAllDimensions.asScala.toList
@@ -126,14 +156,46 @@ object StreamSinkFactory {
       carbonDimension => carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
                          !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
     }
+    val carbonSecureModeDictServer = CarbonProperties.getInstance.
+      getProperty(CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER,
+        CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER_DEFAULT)
+
+    val sparkConf = sparkSession.sqlContext.sparkContext.getConf
+    val sparkDriverHost = sparkSession.sqlContext.sparkContext.
+      getConf.get("spark.driver.host")
+
     val server: Option[DictionaryServer] = if (createDictionary) {
-      val dictionaryServer = DictionaryServer.getInstance(port, carbonTable)
-      sparkSession.sparkContext.addSparkListener(new SparkListener() {
-        override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
-          dictionaryServer.shutdown()
-        }
-      })
-      Some(dictionaryServer)
+      if (sparkConf.get("spark.authenticate", "false").equalsIgnoreCase("true") &&
+          carbonSecureModeDictServer.toBoolean) {
+        val dictionaryServer = SecureDictionaryServer.getInstance(sparkConf,
+          sparkDriverHost.toString, carbonLoadModel.getDictionaryServerPort, carbonTable)
+        carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+        carbonLoadModel.setDictionaryServerHost(dictionaryServer.getHost)
+        carbonLoadModel.setDictionaryServerSecretKey(dictionaryServer.getSecretKey)
+        carbonLoadModel.setDictionaryEncryptServerSecure(dictionaryServer.isEncryptSecureServer)
+        carbonLoadModel.setDictionaryServiceProvider(new SecureDictionaryServiceProvider())
+        sparkSession.sparkContext.addSparkListener(new SparkListener() {
+          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
+            dictionaryServer.shutdown()
+          }
+        })
+        Some(dictionaryServer)
+      } else {
+        val dictionaryServer = NonSecureDictionaryServer
+          .getInstance(carbonLoadModel.getDictionaryServerPort, carbonTable)
+        carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+        carbonLoadModel.setDictionaryServerHost(dictionaryServer.getHost)
+        carbonLoadModel.setDictionaryEncryptServerSecure(false)
+        carbonLoadModel
+          .setDictionaryServiceProvider(new NonSecureDictionaryServiceProvider(dictionaryServer
+            .getPort))
+        sparkSession.sparkContext.addSparkListener(new SparkListener() {
+          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
+            dictionaryServer.shutdown()
+          }
+        })
+        Some(dictionaryServer)
+      }
     } else {
       None
     }

@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 object Checker {
   def validateTableExists(
@@ -45,6 +46,11 @@ object Checker {
  */
 trait MetadataProcessOpeation {
   def processMetadata(sparkSession: SparkSession): Seq[Row]
+
+  // call this to throw exception when processMetadata failed
+  def throwMetadataException(dbName: String, tableName: String, msg: String): Unit = {
+    throw new ProcessMetaDataException(dbName, tableName, msg)
+  }
 }
 
 /**

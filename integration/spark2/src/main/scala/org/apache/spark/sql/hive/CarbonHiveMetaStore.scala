@@ -51,13 +51,15 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       absIdentifier: AbsoluteTableIdentifier,
       sparkSession: SparkSession): CarbonRelation = {
     val info = CarbonUtil.convertGsonToTableInfo(parameters.asJava)
-    if (info != null) {
+    val carbonRelation = if (info != null) {
       val table = CarbonTable.buildFromTableInfo(info)
       CarbonRelation(info.getDatabaseName, info.getFactTable.getTableName,
         CarbonSparkUtil.createSparkMeta(table), table)
     } else {
       super.createCarbonRelation(parameters, absIdentifier, sparkSession)
     }
+    carbonRelation.refresh()
+    carbonRelation
   }
 
 
@@ -75,7 +77,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       // clear driver B-tree and dictionary cache
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
     }
-    checkSchemasModifiedTimeAndReloadTables()
+    checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     removeTableFromMetadata(dbName, tableName)
     CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
@@ -84,8 +86,9 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
   }
 
-  override def checkSchemasModifiedTimeAndReloadTables() {
-    // do nothing now
+  override def checkSchemasModifiedTimeAndReloadTable(tableIdentifier: TableIdentifier): Boolean = {
+    // do nothing
+    false
   }
 
   override def listAllTables(sparkSession: SparkSession): Seq[CarbonTable] = {
@@ -145,7 +148,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       carbonTablePath: String)(sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    updateHiveMetaStoreForDataMap(newTableIdentifier,
+    updateHiveMetaStoreForAlter(newTableIdentifier,
       oldTableIdentifier,
       thriftTableInfo,
       carbonTablePath,
@@ -166,34 +169,13 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       newTableIdentifier.getDatabaseName,
       newTableIdentifier.getTableName,
       newTablePath)
-    val dbName = oldTableIdentifier.getDatabaseName
-    val tableName = oldTableIdentifier.getTableName
+    val dbName = newTableIdentifier.getDatabaseName
+    val tableName = newTableIdentifier.getTableName
     val schemaParts = CarbonUtil.convertToMultiGsonStrings(wrapperTableInfo, "=", "'", "")
     val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
       .getClient()
     hiveClient.runSqlHive(s"ALTER TABLE $dbName.$tableName SET SERDEPROPERTIES($schemaParts)")
 
-    sparkSession.catalog.refreshTable(TableIdentifier(tableName, Some(dbName)).quotedString)
-    removeTableFromMetadata(dbName, tableName)
-    CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
-    CarbonStorePath.getCarbonTablePath(oldTablePath, newTableIdentifier).getPath
-  }
-
-  private def updateHiveMetaStoreForDataMap(newTableIdentifier: CarbonTableIdentifier,
-      oldTableIdentifier: CarbonTableIdentifier,
-      thriftTableInfo: format.TableInfo,
-      tablePath: String,
-      sparkSession: SparkSession,
-      schemaConverter: ThriftWrapperSchemaConverterImpl) = {
-    val newTablePath =
-      CarbonUtil.getNewTablePath(new Path(tablePath), newTableIdentifier.getTableName)
-    val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-      thriftTableInfo,
-      newTableIdentifier.getDatabaseName,
-      newTableIdentifier.getTableName,
-      newTablePath)
-    val dbName = oldTableIdentifier.getDatabaseName
-    val tableName = oldTableIdentifier.getTableName
     sparkSession.catalog.refreshTable(TableIdentifier(tableName, Some(dbName)).quotedString)
     removeTableFromMetadata(dbName, tableName)
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
@@ -228,7 +210,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val childSchemas = thriftTableInfo.dataMapSchemas
-    childSchemas.remove(childSchemas.size())
+    childSchemas.remove(childSchemas.size() - 1)
     val carbonTableIdentifier = absoluteTableIdentifier.getCarbonTableIdentifier
     updateHiveMetaStoreForAlter(carbonTableIdentifier,
       carbonTableIdentifier,

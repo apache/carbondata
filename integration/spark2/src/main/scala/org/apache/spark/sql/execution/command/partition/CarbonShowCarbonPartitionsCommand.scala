@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.command.partition
 
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.command.MetadataCommand
@@ -39,12 +39,11 @@ private[sql] case class CarbonShowCarbonPartitionsCommand(
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val carbonTable = relation.carbonTable
-    val tableName = carbonTable.getTableName
     val partitionInfo = carbonTable.getPartitionInfo(
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
     if (partitionInfo == null) {
-      throw new AnalysisException(
-        s"SHOW PARTITIONS is not allowed on a table that is not partitioned: $tableName")
+      throwMetadataException(carbonTable.getDatabaseName, carbonTable.getTableName,
+        "SHOW PARTITIONS is not allowed on a table that is not partitioned")
     }
     val partitionType = partitionInfo.getPartitionType
     val columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName

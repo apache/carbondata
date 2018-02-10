@@ -25,31 +25,16 @@
 * [Apache Thrift 0.9.3](http://archive.apache.org/dist/thrift/0.9.3/)
 
 ## Build command
-From 1.3.0 onwards, CarbonData supports spark 2.x, build without test,by default carbondata takes Spark 2.1.0 to build the project
+Build with different supported versions of Spark, by default using Spark 2.2.1 to build
 ```
-mvn -DskipTests clean package
-```
-
-Build with test
-```
-mvn clean package
-```
-
-Before 1.3.0, build with different supported versions of Spark
-```
-mvn -DskipTests -Pspark-1.5 -Dspark.version=1.5.1 clean package
-mvn -DskipTests -Pspark-1.5 -Dspark.version=1.5.2 clean package
- 
-mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.1 clean package
-mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.2 clean package
-mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.3 clean package
-
 mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package
+mvn -DskipTests -Pspark-2.2 -Dspark.version=2.2.1 clean package
 ```
 
+Note: If you are working in Windows environment, remember to add `-Pwindows` while building the project.
 
 ## For contributors : To build the format code after any changes, please follow the below command.
 Note:Need install Apache Thrift 0.9.3
 ```
-mvn clean -DskipTests -Pbuild-with-format -Pspark-2.1 package
+mvn clean -DskipTests -Pbuild-with-format -Pspark-2.2 package
 ```

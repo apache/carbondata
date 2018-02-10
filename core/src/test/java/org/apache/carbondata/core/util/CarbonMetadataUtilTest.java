@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
@@ -169,7 +168,8 @@ public class CarbonMetadataUtilTest {
     indexHeader.setSegment_info(segmentInfo);
     indexHeader.setTable_columns(columnSchemaList);
     indexHeader.setBucket_id(0);
-    IndexHeader indexheaderResult = getIndexHeader(columnCardinality, columnSchemaList, 0);
+    indexHeader.setSchema_time_stamp(0L);
+    IndexHeader indexheaderResult = getIndexHeader(columnCardinality, columnSchemaList, 0, 0L);
     assertEquals(indexHeader, indexheaderResult);
   }
 
@@ -209,7 +209,7 @@ public class CarbonMetadataUtilTest {
       }
     };
 
-    TablePageKey key = new TablePageKey(3, null, segmentProperties, false);
+    TablePageKey key = new TablePageKey(3, segmentProperties, false);
     EncodedTablePage encodedTablePage = EncodedTablePage.newInstance(3, new EncodedColumnPage[0], new EncodedColumnPage[0],
         key);
 

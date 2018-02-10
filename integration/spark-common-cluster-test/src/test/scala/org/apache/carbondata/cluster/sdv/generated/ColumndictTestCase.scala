@@ -55,12 +55,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Load using external columndict for CSV having incomplete/wrong data/no data/null data
   test("Columndict-TC004", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/inValidData.csv', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -197,12 +194,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Load using external columndict for table with measure and tableproperties(DICTIONARY_EXCLUDE, DICTIONARY_INCLUDE, BLOCKSIZE)
   test("Columndict-TC020", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_EXCLUDE'='country')""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:'resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -210,12 +204,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Columndict parameter name validation
   ignore("Columndict-TC021", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_EXCLUDE'='country')""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='countries:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -223,12 +214,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Columndict parameter value validation
   test("Columndict-TC022", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='salary:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -236,12 +224,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check for data validation in csv(empty/null/wrong data) for all_dictionary_path
   ignore("Columndict-TC023", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/inValidData.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/inValidData.dictionary', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -249,12 +234,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check for data validation in csv(empty/null/wrong data) for columndict
   test("Columndict-TC024", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/inValidData.csv' into table t3 options('COLUMNDICT'='country:'resourcesPath/Data/columndict/inValidData.csv', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -262,12 +244,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check for validation of external all_dictionary_path folder with incorrect path
   test("Columndict-TC025", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/inValidData.csv' into table t3 options('ALL_DICTIONARY_PATH'=''resourcesPath/Data/*.dictionary', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -275,12 +254,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check for validation of external all_dictionary_path folder with correct path
   test("Columndict-TC026", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/inValidData.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/*.dictionary', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -288,12 +264,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check for validation of external columndict folder with correct path
   test("Columndict-TC027", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/inValidData.csv' into table t3 options('COLUMNDICT'='country:'resourcesPath/Data/columndict/*.csv', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -301,12 +274,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check for validation of external all_dictionary_path file( missing /wrong path / wrong name)
   test("Columndict-TC028", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/inValidData.csv' into table t3 options('ALL_DICTIONARY_PATH'=''resourcesPath/Data/columndict/wrongName.dictionary', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -314,12 +284,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check for validation of external columndict file( missing /wrong path / wrong name)
   test("Columndict-TC029", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/inValidData.csv' into table t3 options('COLUMNDICT'='country:'resourcesPath/Data/columndict/wrongName.csv', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }
@@ -335,12 +302,9 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check for different dictionary file extensions for columndict
   test("Columndict-TC031", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/inValidData.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.txt', 'SINGLE_PASS'='true')""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists t3""").collect
   }

@@ -44,6 +44,16 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
   private MeasureColumnChunkReader measureColumnChunkReader;
 
   /**
+   * reader for dimension chunk of page level
+   */
+  private DimensionColumnChunkReader dimensionChunksPageLevelReader;
+
+  /**
+   * reader of measure chunk of page level
+   */
+  private MeasureColumnChunkReader measureColumnChunkPageLevelReader;
+
+  /**
    * number of pages in blocklet
    */
   private int numberOfPages;
@@ -76,12 +86,28 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
         .getDimensionColumnChunkReader(builderInfos.getFooterList().get(0).getVersionId(),
             builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex),
             builderInfos.getDimensionColumnValueSize(),
-            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath());
+            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath(),
+            false);
     // create a instance of measure column chunk reader
     measureColumnChunkReader = CarbonDataReaderFactory.getInstance()
         .getMeasureColumnChunkReader(builderInfos.getFooterList().get(0).getVersionId(),
             builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex),
-            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath());
+            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath(),
+            false);
+    // create a instance of dimension chunk
+    dimensionChunksPageLevelReader = CarbonDataReaderFactory.getInstance()
+        .getDimensionColumnChunkReader(builderInfos.getFooterList().get(0).getVersionId(),
+            builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex),
+            builderInfos.getDimensionColumnValueSize(),
+            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath(),
+            true);
+    // create a instance of measure column chunk reader
+    measureColumnChunkPageLevelReader = CarbonDataReaderFactory.getInstance()
+        .getMeasureColumnChunkReader(builderInfos.getFooterList().get(0).getVersionId(),
+            builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex),
+            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath(),
+            true);
+
     this.nodeNumber = nodeNumber;
     this.numberOfPages =
         builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex).getNumberOfPages();
@@ -98,6 +124,10 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
     }
   }
 
+  @Override public String blockletId() {
+    return "0";
+  }
+
   /**
    * Below method will be used to get the dimension chunks
    *
@@ -107,7 +137,11 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    */
   @Override public DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader,
       int[][] blockIndexes) throws IOException {
-    return dimensionChunksReader.readRawDimensionChunks(fileReader, blockIndexes);
+    if (fileReader.isReadPageByPage()) {
+      return dimensionChunksPageLevelReader.readRawDimensionChunks(fileReader, blockIndexes);
+    } else {
+      return dimensionChunksReader.readRawDimensionChunks(fileReader, blockIndexes);
+    }
   }
 
   /**
@@ -119,7 +153,11 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    */
   @Override public DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
-    return dimensionChunksReader.readRawDimensionChunk(fileReader, blockIndex);
+    if (fileReader.isReadPageByPage()) {
+      return dimensionChunksPageLevelReader.readRawDimensionChunk(fileReader, blockIndex);
+    } else {
+      return dimensionChunksReader.readRawDimensionChunk(fileReader, blockIndex);
+    }
   }
 
   /**
@@ -131,7 +169,11 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    */
   @Override public MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader,
       int[][] blockIndexes) throws IOException {
-    return measureColumnChunkReader.readRawMeasureChunks(fileReader, blockIndexes);
+    if (fileReader.isReadPageByPage()) {
+      return measureColumnChunkPageLevelReader.readRawMeasureChunks(fileReader, blockIndexes);
+    } else {
+      return measureColumnChunkReader.readRawMeasureChunks(fileReader, blockIndexes);
+    }
   }
 
   /**
@@ -143,7 +185,11 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    */
   @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
-    return measureColumnChunkReader.readRawMeasureChunk(fileReader, blockIndex);
+    if (fileReader.isReadPageByPage()) {
+      return measureColumnChunkPageLevelReader.readRawMeasureChunk(fileReader, blockIndex);
+    } else {
+      return measureColumnChunkReader.readRawMeasureChunk(fileReader, blockIndex);
+    }
   }
 
   /**

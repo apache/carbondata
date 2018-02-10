@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonProperty;
 
 import junit.framework.TestCase;
 import org.junit.Test;
@@ -61,7 +60,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT);
-    assertTrue(!valueBeforeValidation.equals(valueAfterValidation));
+    assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT.equalsIgnoreCase(valueAfterValidation));
   }
@@ -77,8 +76,8 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION);
-    assertTrue(!valueBeforeValidation.equals(valueAfterValidation));
-    assertTrue(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT
+    assertTrue(valueBeforeValidation.equals(valueAfterValidation));
+    assertTrue("false"
         .equalsIgnoreCase(valueAfterValidation));
   }
 
@@ -93,7 +92,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER);
-    assertTrue(!valueBeforeValidation.equals(valueAfterValidation));
+    assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT.equalsIgnoreCase(valueAfterValidation));
   }
@@ -109,7 +108,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE);
-    assertTrue(!valueBeforeValidation.equals(valueAfterValidation));
+    assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT.equalsIgnoreCase(valueAfterValidation));
   }
@@ -125,7 +124,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE);
-    assertTrue(!valueBeforeValidation.equals(valueAfterValidation));
+    assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT.equalsIgnoreCase(valueAfterValidation));
     carbonProperties.addProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE, "10240");
@@ -141,7 +140,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE);
-    assertTrue(!valueBeforeValidation.equals(valueAfterValidation));
+    assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT.equalsIgnoreCase(valueAfterValidation));
   }
@@ -152,4 +151,100 @@ public class CarbonPropertiesValidationTest extends TestCase {
     carbonProperties.addProperty(CarbonCommonConstants.HANDOFF_SIZE, "" + newSize);
     assertEquals(newSize, carbonProperties.getHandoffSize());
   }
+
+  @Test public void testValidateTimeStampFormat()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method validateMethodType = carbonProperties.getClass()
+        .getDeclaredMethod("validateTimeFormatKey", new Class[] { String.class, String.class });
+    validateMethodType.setAccessible(true);
+    carbonProperties.addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "agdgaJIASDG667");
+    String valueBeforeValidation =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
+    validateMethodType.invoke(carbonProperties, CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    String valueAfterValidation =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
+    assertTrue(valueBeforeValidation.equals(valueAfterValidation));
+    assertTrue(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+        .equalsIgnoreCase(valueAfterValidation));
+    carbonProperties.addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        "yyyy-MM-dd hh:mm:ss");
+    validateMethodType.invoke(carbonProperties, CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    assertEquals("yyyy-MM-dd hh:mm:ss",
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT));
+  }
+
+  @Test public void testValidateSortFileWriteBufferSize()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method validateMethodType =
+        carbonProperties.getClass().getDeclaredMethod("validateSortFileWriteBufferSize");
+    validateMethodType.setAccessible(true);
+    carbonProperties.addProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE, "test");
+    String valueBeforeValidation =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE);
+    validateMethodType.invoke(carbonProperties);
+    String valueAfterValidation =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE);
+    assertTrue(valueBeforeValidation.equals(valueAfterValidation));
+    assertTrue(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE
+        .equalsIgnoreCase(valueAfterValidation));
+  }
+  @Test public void testValidateSortIntermediateFilesLimit()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method validateMethodType =
+        carbonProperties.getClass().getDeclaredMethod("validateSortIntermediateFilesLimit");
+    validateMethodType.setAccessible(true);
+    carbonProperties.addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT, "test");
+    String valueBeforeValidation =
+        carbonProperties.getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT);
+    validateMethodType.invoke(carbonProperties);
+    String valueAfterValidation =
+        carbonProperties.getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT);
+    assertTrue(valueBeforeValidation.equals(valueAfterValidation));
+    assertTrue(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE
+        .equalsIgnoreCase(valueAfterValidation));
+  }
+
+  @Test public void testValidateDynamicSchedulerTimeOut() {
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT, "2");
+    String valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT);
+    assertTrue(valueAfterValidation
+        .equals(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_DEFAULT));
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT, "16");
+    valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT);
+    assertTrue(valueAfterValidation
+        .equals(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_DEFAULT));
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT, "15");
+    valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT);
+    assertTrue(valueAfterValidation
+        .equals("15"));
+
+  }
+  @Test public void testValidateSchedulerMinRegisteredRatio() {
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO, "0.0");
+    String valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO);
+    assertTrue(valueAfterValidation
+        .equals(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT));
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO, "-0.1");
+    valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO);
+    assertTrue(valueAfterValidation
+        .equals(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT));
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO, "0.1");
+    valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO);
+    assertTrue(valueAfterValidation.equals("0.1"));
+  }
+
 }

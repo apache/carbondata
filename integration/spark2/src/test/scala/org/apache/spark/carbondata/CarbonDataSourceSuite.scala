@@ -147,7 +147,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists sparkunion")
     import sqlContext.implicits._
     val df = sqlContext.sparkContext.parallelize(1 to 1000).map(x => (x+"", (x+100)+"")).toDF("c1", "c2")
-    df.registerTempTable("sparkunion")
+    df.createOrReplaceTempView("sparkunion")
     df.write
       .format("carbondata")
       .mode(SaveMode.Overwrite)
@@ -259,5 +259,13 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
     }.getMessage
     sql("drop table if exists carbon_test")
     assert(exception.contains("Table creation failed. Table name cannot contain blank space"))
+  }
+
+  test("test create table: using") {
+    sql("DROP TABLE IF EXISTS usingTable")
+    val e: Exception = intercept[ClassNotFoundException] {
+      sql("CREATE TABLE usingTable(name STRING) USING abc")
+    }
+    assert(e.getMessage.contains("Failed to find data source: abc"))
   }
 }

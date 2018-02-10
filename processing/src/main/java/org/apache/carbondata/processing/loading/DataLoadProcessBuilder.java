@@ -93,9 +93,7 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep converterProcessorStep =
         new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
     // 3. Writes the sorted data in carbondata format.
-    AbstractDataLoadProcessorStep writerProcessorStep =
-        new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
-    return writerProcessorStep;
+    return new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBatchSort(CarbonIterator[] inputIterators,
@@ -218,10 +216,17 @@ public final class DataLoadProcessBuilder {
     configuration.setUseOnePass(loadModel.getUseOnePass());
     configuration.setDictionaryServerHost(loadModel.getDictionaryServerHost());
     configuration.setDictionaryServerPort(loadModel.getDictionaryServerPort());
+    configuration.setDictionaryServerSecretKey(loadModel.getDictionaryServerSecretKey());
+    configuration.setDictionaryEncryptServerSecure(loadModel.getDictionaryEncryptServerSecure());
+    configuration.setDictionaryServiceProvider(loadModel.getDictionaryServiceProvider());
     configuration.setPreFetch(loadModel.isPreFetch());
     configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
-
+    // For partition loading always use single core as it already runs in multiple
+    // threads per partition
+    if (carbonTable.isHivePartitionTable()) {
+      configuration.setWritingCoresCount((short) 1);
+    }
     TableSpec tableSpec = new TableSpec(dimensions, measures);
     configuration.setTableSpec(tableSpec);
     return configuration;

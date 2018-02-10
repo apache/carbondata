@@ -159,10 +159,10 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
       Row(4))
 
     checkAnswer(sql("select * from carbon_table where booleanField not in (null)"),
-      Seq(Row(true), Row(true), Row(true), Row(true), Row(false), Row(false), Row(false), Row(false)))
+      Seq.empty)
 
     checkAnswer(sql("select count(*) from carbon_table where booleanField not in (null)"),
-      Row(8))
+      Row(0))
 
     checkAnswer(sql("select count(*) from carbon_table where booleanField not in (true,false)"),
       Row(0))

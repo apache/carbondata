@@ -86,8 +86,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     }
   }
 
-  private ColumnPageEncoder createEncoderForDimensionLegacy(TableSpec.DimensionSpec columnSpec) {
-    TableSpec.DimensionSpec dimensionSpec = columnSpec;
+  private ColumnPageEncoder createEncoderForDimensionLegacy(TableSpec.DimensionSpec dimensionSpec) {
     Compressor compressor = CompressorFactory.getInstance().getCompressor();
     switch (dimensionSpec.getColumnType()) {
       case GLOBAL_DICTIONARY:
@@ -216,8 +215,13 @@ public class DefaultEncodingFactory extends EncodingFactory {
     } else if (dataType == DataTypes.INT) {
       value = (long) (int) max - (long) (int) min;
     } else if (dataType == DataTypes.LONG) {
-      // TODO: add overflow detection and return delta type
-      return DataTypes.LONG;
+      value = (long) max - (long) min;
+      // The subtraction overflowed iff the operands have opposing signs
+      // and the result's sign differs from the minuend.
+      boolean overflow = (((long) max ^ (long) min) & ((long) max ^ value)) < 0;
+      if (overflow) {
+        return DataTypes.LONG;
+      }
     } else if (dataType == DataTypes.DOUBLE) {
       return DataTypes.LONG;
     } else {

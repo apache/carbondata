@@ -19,6 +19,10 @@ package org.apache.carbondata.presto.readers;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.DataTypeUtil;
+
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.BlockBuilderStatus;
@@ -29,8 +33,16 @@ import com.facebook.presto.spi.type.Type;
  */
 public class DoubleStreamReader extends AbstractStreamReader {
 
+  private boolean isDictionary;
+  private Dictionary dictionary;
+
   public DoubleStreamReader() {
 
+  }
+
+  public DoubleStreamReader(boolean isDictionary, Dictionary dictionary) {
+    this.isDictionary = isDictionary;
+    this.dictionary = dictionary;
   }
 
   /**
@@ -47,10 +59,9 @@ public class DoubleStreamReader extends AbstractStreamReader {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if(columnVector.anyNullsSet()) {
+        if (columnVector.anyNullsSet()) {
           handleNullInVector(type, numberOfRows, builder);
-        }
-        else {
+        } else {
           populateVector(type, numberOfRows, builder);
         }
       }
@@ -72,15 +83,29 @@ public class DoubleStreamReader extends AbstractStreamReader {
       if (columnVector.isNullAt(i)) {
         builder.appendNull();
       } else {
-        type.writeDouble(builder, columnVector.getDouble(i));
+        type.writeDouble(builder, (Double) columnVector.getData(i));
       }
     }
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
-    for (int i = 0; i < numberOfRows; i++) {
-      type.writeDouble(builder, columnVector.getDouble(i));
-    }
-  }
+    if (isDictionary) {
+      for (int i = 0; i < numberOfRows; i++) {
+        int value = (int) columnVector.getData(i);
+        Object data = DataTypeUtil
+            .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.DOUBLE);
+        if (data != null) {
+          type.writeDouble(builder, (Double) data);
+        } else {
+          builder.appendNull();
+        }
 
+      }
+    } else {
+      for (int i = 0; i < numberOfRows; i++) {
+        type.writeDouble(builder, (Double) columnVector.getData(i));
+      }
+    }
+
+  }
 }

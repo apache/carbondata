@@ -42,7 +42,6 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
-import org.apache.carbondata.core.preagg.TimeSeriesUDF;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
@@ -158,25 +157,18 @@ public abstract class AbstractDataFileFooterConverter {
         BlockIndex readBlockIndexInfo = indexReader.readBlockIndexInfo();
         blockletIndex = getBlockletIndex(readBlockIndexInfo.getBlock_index());
         dataFileFooter = new DataFileFooter();
-        TableBlockInfo tableBlockInfo = new TableBlockInfo();
-        tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
-        ColumnarFormatVersion version =
-            ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion());
-        tableBlockInfo.setVersion(version);
-        int blockletSize = getBlockletSize(readBlockIndexInfo);
-        tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
-        String fileName = readBlockIndexInfo.file_name;
-        // Take only name of file.
-        if (fileName.lastIndexOf("/") > 0) {
-          fileName = fileName.substring(fileName.lastIndexOf("/"));
-        }
-        tableBlockInfo.setFilePath(parentPath + "/" + fileName);
+        TableBlockInfo tableBlockInfo =
+            getTableBlockInfo(readBlockIndexInfo, readIndexHeader, parentPath);
         dataFileFooter.setBlockletIndex(blockletIndex);
         dataFileFooter.setColumnInTable(columnSchemaList);
         dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
         dataFileFooter.setBlockInfo(new BlockInfo(tableBlockInfo));
         dataFileFooter.setSegmentInfo(segmentInfo);
-        dataFileFooter.setVersionId(version);
+        dataFileFooter.setVersionId(tableBlockInfo.getVersion());
+        // In case of old schema time stamp will not be found in the index header
+        if (readIndexHeader.isSetSchema_time_stamp()) {
+          dataFileFooter.setSchemaUpdatedTimeStamp(readIndexHeader.getSchema_time_stamp());
+        }
         if (readBlockIndexInfo.isSetBlocklet_info()) {
           List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
           BlockletInfo blockletInfo = new DataFileFooterConverterV3()
@@ -192,6 +184,33 @@ public abstract class AbstractDataFileFooterConverter {
       indexReader.closeThriftReader();
     }
     return dataFileFooters;
+  }
+
+  /**
+   * This method will create a table block info object from index file info
+   *
+   * @param readBlockIndexInfo
+   * @param readIndexHeader
+   * @param parentPath
+   * @return
+   */
+  public TableBlockInfo getTableBlockInfo(BlockIndex readBlockIndexInfo,
+      org.apache.carbondata.format.IndexHeader readIndexHeader, String parentPath) {
+    TableBlockInfo tableBlockInfo = new TableBlockInfo();
+    tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
+    ColumnarFormatVersion version =
+        ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion());
+    tableBlockInfo.setVersion(version);
+    int blockletSize = getBlockletSize(readBlockIndexInfo);
+    tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
+    String fileName = readBlockIndexInfo.file_name;
+    // Take only name of file.
+    if (fileName.lastIndexOf("/") > 0) {
+      fileName = fileName.substring(fileName.lastIndexOf("/"));
+    }
+    fileName = (CarbonCommonConstants.FILE_SEPARATOR + fileName).replaceAll("//", "/");
+    tableBlockInfo.setFilePath(parentPath + fileName);
+    return tableBlockInfo;
   }
 
   /**
@@ -290,15 +309,7 @@ public abstract class AbstractDataFileFooterConverter {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
-    if (null != externalColumnSchema.getAggregate_function()) {
-      if (TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION
-          .contains(externalColumnSchema.getAggregate_function().toLowerCase())) {
-        wrapperColumnSchema
-            .setTimeSeriesFunction(externalColumnSchema.getAggregate_function().toLowerCase());
-      } else {
-        wrapperColumnSchema.setAggFunction(externalColumnSchema.getAggregate_function());
-      }
-    }
+    wrapperColumnSchema.setFunction(externalColumnSchema.getAggregate_function());
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
         externalColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelation) {

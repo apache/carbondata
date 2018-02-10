@@ -17,12 +17,10 @@
 
 package org.apache.spark.sql.execution.command.schema
 
-import org.apache.hadoop.fs.Path
-import org.apache.spark.sql._
-import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -37,7 +35,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{AlterTableRenamePostEvent, AlterTableRenamePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.SchemaEvolutionEntry
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.exception.{ConcurrentOperationException, MalformedCarbonCommandException}
 
 private[sql] case class CarbonAlterTableRenameCommand(
     alterTableRenameModel: AlterTableRenameModel)
@@ -70,7 +68,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
     if (relation == null) {
       LOGGER.audit(s"Rename table request has failed. " +
                    s"Table $oldDatabaseName.$oldTableName does not exist")
-      sys.error(s"Table $oldDatabaseName.$oldTableName does not exist")
+      throwMetadataException(oldDatabaseName, oldTableName, "Table does not exist")
     }
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
       LockUsage.COMPACTION_LOCK,
@@ -80,16 +78,18 @@ private[sql] case class CarbonAlterTableRenameCommand(
     var locks = List.empty[ICarbonLock]
     var timeStamp = 0L
     var carbonTable: CarbonTable = null
+    // lock file path to release locks after operation
+    var carbonTableLockFilePath: String = null
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(oldDatabaseName, oldTableName, locksToBeAcquired)(
           sparkSession)
       carbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
         .asInstanceOf[CarbonRelation].carbonTable
+      carbonTableLockFilePath = carbonTable.getTablePath
       // if any load is in progress for table, do not allow rename table
-      if (SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)) {
-        throw new AnalysisException(s"Data loading is in progress for table $oldTableName, alter " +
-                                    s"table rename operation is not allowed")
+      if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
+        throw new ConcurrentOperationException(carbonTable, "loading", "alter table rename")
       }
       // invalid data map for the old table, see CARBON-1690
       val oldTableIdentifier = carbonTable.getAbsoluteTableIdentifier
@@ -119,6 +119,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
       val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
         .getClient()
+      sparkSession.catalog.refreshTable(TableIdentifier(oldTableName,
+        Some(oldDatabaseName)).quotedString)
       hiveClient.runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
       hiveClient.runSqlHive(
@@ -151,9 +153,12 @@ private[sql] case class CarbonAlterTableRenameCommand(
 
       sparkSession.catalog.refreshTable(TableIdentifier(newTableName,
         Some(oldDatabaseName)).quotedString)
+      carbonTableLockFilePath = newTablePath
       LOGGER.audit(s"Table $oldTableName has been successfully renamed to $newTableName")
       LOGGER.info(s"Table $oldTableName has been successfully renamed to $newTableName")
     } catch {
+      case e: ConcurrentOperationException =>
+        throw e
       case e: Exception =>
         LOGGER.error(e, "Rename table failed: " + e.getMessage)
         if (carbonTable != null) {
@@ -166,20 +171,17 @@ private[sql] case class CarbonAlterTableRenameCommand(
               sparkSession)
           renameBadRecords(newTableName, oldTableName, oldDatabaseName)
         }
-        sys.error(s"Alter table rename table operation failed: ${e.getMessage}")
+        throwMetadataException(oldDatabaseName, oldTableName,
+          s"Alter table rename table operation failed: ${e.getMessage}")
     } finally {
-      // release lock after command execution completion
-      AlterTableUtil.releaseLocks(locks)
       // case specific to rename table as after table rename old table path will not be found
       if (carbonTable != null) {
-        val newTablePath = CarbonUtil
-          .getNewTablePath(new Path(carbonTable.getTablePath), newTableName)
         AlterTableUtil
           .releaseLocksManually(locks,
             locksToBeAcquired,
             oldDatabaseName,
             newTableName,
-            newTablePath)
+            carbonTableLockFilePath)
       }
     }
     Seq.empty

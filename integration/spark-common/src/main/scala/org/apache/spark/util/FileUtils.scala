@@ -20,6 +20,7 @@ package org.apache.spark.util
 import java.io.{File, IOException}
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkContext
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -73,7 +74,8 @@ object FileUtils {
       val stringBuild = new StringBuilder()
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
-        val fileType = FileFactory.getFileType(filePaths(i))
+        val filePath = CarbonUtil.checkAndAppendHDFSUrl(filePaths(i))
+        val fileType = FileFactory.getFileType(filePath)
         val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType, hadoopConf)
         if (!carbonFile.exists()) {
           throw new DataLoadingException(
@@ -105,13 +107,13 @@ object FileUtils {
     }
   }
 
-  def createDatabaseDirectory(dbName: String, storePath: String) {
+  def createDatabaseDirectory(dbName: String, storePath: String, sparkContext: SparkContext) {
     val databasePath: String = storePath + File.separator + dbName.toLowerCase
     val fileType = FileFactory.getFileType(databasePath)
     FileFactory.mkdirs(databasePath, fileType)
     val operationContext = new OperationContext
     val createDatabasePostExecutionEvent = new CreateDatabasePostExecutionEvent(dbName,
-      databasePath)
+      databasePath, sparkContext)
     OperationListenerBus.getInstance.fireEvent(createDatabasePostExecutionEvent, operationContext)
   }
 

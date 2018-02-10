@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.4.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -117,6 +117,7 @@
           <argLine>-Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m</argLine>
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
+            <spark.carbon.hive.schema.store>${carbon.hive.based.metastore}</spark.carbon.hive.schema.store>
           </systemProperties>
           <failIfNoTests>false</failIfNoTests>
         </configuration>
@@ -137,6 +138,7 @@
           </environmentVariables>
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
+            <spark.carbon.hive.schema.store>${carbon.hive.based.metastore}</spark.carbon.hive.schema.store>
           </systemProperties>
         </configuration>
         <executions>
@@ -154,7 +156,7 @@
     <profile>
       <id>build-all</id>
       <properties>
-        <spark.version>2.1.0</spark.version>
+        <spark.version>2.2.1</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
@@ -207,8 +209,11 @@
     </profile>
     <profile>
     <id>spark-2.2</id>
+    <activation>
+      <activeByDefault>true</activeByDefault>
+    </activation>
     <properties>
-      <spark.version>2.2.0</spark.version>
+      <spark.version>2.2.1</spark.version>
       <scala.binary.version>2.11</scala.binary.version>
       <scala.version>2.11.8</scala.version>
     </properties>

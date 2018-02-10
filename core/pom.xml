@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.4.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -106,8 +106,34 @@
           <include>CARBON_CORELogResource.properties</include>
         </includes>
       </resource>
+      <resource>
+        <!-- Include the properties file to provide the build information. -->
+        <directory>${project.build.directory}/extra-resources</directory>
+        <filtering>true</filtering>
+      </resource>
     </resources>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <!-- Execute the shell script to generate the CarbonData build information. -->
+            <configuration>
+              <executable>${project.basedir}/../build/carbondata-build-info${script.exetension}</executable>
+              <arguments>
+                <argument>${project.build.directory}/extra-resources</argument>
+                <argument>${project.version}</argument>
+              </arguments>
+            </configuration>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>

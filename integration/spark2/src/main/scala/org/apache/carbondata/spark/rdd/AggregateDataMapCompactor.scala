@@ -24,11 +24,12 @@ import org.apache.spark.sql.{CarbonSession, SQLContext}
 import org.apache.spark.sql.execution.command.CompactionModel
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
-import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 
@@ -39,7 +40,8 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
     compactionModel: CompactionModel,
     executor: ExecutorService,
     sqlContext: SQLContext,
-    storeLocation: String)
+    storeLocation: String,
+    operationContext: OperationContext)
   extends Compactor(carbonLoadModel, compactionModel, executor, sqlContext, storeLocation) {
 
   override def executeCompaction(): Unit = {
@@ -57,32 +59,22 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
         carbonLoadModel.getDatabaseName + "." +
         carbonLoadModel.getTableName, "false")
-      val headers = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
-        .map(_.getColumnName).mkString(",")
-      // Creating a new query string to insert data into pre-aggregate table from that same table.
-      // For example: To compact preaggtable1 we can fire a query like insert into preaggtable1
-      // select * from preaggtable1
-      // The following code will generate the select query with a load UDF that will be used to
-      // apply DataLoadingRules
-      val childDataFrame = sqlContext.sparkSession.sql(new CarbonSpark2SqlParser()
-        // adding the aggregation load UDF
-        .addPreAggLoadFunction(
-        // creating the select query on the bases on table schema
-        PreAggregateUtil.createChildSelectQuery(
-          carbonTable.getTableInfo.getFactTable, carbonTable.getDatabaseName))).drop("preAggLoad")
+      CarbonSession.updateSessionInfoToCurrentThread(sqlContext.sparkSession)
+      val loadCommand = operationContext.getProperty(carbonTable.getTableName + "_Compaction")
+        .asInstanceOf[CarbonLoadDataCommand]
+      val uuid = Option(loadCommand.operationContext.getProperty("uuid")).getOrElse("").toString
       try {
-        CarbonLoadDataCommand(
-          Some(carbonTable.getDatabaseName),
-          carbonTable.getTableName,
-          null,
-          Nil,
-          Map("fileheader" -> headers),
-          isOverwriteTable = false,
-          dataFrame = Some(childDataFrame),
-          internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true",
-            "mergedSegmentName" -> mergedLoadName)).run(sqlContext.sparkSession)
+        val newInternalOptions = loadCommand.internalOptions ++
+                                 Map("mergedSegmentName" -> mergedLoadName)
+        loadCommand.internalOptions = newInternalOptions
+        loadCommand.dataFrame =
+                  Some(PreAggregateUtil.getDataFrame(
+                    sqlContext.sparkSession, loadCommand.logicalPlan.get))
+        CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+          "true")
+        loadCommand.processData(sqlContext.sparkSession)
         val newLoadMetaDataDetails = SegmentStatusManager.readLoadMetadata(
-          carbonTable.getMetaDataFilepath)
+          carbonTable.getMetaDataFilepath, uuid)
         val updatedLoadMetaDataDetails = newLoadMetaDataDetails collect {
           case load if loadMetaDataDetails.contains(load) =>
             load.setMergedLoadName(mergedLoadName)
@@ -95,15 +87,37 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
           .getCarbonTablePath(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
             .getAbsoluteTableIdentifier)
         SegmentStatusManager
-          .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath,
+          .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePathWithUUID(uuid),
             updatedLoadMetaDataDetails)
         carbonLoadModel.setLoadMetadataDetails(updatedLoadMetaDataDetails.toList.asJava)
       } finally {
         // check if any other segments needs compaction on in case of MINOR_COMPACTION.
         // For example: after 8.1 creation 0.1, 4.1, 8.1 have to be merged to 0.2 if threshhold
         // allows it.
+        // Also as the load which will be fired for 2nd level compaction will read the
+        // tablestatus file and not the tablestatus_UUID therefore we have to commit the
+        // intermediate tablestatus file for 2nd level compaction to be successful.
+        // This is required because:
+        //  1. after doing 12 loads and a compaction after every 4 loads the table status file will
+        //     have 0.1, 4.1, 8, 9, 10, 11 as Success segments. While tablestatus_UUID will have
+        //     0.1, 4.1, 8.1.
+        //  2. Now for 2nd level compaction 0.1, 8.1, 4.1 have to be merged to 0.2. therefore we
+        //     need to read the tablestatus_UUID. But load flow should always read tablestatus file
+        //     because it contains the actual In-Process status for the segments.
+        //  3. If we read the tablestatus then 8, 9, 10, 11 will keep getting compacted into 8.1.
+        //  4. Therefore tablestatus file will be committed in between multiple commits.
         if (!compactionModel.compactionType.equals(CompactionType.MAJOR)) {
-          executeCompaction()
+          if (!identifySegmentsToBeMerged().isEmpty) {
+            val carbonTablePath = CarbonStorePath
+              .getCarbonTablePath(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+                .getAbsoluteTableIdentifier)
+            val uuidTableStaus = carbonTablePath.getTableStatusFilePathWithUUID(uuid)
+            val tableStatus = carbonTablePath.getTableStatusFilePath
+            if (!uuidTableStaus.equalsIgnoreCase(tableStatus)) {
+              FileFactory.getCarbonFile(uuidTableStaus).renameForce(tableStatus)
+            }
+            executeCompaction()
+          }
         }
         CarbonSession
           .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +

@@ -98,7 +98,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
     ValueEncoderMeta meta = dataChunk.getValueEncoderMeta().get(0);
     ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta);
     ColumnPage decodedPage = codec.decode(measureRawColumnChunk.getRawData().array(),
-        measureRawColumnChunk.getOffSet(), dataChunk.getDataPageLength());
+        (int) measureRawColumnChunk.getOffSet(), dataChunk.getDataPageLength());
     decodedPage.setNullBits(dataChunk.getNullValueIndexForColumn());
 
     return decodedPage;

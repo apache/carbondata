@@ -47,13 +47,11 @@ object TestQueryExecutor {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   val projectPath = new File(this.getClass.getResource("/").getPath + "../../../..")
-    .getCanonicalPath
+    .getCanonicalPath.replaceAll("\\\\", "/")
   LOGGER.info(s"project path: $projectPath")
   val integrationPath = s"$projectPath/integration"
   val metastoredb = s"$integrationPath/spark-common/target"
   val location = s"$integrationPath/spark-common/target/dbpath"
-  val badStoreLocation = s"$integrationPath/spark-common/target/bad_store"
-  createDirectory(badStoreLocation)
   val masterUrl = {
     val property = System.getProperty("spark.master.url")
     if (property == null) {
@@ -62,7 +60,6 @@ object TestQueryExecutor {
       property
     }
   }
-
   val hdfsUrl = {
     val property = System.getProperty("hdfs.url")
     if (property == null) {
@@ -99,6 +96,13 @@ object TestQueryExecutor {
   } else {
     s"$integrationPath/spark-common/target/warehouse"
   }
+
+  val badStoreLocation = if (hdfsUrl.startsWith("hdfs://")) {
+       s"$hdfsUrl/bad_store_" + System.nanoTime()
+      } else {
+        s"$integrationPath/spark-common/target/bad_store"
+      }
+    createDirectory(badStoreLocation)
 
   val hiveresultpath = if (hdfsUrl.startsWith("hdfs://")) {
     val p = s"$hdfsUrl/hiveresultpath"

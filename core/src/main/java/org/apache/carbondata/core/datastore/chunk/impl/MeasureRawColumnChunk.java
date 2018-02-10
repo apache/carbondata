@@ -39,7 +39,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
   private FileHolder fileReader;
 
-  public MeasureRawColumnChunk(int columnIndex, ByteBuffer rawData, int offSet, int length,
+  public MeasureRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length,
       MeasureColumnChunkReader chunkReader) {
     super(columnIndex, rawData, offSet, length);
     this.chunkReader = chunkReader;
@@ -83,6 +83,22 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     }
 
     return columnPages[columnIndex];
+  }
+
+  /**
+   * Convert raw data with specified page number processed to MeasureColumnDataChunk
+   *
+   * @param index
+   * @return
+   */
+  public ColumnPage convertToColumnPageWithOutCache(int index) {
+    assert index < pagesCount;
+
+    try {
+      return chunkReader.convertToColumnPage(this, index);
+    } catch (IOException | MemoryException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override public void freeMemory() {

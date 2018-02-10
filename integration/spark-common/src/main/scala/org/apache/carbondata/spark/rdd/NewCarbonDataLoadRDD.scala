@@ -22,7 +22,6 @@ import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Random
 import scala.util.control.NonFatal
@@ -43,7 +42,6 @@ import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
@@ -118,7 +116,7 @@ class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSp
 }
 
 class SparkPartitionLoader(model: CarbonLoadModel,
-    splitIndex: Int,
+    splitIndex: Long,
     storePath: String,
     loadMetadataDetails: LoadMetadataDetails) {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -169,7 +167,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     LOGGER.info("Temp location for loading data: " + storeLocation.mkString(","))
   }
 
-  private def tmpLocationSuffix = File.separator + System.nanoTime() + "_" + splitIndex
+  private def tmpLocationSuffix = File.separator + "carbon" + System.nanoTime() + "_" + splitIndex
 }
 
 /**

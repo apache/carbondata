@@ -32,13 +32,11 @@ import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaFactory;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
-import org.apache.carbondata.core.preagg.TimeSeriesUDF;
 
 /**
  * Thrift schema to carbon schema converter and vice versa
@@ -201,10 +199,14 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       }
       properties.put(CarbonCommonConstants.SORT_COLUMNS, "true");
     }
-    thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getAggFunction());
-    if (null != wrapperColumnSchema.getTimeSeriesFunction() && !wrapperColumnSchema
+    if (null != wrapperColumnSchema.getAggFunction() && !wrapperColumnSchema.getAggFunction()
+        .isEmpty()) {
+      thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getAggFunction());
+    } else if (null != wrapperColumnSchema.getTimeSeriesFunction() && !wrapperColumnSchema
         .getTimeSeriesFunction().isEmpty()) {
       thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getTimeSeriesFunction());
+    } else {
+      thriftColumnSchema.setAggregate_function("");
     }
     List<ParentColumnTableRelation> parentColumnTableRelations =
         wrapperColumnSchema.getParentColumnTableRelations();
@@ -229,8 +231,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.apache.carbondata.format.PartitionType.RANGE;
       case RANGE_INTERVAL:
         return org.apache.carbondata.format.PartitionType.RANGE_INTERVAL;
+      case NATIVE_HIVE:
+        return org.apache.carbondata.format.PartitionType.NATIVE_HIVE;
       default:
-        return org.apache.carbondata.format.PartitionType.HASH;
+        return org.apache.carbondata.format.PartitionType.NATIVE_HIVE;
     }
   }
 
@@ -339,7 +343,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
             .setDatabaseName(wrapperChildSchema.getRelationIdentifier().getDatabaseName());
         relationIdentifier.setTableName(wrapperChildSchema.getRelationIdentifier().getTableName());
         relationIdentifier.setTableId(wrapperChildSchema.getRelationIdentifier().getTableId());
-        thriftChildSchema.setRelationIdentifire(relationIdentifier);
+        thriftChildSchema.setChildTableIdentifier(relationIdentifier);
       }
       thriftChildSchema.setProperties(wrapperChildSchema.getProperties());
       thriftChildSchema.setClassName(wrapperChildSchema.getClassName());
@@ -526,15 +530,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
-    if (null != externalColumnSchema.getAggregate_function().toLowerCase()) {
-      if (TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION
-          .contains(externalColumnSchema.getAggregate_function().toLowerCase())) {
-        wrapperColumnSchema
-            .setTimeSeriesFunction(externalColumnSchema.getAggregate_function().toLowerCase());
-      } else {
-        wrapperColumnSchema.setAggFunction(externalColumnSchema.getAggregate_function());
-      }
-    }
+    wrapperColumnSchema.setFunction(externalColumnSchema.getAggregate_function());
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
         externalColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelation) {
@@ -559,8 +555,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return PartitionType.RANGE;
       case RANGE_INTERVAL:
         return PartitionType.RANGE_INTERVAL;
+      case NATIVE_HIVE:
+        return PartitionType.NATIVE_HIVE;
       default:
-        return PartitionType.HASH;
+        return PartitionType.NATIVE_HIVE;
     }
   }
 
@@ -635,26 +633,26 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         schemaEvolutionList.get(schemaEvolutionList.size() - 1).getTime_stamp());
     wrapperTableInfo.setDatabaseName(dbName);
     wrapperTableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName));
-    wrapperTableInfo.setTablePath(tablePath);
     wrapperTableInfo.setFactTable(
         fromExternalToWrapperTableSchema(externalTableInfo.getFact_table(), tableName));
     if (null != externalTableInfo.getDataMapSchemas()) {
       wrapperTableInfo.setDataMapSchemaList(
           fromExternalToWrapperChildSchemaList(externalTableInfo.getDataMapSchemas()));
     }
+    wrapperTableInfo.setTablePath(tablePath);
     return wrapperTableInfo;
   }
 
   @Override public DataMapSchema fromExternalToWrapperDataMapSchema(
       org.apache.carbondata.format.DataMapSchema thriftDataMapSchema) {
-    DataMapSchema childSchema = DataMapSchemaFactory.INSTANCE
-        .getDataMapSchema(thriftDataMapSchema.getDataMapName(), thriftDataMapSchema.getClassName());
+    DataMapSchema childSchema = new DataMapSchema(thriftDataMapSchema.getDataMapName(),
+        thriftDataMapSchema.getClassName());
     childSchema.setProperties(thriftDataMapSchema.getProperties());
-    if (null != thriftDataMapSchema.getRelationIdentifire()) {
+    if (null != thriftDataMapSchema.getChildTableIdentifier()) {
       RelationIdentifier relationIdentifier =
-          new RelationIdentifier(thriftDataMapSchema.getRelationIdentifire().getDatabaseName(),
-              thriftDataMapSchema.getRelationIdentifire().getTableName(),
-              thriftDataMapSchema.getRelationIdentifire().getTableId());
+          new RelationIdentifier(thriftDataMapSchema.getChildTableIdentifier().getDatabaseName(),
+              thriftDataMapSchema.getChildTableIdentifier().getTableName(),
+              thriftDataMapSchema.getChildTableIdentifier().getTableId());
       childSchema.setRelationIdentifier(relationIdentifier);
       childSchema.setChildSchema(
           fromExternalToWrapperTableSchema(thriftDataMapSchema.getChildTableSchema(),

@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.constants.CarbonVersionConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -31,6 +32,7 @@ import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkRea
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 
 /**
  * wrapper for blocklet data map data
@@ -53,9 +55,18 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
       BlockletDetailInfo detailInfo = blockInfo.getDetailInfo();
       detailInfo.getBlockletInfo().setNumberOfRows(detailInfo.getRowCount());
       detailInfo.getBlockletInfo().setNumberOfPages(detailInfo.getPagesCount());
+      detailInfo.setBlockletId(blockInfo.getDetailInfo().getBlockletId());
       int[] pageRowCount = new int[detailInfo.getPagesCount()];
-      int numberOfPagesCompletelyFilled = detailInfo.getRowCount()
-          / CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+      int numberOfPagesCompletelyFilled = detailInfo.getRowCount();
+      // no. of rows to a page is 120000 in V2 and 32000 in V3, same is handled to get the number
+      // of pages filled
+      if (blockInfo.getVersion() == ColumnarFormatVersion.V2) {
+        numberOfPagesCompletelyFilled /=
+            CarbonVersionConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT_V2;
+      } else {
+        numberOfPagesCompletelyFilled /=
+            CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+      }
       int lastPageRowCount = detailInfo.getRowCount()
           % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
       for (int i = 0; i < numberOfPagesCompletelyFilled; i++) {
@@ -86,57 +97,120 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
     return index;
   }
 
-  @Override public byte[][] getColumnsMaxValue() {
+  @Override public String blockletId() {
+    return blockInfos.get(index).getDetailInfo().getBlockletId().toString();
+  }
+
+  @Override
+  public byte[][] getColumnsMaxValue() {
+    BlockletIndex blockletIndex =
+        blockInfos.get(index).getDetailInfo().getBlockletInfo().getBlockletIndex();
+    // In case of blocklet distribution this will be null
+    if (null != blockletIndex) {
+      return blockletIndex.getMinMaxIndex().getMaxValues();
+    }
     return null;
   }
 
-  @Override public byte[][] getColumnsMinValue() {
+  @Override
+  public byte[][] getColumnsMinValue() {
+    BlockletIndex blockletIndex =
+        blockInfos.get(index).getDetailInfo().getBlockletInfo().getBlockletIndex();
+    // In case of blocklet distribution this will be null
+    if (null != blockletIndex) {
+      return blockletIndex.getMinMaxIndex().getMinValues();
+    }
     return null;
   }
 
   @Override
   public DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
       throws IOException {
-    DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader();
+    DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader(fileReader);
     return dimensionChunksReader.readRawDimensionChunks(fileReader, blockIndexes);
   }
 
   @Override
   public DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader, int blockIndexes)
       throws IOException {
-    DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader();
+    DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader(fileReader);
     return dimensionChunksReader.readRawDimensionChunk(fileReader, blockIndexes);
   }
 
   @Override
   public MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
       throws IOException {
-    MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader();
-    return measureColumnChunkReader.readRawMeasureChunks(fileReader, blockIndexes);
+    MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
+    MeasureRawColumnChunk[] measureRawColumnChunks =
+        measureColumnChunkReader.readRawMeasureChunks(fileReader, blockIndexes);
+    updateMeasureRawColumnChunkMinMaxValues(measureRawColumnChunks);
+    return measureRawColumnChunks;
   }
 
   @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
-    MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader();
-    return measureColumnChunkReader.readRawMeasureChunk(fileReader, blockIndex);
+    MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
+    MeasureRawColumnChunk measureRawColumnChunk =
+        measureColumnChunkReader.readRawMeasureChunk(fileReader, blockIndex);
+    updateMeasureRawColumnChunkMinMaxValues(measureRawColumnChunk);
+    return measureRawColumnChunk;
   }
 
-  private DimensionColumnChunkReader getDimensionColumnChunkReader() throws IOException {
-    ColumnarFormatVersion version =
-        ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
-    DimensionColumnChunkReader dimensionColumnChunkReader = CarbonDataReaderFactory.getInstance()
-        .getDimensionColumnChunkReader(version,
-            blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
-            blockInfos.get(index).getFilePath());
-    return dimensionColumnChunkReader;
+  /**
+   * This method is written specifically for old store wherein the measure min and max values
+   * are written opposite (i.e min in place of max and amx in place of min). Due to this computing
+   * f measure filter with current code is impacted. In order to sync with current min and
+   * max values only in case old store and measures is reversed
+   *
+   * @param measureRawColumnChunk
+   */
+  private void updateMeasureRawColumnChunkMinMaxValues(
+      MeasureRawColumnChunk measureRawColumnChunk) {
+    if (blockInfos.get(index).isDataBlockFromOldStore()) {
+      byte[][] maxValues = measureRawColumnChunk.getMaxValues();
+      byte[][] minValues = measureRawColumnChunk.getMinValues();
+      measureRawColumnChunk.setMaxValues(minValues);
+      measureRawColumnChunk.setMinValues(maxValues);
+    }
   }
 
-  private MeasureColumnChunkReader getMeasureColumnChunkReader() throws IOException {
+  private void updateMeasureRawColumnChunkMinMaxValues(
+      MeasureRawColumnChunk[] measureRawColumnChunks) {
+    if (blockInfos.get(index).isDataBlockFromOldStore()) {
+      for (int i = 0; i < measureRawColumnChunks.length; i++) {
+        if (null != measureRawColumnChunks[i]) {
+          updateMeasureRawColumnChunkMinMaxValues(measureRawColumnChunks[i]);
+        }
+      }
+    }
+  }
+
+  private DimensionColumnChunkReader getDimensionColumnChunkReader(FileHolder fileReader) {
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
-    return CarbonDataReaderFactory.getInstance().getMeasureColumnChunkReader(version,
-        blockInfos.get(index).getDetailInfo().getBlockletInfo(),
-        blockInfos.get(index).getFilePath());
+    if (fileReader.isReadPageByPage()) {
+      return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(version,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
+          blockInfos.get(index).getFilePath(), true);
+    } else {
+      return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(version,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
+          blockInfos.get(index).getFilePath(), false);
+    }
+  }
+
+  private MeasureColumnChunkReader getMeasureColumnChunkReader(FileHolder fileReader) {
+    ColumnarFormatVersion version =
+        ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
+    if (fileReader.isReadPageByPage()) {
+      return CarbonDataReaderFactory.getInstance().getMeasureColumnChunkReader(version,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(),
+          blockInfos.get(index).getFilePath(), true);
+    } else {
+      return CarbonDataReaderFactory.getInstance().getMeasureColumnChunkReader(version,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(),
+          blockInfos.get(index).getFilePath(), false);
+    }
   }
 
   @Override
@@ -159,5 +233,9 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
 
   public int numberOfNodes() {
     return blockInfos.size();
+  }
+
+  public List<TableBlockInfo> getBlockInfos() {
+    return blockInfos;
   }
 }

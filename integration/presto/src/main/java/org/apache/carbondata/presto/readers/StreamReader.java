@@ -19,9 +19,10 @@ package org.apache.carbondata.presto.readers;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.type.Type;
-import org.apache.spark.sql.execution.vectorized.ColumnVector;
 
 /**
  * Interface for StreamReader
@@ -32,7 +33,7 @@ public interface StreamReader {
 
   void setStreamData(Object[] data);
 
-  void setVector(ColumnVector vector);
+  void setVector(CarbonColumnVectorImpl vector);
 
   void setVectorReader(boolean isVectorReader);
 

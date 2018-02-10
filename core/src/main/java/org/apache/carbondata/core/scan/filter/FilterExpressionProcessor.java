@@ -63,6 +63,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.LogicalFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolverImpl;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.FalseConditionalResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditionalResolverImpl;
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
@@ -398,11 +399,22 @@ public class FilterExpressionProcessor implements FilterProcessor {
     ConditionalExpression condExpression = null;
     switch (filterExpressionType) {
       case FALSE:
-        return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
+        return new FalseConditionalResolverImpl(expression, false, false, tableIdentifier);
       case TRUE:
         return new TrueConditionalResolverImpl(expression, false, false, tableIdentifier);
       case EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
+        // check for implicit column in the expression
+        if (currentCondExpression instanceof InExpression) {
+          CarbonColumn carbonColumn =
+              currentCondExpression.getColumnList().get(0).getCarbonColumn();
+          if (carbonColumn.hasEncoding(Encoding.IMPLICIT)) {
+            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
+                tableIdentifier,
+                currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
+          }
+        }
+
         CarbonColumn column = currentCondExpression.getColumnList().get(0).getCarbonColumn();
         if (currentCondExpression.isSingleColumn() && ! column.getDataType().isComplexType()) {
           if (column.isMeasure()) {

@@ -39,7 +39,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
   private FileHolder fileHolder;
 
-  public DimensionRawColumnChunk(int columnIndex, ByteBuffer rawData, int offSet, int length,
+  public DimensionRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length,
       DimensionColumnChunkReader columnChunkReader) {
     super(columnIndex, rawData, offSet, length);
     this.chunkReader = columnChunkReader;
@@ -84,6 +84,21 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     }
 
     return dataChunks[index];
+  }
+
+  /**
+   * Convert raw data with specified page number processed to DimensionColumnDataChunk
+   *
+   * @param index
+   * @return
+   */
+  public DimensionColumnDataChunk convertToDimColDataChunkWithOutCache(int index) {
+    assert index < pagesCount;
+    try {
+      return chunkReader.convertToDimensionChunk(this, index);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override public void freeMemory() {

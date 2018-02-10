@@ -21,13 +21,11 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import scala.util.Random
-
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
 /**
  * A query test case
@@ -52,7 +50,7 @@ object CompareTest {
   // +-------------+-----------+-------------+-------------+------------+
   // | country     | string    | 1103        | dimension   | yes        |
   // +-------------+-----------+-------------+-------------+------------+
-  // | planet      | string    | 100,007     | dimension   | yes        |
+  // | planet      | string    | 10,007      | dimension   | yes        |
   // +-------------+-----------+-------------+-------------+------------+
   // | id          | string    | 10,000,000  | dimension   | no         |
   // +-------------+-----------+-------------+-------------+------------+
@@ -67,7 +65,6 @@ object CompareTest {
   // | m5          | decimal   | NA          | measure     | no         |
   // +-------------+-----------+-------------+-------------+------------+
   private def generateDataFrame(spark: SparkSession): DataFrame = {
-    val r = new Random()
     val rdd = spark.sparkContext
         .parallelize(1 to 10 * 1000 * 1000, 4)
         .map { x =>
@@ -257,7 +254,7 @@ object CompareTest {
         .partitionBy("partitionCol")
         .mode(SaveMode.Overwrite)
         .parquet(table)
-    spark.read.parquet(table).registerTempTable(table)
+    spark.read.parquet(table).createOrReplaceTempView(table)
   }
 
   private def loadOrcTable(spark: SparkSession, input: DataFrame, table: String): Double = time {
@@ -265,7 +262,7 @@ object CompareTest {
     input.write
         .mode(SaveMode.Overwrite)
         .orc(table)
-    spark.read.orc(table).registerTempTable(table)
+    spark.read.orc(table).createOrReplaceTempView(table)
   }
 
   private def loadCarbonTable(spark: SparkSession, input: DataFrame, tableName: String): Double = {
@@ -337,7 +334,6 @@ object CompareTest {
   private def runTest(spark: SparkSession, table1: String, table2: String): Unit = {
     val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     val date = new Date
-    val timestamp = date.getTime
     // run queries on parquet and carbon
     val table1Result: Array[(Double, Array[Row])] = runQueries(spark, table1)
     // do GC and sleep for some time before running next table
@@ -388,6 +384,8 @@ object CompareTest {
     prepareTable(spark, table1, table2)
     runTest(spark, table1, table2)
 
+    CarbonUtil.deleteFoldersAndFiles(new File(table1))
+    spark.sql(s"drop table if exists $table2")
     spark.close()
   }
 

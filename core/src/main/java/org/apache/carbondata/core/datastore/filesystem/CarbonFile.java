@@ -34,6 +34,12 @@ public interface CarbonFile {
 
   CarbonFile[] listFiles();
 
+  /**
+   * It returns list of files with location details.
+   * @return
+   */
+  CarbonFile[] locationAwareListFiles() throws IOException;
+
   String getName();
 
   boolean isDirectory();
@@ -77,6 +83,18 @@ public interface CarbonFile {
   DataInputStream getDataInputStream(String path, FileFactory.FileType fileType, int bufferSize,
       Configuration configuration) throws IOException;
 
+  /**
+   * get data input stream
+   * @param path
+   * @param fileType
+   * @param bufferSize
+   * @param compressor name of compressor to write this file
+   * @return dataInputStream
+   * @throws IOException
+   */
+  DataInputStream getDataInputStream(String path, FileFactory.FileType fileType, int bufferSize,
+      String compressor) throws IOException;
+
   DataInputStream getDataInputStream(String path, FileFactory.FileType fileType, int bufferSize,
       long offset) throws IOException;
 
@@ -85,6 +103,18 @@ public interface CarbonFile {
 
   DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType, int bufferSize,
       long blockSize) throws IOException;
+
+  /**
+   * get data output stream
+   * @param path
+   * @param fileType
+   * @param bufferSize
+   * @param compressor name of compressor to write this file
+   * @return DataOutputStream
+   * @throws IOException
+   */
+  DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType, int bufferSize,
+      String compressor) throws IOException;
 
   boolean isFileExist(String filePath, FileFactory.FileType fileType, boolean performFileCheck)
       throws IOException;
@@ -107,5 +137,11 @@ public interface CarbonFile {
 
   void setPermission(String directoryPath, FsPermission permission, String username, String group)
       throws IOException;
+
+  /**
+   * Returns locations of the file
+   * @return
+   */
+  String[] getLocations() throws IOException;
 
 }

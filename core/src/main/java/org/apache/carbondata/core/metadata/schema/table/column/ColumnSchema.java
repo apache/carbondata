@@ -31,6 +31,7 @@ import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.WritableUtil;
+import org.apache.carbondata.core.preagg.TimeSeriesUDF;
 
 /**
  * Store the information about the column meta data present the table
@@ -443,18 +444,19 @@ public class ColumnSchema implements Serializable, Writable {
     return aggFunction;
   }
 
-  public void setAggFunction(String aggFunction) {
-    this.aggFunction = aggFunction;
+  public void setFunction(String function) {
+    if (null == function) {
+      return;
+    }
+    if (TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION.contains(function.toLowerCase())) {
+      this.timeSeriesFunction = function;
+    } else {
+      this.aggFunction = function;
+    }
   }
 
   public String getTimeSeriesFunction() {
     return timeSeriesFunction;
-  }
-
-  public void setTimeSeriesFunction(String timeSeriesFunction) {
-    if (null != timeSeriesFunction) {
-      this.timeSeriesFunction = timeSeriesFunction;
-    }
   }
 
   @Override

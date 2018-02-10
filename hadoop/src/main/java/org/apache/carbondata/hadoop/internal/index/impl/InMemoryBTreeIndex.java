@@ -87,10 +87,11 @@ class InMemoryBTreeIndex implements Index {
     for (DataRefNode dataRefNode : dataRefNodes) {
       BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
       TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
-      result.add(new CarbonInputSplit(segment.getId(), new Path(tableBlockInfo.getFilePath()),
-          tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
-          tableBlockInfo.getLocations(), tableBlockInfo.getBlockletInfos().getNoOfBlockLets(),
-          tableBlockInfo.getVersion(), null));
+      result.add(new CarbonInputSplit(segment.getId(),
+          tableBlockInfo.getDetailInfo().getBlockletId().toString(),
+          new Path(tableBlockInfo.getFilePath()), tableBlockInfo.getBlockOffset(),
+          tableBlockInfo.getBlockLength(), tableBlockInfo.getLocations(),
+          tableBlockInfo.getBlockletInfos().getNoOfBlockLets(), tableBlockInfo.getVersion(), null));
     }
     return result;
   }
@@ -140,8 +141,9 @@ class InMemoryBTreeIndex implements Index {
       BlockletInfos blockletInfos = new BlockletInfos(carbonInputSplit.getNumberOfBlocklets(), 0,
           carbonInputSplit.getNumberOfBlocklets());
       tableBlockInfoList.add(
-          new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
-              segment.getId(), carbonInputSplit.getLocations(), carbonInputSplit.getLength(),
+          new TableBlockInfo(carbonInputSplit.getPath().toString(),
+              carbonInputSplit.getBlockletId(),carbonInputSplit.getStart(), segment.getId(),
+              carbonInputSplit.getLocations(), carbonInputSplit.getLength(),
               blockletInfos, carbonInputSplit.getVersion(),
               carbonInputSplit.getDeleteDeltaFiles()));
     }

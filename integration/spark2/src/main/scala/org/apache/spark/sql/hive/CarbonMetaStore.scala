@@ -16,10 +16,12 @@
  */
 package org.apache.spark.sql.hive
 
-import org.apache.spark.sql.{RuntimeConfig, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, DataFrame, Dataset, RuntimeConfig, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.types.StructType
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema
@@ -135,7 +137,7 @@ trait CarbonMetaStore {
 
   def updateAndTouchSchemasUpdatedTime()
 
-  def checkSchemasModifiedTimeAndReloadTables()
+  def checkSchemasModifiedTimeAndReloadTable(tableIdentifier: TableIdentifier): Boolean
 
   def isReadFromHiveMetaStore: Boolean
 
@@ -144,17 +146,46 @@ trait CarbonMetaStore {
   def getThriftTableInfo(tablePath: CarbonTablePath)(sparkSession: SparkSession): TableInfo
 
   def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable]
+
+  /**
+   * Method will be used to retrieve or create carbon data source relation
+   *
+   * @param sparkSession
+   * @param tableIdentifier
+   * @return
+   */
+  def createCarbonDataSourceHadoopRelation(
+      sparkSession: SparkSession,
+      tableIdentifier: TableIdentifier): CarbonDatasourceHadoopRelation
+
+  /**
+   * Method will be used retrieve the schema from unresolved relation
+   *
+   * @param sparkSession
+   * @param query
+   * @return
+   */
+  def getSchemaFromUnresolvedRelation(
+      sparkSession: SparkSession,
+      query: LogicalPlan): StructType = {
+    val df: DataFrame = Dataset.ofRows(sparkSession, query)
+    df.schema
+  }
 }
 /**
  * Factory for Carbon metastore
  */
 object CarbonMetaStoreFactory {
 
+  val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.hive.CarbonMetaStoreFactory")
+
   def createCarbonMetaStore(conf: RuntimeConfig): CarbonMetaStore = {
     val readSchemaFromHiveMetaStore = readSchemaFromHive(conf)
     if (readSchemaFromHiveMetaStore) {
+      LOGGER.audit("Hive based carbon metastore is enabled")
       new CarbonHiveMetaStore()
     } else {
+      LOGGER.audit("File based carbon metastore is enabled")
       new CarbonFileMetastore()
     }
   }

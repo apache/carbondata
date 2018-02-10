@@ -49,11 +49,6 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
       sql("drop table IF EXISTS bigtab")
       CarbonProperties.getInstance().addProperty(
         CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-          new File("./target/test/badRecords")
-            .getCanonicalPath)
-      CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       var csvFilePath = ""
 

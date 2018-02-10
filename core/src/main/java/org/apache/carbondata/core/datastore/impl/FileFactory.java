@@ -108,6 +108,19 @@ public final class FileFactory {
   }
 
   /**
+   * get data input stream
+   * @param path
+   * @param fileType
+   * @param bufferSize
+   * @param compressorName name of compressor to read this file
+   * @return data input stream
+   * @throws IOException
+   */
+  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
+      String compressorName) throws IOException {
+    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, compressorName);
+  }
+  /**
    * return the datainputStream which is seek to the offset of file
    *
    * @param path
@@ -137,6 +150,19 @@ public final class FileFactory {
     return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, blockSize);
   }
 
+  /**
+   * get data out put stream
+   * @param path
+   * @param fileType
+   * @param bufferSize
+   * @param compressorName name of compressor to write this file
+   * @return data out put stram
+   * @throws IOException
+   */
+  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
+      String compressorName) throws IOException {
+    return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, compressorName);
+  }
   /**
    * This method checks the given path exists or not and also is it file or
    * not if the performFileCheck is true

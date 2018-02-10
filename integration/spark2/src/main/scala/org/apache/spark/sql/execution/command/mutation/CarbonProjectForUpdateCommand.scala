@@ -22,15 +22,18 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.spark.exception.ConcurrentOperationException
 
 private[sql] case class CarbonProjectForUpdateCommand(
     plan: LogicalPlan,
@@ -52,6 +55,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
       return Seq.empty
     }
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "loading", "data update")
+    }
 
     // trigger event for Update table
     val operationContext = new OperationContext
@@ -91,7 +97,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
       // do delete operation.
-      DeleteExecution.deleteDeltaExecution(
+      val segmentsToBeDeleted = DeleteExecution.deleteDeltaExecution(
         databaseNameOp,
         tableName,
         sparkSession,
@@ -111,7 +117,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
         plan,
         sparkSession,
         currentTime,
-        executionErrors)
+        executionErrors,
+        segmentsToBeDeleted)
 
       if (executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)
@@ -133,7 +140,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
 
       case e: Exception =>
-        LOGGER.error("Exception in update operation" + e)
+        LOGGER.error(e, "Exception in update operation")
         // ****** start clean up.
         // In case of failure , clean all related delete delta files
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, currentTime + "")
@@ -165,7 +172,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
       plan: LogicalPlan,
       sparkSession: SparkSession,
       currentTime: Long,
-      executorErrors: ExecutionErrors): Unit = {
+      executorErrors: ExecutionErrors,
+      deletedSegments: Seq[String]): Unit = {
 
     def isDestinationRelation(relation: CarbonDatasourceHadoopRelation): Boolean = {
       val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
@@ -173,6 +181,18 @@ private[sql] case class CarbonProjectForUpdateCommand(
        databaseNameOp.get == dbName &&
        tableName == relation.identifier.getCarbonTableIdentifier.getTableName) ||
       (tableName == relation.identifier.getCarbonTableIdentifier.getTableName)
+    }
+
+    // from the dataFrame schema iterate through all the column to be updated and
+    // check for the data type, if the data type is complex then throw exception
+    def checkForUnsupportedDataType(dataFrame: DataFrame): Unit = {
+      dataFrame.schema.foreach(col => {
+        // the new column to be updated will be appended with "-updatedColumn" suffix
+        if (col.name.endsWith(CarbonCommonConstants.UPDATED_COL_EXTENSION) &&
+            col.dataType.isInstanceOf[ArrayType]) {
+          throw new UnsupportedOperationException("Unsupported data type: Array")
+        }
+      })
     }
 
     def getHeader(relation: CarbonDatasourceHadoopRelation, plan: LogicalPlan): String = {
@@ -195,6 +215,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
       }
       header
     }
+
+    // check for the data type of the new value to be updated
+    checkForUnsupportedDataType(dataFrame)
     val ex = dataFrame.queryExecution.analyzed
     val res = ex find {
       case relation: LogicalRelation
@@ -209,7 +232,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       case _ => sys.error("")
     }
 
-    val updateTableModel = UpdateTableModel(true, currentTime, executorErrors)
+    val updateTableModel = UpdateTableModel(true, currentTime, executorErrors, deletedSegments)
 
     val header = getHeader(carbonRelation, plan)
 

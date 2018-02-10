@@ -53,12 +53,15 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private String className;
 
+  private List<String> partitions;
+
   public DistributableDataMapFormat(AbsoluteTableIdentifier identifier,
-      String dataMapName, List<String> validSegments, String className) {
+      String dataMapName, List<String> validSegments, List<String> partitions, String className) {
     this.identifier = identifier;
     this.dataMapName = dataMapName;
     this.validSegments = validSegments;
     this.className = className;
+    this.partitions = partitions;
   }
 
   public static void setFilterExp(Configuration configuration, FilterResolverIntf filterExp)
@@ -102,9 +105,9 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
         TableDataMap dataMap = DataMapStoreManager.getInstance()
             .getDataMap(identifier, distributable.getDataMapName(),
                 distributable.getDataMapFactoryClass());
-        blockletIterator =
-            dataMap.prune(distributable, getFilterExp(taskAttemptContext.getConfiguration()))
-                .iterator();
+        blockletIterator = dataMap.prune(
+            distributable, getFilterExp(taskAttemptContext.getConfiguration()), partitions)
+            .iterator();
       }
 
       @Override

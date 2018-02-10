@@ -39,34 +39,84 @@ public class CarbonIndexFileMergeWriter {
   /**
    * Merge all the carbonindex files of segment to a  merged file
    * @param segmentPath
+   * @param indexFileNamesTobeAdded while merging it comsiders only these files.
+   *                                If null then consider all
+   * @param readFileFooterFromCarbonDataFile flag to read file footer information from carbondata
+   *                                         file. This will used in case of upgrade from version
+   *                                         which do not store the blocklet info to current version
    * @throws IOException
    */
-  public void mergeCarbonIndexFilesOfSegment(String segmentPath) throws IOException {
+  private void mergeCarbonIndexFilesOfSegment(String segmentPath,
+      List<String> indexFileNamesTobeAdded, boolean readFileFooterFromCarbonDataFile)
+      throws IOException {
     CarbonFile[] indexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);
-    if (isCarbonIndexFilePresent(indexFiles)) {
+    if (isCarbonIndexFilePresent(indexFiles) || indexFileNamesTobeAdded != null) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
-      fileStore.readAllIIndexOfSegment(segmentPath);
-      openThriftWriter(
-          segmentPath + "/" +
-              System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT);
+      if (readFileFooterFromCarbonDataFile) {
+        // this case will be used in case of upgrade where old store will not have the blocklet
+        // info in the index file and therefore blocklet info need to be read from the file footer
+        // in the carbondata file
+        fileStore.readAllIndexAndFillBolckletInfo(segmentPath);
+      } else {
+        fileStore.readAllIIndexOfSegment(segmentPath);
+      }
       Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
       MergedBlockIndexHeader indexHeader = new MergedBlockIndexHeader();
       MergedBlockIndex mergedBlockIndex = new MergedBlockIndex();
       List<String> fileNames = new ArrayList<>(indexMap.size());
       List<ByteBuffer> data = new ArrayList<>(indexMap.size());
       for (Map.Entry<String, byte[]> entry : indexMap.entrySet()) {
-        fileNames.add(entry.getKey());
-        data.add(ByteBuffer.wrap(entry.getValue()));
+        if (indexFileNamesTobeAdded == null ||
+            indexFileNamesTobeAdded.contains(entry.getKey())) {
+          fileNames.add(entry.getKey());
+          data.add(ByteBuffer.wrap(entry.getValue()));
+        }
       }
-      indexHeader.setFile_names(fileNames);
-      mergedBlockIndex.setFileData(data);
-      writeMergedBlockIndexHeader(indexHeader);
-      writeMergedBlockIndex(mergedBlockIndex);
-      close();
+      if (fileNames.size() > 0) {
+        openThriftWriter(
+            segmentPath + "/" + System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT);
+        indexHeader.setFile_names(fileNames);
+        mergedBlockIndex.setFileData(data);
+        writeMergedBlockIndexHeader(indexHeader);
+        writeMergedBlockIndex(mergedBlockIndex);
+        close();
+      }
       for (CarbonFile indexFile : indexFiles) {
         indexFile.delete();
       }
     }
+  }
+
+  /**
+   * Merge all the carbonindex files of segment to a  merged file
+   *
+   * @param segmentPath
+   * @param indexFileNamesTobeAdded
+   * @throws IOException
+   */
+  public void mergeCarbonIndexFilesOfSegment(String segmentPath,
+      List<String> indexFileNamesTobeAdded) throws IOException {
+    mergeCarbonIndexFilesOfSegment(segmentPath, indexFileNamesTobeAdded, false);
+  }
+
+  /**
+   * Merge all the carbonindex files of segment to a  merged file
+   * @param segmentPath
+   * @throws IOException
+   */
+  public void mergeCarbonIndexFilesOfSegment(String segmentPath) throws IOException {
+    mergeCarbonIndexFilesOfSegment(segmentPath, null, false);
+  }
+
+  /**
+   * Merge all the carbonindex files of segment to a  merged file
+   * @param segmentPath
+   * @param readFileFooterFromCarbonDataFile
+   * @throws IOException
+   */
+  public void mergeCarbonIndexFilesOfSegment(String segmentPath,
+      boolean readFileFooterFromCarbonDataFile) throws IOException {
+    mergeCarbonIndexFilesOfSegment(segmentPath, null, readFileFooterFromCarbonDataFile);
   }
 
   private boolean isCarbonIndexFilePresent(CarbonFile[] indexFiles) {

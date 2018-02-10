@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.presto.readers;
 
-import org.apache.spark.sql.execution.vectorized.ColumnVector;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 /**
  * Abstract class for Stream Readers
@@ -26,7 +26,7 @@ public abstract class AbstractStreamReader implements StreamReader {
 
   protected Object[] streamData;
 
-  protected ColumnVector columnVector;
+  protected CarbonColumnVectorImpl columnVector;
 
   protected boolean isVectorReader;
 
@@ -44,7 +44,7 @@ public abstract class AbstractStreamReader implements StreamReader {
    * Setter for Vector data
    * @param vector
    */
-  @Override public void setVector(ColumnVector vector) {
+  @Override public void setVector(CarbonColumnVectorImpl vector) {
     this.columnVector = vector;
   }
 

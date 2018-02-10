@@ -19,13 +19,12 @@ package org.apache.spark.sql.execution.streaming
 
 import java.util.Date
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.hadoop.mapreduce.v2.api.records.JobId
-import org.apache.spark._
 import org.apache.spark.TaskContext
-import org.apache.spark.internal.io._
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -42,10 +41,12 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.streaming.CarbonStreamException
+import org.apache.carbondata.streaming.{CarbonStreamException, StreamHandoffRDD}
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -80,6 +81,12 @@ class CarbonAppendableStreamSink(
     CarbonProperties.getInstance().getHandoffSize
   )
 
+  // auto handoff
+  private val enableAutoHandoff = hadoopConf.getBoolean(
+    CarbonCommonConstants.ENABLE_AUTO_HANDOFF,
+    CarbonProperties.getInstance().isEnableAutoHandoff
+  )
+
   override def addBatch(batchId: Long, data: DataFrame): Unit = {
     if (batchId <= fileLog.getLatest().map(_._1).getOrElse(-1L)) {
       CarbonAppendableStreamSink.LOGGER.info(s"Skipping already committed batch $batchId")
@@ -87,6 +94,18 @@ class CarbonAppendableStreamSink(
 
       val statistic = new QueryStatistic()
 
+      // fire pre event on every batch add
+      val operationContext = new OperationContext
+      val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
+        carbonTable.getCarbonTableIdentifier,
+        carbonLoadModel,
+        carbonLoadModel.getFactFilePath,
+        false,
+        parameters.asJava,
+        null,
+        false
+      )
+      OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
       checkOrHandOffSegment()
 
       // committer will record how this spark job commit its output
@@ -113,6 +132,12 @@ class CarbonAppendableStreamSink(
         hadoopConf,
         carbonLoadModel,
         server)
+      // fire post event on every batch add
+      val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
+        carbonTable.getCarbonTableIdentifier,
+        carbonLoadModel
+      )
+      OperationListenerBus.getInstance().fireEvent(loadTablePostExecutionEvent, operationContext)
 
       statistic.addStatistics(s"add batch: $batchId", System.currentTimeMillis())
       CarbonAppendableStreamSink.LOGGER.info(
@@ -127,14 +152,18 @@ class CarbonAppendableStreamSink(
     val segmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
     val fileType = FileFactory.getFileType(segmentDir)
     if (segmentMaxSize <= StreamSegment.size(segmentDir)) {
-      val newSegmentId =
-        StreamSegment.close(carbonTable, currentSegmentId)
+      val newSegmentId = StreamSegment.close(carbonTable, currentSegmentId)
       currentSegmentId = newSegmentId
       val newSegmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
       FileFactory.mkdirs(newSegmentDir, fileType)
-    }
 
-    // TODO trigger hand off operation
+      // TODO trigger hand off operation
+      if (enableAutoHandoff) {
+        StreamHandoffRDD.startStreamingHandoffThread(
+          carbonLoadModel,
+          sparkSession)
+      }
+    }
   }
 }
 

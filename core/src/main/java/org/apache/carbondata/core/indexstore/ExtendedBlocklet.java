@@ -16,15 +16,6 @@
  */
 package org.apache.carbondata.core.indexstore;
 
-import java.io.IOException;
-
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
-
 /**
  * Detailed blocklet information
  */
@@ -50,25 +41,15 @@ public class ExtendedBlocklet extends Blocklet {
     this.detailInfo = detailInfo;
   }
 
-  /**
-   * It gets the hdfs block locations and length for this blocklet. It is used internally to get the
-   * locations for allocating tasks.
-   * @throws IOException
-   */
-  public void updateLocations() throws IOException {
-    Path path = new Path(getPath());
-    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-    RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
-    LocatedFileStatus fileStatus = iter.next();
-    location = fileStatus.getBlockLocations()[0].getHosts();
-    length = fileStatus.getLen();
+  public void setLocation(String[] location) {
+    this.location = location;
   }
 
-  public String[] getLocations() throws IOException {
+  public String[] getLocations() {
     return location;
   }
 
-  public long getLength() throws IOException {
+  public long getLength() {
     return length;
   }
 

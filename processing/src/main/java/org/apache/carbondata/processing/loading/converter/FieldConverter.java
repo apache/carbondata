@@ -33,4 +33,9 @@ public interface FieldConverter {
    * @throws CarbonDataLoadingException
    */
   void convert(CarbonRow row, BadRecordLogHolder logHolder) throws CarbonDataLoadingException;
+
+  /**
+   * This method clears all the dictionary caches being acquired.
+   */
+  void clear();
 }

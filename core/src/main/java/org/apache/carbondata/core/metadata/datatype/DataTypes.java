@@ -58,14 +58,14 @@ public class DataTypes {
   static final int LONG_TYPE_ID = 7;
   static final int DOUBLE_TYPE_ID = 8;
   static final int NULL_TYPE_ID = 9;
-  static final int BYTE_TYPE_ID = 10;
-  static final int BYTE_ARRAY_TYPE_ID = 11;
-  static final int SHORT_INT_TYPE_ID = 12;
-  static final int LEGACY_LONG_TYPE_ID = 13;
-  static final int DECIMAL_TYPE_ID = 20;
-  static final int ARRAY_TYPE_ID = 21;
-  static final int STRUCT_TYPE_ID = 22;
-  static final int MAP_TYPE_ID = 23;
+  static final int BYTE_TYPE_ID = 14;
+  static final int BYTE_ARRAY_TYPE_ID = 15;
+  static final int SHORT_INT_TYPE_ID = 16;
+  static final int LEGACY_LONG_TYPE_ID = 17;
+  static final int DECIMAL_TYPE_ID = 10;
+  static final int ARRAY_TYPE_ID = 11;
+  static final int STRUCT_TYPE_ID = 12;
+  static final int MAP_TYPE_ID = 13;
 
   /**
    * create a DataType instance from uniqueId of the DataType

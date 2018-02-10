@@ -141,10 +141,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     String[] dataFolderLocation = CarbonDataProcessorUtil.arrayAppend(storeLocation, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     return new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
-            sortParameters.getDimColCount(), sortParameters.getComplexDimColCount(),
-            sortParameters.getMeasureColCount(), sortParameters.getNoDictionaryCount(),
-            sortParameters.getMeasureDataType(), sortParameters.getNoDictionaryDimnesionColumn(),
-            this.sortParameters.getNoDictionarySortColumn());
+            sortParameters);
   }
 
   @Override public void close() {

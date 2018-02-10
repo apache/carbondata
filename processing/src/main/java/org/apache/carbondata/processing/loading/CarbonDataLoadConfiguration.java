@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -64,6 +65,21 @@ public class CarbonDataLoadConfiguration {
    */
   private int dictionaryServerPort;
 
+  /**
+   * dictionary server secret key
+   */
+  private String dictionaryServerSecretKey;
+
+  /**
+   * Dictionary Service Provider.
+   */
+  private DictionaryServiceProvider dictionaryServiceProvider;
+
+  /**
+   * Secure Mode or not.
+   */
+  private Boolean dictionaryEncryptServerSecure;
+
   private boolean preFetch;
 
   private int dimensionCount;
@@ -87,6 +103,11 @@ public class CarbonDataLoadConfiguration {
 
   // contains metadata used in write step of loading process
   private TableSpec tableSpec;
+
+  /**
+   * Number of thread cores to use while writing data files
+   */
+  private short writingCoresCount;
 
   public CarbonDataLoadConfiguration() {
   }
@@ -232,6 +253,30 @@ public class CarbonDataLoadConfiguration {
     this.dictionaryServerPort = dictionaryServerPort;
   }
 
+  public String getDictionaryServerSecretKey() {
+    return dictionaryServerSecretKey;
+  }
+
+  public void setDictionaryServerSecretKey(String dictionaryServerSecretKey) {
+    this.dictionaryServerSecretKey = dictionaryServerSecretKey;
+  }
+
+  public DictionaryServiceProvider getDictionaryServiceProvider() {
+    return dictionaryServiceProvider;
+  }
+
+  public void setDictionaryServiceProvider(DictionaryServiceProvider dictionaryServiceProvider) {
+    this.dictionaryServiceProvider = dictionaryServiceProvider;
+  }
+
+  public Boolean getDictionaryEncryptServerSecure() {
+    return dictionaryEncryptServerSecure;
+  }
+
+  public void setDictionaryEncryptServerSecure(Boolean dictionaryEncryptServerSecure) {
+    this.dictionaryEncryptServerSecure = dictionaryEncryptServerSecure;
+  }
+
   public boolean isPreFetch() {
     return preFetch;
   }
@@ -309,5 +354,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setTableSpec(TableSpec tableSpec) {
     this.tableSpec = tableSpec;
+  }
+
+  public short getWritingCoresCount() {
+    return writingCoresCount;
+  }
+
+  public void setWritingCoresCount(short writingCoresCount) {
+    this.writingCoresCount = writingCoresCount;
   }
 }

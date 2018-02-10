@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.facebook.presto.spi.type.*;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -47,6 +46,17 @@ import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.type.BigintType;
+import com.facebook.presto.spi.type.BooleanType;
+import com.facebook.presto.spi.type.DateType;
+import com.facebook.presto.spi.type.DecimalType;
+import com.facebook.presto.spi.type.Decimals;
+import com.facebook.presto.spi.type.DoubleType;
+import com.facebook.presto.spi.type.IntegerType;
+import com.facebook.presto.spi.type.SmallintType;
+import com.facebook.presto.spi.type.TimestampType;
+import com.facebook.presto.spi.type.Type;
+import com.facebook.presto.spi.type.VarcharType;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 
@@ -70,10 +80,9 @@ public class PrestoFilterUtil {
     else if (colType == DateType.DATE) return DataTypes.DATE;
     else if (colType == TimestampType.TIMESTAMP) return DataTypes.TIMESTAMP;
     else if (colType.equals(DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
-        carbondataColumnHandle.getScale())))
-      return org.apache.carbondata.core.metadata.datatype.DataTypes.createDecimalType(
-          carbondataColumnHandle.getPrecision(),
-          carbondataColumnHandle.getScale());
+        carbondataColumnHandle.getScale()))) return DataTypes
+        .createDecimalType(carbondataColumnHandle.getPrecision(),
+            carbondataColumnHandle.getScale());
     else return DataTypes.STRING;
   }
 
@@ -116,20 +125,14 @@ public class PrestoFilterUtil {
                 } else {
                   GreaterThanExpression greater = new GreaterThanExpression(colExpression,
                       new LiteralExpression(value, coltype));
-                  if(valueExpressionMap.get(value) == null) {
-                    valueExpressionMap.put(value, new ArrayList<>());
-                  }
-                  valueExpressionMap.get(value).add(greater);
+                  valueExpressionMap.computeIfAbsent(value, key -> new ArrayList<>()).add(greater);
                 }
                 break;
               case EXACTLY:
                 GreaterThanEqualToExpression greater =
                     new GreaterThanEqualToExpression(colExpression,
                         new LiteralExpression(value, coltype));
-                if(valueExpressionMap.get(value) == null) {
-                  valueExpressionMap.put(value, new ArrayList<>());
-                }
-                valueExpressionMap.get(value).add(greater);
+                valueExpressionMap.computeIfAbsent(value, key -> new ArrayList<>()).add(greater);
                 break;
               case BELOW:
                 throw new IllegalArgumentException("Low marker should never use BELOW bound");
@@ -145,18 +148,12 @@ public class PrestoFilterUtil {
               case EXACTLY:
                 LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
                     new LiteralExpression(value, coltype));
-                if(valueExpressionMap.get(value) == null) {
-                  valueExpressionMap.put(value, new ArrayList<>());
-                }
-                valueExpressionMap.get(value).add(less);
+                valueExpressionMap.computeIfAbsent(value, key -> new ArrayList<>()).add(less);
                 break;
               case BELOW:
                 LessThanExpression less2 =
                     new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
-                if(valueExpressionMap.get(value) == null) {
-                  valueExpressionMap.put(value, new ArrayList<>());
-                }
-                valueExpressionMap.get(value).add(less2);
+                valueExpressionMap.computeIfAbsent(value, key -> new ArrayList<>()).add(less2);
                 break;
               default:
                 throw new AssertionError("Unhandled bound: " + range.getHigh().getBound());
@@ -178,7 +175,7 @@ public class PrestoFilterUtil {
       } else if (singleValues.size() > 1) {
         ListExpression candidates = null;
         List<Expression> exs = singleValues.stream()
-            .map((a) -> new LiteralExpression(ConvertDataByType(a, type), coltype))
+            .map((a) -> new LiteralExpression(a, coltype))
             .collect(Collectors.toList());
         candidates = new ListExpression(exs);
         filters.add(new InExpression(colExpression, candidates));
@@ -199,14 +196,14 @@ public class PrestoFilterUtil {
           valuefilters.add(finalFilters);
         }
 
-        if(valuefilters.size() == 1){
+        if (valuefilters.size() == 1) {
           finalFilters = valuefilters.get(0);
         } else if (valuefilters.size() >= 2) {
-         finalFilters = new AndExpression(valuefilters.get(0), valuefilters.get(1));
-         for (int i = 2; i < valuefilters.size() ; i++) {
-           finalFilters = new AndExpression(finalFilters, valuefilters.get(i));
-         }
-       }
+          finalFilters = new AndExpression(valuefilters.get(0), valuefilters.get(1));
+          for (int i = 2; i < valuefilters.size(); i++) {
+            finalFilters = new AndExpression(finalFilters, valuefilters.get(i));
+          }
+        }
 
         filters.add(finalFilters);
       }
@@ -227,8 +224,9 @@ public class PrestoFilterUtil {
   }
 
   private static Object ConvertDataByType(Object rawdata, Type type) {
-    if (type.equals(IntegerType.INTEGER)) return Integer.valueOf(rawdata.toString());
-    // new Integer((rawdata.toString()));
+    if (type.equals(IntegerType.INTEGER) || type.equals(SmallintType.SMALLINT))
+      return Integer.valueOf(rawdata.toString());
+      // new Integer((rawdata.toString()));
     else if (type.equals(BigintType.BIGINT)) return rawdata;
     else if (type.equals(VarcharType.VARCHAR)) {
       if (rawdata instanceof Slice) {
@@ -244,18 +242,18 @@ public class PrestoFilterUtil {
       c.add(Calendar.DAY_OF_YEAR, ((Long) rawdata).intValue());
       Date date = c.getTime();
       return date.getTime() * 1000;
-    }
-    else if (type instanceof DecimalType) {
-      if(rawdata instanceof  Double) {
+    } else if (type instanceof DecimalType) {
+      if (rawdata instanceof Double) {
         return new BigDecimal((Double) rawdata);
-      } else if (rawdata instanceof  Long) {
+      } else if (rawdata instanceof Long) {
         return new BigDecimal(new BigInteger(String.valueOf(rawdata)),
             ((DecimalType) type).getScale());
-      } else if(rawdata instanceof Slice) {
-        return new BigDecimal(Decimals.decodeUnscaledValue((Slice) rawdata), ((DecimalType) type).getScale());
+      } else if (rawdata instanceof Slice) {
+        return new BigDecimal(Decimals.decodeUnscaledValue((Slice) rawdata),
+            ((DecimalType) type).getScale());
       }
     } else if (type.equals(TimestampType.TIMESTAMP)) {
-      return (Long)rawdata * 1000;
+      return (Long) rawdata * 1000;
     }
 
     return rawdata;

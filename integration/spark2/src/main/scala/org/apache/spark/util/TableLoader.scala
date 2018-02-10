@@ -24,6 +24,7 @@ import scala.collection.{immutable, mutable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -81,7 +82,7 @@ object TableLoader {
     val spark = TableAPIUtil.spark(storePath, s"TableLoader: $dbName.$tableName")
 
     CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables()
+      checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     loadTable(spark, Option(dbName), tableName, inputPaths, map)
   }
 

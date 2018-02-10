@@ -29,7 +29,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
+import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.statusmanager.FileFormat;
@@ -181,6 +183,49 @@ public class StreamSegment {
   }
 
   /**
+   * change the status of the segment from "streaming" to "streaming finish"
+   */
+  public static void finishStreaming(CarbonTable carbonTable) throws IOException {
+    ICarbonLock statusLock = CarbonLockFactory.getCarbonLockObj(
+        carbonTable.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
+        LockUsage.TABLE_STATUS_LOCK);
+    try {
+      if (statusLock.lockWithRetries()) {
+        LoadMetadataDetails[] details =
+            SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath());
+        boolean updated = false;
+        for (LoadMetadataDetails detail : details) {
+          if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
+            detail.setLoadEndTime(System.currentTimeMillis());
+            detail.setSegmentStatus(SegmentStatus.STREAMING_FINISH);
+            updated = true;
+          }
+        }
+        if (updated) {
+          CarbonTablePath tablePath =
+              CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+          SegmentStatusManager.writeLoadDetailsIntoFile(
+              tablePath.getTableStatusFilePath(),
+              details);
+        }
+      } else {
+        String msg = "Failed to acquire table status lock of " + carbonTable.getDatabaseName()
+            + "." + carbonTable.getTableName();
+        LOGGER.error(msg);
+        throw new IOException(msg);
+      }
+    } finally {
+      if (statusLock.unlock()) {
+        LOGGER.info("Table unlocked successfully after table status updation"
+            + carbonTable.getDatabaseName() + "." + carbonTable.getTableName());
+      } else {
+        LOGGER.error("Unable to unlock Table lock for table " + carbonTable.getDatabaseName()
+            + "." + carbonTable.getTableName() + " during table status updation");
+      }
+    }
+  }
+
+  /**
    * invoke CarbonStreamOutputFormat to append batch data to existing carbondata file
    */
   public static void appendBatchData(CarbonIterator<Object[]> inputIterators,
@@ -199,10 +244,11 @@ public class StreamSegment {
         writer.write(null, inputIterators.next());
       }
       inputIterators.close();
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
       if (writer != null) {
         LOGGER.error(ex, "Failed to append batch data to stream segment: " +
             writer.getSegmentDir());
+        writer.setHasException(true);
       }
       throw ex;
     } finally {
@@ -315,7 +361,7 @@ public class StreamSegment {
   }
 
   /**
-   * update carbonindex file after after a stream batch.
+   * update carbonindex file after a stream batch.
    */
   public static void updateIndexFile(String segmentDir) throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);

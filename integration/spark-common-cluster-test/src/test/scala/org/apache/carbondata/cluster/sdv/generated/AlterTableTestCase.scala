@@ -120,141 +120,107 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check alter table when the altered name is already present in the database
   test("RenameTable_001_08", Include) {
-    try {
-       sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx',1""").collect
-   sql(s"""create table test2 (name string, id int) stored by 'carbondata'""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx',1""").collect
+      sql(s"""create table test2 (name string, id int) stored by 'carbondata'""").collect
       sql(s"""alter table test1 RENAME TO test2""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
-   sql(s"""drop table if exists test2""").collect
+
+    sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test2""").collect
   }
 
 
   //Check alter table when the altered name is given multiple times
   test("RenameTable_001_09", Include) {
-    try {
-       sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx',1""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx',1""").collect
       sql(s"""alter table test1 RENAME TO test2 test3""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
   //Check delete column for dimension column
   test("DeleteCol_001_01", Include) {
-    try {
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='id') """).collect
-   sql(s"""insert into test1 select 'xx',1""").collect
-   sql(s"""alter table test1 drop columns (name)""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (name string, id int) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='id') """).collect
+      sql(s"""insert into test1 select 'xx',1""").collect
+      sql(s"""alter table test1 drop columns (name)""").collect
       sql(s"""select name from test1""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
   //Check delete column for measure column
   test("DeleteCol_001_02", Include) {
-    try {
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx',1""").collect
-   sql(s"""alter table test1 drop columns (id)""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx',1""").collect
+      sql(s"""alter table test1 drop columns (id)""").collect
       sql(s"""select id from test1""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
   //Check delete column for measure and dimension column
   test("DeleteCol_001_03", Include) {
-    try {
-     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
-   sql(s"""alter table test1 drop columns (id,name)""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
+      sql(s"""alter table test1 drop columns (id,name)""").collect
       sql(s"""select id,name  from test1""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
   //Check delete column for multiple column
   test("DeleteCol_001_04", Include) {
-    try {
-     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'  TBLPROPERTIES('DICTIONARY_INCLUDE'='id')""").collect
-   sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
-   sql(s"""alter table test1 drop columns (name, upd_time)""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'  TBLPROPERTIES('DICTIONARY_INCLUDE'='id')""").collect
+      sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
+      sql(s"""alter table test1 drop columns (name, upd_time)""").collect
       sql(s"""select name, upd_time from test1""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
   //Check delete column for all columns
   test("DeleteCol_001_05", Include) {
-    try {
-       sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
-      sql(s"""alter table test1 drop columns (name, upd_time, country,id)""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
-    }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+    sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
+    sql(s"""alter table test1 drop columns (name, upd_time, country,id)""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
   //Check delete column for include dictionary column
   test("DeleteCol_001_06", Include) {
-    try {
-     sql(s"""create table test1 (name string, id int) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='id')""").collect
-   sql(s"""insert into test1 select 'xx',1""").collect
-   sql(s"""alter table test1 drop columns (id)""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (name string, id int) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='id')""").collect
+      sql(s"""insert into test1 select 'xx',1""").collect
+      sql(s"""alter table test1 drop columns (id)""").collect
       sql(s"""select id from test1""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
   //Check delete column for timestamp column
   test("DeleteCol_001_08", Include) {
-    try {
-     sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
-   sql(s"""alter table test1 drop columns (upd_time)""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
+      sql(s"""alter table test1 drop columns (upd_time)""").collect
       sql(s"""select upd_time from test1""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
@@ -272,17 +238,13 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check the drop of added column will remove the column from table
   test("DeleteCol_001_09_2", Include) {
-    try {
+    intercept[Exception] {
      sql(s"""create table test1 (name string, country string, upd_time timestamp, id int) stored by 'carbondata'""").collect
      sql(s"""insert into test1 select 'xx','yy',current_timestamp,1""").collect
      sql(s"""alter table test1 add columns (name2 string)""").collect
      sql(s"""insert into test1 select 'xx','yy',current_timestamp,1,'abc'""").collect
      sql(s"""alter table test1 drop columns (name2)""").collect
      sql(s"""select count(id) from test1 where name2 = 'abc'""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
      sql(s"""drop table if exists test1""").collect
   }
@@ -451,16 +413,13 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check add column with option default value is given for an existing column
   test("AddColumn_001_14", Include) {
-    try {
+    intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
       sql(s"""create table test1 (name string) stored by 'carbondata'""").collect
       sql(s"""insert into test1 select 'xx'""").collect
       sql(s"""ALTER TABLE test1 ADD COLUMNS (Id int) TBLPROPERTIES('DICTIONARY_INCLUDE'='id','default.value.name'='yy')""").collect
-      assert(false)
-      sql(s"""drop table if exists test1""").collect
-    } catch {
-      case _ => assert(true)
     }
+    sql(s"""drop table if exists test1""").collect
   }
 
 
@@ -489,17 +448,14 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //check drop table after table rename using old name
   test("DropTable_001_02", Include) {
-    try {
+    intercept[Exception] {
       sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string, price decimal(3,2)) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx',1.2""").collect
-   sql(s"""alter table test1 rename to test2""").collect
+      sql(s"""create table test1 (name string, price decimal(3,2)) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx',1.2""").collect
+      sql(s"""alter table test1 rename to test2""").collect
       sql(s"""drop table test1""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test2""").collect
+    sql(s"""drop table if exists test2""").collect
   }
 
 
@@ -734,15 +690,12 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check show segments on old table After altering the Table name.
   test("Showsegme_001_01", Include) {
-    try {
-       sql(s"""create table test1 (country string, id int) stored by 'carbondata'""").collect
-   sql(s"""alter table test1 rename to test2""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (country string, id int) stored by 'carbondata'""").collect
+      sql(s"""alter table test1 rename to test2""").collect
       sql(s"""show segments for table test1""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test2""").collect
+    sql(s"""drop table if exists test2""").collect
   }
 
 
@@ -828,65 +781,53 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check vertical compaction when all segments are created before drop column, check dropped column is not used in the compation
   test("Compaction_001_06", Include) {
-    try {
-     sql(s"""drop table if exists test1""").collect
-   sql(s"""drop table if exists test2""").collect
-   sql(s"""create table test1(name string, country string, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx','china',1""").collect
-   sql(s"""insert into test1 select 'xe','china',2""").collect
-   sql(s"""insert into test1 select 'xe','china',3""").collect
-   sql(s"""alter table test1 drop columns (country)""").collect
-   sql(s"""alter table test1 compact 'minor'""").collect
+    intercept[Exception] {
+      sql(s"""drop table if exists test1""").collect
+      sql(s"""drop table if exists test2""").collect
+      sql(s"""create table test1(name string, country string, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx','china',1""").collect
+      sql(s"""insert into test1 select 'xe','china',2""").collect
+      sql(s"""insert into test1 select 'xe','china',3""").collect
+      sql(s"""alter table test1 drop columns (country)""").collect
+      sql(s"""alter table test1 compact 'minor'""").collect
       sql(s"""select country from test1 where country='china'""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
   //Check vertical compaction when some of the segments are created before drop column, check dropped column is not used in the compation
   test("Compaction_001_07", Include) {
-    try {
-     sql(s"""drop table if exists test1""").collect
-   sql(s"""drop table if exists test2""").collect
-   sql(s"""create table test1(name string, country string, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx','china',1""").collect
-   sql(s"""insert into test1 select 'xe','china',2""").collect
-   sql(s"""alter table test1 drop columns (country)""").collect
-   sql(s"""insert into test1 select 'xe',3""").collect
-   sql(s"""alter table test1 compact 'minor'""").collect
+    intercept[Exception] {
+      sql(s"""drop table if exists test1""").collect
+      sql(s"""drop table if exists test2""").collect
+      sql(s"""create table test1(name string, country string, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx','china',1""").collect
+      sql(s"""insert into test1 select 'xe','china',2""").collect
+      sql(s"""alter table test1 drop columns (country)""").collect
+      sql(s"""insert into test1 select 'xe',3""").collect
+      sql(s"""alter table test1 compact 'minor'""").collect
       sql(s"""select country from test1 where country='china'""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
   //Check vertical compaction for multiple drop column, check dropped column is not used in the compation
   test("Compaction_001_08", Include) {
-    try {
-     sql(s"""drop table if exists test1""").collect
-   sql(s"""drop table if exists test2""").collect
-   sql(s"""create table test1(name string, country string, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx','china',1""").collect
-   sql(s"""alter table test1 drop columns (country)""").collect
-   sql(s"""insert into test1 select 'xe',3""").collect
-   sql(s"""alter table test1 drop columns (id)""").collect
-   sql(s"""insert into test1 select 'xe'""").collect
-   sql(s"""alter table test1 compact 'minor'""").collect
+    intercept[Exception] {
+      sql(s"""drop table if exists test1""").collect
+      sql(s"""drop table if exists test2""").collect
+      sql(s"""create table test1(name string, country string, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx','china',1""").collect
+      sql(s"""alter table test1 drop columns (country)""").collect
+      sql(s"""insert into test1 select 'xe',3""").collect
+      sql(s"""alter table test1 drop columns (id)""").collect
+      sql(s"""insert into test1 select 'xe'""").collect
+      sql(s"""alter table test1 compact 'minor'""").collect
       sql(s"""select country from test1 where id=1""").collect
-
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test1""").collect
   }
 
 
@@ -989,17 +930,14 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check delete segment is not allowed on old table name when table name is altered
   test("DeleteSeg_001_01", Include) {
-    try {
-       sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx',1""").collect
-   sql(s"""insert into test1 select 'xx',12""").collect
-   sql(s"""alter table test1 rename to test2""").collect
+    intercept[Exception] {
+      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx',1""").collect
+      sql(s"""insert into test1 select 'xx',12""").collect
+      sql(s"""alter table test1 rename to test2""").collect
       sql(s"""delete from table test1 where segment.id in (0)""").collect
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table if exists test2""").collect
+    sql(s"""drop table if exists test2""").collect
   }
 
 
@@ -1078,8 +1016,6 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     prop.addProperty("carbon.compaction.level.threshold", "2,1")
     prop.addProperty("carbon.enable.auto.load.merge", "false")
     prop.addProperty("carbon.bad.records.action", "FORCE")
-    prop.addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-      TestQueryExecutor.warehouse+"/baaaaaaadrecords")
   }
 
   override def afterAll: Unit = {
