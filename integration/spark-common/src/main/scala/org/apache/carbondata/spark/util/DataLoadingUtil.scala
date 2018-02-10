@@ -217,6 +217,51 @@ object DataLoadingUtil {
 
   /**
    * build CarbonLoadModel for data loading
+   * @param table CarbonTable object containing all metadata information for the table
+   *              like table name, table path, schema, etc
+   * @param options Load options from user input
+   * @return a new CarbonLoadModel instance
+   */
+  def buildCarbonLoadModelJava(
+      table: CarbonTable,
+      options: java.util.Map[String, String]
+  ): CarbonLoadModel = {
+    val carbonProperty: CarbonProperties = CarbonProperties.getInstance
+    val optionsFinal = getDataLoadingOptions(carbonProperty, options.asScala.toMap)
+    optionsFinal.put("sort_scope", "no_sort")
+    if (!options.containsKey("fileheader")) {
+      val csvHeader = table.getCreateOrderColumn(table.getTableName)
+        .asScala.map(_.getColName).mkString(",")
+      optionsFinal.put("fileheader", csvHeader)
+    }
+    val model = new CarbonLoadModel()
+    buildCarbonLoadModel(
+      table = table,
+      carbonProperty = carbonProperty,
+      options = options.asScala.toMap,
+      optionsFinal = optionsFinal,
+      carbonLoadModel = model,
+      hadoopConf = null)  // we have provided 'fileheader', so it can be null
+
+    // set default values
+    model.setTimestampformat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    model.setDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    model.setUseOnePass(options.asScala.getOrElse("onepass", "false").toBoolean)
+    model.setDictionaryServerHost(options.asScala.getOrElse("dicthost", null))
+    model.setDictionaryServerPort(options.asScala.getOrElse("dictport", "-1").toInt)
+    model
+  }
+
+  /**
+   * build CarbonLoadModel for data loading
+   * @param table CarbonTable object containing all metadata information for the table
+   *              like table name, table path, schema, etc
+   * @param carbonProperty Carbon property instance
+   * @param options Load options from user input
+   * @param optionsFinal Load options that populated with default values for optional options
+   * @param carbonLoadModel The output load model
+   * @param hadoopConf hadoopConf is needed to read CSV header if there 'fileheader' is not set in
+   *                   user provided load options
    */
   def buildCarbonLoadModel(
       table: CarbonTable,

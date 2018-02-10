@@ -294,4 +294,11 @@ public class TableSchema implements Serializable, Writable {
     return dataMapSchema;
   }
 
+  /**
+   * Create a {@link TableSchemaBuilder} to create {@link TableSchema}
+   */
+  public static TableSchemaBuilder builder() {
+    return new TableSchemaBuilder();
+  }
+
 }
