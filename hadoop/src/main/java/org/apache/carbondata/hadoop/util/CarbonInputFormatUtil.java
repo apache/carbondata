@@ -18,9 +18,14 @@
 package org.apache.carbondata.hadoop.util;
 
 import java.io.IOException;
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+
+
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -58,12 +63,22 @@ public class CarbonInputFormatUtil {
     CarbonQueryPlan plan = new CarbonQueryPlan(carbonTable.getDatabaseName(), factTableName);
     // fill dimensions
     // If columns are null, set all dimensions and measures
+    //child projected dimensions for a dimension are apppended by #
     int i = 0;
     if (columns != null) {
       for (String column : columns) {
+        String[] childFieldNames = column.split("#");
+        List<String> childernProjColumns = new ArrayList<String>();
+        for (int j = 0; j < childFieldNames.length ; j++) {
+          if (j == 0) {
+            column = childFieldNames[j];
+          } else {
+            childernProjColumns.add(childFieldNames[j]);
+          }
+        }
         CarbonDimension dimensionByName = carbonTable.getDimensionByName(factTableName, column);
         if (dimensionByName != null) {
-          addQueryDimension(plan, i, dimensionByName);
+          addQueryDimension(plan, i, dimensionByName, childernProjColumns);
           i++;
         } else {
           CarbonMeasure measure = carbonTable.getMeasureByName(factTableName, column);
@@ -112,10 +127,11 @@ public class CarbonInputFormatUtil {
   }
 
   private static void addQueryDimension(CarbonQueryPlan plan, int order,
-      CarbonDimension dimension) {
+      CarbonDimension dimension , List<String> projectedChildFields) {
     QueryDimension queryDimension = new QueryDimension(dimension.getColName());
     queryDimension.setQueryOrder(order);
-    queryDimension.setDimension(dimension);
+    queryDimension.setDimension(dimension); //ashwini
+    queryDimension.setProjectionChildColumnNames(projectedChildFields);
     plan.addDimension(queryDimension);
   }
 

@@ -20,6 +20,7 @@ package org.apache.carbondata.core.scan.complextypes;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -133,5 +134,8 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       actualData = DataTypeUtil.getDataBasedOnDataType(dictionaryValueForKey, this.dataType);
     }
     return actualData;
+  }
+  public List<GenericQueryType> getChildern() {
+    return  null;
   }
 }

@@ -26,6 +26,8 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import scala.collection.mutable
+
 class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
 
@@ -530,6 +532,60 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     }.getMessage.contains("Update operation is not supported for pre-aggregate table")
     sql("drop table if exists preaggMain")
     sql("drop table if exists preaggMain_preagg1")
+  }
+
+
+  test("test struct optimization ") {
+    sql("DROP TABLE IF EXISTS st ")
+
+    sql("create table st (id int, name string , structelem struct<id1:int, structelem: struct<id2:int, name:string>>)" +
+      "stored by 'carbondata'").show
+
+    sql(s"load data local inpath '$resourcesPath/structinstructnull.csv' into table st options('delimiter'=',' ,  " +
+      s"'fileheader'='id,name,structelem','COMPLEX_DELIMITER_LEVEL_1'='#', 'COMPLEX_DELIMITER_LEVEL_2'='|')")
+
+    sql("select structelem from st ").show
+    checkExistence(sql("select structelem from st "),true,  "2002")
+
+    sql("select structelem.structelem from st ").show
+    checkExistence(sql("select structelem.structelem from st "),true,  "2002")
+
+    sql("select structelem.structelem.name from st ").show
+    checkExistence(sql("select structelem.structelem.name from st "),true,  "abc")
+
+    sql("select  name as Name1 , structelem as mainStruct,structelem ,structelem.structelem.name  from st ").show;
+    checkExistence(sql("select  name as Name1 , structelem as mainStruct,structelem ,structelem.structelem.name  from st "),true,  "name1");
+
+    sql("DROP TABLE IF EXISTS st")
+  }
+  test("test struct optimization with complex struct  ") {
+    sql("DROP TABLE IF EXISTS structOptimizationCheck ")
+
+    sql(
+      "create table structOptimizationCheck(name struct<middlename:string, " +
+        "othernames:struct<firstname:string,lastname:string>,age:int> ) STORED BY 'org.apache" +
+        ".carbondata.format'")
+    sql("LOAD DATA local INPATH '" + resourcesPath +
+      "/structusingstruct.csv' INTO table structOptimizationCheck options ('DELIMITER'=',', " +
+      "'QUOTECHAR'='\"', 'FILEHEADER'='name','COMPLEX_DELIMITER_LEVEL_1'='$'," +
+      "'COMPLEX_DELIMITER_LEVEL_2'='&')")
+
+
+    sql("select name from structOptimizationCheck ").show
+    checkExistence(sql("select name from structOptimizationCheck "),true,  "klm");
+
+    sql("select name.othernames from structOptimizationCheck ").show
+    checkExistence(sql("select name.othernames from structOptimizationCheck "),true,  "abc");
+
+    sql("select name.othernames.firstname from structOptimizationCheck ").show
+    checkExistence(sql("select name.othernames.firstname from structOptimizationCheck "),true,  "klm");
+
+    sql("select  name as Name1 , name.othernames as mainStruct, name.othernames " +
+      ", name.othernames.firstname as FirstName from structOptimizationCheck ").show
+    checkExistence(sql("select  name as Name1 , name.othernames as mainStruct," +
+     "name.othernames ,name.othernames.firstname  from structOptimizationCheck "),true,  "sac");
+
+    sql("DROP TABLE IF EXISTS structOptimizationCheck ")
   }
 
   test("Update operation on carbon table with singlepass") {

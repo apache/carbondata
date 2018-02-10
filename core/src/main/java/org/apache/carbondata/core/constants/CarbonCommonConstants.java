@@ -1598,6 +1598,12 @@ public final class CarbonCommonConstants {
       "carbon.query.validate.directqueryondatamap";
   public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "true";
 
+  public static final String ATTRIBUTE_REFRENCE = "AttributeReference";
+
+  public static final String FIELD_NAME = "FieldName";
+
+  public static final String NEED_ALL_FIELDS = "ALL_FIELDS";
+
   private CarbonCommonConstants() {
   }
 }

@@ -57,6 +57,13 @@ public class NonFilterQueryScannedResult extends AbstractScannedResult {
     return getComplexTypeKeyArray(currentRow);
   }
 
+
+  public byte[] getComplexTypeKeyArrayForDimension(String projectedDimension ,
+                                                   int parentblockIndex) {
+    return getComplexTypeKeyArrayForDimension(currentRow,projectedDimension,
+            parentblockIndex);
+  }
+
   /**
    * Below method will be used to get the no dictionary key array for all the
    * no dictionary dimension selected in query

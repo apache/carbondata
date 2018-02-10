@@ -20,6 +20,8 @@ package org.apache.carbondata.core.scan.complextypes;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
@@ -103,5 +105,9 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     }
     return new GenericArrayData(data);
   }
-
+  public List<GenericQueryType> getChildern() {
+    ArrayList<GenericQueryType> childrenlist =  new ArrayList<GenericQueryType>();
+    childrenlist.add(children);
+    return childrenlist;
+  }
 }

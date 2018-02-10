@@ -124,4 +124,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
 
     return new GenericInternalRow(fields);
   }
+
+  public List<GenericQueryType> getChildern() {
+    return  children;
+  }
 }

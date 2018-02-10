@@ -48,7 +48,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 public abstract class AbstractScannedResult {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(AbstractScannedResult.class.getName());
+          LogServiceFactory.getLogService(AbstractScannedResult.class.getName());
   /**
    * current row number
    */
@@ -208,8 +208,8 @@ public abstract class AbstractScannedResult {
     int offset = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
       offset += dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
-          .fillChunkData(completeKey, offset, rowId,
-              columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
+              .fillChunkData(completeKey, offset, rowId,
+                      columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
     rowCounter++;
     return completeKey;
@@ -227,8 +227,8 @@ public abstract class AbstractScannedResult {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
       column = dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
-          .fillConvertedChunkData(rowId, column, completeKey,
-              columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
+              .fillConvertedChunkData(rowId, column, completeKey,
+                      columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
     rowCounter++;
     return completeKey;
@@ -241,8 +241,8 @@ public abstract class AbstractScannedResult {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
       column = dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
-          .fillConvertedChunkData(vectorInfo, column,
-              columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
+              .fillConvertedChunkData(vectorInfo, column,
+                      columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
   }
 
@@ -253,8 +253,8 @@ public abstract class AbstractScannedResult {
     int column = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       column = dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
-          .fillConvertedChunkData(vectorInfo, column,
-              columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
+              .fillConvertedChunkData(vectorInfo, column,
+                      columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
     }
   }
 
@@ -264,7 +264,7 @@ public abstract class AbstractScannedResult {
   public void fillColumnarMeasureBatch(ColumnVectorInfo[] vectorInfo, int[] measuresOrdinal) {
     for (int i = 0; i < measuresOrdinal.length; i++) {
       vectorInfo[i].measureVectorFiller
-          .fillMeasureVector(measureDataChunks[measuresOrdinal[i]][pageCounter], vectorInfo[i]);
+              .fillMeasureVector(measureDataChunks[measuresOrdinal[i]][pageCounter], vectorInfo[i]);
     }
   }
 
@@ -279,10 +279,11 @@ public abstract class AbstractScannedResult {
         DataOutputStream dataOutput = new DataOutputStream(byteStream);
         try {
           vectorInfos[i].genericQueryType
-              .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks,
-                  rowMapping == null ? j : rowMapping[pageCounter][j], pageCounter, dataOutput);
+                  .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks,
+                          rowMapping == null ? j :
+                                  rowMapping[pageCounter][j], pageCounter, dataOutput);
           Object data = vectorInfos[i].genericQueryType
-              .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(byteStream.toByteArray()));
+                  .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(byteStream.toByteArray()));
           vector.putObject(vectorOffset++, data);
         } catch (IOException e) {
           LOGGER.error(e);
@@ -308,14 +309,14 @@ public abstract class AbstractScannedResult {
         // Considering only String case now as we support only
         String data = getBlockletId();
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
-            .equals(columnVectorInfo.dimension.getColumnName())) {
+                .equals(columnVectorInfo.dimension.getColumnName())) {
           data = data + CarbonCommonConstants.FILE_SEPARATOR + pageCounter
-              + CarbonCommonConstants.FILE_SEPARATOR + (rowMapping == null ?
-              j :
-              rowMapping[pageCounter][j]);
+                  + CarbonCommonConstants.FILE_SEPARATOR + (rowMapping == null ?
+                  j :
+                  rowMapping[pageCounter][j]);
         }
         vector.putBytes(vectorOffset++,
-            data.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+                data.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       }
     }
   }
@@ -352,14 +353,14 @@ public abstract class AbstractScannedResult {
     for (int i = 0; i < dimensionDataChunks.length; i++) {
       if (dimensionDataChunks[i][pageCounter] == null && dimRawColumnChunks[i] != null) {
         dimensionDataChunks[i][pageCounter] =
-            dimRawColumnChunks[i].convertToDimColDataChunkWithOutCache(pageCounter);
+                dimRawColumnChunks[i].convertToDimColDataChunkWithOutCache(pageCounter);
       }
     }
 
     for (int i = 0; i < measureDataChunks.length; i++) {
       if (measureDataChunks[i][pageCounter] == null && msrRawColumnChunks[i] != null) {
         measureDataChunks[i][pageCounter] =
-            msrRawColumnChunks[i].convertToColumnPageWithOutCache(pageCounter);
+                msrRawColumnChunks[i].convertToColumnPageWithOutCache(pageCounter);
       }
     }
   }
@@ -428,7 +429,8 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] =
-          dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId);
+              dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
+                      .getChunkData(rowId);
     }
     return noDictionaryColumnsKeys;
   }
@@ -445,8 +447,9 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] = new String(
-          dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId),
-          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+              dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
+                      .getChunkData(rowId),
+              Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     }
     return noDictionaryColumnsKeys;
   }
@@ -496,13 +499,13 @@ public abstract class AbstractScannedResult {
     byte[][] complexTypeData = new byte[complexParentBlockIndexes.length][];
     for (int i = 0; i < complexTypeData.length; i++) {
       GenericQueryType genericQueryType =
-          complexParentIndexToQueryMap.get(complexParentBlockIndexes[i]);
+              complexParentIndexToQueryMap.get(complexParentBlockIndexes[i]);
       ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
       DataOutputStream dataOutput = new DataOutputStream(byteStream);
       try {
         genericQueryType
-            .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, rowId, pageCounter,
-                dataOutput);
+                .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, rowId, pageCounter,
+                        dataOutput);
         complexTypeData[i] = byteStream.toByteArray();
       } catch (IOException e) {
         LOGGER.error(e);
@@ -512,6 +515,57 @@ public abstract class AbstractScannedResult {
       }
     }
     return complexTypeData;
+  }
+  public GenericQueryType getChildProjectionQueryType(GenericQueryType parentQueryType ,
+                                                      String childProjection) {
+    int childLength = parentQueryType.getChildern().size();
+    for (int i = 0; i < childLength; i++) {
+      GenericQueryType childQueryType = parentQueryType.getChildern().get(i);
+      if (childProjection.equalsIgnoreCase(childQueryType.getName())) {
+        return childQueryType;
+      } else if (childQueryType.getChildern() != null &&
+              childQueryType.getChildern().size() > 0) {
+        GenericQueryType found = getChildProjectionQueryType(childQueryType ,
+                childProjection);
+        if (found != null) {
+          return found;
+        }
+
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get byte array for projected dimensions
+   * @param rowId
+   * @param childProjection
+   * @param parentblockIndex
+   * @return byte[]
+   */
+  protected byte[] getComplexTypeKeyArrayForDimension(int rowId , String childProjection ,
+                                                      int parentblockIndex) {
+    GenericQueryType genericQueryType =
+            complexParentIndexToQueryMap.get(parentblockIndex) ;
+
+    GenericQueryType projectedQueryType = getChildProjectionQueryType(genericQueryType ,
+            childProjection);
+    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    DataOutputStream dataOutput = new DataOutputStream(byteStream);
+    try {
+      projectedQueryType
+              .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, rowId, pageCounter,
+                      dataOutput);
+    } catch (IOException e) {
+      LOGGER.error(e);
+    } finally {
+      CarbonUtil.closeStreams(dataOutput);
+      CarbonUtil.closeStreams(byteStream);
+    }
+
+    return byteStream.toByteArray();
+
   }
 
   /**
@@ -643,6 +697,9 @@ public abstract class AbstractScannedResult {
    */
   public abstract byte[][] getComplexTypeKeyArray();
 
+  public abstract byte[] getComplexTypeKeyArrayForDimension(String projectedDimension ,
+                                                            int parentblockIndex);
+
   /**
    * Below method will be used to get the no dictionary key
    * array for all the no dictionary dimension selected in query
@@ -667,7 +724,7 @@ public abstract class AbstractScannedResult {
    * @param vectorOffset
    */
   public int markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
-      int vectorOffset) {
+                              int vectorOffset) {
     int rowsFiltered = 0;
     if (currentDeleteDeltaVo != null) {
       int len = startRow + size;
