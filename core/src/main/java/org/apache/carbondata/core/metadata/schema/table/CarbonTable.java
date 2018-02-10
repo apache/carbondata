@@ -875,4 +875,11 @@ public class CarbonTable implements Serializable {
 
     return projection;
   }
+
+  /**
+   * Create a {@link CarbonTableBuilder} to create {@link CarbonTable}
+   */
+  public static CarbonTableBuilder builder() {
+    return new CarbonTableBuilder();
+  }
 }
