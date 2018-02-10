@@ -280,7 +280,8 @@ public abstract class AbstractScannedResult {
         try {
           vectorInfos[i].genericQueryType
                   .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks,
-                          rowMapping == null ? j : rowMapping[pageCounter][j], pageCounter, dataOutput);
+                          rowMapping == null ? j :
+                                  rowMapping[pageCounter][j], pageCounter, dataOutput);
           Object data = vectorInfos[i].genericQueryType
                   .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(byteStream.toByteArray()));
           vector.putObject(vectorOffset++, data);
@@ -428,7 +429,8 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] =
-              dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId);
+              dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
+                      .getChunkData(rowId);
     }
     return noDictionaryColumnsKeys;
   }
@@ -445,7 +447,8 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] = new String(
-              dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId),
+              dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
+                      .getChunkData(rowId),
               Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     }
     return noDictionaryColumnsKeys;
