@@ -272,7 +272,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     return bitSetGroup;
   }
 
-  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+  @Override
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     try {
       return exp.evaluate(value).getBoolean();
