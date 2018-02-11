@@ -36,7 +36,7 @@ public class Schema {
 
   private Field[] fields;
 
-  private Schema(Field[] fields) {
+  public Schema(Field[] fields) {
     this.fields = fields;
   }
 

@@ -40,7 +40,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 /**
  * Implementation to write rows in CSV format to carbondata file.
  */
-@InterfaceAudience.Developer("SDK")
+@InterfaceAudience.Developer
 @InterfaceStability.Unstable
 class CSVCarbonWriter extends CarbonWriter {
 

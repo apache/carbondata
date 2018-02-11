@@ -25,14 +25,14 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 /**
  * A field represent one column
  */
-@InterfaceAudience.Developer("SDK")
+@InterfaceAudience.User
 @InterfaceStability.Unstable
-class Field {
+public class Field {
 
   private String name;
   private DataType type;
 
-  Field(String name, String type) {
+  public Field(String name, String type) {
     this.name = name;
     if (type.equalsIgnoreCase("string")) {
       this.type = DataTypes.STRING;
@@ -59,7 +59,7 @@ class Field {
     }
   }
 
-  Field(String name, DataType type) {
+  public Field(String name, DataType type) {
     this.name = name;
     this.type = type;
   }

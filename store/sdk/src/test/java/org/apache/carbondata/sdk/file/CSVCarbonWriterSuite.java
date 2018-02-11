@@ -22,6 +22,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.io.FileUtils;
@@ -35,22 +36,40 @@ public class CSVCarbonWriterSuite {
 
   @Test
   public void testWriteFiles() throws IOException {
-    String path = "./CarbonWriterTestSuiteOutput";
-    if (new File(path).exists()) {
-      FileUtils.deleteDirectory(new File(path));
-    }
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
 
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    writeFilesAndVerify(new Schema(fields), path);
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testWriteFilesJsonSchema() throws IOException {
+    String path = "./testWriteFilesJsonSchema";
+    FileUtils.deleteDirectory(new File(path));
+
+    String schema = new StringBuilder()
+        .append("[ \n")
+        .append("   {\"name\":\"string\"},\n")
+        .append("   {\"age\":\"int\"},\n")
+        .append("   {\"height\":\"double\"}\n")
+        .append("]")
+        .toString();
+
+    writeFilesAndVerify(Schema.parseJson(schema), path);
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  private void writeFilesAndVerify(Schema schema, String path) {
     try {
-      String schema = new StringBuilder()
-          .append("[ \n")
-          .append("   {\"name\":\"string\"},\n")
-          .append("   {\"age\":\"int\"},\n")
-          .append("   {\"height\":\"double\"}\n")
-          .append("]")
-          .toString();
-
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(Schema.parseJson(schema))
+          .withSchema(schema)
           .outputPath(path)
           .buildWriterForCSVInput();
 
@@ -73,10 +92,6 @@ public class CSVCarbonWriterSuite {
     });
     Assert.assertNotNull(dataFiles);
     Assert.assertEquals(1, dataFiles.length);
-
-    if (new File(path).exists()) {
-      FileUtils.deleteDirectory(new File(path));
-    }
   }
 
   @Test
