@@ -416,10 +416,12 @@ test("check load and select for avg double datatype") {
     checkAnswer(sql("select age,avg(age) from maintable group by age"), rows)
   }
 
-  // TODO: to be fixed
+  // TODO: to be fixed,  compaction table status error
   test("test whether all segments are loaded into pre-aggregate table: error in auto merge and input segment") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    val prop = CarbonProperties.getInstance()
+    prop.addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
     sql("reset")
     sql("DROP TABLE IF EXISTS main_table")
     sql(
@@ -433,7 +435,7 @@ test("check load and select for avg double datatype") {
       """.stripMargin)
     sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
     sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
-
+    sql("show segments for table main_table").show()
     sql(
       s"""
          | CREATE DATAMAP preagg_sum
@@ -444,13 +446,49 @@ test("check load and select for avg double datatype") {
          | GROUP BY id
        """.stripMargin)
 
-
+    sql("show segments for table main_table_preagg_sum").show()
     sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
     sql("show segments for table main_table_preagg_sum").show()
     sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
     sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
 
     sql("show segments for table main_table_preagg_sum").show()
+    checkExistence(sql("show segments for table main_table_preagg_sum"), true, "Compacted")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+  }
+
+  test("test whether all segments are loaded into pre-aggregate table: error in auto merge and input segment2") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    sql("reset")
+    sql("DROP TABLE IF EXISTS main_table")
+    sql(
+      """
+        | CREATE TABLE main_table(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE main_table
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM main_table
+         | GROUP BY id
+       """.stripMargin)
+
+    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' INTO TABLE main_table")
+
+    sql("alter table main_table compact 'major'")
     checkExistence(sql("show segments for table main_table_preagg_sum"), true, "Compacted")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")

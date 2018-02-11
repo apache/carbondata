@@ -244,7 +244,7 @@ object LoadPostAggregateListener extends OperationEventListener {
 
 /**
  * This listener is used to commit all the child data aggregate tables in one transaction. If one
- * failes all will be reverted to original state.
+ * fails all will be reverted to original state.
  */
 object CommitPreAggregateListener extends OperationEventListener {
 
