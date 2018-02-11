@@ -120,8 +120,8 @@ public class CarbonLoadModelBuilder {
     String complex_delimeter_level2 = optionsFinal.get("complex_delimiter_level_2");
     String all_dictionary_path = optionsFinal.get("all_dictionary_path");
     String column_dict = optionsFinal.get("columndict");
-    validateDateTimeFormat(timestampformat, "timestampFormat");
-    validateDateTimeFormat(dateFormat, "dateFormat");
+    validateDateTimeFormat(timestampformat, "TimestampFormat");
+    validateDateTimeFormat(dateFormat, "DateFormat");
     validateSortScope(sort_scope);
 
     if (Boolean.parseBoolean(bad_records_logger_enable) ||
@@ -143,16 +143,13 @@ public class CarbonLoadModelBuilder {
     String fileHeader = optionsFinal.get("fileheader");
     String headerOption = options.get("header");
     if (headerOption != null) {
-      // whether the csv file has file header
-      // the default value is true
-      boolean header = false;
-      try {
-        header = Boolean.parseBoolean(headerOption);
-      } catch (IllegalArgumentException e) {
+      if (!headerOption.equalsIgnoreCase("true") &&
+          !headerOption.equalsIgnoreCase("false")) {
         throw new InvalidLoadOptionException(
-            "'header' option should be either 'true' or 'false'. " + e.getMessage());
+            "'header' option should be either 'true' or 'false'.");
       }
-      if (header) {
+      // whether the csv file has file header, the default value is true
+      if (Boolean.valueOf(headerOption)) {
         if (!StringUtils.isEmpty(fileHeader)) {
           throw new InvalidLoadOptionException(
               "When 'header' option is true, 'fileheader' option is not required.");
