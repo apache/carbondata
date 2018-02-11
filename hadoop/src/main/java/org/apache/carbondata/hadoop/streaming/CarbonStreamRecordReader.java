@@ -607,7 +607,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
               filterValues[filterMap[colCount]] = v;
             }
             if (isProjectionRequired[colCount]) {
-              outputValues[projectionMap[colCount]] = v;
+              outputValues[projectionMap[colCount]] = Decimal.apply(v);
             }
           } else {
             input.skipBytes(len);

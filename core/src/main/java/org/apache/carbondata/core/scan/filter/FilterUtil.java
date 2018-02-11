@@ -1790,6 +1790,10 @@ public final class FilterUtil {
   }
 
   public static void updateIndexOfColumnExpression(Expression exp, int dimOridnalMax) {
+    // if expression is null, not require to update index.
+    if (exp == null) {
+      return;
+    }
     if (exp.getChildren() == null || exp.getChildren().size() == 0) {
       if (exp instanceof ColumnExpression) {
         ColumnExpression ce = (ColumnExpression) exp;

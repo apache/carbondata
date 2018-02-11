@@ -35,6 +35,10 @@ public interface FilterExecuter {
   BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException;
 
+  /**
+   * apply range filter on a row
+   * @return true: if the value satisfy the filter; or else false.
+   */
   boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException;
 

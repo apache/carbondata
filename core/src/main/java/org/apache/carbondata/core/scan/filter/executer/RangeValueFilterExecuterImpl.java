@@ -37,6 +37,7 @@ import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExp
 import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -143,6 +144,34 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
   public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException {
     return applyNoAndDirectFilter(blockChunkHolder);
+  }
+
+  /**
+   * apply range filter on a row
+   */
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+      throws FilterUnsupportedException, IOException {
+
+    byte[] col = (byte[]) value.getVal(dimColEvaluatorInfo.getDimension().getOrdinal());
+    byte[][] filterValues = this.filterRangesValues;
+
+    if (isDimensionPresentInCurrentBlock) {
+      boolean result;
+      if (greaterThanExp) {
+        result = ByteUtil.compare(filterValues[0], col) < 0;
+      } else {
+        result = ByteUtil.compare(filterValues[0], col) <= 0;
+      }
+
+      if (result) {
+        if (lessThanExp) {
+          return ByteUtil.compare(filterValues[1], col) > 0;
+        } else {
+          return ByteUtil.compare(filterValues[1], col) >= 0;
+        }
+      }
+    }
+    return false;
   }
 
   /**

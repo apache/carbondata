@@ -135,7 +135,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
   @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
     if (isDimensionPresentInCurrentBlock) {
-      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+      byte[][] filterValues = dimColumnExecuterInfo.getExcludeFilterKeys();
       byte[] col = (byte[])value.getVal(dimColEvaluatorInfo.getDimension().getOrdinal());
       for (int i = 0; i < filterValues.length; i++) {
         if (0 == ByteUtil.UnsafeComparer.INSTANCE.compareTo(col, 0, col.length,
