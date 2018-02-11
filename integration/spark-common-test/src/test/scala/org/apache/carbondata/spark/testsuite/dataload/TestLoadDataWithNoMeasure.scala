@@ -86,7 +86,8 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
     )
     val testData = s"$resourcesPath/datasingleComplexCol.csv"
     sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_scd options " +
-      "('DELIMITER'=',','QUOTECHAR'='\"','FILEHEADER'='cityDetail','COMPLEX_DELIMITER_LEVEL_1'=':')"
+      "('DELIMITER'=',','QUOTECHAR'='\"','FILEHEADER'='cityDetail'," +
+      "'COMPLEX_DELIMITER_LEVEL_1'=':','COMPLEX_DELIMITER_LEVEL_2'='$')"
     )
   }
 
@@ -101,7 +102,7 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
     val testData = s"$resourcesPath/datasingleComplexCol.csv"
     sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_scd options " +
       "('DELIMITER'=',','QUOTECHAR'='\"','FILEHEADER'='cityDetail'," +
-      "'COMPLEX_DELIMITER_LEVEL_1'=':')"
+      "'COMPLEX_DELIMITER_LEVEL_1'=':','COMPLEX_DELIMITER_LEVEL_2'='$')"
     )
   }
 
