@@ -274,10 +274,10 @@ object GlobalDictionaryUtil {
         Pattern.compile(if (d == null) {
           ""
         } else {
-          d
+          CarbonUtil.delimiterConverter(d)
         })
       }
-      DataFormat(delimiters, 0, patterns)
+      DataFormat(delimiters.map(CarbonUtil.delimiterConverter(_)), 0, patterns)
     } else {
       null
     }
