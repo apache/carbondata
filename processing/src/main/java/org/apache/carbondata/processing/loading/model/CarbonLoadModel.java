@@ -18,14 +18,16 @@
 package org.apache.carbondata.processing.loading.model;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
-
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 public class CarbonLoadModel implements Serializable {
 
@@ -797,6 +799,7 @@ public class CarbonLoadModel implements Serializable {
     this.skipEmptyLine = skipEmptyLine;
   }
 
+
   public boolean isPartitionLoad() {
     return isPartitionLoad;
   }
@@ -811,5 +814,14 @@ public class CarbonLoadModel implements Serializable {
 
   public void setDataWritePath(String dataWritePath) {
     this.dataWritePath = dataWritePath;
+  }
+
+  /**
+   * Read segments metadata from table status file and set it to this load model object
+   */
+  public void readAndSetLoadMetadataDetails() {
+    String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
+    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metadataPath);
+    setLoadMetadataDetails(Arrays.asList(details));
   }
 }

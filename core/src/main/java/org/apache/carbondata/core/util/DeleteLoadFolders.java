@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.util;
+package org.apache.carbondata.core.util;
 
 import java.io.IOException;
 import java.util.List;
