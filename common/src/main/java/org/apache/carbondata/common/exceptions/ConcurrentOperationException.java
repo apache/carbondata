@@ -15,29 +15,42 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.common;
-
-import java.util.Objects;
+package org.apache.carbondata.common.exceptions;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
-@InterfaceAudience.Developer
-public class Strings {
+/**
+ * This exception will be thrown when executing concurrent operations which
+ * is not supported in carbon.
+ *
+ * For example, when INSERT OVERWRITE is executing, other operations are not
+ * allowed, so this exception will be thrown
+ */
+@InterfaceAudience.User
+@InterfaceStability.Stable
+public class ConcurrentOperationException extends Exception {
 
   /**
-   * Provide same function as mkString in Scala.
-   * This is added to avoid JDK 8 dependency.
+   * The Error message.
    */
-  public static String mkString(String[] strings, String delimeter) {
-    Objects.requireNonNull(strings);
-    Objects.requireNonNull(delimeter);
-    StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < strings.length; i++) {
-      builder.append(strings[i]);
-      if (i != strings.length - 1) {
-        builder.append(delimeter);
-      }
-    }
-    return builder.toString();
+  private String msg;
+
+  /**
+   * Constructor
+   *
+   * @param msg The error message for this exception.
+   */
+  public ConcurrentOperationException(String msg) {
+    super(msg);
+    this.msg = msg;
   }
+
+  /**
+   * getMessage
+   */
+  public String getMessage() {
+    return this.msg;
+  }
+
 }

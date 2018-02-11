@@ -15,29 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.common;
-
-import java.util.Objects;
+package org.apache.carbondata.common.exceptions;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
-@InterfaceAudience.Developer
-public class Strings {
+/**
+ * This exception will be thrown when failed to acquire lock for table status metadata,
+ * or re-try timed out
+ */
+@InterfaceAudience.User
+@InterfaceStability.Evolving
+public class TableStatusLockException extends RuntimeException {
 
-  /**
-   * Provide same function as mkString in Scala.
-   * This is added to avoid JDK 8 dependency.
-   */
-  public static String mkString(String[] strings, String delimeter) {
-    Objects.requireNonNull(strings);
-    Objects.requireNonNull(delimeter);
-    StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < strings.length; i++) {
-      builder.append(strings[i]);
-      if (i != strings.length - 1) {
-        builder.append(delimeter);
-      }
-    }
-    return builder.toString();
+  public TableStatusLockException(String msg) {
+    super(msg);
   }
 }

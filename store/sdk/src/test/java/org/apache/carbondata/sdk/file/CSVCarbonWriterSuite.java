@@ -77,7 +77,7 @@ public class CSVCarbonWriterSuite {
         writer.write(new String[]{"robot" + i, String.valueOf(i), String.valueOf((double) i / 2)});
       }
       writer.close();
-    } catch (IOException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
     }
