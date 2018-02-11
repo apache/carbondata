@@ -889,7 +889,11 @@ public class SegmentStatusManager {
           CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
           if (updationCompletionStatus) {
             DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(
+<<<<<<< 072c95a6770a2b847e111f3349df271bade62675
                 identifier, carbonTable.getMetadataPath(), isForceDeletion, partitionSpecs);
+=======
+                identifier, carbonTable.getMetadataPath(), isForceDeletion);
+>>>>>>> [CARBONDATA-2159] Remove carbon-spark dependency in store-sdk module
           }
         }
       }
