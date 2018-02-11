@@ -15,18 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.exception;
+package org.apache.carbondata.common.exceptions.sql;
+
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
 /**
- * Throw exception when using illegal argument
+ * This exception will be thrown if datamap is not found when executing datamap
+ * related SQL statement
  */
-public class MalformedDataMapCommandException extends MalformedCarbonCommandException {
+@InterfaceAudience.User
+@InterfaceStability.Stable
+public class NoSuchDataMapException extends MalformedCarbonCommandException {
+
   /**
    * default serial version ID.
    */
   private static final long serialVersionUID = 1L;
 
-  public MalformedDataMapCommandException(String msg) {
-    super(msg);
+  public NoSuchDataMapException(String dataMapName, String tableName) {
+    super("Datamap with name " + dataMapName + " does not exist under table " + tableName);
   }
 }

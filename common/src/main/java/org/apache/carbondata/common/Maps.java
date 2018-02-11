@@ -15,30 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.exception;
+package org.apache.carbondata.common;
 
-public class ConcurrentOperationException extends Exception {
+import java.util.Map;
+
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+
+@InterfaceAudience.Developer
+public class Maps {
 
   /**
-   * The Error message.
+   * Return value if key is contained in the map, else return defauleValue.
+   * This is added to avoid JDK 8 dependency
    */
-  private String msg = "";
-
-  /**
-   * Constructor
-   *
-   * @param msg The error message for this exception.
-   */
-  public ConcurrentOperationException(String msg) {
-    super(msg);
-    this.msg = msg;
+  public static <K, V> V getOrDefault(Map<K, V> map, K key, V defaultValue) {
+    V value = map.get(key);
+    if (value != null) {
+      return value;
+    } else {
+      return defaultValue;
+    }
   }
-
-  /**
-   * getMessage
-   */
-  public String getMessage() {
-    return this.msg;
-  }
-
 }

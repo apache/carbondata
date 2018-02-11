@@ -28,6 +28,7 @@ import java.util.Objects;
 import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
@@ -40,7 +41,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
-import org.apache.carbondata.spark.util.DataLoadingUtil;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 
 /**
  * Biulder for {@link CarbonWriter}
@@ -94,9 +95,9 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * Build a {@link CSVCarbonWriter}, which accepts row in CSV format
+   * Build a {@link CarbonWriter}, which accepts row in CSV format
    */
-  public CarbonWriter buildWriterForCSVInput() throws IOException {
+  public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
 
@@ -113,7 +114,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * Build a {@link AvroCarbonWriter}, which accepts Avro object
+   * Build a {@link CarbonWriter}, which accepts Avro object
    * @return
    * @throws IOException
    */
@@ -184,11 +185,13 @@ public class CarbonWriterBuilder {
   /**
    * Build a {@link CarbonLoadModel}
    */
-  private CarbonLoadModel buildLoadModel(CarbonTable table) {
+  private CarbonLoadModel buildLoadModel(CarbonTable table)
+      throws InvalidLoadOptionException, IOException {
     Map<String, String> options = new HashMap<>();
     if (sortColumns != null) {
       options.put("sort_columns", Strings.mkString(sortColumns, ","));
     }
-    return DataLoadingUtil.buildCarbonLoadModelJava(table, options);
+    CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
+    return builder.build(options);
   }
 }

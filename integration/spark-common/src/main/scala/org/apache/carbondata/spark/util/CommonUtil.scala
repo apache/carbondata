@@ -36,6 +36,7 @@ import org.apache.spark.sql.types.{MetadataBuilder, StringType}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.FileUtils
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -53,8 +54,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil}
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.rdd.CarbonMergeFilesRDD
 
 object CommonUtil {
@@ -632,13 +632,6 @@ object CommonUtil {
     parsedPropertyValueString
   }
 
-
-  def readLoadMetadataDetails(model: CarbonLoadModel): Unit = {
-    val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetadataPath
-    val details = SegmentStatusManager.readLoadMetadata(metadataPath)
-    model.setLoadMetadataDetails(new util.ArrayList[LoadMetadataDetails](details.toList.asJava))
-  }
-
   def configureCSVInputFormat(configuration: Configuration,
       carbonLoadModel: CarbonLoadModel): Unit = {
     CSVInputFormat.setCommentCharacter(configuration, carbonLoadModel.getCommentChar)
@@ -678,48 +671,6 @@ object CommonUtil {
                   s"defaultParallelism: $defaultParallelism")
       LOGGER.info(s"mapreduce.input.fileinputformat.split.maxsize: ${ newSplitSize.toString }")
     }
-  }
-
-  def getCsvHeaderColumns(
-      carbonLoadModel: CarbonLoadModel,
-      hadoopConf: Configuration): Array[String] = {
-    val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
-      CarbonCommonConstants.COMMA
-    } else {
-      CarbonUtil.delimiterConverter(carbonLoadModel.getCsvDelimiter)
-    }
-    var csvFile: String = null
-    var csvHeader: String = carbonLoadModel.getCsvHeader
-    val csvColumns = if (StringUtils.isBlank(csvHeader)) {
-      // read header from csv file
-      csvFile = carbonLoadModel.getFactFilePath.split(",")(0)
-      csvHeader = CarbonUtil.readHeader(csvFile, hadoopConf)
-      if (StringUtils.isBlank(csvHeader)) {
-        throw new CarbonDataLoadingException("First line of the csv is not valid.")
-      }
-      csvHeader.toLowerCase().split(delimiter).map(_.replaceAll("\"", "").trim)
-    } else {
-      csvHeader.toLowerCase.split(CarbonCommonConstants.COMMA).map(_.trim)
-    }
-
-    if (!CarbonDataProcessorUtil.isHeaderValid(carbonLoadModel.getTableName, csvColumns,
-        carbonLoadModel.getCarbonDataLoadSchema)) {
-      if (csvFile == null) {
-        LOGGER.error("CSV header in DDL is not proper."
-                     + " Column names in schema and CSV header are not the same.")
-        throw new CarbonDataLoadingException(
-          "CSV header in DDL is not proper. Column names in schema and CSV header are "
-          + "not the same.")
-      } else {
-        LOGGER.error(
-          "CSV header in input file is not proper. Column names in schema and csv header are not "
-          + "the same. Input file : " + CarbonUtil.removeAKSK(csvFile))
-        throw new CarbonDataLoadingException(
-          "CSV header in input file is not proper. Column names in schema and csv header are not "
-          + "the same. Input file : " + CarbonUtil.removeAKSK(csvFile))
-      }
-    }
-    csvColumns
   }
 
   def validateMaxColumns(csvHeaders: Array[String], maxColumns: String): Int = {
@@ -862,8 +813,7 @@ object CommonUtil {
                 try {
                   val carbonTable = CarbonMetadata.getInstance
                     .getCarbonTable(identifier.getCarbonTableIdentifier.getTableUniqueName)
-                  DataLoadingUtil.deleteLoadsAndUpdateMetadata(
-                    isForceDeletion = true, carbonTable)
+                  SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable, true)
                 } catch {
                   case _: Exception =>
                     LOGGER.warn(s"Error while cleaning table " +

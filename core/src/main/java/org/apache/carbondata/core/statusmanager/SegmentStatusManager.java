@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.carbondata.common.exceptions.TableStatusLockException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -46,6 +47,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DeleteLoadFolders;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
@@ -705,6 +707,128 @@ public class SegmentStatusManager {
       return !segmentLock.lockWithRetries(1, 0);
     } finally {
       segmentLock.unlock();
+    }
+  }
+
+  private static boolean isLoadDeletionRequired(String metaDataLocation) {
+    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
+    if (details != null && details.length > 0) {
+      for (LoadMetadataDetails oneRow : details) {
+        if ((SegmentStatus.MARKED_FOR_DELETE == oneRow.getSegmentStatus()
+            || SegmentStatus.COMPACTED == oneRow.getSegmentStatus()
+            || SegmentStatus.INSERT_IN_PROGRESS == oneRow.getSegmentStatus()
+            || SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneRow.getSegmentStatus())
+            && oneRow.getVisibility().equalsIgnoreCase("true")) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * This will update the old table status details before clean files to the latest table status.
+   * @param oldList
+   * @param newList
+   * @return
+   */
+  public static List<LoadMetadataDetails> updateLoadMetadataFromOldToNew(
+      LoadMetadataDetails[] oldList, LoadMetadataDetails[] newList) {
+
+    List<LoadMetadataDetails> newListMetadata =
+        new ArrayList<LoadMetadataDetails>(Arrays.asList(newList));
+    for (LoadMetadataDetails oldSegment : oldList) {
+      if ("false".equalsIgnoreCase(oldSegment.getVisibility())) {
+        newListMetadata.get(newListMetadata.indexOf(oldSegment)).setVisibility("false");
+      }
+    }
+    return newListMetadata;
+  }
+
+  private static void writeLoadMetadata(AbsoluteTableIdentifier identifier,
+      List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
+    String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
+
+    DataOutputStream dataOutputStream;
+    Gson gsonObjectToWrite = new Gson();
+    BufferedWriter brWriter = null;
+
+    AtomicFileOperations writeOperation =
+        new AtomicFileOperationsImpl(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
+
+    try {
+
+      dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
+      brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+
+      String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
+      brWriter.write(metadataInstance);
+    } finally {
+      try {
+        if (null != brWriter) {
+          brWriter.flush();
+        }
+      } catch (Exception e) {
+        LOG.error("error in  flushing ");
+
+      }
+      CarbonUtil.closeStreams(brWriter);
+      writeOperation.close();
+    }
+  }
+
+  public static void deleteLoadsAndUpdateMetadata(
+      CarbonTable carbonTable,
+      boolean isForceDeletion) throws IOException {
+    if (isLoadDeletionRequired(carbonTable.getMetadataPath())) {
+      LoadMetadataDetails[] details =
+          SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+      AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
+      ICarbonLock carbonTableStatusLock = CarbonLockFactory.getCarbonLockObj(
+          identifier, LockUsage.TABLE_STATUS_LOCK);
+
+      // Delete marked loads
+      boolean isUpdationRequired = DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
+          identifier, isForceDeletion, details, carbonTable.getMetadataPath());
+
+      boolean updationCompletionStatus = false;
+
+      if (isUpdationRequired) {
+        try {
+          // Update load metadate file after cleaning deleted nodes
+          if (carbonTableStatusLock.lockWithRetries()) {
+            LOG.info("Table status lock has been successfully acquired.");
+
+            // read latest table status again.
+            LoadMetadataDetails[] latestMetadata =
+                SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+
+            // update the metadata details from old to new status.
+            List<LoadMetadataDetails> latestStatus =
+                updateLoadMetadataFromOldToNew(details, latestMetadata);
+
+            writeLoadMetadata(identifier, latestStatus);
+          } else {
+            String dbName = identifier.getCarbonTableIdentifier().getDatabaseName();
+            String tableName = identifier.getCarbonTableIdentifier().getTableName();
+            String errorMsg = "Clean files request is failed for " +
+                dbName + "." + tableName +
+                ". Not able to acquire the table status lock due to other operation " +
+                "running in the background.";
+            LOG.audit(errorMsg);
+            LOG.error(errorMsg);
+            throw new TableStatusLockException(errorMsg + " Please try after some time.");
+          }
+          updationCompletionStatus = true;
+        } finally {
+          CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
+          if (updationCompletionStatus) {
+            DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(
+                identifier, carbonTable.getMetadataPath(), isForceDeletion);
+          }
+        }
+      }
     }
   }
 
