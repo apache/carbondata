@@ -637,6 +637,11 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     assertResult(newSegments.length / 2)(newSegments.filter(_.getString(1).equals("Success")).length)
     assertResult(newSegments.length / 2)(newSegments.filter(_.getString(1).equals("Compacted")).length)
 
+    //Verify MergeTO column entry for compacted Segments
+    newSegments.filter(_.getString(1).equals("Compacted")).foreach{ rw =>
+      assertResult("Compacted")(rw.getString(1))
+      assertResult((Integer.parseInt(rw.getString(0))+2).toString)(rw.getString(4))
+    }
     checkAnswer(
       sql("select count(*) from streaming.stream_table_reopen"),
       Seq(Row(2 * 100 * 2))
