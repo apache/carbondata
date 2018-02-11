@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -246,6 +247,23 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       return bitSetGroup;
     }
     return null;
+  }
+
+  @Override
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+      throws FilterUnsupportedException, IOException {
+    if (isDimensionPresentInCurrentBlock[0]) {
+      byte[] col =
+          (byte[]) value.getVal(dimColEvaluatorInfoList.get(0).getDimension().getOrdinal());
+      return ByteUtil.compare(filterRangeValues[0], col) <= 0;
+    }
+
+    if (isMeasurePresentInCurrentBlock[0]) {
+      Object col =
+          value.getVal(msrColEvalutorInfoList.get(0).getMeasure().getOrdinal() + dimOrdinalMax);
+      return comparator.compare(msrFilterRangeValues[0], col) <= 0;
+    }
+    return false;
   }
 
   private BitSet getFilteredIndexesForMeasures(ColumnPage columnPage,
