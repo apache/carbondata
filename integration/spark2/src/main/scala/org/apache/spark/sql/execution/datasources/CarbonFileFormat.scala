@@ -50,6 +50,9 @@ import org.apache.carbondata.hadoop.api.{CarbonOutputCommitter, CarbonTableOutpu
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat.CarbonRecordWriter
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil
+import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
+import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLoadModelBuilder, LoadOption}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, Util}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataLoadingUtil, Util}
 
@@ -87,7 +90,7 @@ with Serializable {
       TableIdentifier(options("tableName"), options.get("dbName")))(sparkSession)
     val model = new CarbonLoadModel
     val carbonProperty = CarbonProperties.getInstance()
-    val optionsFinal = DataLoadingUtil.getDataLoadingOptions(carbonProperty, options)
+    val optionsFinal = LoadOption.fillOptionWithDefaultValue(options.asJava)
     val tableProperties = table.getTableInfo.getFactTable.getTableProperties
     optionsFinal.put("sort_scope", tableProperties.asScala.getOrElse("sort_scope",
       carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
@@ -102,14 +105,11 @@ with Serializable {
     val optionsLocal = new mutable.HashMap[String, String]()
     optionsLocal ++= options
     optionsLocal += (("header", "false"))
-    DataLoadingUtil.buildCarbonLoadModel(
-      table,
-      carbonProperty,
-      optionsLocal.toMap,
+    new CarbonLoadModelBuilder(table).build(
+      optionsLocal.toMap.asJava,
       optionsFinal,
       model,
-      conf
-    )
+      conf)
     model.setUseOnePass(options.getOrElse("onepass", "false").toBoolean)
     model.setDictionaryServerHost(options.getOrElse("dicthost", null))
     model.setDictionaryServerPort(options.getOrElse("dictport", "-1").toInt)

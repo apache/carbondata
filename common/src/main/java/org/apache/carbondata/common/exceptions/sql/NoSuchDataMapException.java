@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.exception;
+package org.apache.carbondata.common.exceptions.sql;
 
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
-public class ConcurrentOperationException extends MalformedCarbonCommandException {
+/**
+ * This exception will be thrown if datamap is not found when executing datamap
+ * related SQL statement
+ */
+@InterfaceAudience.User
+@InterfaceStability.Stable
+public class NoSuchDataMapException extends MalformedCarbonCommandException {
 
-  public ConcurrentOperationException(String dbName, String tableName, String command1,
-      String command2) {
-    super(command1 + " is in progress for table " + dbName + "." + tableName + ", " + command2 +
-      " operation is not allowed");
+  /**
+   * default serial version ID.
+   */
+  private static final long serialVersionUID = 1L;
+
+  public NoSuchDataMapException(String dataMapName, String tableName) {
+    super("Datamap with name " + dataMapName + " does not exist under table " + tableName);
   }
-
-  public ConcurrentOperationException(CarbonTable table, String command1, String command2) {
-    this(table.getDatabaseName(), table.getTableName(), command1, command2);
-  }
-
-  public String getMessage() {
-    return super.getMessage();
-  }
-
 }
