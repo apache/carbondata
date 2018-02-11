@@ -15,29 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.common;
-
-import java.util.Objects;
+package org.apache.carbondata.common.exceptions.sql;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
-@InterfaceAudience.Developer
-public class Strings {
-
+/**
+ * This exception will be thrown when Datamap related SQL statement is invalid
+ */
+@InterfaceAudience.User
+@InterfaceStability.Stable
+public class MalformedDataMapCommandException extends MalformedCarbonCommandException {
   /**
-   * Provide same function as mkString in Scala.
-   * This is added to avoid JDK 8 dependency.
+   * default serial version ID.
    */
-  public static String mkString(String[] strings, String delimeter) {
-    Objects.requireNonNull(strings);
-    Objects.requireNonNull(delimeter);
-    StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < strings.length; i++) {
-      builder.append(strings[i]);
-      if (i != strings.length - 1) {
-        builder.append(delimeter);
-      }
-    }
-    return builder.toString();
+  private static final long serialVersionUID = 1L;
+
+  public MalformedDataMapCommandException(String msg) {
+    super(msg);
   }
 }

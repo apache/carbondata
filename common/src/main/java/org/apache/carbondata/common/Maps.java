@@ -15,19 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.exception;
+package org.apache.carbondata.common;
 
-/**
- * if the dataMap does not exist, carbon should throw NoSuchDataMapException
- */
-public class NoSuchDataMapException extends MalformedCarbonCommandException {
+import java.util.Map;
+
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+
+@InterfaceAudience.Developer
+public class Maps {
 
   /**
-   * default serial version ID.
+   * Return value if key is contained in the map, else return defauleValue.
+   * This is added to avoid JDK 8 dependency
    */
-  private static final long serialVersionUID = 1L;
-
-  public NoSuchDataMapException(String dataMapName, String tableName) {
-    super("Datamap with name " + dataMapName + " does not exist under table " + tableName);
+  public static <K, V> V getOrDefault(Map<K, V> map, K key, V defaultValue) {
+    V value = map.get(key);
+    if (value != null) {
+      return value;
+    } else {
+      return defaultValue;
+    }
   }
 }

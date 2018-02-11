@@ -15,12 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.exception;
+package org.apache.carbondata.common.exceptions.sql;
 
-// After parsing carbon query successfully , if any validation fails then
-// use MalformedCarbonCommandException
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+
+/**
+ * This exception will be thrown if any validation fails then parsing
+ * SQL statement.
+ */
+@InterfaceAudience.User
+@InterfaceStability.Stable
 public class MalformedCarbonCommandException extends Exception {
-
 
   /**
    * default serial version ID.
