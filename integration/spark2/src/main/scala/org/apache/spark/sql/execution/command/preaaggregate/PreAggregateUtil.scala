@@ -419,7 +419,6 @@ object PreAggregateUtil {
       LockUsage.DROP_TABLE_LOCK)
     var locks = List.empty[ICarbonLock]
     var carbonTable: CarbonTable = null
-    var numberOfCurrentChild: Int = 0
     try {
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
@@ -435,7 +434,6 @@ object PreAggregateUtil {
         dbName,
         tableName,
         carbonTable.getTablePath)
-      numberOfCurrentChild = wrapperTableInfo.getDataMapSchemaList.size
       if (wrapperTableInfo.getDataMapSchemaList.asScala.
         exists(f => f.getDataMapName.equalsIgnoreCase(childSchema.getDataMapName))) {
         throw new Exception("Duplicate datamap")
@@ -445,11 +443,11 @@ object PreAggregateUtil {
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
       updateSchemaInfo(carbonTable,
         thriftTable)(sparkSession)
-      LOGGER.info(s"Parent table updated is successful for table $dbName.$tableName")
+      LOGGER.info(s"Parent table updated is successful for table" +
+                  s" $dbName.${childSchema.getRelationIdentifier.toString}")
     } catch {
       case e: Exception =>
         LOGGER.error(e, "Pre Aggregate Parent table update failed reverting changes")
-        revertMainTableChanges(dbName, tableName, numberOfCurrentChild)(sparkSession)
         throw e
     } finally {
       // release lock after command execution completion
@@ -515,27 +513,6 @@ object PreAggregateUtil {
       } else {
         LOGGER.error("Unable to release lock during Pre agg table cretion")
       }
-    }
-  }
-
-  /**
-   * This method reverts the changes to the schema if add column command fails.
-   *
-   * @param dbName
-   * @param tableName
-   * @param numberOfChildSchema
-   * @param sparkSession
-   */
-  def revertMainTableChanges(dbName: String, tableName: String, numberOfChildSchema: Int)
-    (sparkSession: SparkSession): Unit = {
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-    val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-    carbonTable.getTableLastUpdatedTime
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
-    val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
-    if (thriftTable.dataMapSchemas.size > numberOfChildSchema) {
-      metastore.revertTableSchemaForPreAggCreationFailure(
-        carbonTable.getAbsoluteTableIdentifier, thriftTable)(sparkSession)
     }
   }
 
