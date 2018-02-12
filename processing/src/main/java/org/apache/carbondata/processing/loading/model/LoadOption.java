@@ -37,13 +37,16 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 
+/**
+ * Provide utilities to populate loading options
+ */
 @InterfaceAudience.Developer
 public class LoadOption {
 
   private static LogService LOG = LogServiceFactory.getLogService(LoadOption.class.getName());
 
   /**
-   * get data loading options and initialise default value
+   * Based on the input options, fill and return data loading options with default value
    */
   public static Map<String, String> fillOptionWithDefaultValue(
       Map<String, String> options) throws InvalidLoadOptionException {
@@ -178,8 +181,8 @@ public class LoadOption {
     } else {
       // when single_pass = false  and if either alldictionarypath
       // or columnDict is configured the do not allow load
-      if (StringUtils.isNotEmpty(optionsFinal.get("all_dictionary_path")) || StringUtils
-          .isNotEmpty(optionsFinal.get("columndict"))) {
+      if (StringUtils.isNotEmpty(optionsFinal.get("all_dictionary_path")) ||
+          StringUtils.isNotEmpty(optionsFinal.get("columndict"))) {
         throw new InvalidLoadOptionException(
             "Can not use all_dictionary_path or columndict without single_pass.");
       } else {
@@ -191,6 +194,9 @@ public class LoadOption {
     return optionsFinal;
   }
 
+  /**
+   * Return CSV header field names
+   */
   public static String[] getCsvHeaderColumns(
       CarbonLoadModel carbonLoadModel,
       Configuration hadoopConf) throws IOException {

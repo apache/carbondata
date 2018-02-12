@@ -790,10 +790,7 @@ public class SegmentStatusManager {
 
       // Delete marked loads
       boolean isUpdationRequired = DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
-              identifier,
-              isForceDeletion,
-              details,
-              carbonTable.getMetadataPath());
+          identifier, isForceDeletion, details, carbonTable.getMetadataPath());
 
       boolean updationCompletionStatus = false;
 

@@ -21,7 +21,6 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
-
 class DateTypeTest extends QueryTest with BeforeAndAfterAll{
 
   override def afterAll: Unit = {
