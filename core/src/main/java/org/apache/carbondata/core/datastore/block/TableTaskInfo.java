@@ -29,7 +29,7 @@ import java.util.TreeMap;
 /**
  * This class is responsible for maintaining the mapping of tasks of a node.
  */
-public class TableTaskInfo implements Distributable {
+public class TableTaskInfo implements Distributable<TableTaskInfo> {
 
   private final List<TableBlockInfo> tableBlockInfoList;
   private final String taskId;
@@ -56,8 +56,8 @@ public class TableTaskInfo implements Distributable {
     return nodes.toArray(new String[nodes.size()]);
   }
 
-  @Override public int compareTo(Distributable o) {
-    return taskId.compareTo(((TableTaskInfo)o).getTaskId());
+  @Override public int compareTo(TableTaskInfo o) {
+    return taskId.compareTo(o.getTaskId());
   }
 
   @Override public boolean equals(Object obj) {

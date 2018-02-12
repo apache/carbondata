@@ -20,18 +20,19 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.Distributable;
 
-public class NodeMultiBlockRelation implements Comparable<NodeMultiBlockRelation> {
+public class NodeMultiBlockRelation<T extends Distributable>
+    implements Comparable<NodeMultiBlockRelation> {
 
-  private final List<Distributable> blocks;
+  private final List<T> blocks;
   private final String node;
 
-  public NodeMultiBlockRelation(String node, List<Distributable> blocks) {
+  public NodeMultiBlockRelation(String node, List<T> blocks) {
     this.node = node;
     this.blocks = blocks;
 
   }
 
-  public List<Distributable> getBlocks() {
+  public List<T> getBlocks() {
     return blocks;
   }
 

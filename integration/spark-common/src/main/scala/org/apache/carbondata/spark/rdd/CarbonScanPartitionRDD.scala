@@ -105,7 +105,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
     val result = new ArrayList[Partition](parallelism)
     val blockList = splits.asScala
       .filter(_.asInstanceOf[CarbonInputSplit].getBucketId.toInt == bucketId)
-      .map(_.asInstanceOf[Distributable])
+      .map(_.asInstanceOf[Distributable[_]])
     if (!blockList.isEmpty) {
       val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)
       val nodeBlockMapping = CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1,

@@ -27,7 +27,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
  * Distributable class for datamap.
  */
 public abstract class DataMapDistributable extends InputSplit
-    implements Distributable, Serializable {
+    implements Distributable<DataMapDistributable>, Serializable {
 
   private String tablePath;
 
@@ -81,7 +81,7 @@ public abstract class DataMapDistributable extends InputSplit
   }
 
   @Override
-  public int compareTo(Distributable o) {
+  public int compareTo(DataMapDistributable o) {
     return 0;
   }
 

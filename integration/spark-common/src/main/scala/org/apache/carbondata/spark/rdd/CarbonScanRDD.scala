@@ -180,7 +180,7 @@ class CarbonScanRDD(
           carbonDistribution.equalsIgnoreCase(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_CUSTOM)
         if (useCustomDistribution) {
           // create a list of block based on split
-          val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
+          val blockList = splits.asScala.map(_.asInstanceOf[Distributable[_]])
 
           // get the list of executors and map blocks to executors based on locality
           val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)

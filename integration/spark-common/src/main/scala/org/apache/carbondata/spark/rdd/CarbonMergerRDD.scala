@@ -272,7 +272,7 @@ class CarbonMergerRDD[K, V](
     var carbonPartitionId = 0
     var noOfBlocks = 0
 
-    val taskInfoList = new java.util.ArrayList[Distributable]
+    val taskInfoList = new java.util.ArrayList[Distributable[_]]
     var carbonInputSplits = mutable.Seq[CarbonInputSplit]()
 
     var splitsOfLastSegment: List[CarbonInputSplit] = null
@@ -374,7 +374,7 @@ class CarbonMergerRDD[K, V](
     taskIdMapping.asScala.foreach(
       entry =>
         taskInfoList
-          .add(new CarbonInputSplitTaskInfo(entry._1, entry._2).asInstanceOf[Distributable])
+          .add(new CarbonInputSplitTaskInfo(entry._1, entry._2).asInstanceOf[Distributable[_]])
     )
 
     val nodeBlockMap = CarbonLoaderUtil.nodeBlockMapping(taskInfoList, -1)

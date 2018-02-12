@@ -37,7 +37,7 @@ import org.apache.hadoop.fs.Path;
  * class will be used to pass the block detail detail will be passed form driver
  * to all the executor to load the b+ tree
  */
-public class TableBlockInfo implements Distributable, Serializable {
+public class TableBlockInfo implements Distributable<TableBlockInfo>, Serializable {
 
   /**
    * serialization id
@@ -276,18 +276,19 @@ public class TableBlockInfo implements Distributable, Serializable {
    * is same 2. compare task id if task id is same 3. compare offsets of the
    * block
    */
-  @Override public int compareTo(Distributable other) {
+  @Override public int compareTo(TableBlockInfo other) {
 
     int compareResult = 0;
     // get the segment id
     // converr seg ID to double.
 
     double seg1 = Double.parseDouble(segmentId);
-    double seg2 = Double.parseDouble(((TableBlockInfo) other).segmentId);
-    if (seg1 - seg2 < 0) {
+    double seg2 = Double.parseDouble(other.segmentId);
+    int result = Double.compare(seg1, seg2);
+    if (result < 0) {
       return -1;
     }
-    if (seg1 - seg2 > 0) {
+    if (result > 0) {
       return 1;
     }
 
@@ -298,7 +299,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     if (CarbonTablePath.isCarbonDataFile(filePath)) {
       int compare = ByteUtil.compare(DataFileUtil.getTaskNo(filePath)
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
-          DataFileUtil.getTaskNo(((TableBlockInfo) other).filePath)
+          DataFileUtil.getTaskNo(other.filePath)
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       if (compare != 0) {
         return compare;
@@ -306,10 +307,10 @@ public class TableBlockInfo implements Distributable, Serializable {
       // compare the part no of both block info
       int firstPartNo = Integer.parseInt(DataFileUtil.getPartNo(filePath));
       int SecondPartNo =
-          Integer.parseInt(DataFileUtil.getPartNo(((TableBlockInfo) other).filePath));
+          Integer.parseInt(DataFileUtil.getPartNo(other.filePath));
       compareResult = firstPartNo - SecondPartNo;
     } else {
-      compareResult = filePath.compareTo(((TableBlockInfo) other).getFilePath());
+      compareResult = filePath.compareTo(other.getFilePath());
     }
     if (compareResult != 0) {
       return compareResult;
@@ -317,15 +318,15 @@ public class TableBlockInfo implements Distributable, Serializable {
     //compare result is not 0 then return
     // if part no is also same then compare the offset and length of the block
     if (blockOffset + blockLength
-        < ((TableBlockInfo) other).blockOffset + ((TableBlockInfo) other).blockLength) {
+        < other.blockOffset + other.blockLength) {
       return -1;
     } else if (blockOffset + blockLength
-        > ((TableBlockInfo) other).blockOffset + ((TableBlockInfo) other).blockLength) {
+        > other.blockOffset + other.blockLength) {
       return 1;
     }
     //compare the startBlockLetNumber
     int diffStartBlockLetNumber =
-        blockletInfos.getStartBlockletNumber() - ((TableBlockInfo) other).blockletInfos
+        blockletInfos.getStartBlockletNumber() - other.blockletInfos
             .getStartBlockletNumber();
     if (diffStartBlockLetNumber < 0) {
       return -1;
