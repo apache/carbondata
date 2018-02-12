@@ -738,9 +738,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select structelem.id1, structelem.structelem.id2, structelem.structelem.name from st limit 1")
       ,Seq(Row(119,1006,"xyz1")) )
 
-    sql("update st set (structelem) = (\"NULL\")").show
-    checkAnswer(sql("select structelem.id1, structelem.structelem.id2, structelem.structelem.name from st limit 1")
-      ,Seq(Row(null,null,null)) )
+    
     sql("DROP TABLE IF EXISTS st")
   }
 
