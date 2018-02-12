@@ -131,11 +131,17 @@ case class CreatePreAggregateTableCommand(
     dmProperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
 
     // updating the parent table about child table
-    PreAggregateUtil.updateMainTable(
-      CarbonEnv.getDatabaseName(parentTableIdentifier.database)(sparkSession),
-      parentTableIdentifier.table,
-      childSchema,
-      sparkSession)
+    try {
+      PreAggregateUtil.updateMainTable(
+        CarbonEnv.getDatabaseName(parentTableIdentifier.database)(sparkSession),
+        parentTableIdentifier.table,
+        childSchema,
+        sparkSession)
+    } catch {
+      case ex: Exception =>
+        undoMetadata(sparkSession, ex)
+        throw ex
+    }
     val updatedLoadQuery = if (timeSeriesFunction.isDefined) {
       PreAggregateUtil.createTimeSeriesSelectQueryFromMain(childSchema.getChildSchema,
         parentTable.getTableName,
