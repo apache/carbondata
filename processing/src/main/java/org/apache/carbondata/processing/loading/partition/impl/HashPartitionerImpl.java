@@ -19,6 +19,8 @@ package org.apache.carbondata.processing.loading.partition.impl;
 
 import java.util.List;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -27,7 +29,8 @@ import org.apache.carbondata.processing.loading.partition.Partitioner;
 /**
  * Hash partitioner implementation
  */
-public class HashPartitionerImpl implements Partitioner<Object[]> {
+@InterfaceAudience.Internal
+public class HashPartitionerImpl implements Partitioner<CarbonRow> {
 
   private int numberOfBuckets;
 
@@ -50,10 +53,11 @@ public class HashPartitionerImpl implements Partitioner<Object[]> {
     }
   }
 
-  @Override public int getPartition(Object[] objects) {
+  @Override
+  public int getPartition(CarbonRow key) {
     int hashCode = 0;
     for (Hash hash : hashes) {
-      hashCode += hash.getHash(objects);
+      hashCode += hash.getHash(key.getData());
     }
     return (hashCode & Integer.MAX_VALUE) % numberOfBuckets;
   }
