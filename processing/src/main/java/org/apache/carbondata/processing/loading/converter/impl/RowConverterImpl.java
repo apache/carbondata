@@ -250,4 +250,8 @@ public class RowConverterImpl implements RowConverter {
     }
     return cardinality;
   }
+
+  @Override public FieldConverter[] getFieldConverters() {
+    return fieldConverters;
+  }
 }

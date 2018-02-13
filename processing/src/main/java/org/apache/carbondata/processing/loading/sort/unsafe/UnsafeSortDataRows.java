@@ -366,9 +366,9 @@ public class UnsafeSortDataRows {
           // create a new file and pick a temp directory randomly every time
           String tmpDir = parameters.getTempFileLocation()[
               new Random().nextInt(parameters.getTempFileLocation().length)];
-          File sortTempFile = new File(
-              tmpDir + File.separator + parameters.getTableName()
-                  + System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+          File sortTempFile = new File(tmpDir + File.separator + parameters.getTableName()
+              + '_' + parameters.getRangeId() + '_' + System.nanoTime()
+              + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
           writeDataToFile(page, sortTempFile);
           LOGGER.info("Time taken to sort row page with size" + page.getBuffer().getActualSize()
               + " and write is: " + (System.currentTimeMillis() - startTime) + ": location:"
