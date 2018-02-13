@@ -167,12 +167,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     blockletProcessingCount = new AtomicInteger(0);
     producerExecutorService = Executors.newFixedThreadPool(numberOfCores,
-        new CarbonThreadFactory("ProducerPool:" + model.getTableName()));
+        new CarbonThreadFactory("ProducerPool:" + model.getTableName()
+            + ", range: " + model.getBucketId()));
     producerExecutorServiceTaskList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     LOGGER.info("Initializing writer executors");
     consumerExecutorService = Executors
-        .newFixedThreadPool(1, new CarbonThreadFactory("ConsumerPool:" + model.getTableName()));
+        .newFixedThreadPool(1, new CarbonThreadFactory("ConsumerPool:" + model.getTableName()
+            + ", range: " + model.getBucketId()));
     consumerExecutorServiceTaskList = new ArrayList<>(1);
     semaphore = new Semaphore(numberOfCores);
     tablePageList = new TablePageList();

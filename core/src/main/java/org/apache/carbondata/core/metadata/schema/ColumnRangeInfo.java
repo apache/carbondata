@@ -14,23 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.processing.loading.converter;
 
-import java.io.IOException;
+package org.apache.carbondata.core.metadata.schema;
 
-import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 /**
- * convert the row
+ * interface for column range information. Currently we treat bucket and sort_column_range as
+ * value ranges for a column.
  */
-public interface RowConverter extends DictionaryCardinalityFinder {
-
-  void initialize() throws IOException;
-
-  CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
-
-  RowConverter createCopyForNewThread();
-  FieldConverter[] getFieldConverters();
-  void finish();
+@InterfaceAudience.Internal
+public interface ColumnRangeInfo {
+  int getNumOfRanges();
 }
