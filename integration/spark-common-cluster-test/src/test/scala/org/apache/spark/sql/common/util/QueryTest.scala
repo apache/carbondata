@@ -34,6 +34,8 @@ import org.apache.spark.sql.{CarbonSession, DataFrame, Row, SQLContext}
 import org.scalatest.Suite
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 class QueryTest extends PlanTest with Suite {
 
@@ -41,6 +43,8 @@ class QueryTest extends PlanTest with Suite {
 
   val DOLLAR = "$"
 
+  // timezone is fixed for timestamp related tests
+  TimeZone.setDefault(TimeZone.getTimeZone("GMT"))
   // Add Locale setting
   Locale.setDefault(Locale.US)
 

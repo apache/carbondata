@@ -27,6 +27,7 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -1467,9 +1468,22 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop database if exists insertInto cascade""").collect
   }
 
+  private var cutoffTs: String = _
+
   override protected def beforeAll(): Unit = {
     sql(s"""drop table if exists uniqdata""").collect
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
       TestQueryExecutor.warehouse + "/baaaaaaadrecords")
+    cutoffTs = CarbonProperties.getInstance().getProperty(
+      TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP)
+    // in 2000_uniqData, the date before `CARBON_CUTOFF_TIMESTAMP_DEFAULT_VAL` is considered as bad record
+    CarbonProperties.getInstance().addProperty(
+      TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP,
+      TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP_DEFAULT_VAL)
+  }
+
+  override protected def afterAll(): Unit = {
+    CarbonProperties.getInstance().addProperty(
+      TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, cutoffTs)
   }
 }

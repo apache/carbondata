@@ -28,6 +28,10 @@ public interface TimeStampGranularityConstants {
    */
   String CARBON_CUTOFF_TIMESTAMP = "carbon.cutOffTimestamp";
   /**
+   * default value of cutoff timestamp
+   */
+  String CARBON_CUTOFF_TIMESTAMP_DEFAULT_VAL = "1970-01-01 05:30:00";
+  /**
    * The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR
    * or DAY level
    */
