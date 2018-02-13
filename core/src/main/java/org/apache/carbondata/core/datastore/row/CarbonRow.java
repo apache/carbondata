@@ -29,7 +29,7 @@ public class CarbonRow implements Serializable {
 
   private Object[] rawData;
 
-  public short bucketNumber;
+  private short rangeId;
 
   public CarbonRow(Object[] data) {
     this.data = data;
@@ -82,5 +82,13 @@ public class CarbonRow implements Serializable {
   }
   public void setRawData(Object[] rawData) {
     this.rawData = rawData;
+  }
+
+  public short getRangeId() {
+    return rangeId;
+  }
+
+  public void setRangeId(short rangeId) {
+    this.rangeId = rangeId;
   }
 }

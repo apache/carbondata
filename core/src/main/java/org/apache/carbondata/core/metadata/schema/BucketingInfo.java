@@ -24,40 +24,41 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
  * Bucketing information
  */
-public class BucketingInfo implements Serializable, Writable {
-
+@InterfaceAudience.Internal
+public class BucketingInfo implements ColumnRangeInfo, Serializable, Writable {
   private static final long serialVersionUID = -0L;
-
   private List<ColumnSchema> listOfColumns;
-
-  private int numberOfBuckets;
+  // number of value ranges
+  private int numOfRanges;
 
   public BucketingInfo() {
 
   }
 
-  public BucketingInfo(List<ColumnSchema> listOfColumns, int numberOfBuckets) {
+  public BucketingInfo(List<ColumnSchema> listOfColumns, int numberOfRanges) {
     this.listOfColumns = listOfColumns;
-    this.numberOfBuckets = numberOfBuckets;
+    this.numOfRanges = numberOfRanges;
   }
 
   public List<ColumnSchema> getListOfColumns() {
     return listOfColumns;
   }
 
-  public int getNumberOfBuckets() {
-    return numberOfBuckets;
+  @Override
+  public int getNumOfRanges() {
+    return numOfRanges;
   }
 
   @Override
   public void write(DataOutput output) throws IOException {
-    output.writeInt(numberOfBuckets);
+    output.writeInt(numOfRanges);
     output.writeInt(listOfColumns.size());
     for (ColumnSchema aColSchema : listOfColumns) {
       aColSchema.write(output);
@@ -66,7 +67,7 @@ public class BucketingInfo implements Serializable, Writable {
 
   @Override
   public void readFields(DataInput input) throws IOException {
-    this.numberOfBuckets = input.readInt();
+    this.numOfRanges = input.readInt();
     int colSchemaSize = input.readInt();
     this.listOfColumns = new ArrayList<>(colSchemaSize);
     for (int i = 0; i < colSchemaSize; i++) {
@@ -75,5 +76,4 @@ public class BucketingInfo implements Serializable, Writable {
       this.listOfColumns.add(aSchema);
     }
   }
-
 }

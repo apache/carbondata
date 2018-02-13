@@ -119,6 +119,7 @@ public class SortParameters implements Serializable {
   private int numberOfCores;
 
   private int batchSortSizeinMb;
+  private int rangeId = 0;
 
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
@@ -147,6 +148,7 @@ public class SortParameters implements Serializable {
     parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
     parameters.numberOfCores = numberOfCores;
     parameters.batchSortSizeinMb = batchSortSizeinMb;
+    parameters.rangeId = rangeId;
     return parameters;
   }
 
@@ -427,6 +429,14 @@ public class SortParameters implements Serializable {
     DataType[] measureDataType = configuration.getMeasureDataType();
     parameters.setMeasureDataType(measureDataType);
     return parameters;
+  }
+
+  public int getRangeId() {
+    return rangeId;
+  }
+
+  public void setRangeId(int rangeId) {
+    this.rangeId = rangeId;
   }
 
   /**

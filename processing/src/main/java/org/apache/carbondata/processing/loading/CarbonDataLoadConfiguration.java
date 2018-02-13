@@ -29,6 +29,7 @@ import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.SortColumnRangeInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.loading.converter.DictionaryCardinalityFinder;
 
@@ -106,6 +107,8 @@ public class CarbonDataLoadConfiguration {
    * Number of thread cores to use while writing data files
    */
   private short writingCoresCount;
+
+  private SortColumnRangeInfo sortColumnRangeInfo;
 
   /**
    * Flder path to where data should be written for this load.
@@ -365,5 +368,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setDataWritePath(String dataWritePath) {
     this.dataWritePath = dataWritePath;
+  }
+
+  public SortColumnRangeInfo getSortColumnRangeInfo() {
+    return sortColumnRangeInfo;
+  }
+
+  public void setSortColumnRangeInfo(SortColumnRangeInfo sortColumnRangeInfo) {
+    this.sortColumnRangeInfo = sortColumnRangeInfo;
   }
 }

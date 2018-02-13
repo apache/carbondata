@@ -163,7 +163,7 @@ class CarbonScanRDD(
         var i = 0
         val bucketed =
           splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).groupBy(f => f.getBucketId)
-        (0 until bucketedTable.getNumberOfBuckets).map { bucketId =>
+        (0 until bucketedTable.getNumOfRanges).map { bucketId =>
           val bucketPartitions = bucketed.getOrElse(bucketId.toString, Nil)
           val multiBlockSplit =
             new CarbonMultiBlockSplit(
