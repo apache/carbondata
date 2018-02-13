@@ -247,7 +247,7 @@
       <dependency>
         <groupId>org.jmockit</groupId>
         <artifactId>jmockit</artifactId>
-        <version>1.10</version>
+        <version></version>
         <exclusions>
           <exclusion>
             <groupId>*</groupId>
