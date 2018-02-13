@@ -17,7 +17,9 @@
 package org.apache.carbondata.processing.loading.sort.impl;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +31,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.ColumnRangeInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
@@ -46,49 +48,59 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
  * It parallely reads data from array of iterates and do merge sort.
  * First it sorts the data and write to temp files. These temp files will be merge sorted to get
  * final merge sort result.
- * This step is specifically for bucketing, it sorts each bucket data separately and write to
- * temp files.
+ * This step is specifically for the data loading with specifying column value range, such as
+ * bucketing,sort_column_bounds, it sorts each range of data separately and write to temp files.
  */
-public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorter {
+public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSorter {
+  private static final LogService LOGGER = LogServiceFactory.getLogService(
+      ParallelReadMergeSorterWithColumnRangeImpl.class.getName());
 
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(ParallelReadMergeSorterWithBucketingImpl.class.getName());
-
-  private SortParameters sortParameters;
+  private SortParameters originSortParameters;
 
   private SortIntermediateFileMerger[] intermediateFileMergers;
 
-  private BucketingInfo bucketingInfo;
+  private ColumnRangeInfo columnRangeInfo;
 
   private int sortBufferSize;
 
   private AtomicLong rowCounter;
+  /**
+   * counters to collect information about rows processed by each range
+   */
+  private List<AtomicLong> insideRowCounterList;
 
-  public ParallelReadMergeSorterWithBucketingImpl(AtomicLong rowCounter,
-      BucketingInfo bucketingInfo) {
+  public ParallelReadMergeSorterWithColumnRangeImpl(AtomicLong rowCounter,
+      ColumnRangeInfo columnRangeInfo) {
     this.rowCounter = rowCounter;
-    this.bucketingInfo = bucketingInfo;
+    this.columnRangeInfo = columnRangeInfo;
   }
 
-  @Override public void initialize(SortParameters sortParameters) {
-    this.sortParameters = sortParameters;
+  @Override
+  public void initialize(SortParameters sortParameters) {
+    this.originSortParameters = sortParameters;
     int buffer = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
-    sortBufferSize = buffer / bucketingInfo.getNumberOfBuckets();
+    sortBufferSize = buffer / columnRangeInfo.getNumOfRanges();
     if (sortBufferSize < 100) {
       sortBufferSize = 100;
+    }
+    this.insideRowCounterList = new ArrayList<>(columnRangeInfo.getNumOfRanges());
+    for (int i = 0; i < columnRangeInfo.getNumOfRanges(); i++) {
+      insideRowCounterList.add(new AtomicLong(0));
     }
   }
 
   @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
-    SortDataRows[] sortDataRows = new SortDataRows[bucketingInfo.getNumberOfBuckets()];
-    intermediateFileMergers =
-        new SortIntermediateFileMerger[sortDataRows.length];
+    SortDataRows[] sortDataRows = new SortDataRows[columnRangeInfo.getNumOfRanges()];
+    intermediateFileMergers = new SortIntermediateFileMerger[columnRangeInfo.getNumOfRanges()];
+    SortParameters[] sortParameterArray = new SortParameters[columnRangeInfo.getNumOfRanges()];
     try {
-      for (int i = 0; i < bucketingInfo.getNumberOfBuckets(); i++) {
-        SortParameters parameters = sortParameters.getCopy();
+      for (int i = 0; i < columnRangeInfo.getNumOfRanges(); i++) {
+        SortParameters parameters = originSortParameters.getCopy();
         parameters.setPartitionID(i + "");
+        parameters.setRangeId(i);
+        sortParameterArray[i] = parameters;
         setTempLocation(parameters);
         parameters.setBufferSize(sortBufferSize);
         intermediateFileMergers[i] = new SortIntermediateFileMerger(parameters);
@@ -102,13 +114,14 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
+      // dispatch rows to sortDataRows by range id
       for (int i = 0; i < iterators.length; i++) {
         executorService.execute(new SortIteratorThread(iterators[i], sortDataRows, rowCounter,
-            this.threadStatusObserver));
+            this.insideRowCounterList, this.threadStatusObserver));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
-      processRowToNextStep(sortDataRows, sortParameters);
+      processRowToNextStep(sortDataRows, originSortParameters);
     } catch (Exception e) {
       checkError();
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
@@ -124,24 +137,24 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
       throw new CarbonDataLoadingException(e);
     }
 
-    Iterator<CarbonRowBatch>[] batchIterator = new Iterator[bucketingInfo.getNumberOfBuckets()];
-    for (int i = 0; i < bucketingInfo.getNumberOfBuckets(); i++) {
-      batchIterator[i] = new MergedDataIterator(String.valueOf(i), batchSize);
+    Iterator<CarbonRowBatch>[] batchIterator = new Iterator[columnRangeInfo.getNumOfRanges()];
+    for (int i = 0; i < columnRangeInfo.getNumOfRanges(); i++) {
+      batchIterator[i] = new MergedDataIterator(sortParameterArray[i], batchSize);
     }
 
     return batchIterator;
   }
 
-  private SingleThreadFinalSortFilesMerger getFinalMerger(String bucketId) {
-    String[] storeLocation = CarbonDataProcessorUtil.getLocalDataFolderLocation(
-        sortParameters.getDatabaseName(), sortParameters.getTableName(),
-        String.valueOf(sortParameters.getTaskNo()), sortParameters.getSegmentId(),
-        false, false);
+  private SingleThreadFinalSortFilesMerger getFinalMerger(SortParameters sortParameters) {
+    String[] storeLocation = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(sortParameters.getDatabaseName(), sortParameters.getTableName(),
+            String.valueOf(sortParameters.getTaskNo()),
+            sortParameters.getSegmentId() + "", false, false);
     // Set the data file location
     String[] dataFolderLocation = CarbonDataProcessorUtil.arrayAppend(storeLocation, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     return new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
-            sortParameters);
+        sortParameters);
   }
 
   @Override public void close() {
@@ -181,9 +194,10 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
   }
 
   private void setTempLocation(SortParameters parameters) {
-    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil.getLocalDataFolderLocation(
-        parameters.getDatabaseName(), parameters.getTableName(), parameters.getTaskNo(),
-        parameters.getSegmentId(), false, false);
+    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(parameters.getDatabaseName(),
+            parameters.getTableName(), parameters.getTaskNo(),
+            parameters.getSegmentId(), false, false);
     String[] tmpLocs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     parameters.setTempFileLocation(tmpLocs);
@@ -199,14 +213,16 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     private SortDataRows[] sortDataRows;
 
     private AtomicLong rowCounter;
-
+    private List<AtomicLong> insideCounterList;
     private ThreadStatusObserver threadStatusObserver;
 
     public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows[] sortDataRows,
-        AtomicLong rowCounter, ThreadStatusObserver observer) {
+        AtomicLong rowCounter, List<AtomicLong> insideCounterList,
+        ThreadStatusObserver observer) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
       this.rowCounter = rowCounter;
+      this.insideCounterList = insideCounterList;
       this.threadStatusObserver = observer;
     }
 
@@ -215,18 +231,19 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
-          int i = 0;
           while (batch.hasNext()) {
             CarbonRow row = batch.next();
             if (row != null) {
-              SortDataRows sortDataRow = sortDataRows[row.bucketNumber];
+              SortDataRows sortDataRow = sortDataRows[row.getRangeId()];
               synchronized (sortDataRow) {
                 sortDataRow.addRow(row.getData());
+                insideCounterList.get(row.getRangeId()).getAndIncrement();
                 rowCounter.getAndAdd(1);
               }
             }
           }
         }
+        LOGGER.info("Rows processed by each range: " + insideCounterList);
       } catch (Exception e) {
         LOGGER.error(e);
         this.threadStatusObserver.notifyFailed(e);
@@ -237,14 +254,14 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
 
   private class MergedDataIterator extends CarbonIterator<CarbonRowBatch> {
 
-    private String partitionId;
+    private SortParameters sortParameters;
 
     private int batchSize;
 
     private boolean firstRow = true;
 
-    public MergedDataIterator(String partitionId, int batchSize) {
-      this.partitionId = partitionId;
+    public MergedDataIterator(SortParameters sortParameters, int batchSize) {
+      this.sortParameters = sortParameters;
       this.batchSize = batchSize;
     }
 
@@ -253,7 +270,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     @Override public boolean hasNext() {
       if (firstRow) {
         firstRow = false;
-        finalMerger = getFinalMerger(partitionId);
+        finalMerger = getFinalMerger(sortParameters);
         finalMerger.startFinalMerge();
       }
       return finalMerger.hasNext();

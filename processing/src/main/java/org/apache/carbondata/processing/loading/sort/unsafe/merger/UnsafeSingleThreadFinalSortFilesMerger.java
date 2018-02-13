@@ -147,19 +147,20 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   }
 
   private List<File> getFilesToMergeSort() {
+    // this can be partitionId, bucketId or rangeId, let's call it rangeId
+    final int rangeId = parameters.getRangeId();
+
     FileFilter fileFilter = new FileFilter() {
       public boolean accept(File pathname) {
-        return pathname.getName().startsWith(tableName);
+        return pathname.getName().startsWith(tableName + '_' + rangeId);
       }
     };
 
     // get all the merged files
     List<File> files = new ArrayList<File>(tempFileLocation.length);
-    for (String tempLoc : tempFileLocation)
-    {
+    for (String tempLoc : tempFileLocation) {
       File[] subFiles = new File(tempLoc).listFiles(fileFilter);
-      if (null != subFiles && subFiles.length > 0)
-      {
+      if (null != subFiles && subFiles.length > 0) {
         files.addAll(Arrays.asList(subFiles));
       }
     }

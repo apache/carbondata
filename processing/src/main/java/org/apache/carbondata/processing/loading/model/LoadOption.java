@@ -191,6 +191,7 @@ public class LoadOption {
     }
 
     optionsFinal.put("single_pass", String.valueOf(singlePass));
+    optionsFinal.put("sort_column_bounds", Maps.getOrDefault(options, "sort_column_bounds", ""));
     return optionsFinal;
   }
 
