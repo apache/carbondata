@@ -87,12 +87,12 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       absoluteTableIdentifier)
 
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentId).toList
     assert(segments.contains("0.1"))
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
     assert(!segments.contains("3"))
-    val cacheClient = new CacheClient();
+    val cacheClient = new CacheClient()
     val segmentIdentifier = new TableSegmentUniqueIdentifier(absoluteTableIdentifier, "2")
     val wrapper: SegmentTaskIndexWrapper = cacheClient.getSegmentAccessClient.
       getIfPresent(segmentIdentifier)
@@ -181,7 +181,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       absoluteTableIdentifier)
 
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentId).toList
     assert(!segments.contains("0.1"))
     assert(segments.contains("0.2"))
     assert(!segments.contains("2"))

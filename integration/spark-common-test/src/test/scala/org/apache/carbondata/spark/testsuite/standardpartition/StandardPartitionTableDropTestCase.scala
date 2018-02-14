@@ -204,6 +204,7 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
       sql(s"""select count (*) from partitionone1 where empno=11"""),
       sql(s"""select count (*) from originTable where empno=11"""))
     sql(s"""ALTER TABLE partitionone1 DROP PARTITION(empno='11')""")
+    sql(s"CLEAN FILES FOR TABLE partitionone1").show()
     assert(Files.notExists(Paths.get(TestQueryExecutor.warehouse + "/partitionone1/" + "empno=11"), LinkOption.NOFOLLOW_LINKS))
     sql("drop table if exists partitionone1")
   }

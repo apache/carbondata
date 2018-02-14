@@ -26,6 +26,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
@@ -37,6 +38,7 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block._
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
@@ -87,8 +89,8 @@ class CarbonMergerRDD[K, V](
       } else {
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
       }
-      val partitionNames = if (carbonTable.isHivePartitionTable) {
-        carbonSparkPartition.partitionNames.get.asJava
+      val partitionSpec = if (carbonTable.isHivePartitionTable) {
+        carbonSparkPartition.partitionSpec.get
       } else {
         null
       }
@@ -198,7 +200,7 @@ class CarbonMergerRDD[K, V](
             segmentProperties,
             carbonMergerMapping.campactionType,
             factTableName,
-            partitionNames)
+            partitionSpec)
         } else {
           LOGGER.info("RowResultMergerProcessor flow is selected")
           processor =
@@ -209,7 +211,7 @@ class CarbonMergerRDD[K, V](
               tempStoreLoc,
               carbonLoadModel,
               carbonMergerMapping.campactionType,
-              partitionNames)
+              partitionSpec)
         }
         mergeStatus = processor.execute(result2)
         mergeResult = tableBlockInfoList.get(0).getSegmentId + ',' + mergeNumber
@@ -260,7 +262,7 @@ class CarbonMergerRDD[K, V](
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
     CarbonTableInputFormat.setPartitionsToPrune(
       job.getConfiguration,
-      carbonMergerMapping.currentPartitions.asJava)
+      carbonMergerMapping.currentPartitions.map(_.asJava).orNull)
     CarbonTableInputFormat.setTableInfo(job.getConfiguration,
       carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)
     var updateDetails: UpdateVO = null
@@ -284,10 +286,10 @@ class CarbonMergerRDD[K, V](
     for (eachSeg <- carbonMergerMapping.validSegments) {
 
       // map for keeping the relation of a task and its blocks.
-      job.getConfiguration.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, eachSeg)
+      job.getConfiguration.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, eachSeg.getSegmentId)
 
       if (updateStatusManager.getUpdateStatusDetails.length != 0) {
-         updateDetails = updateStatusManager.getInvalidTimestampRange(eachSeg)
+         updateDetails = updateStatusManager.getInvalidTimestampRange(eachSeg.getSegmentId)
       }
 
       val updated: Boolean = updateStatusManager.getUpdateStatusDetails.length != 0
@@ -304,7 +306,7 @@ class CarbonMergerRDD[K, V](
         val blockInfo = new TableBlockInfo(entry.getPath.toString,
           entry.getStart, entry.getSegmentId,
           entry.getLocations, entry.getLength, entry.getVersion,
-          updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString)
+          updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString, entry.getSegmentId)
         )
         (!updated || (updated && (!CarbonUtil
           .isInvalidTableBlock(blockInfo.getSegmentId, blockInfo.getFilePath,
@@ -329,7 +331,7 @@ class CarbonMergerRDD[K, V](
     }
 
     val columnToCardinalityMap = new util.HashMap[java.lang.String, Integer]()
-    val partitionTaskMap = new util.HashMap[util.List[String], String]()
+    val partitionTaskMap = new util.HashMap[PartitionSpec, String]()
     val counter = new AtomicInteger()
     carbonInputSplits.foreach { split =>
       val taskNo = getTaskNo(split, partitionTaskMap, counter)
@@ -455,16 +457,20 @@ class CarbonMergerRDD[K, V](
 
   private def getTaskNo(
       split: CarbonInputSplit,
-      partitionTaskMap: util.Map[List[String], String],
+      partitionTaskMap: util.Map[PartitionSpec, String],
       counter: AtomicInteger): String = {
     if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
-      val partitions =
-        carbonMergerMapping.partitionMapper.getPartitionMap.get(
-          CarbonTablePath.getCarbonIndexFileName(split.getBlockPath))
-      var task = partitionTaskMap.get(partitions)
+      val path = split.getPath.getParent
+      val partTask =
+        carbonMergerMapping.currentPartitions.get.find(p => p.getLocation.equals(path)) match {
+        case Some(part) => part
+        case None =>
+          throw new UnsupportedOperationException("Cannot do compaction on dropped partition")
+      }
+      var task = partitionTaskMap.get(partTask)
       if (task == null) {
         task = counter.incrementAndGet().toString
-        partitionTaskMap.put(partitions, task)
+        partitionTaskMap.put(partTask, task)
       }
       task
     } else {
@@ -472,10 +478,12 @@ class CarbonMergerRDD[K, V](
     }
   }
 
+
+
   private def getPartitionNamesFromTask(taskId: String,
-      partitionTaskMap: util.Map[List[String], String]): Option[Seq[String]] = {
+      partitionTaskMap: util.Map[PartitionSpec, String]): Option[PartitionSpec] = {
     if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
-      Some(partitionTaskMap.asScala.find(f => f._2.equals(taskId)).get._1.asScala)
+      Some(partitionTaskMap.asScala.find(f => f._2.equals(taskId)).get._1)
     } else {
       None
     }

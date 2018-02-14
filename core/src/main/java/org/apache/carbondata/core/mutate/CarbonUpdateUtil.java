@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -82,14 +83,16 @@ public class CarbonUpdateUtil {
    * @param factPath
    * @return
    */
-  public static String getTableBlockPath(String tid, String factPath) {
-    String part =
-            CarbonTablePath.addPartPrefix(getRequiredFieldFromTID(tid, TupleIdEnum.PART_ID));
+  public static String getTableBlockPath(String tid, String factPath, boolean isPartitionTable) {
+    String partField = getRequiredFieldFromTID(tid, TupleIdEnum.PART_ID);
+    if (isPartitionTable) {
+      return factPath + CarbonCommonConstants.FILE_SEPARATOR + partField;
+    }
+    String part = CarbonTablePath.addPartPrefix(partField);
     String segment =
             CarbonTablePath.addSegmentPrefix(getRequiredFieldFromTID(tid, TupleIdEnum.SEGMENT_ID));
     return factPath + CarbonCommonConstants.FILE_SEPARATOR + part
             + CarbonCommonConstants.FILE_SEPARATOR + segment;
-
   }
 
   /**
@@ -172,6 +175,22 @@ public class CarbonUpdateUtil {
   }
 
   /**
+   * Update table status
+   * @param updatedSegmentsList
+   * @param table
+   * @param updatedTimeStamp
+   * @param isTimestampUpdationRequired
+   * @param segmentsToBeDeleted
+   * @return
+   */
+  public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
+      CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdationRequired,
+      List<Segment> segmentsToBeDeleted) {
+    return updateTableMetadataStatus(updatedSegmentsList, table, updatedTimeStamp,
+        isTimestampUpdationRequired, segmentsToBeDeleted, new ArrayList<Segment>());
+  }
+
+  /**
    *
    * @param updatedSegmentsList
    * @param table
@@ -180,10 +199,9 @@ public class CarbonUpdateUtil {
    * @param segmentsToBeDeleted
    * @return
    */
-  public static boolean updateTableMetadataStatus(Set<String> updatedSegmentsList,
-                                                  CarbonTable table, String updatedTimeStamp,
-                                                  boolean isTimestampUpdationRequired,
-                                                  List<String> segmentsToBeDeleted) {
+  public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
+      CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdationRequired,
+      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated) {
 
     boolean status = false;
 
@@ -221,13 +239,13 @@ public class CarbonUpdateUtil {
             }
 
             // if the segments is in the list of marked for delete then update the status.
-            if (segmentsToBeDeleted.contains(loadMetadata.getLoadName())) {
+            if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName(), null))) {
               loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
               loadMetadata.setModificationOrdeletionTimesStamp(Long.parseLong(updatedTimeStamp));
             }
           }
-          for (String segName : updatedSegmentsList) {
-            if (loadMetadata.getLoadName().equalsIgnoreCase(segName)) {
+          for (Segment segName : updatedSegmentsList) {
+            if (loadMetadata.getLoadName().equalsIgnoreCase(segName.getSegmentId())) {
               // if this call is coming from the delete delta flow then the time stamp
               // String will come empty then no need to write into table status file.
               if (isTimestampUpdationRequired) {
@@ -239,6 +257,10 @@ public class CarbonUpdateUtil {
                 }
                 // update end timestamp for each time.
                 loadMetadata.setUpdateDeltaEndTimestamp(updatedTimeStamp);
+              }
+              if (segmentFilesTobeUpdated.contains(Segment.toSegment(loadMetadata.getLoadName()))) {
+                loadMetadata.setSegmentFile(loadMetadata.getLoadName() + "_" + updatedTimeStamp
+                    + CarbonTablePath.SEGMENT_EXT);
               }
             }
           }
@@ -696,14 +718,14 @@ public class CarbonUpdateUtil {
    * @param segmentBlockCount
    * @return
    */
-  public static List<String> getListOfSegmentsToMarkDeleted(Map<String, Long> segmentBlockCount) {
-    List<String> segmentsToBeDeleted =
+  public static List<Segment> getListOfSegmentsToMarkDeleted(Map<String, Long> segmentBlockCount) {
+    List<Segment> segmentsToBeDeleted =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     for (Map.Entry<String, Long> eachSeg : segmentBlockCount.entrySet()) {
 
       if (eachSeg.getValue() == 0) {
-        segmentsToBeDeleted.add(eachSeg.getKey());
+        segmentsToBeDeleted.add(new Segment(eachSeg.getKey(), null));
       }
 
     }

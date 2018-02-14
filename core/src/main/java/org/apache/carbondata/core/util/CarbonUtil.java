@@ -47,6 +47,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -63,6 +64,7 @@ import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
@@ -1437,14 +1439,13 @@ public final class CarbonUtil {
    * @param values
    * @return comma separated segment string
    */
-  public static String convertToString(List<String> values) {
+  public static String convertToString(List<Segment> values) {
     if (values == null || values.isEmpty()) {
       return "";
     }
     StringBuilder segmentStringbuilder = new StringBuilder();
     for (int i = 0; i < values.size() - 1; i++) {
-      String segmentNo = values.get(i);
-      segmentStringbuilder.append(segmentNo);
+      segmentStringbuilder.append(values.get(i));
       segmentStringbuilder.append(",");
     }
     segmentStringbuilder.append(values.get(values.size() - 1));
@@ -2145,7 +2146,8 @@ public final class CarbonUtil {
       }
       for (String value : values) {
         if (!value.equalsIgnoreCase("*")) {
-          Float aFloatValue = Float.parseFloat(value);
+          Segment segment = Segment.toSegment(value);
+          Float aFloatValue = Float.parseFloat(segment.getSegmentId());
           if (aFloatValue < 0 || aFloatValue > Float.MAX_VALUE) {
             throw new InvalidConfigurationException(
                 "carbon.input.segments.<database_name>.<table_name> value range should be greater "
@@ -2298,7 +2300,7 @@ public final class CarbonUtil {
   }
 
   // Get the total size of carbon data and the total size of carbon index
-  public static HashMap<String, Long> getDataSizeAndIndexSize(CarbonTablePath carbonTablePath,
+  private static HashMap<String, Long> getDataSizeAndIndexSize(CarbonTablePath carbonTablePath,
       String segmentId) throws IOException {
     long carbonDataSize = 0L;
     long carbonIndexSize = 0L;
@@ -2349,6 +2351,51 @@ public final class CarbonUtil {
     dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, carbonIndexSize);
     return dataAndIndexSize;
   }
+
+  // Get the total size of carbon data and the total size of carbon index
+  private static HashMap<String, Long> getDataSizeAndIndexSize(SegmentFileStore fileStore)
+      throws IOException {
+    long carbonDataSize = 0L;
+    long carbonIndexSize = 0L;
+    HashMap<String, Long> dataAndIndexSize = new HashMap<String, Long>();
+    if (fileStore.getLocationMap() != null) {
+      fileStore.readIndexFiles();
+      Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
+      for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
+        carbonIndexSize = +FileFactory.getCarbonFile(entry.getKey()).getSize();
+        for (String blockFile : entry.getValue()) {
+          carbonDataSize += FileFactory.getCarbonFile(blockFile).getSize();
+        }
+      }
+    }
+    dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE, carbonDataSize);
+    dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, carbonIndexSize);
+    return dataAndIndexSize;
+  }
+
+  // Get the total size of carbon data and the total size of carbon index
+  public static HashMap<String, Long> getDataSizeAndIndexSize(CarbonTablePath carbonTablePath,
+      Segment segment) throws IOException {
+    if (segment.getSegmentFileName() != null) {
+      SegmentFileStore fileStore = new SegmentFileStore();
+      fileStore.readSegment(carbonTablePath.getPath(), segment.getSegmentFileName());
+      return getDataSizeAndIndexSize(fileStore);
+    } else {
+      return getDataSizeAndIndexSize(carbonTablePath, segment.getSegmentId());
+    }
+  }
+
+  // Get the total size of segment.
+  public static long getSizeOfSegment(CarbonTablePath carbonTablePath,
+      Segment segment) throws IOException {
+    HashMap<String, Long> dataSizeAndIndexSize = getDataSizeAndIndexSize(carbonTablePath, segment);
+    long size = 0;
+    for (Long eachSize: dataSizeAndIndexSize.values()) {
+      size += eachSize;
+    }
+    return size;
+  }
+
 
   /**
    * Utility function to check whether table has timseries datamap or not
@@ -2447,6 +2494,41 @@ public final class CarbonUtil {
       }
     }
     return updatedMinMaxValues;
+  }
+
+  /**
+   * Generate the blockid as per the block path
+   *
+   * @param identifier
+   * @param filePath
+   * @param segmentId
+   * @return
+   */
+  public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
+      String segmentId) {
+    String blockId;
+    String blockName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
+    String tablePath = identifier.getTablePath();
+    if (filePath.startsWith(tablePath)) {
+      String factDir =
+          CarbonStorePath.getCarbonTablePath(tablePath, identifier.getCarbonTableIdentifier())
+              .getFactDir();
+      if (filePath.startsWith(factDir)) {
+        blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
+            + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+      } else {
+        String partitionDir =
+            filePath.substring(tablePath.length() + 1, filePath.length() - blockName.length() - 1);
+
+        blockId = partitionDir.replace("/", "#") + CarbonCommonConstants.FILE_SEPARATOR + "Segment_"
+            + segmentId + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+      }
+    } else {
+      blockId = filePath.substring(0, filePath.length() - blockName.length()).replace("/", "#")
+          + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
+          + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+    }
+    return blockId;
   }
 
 }

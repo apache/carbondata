@@ -28,7 +28,6 @@ import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
@@ -214,14 +213,20 @@ object CarbonScalaUtil {
           val time = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
             CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-          ).getValueFromSurrogate(value.toInt).toString
-          return DateTimeUtils.timestampToString(time.toLong * 1000)
+          ).getValueFromSurrogate(value.toInt)
+          if (time == null) {
+            return null
+          }
+          return DateTimeUtils.timestampToString(time.toString.toLong * 1000)
         } else if (column.getDataType.equals(CarbonDataTypes.DATE)) {
           val date = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
             CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
-          ).getValueFromSurrogate(value.toInt).toString
-          return DateTimeUtils.dateToString(date.toInt)
+          ).getValueFromSurrogate(value.toInt)
+          if (date == null) {
+            return null
+          }
+          return DateTimeUtils.dateToString(date.toString.toInt)
         }
       }
       val dictionaryPath =
@@ -295,9 +300,7 @@ object CarbonScalaUtil {
    */
   def updatePartitions(
       partitionSpec: Map[String, String],
-      table: CarbonTable,
-      timeFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat): Map[String, String] = {
+      table: CarbonTable): Map[String, String] = {
     val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
@@ -343,30 +346,11 @@ object CarbonScalaUtil {
       carbonSessionInfo: CarbonSessionInfo,
       parts: Seq[CatalogTablePartition],
       table: CarbonTable): Seq[CatalogTablePartition] = {
-    val dateFormatStr = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)
-    val dateFormat = new SimpleDateFormat(dateFormatStr)
-    val timeFormatStr = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)
-    val timeFormat = new SimpleDateFormat(timeFormatStr)
-    val serializeFormat = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT_DEFAULT)
-    val isEmptyBadRecord = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT).toBoolean
-    val badRecordAction = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
-      LoggerAction.FAIL.toString)
     parts.map{ f =>
       val changedSpec =
         updatePartitions(
           f.spec,
-          table,
-          timeFormat,
-          dateFormat)
+          table)
       f.copy(spec = changedSpec)
     }.filterNot{ p =>
       // Filter the special bad record ignore case string

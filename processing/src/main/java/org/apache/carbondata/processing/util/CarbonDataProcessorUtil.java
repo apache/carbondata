@@ -302,7 +302,7 @@ public final class CarbonDataProcessorUtil {
   }
 
   public static boolean isHeaderValid(String tableName, String[] csvHeader,
-      CarbonDataLoadSchema schema) {
+      CarbonDataLoadSchema schema, List<String> ignoreColumns) {
     Iterator<String> columnIterator =
         CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName).iterator();
     Set<String> csvColumns = new HashSet<String>(csvHeader.length);
@@ -311,7 +311,8 @@ public final class CarbonDataProcessorUtil {
     // file header should contain all columns of carbon table.
     // So csvColumns should contain all elements of columnIterator.
     while (columnIterator.hasNext()) {
-      if (!csvColumns.contains(columnIterator.next().toLowerCase())) {
+      String column = columnIterator.next().toLowerCase();
+      if (!csvColumns.contains(column) && !ignoreColumns.contains(column)) {
         return false;
       }
     }
@@ -377,7 +378,7 @@ public final class CarbonDataProcessorUtil {
    *
    * @return data directory path
    */
-  public static String checkAndCreateCarbonStoreLocation(String factStoreLocation,
+  public static String createCarbonStoreLocation(String factStoreLocation,
       String databaseName, String tableName, String partitionId, String segmentId) {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
@@ -385,7 +386,6 @@ public final class CarbonDataProcessorUtil {
         CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
-    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }
 

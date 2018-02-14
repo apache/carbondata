@@ -683,7 +683,8 @@ object CommonUtil {
 
   def getCsvHeaderColumns(
       carbonLoadModel: CarbonLoadModel,
-      hadoopConf: Configuration): Array[String] = {
+      hadoopConf: Configuration,
+      staticPartitionCols: util.List[String] = new util.ArrayList[String]()): Array[String] = {
     val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
       CarbonCommonConstants.COMMA
     } else {
@@ -691,7 +692,7 @@ object CommonUtil {
     }
     var csvFile: String = null
     var csvHeader: String = carbonLoadModel.getCsvHeader
-    val csvColumns = if (StringUtils.isBlank(csvHeader)) {
+    var csvColumns = if (StringUtils.isBlank(csvHeader)) {
       // read header from csv file
       csvFile = carbonLoadModel.getFactFilePath.split(",")(0)
       csvHeader = CarbonUtil.readHeader(csvFile, hadoopConf)
@@ -704,7 +705,7 @@ object CommonUtil {
     }
 
     if (!CarbonDataProcessorUtil.isHeaderValid(carbonLoadModel.getTableName, csvColumns,
-        carbonLoadModel.getCarbonDataLoadSchema)) {
+        carbonLoadModel.getCarbonDataLoadSchema, staticPartitionCols)) {
       if (csvFile == null) {
         LOGGER.error("CSV header in DDL is not proper."
                      + " Column names in schema and CSV header are not the same.")
@@ -720,7 +721,23 @@ object CommonUtil {
           + "the same. Input file : " + CarbonUtil.removeAKSK(csvFile))
       }
     }
-    csvColumns
+    // In case of static partition columns just change the name of header if already exists as
+    // we should not take the column from csv file and add them as new columns at the end.
+    if (staticPartitionCols.size() > 0) {
+      val scalaIgnoreColumns = staticPartitionCols.asScala
+      var updatedCols = csvColumns.map{col =>
+        if (scalaIgnoreColumns.exists(_.equalsIgnoreCase(col))) {
+          col + "1"
+        } else {
+          col
+        }
+      }.toList.asJava
+      updatedCols = new util.ArrayList[String](updatedCols)
+      updatedCols.addAll(staticPartitionCols)
+      updatedCols.asScala.toArray
+    } else {
+      csvColumns
+    }
   }
 
   def validateMaxColumns(csvHeaders: Array[String], maxColumns: String): Int = {
@@ -866,7 +883,7 @@ object CommonUtil {
                   val carbonTable = CarbonMetadata.getInstance
                     .getCarbonTable(identifier.getCarbonTableIdentifier.getTableUniqueName)
                   DataLoadingUtil.deleteLoadsAndUpdateMetadata(
-                    isForceDeletion = true, carbonTable)
+                    isForceDeletion = true, carbonTable, null)
                 } catch {
                   case _: Exception =>
                     LOGGER.warn(s"Error while cleaning table " +

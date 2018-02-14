@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -260,8 +261,12 @@ public class CarbonInputSplit extends FileSplit
     return invalidSegments;
   }
 
-  public void setInvalidSegments(List<String> invalidSegments) {
-    this.invalidSegments = invalidSegments;
+  public void setInvalidSegments(List<Segment> invalidSegments) {
+    List<String> invalidSegmentIds = new ArrayList<>();
+    for (Segment segment: invalidSegments) {
+      invalidSegmentIds.add(segment.getSegmentId());
+    }
+    this.invalidSegments = invalidSegmentIds;
   }
 
   public void setInvalidTimestampRange(List<UpdateVO> invalidTimestamps) {

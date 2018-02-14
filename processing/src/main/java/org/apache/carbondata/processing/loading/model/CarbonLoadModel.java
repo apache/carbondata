@@ -193,6 +193,11 @@ public class CarbonLoadModel implements Serializable {
    */
   private boolean isPartitionLoad;
 
+  /**
+   * Flder path to where data should be written for this load.
+   */
+  private String dataWritePath;
+
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
   }
@@ -869,5 +874,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setPartitionLoad(boolean partitionLoad) {
     isPartitionLoad = partitionLoad;
+  }
+
+  public String getDataWritePath() {
+    return dataWritePath;
+  }
+
+  public void setDataWritePath(String dataWritePath) {
+    this.dataWritePath = dataWritePath;
   }
 }

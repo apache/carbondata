@@ -25,17 +25,16 @@ import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AtomicRunnableCommand}
-import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.PartitionMapFileStore
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.spark.rdd.{CarbonDropPartitionCommitRDD, CarbonDropPartitionRDD}
+import org.apache.carbondata.spark.rdd.CarbonDropPartitionRDD
 
 /**
  * Drop the partitions from hive and carbon store. It drops the partitions in following steps
@@ -59,6 +58,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
     retainData: Boolean)
   extends AtomicRunnableCommand {
 
+  var carbonPartitionsTobeDropped : util.List[PartitionSpec] = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
@@ -67,8 +67,33 @@ case class CarbonAlterTableDropHivePartitionCommand(
         "Partition can not be dropped as it is mapped to Pre Aggregate table")
     }
     if (table.isHivePartitionTable) {
+      var locks = List.empty[ICarbonLock]
       try {
-        specs.flatMap(f => sparkSession.sessionState.catalog.listPartitions(tableName, Some(f)))
+        val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
+          LockUsage.COMPACTION_LOCK,
+          LockUsage.DELETE_SEGMENT_LOCK,
+          LockUsage.DROP_TABLE_LOCK,
+          LockUsage.CLEAN_FILES_LOCK,
+          LockUsage.ALTER_PARTITION_LOCK)
+        locks = AlterTableUtil.validateTableAndAcquireLock(
+          table.getDatabaseName,
+          table.getTableName,
+          locksToBeAcquired)(sparkSession)
+        val partitions =
+          specs.flatMap(f => sparkSession.sessionState.catalog.listPartitions(tableName, Some(f)))
+        val carbonPartitions = partitions.map { partition =>
+          new PartitionSpec(new util.ArrayList[String](
+            partition.spec.seq.map { case (column, value) => column + "=" + value }.toList.asJava),
+            partition.location)
+        }
+        carbonPartitionsTobeDropped = new util.ArrayList[PartitionSpec](carbonPartitions.asJava)
+        // Drop the partitions from hive.
+        AlterTableDropPartitionCommand(
+          tableName,
+          specs,
+          ifExists,
+          purge,
+          retainData).run(sparkSession)
       } catch {
         case e: Exception =>
           if (!ifExists) {
@@ -77,15 +102,10 @@ case class CarbonAlterTableDropHivePartitionCommand(
             log.warn(e.getMessage)
             return Seq.empty[Row]
           }
+      } finally {
+        AlterTableUtil.releaseLocks(locks)
       }
 
-      // Drop the partitions from hive.
-      AlterTableDropPartitionCommand(
-        tableName,
-        specs,
-        ifExists,
-        purge,
-        retainData).run(sparkSession)
     }
     Seq.empty[Row]
   }
@@ -119,48 +139,27 @@ case class CarbonAlterTableDropHivePartitionCommand(
       }.toSet
       val segments = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
         .getValidAndInvalidSegments.getValidSegments
-      try {
-        // First drop the partitions from partition mapper files of each segment
-        new CarbonDropPartitionRDD(sparkSession.sparkContext,
-          table.getTablePath,
-          segments.asScala,
-          partitionNames.toSeq,
-          uniqueId,
-          partialMatch = true).collect()
-      } catch {
-        case e: Exception =>
-          // roll back the drop partitions from carbon store
-          new CarbonDropPartitionCommitRDD(sparkSession.sparkContext,
-            table.getTablePath,
-            segments.asScala,
-            false,
-            uniqueId,
-            partitionNames.toSeq).collect()
-          throw e
-      }
-      // commit the drop partitions from carbon store
-      new CarbonDropPartitionCommitRDD(sparkSession.sparkContext,
+      // First drop the partitions from partition mapper files of each segment
+      val tuples = new CarbonDropPartitionRDD(sparkSession.sparkContext,
         table.getTablePath,
         segments.asScala,
-        true,
-        uniqueId,
-        partitionNames.toSeq).collect()
-      // Update the loadstatus with update time to clear cache from driver.
-      val segmentSet = new util.HashSet[String](new SegmentStatusManager(table
-        .getAbsoluteTableIdentifier).getValidAndInvalidSegments.getValidSegments)
-      CarbonUpdateUtil.updateTableMetadataStatus(
-        segmentSet,
-        table,
-        uniqueId,
-        true,
-        new util.ArrayList[String])
+        carbonPartitionsTobeDropped,
+        uniqueId).collect()
+      val tobeUpdatedSegs = new util.ArrayList[String]
+      val tobeDeletedSegs = new util.ArrayList[String]
+      tuples.foreach{case (tobeUpdated, tobeDeleted) =>
+        if (tobeUpdated.split(",").length > 0) {
+          tobeUpdatedSegs.add(tobeUpdated.split(",")(0))
+        }
+        if (tobeDeleted.split(",").length > 0) {
+          tobeDeletedSegs.add(tobeDeleted.split(",")(0))
+        }
+      }
+      SegmentFileStore.commitDropPartitions(table, uniqueId, tobeUpdatedSegs, tobeDeletedSegs)
       DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
     } finally {
       AlterTableUtil.releaseLocks(locks)
-      new PartitionMapFileStore().cleanSegments(
-        table,
-        new util.ArrayList(CarbonFilters.getPartitions(Seq.empty, sparkSession, tableName).asJava),
-        false)
+      new SegmentFileStore().cleanSegments(table, null, false)
     }
     Seq.empty[Row]
   }

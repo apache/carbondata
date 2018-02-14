@@ -234,6 +234,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     loadModel.setTaskNo(taskAttemptContext.getConfiguration().get(
         "carbon.outputformat.taskno",
         String.valueOf(System.nanoTime())));
+    loadModel.setDataWritePath(
+        taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
     final CarbonOutputIteratorWrapper iteratorWrapper = new CarbonOutputIteratorWrapper();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();

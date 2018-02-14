@@ -51,7 +51,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
 import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
-import org.apache.carbondata.core.metadata.PartitionMapFileStore
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
@@ -72,7 +72,7 @@ import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServicePr
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load.DataLoadProcessorStepOnSpark
-import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, CarbonDropPartitionCommitRDD, CarbonDropPartitionRDD}
+import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataLoadingUtil, GlobalDictionaryUtil, SparkDataTypeConverterImpl}
 
 case class CarbonLoadDataCommand(
@@ -182,7 +182,8 @@ case class CarbonLoadDataCommand(
         options,
         optionsFinal,
         carbonLoadModel,
-        hadoopConf
+        hadoopConf,
+        partition
       )
       // Delete stale segment folders that are not in table status but are physically present in
       // the Fact folder
@@ -215,7 +216,11 @@ case class CarbonLoadDataCommand(
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
         // Clean up the old invalid segment data before creating a new entry for new load.
-        DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, table)
+        DataLoadingUtil.deleteLoadsAndUpdateMetadata(
+          isForceDeletion = false,
+          table,
+          CarbonFilters.getCurrentPartitions(sparkSession,
+            TableIdentifier(tableName, databaseNameOp)).map(_.asJava).orNull)
         // add the start entry for the new load in the table status file
         if (updateModel.isEmpty && !table.isHivePartitionTable) {
           CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
@@ -515,37 +520,7 @@ case class CarbonLoadDataCommand(
     val currentPartitions =
       CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, identifier)
     // Clean up the alreday dropped partitioned data
-    new PartitionMapFileStore().cleanSegments(table, currentPartitions.asJava, false)
-    // Converts the data to carbon understandable format. The timestamp/date format data needs to
-    // converted to hive standard fomat to let spark understand the data to partition.
-    val serializationNullFormat =
-      carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
-    val badRecordAction =
-      carbonLoadModel.getBadRecordsAction.split(",")(1)
-    var timeStampformatString = carbonLoadModel.getTimestampformat
-    if (timeStampformatString.isEmpty) {
-      timeStampformatString = carbonLoadModel.getDefaultTimestampFormat
-    }
-    val timeStampFormat = new SimpleDateFormat(timeStampformatString)
-    var dateFormatString = carbonLoadModel.getDateFormat
-    if (dateFormatString.isEmpty) {
-      dateFormatString = carbonLoadModel.getDefaultDateFormat
-    }
-    val dateFormat = new SimpleDateFormat(dateFormatString)
-    CarbonSession.threadSet(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT, dateFormatString)
-    CarbonSession.threadSet(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
-      timeStampformatString)
-    CarbonSession.threadSet(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT,
-      serializationNullFormat)
-    CarbonSession.threadSet(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
-      badRecordAction)
-    val isEmptyBadRecord = carbonLoadModel.getIsEmptyDataBadRecord.split(",")(1)
-    CarbonSession.threadSet(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
-      isEmptyBadRecord)
+    new SegmentFileStore().cleanSegments(table, null, false)
     CarbonSession.threadSet("partition.operationcontext", operationContext)
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
@@ -556,8 +531,13 @@ case class CarbonLoadDataCommand(
 
     var partitionsLen = 0
     val sortScope = CarbonDataProcessorUtil.getSortScope(carbonLoadModel.getSortScope)
+    val partitionValues = if (partition.nonEmpty) {
+      partition.values.filter(_.nonEmpty).map(_.get).toArray
+    } else {
+      Array[String]()
+    }
     def transformQuery(rdd: RDD[Row], isDataFrame: Boolean) = {
-      val updatedRdd = convertData(rdd, sparkSession, carbonLoadModel, isDataFrame)
+      val updatedRdd = convertData(rdd, sparkSession, carbonLoadModel, isDataFrame, partitionValues)
       val catalogAttributes = catalogTable.schema.toAttributes
       attributes = attributes.map(a => {
         catalogAttributes.find(_.name.equalsIgnoreCase(a.name)).get
@@ -603,56 +583,65 @@ case class CarbonLoadDataCommand(
 
     try {
       val query: LogicalPlan = if (dataFrame.isDefined) {
-        val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
-        val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
-        val dfAttributes =
-          StructType(dataFrame.get.schema.fields.map(_.copy(dataType = StringType))).toAttributes
-        val partitionValues = if (partition.nonEmpty) {
-          partition.values.filter(_.nonEmpty).map(_.get).toArray
-        } else {
-          Array[String]()
-        }
-        val len = dfAttributes.length
-        val rdd = dataFrame.get.rdd.map { f =>
-          val data = new Array[Any](len)
-          var i = 0
-          while (i < f.length) {
-            data(i) =
-              UTF8String.fromString(
-                CarbonScalaUtil.getString(f.get(i),
-                  serializationNullFormat,
-                  delimiterLevel1,
-                  delimiterLevel2,
-                  timeStampFormat,
-                  dateFormat))
-            i = i + 1
-          }
-          if (partitionValues.length > 0) {
-            var j = 0
-            while (i < len) {
-              data(i) = UTF8String.fromString(partitionValues(j))
-              j = j + 1
-              i = i + 1
-            }
-          }
-          Row.fromSeq(data)
-        }
-        val transRdd = if (updateModel.isDefined) {
+        val (rdd, dfAttributes) = if (updateModel.isDefined) {
           // Get the updated query plan in case of update scenario
-          Dataset.ofRows(
+          val updatedFrame = Dataset.ofRows(
             sparkSession,
             getLogicalQueryForUpdate(
               sparkSession,
               catalogTable,
-              dfAttributes,
-              rdd.map(row => InternalRow.fromSeq(row.toSeq)),
-              carbonLoadModel)).rdd
+              dataFrame.get,
+              carbonLoadModel))
+          (updatedFrame.rdd, updatedFrame.schema)
         } else {
-          rdd
+          (dataFrame.get.rdd, dataFrame.get.schema)
         }
-        transformQuery(transRdd, true)
-      } else {
 
+        val expectedColumns = {
+          val staticPartCols = partition.filter(_._2.isDefined).keySet
+          attributes.filterNot(a => staticPartCols.contains(a.name))
+        }
+        if (expectedColumns.length != dfAttributes.length) {
+          throw new AnalysisException(
+            s"Cannot insert into table $tableName because the number of columns are different: " +
+            s"need ${expectedColumns.length} columns, " +
+            s"but query has ${dfAttributes.length} columns.")
+        }
+        val nonPartitionBounds = expectedColumns.zipWithIndex.map(_._2).toArray
+        val partitionBounds = new Array[Int](partitionValues.length)
+        if (partition.nonEmpty) {
+          val nonPartitionSchemaLen = attributes.length - partition.size
+          var i = nonPartitionSchemaLen
+          var index = 0
+          partition.values.foreach { p =>
+            if (p.isDefined) {
+              partitionBounds(index) = i + index
+            } else {
+              nonPartitionBounds(i) = nonPartitionSchemaLen + index
+              i = i + 1
+            }
+            index = index + 1
+          }
+        }
+
+        val len = dfAttributes.length + partitionValues.length
+        val transRdd = rdd.map { f =>
+          val data = new Array[Any](len)
+          var i = 0
+          while (i < f.length) {
+            data(nonPartitionBounds(i)) = f.get(i)
+            i = i + 1
+          }
+          var j = 0
+          while (j < partitionBounds.length) {
+            data(partitionBounds(j)) = UTF8String.fromString(partitionValues(j))
+            j = j + 1
+          }
+          Row.fromSeq(data)
+        }
+
+        transformQuery(transRdd, isDataFrame = true)
+      } else {
         val rowDataTypes = attributes.map { attribute =>
           catalogTable.schema.find(_.name.equalsIgnoreCase(attribute.name)) match {
             case Some(attr) => attr.dataType
@@ -704,18 +693,13 @@ case class CarbonLoadDataCommand(
           ifPartitionNotExists = false)
       Dataset.ofRows(sparkSession, convertedPlan)
     } finally {
-      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT)
-      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT)
-      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT)
-      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)
-      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD)
       CarbonSession.threadUnset("partition.operationcontext")
       if (isOverwriteTable) {
         DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
         // Clean the overwriting segments if any.
-        new PartitionMapFileStore().cleanSegments(
+        new SegmentFileStore().cleanSegments(
           table,
-          CarbonFilters.getPartitions(Seq.empty, sparkSession, identifier).asJava,
+          null,
           false)
       }
     }
@@ -738,7 +722,8 @@ case class CarbonLoadDataCommand(
       originRDD: RDD[Row],
       sparkSession: SparkSession,
       model: CarbonLoadModel,
-      isDataFrame: Boolean): RDD[InternalRow] = {
+      isDataFrame: Boolean,
+      partitionValues: Array[String]): RDD[InternalRow] = {
     model.setPartitionId("0")
     val sc = sparkSession.sparkContext
     val modelBroadcast = sc.broadcast(model)
@@ -752,12 +737,18 @@ case class CarbonLoadDataCommand(
           DataLoadProcessorStepOnSpark.toRDDIterator(rows, modelBroadcast)
         }
       } else {
-        originRDD.map{row =>
-          val array = new Array[AnyRef](row.length)
+        // Append the partition columns in case of static partition scenario
+        val partitionLen = partitionValues.length
+        val len = model.getCsvHeaderColumns.length - partitionLen
+        originRDD.map{ row =>
+          val array = new Array[AnyRef](len + partitionLen)
           var i = 0
-          while (i < array.length) {
+          while (i < len) {
             array(i) = row.get(i).asInstanceOf[AnyRef]
             i = i + 1
+          }
+          if (partitionLen > 0) {
+            System.arraycopy(partitionValues, 0, array, i, partitionLen)
           }
           array
         }
@@ -783,12 +774,11 @@ case class CarbonLoadDataCommand(
   private def getLogicalQueryForUpdate(
       sparkSession: SparkSession,
       catalogTable: CatalogTable,
-      attributes: Seq[AttributeReference],
-      rdd: RDD[InternalRow],
+      df: DataFrame,
       carbonLoadModel: CarbonLoadModel): LogicalPlan = {
     sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
     // In case of update, we don't need the segmrntid column in case of partitioning
-    val dropAttributes = attributes.dropRight(1)
+    val dropAttributes = df.logicalPlan.output.dropRight(1)
     val finalOutput = catalogTable.schema.map { attr =>
       dropAttributes.find { d =>
         val index = d.name.lastIndexOf("-updatedColumn")
@@ -801,7 +791,7 @@ case class CarbonLoadDataCommand(
     }
     carbonLoadModel.setCsvHeader(catalogTable.schema.map(_.name.toLowerCase).mkString(","))
     carbonLoadModel.setCsvHeaderColumns(carbonLoadModel.getCsvHeader.split(","))
-    Project(finalOutput, LogicalRDD(attributes, rdd)(sparkSession))
+    Project(finalOutput, df.logicalPlan)
   }
 
   private def convertToLogicalRelation(
@@ -855,7 +845,8 @@ case class CarbonLoadDataCommand(
     if (updateModel.isDefined) {
       options += (("updatetimestamp", updateModel.get.updatedTimeStamp.toString))
       if (updateModel.get.deletedSegments.nonEmpty) {
-        options += (("segmentsToBeDeleted", updateModel.get.deletedSegments.mkString(",")))
+        options += (("segmentsToBeDeleted",
+          updateModel.get.deletedSegments.map(_.getSegmentId).mkString(",")))
       }
     }
     val hdfsRelation = HadoopFsRelation(

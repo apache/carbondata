@@ -16,20 +16,24 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
+import scala.collection.JavaConverters._
 import java.io.{File, FileWriter, IOException}
 import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors}
 
 import org.apache.commons.io.FileUtils
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.BatchedDataSourceScanExec
+import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSession, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
@@ -66,18 +70,15 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originMultiLoads OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
   }
 
-  def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Int): Unit = {
+  def validateDataFiles(tableUniqueName: String, segmentId: String, partition: Int): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
     val tablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
       carbonTable.getTablePath)
-    val segmentDir = tablePath.getCarbonDataDirectoryPath("0", segmentId)
-    val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
-    val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      override def accept(file: CarbonFile): Boolean = {
-        return file.getName.endsWith(".partitionmap")
-      }
-    })
-    assert(dataFiles.length == partitions)
+    val partitions = CarbonFilters
+      .getPartitions(Seq.empty,
+        sqlContext.sparkSession,
+        TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName)))
+    assert(partitions.get.length == partition)
   }
 
   test("data loading for partition table for one partition column") {
@@ -92,7 +93,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_partitionone", "0", 1)
+    validateDataFiles("default_partitionone", "0", 10)
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionone order by empno"),
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -111,7 +112,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiontwo OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_partitiontwo", "0", 1)
+    validateDataFiles("default_partitiontwo", "0", 10)
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitiontwo order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -130,7 +131,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionthree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_partitionthree", "0", 1)
+    validateDataFiles("default_partitionthree", "0", 10)
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionthree order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -152,8 +153,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_partitionmultiplethree", "1", 1)
-    validateDataFiles("default_partitionmultiplethree", "2", 1)
+    validateDataFiles("default_partitionmultiplethree", "1", 10)
+    validateDataFiles("default_partitionmultiplethree", "2", 10)
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionmultiplethree order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originMultiLoads order by empno"))
   }
@@ -172,7 +173,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql(s"""insert into insertpartitionthree select empno,doj,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
     sql(s"""insert into insertpartitionthree select empno,doj,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
 
-    validateDataFiles("default_insertpartitionthree", "0", 1)
+    validateDataFiles("default_insertpartitionthree", "0", 10)
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from insertpartitionthree order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originMultiLoads order by empno"))
@@ -205,7 +206,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE singlepasspartitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'SINGLE_PASS'='true')""")
 
-    validateDataFiles("default_singlepasspartitionone", "0", 1)
+    validateDataFiles("default_singlepasspartitionone", "0", 8)
   }
 
   test("data loading for partition table for one static partition column with load syntax") {
@@ -334,13 +335,13 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_mergeindexpartitionthree")
     val tablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
-      carbonTable.getTablePath)
-    val segmentDir = tablePath.getCarbonDataDirectoryPath("0", "0")
-    val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
-    val files = carbonFile.listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = CarbonTablePath.isCarbonIndexFile(file.getName)
-    })
-    assert(files.length == 10)
+        carbonTable.getTablePath)
+    val details = SegmentStatusManager.readTableStatusFile(tablePath.getTableStatusFilePath)
+    val store = new SegmentFileStore
+    store.readSegment(carbonTable.getTablePath, details(0).getSegmentFile)
+    store.readIndexFiles()
+    store.getIndexFiles
+    assert(store.getIndexFiles.size() == 10)
   }
 
   test("load static partition table for one static partition column with load syntax issue") {
@@ -433,10 +434,10 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
     sql(s"LOAD DATA LOCAL INPATH '$inputPath' INTO TABLE smallpartitionfiles")
     FileUtils.deleteDirectory(folder)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "smallpartitionfiles")
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
-    val segmentDir = carbonTablePath.getSegmentDir("0", "0")
-    assert(new File(segmentDir).listFiles().length < 50)
+    val specs = CarbonFilters.getPartitions(Seq.empty, sqlContext.sparkSession, TableIdentifier("smallpartitionfiles"))
+    specs.get.foreach{s =>
+      assert(new File(s.getLocation.toString).listFiles().length < 10)
+    }
   }
 
   test("verify partition read with small files") {

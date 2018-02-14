@@ -27,6 +27,7 @@ import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -173,7 +174,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       sparkSession: SparkSession,
       currentTime: Long,
       executorErrors: ExecutionErrors,
-      deletedSegments: Seq[String]): Unit = {
+      deletedSegments: Seq[Segment]): Unit = {
 
     def isDestinationRelation(relation: CarbonDatasourceHadoopRelation): Boolean = {
       val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)

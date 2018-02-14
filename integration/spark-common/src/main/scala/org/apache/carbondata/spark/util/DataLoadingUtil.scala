@@ -18,7 +18,8 @@
 package org.apache.carbondata.spark.util
 
 import java.text.SimpleDateFormat
-import java.util.{Date, Locale}
+import java.util
+import java.util.{Date, List, Locale}
 
 import scala.collection.{immutable, mutable}
 import scala.collection.JavaConverters._
@@ -43,6 +44,7 @@ import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
@@ -221,7 +223,8 @@ object DataLoadingUtil {
       options: immutable.Map[String, String],
       optionsFinal: mutable.Map[String, String],
       carbonLoadModel: CarbonLoadModel,
-      hadoopConf: Configuration): Unit = {
+      hadoopConf: Configuration,
+      partition: Map[String, Option[String]] = Map.empty): Unit = {
     carbonLoadModel.setTableName(table.getTableName)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTablePath(table.getTablePath)
@@ -333,8 +336,9 @@ object DataLoadingUtil {
     carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimeter))
     carbonLoadModel.setCsvHeader(fileHeader)
     carbonLoadModel.setColDictFilePath(column_dict)
+    val ignoreColumns = new util.ArrayList(partition.filter(_._2.isDefined).map(_._1).toList.asJava)
     carbonLoadModel.setCsvHeaderColumns(
-      CommonUtil.getCsvHeaderColumns(carbonLoadModel, hadoopConf))
+      CommonUtil.getCsvHeaderColumns(carbonLoadModel, hadoopConf, ignoreColumns))
 
     val validatedMaxColumns = CommonUtil.validateMaxColumns(
       carbonLoadModel.getCsvHeaderColumns,
@@ -362,7 +366,8 @@ object DataLoadingUtil {
 
   def deleteLoadsAndUpdateMetadata(
       isForceDeletion: Boolean,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      specs: util.List[PartitionSpec]): Unit = {
     if (isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
       val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
@@ -416,7 +421,7 @@ object DataLoadingUtil {
         if (updationCompletionStaus) {
           DeleteLoadFolders
             .physicalFactAndMeasureMetadataDeletion(absoluteTableIdentifier,
-              carbonTable.getMetaDataFilepath, isForceDeletion)
+              carbonTable.getMetaDataFilepath, isForceDeletion, specs)
         }
       }
     }

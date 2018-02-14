@@ -24,18 +24,19 @@ import java.util.PriorityQueue;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.PartitionMapFileStore;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.exception.SliceMergerException;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
@@ -51,7 +52,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
   private CarbonFactHandler dataHandler;
   private SegmentProperties segprop;
   private CarbonLoadModel loadModel;
-  private List<String> partitionNames;
+  private PartitionSpec partitionSpec;
   /**
    * record holder heap
    */
@@ -62,16 +63,26 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
   public RowResultMergerProcessor(String databaseName,
       String tableName, SegmentProperties segProp, String[] tempStoreLocation,
-      CarbonLoadModel loadModel, CompactionType compactionType, List<String> partitionNames) {
+      CarbonLoadModel loadModel, CompactionType compactionType, PartitionSpec partitionSpec) {
     this.segprop = segProp;
-    this.partitionNames = partitionNames;
+    this.partitionSpec = partitionSpec;
     this.loadModel = loadModel;
     CarbonDataProcessorUtil.createLocations(tempStoreLocation);
 
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
+    String carbonStoreLocation;
+    if (partitionSpec != null) {
+      carbonStoreLocation =
+          partitionSpec.getLocation().toString() + CarbonCommonConstants.FILE_SEPARATOR + loadModel
+              .getFactTimeStamp() + ".tmp";
+    } else {
+      carbonStoreLocation = CarbonDataProcessorUtil
+          .createCarbonStoreLocation(carbonTable.getTablePath(), loadModel.getDatabaseName(),
+              tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
+    }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .getCarbonFactDataHandlerModel(loadModel, carbonTable, segProp, tableName,
-            tempStoreLocation);
+            tempStoreLocation, carbonStoreLocation);
     setDataFileAttributesInModel(loadModel, compactionType, carbonTable,
         carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setCompactionFlow(true);
@@ -157,14 +168,13 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         if (isDataPresent) {
           this.dataHandler.closeHandler();
         }
-        if (partitionNames != null) {
-          new PartitionMapFileStore().writePartitionMapFile(
-              CarbonTablePath.getSegmentPath(loadModel.getTablePath(), loadModel.getSegmentId()),
-              loadModel.getTaskNo(),
-              partitionNames);
+        if (partitionSpec != null) {
+          new SegmentFileStore().writeSegmentFile(loadModel.getTablePath(), loadModel.getTaskNo(),
+              partitionSpec.getLocation().toString(), loadModel.getFactTimeStamp() + "",
+              partitionSpec.getPartitions());
         }
       } catch (CarbonDataWriterException | IOException e) {
-        LOGGER.error(e,"Exception in compaction merger");
+        LOGGER.error(e, "Exception in compaction merger");
         mergeStatus = false;
       }
     }

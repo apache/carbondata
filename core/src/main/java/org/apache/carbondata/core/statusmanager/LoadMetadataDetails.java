@@ -123,6 +123,11 @@ public class LoadMetadataDetails implements Serializable {
    */
   private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
 
+  /**
+   * Segment file name where it has the information of partition information.
+   */
+  private String segmentFile;
+
   public String getPartitionCount() {
     return partitionCount;
   }
@@ -416,5 +421,13 @@ public class LoadMetadataDetails implements Serializable {
 
   public void setFileFormat(FileFormat fileFormat) {
     this.fileFormat = fileFormat;
+  }
+
+  public String getSegmentFile() {
+    return segmentFile;
+  }
+
+  public void setSegmentFile(String segmentFile) {
+    this.segmentFile = segmentFile;
   }
 }

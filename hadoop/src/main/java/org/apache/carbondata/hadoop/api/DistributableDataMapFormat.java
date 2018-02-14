@@ -24,8 +24,10 @@ import java.util.List;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
@@ -49,14 +51,14 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private String dataMapName;
 
-  private List<String> validSegments;
+  private List<Segment> validSegments;
 
   private String className;
 
-  private List<String> partitions;
+  private List<PartitionSpec> partitions;
 
-  public DistributableDataMapFormat(AbsoluteTableIdentifier identifier,
-      String dataMapName, List<String> validSegments, List<String> partitions, String className) {
+  public DistributableDataMapFormat(AbsoluteTableIdentifier identifier, String dataMapName,
+      List<Segment> validSegments, List<PartitionSpec> partitions, String className) {
     this.identifier = identifier;
     this.dataMapName = dataMapName;
     this.validSegments = validSegments;

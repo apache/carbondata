@@ -20,11 +20,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.{CarbonMetadata, PartitionMapFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -49,23 +45,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
 
   }
 
-  def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Int): Unit = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
-    val tablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
-      carbonTable.getTablePath)
-    val segmentDir = tablePath.getCarbonDataDirectoryPath("0", segmentId)
-    val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
-    val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      override def accept(file: CarbonFile): Boolean = {
-        return CarbonTablePath.isCarbonDataFile(file.getName) ||
-               CarbonTablePath.isCarbonIndexFile(file.getName)
-      }
-    })
-    assert(dataFiles.length > 1)
-    val pstore = new PartitionMapFileStore()
-    pstore.readAllPartitionsOfSegment(segmentDir)
-    println(pstore.getPartitionMap)
-  }
 
   test("data compaction for partition table for one partition column") {
     sql(
@@ -83,8 +62,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionone OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     sql("ALTER TABLE partitionone COMPACT 'MINOR'").collect()
-
-    validateDataFiles("default_partitionone", "0.1", 1)
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionone where empno=11 order by empno"),
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where empno=11 order by empno"))
@@ -107,8 +84,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionthree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionthree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql("ALTER TABLE partitionthree COMPACT 'MINOR'").collect()
-
-    validateDataFiles("default_partitionthree", "0.1", 1)
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionthree where workgroupcategory=1 and empname='arvind' and designation='SE' order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where workgroupcategory=1 and empname='arvind' and designation='SE' order by empno"))
@@ -136,7 +111,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmajor OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     val rows = sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionmajor where workgroupcategory=1 and empname='arvind' and designation='SE' order by empno").collect()
     sql("ALTER TABLE partitionmajor COMPACT 'MAJOR'").collect()
-    validateDataFiles("default_partitionmajor", "0.2", 1)
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionmajor where workgroupcategory=1 and empname='arvind' and designation='SE' order by empno"),
       rows)
   }
@@ -158,8 +132,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     val p1 = sql(s"""select count(*) from staticpartition where deptname='software'""").collect()
     val p2 = sql(s"""select count(*) from staticpartition where deptname='finance'""").collect()
     sql("ALTER TABLE staticpartition COMPACT 'MINOR'").collect()
-
-    validateDataFiles("default_staticpartition", "0.1", 1)
 
     checkAnswer(sql(s"""select count(*) from staticpartition where deptname='software'"""), p1)
     checkAnswer(sql(s"""select count(*) from staticpartition where deptname='finance'"""), p2)

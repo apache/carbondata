@@ -28,8 +28,10 @@ import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, Me
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, PartitionMapFileStore}
+import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
@@ -228,10 +230,18 @@ case class RefreshCarbonTableCommand(
     val allpartitions = metadataDetails.map{ metadata =>
       if (metadata.getSegmentStatus == SegmentStatus.SUCCESS ||
           metadata.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-        val mapper = new PartitionMapFileStore()
-        mapper.readAllPartitionsOfSegment(
-          CarbonTablePath.getSegmentPath(absIdentifier.getTablePath, metadata.getLoadName))
-        Some(mapper.getPartitionMap.values().asScala)
+        val mapper = new SegmentFileStore()
+        mapper.readSegment(absIdentifier.getTablePath, metadata.getSegmentFile)
+        val specs = mapper.getLocationMap.asScala.map { case(location, fd) =>
+          var updatedLoc =
+            if (fd.isRelative) {
+              absIdentifier.getTablePath + CarbonCommonConstants.FILE_SEPARATOR + location
+            } else {
+              location
+            }
+          new PartitionSpec(fd.getPartitions, updatedLoc)
+        }
+        Some(specs)
       } else {
         None
       }
@@ -240,14 +250,14 @@ case class RefreshCarbonTableCommand(
       TableIdentifier(absIdentifier.getTableName, Some(absIdentifier.getDatabaseName))
     // Register the partition information to the hive metastore
     allpartitions.foreach { segPartitions =>
-      val specs: Seq[TablePartitionSpec] = segPartitions.map { indexPartitions =>
-        indexPartitions.asScala.map{ p =>
+      val specs: Seq[(TablePartitionSpec, Option[String])] = segPartitions.map { indexPartitions =>
+        (indexPartitions.getPartitions.asScala.map{ p =>
           val spec = p.split("=")
           (spec(0), spec(1))
-        }.toMap
+        }.toMap, Some(indexPartitions.getLocation.toString))
       }.toSeq
       // Add partition information
-      AlterTableAddPartitionCommand(identifier, specs.map((_, None)), true).run(sparkSession)
+      AlterTableAddPartitionCommand(identifier, specs, true).run(sparkSession)
     }
   }
 }

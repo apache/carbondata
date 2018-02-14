@@ -215,7 +215,7 @@ case class CarbonAlterTableSplitPartitionCommand(
       var i = 0
       validSegments.foreach { segmentId =>
         threadArray(i) = SplitThread(sqlContext, carbonLoadModel, executor,
-          segmentId, partitionId, oldPartitionIdList)
+          segmentId.getSegmentId, partitionId, oldPartitionIdList)
         threadArray(i).start()
         i += 1
       }
@@ -225,7 +225,7 @@ case class CarbonAlterTableSplitPartitionCommand(
       val identifier = AbsoluteTableIdentifier.from(carbonLoadModel.getTablePath,
         carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
       val refresher = DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
-      refresher.refreshSegments(validSegments.asJava)
+      refresher.refreshSegments(validSegments.map(_.getSegmentId).asJava)
     } catch {
       case e: Exception =>
         LOGGER.error(s"Exception when split partition: ${ e.getMessage }")

@@ -295,7 +295,7 @@ test("Creation of partition table should fail if the colname in table schema and
         .asInstanceOf[CarbonScanRDD]
     }
     assert(scanRDD.nonEmpty)
-    assert(!partitionNames.map(f => scanRDD.head.partitionNames.exists(_.equals(f))).exists(!_))
+    assert(!partitionNames.map(f => scanRDD.head.partitionNames.exists(_.getPartitions.contains(f))).exists(!_))
   }
 
   override def afterAll = {

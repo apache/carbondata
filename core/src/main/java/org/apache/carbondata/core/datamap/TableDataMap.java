@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.events.Event;
@@ -60,21 +61,21 @@ public final class TableDataMap extends OperationEventListener {
   /**
    * Pass the valid segments and prune the datamap using filter expression
    *
-   * @param segmentIds
+   * @param segments
    * @param filterExp
    * @return
    */
-  public List<ExtendedBlocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp,
-      List<String> partitions) throws IOException {
+  public List<ExtendedBlocklet> prune(List<Segment> segments, FilterResolverIntf filterExp,
+      List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> blocklets = new ArrayList<>();
-    for (String segmentId : segmentIds) {
+    for (Segment segment : segments) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
+      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
       for (DataMap dataMap : dataMaps) {
         pruneBlocklets.addAll(dataMap.prune(filterExp, partitions));
       }
       blocklets.addAll(addSegmentId(blockletDetailsFetcher
-          .getExtendedBlocklets(pruneBlocklets, segmentId), segmentId));
+          .getExtendedBlocklets(pruneBlocklets, segment), segment.getSegmentId()));
     }
     return blocklets;
   }
@@ -94,13 +95,13 @@ public final class TableDataMap extends OperationEventListener {
    *
    * @return
    */
-  public List<DataMapDistributable> toDistributable(List<String> segmentIds) throws IOException {
+  public List<DataMapDistributable> toDistributable(List<Segment> segments) throws IOException {
     List<DataMapDistributable> distributables = new ArrayList<>();
-    for (String segmentsId : segmentIds) {
-      List<DataMapDistributable> list = dataMapFactory.toDistributable(segmentsId);
+    for (Segment segment : segments) {
+      List<DataMapDistributable> list = dataMapFactory.toDistributable(segment);
       for (DataMapDistributable distributable: list) {
         distributable.setDataMapName(dataMapName);
-        distributable.setSegmentId(segmentsId);
+        distributable.setSegment(segment);
         distributable.setTablePath(identifier.getTablePath());
         distributable.setDataMapFactoryClass(dataMapFactory.getClass().getName());
       }
@@ -118,7 +119,7 @@ public final class TableDataMap extends OperationEventListener {
    * @return
    */
   public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
-      FilterResolverIntf filterExp, List<String> partitions) throws IOException {
+      FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     List<Blocklet> blocklets = new ArrayList<>();
     List<DataMap> dataMaps = dataMapFactory.getDataMaps(distributable);
@@ -127,8 +128,8 @@ public final class TableDataMap extends OperationEventListener {
     }
     for (Blocklet blocklet: blocklets) {
       ExtendedBlocklet detailedBlocklet =
-          blockletDetailsFetcher.getExtendedBlocklet(blocklet, distributable.getSegmentId());
-      detailedBlocklet.setSegmentId(distributable.getSegmentId());
+          blockletDetailsFetcher.getExtendedBlocklet(blocklet, distributable.getSegment());
+      detailedBlocklet.setSegmentId(distributable.getSegment().getSegmentId());
       detailedBlocklets.add(detailedBlocklet);
     }
     return detailedBlocklets;
@@ -136,11 +137,11 @@ public final class TableDataMap extends OperationEventListener {
 
   /**
    * Clear only the datamaps of the segments
-   * @param segmentIds
+   * @param segments
    */
-  public void clear(List<String> segmentIds) {
-    for (String segmentId: segmentIds) {
-      dataMapFactory.clear(segmentId);
+  public void clear(List<Segment> segments) {
+    for (Segment segment: segments) {
+      dataMapFactory.clear(segment);
     }
   }
 
@@ -170,21 +171,21 @@ public final class TableDataMap extends OperationEventListener {
   /**
    * Method to prune the segments based on task min/max values
    *
-   * @param segmentIds
+   * @param segments
    * @param filterExp
    * @return
    * @throws IOException
    */
-  public List<String> pruneSegments(List<String> segmentIds, FilterResolverIntf filterExp)
+  public List<String> pruneSegments(List<Segment> segments, FilterResolverIntf filterExp)
       throws IOException {
     List<String> prunedSegments = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (String segmentId : segmentIds) {
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
+    for (Segment segment : segments) {
+      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
       for (DataMap dataMap : dataMaps) {
         if (dataMap.isScanRequired(filterExp)) {
           // If any one task in a given segment contains the data that means the segment need to
           // be scanned and we need to validate further data maps in the same segment
-          prunedSegments.add(segmentId);
+          prunedSegments.add(segment.getSegmentId());
           break;
         }
       }

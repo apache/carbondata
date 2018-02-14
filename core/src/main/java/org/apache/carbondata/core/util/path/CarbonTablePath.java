@@ -49,6 +49,7 @@ public class CarbonTablePath extends Path {
   public static final String INDEX_FILE_EXT = ".carbonindex";
   public static final String MERGE_INDEX_FILE_EXT = ".carbonindexmerge";
   public static final String PARTITION_MAP_EXT = ".partitionmap";
+  public static final String SEGMENT_EXT = ".segment";
 
   private static final String STREAMING_DIR = ".streaming";
   private static final String STREAMING_LOG_DIR = "log";
@@ -667,6 +668,18 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * This method will remove strings in path and return short block id
+   *
+   * @param blockId
+   * @return shortBlockId
+   */
+  public static String getShortBlockIdForPartitionTable(String blockId) {
+    return blockId.replace(SEGMENT_PREFIX, "")
+        .replace(DATA_PART_PREFIX, "")
+        .replace(CARBON_DATA_EXT, "");
+  }
+
+  /**
    * This method will append strings in path and return block id
    *
    * @param shortBlockId
@@ -735,4 +748,12 @@ public class CarbonTablePath extends Path {
   public static String getSegmentPath(String tablePath, String segmentId) {
     return tablePath + "/Fact/Part0/Segment_" + segmentId;
   }
+
+  /**
+   * Get the segment file locations of table
+   */
+  public static String getSegmentFilesLocation(String tablePath) {
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments";
+  }
+
 }
