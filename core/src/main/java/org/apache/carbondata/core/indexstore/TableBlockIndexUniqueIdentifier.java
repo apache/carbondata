@@ -17,47 +17,29 @@
 
 package org.apache.carbondata.core.indexstore;
 
+import java.util.Objects;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
 /**
- * Class holds the absoluteTableIdentifier and segmentId to uniquely identify a segment
+ * Class holds the indexFile information to uniquely identitify the carbon index
  */
 public class TableBlockIndexUniqueIdentifier {
-  /**
-   * table fully qualified identifier
-   */
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
+
+  private String indexFilePath;
+
+  private String indexFileName;
+
+  private String mergeIndexFileName;
 
   private String segmentId;
 
-  private String carbonIndexFileName;
-
-  /**
-   * Constructor to initialize the class instance
-   *
-   * @param absoluteTableIdentifier
-   * @param segmentId
-   */
-  public TableBlockIndexUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
-      String segmentId, String carbonIndexFileName) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
+  public TableBlockIndexUniqueIdentifier(String indexFilePath, String indexFileName,
+      String mergeIndexFileName, String segmentId) {
+    this.indexFilePath = indexFilePath;
+    this.indexFileName = indexFileName;
+    this.mergeIndexFileName = mergeIndexFileName;
     this.segmentId = segmentId;
-    this.carbonIndexFileName = carbonIndexFileName;
-  }
-
-  /**
-   * returns AbsoluteTableIdentifier
-   *
-   * @return
-   */
-  public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
-    return absoluteTableIdentifier;
-  }
-
-  public String getSegmentId() {
-    return segmentId;
   }
 
   /**
@@ -66,42 +48,35 @@ public class TableBlockIndexUniqueIdentifier {
    * @return
    */
   public String getUniqueTableSegmentIdentifier() {
-    CarbonTableIdentifier carbonTableIdentifier =
-        absoluteTableIdentifier.getCarbonTableIdentifier();
-    return carbonTableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR
-        + carbonTableIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE
-        + carbonTableIdentifier.getTableId() + CarbonCommonConstants.FILE_SEPARATOR + segmentId
-        + CarbonCommonConstants.FILE_SEPARATOR + carbonIndexFileName;
+    return indexFilePath + CarbonCommonConstants.FILE_SEPARATOR + indexFileName;
   }
 
-  public String getFilePath() {
-    return absoluteTableIdentifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId + "/"
-        + carbonIndexFileName;
+  public String getIndexFilePath() {
+    return indexFilePath;
+  }
+
+  public String getIndexFileName() {
+    return indexFileName;
+  }
+
+  public String getMergeIndexFileName() {
+    return mergeIndexFileName;
+  }
+
+  public String getSegmentId() {
+    return segmentId;
   }
 
   @Override public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-
     TableBlockIndexUniqueIdentifier that = (TableBlockIndexUniqueIdentifier) o;
-
-    if (!absoluteTableIdentifier.equals(that.absoluteTableIdentifier)) {
-      return false;
-    }
-    if (!segmentId.equals(that.segmentId)) {
-      return false;
-    }
-    return carbonIndexFileName.equals(that.carbonIndexFileName);
+    return Objects.equals(indexFilePath, that.indexFilePath) && Objects
+        .equals(indexFileName, that.indexFileName) && Objects
+        .equals(mergeIndexFileName, that.mergeIndexFileName);
   }
 
   @Override public int hashCode() {
-    int result = absoluteTableIdentifier.hashCode();
-    result = 31 * result + segmentId.hashCode();
-    result = 31 * result + carbonIndexFileName.hashCode();
-    return result;
-  }
-
-  public String getCarbonIndexFileName() {
-    return carbonIndexFileName;
+    return Objects.hash(indexFilePath, indexFileName, mergeIndexFileName);
   }
 }

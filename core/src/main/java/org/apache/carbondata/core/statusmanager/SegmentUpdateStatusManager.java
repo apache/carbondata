@@ -33,6 +33,7 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -70,6 +71,7 @@ public class SegmentUpdateStatusManager {
   private SegmentUpdateDetails[] updateDetails;
   private CarbonTablePath carbonTablePath;
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
+  private boolean isPartitionTable;
 
   /**
    * @param absoluteTableIdentifier
@@ -83,6 +85,9 @@ public class SegmentUpdateStatusManager {
     // on latest file status.
     segmentDetails =
         segmentStatusManager.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
+    if (segmentDetails.length > 0) {
+      isPartitionTable = segmentDetails[0].getSegmentFile() != null;
+    }
     updateDetails = readLoadMetadata();
     populateMap();
   }
@@ -268,12 +273,14 @@ public class SegmentUpdateStatusManager {
    * @return all delete delta files
    * @throws Exception
    */
-  public String[] getDeleteDeltaFilePath(String blockFilePath) throws Exception {
-    int tableFactPathLength = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier()).getFactDir().length() + 1;
-    String blockame = blockFilePath.substring(tableFactPathLength);
-    String tupleId = CarbonTablePath.getShortBlockId(blockame);
+  public String[] getDeleteDeltaFilePath(String blockFilePath, String segmentId) throws Exception {
+    String blockId = CarbonUtil.getBlockId(absoluteTableIdentifier, blockFilePath, segmentId);
+    String tupleId;
+    if (isPartitionTable) {
+      tupleId = CarbonTablePath.getShortBlockIdForPartitionTable(blockId);
+    } else {
+      tupleId = CarbonTablePath.getShortBlockId(blockId);
+    }
     return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
         .toArray(new String[0]);
   }
@@ -292,12 +299,19 @@ public class SegmentUpdateStatusManager {
           .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
               absoluteTableIdentifier.getCarbonTableIdentifier());
       String segment = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID);
-      String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath("0", segment);
       String completeBlockName = CarbonTablePath.addDataPartPrefix(
           CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.BLOCK_ID)
               + CarbonCommonConstants.FACT_FILE_EXT);
-      String blockPath =
-          carbonDataDirectoryPath + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
+      String blockPath;
+      if (isPartitionTable) {
+        blockPath = absoluteTableIdentifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR
+            + CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.PART_ID)
+            .replace("#", "/") + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
+      } else {
+        String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath("0", segment);
+        blockPath =
+            carbonDataDirectoryPath + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
+      }
       CarbonFile file = FileFactory.getCarbonFile(blockPath, FileFactory.getFileType(blockPath));
       if (!file.exists()) {
         throw new Exception("Invalid tuple id " + tupleId);
@@ -306,8 +320,7 @@ public class SegmentUpdateStatusManager {
       //blockName without timestamp
       final String blockNameFromTuple =
           blockNameWithoutExtn.substring(0, blockNameWithoutExtn.lastIndexOf("-"));
-      return getDeltaFiles(file, blockNameFromTuple, extension,
-          segment);
+      return getDeltaFiles(file, blockNameFromTuple, extension, segment);
     } catch (Exception ex) {
       String errorMsg = "Invalid tuple id " + tupleId;
       LOG.error(errorMsg);
@@ -418,20 +431,20 @@ public class SegmentUpdateStatusManager {
    * @param blockName
    * @return
    */
-  public CarbonFile[] getDeleteDeltaFilesList(final String segmentId, final String blockName) {
+  public CarbonFile[] getDeleteDeltaFilesList(final Segment segmentId, final String blockName) {
 
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
 
-    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
+    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segmentId.getSegmentNo());
 
     CarbonFile segDir =
         FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
 
     for (SegmentUpdateDetails block : updateDetails) {
       if ((block.getBlockName().equalsIgnoreCase(blockName)) &&
-          (block.getSegmentName().equalsIgnoreCase(segmentId))
+          (block.getSegmentName().equalsIgnoreCase(segmentId.getSegmentNo()))
           && !CarbonUpdateUtil.isBlockInvalid((block.getSegmentStatus()))) {
         final long deltaStartTimestamp =
             getStartTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);

@@ -74,7 +74,6 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -269,7 +268,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfoList.add(getBlockExecutionInfoForBlock(queryModel, abstractIndex,
           dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
           dataRefNode.numberOfNodes(), dataRefNode.getBlockInfos().get(0).getFilePath(),
-          dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath()));
+          dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
+          dataRefNode.getBlockInfos().get(0).getSegmentId()));
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
@@ -291,7 +291,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   protected BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
       AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath,
-      String[] deleteDeltaFiles)
+      String[] deleteDeltaFiles, String segmentId)
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
@@ -304,11 +304,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             queryModel.getQueryDimension(), tableBlockDimensions,
             segmentProperties.getComplexDimensions());
-    int tableFactPathLength = CarbonStorePath
-        .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getTablePath(),
-            queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
-        .length() + 1;
-    blockExecutionInfo.setBlockId(filePath.substring(tableFactPathLength));
+    blockExecutionInfo.setBlockId(
+        CarbonUtil.getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segmentId));
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
     blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
@@ -456,6 +453,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     DataTypeUtil.setDataTypeConverter(queryModel.getConverter());
     return blockExecutionInfo;
   }
+
+
 
   /**
    * This method will be used to get fixed key length size this will be used

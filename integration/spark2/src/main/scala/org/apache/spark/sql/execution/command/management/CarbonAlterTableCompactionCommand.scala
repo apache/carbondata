@@ -206,7 +206,9 @@ case class CarbonAlterTableCompactionCommand(
       compactionType,
       carbonTable,
       isCompactionTriggerByDDl,
-      CarbonFilters.getCurrentPartitions(sqlContext.sparkSession, carbonTable)
+      CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
+        TableIdentifier(carbonTable.getTableName,
+        Some(carbonTable.getDatabaseName)))
     )
 
     val isConcurrentCompactionAllowed = CarbonProperties.getInstance()

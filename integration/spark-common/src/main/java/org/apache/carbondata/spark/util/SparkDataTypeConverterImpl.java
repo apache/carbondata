@@ -31,19 +31,31 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
   private static final long serialVersionUID = -4379212832935070583L;
 
   public Object convertToDecimal(Object data) {
+    if (null == data) {
+      return null;
+    }
     java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
     return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
   }
 
   public byte[] convertFromStringToByte(Object data) {
+    if (null == data) {
+      return null;
+    }
     return UTF8String.fromString((String) data).getBytes();
   }
 
   public Object convertFromByteToUTF8String(Object data) {
+    if (null == data) {
+      return null;
+    }
     return UTF8String.fromBytes((byte[]) data);
   }
 
   public Object convertFromStringToUTF8String(Object data) {
+    if (null == data) {
+      return null;
+    }
     return UTF8String.fromString((String) data);
   }
 }

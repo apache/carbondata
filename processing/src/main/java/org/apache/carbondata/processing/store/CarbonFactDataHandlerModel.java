@@ -275,7 +275,7 @@ public class CarbonFactDataHandlerModel {
    */
   public static CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel,
       CarbonTable carbonTable, SegmentProperties segmentProperties, String tableName,
-      String[] tempStoreLocation) {
+      String[] tempStoreLocation, String carbonDataDirectoryPath) {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     carbonFactDataHandlerModel.setDatabaseName(loadModel.getDatabaseName());
@@ -307,9 +307,7 @@ public class CarbonFactDataHandlerModel {
       measureDataTypes[i++] = msr.getDataType();
     }
     carbonFactDataHandlerModel.setMeasureDataType(measureDataTypes);
-    String carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .checkAndCreateCarbonStoreLocation(carbonTable.getTablePath(), loadModel.getDatabaseName(),
-            tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
+    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
     boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
@@ -334,6 +332,10 @@ public class CarbonFactDataHandlerModel {
    * @return data directory path
    */
   private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration) {
+    if (configuration.getDataWritePath() != null) {
+      CarbonUtil.checkAndCreateFolder(configuration.getDataWritePath());
+      return configuration.getDataWritePath();
+    }
     AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     String carbonDataDirectoryPath = carbonTablePath

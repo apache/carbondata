@@ -89,7 +89,7 @@ public class MeasureFieldConverterImpl implements FieldConverter {
     } else {
       try {
         if (dataField.isUseActualData()) {
-          output = DataTypeUtil.getConvertedMeasureValueBasedOnDataType(value, dataType, measure);
+          output = DataTypeUtil.getMeasureValueBasedOnDataType(value, dataType, measure, true);
         } else {
           output = DataTypeUtil.getMeasureValueBasedOnDataType(value, dataType, measure);
         }

@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand, CarbonLoadDataCommand, RefreshCarbonTableCommand}
-import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableDropHivePartitionCommand, CarbonShowCarbonPartitionsCommand}
+import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand, CarbonShowCarbonPartitionsCommand}
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonDescribeFormattedCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
@@ -247,16 +247,19 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         } else {
           ExecutedCommandExec(rename) :: Nil
         }
-      case addPartition@AlterTableAddPartitionCommand(tableName, partitionSpecsAndLocs, _) =>
+      case addPart@AlterTableAddPartitionCommand(tableName, partitionSpecsAndLocs, ifNotExists) =>
         val dbOption = tableName.database.map(_.toLowerCase)
         val tableIdentifier = TableIdentifier(tableName.table.toLowerCase(), dbOption)
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableIdentifier)(sparkSession)
-        if (isCarbonTable && partitionSpecsAndLocs.exists(_._2.isDefined)) {
-          throw new UnsupportedOperationException(
-            "add partition with location is not supported")
+        if (isCarbonTable) {
+          ExecutedCommandExec(
+            CarbonAlterTableAddHivePartitionCommand(
+              tableName,
+              partitionSpecsAndLocs,
+              ifNotExists)) :: Nil
         } else {
-          ExecutedCommandExec(addPartition) :: Nil
+          ExecutedCommandExec(addPart) :: Nil
         }
       case RefreshTable(tableIdentifier) =>
         RefreshCarbonTableCommand(tableIdentifier.database,

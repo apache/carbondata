@@ -38,8 +38,8 @@ import org.apache.spark.{SparkEnv, SparkException, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, NewHadoopRDD, RDD}
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, DataFrame, Row, SQLContext}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
-import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.CarbonException
@@ -47,6 +47,7 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
@@ -207,7 +208,9 @@ object CarbonDataRDDFactory {
                 compactionType,
                 table,
                 compactionModel.isDDLTrigger,
-                CarbonFilters.getCurrentPartitions(sqlContext.sparkSession, table))
+                CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
+                  TableIdentifier(table.getTableName,
+                  Some(table.getDatabaseName))))
               // proceed for compaction
               try {
                 CompactionFactory.getCompactor(
@@ -395,26 +398,9 @@ object CarbonDataRDDFactory {
     } catch {
       case ex: Throwable =>
         loadStatus = SegmentStatus.LOAD_FAILURE
-        ex match {
-          case sparkException: SparkException =>
-            if (sparkException.getCause.isInstanceOf[DataLoadingException] ||
-                sparkException.getCause.isInstanceOf[CarbonDataLoadingException]) {
-              executorMessage = sparkException.getCause.getMessage
-              errorMessage = errorMessage + ": " + executorMessage
-            } else if (sparkException.getCause.isInstanceOf[TextParsingException]) {
-              executorMessage = CarbonDataProcessorUtil
-                .trimErrorMessage(sparkException.getCause.getMessage)
-              errorMessage = errorMessage + " : " + executorMessage
-            }
-          case aex: AnalysisException =>
-            LOGGER.error(aex.getMessage())
-            throw aex
-          case _ =>
-            if (ex.getCause != null) {
-              executorMessage = ex.getCause.getMessage
-              errorMessage = errorMessage + ": " + executorMessage
-            }
-        }
+        val (extrMsgLocal, errorMsgLocal) = CarbonScalaUtil.retrieveAndLogErrorMsg(ex, LOGGER)
+        executorMessage = extrMsgLocal
+        errorMessage = errorMsgLocal
         LOGGER.info(errorMessage)
         LOGGER.error(ex)
     } finally {
@@ -423,14 +409,7 @@ object CarbonDataRDDFactory {
     // handle the status file updation for the update cmd.
     if (updateModel.isDefined) {
       if (loadStatus == SegmentStatus.LOAD_FAILURE) {
-        if (updateModel.get.executorErrors.failureCauses == FailureCauses.NONE) {
-          updateModel.get.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
-          if (null != executorMessage && !executorMessage.isEmpty) {
-            updateModel.get.executorErrors.errorMsg = executorMessage
-          } else {
-            updateModel.get.executorErrors.errorMsg = "Update failed as the data load has failed."
-          }
-        }
+        CarbonScalaUtil.updateErrorInUpdateModel(updateModel.get, executorMessage)
         return
       } else if (loadStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
                  updateModel.get.executorErrors.failureCauses == FailureCauses.BAD_RECORDS &&
@@ -441,12 +420,12 @@ object CarbonDataRDDFactory {
         // success case.
         // write the dictionary file in case of single_pass true
         writeDictionary(carbonLoadModel, result, false)
-        val segmentDetails = new util.HashSet[String]()
+        val segmentDetails = new util.HashSet[Segment]()
         var resultSize = 0
         res.foreach { resultOfSeg =>
           resultSize = resultSize + resultOfSeg.size
           resultOfSeg.foreach { resultOfBlock =>
-            segmentDetails.add(resultOfBlock._2._1.getLoadName)
+            segmentDetails.add(new Segment(resultOfBlock._2._1.getLoadName, null))
           }
         }
 
@@ -462,7 +441,7 @@ object CarbonDataRDDFactory {
           carbonTable,
           updateModel.get.updatedTimeStamp + "",
           true,
-          new util.ArrayList[String](0))) {
+          new util.ArrayList[Segment](0))) {
           LOGGER.audit("Data update is successful for " +
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         } else {
@@ -744,7 +723,9 @@ object CarbonDataRDDFactory {
         CompactionType.MINOR,
         carbonTable,
         isCompactionTriggerByDDl,
-        CarbonFilters.getCurrentPartitions(sqlContext.sparkSession, carbonTable))
+        CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
+          TableIdentifier(carbonTable.getTableName,
+          Some(carbonTable.getDatabaseName))))
       var storeLocation = ""
       val configuredStore = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
       if (null != configuredStore && configuredStore.nonEmpty) {

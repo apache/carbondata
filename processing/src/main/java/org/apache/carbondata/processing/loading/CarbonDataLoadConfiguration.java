@@ -109,6 +109,11 @@ public class CarbonDataLoadConfiguration {
    */
   private short writingCoresCount;
 
+  /**
+   * Flder path to where data should be written for this load.
+   */
+  private String dataWritePath;
+
   public CarbonDataLoadConfiguration() {
   }
 
@@ -362,5 +367,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setWritingCoresCount(short writingCoresCount) {
     this.writingCoresCount = writingCoresCount;
+  }
+
+  public String getDataWritePath() {
+    return dataWritePath;
+  }
+
+  public void setDataWritePath(String dataWritePath) {
+    this.dataWritePath = dataWritePath;
   }
 }

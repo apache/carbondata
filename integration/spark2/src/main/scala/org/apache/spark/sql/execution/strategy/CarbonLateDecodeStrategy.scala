@@ -36,6 +36,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
@@ -143,10 +144,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       projects: Seq[NamedExpression],
       filterPredicates: Seq[Expression],
       scanBuilder: (Seq[Attribute], Array[Filter],
-        ArrayBuffer[AttributeReference], Seq[String]) => RDD[InternalRow]) = {
+        ArrayBuffer[AttributeReference], Seq[PartitionSpec]) => RDD[InternalRow]) = {
     val names = relation.catalogTable.get.partitionColumnNames
     // Get the current partitions from table.
-    var partitions: Seq[String] = null
+    var partitions: Seq[PartitionSpec] = null
     if (names.nonEmpty) {
       val partitionSet = AttributeSet(names
         .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
@@ -167,7 +168,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         CarbonFilters.getPartitions(
           updatedPartitionFilters.toSeq,
           SparkSession.getActiveSession.get,
-          relation.catalogTable.get.identifier)
+          relation.catalogTable.get.identifier).orNull
     }
     pruneFilterProjectRaw(
       relation,
@@ -199,9 +200,9 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       relation: LogicalRelation,
       rawProjects: Seq[NamedExpression],
       filterPredicates: Seq[Expression],
-      partitions: Seq[String],
+      partitions: Seq[PartitionSpec],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
-        ArrayBuffer[AttributeReference], Seq[String]) => RDD[InternalRow]) = {
+        ArrayBuffer[AttributeReference], Seq[PartitionSpec]) => RDD[InternalRow]) = {
     val projects = rawProjects.map {p =>
       p.transform {
         case CustomDeterministicExpression(exp) => exp
@@ -350,9 +351,9 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   private def getDataSourceScan(relation: LogicalRelation,
       output: Seq[Attribute],
-      partitions: Seq[String],
+      partitions: Seq[PartitionSpec],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
-        ArrayBuffer[AttributeReference], Seq[String]) => RDD[InternalRow],
+        ArrayBuffer[AttributeReference], Seq[PartitionSpec]) => RDD[InternalRow],
       candidatePredicates: Seq[Expression],
       pushedFilters: Seq[Filter],
       metadata: Map[String, String],

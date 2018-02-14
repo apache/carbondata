@@ -34,6 +34,7 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -166,6 +167,23 @@ public final class CarbonLoaderUtil {
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
       CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
       throws IOException {
+    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
+        new ArrayList<Segment>(), new ArrayList<Segment>());
+  }
+
+  /**
+   * This API will write the load level metadata for the loadmanagement module inorder to
+   * manage the load and query execution management smoothly.
+   *
+   * @param newMetaEntry
+   * @param loadModel
+   * @param uuid
+   * @return boolean which determines whether status update is done or not.
+   * @throws IOException
+   */
+  public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
+      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid,
+      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated) throws IOException {
     boolean status = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
@@ -237,9 +255,11 @@ public final class CarbonLoaderUtil {
           // existing entry needs to be overwritten as the entry will exist with some
           // intermediate status
           int indexToOverwriteNewMetaEntry = 0;
+          boolean found = false;
           for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
             if (entry.getLoadName().equals(newMetaEntry.getLoadName())
                 && entry.getLoadStartTime() == newMetaEntry.getLoadStartTime()) {
+              found = true;
               break;
             }
             indexToOverwriteNewMetaEntry++;
@@ -254,12 +274,27 @@ public final class CarbonLoaderUtil {
               }
             }
           }
+          if (!found) {
+            LOGGER.error("Entry not found to update " + newMetaEntry + " From list :: "
+                + listOfLoadFolderDetails);
+          }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
         }
         // when no records are inserted then newSegmentEntry will be SegmentStatus.MARKED_FOR_DELETE
         // so empty segment folder should be deleted
         if (newMetaEntry.getSegmentStatus() == SegmentStatus.MARKED_FOR_DELETE) {
           addToStaleFolders(carbonTablePath, staleFolders, newMetaEntry);
+        }
+
+        for (LoadMetadataDetails detail: listOfLoadFolderDetails) {
+          // if the segments is in the list of marked for delete then update the status.
+          if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName(), null))) {
+            detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+          } else if (segmentFilesTobeUpdated.contains(Segment.toSegment(detail.getLoadName()))) {
+            detail.setSegmentFile(
+                detail.getLoadName() + "_" + newMetaEntry.getUpdateStatusFileName()
+                    + CarbonTablePath.SEGMENT_EXT);
+          }
         }
 
         SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
@@ -907,8 +942,8 @@ public final class CarbonLoaderUtil {
       String segmentId, CarbonTable carbonTable) throws IOException {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath((carbonTable.getAbsoluteTableIdentifier()));
-    Map<String, Long> dataIndexSize =
-        CarbonUtil.getDataSizeAndIndexSize(carbonTablePath, segmentId);
+    Map<String, Long> dataIndexSize = CarbonUtil.getDataSizeAndIndexSize(carbonTablePath,
+        new Segment(segmentId, loadMetadataDetails.getSegmentFile()));
     Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
     loadMetadataDetails.setDataSize(String.valueOf(dataSize));
     Long indexSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE);

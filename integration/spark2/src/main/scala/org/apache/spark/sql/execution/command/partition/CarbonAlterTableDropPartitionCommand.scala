@@ -31,7 +31,7 @@ import org.apache.spark.util.AlterTableUtil
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -204,7 +204,7 @@ case class CarbonAlterTableDropPartitionCommand(
       val validSegments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala
       val threadArray: Array[Thread] = new Array[Thread](validSegments.size)
       var i = 0
-      for (segmentId: String <- validSegments) {
+      for (segmentId: Segment <- validSegments) {
         threadArray(i) = dropPartitionThread(sqlContext, carbonLoadModel, executor,
           segmentId, partitionId, dropWithData, oldPartitionIds)
         threadArray(i).start()
@@ -216,7 +216,7 @@ case class CarbonAlterTableDropPartitionCommand(
       val identifier = AbsoluteTableIdentifier.from(carbonLoadModel.getTablePath,
         carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
       val refresher = DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
-      refresher.refreshSegments(validSegments.asJava)
+      refresher.refreshSegments(validSegments.map(_.getSegmentNo).asJava)
     } catch {
       case e: Exception =>
         LOGGER.error(s"Exception when dropping partition: ${ e.getMessage }")
@@ -238,7 +238,7 @@ case class CarbonAlterTableDropPartitionCommand(
 case class dropPartitionThread(sqlContext: SQLContext,
     carbonLoadModel: CarbonLoadModel,
     executor: ExecutorService,
-    segmentId: String,
+    segmentId: Segment,
     partitionId: String,
     dropWithData: Boolean,
     oldPartitionIds: List[Int]) extends Thread {
@@ -259,7 +259,7 @@ case class dropPartitionThread(sqlContext: SQLContext,
   private def executeDroppingPartition(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       executor: ExecutorService,
-      segmentId: String,
+      segmentId: Segment,
       partitionId: String,
       dropWithData: Boolean,
       oldPartitionIds: List[Int]): Unit = {
