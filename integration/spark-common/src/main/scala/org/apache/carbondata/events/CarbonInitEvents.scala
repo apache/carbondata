@@ -18,13 +18,15 @@ package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.core.util.CarbonSessionInfo
+
 /**
  *
  * @param sparkSession
  * @param storePath
  */
 case class CarbonEnvInitPreEvent(
-    sparkSession: SparkSession, storePath: String)
+    sparkSession: SparkSession, carbonSessionInfo: CarbonSessionInfo, storePath: String)
   extends Event with SessionEventInfo
 
 
