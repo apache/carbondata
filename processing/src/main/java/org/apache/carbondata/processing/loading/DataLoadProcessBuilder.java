@@ -57,7 +57,8 @@ public final class DataLoadProcessBuilder {
       CarbonIterator[] inputIterators) throws Exception {
     CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
-    if (!configuration.isSortTable() || sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
+    if ((!configuration.isSortTable() || sortScope.equals(SortScopeOptions.SortScope.NO_SORT))
+        && !loadModel.isPartitionLoad()) {
       return buildInternalForNoSort(inputIterators, configuration);
     } else if (configuration.getBucketingInfo() != null) {
       return buildInternalForBucketing(inputIterators, configuration);
@@ -251,6 +252,7 @@ public final class DataLoadProcessBuilder {
     configuration.setPreFetch(loadModel.isPreFetch());
     configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
+    configuration.setDataWritePath(loadModel.getDataWritePath());
     // For partition loading always use single core as it already runs in multiple
     // threads per partition
     if (carbonTable.isHivePartitionTable()) {

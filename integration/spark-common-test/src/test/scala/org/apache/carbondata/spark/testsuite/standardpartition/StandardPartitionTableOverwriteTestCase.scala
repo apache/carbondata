@@ -61,7 +61,6 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     sql(s"""insert into staticpartitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
     sql(s"""insert into staticpartitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
     sql(s"""insert overwrite table staticpartitiondateinsert PARTITION(projectenddate='2016-06-29',doj='2010-12-29 00:00:00') select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary from originTable where projectenddate=cast('2016-06-29' as Date)""")
-//    sql(s"""insert overwrite table partitiondateinsert  select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
     checkAnswer(sql("select * from staticpartitiondateinsert where projectenddate=cast('2016-06-29' as Date)"),
       sql("select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable where projectenddate=cast('2016-06-29' as Date)"))
   }
@@ -119,6 +118,7 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
   }
 
   test("dynamic and static partition table with overwrite ") {
+    sql("drop table if exists insertstaticpartitiondynamic")
     sql(
       """
         | CREATE TABLE insertstaticpartitiondynamic (designation String, doj Timestamp,salary int)
@@ -135,6 +135,80 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
       sql("""insert overwrite table insertstaticpartitiondynamic PARTITION(empno, empname='ravi') select designation, doj, salary, empname from insertstaticpartitiondynamic""")
     }
 
+  }
+
+  test("dynamic and static partition table with many partition cols overwrite ") {
+    sql("drop table if exists insertstaticpartitiondynamic")
+    sql(
+      """
+        | CREATE TABLE insertstaticpartitiondynamic (designation String,salary int)
+        | PARTITIONED BY (empno int, empname String, doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE insertstaticpartitiondynamic PARTITION(empno, empname, doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    val rows = sql(s"select count(*) from insertstaticpartitiondynamic").collect()
+    sql("""insert overwrite table insertstaticpartitiondynamic PARTITION(empno='1', empname='ravi', doj) select designation, salary, doj from insertstaticpartitiondynamic""")
+
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno=1 and empname='ravi'"), rows)
+  }
+
+  test("dynamic and static partition table with many partition cols overwrite with diffrent order") {
+    sql("drop table if exists insertstaticpartitiondynamic")
+    sql(
+      """
+        | CREATE TABLE insertstaticpartitiondynamic (designation String,salary int)
+        | PARTITIONED BY (empno int, empname String, doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE insertstaticpartitiondynamic PARTITION(empno, empname, doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    val rows = sql(s"select count(*) from insertstaticpartitiondynamic").collect()
+    sql("""insert overwrite table insertstaticpartitiondynamic PARTITION(empno='1', empname, doj) select designation, salary,empname, doj from insertstaticpartitiondynamic""")
+
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno=1"), rows)
+  }
+
+  test("dynamic and static partition table with many partition cols load overwrite ") {
+    sql("drop table if exists insertstaticpartitiondynamic")
+    sql(
+      """
+        | CREATE TABLE insertstaticpartitiondynamic (designation String,salary int)
+        | PARTITIONED BY (empno1 int, empname1 String, doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE insertstaticpartitiondynamic PARTITION(empno1='1', empname1='ravi', doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno1=1 and empname1='ravi'"), Seq(Row(10)))
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE insertstaticpartitiondynamic PARTITION(empno1='1', empname1='ravi', doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno1=1 and empname1='ravi'"), Seq(Row(10)))
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic"), Seq(Row(10)))
+
+    intercept[Exception] {
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE insertstaticpartitiondynamic PARTITION(empno1='1', empname1, doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    }
+  }
+
+  test("dynamic and static partition table with many partition cols load differnt combinations ") {
+    sql("drop table if exists insertstaticpartitiondynamic")
+    sql(
+      """
+        | CREATE TABLE insertstaticpartitiondynamic (designation String,salary int)
+        | PARTITIONED BY (empno1 int, empname String, doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE insertstaticpartitiondynamic PARTITION(empno1='1', empname, doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno1=1"), Seq(Row(10)))
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE insertstaticpartitiondynamic PARTITION(empno1='1', empname, doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno1=1"), Seq(Row(10)))
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic"), Seq(Row(10)))
+
+    intercept[Exception] {
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE insertstaticpartitiondynamic PARTITION(empno1, empname, doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    }
   }
 
   test("overwriting all partition on table and do compaction") {

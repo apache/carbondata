@@ -31,7 +31,7 @@ public abstract class DataMapDistributable extends InputSplit
 
   private String tablePath;
 
-  private String segmentId;
+  private Segment segment;
 
   private String dataMapName;
 
@@ -47,12 +47,12 @@ public abstract class DataMapDistributable extends InputSplit
     this.tablePath = tablePath;
   }
 
-  public String getSegmentId() {
-    return segmentId;
+  public Segment getSegment() {
+    return segment;
   }
 
-  public void setSegmentId(String segmentId) {
-    this.segmentId = segmentId;
+  public void setSegment(Segment segment) {
+    this.segment = segment;
   }
 
   public String getDataMapName() {

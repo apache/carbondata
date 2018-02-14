@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
@@ -29,35 +28,27 @@ public class BlockletDataMapModel extends DataMapModel {
 
   private byte[] fileData;
 
-  private List<String> partitions;
+  private Map<String, BlockMetaInfo> blockMetaInfoMap;
 
-  private boolean partitionedSegment;
+  private String segmentId;
 
-  Map<String, BlockMetaInfo> blockMetaInfoMap;
-
-  public BlockletDataMapModel(String filePath, byte[] fileData, List<String> partitions,
-      boolean partitionedSegment,
-      Map<String, BlockMetaInfo> blockMetaInfoMap) {
+  public BlockletDataMapModel(String filePath, byte[] fileData,
+      Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId) {
     super(filePath);
     this.fileData = fileData;
-    this.partitions = partitions;
-    this.partitionedSegment = partitionedSegment;
     this.blockMetaInfoMap = blockMetaInfoMap;
+    this.segmentId = segmentId;
   }
 
   public byte[] getFileData() {
     return fileData;
   }
 
-  public List<String> getPartitions() {
-    return partitions;
-  }
-
-  public boolean isPartitionedSegment() {
-    return partitionedSegment;
-  }
-
   public Map<String, BlockMetaInfo> getBlockMetaInfoMap() {
     return blockMetaInfoMap;
+  }
+
+  public String getSegmentId() {
+    return segmentId;
   }
 }

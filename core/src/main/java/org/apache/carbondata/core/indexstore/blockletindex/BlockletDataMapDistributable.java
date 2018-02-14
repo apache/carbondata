@@ -31,8 +31,8 @@ public class BlockletDataMapDistributable extends DataMapDistributable {
    */
   private String filePath;
 
-  public BlockletDataMapDistributable(String indexFileName) {
-    this.filePath = indexFileName;
+  public BlockletDataMapDistributable(String indexFilePath) {
+    this.filePath = indexFilePath;
   }
 
   public String getFilePath() {

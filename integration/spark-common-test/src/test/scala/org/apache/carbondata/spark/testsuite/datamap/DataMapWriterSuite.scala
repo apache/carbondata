@@ -27,7 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory, DataMapWriter}
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.indexstore.schema.FilterType
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -42,15 +42,15 @@ class C2DataMapFactory() extends DataMapFactory {
 
   override def fireEvent(event: Event): Unit = ???
 
-  override def clear(segmentId: String): Unit = {}
+  override def clear(segmentId: Segment): Unit = {}
 
   override def clear(): Unit = {}
 
   override def getDataMaps(distributable: DataMapDistributable): java.util.List[DataMap] = ???
 
-  override def getDataMaps(segmentId: String): util.List[DataMap] = ???
+  override def getDataMaps(segmentId: Segment): util.List[DataMap] = ???
 
-  override def createWriter(segmentId: String): DataMapWriter = DataMapWriterSuite.dataMapWriterC2Mock
+  override def createWriter(segmentId: Segment): DataMapWriter = DataMapWriterSuite.dataMapWriterC2Mock
 
   override def getMeta: DataMapMeta = new DataMapMeta(List("c2").asJava, FilterType.EQUALTO)
 
@@ -59,7 +59,7 @@ class C2DataMapFactory() extends DataMapFactory {
    *
    * @return
    */
-  override def toDistributable(segmentId: String): util.List[DataMapDistributable] = {
+  override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = {
     ???
   }
 }

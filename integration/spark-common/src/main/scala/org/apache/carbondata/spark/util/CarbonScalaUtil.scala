@@ -17,27 +17,35 @@
 
 package org.apache.carbondata.spark.util
 
+import java.{lang, util}
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
-import java.util
+import java.util.Date
 
+import com.univocity.parsers.common.TextParsingException
+import org.apache.spark.SparkException
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.execution.command.DataTypeInfo
+import org.apache.spark.sql.execution.command.{DataTypeInfo, UpdateTableModel}
 import org.apache.spark.sql.types._
-import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.common.logging.LogService
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
+import org.apache.carbondata.core.metadata.ColumnIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
-import org.apache.carbondata.core.util.{CarbonSessionInfo, DataTypeUtil}
+import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.processing.exception.DataLoadingException
+import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -167,33 +175,48 @@ object CarbonScalaUtil {
    * @param dataType Datatype to convert and then convert to String
    * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
    * @param dateFormat DataFormat to convert in case of DateType datatype
-   * @param serializationNullFormat if this encounters in input data then data will
-   *                                be treated as null
    * @return converted String
    */
-  def convertToString(
+  def convertToDateAndTimeFormats(
       value: String,
       dataType: DataType,
       timeStampFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat,
-      serializationNullFormat: String): String = {
-    if (value == null || serializationNullFormat.equals(value)) {
-      return null
-    }
-    dataType match {
-      case TimestampType if timeStampFormat != null =>
-        DateTimeUtils.timestampToString(timeStampFormat.parse(value).getTime * 1000)
-      case DateType if dateFormat != null =>
-        DateTimeUtils.dateToString(
-          (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt)
-      case ShortType => value.toShort.toString
-      case IntegerType => value.toInt.toString
-      case LongType => value.toLong.toString
-      case DoubleType => value.toDouble.toString
-      case FloatType => value.toFloat.toString
-      case d: DecimalType => new java.math.BigDecimal(value).toPlainString
-      case BooleanType => value.toBoolean.toString
-      case _ => value
+      dateFormat: SimpleDateFormat): String = {
+    val defaultValue = value != null && value.equalsIgnoreCase(hivedefaultpartition)
+    try {
+      dataType match {
+        case TimestampType if timeStampFormat != null =>
+          if (defaultValue) {
+            timeStampFormat.format(new Date())
+          } else {
+            timeStampFormat.format(DateTimeUtils.stringToTime(value))
+          }
+        case DateType if dateFormat != null =>
+          if (defaultValue) {
+            dateFormat.format(new Date())
+          } else {
+            dateFormat.format(DateTimeUtils.stringToTime(value))
+          }
+        case _ =>
+          val convertedValue =
+            DataTypeUtil
+              .getDataBasedOnDataType(value, convertSparkToCarbonDataType(dataType))
+          if (convertedValue == null) {
+            if (defaultValue) {
+              return dataType match {
+                case BooleanType => "false"
+                case _ => "0"
+              }
+            }
+            throw new MalformedCarbonCommandException(
+              s"Value $value with datatype $dataType on static partition is not correct")
+          }
+          value
+      }
+    } catch {
+      case e: Exception =>
+        throw new MalformedCarbonCommandException(
+          s"Value $value with datatype $dataType on static partition is not correct")
     }
   }
 
@@ -214,14 +237,20 @@ object CarbonScalaUtil {
           val time = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
             CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-          ).getValueFromSurrogate(value.toInt).toString
-          return DateTimeUtils.timestampToString(time.toLong * 1000)
+          ).getValueFromSurrogate(value.toInt)
+          if (time == null) {
+            return null
+          }
+          return DateTimeUtils.timestampToString(time.toString.toLong * 1000)
         } else if (column.getDataType.equals(CarbonDataTypes.DATE)) {
           val date = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
             CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
-          ).getValueFromSurrogate(value.toInt).toString
-          return DateTimeUtils.dateToString(date.toInt)
+          ).getValueFromSurrogate(value.toInt)
+          if (date == null) {
+            return null
+          }
+          return DateTimeUtils.dateToString(date.toString.toInt)
         }
       }
       val dictionaryPath =
@@ -271,14 +300,28 @@ object CarbonScalaUtil {
             CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
           ).generateDirectSurrogateKey(value).toString
         }
+      } else if (column.hasEncoding(Encoding.DICTIONARY)) {
+        val cacheProvider: CacheProvider = CacheProvider.getInstance
+        val reverseCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
+          cacheProvider.createCache(CacheType.REVERSE_DICTIONARY)
+        val dictionaryPath =
+          table.getTableInfo.getFactTable.getTableProperties.get(
+            CarbonCommonConstants.DICTIONARY_PATH)
+        val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
+          table.getAbsoluteTableIdentifier,
+          new ColumnIdentifier(
+            column.getColumnUniqueId,
+            column.getColumnProperties,
+            column.getDataType),
+          column.getDataType,
+          dictionaryPath)
+        return reverseCache.get(dictionaryColumnUniqueIdentifier).getSurrogateKey(value).toString
       }
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
-          DataTypeUtil.getDataDataTypeForNoDictionaryColumn(value,
-            column.getDataType,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT).toString
+          DateTimeUtils.stringToTime(value).getTime.toString
         case CarbonDataTypes.DATE =>
-          DateTimeUtils.stringToDate(UTF8String.fromString(value)).get.toString
+          DateTimeUtils.stringToTime(value).getTime.toString
         case _ => value
       }
     } catch {
@@ -287,7 +330,7 @@ object CarbonScalaUtil {
     }
   }
 
-  private val hiveignorepartition = "__HIVE_IGNORE_PARTITION__"
+  private val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
 
   /**
    * Update partition values as per the right date and time format
@@ -295,10 +338,7 @@ object CarbonScalaUtil {
    */
   def updatePartitions(
       partitionSpec: Map[String, String],
-      table: CarbonTable,
-      timeFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat): Map[String, String] = {
-    val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
+  table: CarbonTable): Map[String, String] = {
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
       cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
@@ -340,37 +380,14 @@ object CarbonScalaUtil {
    * Update partition values as per the right date and time format
    */
   def updatePartitions(
-      carbonSessionInfo: CarbonSessionInfo,
       parts: Seq[CatalogTablePartition],
       table: CarbonTable): Seq[CatalogTablePartition] = {
-    val dateFormatStr = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)
-    val dateFormat = new SimpleDateFormat(dateFormatStr)
-    val timeFormatStr = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)
-    val timeFormat = new SimpleDateFormat(timeFormatStr)
-    val serializeFormat = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT_DEFAULT)
-    val isEmptyBadRecord = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT).toBoolean
-    val badRecordAction = carbonSessionInfo.getThreadParams.getProperty(
-      CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
-      LoggerAction.FAIL.toString)
     parts.map{ f =>
       val changedSpec =
         updatePartitions(
           f.spec,
-          table,
-          timeFormat,
-          dateFormat)
+          table)
       f.copy(spec = changedSpec)
-    }.filterNot{ p =>
-      // Filter the special bad record ignore case string
-      p.spec.exists(_._2.equals(hiveignorepartition))
     }.groupBy(p => p.spec).map(f => f._2.head).toSeq // Avoid duplicates by do groupby
   }
 
@@ -508,4 +525,64 @@ object CarbonScalaUtil {
     }
   }
 
+  /**
+   * Retrieve error message from exception
+   */
+  def retrieveAndLogErrorMsg(ex: Throwable, logger: LogService): (String, String) = {
+    var errorMessage = "DataLoad failure"
+    var executorMessage = ""
+    if (ex != null) {
+      ex match {
+        case sparkException: SparkException =>
+          if (sparkException.getCause.isInstanceOf[DataLoadingException] ||
+              sparkException.getCause.isInstanceOf[CarbonDataLoadingException]) {
+            executorMessage = sparkException.getCause.getMessage
+            errorMessage = errorMessage + ": " + executorMessage
+          } else if (sparkException.getCause.isInstanceOf[TextParsingException]) {
+            executorMessage = CarbonDataProcessorUtil
+              .trimErrorMessage(sparkException.getCause.getMessage)
+            errorMessage = errorMessage + " : " + executorMessage
+          } else if (sparkException.getCause.isInstanceOf[SparkException]) {
+            val (executorMsgLocal, errorMsgLocal) =
+              retrieveAndLogErrorMsg(sparkException.getCause, logger)
+            executorMessage = executorMsgLocal
+            errorMessage = errorMsgLocal
+          }
+        case aex: AnalysisException =>
+          logger.error(aex.getMessage())
+          throw aex
+        case _ =>
+          if (ex.getCause != null) {
+            executorMessage = ex.getCause.getMessage
+            errorMessage = errorMessage + ": " + executorMessage
+          }
+      }
+    }
+    (executorMessage, errorMessage)
+  }
+
+  /**
+   * Update error inside update model
+   */
+  def updateErrorInUpdateModel(updateModel: UpdateTableModel, executorMessage: String): Unit = {
+    if (updateModel.executorErrors.failureCauses == FailureCauses.NONE) {
+      updateModel.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
+      if (null != executorMessage && !executorMessage.isEmpty) {
+        updateModel.executorErrors.errorMsg = executorMessage
+      } else {
+        updateModel.executorErrors.errorMsg = "Update failed as the data load has failed."
+      }
+    }
+  }
+
+  /**
+   * Generate unique number to be used as partition number of file name
+   */
+  def generateUniqueNumber(taskId: Int,
+      segmentId: String,
+      partitionNumber: lang.Long): String = {
+    String.valueOf(Math.pow(10, 2).toInt + segmentId.toInt) +
+    String.valueOf(Math.pow(10, 5).toInt + taskId) +
+    String.valueOf(partitionNumber + Math.pow(10, 5).toInt)
+  }
 }

@@ -29,8 +29,10 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
-import org.apache.carbondata.core.metadata.PartitionMapFileStore.PartitionMapper
+import org.apache.carbondata.core.metadata.SegmentFileStore.SegmentFile
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
@@ -109,15 +111,14 @@ case class CarbonMergerMapping(
     var mergedLoadName: String,
     databaseName: String,
     factTableName: String,
-    validSegments: Array[String],
+    validSegments: Array[Segment],
     tableId: String,
     campactionType: CompactionType,
     // maxSegmentColCardinality is Cardinality of last segment of compaction
     var maxSegmentColCardinality: Array[Int],
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
     var maxSegmentColumnSchemaList: List[ColumnSchema],
-    currentPartitions: Seq[String],
-    @transient partitionMapper: PartitionMapper)
+    currentPartitions: Option[Seq[PartitionSpec]])
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
@@ -133,20 +134,20 @@ case class UpdateTableModel(
     isUpdate: Boolean,
     updatedTimeStamp: Long,
     var executorErrors: ExecutionErrors,
-    deletedSegments: Seq[String])
+    deletedSegments: Seq[Segment])
 
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,
     carbonTable: CarbonTable,
     isDDLTrigger: Boolean,
-    currentPartitions: Seq[String])
+    currentPartitions: Option[Seq[PartitionSpec]])
 
 case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     carbonTable: CarbonTable,
     loadsToMerge: util.List[LoadMetadataDetails],
     sqlContext: SQLContext,
     compactionType: CompactionType,
-    currentPartitions: Seq[String])
+    currentPartitions: Option[Seq[PartitionSpec]])
 
 case class AlterPartitionModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,
@@ -161,7 +162,7 @@ case class SplitPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     sqlContext: SQLContext)
 
 case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
-    segmentId: String,
+    segmentId: Segment,
     partitionId: String,
     oldPartitionIds: List[Int],
     dropWithData: Boolean,

@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
@@ -714,15 +715,15 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToGetSegmentString() {
-    List<String> list = new ArrayList<>();
-    list.add("1");
-    list.add("2");
+    List<Segment> list = new ArrayList<>();
+    list.add(new Segment("1", null));
+    list.add(new Segment("2", null));
     String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "1,2");
   }
 
   @Test public void testToGetSegmentStringWithEmptySegmentList() {
-    List<String> list = new ArrayList<>();
+    List<Segment> list = new ArrayList<>();
     String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "");
   }

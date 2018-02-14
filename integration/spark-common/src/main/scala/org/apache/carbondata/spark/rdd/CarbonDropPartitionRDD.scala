@@ -23,10 +23,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
-import org.apache.carbondata.core.metadata.PartitionMapFileStore
-import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.metadata.SegmentFileStore
 
-case class CarbonDropPartition(rddId: Int, val idx: Int, segmentPath: String)
+case class CarbonDropPartition(rddId: Int, val idx: Int, segment: Segment)
   extends Partition {
 
   override val index: Int = idx
@@ -35,115 +36,52 @@ case class CarbonDropPartition(rddId: Int, val idx: Int, segmentPath: String)
 }
 
 /**
- * RDD to drop the partitions from partition mapper files of all segments.
+ * RDD to drop the partitions from segment files of all segments.
  * @param sc
  * @param tablePath
- * @param segments segments to be merged
- * @param partialMatch If it is true then even the partial partition spec matches also can be
- *                      dropped
+ * @param segments segments to be cleaned
  */
 class CarbonDropPartitionRDD(
     sc: SparkContext,
     tablePath: String,
-    segments: Seq[String],
-    partitions: Seq[String],
-    uniqueId: String,
-    partialMatch: Boolean)
-  extends CarbonRDD[String](sc, Nil) {
+    segments: Seq[Segment],
+    partitions: util.List[PartitionSpec],
+    uniqueId: String)
+  extends CarbonRDD[(String, String)](sc, Nil) {
 
   override def getPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>
-      CarbonDropPartition(id, s._2, CarbonTablePath.getSegmentPath(tablePath, s._1))
+      CarbonDropPartition(id, s._2, s._1)
     }.toArray
   }
 
-  override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[String] = {
-    val iter = new Iterator[String] {
+  override def internalCompute(
+      theSplit: Partition,
+      context: TaskContext): Iterator[(String, String)] = {
+    val iter = new Iterator[(String, String)] {
       val split = theSplit.asInstanceOf[CarbonDropPartition]
-      logInfo("Dropping partition information from : " + split.segmentPath)
-      partitions.toList.asJava
-      val partitionList = new util.ArrayList[util.List[String]]()
-      partitionList.add(partitions.toList.asJava)
-      new PartitionMapFileStore().dropPartitions(
-        split.segmentPath,
-        partitionList,
+      logInfo("Dropping partition information from : " + split.segment)
+      val toBeDeletedSegments = new util.ArrayList[String]()
+      val toBeUpdateSegments = new util.ArrayList[String]()
+      new SegmentFileStore(
+        tablePath,
+        split.segment.getSegmentFileName).dropPartitions(
+        split.segment,
+        partitions,
         uniqueId,
-        partialMatch)
+        toBeDeletedSegments,
+        toBeUpdateSegments)
 
-      var havePair = false
       var finished = false
 
       override def hasNext: Boolean = {
-        if (!finished && !havePair) {
-          finished = true
-          havePair = !finished
-        }
         !finished
       }
 
-      override def next(): String = {
-        if (!hasNext) {
-          throw new java.util.NoSuchElementException("End of stream")
-        }
-        havePair = false
-        ""
+      override def next(): (String, String) = {
+        finished = true
+        (toBeUpdateSegments.asScala.mkString(","), toBeDeletedSegments.asScala.mkString(","))
       }
-
-    }
-    iter
-  }
-
-}
-
-/**
- * This RDD is used for committing the partitions which were removed in before step. It just removes
- * old mapper files and related data files.
- * @param sc
- * @param tablePath
- * @param segments segments to be merged
- */
-class CarbonDropPartitionCommitRDD(
-    sc: SparkContext,
-    tablePath: String,
-    segments: Seq[String],
-    success: Boolean,
-    uniqueId: String,
-    partitions: Seq[String])
-  extends CarbonRDD[String](sc, Nil) {
-
-  override def getPartitions: Array[Partition] = {
-    segments.zipWithIndex.map {s =>
-      CarbonDropPartition(id, s._2, CarbonTablePath.getSegmentPath(tablePath, s._1))
-    }.toArray
-  }
-
-  override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[String] = {
-    val iter = new Iterator[String] {
-      val split = theSplit.asInstanceOf[CarbonDropPartition]
-      logInfo("Commit partition information from : " + split.segmentPath)
-
-      new PartitionMapFileStore().commitPartitions(split.segmentPath, uniqueId, success, tablePath,
-        partitions.toList.asJava)
-
-      var havePair = false
-      var finished = false
-
-      override def hasNext: Boolean = {
-        if (!finished && !havePair) {
-          finished = true
-          havePair = !finished
-        }
-        !finished
-      }
-
-      override def next(): String = {
-        if (!hasNext) {
-          throw new java.util.NoSuchElementException("End of stream")
-        }
-        havePair = false
-        ""
-      }
-
     }
     iter
   }
