@@ -448,9 +448,4 @@ public final class FileFactory {
     }
   }
 
-  public static void setPermission(String directoryPath, FsPermission permission, String username,
-      String group) throws IOException {
-    getCarbonFile(directoryPath).setPermission(directoryPath, permission, username, group);
-  }
-
 }

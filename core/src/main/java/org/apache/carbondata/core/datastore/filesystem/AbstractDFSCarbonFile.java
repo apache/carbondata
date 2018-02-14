@@ -461,11 +461,6 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   @Override
-  public void setPermission(String directoryPath, FsPermission permission, String username,
-      String group) throws IOException {
-  }
-
-  @Override
   public CarbonFile[] listFiles() {
     FileStatus[] listStatus = null;
     try {
