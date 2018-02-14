@@ -271,7 +271,11 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           false
       }
       operationContext.setProperty("commitComplete", commitComplete)
-      if (!statusFileUpdation && !commitComplete) {
+      // here either of the conditions can be true, when delete segment is fired after compaction
+      // has started, statusFileUpdation will be false , but at the same time commitComplete can be
+      // true because compaction for all datamaps will be finished at a time to the maximum level
+      // possible (level 1, 2 etc). so we need to check for either condition
+      if (!statusFileUpdation || !commitComplete) {
         LOGGER.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +

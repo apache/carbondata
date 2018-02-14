@@ -419,11 +419,6 @@ public class LocalCarbonFile implements CarbonFile {
     return file.createNewFile();
   }
 
-  @Override
-  public void setPermission(String directoryPath, FsPermission permission, String username,
-      String group) throws IOException {
-  }
-
   @Override public CarbonFile[] locationAwareListFiles() throws IOException {
     return listFiles();
   }
