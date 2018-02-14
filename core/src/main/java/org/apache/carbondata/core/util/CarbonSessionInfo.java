@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.util;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
@@ -27,10 +28,13 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
  */
 public class CarbonSessionInfo implements Serializable, Cloneable {
 
-  private static final long serialVersionUID = 7738818814501121256L;
+  private static final long serialVersionUID = 4335254187209416779L;
+
   // contains carbon session param details
   private SessionParams sessionParams;
   private SessionParams threadParams;
+  // use the below field to store the objects which need not be serialized
+  private transient Map<String, Object> nonSerializableExtraInfo;
 
   public SessionParams getSessionParams() {
     return sessionParams;
@@ -70,6 +74,23 @@ public class CarbonSessionInfo implements Serializable, Cloneable {
         ex.printStackTrace();
       }
     }
+    Map<String, Object> nonSerializableExtraInfo = getNonSerializableExtraInfo();
+    for (Map.Entry<String, Object> entry : nonSerializableExtraInfo.entrySet()) {
+      nonSerializableExtraInfo.put(entry.getKey(), entry.getValue());
+    }
+    newObj.setNonSerializableExtraInfo(nonSerializableExtraInfo);
     return newObj;
+  }
+
+  public Map<String, Object> getNonSerializableExtraInfo() {
+    // as the field is transient it can be null if serialized and de serialized again
+    if (null == nonSerializableExtraInfo) {
+      nonSerializableExtraInfo = new HashMap<>();
+    }
+    return nonSerializableExtraInfo;
+  }
+
+  public void setNonSerializableExtraInfo(Map<String, Object> nonSerializableExtraInfo) {
+    this.nonSerializableExtraInfo = nonSerializableExtraInfo;
   }
 }

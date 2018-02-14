@@ -97,7 +97,7 @@ class CarbonEnv {
           // trigger event for CarbonEnv init
           val operationContext = new OperationContext
           val carbonEnvInitPreEvent: CarbonEnvInitPreEvent =
-            CarbonEnvInitPreEvent(sparkSession, storePath)
+            CarbonEnvInitPreEvent(sparkSession, carbonSessionInfo, storePath)
           OperationListenerBus.getInstance.fireEvent(carbonEnvInitPreEvent, operationContext)
 
           CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)

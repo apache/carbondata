@@ -246,7 +246,11 @@ object CarbonSession {
       // copy all the thread parameters to apply to session parameters
       currentThreadSessionInfo.getThreadParams.getAll.asScala
         .foreach(entry => carbonSessionInfo.getSessionParams.addProperty(entry._1, entry._2))
+      currentThreadSessionInfo.getNonSerializableExtraInfo.asScala
+        .foreach(entry => carbonSessionInfo.getNonSerializableExtraInfo.put(entry._1, entry._2))
       carbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
+      carbonSessionInfo
+        .setNonSerializableExtraInfo(currentThreadSessionInfo.getNonSerializableExtraInfo)
     }
     // preserve thread parameters across call
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
