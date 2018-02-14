@@ -17,10 +17,11 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -60,12 +61,25 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
         CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
   }
 
-  test("test create table as select with select from same table name when table exists") {
+  test("test create table as select with select from same carbon table name with if not exists clause") {
     sql("drop table if exists ctas_same_table_name")
-    sql("CREATE TABLE ctas_same_table_name(key INT, value STRING) STORED by 'carbondata'")
-    intercept[Exception] {
-      sql("create table ctas_same_table_name stored by 'carbondata' as select * from ctas_same_table_name")
+    sql("CREATE TABLE ctas_same_table_name(key INT, value STRING) STORED BY 'carbondata'")
+    checkExistence(sql("SHOW TABLES"), true, "ctas_same_table_name")
+    sql(
+      """
+        | CREATE TABLE IF NOT EXISTS ctas_same_table_name
+        | STORED BY 'carbondata'
+        | AS SELECT * FROM ctas_same_table_name
+      """.stripMargin)
+    val e = intercept[TableAlreadyExistsException] {
+      sql(
+        """
+          | CREATE TABLE ctas_same_table_name
+          | STORED BY 'carbondata'
+          | AS SELECT * FROM ctas_same_table_name
+        """.stripMargin)
     }
+    assert(e.getMessage().contains("Table or view 'ctas_same_table_name' already exists"))
   }
 
   test("test create table as select with select from same table name when table does not exists") {
@@ -73,13 +87,6 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] {
       sql("create table ctas_same_table_name stored by 'carbondata' as select * from ctas_same_table_name")
     }
-  }
-
-  test("test create table as select with select from same table name with if not exists clause") {
-    sql("drop table if exists ctas_same_table_name")
-    sql("CREATE TABLE ctas_same_table_name(key INT, value STRING) STORED by 'carbondata'")
-    sql("create table if not exists ctas_same_table_name stored by 'carbondata' as select * from ctas_same_table_name")
-    assert(true)
   }
 
   test("test create table as select with select from another carbon table") {
@@ -199,30 +206,11 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
       sql("SELECT * FROM orc_ctas_test where key=300"))
   }
 
-  test("test create table as select with select from same carbon table name with if not exists clause") {
-    sql("drop table if exists ctas_same_table_name")
-    sql("CREATE TABLE ctas_same_table_name(key INT, value STRING) STORED BY 'carbondata'")
-    checkExistence(sql("SHOW TABLES"), true, "ctas_same_table_name")
-    sql(
-      """
-        | CREATE TABLE IF NOT EXISTS ctas_same_table_name
-        | STORED BY 'carbondata'
-        | AS SELECT * FROM ctas_same_table_name
-      """.stripMargin)
-    intercept[Exception] {
-      sql(
-        """
-          | CREATE TABLE ctas_same_table_name
-          | STORED BY 'carbondata'
-          | AS SELECT * FROM ctas_same_table_name
-        """.stripMargin)
-    }
-  }
-
   test("test create table as select with select from same carbon table name with if not exists clause and source table not exists") {
     sql("DROP TABLE IF EXISTS ctas_same_table_name")
     checkExistence(sql("SHOW TABLES"), false, "ctas_same_table_name")
-    intercept[Exception] {
+    //TODO: should throw NoSuchTableException
+    val e = intercept[AnalysisException] {
       sql(
         """
           | CREATE TABLE IF NOT EXISTS ctas_same_table_name
@@ -230,19 +218,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
           | AS SELECT * FROM ctas_same_table_name
         """.stripMargin)
     }
-  }
-
-  test("test create table as select with select from same carbon table name with if not exists clause and source table exists") {
-    sql("DROP TABLE IF EXISTS ctas_same_table_name")
-    sql("DROP TABLE IF EXISTS ctas_if_table_name")
-    sql("CREATE TABLE ctas_same_table_name(key INT, value STRING) STORED BY 'carbondata'")
-    sql(
-      """
-        | CREATE TABLE IF NOT EXISTS ctas_if_table_name
-        | STORED BY 'carbondata'
-        | AS SELECT * FROM ctas_same_table_name
-      """.stripMargin)
-    checkExistence(sql("show tables"), true, "ctas_if_table_name")
+    assert(e.getMessage().contains("Table or view not found: ctas_same_table_name"))
   }
 
   test("add example for documentation") {

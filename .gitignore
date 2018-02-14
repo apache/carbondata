@@ -16,4 +16,3 @@ target/
 .classpath
 metastore_db/
 derby.log
-integration/spark-common-test/src/test/resources/Data
