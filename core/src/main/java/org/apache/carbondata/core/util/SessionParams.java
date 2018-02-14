@@ -50,9 +50,11 @@ public class SessionParams implements Serializable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CacheProvider.class.getName());
+  private static final long serialVersionUID = -7801994600594915264L;
 
   private Map<String, String> sProps;
   private Map<String, String> addedProps;
+  // below field to be used when we want the objects to be serialized
   private Map<String, Object> extraInfo;
   public SessionParams() {
     sProps = new HashMap<>();
