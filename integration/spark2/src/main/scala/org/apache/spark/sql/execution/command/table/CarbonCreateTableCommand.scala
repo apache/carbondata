@@ -38,7 +38,8 @@ case class CarbonCreateTableCommand(
     tableInfo: TableInfo,
     ifNotExistsSet: Boolean = false,
     tableLocation: Option[String] = None,
-    createDSTable: Boolean = true)
+    createDSTable: Boolean = true,
+    isVisible: Boolean = true)
   extends MetadataCommand {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
@@ -102,6 +103,9 @@ case class CarbonCreateTableCommand(
             } else {
               ""
             }
+          // isVisible property is added to hive table properties to differentiate between main
+          // table and datamaps(like preaggregate). It is false only for datamaps. This is added
+          // to improve the show tables performance when filtering the datamaps from main tables
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tableName
                |(${ rawSchema })
@@ -110,7 +114,8 @@ case class CarbonCreateTableCommand(
                |  tableName "$tableName",
                |  dbName "$dbName",
                |  tablePath "$tablePath",
-               |  path "$tablePath"
+               |  path "$tablePath",
+               |  isVisible "$isVisible"
                |  $carbonSchemaString)
                |  $partitionString
              """.stripMargin)

@@ -130,9 +130,12 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
         true,
         "datamap_hiveMetaStoreTable_1")
 
+      sql("drop datamap datamap_hiveMetaStoreTable_1 on table hiveMetaStoreTable_1")
+      checkExistence(sql("show datamap on table hiveMetaStoreTable_1"),
+        false,
+        "datamap_hiveMetaStoreTable_1")
+      assert(sql("show datamap on table hiveMetaStoreTable_1").collect().length == 0)
       sql("drop table hiveMetaStoreTable_1")
-
-      checkExistence(sql("show tables"), false, "datamap_hiveMetaStoreTable_1")
     }
     finally {
       CarbonProperties.getInstance()
