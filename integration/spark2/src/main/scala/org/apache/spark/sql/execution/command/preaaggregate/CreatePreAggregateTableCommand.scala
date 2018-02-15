@@ -117,7 +117,7 @@ case class CreatePreAggregateTableCommand(
       CarbonEnv.getTablePath(tableModel.databaseNameOp, tableModel.tableName)(sparkSession)
     }
     CarbonCreateTableCommand(TableNewProcessor(tableModel),
-      tableModel.ifNotExistsSet, Some(tablePath)).run(sparkSession)
+      tableModel.ifNotExistsSet, Some(tablePath), isVisible = false).run(sparkSession)
 
     val table = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
     val tableInfo = table.getTableInfo
