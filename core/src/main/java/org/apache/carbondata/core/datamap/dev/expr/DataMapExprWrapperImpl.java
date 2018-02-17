@@ -43,8 +43,9 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
     this.uniqueId = UUID.randomUUID().toString();
   }
 
-  @Override public List<ExtendedBlocklet> prune(List<String> segments) throws IOException {
-    return dataMap.prune(segments, expression, null);
+  @Override public List<ExtendedBlocklet> prune(List<String> segments,
+      List<String> partitionsToPrune) throws IOException {
+    return dataMap.prune(segments, expression, partitionsToPrune);
   }
 
   @Override public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)

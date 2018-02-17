@@ -131,8 +131,7 @@ case class CreatePreAggregateTableCommand(
 
     // updating the parent table about child table
     PreAggregateUtil.updateMainTable(
-      CarbonEnv.getDatabaseName(parentTableIdentifier.database)(sparkSession),
-      parentTableIdentifier.table,
+      parentTable,
       childSchema,
       sparkSession)
     // After updating the parent carbon table with data map entry extract the latest table object

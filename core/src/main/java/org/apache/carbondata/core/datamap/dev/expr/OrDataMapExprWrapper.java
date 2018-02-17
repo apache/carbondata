@@ -44,9 +44,10 @@ public class OrDataMapExprWrapper implements DataMapExprWrapper {
     this.resolverIntf = resolverIntf;
   }
 
-  @Override public List<ExtendedBlocklet> prune(List<String> segments) throws IOException {
-    List<ExtendedBlocklet> leftPrune = left.prune(segments);
-    List<ExtendedBlocklet> rightPrune = right.prune(segments);
+  @Override public List<ExtendedBlocklet> prune(List<String> segments,
+      List<String> partitionsToPrune) throws IOException {
+    List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune);
+    List<ExtendedBlocklet> rightPrune = right.prune(segments, partitionsToPrune);
     Set<ExtendedBlocklet> andBlocklets = new HashSet<>();
     andBlocklets.addAll(leftPrune);
     andBlocklets.addAll(rightPrune);

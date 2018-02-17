@@ -36,8 +36,9 @@ import org.apache.carbondata.hadoop.api.{DataMapJob, DistributableDataMapFormat}
  */
 class SparkDataMapJob extends DataMapJob {
 
-  override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
-    new DataMapPruneRDD(SparkContext.getOrCreate(), dataMapFormat).collect().toList
+  override def execute(dataMapFormat: DistributableDataMapFormat,
+      filter: FilterResolverIntf): util.List[ExtendedBlocklet] = {
+    new DataMapPruneRDD(SparkContext.getOrCreate(), dataMapFormat, filter).collect().toList
       .asJava
   }
 }

@@ -44,6 +44,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBlocklet> implements
     Serializable {
 
+  private static final String FILTER_EXP = "mapreduce.input.distributed.datamap.filter";
+
   private AbsoluteTableIdentifier identifier;
 
   private DataMapExprWrapper dataMapExprWrapper;
@@ -54,8 +56,9 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private List<String> partitions;
 
-  public DistributableDataMapFormat(AbsoluteTableIdentifier identifier,
-      DataMapExprWrapper dataMapExprWrapper, List<String> validSegments, List<String> partitions, String className) {
+  DistributableDataMapFormat(AbsoluteTableIdentifier identifier,
+      DataMapExprWrapper dataMapExprWrapper, List<String> validSegments, List<String> partitions,
+      String className) {
     this.identifier = identifier;
     this.dataMapExprWrapper = dataMapExprWrapper;
     this.validSegments = validSegments;
@@ -103,7 +106,8 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
         TableDataMap dataMap = DataMapStoreManager.getInstance()
             .getDataMap(identifier, distributable.getDistributable().getDataMapSchema());
         List<ExtendedBlocklet> blocklets = dataMap.prune(
-            distributable, dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);
+            distributable.getDistributable(),
+            dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);
         for (ExtendedBlocklet blocklet: blocklets) {
           blocklet.setDataMapUniqueId(distributable.getUniqueId());
         }

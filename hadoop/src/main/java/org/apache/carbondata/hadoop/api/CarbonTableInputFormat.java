@@ -42,9 +42,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -341,10 +339,6 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
     }
-//    TableDataMap blockletMap =
-//        DataMapStoreManager.getInstance().getDataMap(identifier, BlockletDataMap.NAME,
-//            BlockletDataMapFactory.class.getName());
-//    String aggregateTableSegments = getAggeragateTableSegments(job.getConfiguration());
     List<String> invalidSegments = new ArrayList<>();
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
     List<String> streamSegments = null;
@@ -733,17 +727,17 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         new DataMapChooser().choose(getOrCreateCarbonTable(job.getConfiguration()), resolver);
     DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
     List<String> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
-    List<ExtendedBlocklet> prunedBlocklets = null;
+    List<ExtendedBlocklet> prunedBlocklets;
     if (distributedCG || dataMapExprWrapper.getDataMapType() == DataMapType.FG) {
       DistributableDataMapFormat datamapDstr =
           new DistributableDataMapFormat(absoluteTableIdentifier, dataMapExprWrapper,
               segmentIds, partitionsToPrune,
               BlockletDataMapFactory.class.getName());
-      prunedBlocklets = dataMapJob.execute(datamapDstr);
+      prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
       // Apply expression on the blocklets.
       prunedBlocklets = dataMapExprWrapper.pruneBlocklets(prunedBlocklets);
     } else {
-      prunedBlocklets = dataMapExprWrapper.prune(segmentIds, resolver, partitionsToPrune);
+      prunedBlocklets = dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
     }
 
     List<org.apache.carbondata.hadoop.CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();

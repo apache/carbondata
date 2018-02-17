@@ -33,11 +33,9 @@ public interface DataMapExprWrapper extends Serializable {
   /**
    * It get the blocklets from each leaf node datamap and apply expressions on the blocklets
    * using list of segments, it is used in case on non distributable datamap.
-   * @param segments
-   * @return
-   * @throws IOException
    */
-  List<ExtendedBlocklet> prune(List<String> segments) throws IOException;
+  List<ExtendedBlocklet> prune(List<String> segments, List<String> partitionsToPrune)
+      throws IOException;
 
   /**
    * It is used in case on distributable datamap. First using job it gets all blockets from all

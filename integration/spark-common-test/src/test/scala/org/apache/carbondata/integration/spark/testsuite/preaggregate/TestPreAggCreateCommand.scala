@@ -272,7 +272,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   test("test pre agg create table 22: using invalid datamap provider") {
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
 
-    val e: Exception = intercept[Exception] {
+    val e = intercept[MalformedCarbonCommandException] {
       sql(
         """
           | CREATE DATAMAP agg0 ON TABLE mainTable
@@ -282,8 +282,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
           | GROUP BY column3,column5,column2
         """.stripMargin)
     }
-    assert(e.getMessage.contains(
-      s"Unknown data map type abc"))
+    assert(e.getMessage.contains("DataMap class 'abc' does not exist"))
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 
