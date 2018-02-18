@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.dev.expr.AndDataMapExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapperImpl;
@@ -51,10 +53,25 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditio
  *   supposing 2 datamaps(1. column1 2. column1+column2) are supporting this column then we choose
  *   the datamap which has fewer columns that is the first datamap.
  */
+@InterfaceAudience.Developer
+@InterfaceStability.Evolving
 public class DataMapChooser {
 
-  public DataMapExprWrapper choose(CarbonTable carbonTable,
-      FilterResolverIntf resolverIntf) {
+  private static DataMapChooser INSTANCE;
+
+  private DataMapChooser() { }
+
+  public static DataMapChooser get() {
+    if (INSTANCE == null) {
+      INSTANCE = new DataMapChooser();
+    }
+    return INSTANCE;
+  }
+
+  /**
+   * Return a chosen datamap based on input filter
+   */
+  public DataMapExprWrapper choose(CarbonTable carbonTable, FilterResolverIntf resolverIntf) {
     if (resolverIntf != null) {
       Expression expression = resolverIntf.getFilterExpression();
       // First check for FG datamaps if any exist

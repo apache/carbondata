@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.carbondata.common.exceptions.MetadataProcessException;
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -120,7 +122,11 @@ public final class DataMapStoreManager {
           dataMap = getTableDataMap(dataMapSchema.getDataMapName(), tableDataMaps);
         }
         if (dataMap == null) {
-          dataMap = createAndRegisterDataMap(identifier, dataMapSchema);
+          try {
+            dataMap = createAndRegisterDataMap(identifier, dataMapSchema);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
         }
       }
     }
@@ -136,7 +142,8 @@ public final class DataMapStoreManager {
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
   public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
-      DataMapSchema dataMapSchema) {
+      DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
     String table = identifier.getCarbonTableIdentifier().getTableUniqueName();
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(identifier);
@@ -148,10 +155,12 @@ public final class DataMapStoreManager {
     TableDataMap dataMap = getTableDataMap(dataMapName, tableDataMaps);
     if (dataMap != null && dataMap.getDataMapSchema().getDataMapName()
         .equalsIgnoreCase(dataMapName)) {
-      throw new RuntimeException("Already datamap exists in that path with type " + dataMapName);
+      throw new MalformedDataMapCommandException("Already datamap exists in that path with type " +
+          dataMapName);
     }
 
     try {
+      // try to create datamap by reflection to test whether it is a valid DataMapFactory class
       Class<? extends DataMapFactory> factoryClass =
           (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getClassName());
       DataMapFactory dataMapFactory = factoryClass.newInstance();
@@ -166,9 +175,12 @@ public final class DataMapStoreManager {
       segmentPropertiesFetcher = (SegmentPropertiesFetcher) blockletDetailsFetcher;
       dataMap = new TableDataMap(identifier, dataMapSchema, dataMapFactory, blockletDetailsFetcher,
           segmentPropertiesFetcher);
-    } catch (Exception e) {
-      LOGGER.error(e);
-      throw new RuntimeException(e);
+    } catch (ClassNotFoundException e) {
+      throw new MalformedDataMapCommandException("DataMap class '" +
+          dataMapSchema.getClassName() + "' not found");
+    } catch (Throwable e) {
+      throw new MetadataProcessException(
+          "failed to create DataMap instance for '" + dataMapSchema.getClassName() + "'", e);
     }
     tableDataMaps.add(dataMap);
     allDataMaps.put(table, tableDataMaps);

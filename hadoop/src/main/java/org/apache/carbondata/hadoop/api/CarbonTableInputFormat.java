@@ -724,7 +724,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
             CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
     DataMapExprWrapper dataMapExprWrapper =
-        new DataMapChooser().choose(getOrCreateCarbonTable(job.getConfiguration()), resolver);
+        DataMapChooser.get().choose(getOrCreateCarbonTable(job.getConfiguration()), resolver);
     DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
     List<String> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     List<ExtendedBlocklet> prunedBlocklets;
