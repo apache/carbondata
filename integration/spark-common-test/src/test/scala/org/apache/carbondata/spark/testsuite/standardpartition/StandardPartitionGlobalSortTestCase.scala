@@ -21,14 +21,11 @@ import java.util.concurrent.{Callable, ExecutorService, Executors}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterAll {
   var executorService: ExecutorService = _
@@ -173,23 +170,26 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         | CREATE TABLE partitionmultiplethreeconcurrent (empno int, doj Timestamp,
         |  workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
-        |  utilization int,salary int)
-        | PARTITIONED BY (workgroupcategory int, empname String, designation String)
+        |  utilization int,salary int,workgroupcategory int,designation String)
+        | PARTITIONED BY (empname String)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('DICTIONARY_INCLUDE'='empname,designation,deptname', 'SORT_SCOPE'='GLOBAL_SORT')
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
 
     val tasks = new util.ArrayList[Callable[String]]()
-    tasks.add(new QueryTask(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethreeconcurrent OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""))
-    tasks.add(new QueryTask(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethreeconcurrent OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""))
-    tasks.add(new QueryTask(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethreeconcurrent OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""))
+    var i = 0
+    val count = 5
+    while (i < count) {
+      tasks.add(new QueryTask(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE  partitionmultiplethreeconcurrent partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""))
+      i = i + 1
+    }
     val results = executorService.invokeAll(tasks)
     for (i <- 0 until tasks.size()) {
       val res = results.get(i).get
       assert("PASS".equals(res))
     }
     executorService.shutdown()
-    checkAnswer(sql("select count(*) from partitionmultiplethreeconcurrent"), Seq(Row(30)))
+    checkAnswer(sql("select count(*) from partitionmultiplethreeconcurrent"), Seq(Row(10 * count)))
   }
 
   class QueryTask(query: String) extends Callable[String] {
@@ -416,10 +416,10 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   test("test overwrite with timestamp partition column") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    sql("DROP TABLE IF EXISTS origintable")
+    sql("DROP TABLE IF EXISTS origintablenew")
     sql(
       """
-        | CREATE TABLE origintable
+        | CREATE TABLE origintablenew
         | (id Int,
         | vin String,
         | logdate Timestamp,
@@ -432,7 +432,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
     sql(
       s"""
-       LOAD DATA LOCAL INPATH '$resourcesPath/partition_data.csv' into table origintable
+       LOAD DATA LOCAL INPATH '$resourcesPath/partition_data.csv' into table origintablenew
        """)
 
     sql("DROP TABLE IF EXISTS partitiontable0")
@@ -484,9 +484,9 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       """.stripMargin))
 
     sql("insert into table partitiontable0 partition(logdate='2018-02-15 00:00:00') " +
-              "select id,vin,phonenumber,country,area,salary from origintable")
+              "select id,vin,phonenumber,country,area,salary from origintablenew")
     sql("insert into table partitiontable0_hive partition(logdate='2018-02-15 00:00:00') " +
-        "select id,vin,phonenumber,country,area,salary from origintable")
+        "select id,vin,phonenumber,country,area,salary from origintablenew")
     checkAnswer(sql(
       s"""
          | SELECT logdate,id,vin,phonenumber,country,area,salary
@@ -510,10 +510,10 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
   test("test overwrite with date partition column") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-    sql("DROP TABLE IF EXISTS origintable")
+    sql("DROP TABLE IF EXISTS origintablenew")
     sql(
       """
-        | CREATE TABLE origintable
+        | CREATE TABLE origintablenew
         | (id Int,
         | vin String,
         | logdate date,
@@ -526,7 +526,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
     sql(
       s"""
-       LOAD DATA LOCAL INPATH '$resourcesPath/partition_data.csv' into table origintable
+       LOAD DATA LOCAL INPATH '$resourcesPath/partition_data.csv' into table origintablenew
        """)
 
     sql("DROP TABLE IF EXISTS partitiontable0")
@@ -578,9 +578,9 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       """.stripMargin))
 
     sql("insert into table partitiontable0 partition(logdate='2018-02-15') " +
-        "select id,vin,phonenumber,country,area,salary from origintable")
+        "select id,vin,phonenumber,country,area,salary from origintablenew")
     sql("insert into table partitiontable0_hive partition(logdate='2018-02-15') " +
-        "select id,vin,phonenumber,country,area,salary from origintable")
+        "select id,vin,phonenumber,country,area,salary from origintablenew")
     checkAnswer(sql(
       s"""
          | SELECT logdate,id,vin,phonenumber,country,area,salary
@@ -601,6 +601,169 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
   }
 
+  test("partition with date column issue") {
+    try {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FAIL.name())
+      sql("drop table if exists partdatecarb")
+      sql(
+        "create table partdatecarb(name string, age Int) partitioned by(dob date) stored by 'carbondata'")
+
+      sql("insert into partdatecarb partition(dob='2016-06-28') select 'name1',121")
+      checkAnswer(sql("select name,age,cast(dob as string) from partdatecarb"),
+        Seq(Row("name1", 121, "2016-06-28")))
+    } finally {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
+    }
+  }
+
+  test("partition with time column issue") {
+    try {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FAIL.name())
+      sql("drop table if exists partdatecarb1")
+      sql(
+        "create table partdatecarb1(name string, age Int) partitioned by(dob timestamp) stored by 'carbondata'")
+
+      sql("insert into partdatecarb1 partition(dob='2016-06-28 00:00:00') select 'name1',121")
+      checkAnswer(sql("select name,age,cast(dob as string) from partdatecarb1"),
+        Seq(Row("name1", 121, "2016-06-28 00:00:00")))
+    } finally {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
+    }
+  }
+
+  test("partition with int issue and dictionary exclude") {
+    try {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FAIL.name())
+      sql("drop table if exists partdatecarb2")
+      sql(
+        "create table partdatecarb2(name string, dob string) partitioned by(age Int) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='age')")
+
+      sql("insert into partdatecarb2 partition(age='12') select 'name1','2016-06-28'")
+      checkAnswer(sql("select name,age,cast(dob as string) from partdatecarb2"),
+        Seq(Row("name1", 12, "2016-06-28")))
+    } finally {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
+    }
+  }
+
+  test("partition with int issue and dictionary include") {
+    sql("drop table if exists partdatecarb3")
+    intercept[Exception] {
+      sql(
+        "create table partdatecarb3(name string, dob string) partitioned by(age Int) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='age')")
+    }
+  }
+
+  test("data loading for all dimensions with table for two partition column") {
+    sql("drop table if exists partitiontwoalldims")
+    sql(
+      """
+        | CREATE TABLE partitiontwoalldims (empno String, designation String,
+        |  workgroupcategory String, workgroupcategoryname String, deptno String, deptname String,
+        |  projectcode String, projectjoindate Timestamp, projectenddate Timestamp,attendance String,
+        |  utilization String,salary String)
+        | PARTITIONED BY (doj Timestamp, empname String)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiontwoalldims OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(*) from partitiontwoalldims"), Seq(Row(10)))
+  }
+
+  test("partition with different order column issue") {
+    try {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FAIL.name())
+
+      sql("drop table if exists partdatecarb4_hive")
+      sql(
+        "create table partdatecarb4_hive(name string, age Int) partitioned by(country string, state string, city string)")
+
+      sql("insert into partdatecarb4_hive partition(state,city,country='india') select 'name1',12,'KA', 'BGLR'")
+      sql("insert into partdatecarb4_hive partition(state,city,country='india') select 'name1',12,'KA', 'BGLR'")
+
+      sql("drop table if exists partdatecarb4")
+      sql(
+        "create table partdatecarb4(name string, age Int) partitioned by(country string, state string, city string) stored by 'carbondata'")
+
+      sql("insert into partdatecarb4 partition(state,city,country='india') select 'name1',12,'KA', 'BGLR'")
+      sql("insert into partdatecarb4 partition(city,state,country='india') select 'name1',12, 'BGLR','KA'")
+      sql("select * from partdatecarb4").show()
+      checkAnswer(sql("select * from partdatecarb4"), sql("select * from partdatecarb4_hive"))
+      intercept[Exception] {
+        sql(
+          "insert into partdatecarb4 partition(state,city='3',country) select 'name1',12,'cc', 'dd'")
+      }
+    } finally {
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
+    }
+  }
+
+  test("data loading for decimal column partition table") {
+
+    sql(
+      """
+        | CREATE TABLE partitiondecimal (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String)
+        | PARTITIONED BY (salary decimal)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondecimal OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitiondecimal order by empno"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
+  }
+
+  test("data loading for decimal column static partition table") {
+
+    sql(
+      """
+        | CREATE TABLE partitiondecimalstatic (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String)
+        | PARTITIONED BY (salary decimal)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondecimalstatic partition(salary='1.0') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql("select count(salary) from partitiondecimalstatic"), Seq(Row(10)))
+  }
+
+  test("query after select on partition table") {
+
+    sql(
+      """
+        | CREATE TABLE partitiondatadelete (designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int,empno int, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String,salary int)
+        | PARTITIONED BY (projectjoindate Timestamp)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondatadelete OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    sql(s"delete from partitiondatadelete where projectjoindate='2012-11-14 00:00:00'")
+    checkAnswer(sql(s"select count(*) from partitiondatadelete where where projectjoindate='2012-11-14 00:00:00'"), Seq(Row(0)))
+  }
+
+  test("partition colunm test without partition column in fileheader of load command") {
+    sql("DROP TABLE IF EXISTS partitiontablewithoutpartcolumninfileheader")
+
+    sql("CREATE TABLE partitiontablewithoutpartcolumninfileheader (CUST_ID int,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) partitioned by(CUST_NAME String) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1') ")
+    sql(s"""LOAD DATA INPATH '$resourcesPath/data_with_all_types.csv' into table partitiontablewithoutpartcolumninfileheader partition(cust_name='ravi') OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME1,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""")
+
+    checkAnswer(sql("select count(*) from partitiontablewithoutpartcolumninfileheader"), Seq(Row(10)))
+    sql("DROP TABLE IF EXISTS partitiontablewithoutpartcolumninfileheader")
+  }
 
 
   override def afterAll = {
@@ -660,5 +823,8 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists noLoadTable")
     sql("drop table if exists carbon_test")
     sql("drop table if exists carbon_test_hive")
+    sql("drop table if exists partitiondecimal")
+    sql("drop table if exists partitiondecimalstatic")
+    sql("drop table if exists partitiondatadelete")
   }
 }

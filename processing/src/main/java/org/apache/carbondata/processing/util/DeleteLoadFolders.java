@@ -81,9 +81,8 @@ public final class DeleteLoadFolders {
               CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
 
                 @Override public boolean accept(CarbonFile file) {
-                  return (CarbonTablePath.isCarbonDataFile(file.getName()) || CarbonTablePath
-                      .isCarbonIndexFile(file.getName()) || CarbonTablePath
-                      .isPartitionMapFile(file.getName()));
+                  return (CarbonTablePath.isCarbonDataFile(file.getName()) ||
+                      CarbonTablePath.isCarbonIndexFile(file.getName()));
                 }
               });
 

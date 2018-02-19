@@ -224,7 +224,8 @@ object DataLoadingUtil {
       optionsFinal: mutable.Map[String, String],
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration,
-      partition: Map[String, Option[String]] = Map.empty): Unit = {
+      partition: Map[String, Option[String]] = Map.empty,
+      isDataFrame: Boolean = false): Unit = {
     carbonLoadModel.setTableName(table.getTableName)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTablePath(table.getTablePath)
@@ -336,7 +337,11 @@ object DataLoadingUtil {
     carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimeter))
     carbonLoadModel.setCsvHeader(fileHeader)
     carbonLoadModel.setColDictFilePath(column_dict)
-    val ignoreColumns = new util.ArrayList(partition.filter(_._2.isDefined).map(_._1).toList.asJava)
+
+    val ignoreColumns = new util.ArrayList[String]()
+    if (!isDataFrame) {
+      ignoreColumns.addAll(partition.filter(_._2.isDefined).keys.toList.asJava)
+    }
     carbonLoadModel.setCsvHeaderColumns(
       CommonUtil.getCsvHeaderColumns(carbonLoadModel, hadoopConf, ignoreColumns))
 

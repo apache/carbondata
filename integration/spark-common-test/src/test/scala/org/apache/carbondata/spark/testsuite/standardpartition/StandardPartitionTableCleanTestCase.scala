@@ -146,6 +146,30 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
       Seq(Row(0)))
   }
 
+  test("clean up after deleting segments on table") {
+    sql(
+      """
+        | CREATE TABLE partitionalldeleteseg (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionalldeleteseg OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    assert(sql(s"show segments for table partitionalldeleteseg").count == 4)
+    checkAnswer(sql(s"Select count(*) from partitionalldeleteseg"), Seq(Row(40)))
+    sql(s"delete from table partitionalldeleteseg where segment.id in (1)").show()
+    checkExistence(sql(s"show segments for table partitionalldeleteseg"), true, "Marked for Delete")
+    checkAnswer(sql(s"Select count(*) from partitionalldeleteseg"), Seq(Row(30)))
+    sql(s"CLEAN FILES FOR TABLE partitionalldeleteseg").show()
+    assert(sql(s"show segments for table partitionalldeleteseg").count == 3)
+  }
+
+
   override def afterAll = {
     dropTable
   }
@@ -158,6 +182,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partitionmany")
     sql("drop table if exists partitionshow")
     sql("drop table if exists staticpartition")
+    sql("drop table if exists partitionalldeleteseg")
   }
 
 }

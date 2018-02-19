@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.util
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util
+import java.util.Date
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
@@ -32,6 +33,7 @@ import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
+import org.apache.carbondata.core.metadata.ColumnIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -166,32 +168,18 @@ object CarbonScalaUtil {
    * @param dataType Datatype to convert and then convert to String
    * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
    * @param dateFormat DataFormat to convert in case of DateType datatype
-   * @param serializationNullFormat if this encounters in input data then data will
-   *                                be treated as null
    * @return converted String
    */
-  def convertToString(
+  def convertToDateAndTimeFormats(
       value: String,
       dataType: DataType,
       timeStampFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat,
-      serializationNullFormat: String): String = {
-    if (value == null || serializationNullFormat.equals(value)) {
-      return null
-    }
+      dateFormat: SimpleDateFormat): String = {
     dataType match {
       case TimestampType if timeStampFormat != null =>
-        DateTimeUtils.timestampToString(timeStampFormat.parse(value).getTime * 1000)
+        timeStampFormat.format(DateTimeUtils.stringToTime(value))
       case DateType if dateFormat != null =>
-        DateTimeUtils.dateToString(
-          (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt)
-      case ShortType => value.toShort.toString
-      case IntegerType => value.toInt.toString
-      case LongType => value.toLong.toString
-      case DoubleType => value.toDouble.toString
-      case FloatType => value.toFloat.toString
-      case d: DecimalType => new java.math.BigDecimal(value).toPlainString
-      case BooleanType => value.toBoolean.toString
+        dateFormat.format(DateTimeUtils.stringToTime(value))
       case _ => value
     }
   }
@@ -276,6 +264,22 @@ object CarbonScalaUtil {
             CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
           ).generateDirectSurrogateKey(value).toString
         }
+      } else if (column.hasEncoding(Encoding.DICTIONARY)) {
+        val cacheProvider: CacheProvider = CacheProvider.getInstance
+        val reverseCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
+          cacheProvider.createCache(CacheType.REVERSE_DICTIONARY)
+        val dictionaryPath =
+          table.getTableInfo.getFactTable.getTableProperties.get(
+            CarbonCommonConstants.DICTIONARY_PATH)
+        val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
+          table.getAbsoluteTableIdentifier,
+          new ColumnIdentifier(
+            column.getColumnUniqueId,
+            column.getColumnProperties,
+            column.getDataType),
+          column.getDataType,
+          dictionaryPath)
+        return reverseCache.get(dictionaryColumnUniqueIdentifier).getSurrogateKey(value).toString
       }
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>

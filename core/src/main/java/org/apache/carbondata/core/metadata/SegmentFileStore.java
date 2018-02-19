@@ -481,7 +481,7 @@ public class SegmentFileStore {
     SegmentFileStore fileStore = new SegmentFileStore();
     fileStore.readSegment(tablePath, segmentFile);
     fileStore.readIndexFiles(SegmentStatus.SUCCESS, true);
-    Map<String, FolderDetails> locationMap = fileStore.segmentFile.getLocationMap();
+    Map<String, FolderDetails> locationMap = fileStore.getLocationMap();
     Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
     for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
       FileFactory.deleteFile(entry.getKey(), FileFactory.getFileType(entry.getKey()));
@@ -552,7 +552,7 @@ public class SegmentFileStore {
    */
   public Map<String, FolderDetails> getLocationMap() {
     if (segmentFile == null) {
-      return null;
+      return new HashMap<>();
     }
     return segmentFile.getLocationMap();
   }
@@ -599,7 +599,6 @@ public class SegmentFileStore {
             locationMap.put(entry.getKey(), entry.getValue());
           }
         }
-        locationMap.putAll(mapper.locationMap);
       }
       if (locationMap == null) {
         locationMap = mapper.locationMap;

@@ -43,7 +43,7 @@ import org.apache.carbondata.core.indexstore
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeConverterImpl, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonOutputCommitter, CarbonTableOutputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat.CarbonRecordWriter
@@ -152,13 +152,14 @@ with Serializable {
           path: String,
           dataSchema: StructType,
           context: TaskAttemptContext): OutputWriter = {
+        val model = CarbonTableOutputFormat.getLoadModel(context.getConfiguration)
         val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
         var storeLocation: Array[String] = Array[String]()
         val isCarbonUseLocalDir = CarbonProperties.getInstance()
           .getProperty("carbon.use.local.dir", "false").equalsIgnoreCase("true")
 
 
-        val taskNumber = generateTaskNumber(path, context)
+        val taskNumber = generateTaskNumber(path, context, model.getSegmentId)
         val tmpLocationSuffix =
           File.separator + "carbon" + System.nanoTime() + File.separator + taskNumber
         if (isCarbonUseLocalDir) {
@@ -180,7 +181,7 @@ with Serializable {
             storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
         }
         CarbonTableOutputFormat.setTempStoreLocations(context.getConfiguration, storeLocation)
-        new CarbonOutputWriter(path, context, dataSchema.map(_.dataType), taskNumber)
+        new CarbonOutputWriter(path, context, dataSchema.map(_.dataType), taskNumber, model)
       }
 
       /**
@@ -188,7 +189,7 @@ with Serializable {
        * of partition tables.
        */
       private def generateTaskNumber(path: String,
-          context: TaskAttemptContext): String = {
+          context: TaskAttemptContext, segmentId: String): String = {
         var partitionNumber: java.lang.Long = taskIdMap.get(path)
         if (partitionNumber == null) {
           partitionNumber = counter.incrementAndGet()
@@ -196,6 +197,7 @@ with Serializable {
           taskIdMap.put(path, partitionNumber)
         }
         val taskID = context.getTaskAttemptID.getTaskID.getId
+        String.valueOf(Math.pow(10, 2).toInt + segmentId.toInt) +
         String.valueOf(Math.pow(10, 5).toInt + taskID) +
           String.valueOf(partitionNumber + Math.pow(10, 5).toInt)
       }
@@ -239,9 +241,12 @@ private trait AbstractCarbonOutputWriter {
 private class CarbonOutputWriter(path: String,
     context: TaskAttemptContext,
     fieldTypes: Seq[DataType],
-    taskNo : String)
+    taskNo : String,
+    model: CarbonLoadModel)
   extends OutputWriter with AbstractCarbonOutputWriter {
-  val model = CarbonTableOutputFormat.getLoadModel(context.getConfiguration)
+
+  val converter = new DataTypeConverterImpl
+
   val partitions =
     getPartitionsFromPath(path, context, model).map(ExternalCatalogUtils.unescapePathName)
   val staticPartition: util.HashMap[String, Boolean] = {
@@ -313,15 +318,22 @@ private class CarbonOutputWriter(path: String,
       } else {
         col.getDataType
       }
-      if (staticPartition != null) {
-        DataTypeUtil.getDataBasedOnDataType(
+      if (staticPartition != null && staticPartition.get(col.getColumnName.toLowerCase)) {
+        val converetedVal =
           CarbonScalaUtil.convertStaticPartitions(
             partitionData(index),
             col,
-            model.getCarbonDataLoadSchema.getCarbonTable),
-          dataType)
+            model.getCarbonDataLoadSchema.getCarbonTable)
+        if (col.hasEncoding(Encoding.DICTIONARY)) {
+          converetedVal.toInt.asInstanceOf[AnyRef]
+        } else {
+          DataTypeUtil.getDataBasedOnDataType(
+            converetedVal,
+            dataType,
+            converter)
+        }
       } else {
-        DataTypeUtil.getDataBasedOnDataType(partitionData(index), dataType)
+        DataTypeUtil.getDataBasedOnDataType(partitionData(index), dataType, converter)
       }
     }.toArray
   }
@@ -329,7 +341,7 @@ private class CarbonOutputWriter(path: String,
   private val recordWriter: CarbonRecordWriter = {
     context.getConfiguration.set("carbon.outputformat.taskno", taskNo)
     context.getConfiguration.set("carbon.outputformat.writepath",
-      writePath + "/" + model.getFactTimeStamp + ".tmp")
+      writePath + "/" + model.getSegmentId + "_" + model.getFactTimeStamp + ".tmp")
     new CarbonTableOutputFormat() {
       override def getDefaultWorkFile(context: TaskAttemptContext, extension: String): Path = {
         new Path(path)
@@ -368,20 +380,19 @@ private class CarbonOutputWriter(path: String,
 
   override def close(): Unit = {
     recordWriter.close(context)
-    val loadModel = recordWriter.getLoadModel
     // write partition info to new file.
     val partitonList = new util.ArrayList[String]()
     val formattedPartitions =
     // All dynamic partitions need to be converted to proper format
       CarbonScalaUtil.updatePartitions(
         updatedPartitions.toMap,
-        loadModel.getCarbonDataLoadSchema.getCarbonTable)
+        model.getCarbonDataLoadSchema.getCarbonTable)
     formattedPartitions.foreach(p => partitonList.add(p._1 + "=" + p._2))
     new SegmentFileStore().writeSegmentFile(
-      loadModel.getTablePath,
-      loadModel.getTaskNo,
+      model.getTablePath,
+      taskNo,
       writePath,
-      model.getFactTimeStamp + "",
+      model.getSegmentId + "_" + model.getFactTimeStamp + "",
       partitonList)
   }
 
