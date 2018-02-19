@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.rdd.CarbonDropPartitionRDD
@@ -59,9 +60,10 @@ case class CarbonAlterTableDropHivePartitionCommand(
   extends AtomicRunnableCommand {
 
   var carbonPartitionsTobeDropped : util.List[PartitionSpec] = _
+  var table: CarbonTable = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
+    table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
     if (CarbonUtil.hasAggregationDataMap(table)) {
       throw new AnalysisException(
         "Partition can not be dropped as it is mapped to Pre Aggregate table")
@@ -120,7 +122,6 @@ case class CarbonAlterTableDropHivePartitionCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
     var locks = List.empty[ICarbonLock]
     val uniqueId = System.currentTimeMillis().toString
     try {

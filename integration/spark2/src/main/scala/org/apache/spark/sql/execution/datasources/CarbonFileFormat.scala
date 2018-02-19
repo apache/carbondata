@@ -17,7 +17,6 @@
 package org.apache.spark.sql.execution.datasources
 
 import java.io.File
-import java.text.SimpleDateFormat
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -40,6 +39,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.indexstore
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -66,6 +66,10 @@ with Serializable {
     None
   }
 
+  SparkSession.getActiveSession.get.sessionState.conf.setConfString(
+    "spark.sql.sources.commitProtocolClass",
+    "org.apache.spark.sql.execution.datasources.CarbonSQLHadoopMapReduceCommitProtocol")
+
   override def prepareWrite(
       sparkSession: SparkSession,
       job: Job,
@@ -77,9 +81,6 @@ with Serializable {
       classOf[CarbonOutputCommitter],
       classOf[CarbonOutputCommitter])
     conf.set("carbon.commit.protocol", "carbon.commit.protocol")
-    sparkSession.sessionState.conf.setConfString(
-      "spark.sql.sources.commitProtocolClass",
-      "org.apache.spark.sql.execution.datasources.CarbonSQLHadoopMapReduceCommitProtocol")
     job.setOutputFormatClass(classOf[CarbonTableOutputFormat])
     val table = CarbonEnv.getCarbonTable(
       TableIdentifier(options("tableName"), options.get("dbName")))(sparkSession)
@@ -130,6 +131,11 @@ with Serializable {
     val segemntsTobeDeleted = options.get("segmentsToBeDeleted")
     if (segemntsTobeDeleted.isDefined) {
       conf.set(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, segemntsTobeDeleted.get)
+    }
+
+    val currPartition = options.getOrElse("currentpartition", null)
+    if (currPartition != null) {
+      conf.set("carbon.currentpartition", currPartition)
     }
     CarbonTableOutputFormat.setLoadModel(conf, model)
 
@@ -247,47 +253,51 @@ private class CarbonOutputWriter(path: String,
       null
     }
   }
-  lazy val (updatedPartitions, partitionData) = if (partitions.nonEmpty) {
-    val updatedPartitions = partitions.map{ p =>
-      val value = p.substring(p.indexOf("=") + 1, p.length)
-      val col = p.substring(0, p.indexOf("="))
-      // NUll handling case. For null hive creates with this special name
-      if (value.equals("__HIVE_DEFAULT_PARTITION__")) {
-        (col, null)
-        // we should replace back the special string with empty value.
-      } else if (value.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-        (col, "")
-      } else {
-        (col, value)
-      }
-    }
-
-    if (staticPartition != null) {
-      val table = model.getCarbonDataLoadSchema.getCarbonTable
-      var timeStampformatString = model.getTimestampformat
-      if (timeStampformatString.isEmpty) {
-        timeStampformatString = model.getDefaultTimestampFormat
-      }
-      val timeFormat = new SimpleDateFormat(timeStampformatString)
-      var dateFormatString = model.getDateFormat
-      if (dateFormatString.isEmpty) {
-        dateFormatString = model.getDefaultDateFormat
-      }
-      val dateFormat = new SimpleDateFormat(dateFormatString)
-      val formattedPartitions = updatedPartitions.map {case (col, value) =>
-        // Only convert the static partitions to the carbon format and use it while loading data
-        // to carbon.
-        (col, value)
-      }
-      (formattedPartitions, updatePartitions(formattedPartitions.map(_._2)))
+  lazy val currPartitions: util.List[indexstore.PartitionSpec] = {
+    val currParts = context.getConfiguration.get("carbon.currentpartition")
+    if (currParts != null) {
+      ObjectSerializationUtil.convertStringToObject(
+        currParts).asInstanceOf[util.List[indexstore.PartitionSpec]]
     } else {
-      (updatedPartitions, updatePartitions(updatedPartitions.map(_._2)))
+      new util.ArrayList[indexstore.PartitionSpec]()
     }
+  }
+  var (updatedPartitions, partitionData) = if (partitions.nonEmpty) {
+    val updatedPartitions = partitions.map(splitPartition)
+    (updatedPartitions, updatePartitions(updatedPartitions.map(_._2)))
   } else {
     (Map.empty[String, String].toArray, Array.empty)
   }
 
-  lazy val writePath = getPartitionPath(path, context, model)
+  private def splitPartition(p: String) = {
+    val value = p.substring(p.indexOf("=") + 1, p.length)
+    val col = p.substring(0, p.indexOf("="))
+    // NUll handling case. For null hive creates with this special name
+    if (value.equals("__HIVE_DEFAULT_PARTITION__")) {
+      (col, null)
+      // we should replace back the special string with empty value.
+    } else if (value.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+      (col, "")
+    } else {
+      (col, value)
+    }
+  }
+
+  lazy val writePath = {
+    val updatedPath = getPartitionPath(path, context, model)
+    // in case of partition location specified by user then search the partitions from the current
+    // partitions to get the corresponding partitions.
+    if (partitions.isEmpty) {
+      val writeSpec = new indexstore.PartitionSpec(null, updatedPath)
+      val index = currPartitions.indexOf(writeSpec)
+      if (index > -1) {
+        val spec = currPartitions.get(index)
+        updatedPartitions = spec.getPartitions.asScala.map(splitPartition).toArray
+        partitionData = updatePartitions(updatedPartitions.map(_._2))
+      }
+    }
+    updatedPath
+  }
 
   val writable = new ObjectArrayWritable
 
@@ -390,7 +400,8 @@ private class CarbonOutputWriter(path: String,
       model.getCarbonDataLoadSchema.getCarbonTable.getTablePath +
         CarbonCommonConstants.FILE_SEPARATOR + partitionstr
     } else {
-      FileFactory.getUpdatedFilePath(path)
+      var updatedPath = FileFactory.getUpdatedFilePath(path)
+      updatedPath.substring(0, updatedPath.lastIndexOf("/"))
     }
   }
 
@@ -399,13 +410,13 @@ private class CarbonOutputWriter(path: String,
       attemptContext: TaskAttemptContext,
       model: CarbonLoadModel): Array[String] = {
     var attemptId = attemptContext.getTaskAttemptID.toString + "/"
-    if (path.indexOf(attemptId) <= 0) {
-
-      attemptId = model.getTableName + "/"
-    }
-    val str = path.substring(path.indexOf(attemptId) + attemptId.length, path.lastIndexOf("/"))
-    if (str.length > 0) {
-      str.split("/")
+    if (path.indexOf(attemptId) > -1) {
+      val str = path.substring(path.indexOf(attemptId) + attemptId.length, path.lastIndexOf("/"))
+      if (str.length > 0) {
+        str.split("/")
+      } else {
+        Array.empty
+      }
     } else {
       Array.empty
     }

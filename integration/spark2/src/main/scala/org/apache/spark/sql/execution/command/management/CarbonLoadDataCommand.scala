@@ -51,6 +51,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
 import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
@@ -97,6 +98,8 @@ case class CarbonLoadDataCommand(
 
   var sizeInBytes: Long = _
 
+  var currPartitions: util.List[PartitionSpec] = _
+
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
@@ -123,6 +126,12 @@ case class CarbonLoadDataCommand(
           case l: LogicalRelation => l
         }.head
       sizeInBytes = logicalPartitionRelation.relation.sizeInBytes
+      currPartitions = CarbonFilters.getCurrentPartitions(
+        sparkSession,
+        TableIdentifier(tableName, databaseNameOp)) match {
+        case Some(parts) => new util.ArrayList(parts.toList.asJava)
+        case _ => null
+      }
     }
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     if(CarbonUtil.hasAggregationDataMap(table)) {
@@ -848,6 +857,10 @@ case class CarbonLoadDataCommand(
         options += (("segmentsToBeDeleted",
           updateModel.get.deletedSegments.map(_.getSegmentId).mkString(",")))
       }
+    }
+    if (currPartitions != null) {
+      val currPartStr = ObjectSerializationUtil.convertObjectToString(currPartitions)
+      options += (("currentpartition", currPartStr))
     }
     val hdfsRelation = HadoopFsRelation(
       location = catalog,

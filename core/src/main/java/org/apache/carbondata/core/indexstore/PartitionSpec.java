@@ -65,7 +65,7 @@ public class PartitionSpec implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     PartitionSpec spec = (PartitionSpec) o;
-    return Objects.equals(locationPath, spec.locationPath);
+    return Objects.equals(getLocation(), spec.getLocation());
   }
 
   @Override public int hashCode() {

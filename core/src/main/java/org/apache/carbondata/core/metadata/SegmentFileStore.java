@@ -117,7 +117,7 @@ public class SegmentFileStore {
    * @param path
    * @throws IOException
    */
-  private void writeSegmentFile(SegmentFile segmentFile, String path) throws IOException {
+  public void writeSegmentFile(SegmentFile segmentFile, String path) throws IOException {
     AtomicFileOperations fileWrite =
         new AtomicFileOperationsImpl(path, FileFactory.getFileType(path));
     BufferedWriter brWriter = null;
@@ -151,12 +151,12 @@ public class SegmentFileStore {
     if (segmentFiles != null && segmentFiles.length > 0) {
       SegmentFile segmentFile = null;
       for (CarbonFile file : segmentFiles) {
-        SegmentFile localMapper = readSegmentFile(file.getAbsolutePath());
-        if (segmentFile == null && localMapper != null) {
-          segmentFile = localMapper;
+        SegmentFile localSegmentFile = readSegmentFile(file.getAbsolutePath());
+        if (segmentFile == null && localSegmentFile != null) {
+          segmentFile = localSegmentFile;
         }
-        if (localMapper != null) {
-          segmentFile = segmentFile.merge(localMapper);
+        if (localSegmentFile != null) {
+          segmentFile = segmentFile.merge(localSegmentFile);
         }
       }
       if (segmentFile != null) {
@@ -179,6 +179,53 @@ public class SegmentFileStore {
       });
     }
     return null;
+  }
+
+  /**
+   * It provides segment file only for the partitions which has physical index files.
+   *
+   * @param partitionSpecs
+   */
+  public static SegmentFile getSegmentFileForPhysicalDataPartitions(String tablePath,
+      List<PartitionSpec> partitionSpecs) {
+    SegmentFile segmentFile = null;
+    for (PartitionSpec spec : partitionSpecs) {
+      String location = spec.getLocation().toString();
+      CarbonFile carbonFile = FileFactory.getCarbonFile(location);
+      boolean isRelative = false;
+      if (location.startsWith(tablePath)) {
+        location = location.substring(tablePath.length(), location.length());
+        isRelative = true;
+      }
+      CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
+        @Override public boolean accept(CarbonFile file) {
+          return CarbonTablePath.isCarbonIndexFile(file.getAbsolutePath());
+        }
+      });
+      if (listFiles != null && listFiles.length > 0) {
+        SegmentFile localSegmentFile = new SegmentFile();
+        Map<String, FolderDetails> locationMap = new HashMap<>();
+        FolderDetails folderDetails = new FolderDetails();
+        folderDetails.setRelative(isRelative);
+        folderDetails.setPartitions(spec.getPartitions());
+        folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
+        for (CarbonFile file : listFiles) {
+          if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+            folderDetails.setMergeFileName(file.getName());
+          } else {
+            folderDetails.getFiles().add(file.getName());
+          }
+        }
+        locationMap.put(location, folderDetails);
+        localSegmentFile.setLocationMap(locationMap);
+        if (segmentFile == null) {
+          segmentFile = localSegmentFile;
+        } else {
+          segmentFile = segmentFile.merge(localSegmentFile);
+        }
+      }
+    }
+    return segmentFile;
   }
 
   /**
