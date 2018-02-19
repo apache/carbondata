@@ -345,6 +345,7 @@ class CarbonScanRDD(
           val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
             .asInstanceOf[CarbonStreamRecordReader]
           streamReader.setVectorReader(vectorReader)
+          streamReader.setInputMetricsStats(inputMetricsStats)
           model.setStatisticsRecorder(
             CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId))
           streamReader.setQueryModel(model)
