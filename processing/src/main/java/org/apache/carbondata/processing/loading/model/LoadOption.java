@@ -40,7 +40,7 @@ import org.apache.hadoop.conf.Configuration;
 /**
  * Provide utilities to populate loading options
  */
-@InterfaceAudience.Developer
+@InterfaceAudience.Internal
 public class LoadOption {
 
   private static LogService LOG = LogServiceFactory.getLogService(LoadOption.class.getName());
