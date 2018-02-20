@@ -49,7 +49,7 @@ class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll wit
     // register hook to the table to sleep, thus the other command will be executed
     DataMapStoreManager.getInstance().createAndRegisterDataMap(
       AbsoluteTableIdentifier.from(storeLocation + "/orders", "default", "orders"),
-      new DataMapSchema(classOf[WaitingDataMap].getName, "test"))
+      new DataMapSchema(classOf[WaitingDataMap].getName, classOf[WaitingDataMap].getName))
   }
 
   private def buildTestData(): Unit = {
