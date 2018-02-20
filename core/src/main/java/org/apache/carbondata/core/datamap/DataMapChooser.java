@@ -67,7 +67,7 @@ public class DataMapChooser {
   }
 
   /**
-   * Return a chosen datamap based on input filter
+   * Return a chosen datamap based on input filter. See {@link DataMapChooser}
    */
   public DataMapExprWrapper choose(CarbonTable carbonTable, FilterResolverIntf resolverIntf) {
     if (resolverIntf != null) {
