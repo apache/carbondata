@@ -29,13 +29,12 @@ public class ExtendedBlocklet extends Blocklet {
 
   private String[] location;
 
-  private String path;
-
   private String dataMapWriterPath;
+
+  private String dataMapUniqueId;
 
   public ExtendedBlocklet(String path, String blockletId) {
     super(path, blockletId);
-    this.path = path;
   }
 
   public BlockletDetailInfo getDetailInfo() {
@@ -67,7 +66,7 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   public String getPath() {
-    return path;
+    return getBlockId();
   }
 
   public String getDataMapWriterPath() {
@@ -76,5 +75,31 @@ public class ExtendedBlocklet extends Blocklet {
 
   public void setDataMapWriterPath(String dataMapWriterPath) {
     this.dataMapWriterPath = dataMapWriterPath;
+  }
+
+  public String getDataMapUniqueId() {
+    return dataMapUniqueId;
+  }
+
+  public void setDataMapUniqueId(String dataMapUniqueId) {
+    this.dataMapUniqueId = dataMapUniqueId;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) {
+      return false;
+    }
+
+    ExtendedBlocklet that = (ExtendedBlocklet) o;
+
+    return segmentId != null ? segmentId.equals(that.segmentId) : that.segmentId == null;
+  }
+
+  @Override public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (segmentId != null ? segmentId.hashCode() : 0);
+    return result;
   }
 }

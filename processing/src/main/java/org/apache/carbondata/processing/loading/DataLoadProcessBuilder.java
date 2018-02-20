@@ -226,7 +226,7 @@ public final class DataLoadProcessBuilder {
     if (carbonTable.isHivePartitionTable()) {
       configuration.setWritingCoresCount((short) 1);
     }
-    TableSpec tableSpec = new TableSpec(dimensions, measures);
+    TableSpec tableSpec = new TableSpec(carbonTable);
     configuration.setTableSpec(tableSpec);
     return configuration;
   }
