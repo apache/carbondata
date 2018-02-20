@@ -22,7 +22,6 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -40,8 +39,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 /**
  * Implementation to write rows in CSV format to carbondata file.
  */
-@InterfaceAudience.Developer
-@InterfaceStability.Unstable
+@InterfaceAudience.Internal
 class CSVCarbonWriter extends CarbonWriter {
 
   private RecordWriter<NullWritable, StringArrayWritable> recordWriter;
