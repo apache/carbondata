@@ -73,7 +73,7 @@ case class CarbonDropDataMapCommand(
         Some(CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession))
       } catch {
         case ex: NoSuchTableException =>
-          throw new MetadataProcessException(s"Failed to drop datamap '$dataMapName'", ex)
+          throw new MetadataProcessException(s"Dropping datamap $dataMapName failed", ex)
       }
       if (carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList.size() > 0) {
         val dataMapSchema = carbonTable.get.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
