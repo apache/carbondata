@@ -21,7 +21,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
-@InterfaceAudience.Developer
+@InterfaceAudience.Internal
 public class Maps {
 
   /**

@@ -43,7 +43,7 @@ import org.apache.hadoop.conf.Configuration;
 /**
  * Builder for {@link CarbonLoadModel}
  */
-@InterfaceAudience.Developer
+@InterfaceAudience.Internal
 public class CarbonLoadModelBuilder {
 
   private CarbonTable table;
