@@ -25,10 +25,10 @@ import java.lang.annotation.RetentionPolicy;
  * This annotation is ported and modified from Apache Hadoop project.
  *
  * Annotation to inform users of a package, class or method's intended audience.
- * Currently the audience can be {@link User}, {@link Developer}
+ * Currently the audience can be {@link User}, {@link Developer}, {@link Internal}
  *
  * Public classes that are not marked with this annotation must be
- * considered by default as {@link Developer}.</li>
+ * considered by default as {@link Internal}.</li>
  *
  * External applications must only use classes that are marked {@link User}.
  *
@@ -47,12 +47,21 @@ public class InterfaceAudience {
   public @interface User { }
 
   /**
-   * Intended only for developers to extend interface for CarbonData project
-   * For example, new Datamap implementations.
+   * Intended for developers to develop extension for Apache CarbonData project
+   * For example, "Index DataMap" to add a new index implementation, etc
    */
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
-  public @interface Developer { }
+  public @interface Developer {
+    String[] value();
+  }
+
+  /**
+   * Intended only for internal usage within Apache CarbonData project.
+   */
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Internal { }
 
   private InterfaceAudience() { } // Audience can't exist on its own
 }

@@ -21,7 +21,7 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
-@InterfaceAudience.Developer
+@InterfaceAudience.Internal
 public class Strings {
 
   /**

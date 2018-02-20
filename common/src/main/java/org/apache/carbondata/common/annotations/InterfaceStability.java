@@ -36,7 +36,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience.*;
  *
  * <ul><li>All classes that are annotated with {@link User} or
  * {@link Developer} must have InterfaceStability annotation. </li>
- * <li>Classes that are {@link Private} are to be considered unstable unless
+ * <li>Classes that are {@link Internal} are to be considered unstable unless
  * a different InterfaceStability annotation states otherwise.</li>
  * <li>Incompatible changes must not be made to classes marked as stable.</li>
  * </ul>
