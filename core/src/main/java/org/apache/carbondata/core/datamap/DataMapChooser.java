@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.dev.expr.AndDataMapExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapperImpl;
@@ -53,8 +52,7 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditio
  *   supposing 2 datamaps(1. column1 2. column1+column2) are supporting this column then we choose
  *   the datamap which has fewer columns that is the first datamap.
  */
-@InterfaceAudience.Developer
-@InterfaceStability.Evolving
+@InterfaceAudience.Internal
 public class DataMapChooser {
 
   private static DataMapChooser INSTANCE;
