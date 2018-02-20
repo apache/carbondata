@@ -19,6 +19,7 @@ package org.apache.spark.sql
 import java.io.File
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
@@ -31,6 +32,8 @@ import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
+import org.apache.carbondata.datamap.MVDataMapRules
+import org.apache.carbondata.datamap.preaggregate.PreaggregateMVDataMapRules
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 
 /**
@@ -72,11 +75,20 @@ class CarbonSession(@transient val sc: SparkContext,
     new CarbonSession(sparkContext, Some(sharedState))
   }
 
+  // materialized view rules, currently one datamap is supported: PreaggregateDataMap
+  private var mvDataMapRules: mutable.Seq[MVDataMapRules] = mutable.Seq()
+
+  def addMVDataMapRules(rules: Seq[MVDataMapRules]): Unit =
+    mvDataMapRules = mvDataMapRules ++ rules
+
+  def getMVDataMapRules: Seq[MVDataMapRules] = mvDataMapRules
 }
 
 object CarbonSession {
 
   implicit class CarbonBuilder(builder: Builder) {
+
+    private var mvDataMap: mutable.Seq[MVDataMapRules] = mutable.Seq()
 
     def getOrCreateCarbonSession(): SparkSession = {
       getOrCreateCarbonSession(null, null)
@@ -112,7 +124,7 @@ object CarbonSession {
       }
 
       // Get the session from current thread's active session.
-      var session: SparkSession = SparkSession.getActiveSession match {
+      var session: CarbonSession = SparkSession.getActiveSession match {
         case Some(sparkSession: CarbonSession) =>
           if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
             options.foreach { case (k, v) => sparkSession.sessionState.conf.setConfString(k, v) }
@@ -184,15 +196,29 @@ object CarbonSession {
           }
         })
         session.streams.addListener(new CarbonStreamingQueryListener(session))
+        addDataMapRules(session)
       }
 
       session
     }
 
+    private def addDataMapRules(session: CarbonSession) = {
+      // by default, enable PreaggregateDataMap
+      if (mvDataMap.isEmpty) {
+        mvDataMap = mvDataMap :+ new PreaggregateMVDataMapRules
+      }
+      session.addMVDataMapRules(mvDataMap)
+    }
+
+    def enableMVDataMap(mvDataMapRules: MVDataMapRules): CarbonBuilder = {
+      mvDataMap = mvDataMap :+ mvDataMapRules
+      this
+    }
+
     /**
      * It is a hack to get the private field from class.
      */
-    def getValue(name: String, builder: Builder): Any = {
+    private def getValue(name: String, builder: Builder): Any = {
       val currentMirror = scala.reflect.runtime.currentMirror
       val instanceMirror = currentMirror.reflect(builder)
       val m = currentMirror.classSymbol(builder.getClass).

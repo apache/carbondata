@@ -33,11 +33,13 @@ import org.apache.spark.sql.execution.{SparkOptimizer, SparkSqlAstBuilder}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlParser, CarbonSparkSqlParser}
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, ExperimentalMethods, SparkSession, Strategy}
+import org.apache.spark.sql._
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.datamap.preaggregate.PreaggregateMVDataMapRules
+import org.apache.carbondata.datamap.{DataMapManager, MVDataMapRules}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
@@ -214,7 +216,8 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
       new CarbonLateDecodeRule)
   }
 
-  override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
+  override lazy val optimizer: Optimizer = new CarbonOptimizer(
+    catalog, conf, sparkSession, experimentalMethods)
 
   def extendedAnalyzerRules: Seq[Rule[LogicalPlan]] = Nil
   def internalAnalyzerRules: Seq[Rule[LogicalPlan]] = {
@@ -259,26 +262,40 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
   }
 }
 
-class CarbonAnalyzer(catalog: SessionCatalog,
+class CarbonAnalyzer(
+    catalog: SessionCatalog,
     conf: CatalystConf,
     sparkSession: SparkSession,
     analyzer: Analyzer) extends Analyzer(catalog, conf) {
   override def execute(plan: LogicalPlan): LogicalPlan = {
     var logicalPlan = analyzer.execute(plan)
-    logicalPlan = CarbonPreAggregateDataLoadingRules(sparkSession).apply(logicalPlan)
-    CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
+
+    val mvDataMapRules = sparkSession.asInstanceOf[CarbonSession].getMVDataMapRules
+    mvDataMapRules.foreach { mvDataMap =>
+      val rules = mvDataMap.getAnalyzerRules(sparkSession)
+      rules.foreach(rule => logicalPlan = rule.apply(logicalPlan))
+    }
+    logicalPlan
   }
 }
 
 class CarbonOptimizer(
     catalog: SessionCatalog,
     conf: SQLConf,
+    sparkSession: SparkSession,
     experimentalMethods: ExperimentalMethods)
   extends SparkOptimizer(catalog, conf, experimentalMethods) {
 
   override def execute(plan: LogicalPlan): LogicalPlan = {
-    val transFormedPlan: LogicalPlan = CarbonOptimizerUtil.transformForScalarSubQuery(plan)
-    super.execute(transFormedPlan)
+    var transFormedPlan: LogicalPlan = CarbonOptimizerUtil.transformForScalarSubQuery(plan)
+    transFormedPlan = super.execute(transFormedPlan)
+
+    val mvDataMapRules = sparkSession.asInstanceOf[CarbonSession].getMVDataMapRules
+    mvDataMapRules.foreach { mvDataMap =>
+      val rules = mvDataMap.getOptimizerRules(sparkSession)
+      rules.foreach(rule => transFormedPlan = rule.apply(transFormedPlan))
+    }
+    transFormedPlan
   }
 }
 

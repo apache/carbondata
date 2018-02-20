@@ -18,6 +18,8 @@
 package org.apache.carbondata.datamap;
 
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.datamap.preaggregate.PreAggregateDataMapProvider;
+import org.apache.carbondata.datamap.timeseries.TimeseriesDataMapProvider;
 
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.PREAGGREGATE;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES;
