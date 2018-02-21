@@ -59,10 +59,9 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
         sqlContext.sparkSession,
         TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName)))
     assert(partitions.get.length == partition)
-    val seg = new SegmentFileStore()
     val details = SegmentStatusManager.readLoadMetadata(tablePath.getMetadataDirectoryPath)
     val segLoad = details.find(_.getLoadName.equals(segmentId)).get
-    seg.readSegment(carbonTable.getTablePath, segLoad.getSegmentFile)
+    val seg = new SegmentFileStore(carbonTable.getTablePath, segLoad.getSegmentFile)
     assert(seg.getIndexFiles.size == indexes)
   }
 

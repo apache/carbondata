@@ -32,7 +32,7 @@ object PartitionDropper {
 
   def triggerPartitionDrop(dropPartitionCallableModel: DropPartitionCallableModel): Unit = {
     val alterPartitionModel = new AlterPartitionModel(dropPartitionCallableModel.carbonLoadModel,
-      dropPartitionCallableModel.segmentId.getSegmentId,
+      dropPartitionCallableModel.segmentId.getSegmentNo,
       dropPartitionCallableModel.oldPartitionIds,
       dropPartitionCallableModel.sqlContext
     )

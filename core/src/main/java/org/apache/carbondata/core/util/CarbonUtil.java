@@ -2147,7 +2147,7 @@ public final class CarbonUtil {
       for (String value : values) {
         if (!value.equalsIgnoreCase("*")) {
           Segment segment = Segment.toSegment(value);
-          Float aFloatValue = Float.parseFloat(segment.getSegmentId());
+          Float aFloatValue = Float.parseFloat(segment.getSegmentNo());
           if (aFloatValue < 0 || aFloatValue > Float.MAX_VALUE) {
             throw new InvalidConfigurationException(
                 "carbon.input.segments.<database_name>.<table_name> value range should be greater "
@@ -2377,11 +2377,11 @@ public final class CarbonUtil {
   public static HashMap<String, Long> getDataSizeAndIndexSize(CarbonTablePath carbonTablePath,
       Segment segment) throws IOException {
     if (segment.getSegmentFileName() != null) {
-      SegmentFileStore fileStore = new SegmentFileStore();
-      fileStore.readSegment(carbonTablePath.getPath(), segment.getSegmentFileName());
+      SegmentFileStore fileStore =
+          new SegmentFileStore(carbonTablePath.getPath(), segment.getSegmentFileName());
       return getDataSizeAndIndexSize(fileStore);
     } else {
-      return getDataSizeAndIndexSize(carbonTablePath, segment.getSegmentId());
+      return getDataSizeAndIndexSize(carbonTablePath, segment.getSegmentNo());
     }
   }
 
@@ -2517,9 +2517,12 @@ public final class CarbonUtil {
         blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
             + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       } else {
+        // This is the case with partition table.
         String partitionDir =
             filePath.substring(tablePath.length() + 1, filePath.length() - blockName.length() - 1);
 
+        // Replace / with # on partition director to support multi level partitioning. And access
+        // them all as a single entity.
         blockId = partitionDir.replace("/", "#") + CarbonCommonConstants.FILE_SEPARATOR + "Segment_"
             + segmentId + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       }

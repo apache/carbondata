@@ -32,6 +32,9 @@ public class PartitionSpec implements Serializable {
 
   private static final long serialVersionUID = 4828007433384867678L;
 
+  /**
+   * It holds the partition information in columnName=partitionValue combination.
+   */
   private List<String> partitions;
 
   private transient Path locationPath;

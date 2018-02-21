@@ -99,7 +99,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
         val segmentsLoc = CarbonTablePath.getSegmentFilesLocation(table.getTablePath)
         CarbonUtil.checkAndCreateFolder(segmentsLoc)
         val segmentPath = segmentsLoc + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName
-        new SegmentFileStore().writeSegmentFile(segmentFile, segmentPath)
+        SegmentFileStore.writeSegmentFile(segmentFile, segmentPath)
         CarbonLoaderUtil.populateNewLoadMetaEntry(
           newMetaEntry,
           SegmentStatus.SUCCESS,

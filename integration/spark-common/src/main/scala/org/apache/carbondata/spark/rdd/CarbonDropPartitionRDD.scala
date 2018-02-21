@@ -63,7 +63,9 @@ class CarbonDropPartitionRDD(
       logInfo("Dropping partition information from : " + split.segment)
       val toBeDeletedSegments = new util.ArrayList[String]()
       val toBeUpdateSegments = new util.ArrayList[String]()
-      new SegmentFileStore().dropPartitions(tablePath,
+      new SegmentFileStore(
+        tablePath,
+        split.segment.getSegmentFileName).dropPartitions(
         split.segment,
         partitions,
         uniqueId,

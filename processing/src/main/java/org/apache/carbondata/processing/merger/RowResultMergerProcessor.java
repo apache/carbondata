@@ -169,7 +169,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
           this.dataHandler.closeHandler();
         }
         if (partitionSpec != null) {
-          new SegmentFileStore().writeSegmentFile(loadModel.getTablePath(), loadModel.getTaskNo(),
+          SegmentFileStore.writeSegmentFile(loadModel.getTablePath(), loadModel.getTaskNo(),
               partitionSpec.getLocation().toString(), loadModel.getFactTimeStamp() + "",
               partitionSpec.getPartitions());
         }

@@ -171,7 +171,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     } finally {
       if (partitionSpec != null) {
         try {
-          new SegmentFileStore()
+          SegmentFileStore
               .writeSegmentFile(carbonLoadModel.getTablePath(), carbonLoadModel.getTaskNo(),
                   partitionSpec.getLocation().toString(), carbonLoadModel.getFactTimeStamp() + "",
                   partitionSpec.getPartitions());

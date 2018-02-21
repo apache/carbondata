@@ -388,7 +388,7 @@ private class CarbonOutputWriter(path: String,
         updatedPartitions.toMap,
         model.getCarbonDataLoadSchema.getCarbonTable)
     formattedPartitions.foreach(p => partitonList.add(p._1 + "=" + p._2))
-    new SegmentFileStore().writeSegmentFile(
+    SegmentFileStore.writeSegmentFile(
       model.getTablePath,
       taskNo,
       writePath,

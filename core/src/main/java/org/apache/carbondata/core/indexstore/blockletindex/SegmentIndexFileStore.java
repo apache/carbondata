@@ -102,11 +102,12 @@ public class SegmentIndexFileStore {
     for (Map.Entry<String, SegmentFileStore.FolderDetails> locations : segmentFileStore
         .getLocationMap().entrySet()) {
       String location = locations.getKey();
-      if (locations.getValue().isRelative()) {
-        location =
-            segmentFileStore.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + location;
-      }
+
       if (locations.getValue().getStatus().equals(status.getMessage()) || ignoreStatus) {
+        if (locations.getValue().isRelative()) {
+          location =
+              segmentFileStore.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + location;
+        }
         for (String indexFile : locations.getValue().getFiles()) {
           CarbonFile carbonFile = FileFactory
               .getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + indexFile);
@@ -207,20 +208,23 @@ public class SegmentIndexFileStore {
    */
   private void readMergeFile(String mergeFilePath) throws IOException {
     ThriftReader thriftReader = new ThriftReader(mergeFilePath);
-    thriftReader.open();
-    MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
-    MergedBlockIndex mergedBlockIndex = readMergeBlockIndex(thriftReader);
-    List<String> file_names = indexHeader.getFile_names();
-    List<ByteBuffer> fileData = mergedBlockIndex.getFileData();
-    CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath);
-    assert (file_names.size() == fileData.size());
-    for (int i = 0; i < file_names.size(); i++) {
-      carbonIndexMap.put(file_names.get(i), fileData.get(i).array());
-      carbonIndexMapWithFullPath.put(
-          mergeFile.getParentFile().getAbsolutePath() + CarbonCommonConstants.FILE_SEPARATOR
-              + file_names.get(i), fileData.get(i).array());
+    try {
+      thriftReader.open();
+      MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
+      MergedBlockIndex mergedBlockIndex = readMergeBlockIndex(thriftReader);
+      List<String> file_names = indexHeader.getFile_names();
+      List<ByteBuffer> fileData = mergedBlockIndex.getFileData();
+      CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath);
+      assert (file_names.size() == fileData.size());
+      for (int i = 0; i < file_names.size(); i++) {
+        carbonIndexMap.put(file_names.get(i), fileData.get(i).array());
+        carbonIndexMapWithFullPath.put(
+            mergeFile.getParentFile().getAbsolutePath() + CarbonCommonConstants.FILE_SEPARATOR
+                + file_names.get(i), fileData.get(i).array());
+      }
+    } finally {
+      thriftReader.close();
     }
-    thriftReader.close();
   }
 
   /**

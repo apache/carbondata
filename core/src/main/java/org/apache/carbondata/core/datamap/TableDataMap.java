@@ -75,7 +75,7 @@ public final class TableDataMap extends OperationEventListener {
         pruneBlocklets.addAll(dataMap.prune(filterExp, partitions));
       }
       blocklets.addAll(addSegmentId(blockletDetailsFetcher
-          .getExtendedBlocklets(pruneBlocklets, segment), segment.getSegmentId()));
+          .getExtendedBlocklets(pruneBlocklets, segment), segment.getSegmentNo()));
     }
     return blocklets;
   }
@@ -129,7 +129,7 @@ public final class TableDataMap extends OperationEventListener {
     for (Blocklet blocklet: blocklets) {
       ExtendedBlocklet detailedBlocklet =
           blockletDetailsFetcher.getExtendedBlocklet(blocklet, distributable.getSegment());
-      detailedBlocklet.setSegmentId(distributable.getSegment().getSegmentId());
+      detailedBlocklet.setSegmentId(distributable.getSegment().getSegmentNo());
       detailedBlocklets.add(detailedBlocklet);
     }
     return detailedBlocklets;
@@ -185,7 +185,7 @@ public final class TableDataMap extends OperationEventListener {
         if (dataMap.isScanRequired(filterExp)) {
           // If any one task in a given segment contains the data that means the segment need to
           // be scanned and we need to validate further data maps in the same segment
-          prunedSegments.add(segment.getSegmentId());
+          prunedSegments.add(segment.getSegmentNo());
           break;
         }
       }

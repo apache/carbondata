@@ -337,8 +337,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     val tablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
         carbonTable.getTablePath)
     val details = SegmentStatusManager.readTableStatusFile(tablePath.getTableStatusFilePath)
-    val store = new SegmentFileStore
-    store.readSegment(carbonTable.getTablePath, details(0).getSegmentFile)
+    val store = new SegmentFileStore(carbonTable.getTablePath, details(0).getSegmentFile)
     store.readIndexFiles()
     store.getIndexFiles
     assert(store.getIndexFiles.size() == 10)

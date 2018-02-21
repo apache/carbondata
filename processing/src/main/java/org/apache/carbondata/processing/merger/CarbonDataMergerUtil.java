@@ -998,7 +998,7 @@ public final class CarbonDataMergerUtil {
       for (Segment seg : segments) {
         if (checkUpdateDeltaFilesInSeg(seg, absoluteTableIdentifier, segmentUpdateStatusManager,
             numberUpdateDeltaFilesThreshold)) {
-          validSegments.add(seg.getSegmentId());
+          validSegments.add(seg.getSegmentNo());
         }
       }
     }
@@ -1047,13 +1047,13 @@ public final class CarbonDataMergerUtil {
 
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
 
-    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", seg.getSegmentId());
+    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", seg.getSegmentNo());
     CarbonFile segDir =
         FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
     CarbonFile[] allSegmentFiles = segDir.listFiles();
 
     updateDeltaFiles = segmentUpdateStatusManager
-        .getUpdateDeltaFilesForSegment(seg.getSegmentId(), true,
+        .getUpdateDeltaFilesForSegment(seg.getSegmentNo(), true,
             CarbonCommonConstants.UPDATE_DELTA_FILE_EXT, false, allSegmentFiles);
 
     if (updateDeltaFiles == null) {
@@ -1095,7 +1095,7 @@ public final class CarbonDataMergerUtil {
 
     Set<String> uniqueBlocks = new HashSet<String>();
     List<String> blockNameList =
-        segmentUpdateStatusManager.getBlockNameFromSegment(seg.getSegmentId());
+        segmentUpdateStatusManager.getBlockNameFromSegment(seg.getSegmentNo());
 
     for (final String blockName : blockNameList) {
 
@@ -1138,7 +1138,7 @@ public final class CarbonDataMergerUtil {
 
     List<String> blockLists = new ArrayList<>();
     List<String> blockNameList =
-        segmentUpdateStatusManager.getBlockNameFromSegment(seg.getSegmentId());
+        segmentUpdateStatusManager.getBlockNameFromSegment(seg.getSegmentNo());
 
     for (final String blockName : blockNameList) {
 
@@ -1146,7 +1146,7 @@ public final class CarbonDataMergerUtil {
           segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
 
       if (deleteDeltaFiles.length > numberDeltaFilesThreshold) {
-        blockLists.add(seg.getSegmentId() + "/" + blockName);
+        blockLists.add(seg.getSegmentNo() + "/" + blockName);
       }
     }
     return blockLists;

@@ -286,10 +286,10 @@ class CarbonMergerRDD[K, V](
     for (eachSeg <- carbonMergerMapping.validSegments) {
 
       // map for keeping the relation of a task and its blocks.
-      job.getConfiguration.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, eachSeg.getSegmentId)
+      job.getConfiguration.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, eachSeg.getSegmentNo)
 
       if (updateStatusManager.getUpdateStatusDetails.length != 0) {
-         updateDetails = updateStatusManager.getInvalidTimestampRange(eachSeg.getSegmentId)
+         updateDetails = updateStatusManager.getInvalidTimestampRange(eachSeg.getSegmentNo)
       }
 
       val updated: Boolean = updateStatusManager.getUpdateStatusDetails.length != 0

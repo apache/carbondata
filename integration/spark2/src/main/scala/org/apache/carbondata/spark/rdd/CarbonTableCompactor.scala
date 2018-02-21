@@ -206,7 +206,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         // Merge all partition files into a single file.
         segmentFileName =
           mergedLoadNumber + "_" + carbonLoadModel.getFactTimeStamp
-        val segmentFile = new SegmentFileStore()
+        val segmentFile = SegmentFileStore
           .mergeSegmentFiles(readPath,
             segmentFileName,
             CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath))

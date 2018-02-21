@@ -542,7 +542,7 @@ case class CarbonLoadDataCommand(
     }
     val dateFormat = new SimpleDateFormat(dateFormatString)
     // Clean up the alreday dropped partitioned data
-    new SegmentFileStore().cleanSegments(table, null, false)
+    SegmentFileStore.cleanSegments(table, null, false)
     CarbonSession.threadSet("partition.operationcontext", operationContext)
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
@@ -716,7 +716,7 @@ case class CarbonLoadDataCommand(
       if (isOverwriteTable) {
         DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
         // Clean the overwriting segments if any.
-        new SegmentFileStore().cleanSegments(
+        SegmentFileStore.cleanSegments(
           table,
           null,
           false)
@@ -962,7 +962,7 @@ case class CarbonLoadDataCommand(
       options += (("updatetimestamp", updateModel.get.updatedTimeStamp.toString))
       if (updateModel.get.deletedSegments.nonEmpty) {
         options += (("segmentsToBeDeleted",
-          updateModel.get.deletedSegments.map(_.getSegmentId).mkString(",")))
+          updateModel.get.deletedSegments.map(_.getSegmentNo).mkString(",")))
       }
     }
     if (currPartitions != null) {

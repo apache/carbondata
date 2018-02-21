@@ -28,17 +28,17 @@ public class Segment implements Serializable {
 
   private static final long serialVersionUID = 7044555408162234064L;
 
-  private String segmentId;
+  private String segmentNo;
 
   private String segmentFileName;
 
-  public Segment(String segmentId, String segmentFileName) {
-    this.segmentId = segmentId;
+  public Segment(String segmentNo, String segmentFileName) {
+    this.segmentNo = segmentNo;
     this.segmentFileName = segmentFileName;
   }
 
-  public String getSegmentId() {
-    return segmentId;
+  public String getSegmentNo() {
+    return segmentNo;
   }
 
   public String getSegmentFileName() {
@@ -61,6 +61,11 @@ public class Segment implements Serializable {
     return list;
   }
 
+  /**
+   * SegmentId can be combination of segmentNo and segmentFileName
+   * @param segmentId
+   * @return
+   */
   public static Segment toSegment(String segmentId) {
     String[] split = segmentId.split("#");
     if (split.length > 1) {
@@ -75,19 +80,18 @@ public class Segment implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Segment segment = (Segment) o;
-    return Objects.equals(segmentId, segment.segmentId);
+    return Objects.equals(segmentNo, segment.segmentNo);
   }
 
   @Override public int hashCode() {
-
-    return Objects.hash(segmentId);
+    return Objects.hash(segmentNo);
   }
 
   @Override public String toString() {
     if (segmentFileName != null) {
-      return segmentId + "#" + segmentFileName;
+      return segmentNo + "#" + segmentFileName;
     } else {
-      return segmentId;
+      return segmentNo;
     }
   }
 }

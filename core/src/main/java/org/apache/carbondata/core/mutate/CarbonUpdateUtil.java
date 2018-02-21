@@ -245,7 +245,7 @@ public class CarbonUpdateUtil {
             }
           }
           for (Segment segName : updatedSegmentsList) {
-            if (loadMetadata.getLoadName().equalsIgnoreCase(segName.getSegmentId())) {
+            if (loadMetadata.getLoadName().equalsIgnoreCase(segName.getSegmentNo())) {
               // if this call is coming from the delete delta flow then the time stamp
               // String will come empty then no need to write into table status file.
               if (isTimestampUpdationRequired) {

@@ -376,7 +376,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       invalidSegments.addAll(segments.getInvalidSegments());
       for (Segment invalidSegmentId : invalidSegments) {
         invalidTimestampsList
-            .add(updateStatusManager.getInvalidTimestampRange(invalidSegmentId.getSegmentId()));
+            .add(updateStatusManager.getInvalidTimestampRange(invalidSegmentId.getSegmentNo()));
       }
       if (invalidSegments.size() > 0) {
         blockletMap.clear(invalidSegments);
@@ -403,7 +403,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // Clean segments if refresh is needed
     for (Segment segment : filteredSegmentToAccess) {
       if (DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
-          .isRefreshNeeded(segment.getSegmentId())) {
+          .isRefreshNeeded(segment.getSegmentNo())) {
         toBeCleanedSegments.add(segment);
       }
     }
@@ -462,7 +462,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     List<Segment> segmentToAccessSet =
         new ArrayList<>(new HashSet<>(Arrays.asList(segmentsToAccess)));
     List<Segment> filteredSegmentToAccess = new ArrayList<>();
-    if (segmentsToAccess.length == 0 || segmentsToAccess[0].getSegmentId().equalsIgnoreCase("*")) {
+    if (segmentsToAccess.length == 0 || segmentsToAccess[0].getSegmentNo().equalsIgnoreCase("*")) {
       filteredSegmentToAccess.addAll(validSegments);
     } else {
       for (Segment validSegment : validSegments) {
@@ -499,7 +499,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
       long maxSize = getMaxSplitSize(job);
       for (Segment segment : streamSegments) {
-        String segmentDir = tablePath.getSegmentDir("0", segment.getSegmentId());
+        String segmentDir = tablePath.getSegmentDir("0", segment.getSegmentNo());
         FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
         if (FileFactory.isFileExist(segmentDir, fileType)) {
           String indexName = CarbonTablePath.getCarbonStreamIndexFileName();
@@ -527,20 +527,20 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
                   long bytesRemaining = length;
                   while (((double) bytesRemaining) / splitSize > 1.1) {
                     int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
-                    splits.add(makeSplit(segment.getSegmentId(), path, length - bytesRemaining,
+                    splits.add(makeSplit(segment.getSegmentNo(), path, length - bytesRemaining,
                         splitSize, blkLocations[blkIndex].getHosts(),
                         blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
                     bytesRemaining -= splitSize;
                   }
                   if (bytesRemaining != 0) {
                     int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
-                    splits.add(makeSplit(segment.getSegmentId(), path, length - bytesRemaining,
+                    splits.add(makeSplit(segment.getSegmentNo(), path, length - bytesRemaining,
                         bytesRemaining, blkLocations[blkIndex].getHosts(),
                         blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
                   }
                 } else {
                   //Create empty hosts array for zero length files
-                  splits.add(makeSplit(segment.getSegmentId(), path, 0, length, new String[0],
+                  splits.add(makeSplit(segment.getSegmentNo(), path, 0, length, new String[0],
                       FileFormat.ROW_V1));
                 }
               }

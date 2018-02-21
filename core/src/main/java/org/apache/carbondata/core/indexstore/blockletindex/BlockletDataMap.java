@@ -666,6 +666,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
       for (PartitionSpec spec : partitions) {
         if (folderPath.equals(spec.getLocation())) {
           found = true;
+          break;
         }
       }
       if (!found) {

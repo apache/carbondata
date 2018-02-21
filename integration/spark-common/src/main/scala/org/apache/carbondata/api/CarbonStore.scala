@@ -144,7 +144,7 @@ object CarbonStore {
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
         currentTablePartitions match {
           case Some(partitions) =>
-            new SegmentFileStore().cleanSegments(
+            SegmentFileStore.cleanSegments(
               carbonTable,
               currentTablePartitions.map(_.asJava).orNull,
               true)

@@ -230,8 +230,7 @@ case class RefreshCarbonTableCommand(
     val allpartitions = metadataDetails.map{ metadata =>
       if (metadata.getSegmentStatus == SegmentStatus.SUCCESS ||
           metadata.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-        val mapper = new SegmentFileStore()
-        mapper.readSegment(absIdentifier.getTablePath, metadata.getSegmentFile)
+        val mapper = new SegmentFileStore(absIdentifier.getTablePath, metadata.getSegmentFile)
         val specs = mapper.getLocationMap.asScala.map { case(location, fd) =>
           var updatedLoc =
             if (fd.isRelative) {

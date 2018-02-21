@@ -22,7 +22,7 @@ import java.util.Objects;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
- * Class holds the absoluteTableIdentifier and segment to uniquely identify a segment
+ * Class holds the indexFile information to uniquely identitify the carbon index
  */
 public class TableBlockIndexUniqueIdentifier {
 

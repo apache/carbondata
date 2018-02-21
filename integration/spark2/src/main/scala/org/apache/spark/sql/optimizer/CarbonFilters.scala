@@ -511,8 +511,7 @@ object CarbonFilters {
           .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
                        table.getDatabaseName + "." + table.getTableName)
         val segment = Segment.toSegment(segmentNumbersFromProperty)
-        val segmentFile = new SegmentFileStore()
-        segmentFile.readSegment(table.getTablePath, segment.getSegmentFileName)
+        val segmentFile = new SegmentFileStore(table.getTablePath, segment.getSegmentFileName)
         Some(segmentFile.getPartitionSpecs.asScala)
       } else {
         None

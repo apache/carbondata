@@ -264,7 +264,7 @@ public class CarbonInputSplit extends FileSplit
   public void setInvalidSegments(List<Segment> invalidSegments) {
     List<String> invalidSegmentIds = new ArrayList<>();
     for (Segment segment: invalidSegments) {
-      invalidSegmentIds.add(segment.getSegmentId());
+      invalidSegmentIds.add(segment.getSegmentNo());
     }
     this.invalidSegments = invalidSegmentIds;
   }

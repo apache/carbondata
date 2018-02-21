@@ -225,13 +225,12 @@ case class CarbonRelation(
           // for each segment calculate the size
           segments.foreach {validSeg =>
             if (validSeg.getSegmentFileName != null) {
-              val fileStore = new SegmentFileStore
-              fileStore.readSegment(tablePath, validSeg.getSegmentFileName)
+              val fileStore = new SegmentFileStore(tablePath, validSeg.getSegmentFileName)
               size = size + CarbonUtil.getSizeOfSegment(
-                carbonTablePath, new Segment(validSeg.getSegmentId, validSeg.getSegmentFileName))
+                carbonTablePath, new Segment(validSeg.getSegmentNo, validSeg.getSegmentFileName))
             } else {
               size = size + FileFactory.getDirectorySize(
-                CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentId))
+                CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
             }
           }
           // update the new table status time
