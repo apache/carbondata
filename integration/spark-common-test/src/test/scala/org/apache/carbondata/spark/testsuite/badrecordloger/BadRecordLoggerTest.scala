@@ -242,7 +242,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
           + "('bad_records_action'='FORCA', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     } catch {
       case ex: Exception =>
-        assert("option BAD_RECORDS_ACTION can have only either FORCE or IGNORE or REDIRECT"
+        assert("option BAD_RECORDS_ACTION can have only either FORCE or IGNORE or REDIRECT or FAIL"
           .equals(ex.getMessage))
     }
   }
