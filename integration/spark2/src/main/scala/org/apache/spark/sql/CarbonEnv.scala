@@ -94,7 +94,7 @@ class CarbonEnv {
             properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
           }
           LOGGER.info(s"carbon env initial: $storePath")
-          // trigger event for CarbonEnv init
+          // trigger event for CarbonEnv create
           val operationContext = new OperationContext
           val carbonEnvInitPreEvent: CarbonEnvInitPreEvent =
             CarbonEnvInitPreEvent(sparkSession, carbonSessionInfo, storePath)
