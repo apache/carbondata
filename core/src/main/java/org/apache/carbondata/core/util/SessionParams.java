@@ -157,7 +157,7 @@ public class SessionParams implements Serializable {
           isValid = true;
         } catch (IllegalArgumentException iae) {
           throw new InvalidConfigurationException(
-              "The key " + key + " can have only either FORCE or IGNORE or REDIRECT.");
+              "The key " + key + " can have only either FORCE or IGNORE or REDIRECT or FAIL.");
         }
         break;
       case CARBON_OPTIONS_SORT_SCOPE:
