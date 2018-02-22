@@ -26,12 +26,12 @@ import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexDataMapFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
@@ -68,7 +68,7 @@ public final class DataMapStoreManager {
     List<TableDataMap> tableDataMaps = getAllDataMap(carbonTable);
     if (tableDataMaps != null) {
       for (TableDataMap dataMap : tableDataMaps) {
-        if (mapType == dataMap.getDataMapFactory().getDataMapType()) {
+        if (mapType == dataMap.getIndexDataMapFactory().getDataMapType()) {
           dataMaps.add(dataMap);
         }
       }
@@ -86,8 +86,8 @@ public final class DataMapStoreManager {
     List<TableDataMap> dataMaps = new ArrayList<>();
     if (dataMapSchemaList != null) {
       for (DataMapSchema dataMapSchema : dataMapSchemaList) {
-        if (!dataMapSchema.getClassName()
-            .equalsIgnoreCase(CarbonCommonConstants.AGGREGATIONDATAMAPSCHEMA)) {
+        if (!dataMapSchema.getClassName().equalsIgnoreCase(
+            DataMapProvider.PREAGGREGATE.toString())) {
           dataMaps.add(getDataMap(carbonTable.getAbsoluteTableIdentifier(), dataMapSchema));
         }
       }
@@ -96,13 +96,13 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * It gives the default datamap of the table. Default datamap of any table is BlockletDataMap
+   * It gives the default datamap of the table. Default datamap of any table is BlockletIndexDataMap
    *
    * @param identifier
    * @return
    */
   public TableDataMap getDefaultDataMap(AbsoluteTableIdentifier identifier) {
-    return getDataMap(identifier, BlockletDataMapFactory.DATA_MAP_SCHEMA);
+    return getDataMap(identifier, BlockletIndexDataMapFactory.DATA_MAP_SCHEMA);
   }
 
   /**
@@ -142,8 +142,25 @@ public final class DataMapStoreManager {
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
   public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
-      DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
+      DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
+    IndexDataMapFactory indexDataMapFactory;
+    try {
+      // try to create datamap by reflection to test whether it is a valid IndexDataMapFactory class
+      Class<? extends IndexDataMapFactory> factoryClass =
+          (Class<? extends IndexDataMapFactory>) Class.forName(dataMapSchema.getClassName());
+      indexDataMapFactory = factoryClass.newInstance();
+    } catch (ClassNotFoundException e) {
+      throw new MalformedDataMapCommandException(
+          "DataMap '" + dataMapSchema.getClassName() + "' not found");
+    } catch (Throwable e) {
+      throw new MetadataProcessException(
+          "failed to create DataMap '" + dataMapSchema.getClassName() + "'", e);
+    }
+    return registerDataMap(identifier, dataMapSchema, indexDataMapFactory);
+  }
+
+  public TableDataMap registerDataMap(AbsoluteTableIdentifier identifier,
+      DataMapSchema dataMapSchema,  IndexDataMapFactory indexDataMapFactory) {
     String table = identifier.getCarbonTableIdentifier().getTableUniqueName();
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(identifier);
@@ -151,37 +168,19 @@ public final class DataMapStoreManager {
     if (tableDataMaps == null) {
       tableDataMaps = new ArrayList<>();
     }
-    String dataMapName = dataMapSchema.getDataMapName();
-    TableDataMap dataMap = getTableDataMap(dataMapName, tableDataMaps);
-    if (dataMap != null && dataMap.getDataMapSchema().getDataMapName()
-        .equalsIgnoreCase(dataMapName)) {
-      throw new MalformedDataMapCommandException("Already datamap exists in that path with type " +
-          dataMapName);
-    }
 
-    try {
-      // try to create datamap by reflection to test whether it is a valid DataMapFactory class
-      Class<? extends DataMapFactory> factoryClass =
-          (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getClassName());
-      DataMapFactory dataMapFactory = factoryClass.newInstance();
-      dataMapFactory.init(identifier, dataMapSchema);
-      BlockletDetailsFetcher blockletDetailsFetcher;
-      SegmentPropertiesFetcher segmentPropertiesFetcher = null;
-      if (dataMapFactory instanceof BlockletDetailsFetcher) {
-        blockletDetailsFetcher = (BlockletDetailsFetcher) dataMapFactory;
-      } else {
-        blockletDetailsFetcher = getBlockletDetailsFetcher(identifier);
-      }
-      segmentPropertiesFetcher = (SegmentPropertiesFetcher) blockletDetailsFetcher;
-      dataMap = new TableDataMap(identifier, dataMapSchema, dataMapFactory, blockletDetailsFetcher,
-          segmentPropertiesFetcher);
-    } catch (ClassNotFoundException e) {
-      throw new MalformedDataMapCommandException("DataMap class '" +
-          dataMapSchema.getClassName() + "' not found");
-    } catch (Throwable e) {
-      throw new MetadataProcessException(
-          "failed to create DataMap instance for '" + dataMapSchema.getClassName() + "'", e);
+    indexDataMapFactory.init(identifier, dataMapSchema);
+    BlockletDetailsFetcher blockletDetailsFetcher;
+    SegmentPropertiesFetcher segmentPropertiesFetcher = null;
+    if (indexDataMapFactory instanceof BlockletDetailsFetcher) {
+      blockletDetailsFetcher = (BlockletDetailsFetcher) indexDataMapFactory;
+    } else {
+      blockletDetailsFetcher = getBlockletDetailsFetcher(identifier);
     }
+    segmentPropertiesFetcher = (SegmentPropertiesFetcher) blockletDetailsFetcher;
+    TableDataMap dataMap = new TableDataMap(identifier, dataMapSchema, indexDataMapFactory,
+        blockletDetailsFetcher, segmentPropertiesFetcher);
+
     tableDataMaps.add(dataMap);
     allDataMaps.put(table, tableDataMaps);
     return dataMap;
@@ -261,8 +260,8 @@ public final class DataMapStoreManager {
    * @return
    */
   private BlockletDetailsFetcher getBlockletDetailsFetcher(AbsoluteTableIdentifier identifier) {
-    TableDataMap blockletMap = getDataMap(identifier, BlockletDataMapFactory.DATA_MAP_SCHEMA);
-    return (BlockletDetailsFetcher) blockletMap.getDataMapFactory();
+    TableDataMap blockletMap = getDataMap(identifier, BlockletIndexDataMapFactory.DATA_MAP_SCHEMA);
+    return (BlockletDetailsFetcher) blockletMap.getIndexDataMapFactory();
   }
 
   /**

@@ -14,21 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.datamap.dev.cgdatamap;
+package org.apache.carbondata.core.datamap.dev.fgdatamap;
 
 import org.apache.carbondata.core.datamap.DataMapType;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexDataMapFactory;
 
 /**
- *  1. Any filter query which hits the table with datamap will call prune method of CGdatamap.
- *  2. The prune method of CGDatamap return list Blocklet , these blocklets contain the
- *     information of block and blocklet.
- *  3. Based on the splits scanrdd schedule the tasks.
+ *  1. Any filter query which hits the table with datamap will call prune method of FGdatamap.
+ *  2. The prune method of FGDatamap return list FineGrainBlocklet , these blocklets contain the
+ *     information of block, blocklet, page and rowids information as well.
+ *  3. The pruned blocklets are internally wriitten to file and returns only the block ,
+ *    blocklet and filepath information as part of Splits.
+ *  4. Based on the splits scanrdd schedule the tasks.
+ *  5. In filterscanner we check the datamapwriterpath from split and reNoteads the
+ *     bitset if exists. And pass this bitset as input to it.
  */
-public abstract class AbstractCoarseGrainDataMapFactory
-    implements DataMapFactory<AbstractCoarseGrainDataMap> {
+public abstract class AbstractFineGrainIndexDataMapFactory
+    implements IndexDataMapFactory<AbstractFineGrainIndexDataMap> {
 
   @Override public DataMapType getDataMapType() {
-    return DataMapType.CG;
+    return DataMapType.FG;
   }
 }

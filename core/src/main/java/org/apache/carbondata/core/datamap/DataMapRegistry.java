@@ -14,11 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.datamap.dev.fgdatamap;
 
-import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.indexstore.FineGrainBlocklet;
+package org.apache.carbondata.core.datamap;
 
-public abstract class AbstractFineGrainDataMap implements DataMap<FineGrainBlocklet> {
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
+public class DataMapRegistry {
+  private static Map<String, String> shortNameToClassName = new ConcurrentHashMap<>();
+
+  static void registerDataMap(String datamapClassName, String shortName) {
+    Objects.requireNonNull(datamapClassName);
+    Objects.requireNonNull(shortName);
+    shortNameToClassName.put(shortName, datamapClassName);
+  }
+
+  public static String getDataMapClassName(String shortName) {
+    Objects.requireNonNull(shortName);
+    return shortNameToClassName.get(shortName);
+  }
 }

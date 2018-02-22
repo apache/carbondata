@@ -14,24 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.metadata.schema.table;
+package org.apache.carbondata.core.datamap.dev.fgdatamap;
 
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider;
+import org.apache.carbondata.core.datamap.dev.IndexDataMap;
+import org.apache.carbondata.core.indexstore.FineGrainBlocklet;
 
-public class DataMapSchemaFactory {
-  public static final DataMapSchemaFactory INSTANCE = new DataMapSchemaFactory();
+public abstract class AbstractFineGrainIndexDataMap implements IndexDataMap<FineGrainBlocklet> {
 
-  /**
-   * Below class will be used to get data map schema object
-   * based on class name
-   * @param providerName
-   * @return data map schema
-   */
-  public DataMapSchema getDataMapSchema(String dataMapName, String providerName) {
-    if (providerName.equalsIgnoreCase(DataMapProvider.PREAGGREGATE.toString())) {
-      return new AggregationDataMapSchema(dataMapName, providerName);
-    } else {
-      return new DataMapSchema(dataMapName, providerName);
-    }
-  }
 }

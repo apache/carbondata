@@ -34,4 +34,8 @@ public class MalformedDataMapCommandException extends MalformedCarbonCommandExce
   public MalformedDataMapCommandException(String msg) {
     super(msg);
   }
+
+  public MalformedDataMapCommandException(String msg, Throwable e) {
+    super(msg, e);
+  }
 }

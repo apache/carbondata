@@ -36,7 +36,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainIndexDataMap;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -73,10 +73,10 @@ import org.xerial.snappy.Snappy;
 /**
  * Datamap implementation for blocklet.
  */
-public class BlockletDataMap extends AbstractCoarseGrainDataMap implements Cacheable {
+public class BlockletIndexDataMap extends AbstractCoarseGrainIndexDataMap implements Cacheable {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(BlockletDataMap.class.getName());
+      LogServiceFactory.getLogService(BlockletIndexDataMap.class.getName());
 
   private static int KEY_INDEX = 0;
 
