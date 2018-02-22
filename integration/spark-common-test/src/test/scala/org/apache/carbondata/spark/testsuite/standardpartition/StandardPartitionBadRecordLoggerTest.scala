@@ -17,10 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.standardpartition
 
-import java.io.File
-
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -29,11 +26,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for detailed query on timestamp datatypes
- *
- *
  */
 class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
-  var hiveContext: HiveContext = _
 
   override def beforeAll {
     drop()
@@ -53,8 +47,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
         " ',', 'QUOTECHAR'= '\"')")
     checkAnswer(
       sql("select count(*) from sales"),
-      Seq(Row(2)
-      )
+      Seq(Row(2))
     )
   }
 
@@ -72,8 +65,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
         "'DELIMITER'= ',', 'QUOTECHAR'= '\"')")
     checkAnswer(
       sql("select count(*) from serializable_values"),
-      Seq(Row(2)
-      )
+      Seq(Row(2))
     )
   }
 
@@ -89,8 +81,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
       + "('bad_records_logger_enable'='false', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     checkAnswer(
       sql("select count(*) from serializable_values_false"),
-      Seq(Row(2)
-      )
+      Seq(Row(2))
     )
   }
 
@@ -111,8 +102,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
         "'DELIMITER'= ',', 'QUOTECHAR'= '\"')")
     checkAnswer(
       sql("select count(*) from empty_timestamp"),
-      Seq(Row(1)
-      )
+      Seq(Row(1))
     )
   }
 
@@ -129,8 +119,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
         "'DELIMITER'= ',', 'QUOTECHAR'= '\"')")
     checkAnswer(
       sql("select count(*) from insufficientColumn"),
-      Seq(Row(3)
-      )
+      Seq(Row(3))
     )
   }
 
@@ -145,8 +134,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
         + "('bad_records_logger_enable'='false', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')")
     checkAnswer(
       sql("select count(*) from insufficientColumn_false"),
-      Seq(Row(3)
-      )
+      Seq(Row(3))
     )
   }
 
@@ -167,8 +155,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
         "'DELIMITER'= ',', 'QUOTECHAR'= '\"')")
     checkAnswer(
       sql("select count(*) from emptyColumnValues"),
-      Seq(Row(2)
-      )
+      Seq(Row(2))
     )
   }
 
@@ -183,8 +170,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
         + "('bad_records_logger_enable'='false', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     checkAnswer(
       sql("select count(*) from emptyColumnValues_false"),
-      Seq(Row(7)
-      )
+      Seq(Row(7))
     )
   }
 
@@ -199,8 +185,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
         + "('bad_records_logger_enable'='false', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     checkAnswer(
       sql("select count(*) from empty_timestamp_false"),
-      Seq(Row(7)
-      )
+      Seq(Row(7))
     )
   }
 

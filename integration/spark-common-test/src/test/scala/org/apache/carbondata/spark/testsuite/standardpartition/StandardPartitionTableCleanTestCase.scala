@@ -27,6 +27,7 @@ import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -166,6 +167,79 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     assert(sql(s"show segments for table partitionalldeleteseg").count == 3)
   }
 
+  test("clean up partition table should throw exception when partition not exists") {
+    sql("DROP TABLE IF EXISTS partition_table")
+    sql(
+      """
+        | CREATE TABLE partition_table (
+        |   empname STRING,
+        |   designation STRING,
+        |   doj TIMESTAMP,
+        |   workgroupcategory INT,
+        |   workgroupcategoryname STRING,
+        |   deptno INT,
+        |   deptname STRING,
+        |   projectcode INT,
+        |   projectjoindate TIMESTAMP,
+        |   projectenddate DATE,
+        |   attendance INT,
+        |   utilization INT,
+        |   salary INT)
+        | PARTITIONED BY (empno INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE partition_table
+         | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+       """.stripMargin)
+
+    checkExistence(sql("show partitions partition_table"), false, "empno=10")
+
+    val e = intercept[ProcessMetaDataException] {
+      sql(s"""ALTER TABLE partition_table DROP PARTITION(empno='10')""")
+    }
+    assert(e.getMessage().contains("No partition is dropped."))
+  }
+
+  test("clean up partition table shouldn't throw exception with if exists when partition not exists") {
+    sql("DROP TABLE IF EXISTS partition_table")
+    sql(
+      """
+        | CREATE TABLE partition_table (
+        |   empname STRING,
+        |   designation STRING,
+        |   doj TIMESTAMP,
+        |   workgroupcategory INT,
+        |   workgroupcategoryname STRING,
+        |   deptno INT,
+        |   deptname STRING,
+        |   projectcode INT,
+        |   projectjoindate TIMESTAMP,
+        |   projectenddate DATE,
+        |   attendance INT,
+        |   utilization INT,
+        |   salary INT)
+        | PARTITIONED BY (empno INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA local inpath '$resourcesPath/data.csv'
+         | INTO TABLE partition_table
+         | OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')
+       """.stripMargin)
+
+    checkExistence(sql("show partitions partition_table"), false, "empno=10")
+    checkExistence(sql("show partitions partition_table"), true, "empno=11")
+
+    sql(s"""ALTER TABLE partition_table DROP IF EXISTS PARTITION(empno='10')""")
+    sql(s"""ALTER TABLE partition_table DROP IF EXISTS PARTITION(empno='11')""")
+
+    checkExistence(sql("show partitions partition_table"), false, "empno=10")
+    checkExistence(sql("show partitions partition_table"), false, "empno=11")
+  }
 
   override def afterAll = {
     dropTable
@@ -180,6 +254,7 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partitionshow")
     sql("drop table if exists staticpartition")
     sql("drop table if exists partitionalldeleteseg")
+    sql("DROP TABLE IF EXISTS partition_table")
   }
 
 }
