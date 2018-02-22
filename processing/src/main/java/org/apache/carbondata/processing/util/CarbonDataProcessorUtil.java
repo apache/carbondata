@@ -117,22 +117,25 @@ public final class CarbonDataProcessorUtil {
       }
     }
   }
+
   /**
+   *
    * This method will form the local data folder store location
    *
-   * @param databaseName
-   * @param tableName
+   * @param carbonTable
    * @param taskId
    * @param partitionId
    * @param segmentId
+   * @param isCompactionFlow
+   * @param isAltPartitionFlow
    * @return
    */
-  public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
+  public static String[] getLocalDataFolderLocation(CarbonTable carbonTable, String tableName,
       String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
       boolean isAltPartitionFlow) {
     String tempLocationKey =
-        getTempStoreLocationKey(databaseName, tableName, segmentId, taskId, isCompactionFlow,
-            isAltPartitionFlow);
+        getTempStoreLocationKey(carbonTable.getDatabaseName(), tableName,
+            segmentId, taskId, isCompactionFlow, isAltPartitionFlow);
     String baseTempStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey);
     if (baseTempStorePath == null) {
@@ -145,7 +148,6 @@ public final class CarbonDataProcessorUtil {
     String[] baseTmpStorePathArray = StringUtils.split(baseTempStorePath, File.pathSeparator);
     String[] localDataFolderLocArray = new String[baseTmpStorePathArray.length];
 
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     for (int i = 0 ; i < baseTmpStorePathArray.length; i++) {
       String tmpStore = baseTmpStorePathArray[i];
       CarbonTablePath carbonTablePath =
@@ -156,6 +158,26 @@ public final class CarbonDataProcessorUtil {
       localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
     }
     return localDataFolderLocArray;
+  }
+
+  /**
+   * This method will form the local data folder store location
+   *
+   * @param databaseName
+   * @param tableName
+   * @param taskId
+   * @param partitionId
+   * @param segmentId
+   * @param isCompactionFlow
+   * @param isAltPartitionFlow
+   * @return
+   */
+  public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
+      String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
+      boolean isAltPartitionFlow) {
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
+    return getLocalDataFolderLocation(carbonTable, tableName, taskId, partitionId,
+        segmentId, isCompactionFlow, isAltPartitionFlow);
   }
 
   /**
