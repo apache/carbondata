@@ -844,6 +844,12 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql(s"select * from partitiondecimalfailissue").show(100)
   }
 
+  test("data loading with decimalissue partition issue") {
+    sql("DROP TABLE IF EXISTS decimalissue")
+    sql("create table decimalissue(a int) partitioned by (b decimal(2,2)) stored by 'carbondata'")
+    sql("insert into decimalissue values(23,21.2)")
+    checkAnswer(sql("select * from decimalissue"), Seq(Row(23,null)))
+  }
 
 
 

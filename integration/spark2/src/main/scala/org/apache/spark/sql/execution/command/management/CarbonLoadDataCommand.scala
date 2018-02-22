@@ -663,7 +663,7 @@ case class CarbonLoadDataCommand(
           }
         }
         val columnCount = carbonLoadModel.getCsvHeaderColumns.length
-        var rdd = DataLoadingUtil.csvFileScanRDD(
+        val rdd = DataLoadingUtil.csvFileScanRDD(
           sparkSession,
           model = carbonLoadModel,
           hadoopConf).map(DataLoadProcessorStepOnSpark.toStringArrayRow(_, columnCount))
@@ -847,7 +847,7 @@ case class CarbonLoadDataCommand(
 
     val inputStepRowCounter = sc.accumulator(0, "Input Processor Accumulator")
     // 1. Input
-    var convertRDD =
+    val convertRDD =
       if (isDataFrame) {
         originRDD.mapPartitions{rows =>
           DataLoadProcessorStepOnSpark.toRDDIterator(rows, modelBroadcast)

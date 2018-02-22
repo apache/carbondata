@@ -83,25 +83,7 @@ public final class DataTypeUtil {
    */
   public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
       CarbonMeasure carbonMeasure) {
-    if (dataType == DataTypes.BOOLEAN) {
-      return BooleanConvert.parseBoolean(msrValue);
-    } else if (DataTypes.isDecimal(dataType)) {
-      BigDecimal bigDecimal =
-          new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-      return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
-    } else if (dataType == DataTypes.SHORT) {
-      return Short.parseShort(msrValue);
-    } else if (dataType == DataTypes.INT) {
-      return Integer.parseInt(msrValue);
-    } else if (dataType == DataTypes.LONG) {
-      return Long.valueOf(msrValue);
-    } else {
-      Double parsedValue = Double.valueOf(msrValue);
-      if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
-        return null;
-      }
-      return parsedValue;
-    }
+    return getMeasureValueBasedOnDataType(msrValue, dataType,carbonMeasure, false);
   }
 
   /**
@@ -112,15 +94,19 @@ public final class DataTypeUtil {
    * @param carbonMeasure
    * @return
    */
-  public static Object getConvertedMeasureValueBasedOnDataType(String msrValue, DataType dataType,
-      CarbonMeasure carbonMeasure) {
+  public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
+      CarbonMeasure carbonMeasure, boolean useConverter) {
     if (dataType == DataTypes.BOOLEAN) {
       return BooleanConvert.parseBoolean(msrValue);
     } else if (DataTypes.isDecimal(dataType)) {
       BigDecimal bigDecimal =
           new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-      return converter
-          .convertToDecimal(normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision()));
+      BigDecimal decimal = normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+      if (useConverter) {
+        return converter.convertToDecimal(decimal);
+      } else {
+        return decimal;
+      }
     } else if (dataType == DataTypes.SHORT) {
       return Short.parseShort(msrValue);
     } else if (dataType == DataTypes.INT) {
