@@ -255,9 +255,11 @@ public final class CarbonLoaderUtil {
           // existing entry needs to be overwritten as the entry will exist with some
           // intermediate status
           int indexToOverwriteNewMetaEntry = 0;
+          boolean found = false;
           for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
             if (entry.getLoadName().equals(newMetaEntry.getLoadName())
                 && entry.getLoadStartTime() == newMetaEntry.getLoadStartTime()) {
+              found = true;
               break;
             }
             indexToOverwriteNewMetaEntry++;
@@ -271,6 +273,10 @@ public final class CarbonLoaderUtil {
                 addToStaleFolders(carbonTablePath, staleFolders, entry);
               }
             }
+          }
+          if (!found) {
+            LOGGER.error("Entry not found to update " + newMetaEntry + " From list :: "
+                + listOfLoadFolderDetails);
           }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
         }

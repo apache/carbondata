@@ -430,4 +430,9 @@ public class LoadMetadataDetails implements Serializable {
   public void setSegmentFile(String segmentFile) {
     this.segmentFile = segmentFile;
   }
+
+  @Override public String toString() {
+    return "LoadMetadataDetails{" + "loadStatus=" + loadStatus + ", loadName='" + loadName + '\''
+        + ", loadStartTime='" + loadStartTime + '\'' + ", segmentFile='" + segmentFile + '\'' + '}';
+  }
 }
