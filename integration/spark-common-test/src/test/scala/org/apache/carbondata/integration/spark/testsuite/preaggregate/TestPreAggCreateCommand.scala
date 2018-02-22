@@ -38,6 +38,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists PreAggMain1")
     sql("drop table if exists PreAggMain2")
     sql("drop table if exists maintable")
+    sql("drop table if exists showTables")
     sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
     sql("create table preaggMain1 (a string, b string, c string) stored by 'carbondata' tblProperties('DICTIONARY_INCLUDE' = 'a')")
     sql("create table preaggMain2 (a string, b string, c string) stored by 'carbondata'")
@@ -376,6 +377,13 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 
+  test("test show tables filterted with datamaps"){
+    sql("create table showTables(name string, age int) stored by 'carbondata'")
+    sql("create datamap preAgg on table showTables using 'preaggregate' as select sum(age) from showTables")
+    sql("show tables").show()
+    assert(!sql("show tables").collect().contains("showTables_preagg"))
+  }
+
   def getCarbontable(plan: LogicalPlan) : CarbonTable ={
     var carbonTable : CarbonTable = null
     plan.transform {
@@ -403,5 +411,6 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists PreAggMain1")
     sql("drop table if exists PreAggMain2")
     sql("drop table if exists maintabletime")
+    sql("drop table if exists showTables")
   }
 }

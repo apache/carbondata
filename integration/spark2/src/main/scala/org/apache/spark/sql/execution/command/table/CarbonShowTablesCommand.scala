@@ -39,44 +39,18 @@ private[sql] case class CarbonShowTablesCommand ( databaseName: Option[String],
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     // Since we need to return a Seq of rows, we will call getTables directly
     // instead of calling tables in sparkSession.
-    // filterDataMaps Method is to Filter the Table.
     val catalog = sparkSession.sessionState.catalog
     val db = databaseName.getOrElse(catalog.getCurrentDatabase)
     var tables =
       tableIdentifierPattern.map(catalog.listTables(db, _)).getOrElse(catalog.listTables(db))
-    tables = filterDataMaps(tables, sparkSession)
-    tables.map { tableIdent =>
-      val isTemp = catalog.isTemporaryTable(tableIdent)
-      Row(tableIdent.database.getOrElse("default"), tableIdent.table, isTemp)
+    val externalCatalog = sparkSession.sharedState.externalCatalog
+    // tables will be filtered for all the dataMaps to show only main tables
+    tables.collect {
+      case tableIdent if externalCatalog.getTable(db, tableIdent.table).storage.properties
+        .getOrElse("isVisible", true).toString.toBoolean =>
+        val isTemp = catalog.isTemporaryTable(tableIdent)
+        Row(tableIdent.database.getOrElse("default"), tableIdent.table, isTemp)
     }
   }
 
-  /**
-   *
-   * @param tables tableIdnetifers
-   * @param sparkSession sparksession
-   * @return  Tables after filter datamap tables
-   */
-  private def filterDataMaps(tables: Seq[TableIdentifier],
-      sparkSession: SparkSession): Seq[TableIdentifier] = {
-    // Filter carbon Tables then get CarbonTable and getDataMap List and filter the same
-    // as of now 2 times lookup is happening(filter  carbon table ,getDataMapList)
-    // TODO : add another PR (CARBONDATA-2103) to improve  with 1 lookup
-    val allDatamapTable = tables.filter { table =>
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .tableExists(table)(sparkSession)
-    }.map { table =>
-      val ctable = CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession)
-      ctable.getTableInfo.getDataMapSchemaList.asScala
-    }
-    val alldamrelation = allDatamapTable
-      .flatMap { table =>
-        table.map(eachtable => eachtable.getRelationIdentifier.toString)
-      }
-    tables
-      .filter { table =>
-        !alldamrelation
-          .contains(table.database.getOrElse("default") + "." + table.identifier)
-      }
-  }
 }
