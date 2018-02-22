@@ -93,7 +93,7 @@ case class CarbonAlterTableDropPartitionCommand(
     partitionInfo.dropPartition(partitionIndex)
 
     // read TableInfo
-    val tableInfo = carbonMetaStore.getThriftTableInfo(carbonTable)(sparkSession)
+    val tableInfo = carbonMetaStore.getThriftTableInfo(carbonTable)
     val schemaConverter = new ThriftWrapperSchemaConverterImpl()
     val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(tableInfo,
       dbName, tableName, tablePath)

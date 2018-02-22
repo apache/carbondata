@@ -52,8 +52,8 @@ object MinMaxDataMapExample {
     // register datamap writer
     DataMapStoreManager.getInstance().createAndRegisterDataMap(
       AbsoluteTableIdentifier.from(storeLocation, "default", "carbonminmax"),
-      classOf[MinMaxDataMapFactory].getName,
-      MinMaxDataMap.NAME)
+      classOf[MinMaxIndexDataMapFactory].getName,
+      MinMaxIndexDataMap.NAME)
 
     spark.sql("DROP TABLE IF EXISTS carbonminmax")
 

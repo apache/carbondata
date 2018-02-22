@@ -29,9 +29,9 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.AbstractDataMapWriter;
-import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainDataMap;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainDataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainIndexDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainIndexDataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -55,20 +55,20 @@ import org.apache.hadoop.fs.RemoteIterator;
 /**
  * Table map for blocklet
  */
-public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
+public class BlockletIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFactory
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher {
 
   private static final String NAME = "clustered.btree.blocklet";
 
   public static final DataMapSchema DATA_MAP_SCHEMA =
-      new DataMapSchema(NAME, BlockletDataMapFactory.class.getName());
+      new DataMapSchema(NAME, BlockletIndexDataMapFactory.class.getName());
 
   private AbsoluteTableIdentifier identifier;
 
   // segmentId -> list of index file
   private Map<String, List<TableBlockIndexUniqueIdentifier>> segmentMap = new HashMap<>();
 
-  private Cache<TableBlockIndexUniqueIdentifier, AbstractCoarseGrainDataMap> cache;
+  private Cache<TableBlockIndexUniqueIdentifier, AbstractCoarseGrainIndexDataMap> cache;
 
   @Override
   public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema) {
@@ -83,7 +83,7 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
   }
 
   @Override
-  public List<AbstractCoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
+  public List<AbstractCoarseGrainIndexDataMap> getDataMaps(Segment segment) throws IOException {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
     return cache.getAll(tableBlockIndexUniqueIdentifiers);
@@ -118,8 +118,8 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
 
   /**
    * Get the blocklet detail information based on blockletid, blockid and segmentid. This method is
-   * exclusively for BlockletDataMapFactory as detail information is only available in this default
-   * datamap.
+   * exclusively for BlockletIndexDataMapFactory as detail information is only available in this
+   * default datamap.
    */
   @Override
   public List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment)
@@ -157,8 +157,8 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
     String carbonIndexFileName = CarbonTablePath.getCarbonIndexFileName(blocklet.getBlockId());
     for (TableBlockIndexUniqueIdentifier identifier : identifiers) {
       if (identifier.getIndexFilePath().equals(carbonIndexFileName)) {
-        DataMap dataMap = cache.get(identifier);
-        return ((BlockletDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
+        IndexDataMap dataMap = cache.get(identifier);
+        return ((BlockletIndexDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
       }
     }
     throw new IOException("Blocklet with blockid " + blocklet.getBlockletId() + " not found ");
@@ -211,10 +211,10 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
     List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segment.getSegmentNo());
     if (blockIndexes != null) {
       for (TableBlockIndexUniqueIdentifier blockIndex : blockIndexes) {
-        DataMap dataMap = cache.getIfPresent(blockIndex);
-        if (dataMap != null) {
+        IndexDataMap indexDataMap = cache.getIfPresent(blockIndex);
+        if (indexDataMap != null) {
           cache.invalidate(blockIndex);
-          dataMap.clear();
+          indexDataMap.clear();
         }
       }
     }
@@ -228,7 +228,7 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
   }
 
   @Override
-  public List<AbstractCoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
+  public List<AbstractCoarseGrainIndexDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
     BlockletDataMapDistributable mapDistributable = (BlockletDataMapDistributable) distributable;
     List<TableBlockIndexUniqueIdentifier> identifiers = new ArrayList<>();
@@ -249,7 +249,7 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
                 segmentNo));
       }
     }
-    List<AbstractCoarseGrainDataMap> dataMaps;
+    List<AbstractCoarseGrainIndexDataMap> dataMaps;
     try {
       dataMaps = cache.getAll(identifiers);
     } catch (IOException e) {
@@ -265,19 +265,19 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
   }
 
   @Override public SegmentProperties getSegmentProperties(Segment segment) throws IOException {
-    List<AbstractCoarseGrainDataMap> dataMaps = getDataMaps(segment);
+    List<AbstractCoarseGrainIndexDataMap> dataMaps = getDataMaps(segment);
     assert (dataMaps.size() > 0);
-    AbstractCoarseGrainDataMap coarseGrainDataMap = dataMaps.get(0);
-    assert (coarseGrainDataMap instanceof BlockletDataMap);
-    BlockletDataMap dataMap = (BlockletDataMap) coarseGrainDataMap;
+    AbstractCoarseGrainIndexDataMap coarseGrainDataMap = dataMaps.get(0);
+    assert (coarseGrainDataMap instanceof BlockletIndexDataMap);
+    BlockletIndexDataMap dataMap = (BlockletIndexDataMap) coarseGrainDataMap;
     return dataMap.getSegmentProperties();
   }
 
   @Override public List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions)
       throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
-    List<AbstractCoarseGrainDataMap> dataMaps = getDataMaps(segment);
-    for (AbstractCoarseGrainDataMap dataMap : dataMaps) {
+    List<AbstractCoarseGrainIndexDataMap> dataMaps = getDataMaps(segment);
+    for (AbstractCoarseGrainIndexDataMap dataMap : dataMaps) {
       blocklets.addAll(dataMap.prune(null, getSegmentProperties(segment), partitions));
     }
     return blocklets;
