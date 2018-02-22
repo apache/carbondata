@@ -121,19 +121,14 @@ case class PreAggregateTableHelper(
 
     val table = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
     val tableInfo = table.getTableInfo
-
-    val provider = if (timeSeriesFunction == null) {
-      DataMapProvider.PREAGGREGATE.toString
-    } else {
-      DataMapProvider.TIMESERIES.toString
-    }
+    
     // child schema object will be saved on parent table schema
     val childSchema = tableInfo.getFactTable.buildChildSchema(
       dataMapName,
-      provider,
+      DataMapProvider.PREAGGREGATE.toString,
       tableInfo.getDatabaseName,
       queryString,
-      provider)
+      "AGGREGATION")
     dmProperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
 
     // updating the parent table about child table
