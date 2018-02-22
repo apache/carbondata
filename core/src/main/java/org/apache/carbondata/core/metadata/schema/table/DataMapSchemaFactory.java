@@ -30,6 +30,8 @@ public class DataMapSchemaFactory {
   public DataMapSchema getDataMapSchema(String dataMapName, String providerName) {
     if (providerName.equalsIgnoreCase(DataMapProvider.PREAGGREGATE.toString())) {
       return new AggregationDataMapSchema(dataMapName, providerName);
+    } else if (providerName.equalsIgnoreCase(DataMapProvider.TIMESERIES.toString())) {
+      return new AggregationDataMapSchema(dataMapName, providerName);
     } else {
       return new DataMapSchema(dataMapName, providerName);
     }

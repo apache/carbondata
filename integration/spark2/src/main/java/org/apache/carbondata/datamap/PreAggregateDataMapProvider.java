@@ -17,25 +17,30 @@
 
 package org.apache.carbondata.datamap;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.execution.command.preaaggregate.CarbonCreatePreAggregateTableCommand;
+import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateTableHelper;
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand;
 import scala.Some;
 
 public class PreAggregateDataMapProvider implements DataMapProvider {
-  protected CarbonCreatePreAggregateTableCommand createCommand;
+  protected PreAggregateTableHelper helper;
   protected CarbonDropTableCommand dropTableCommand;
 
   @Override
   public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement,
-      SparkSession sparkSession) {
-    createCommand = new CarbonCreatePreAggregateTableCommand(
+      SparkSession sparkSession) throws MalformedDataMapCommandException {
+    if (!dataMapSchema.getProperties().isEmpty()) {
+      throw new MalformedDataMapCommandException(
+          "No dmproperty is required for 'preaggregate' datamap");
+    }
+    helper = new PreAggregateTableHelper(
         mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getClassName(),
         dataMapSchema.getProperties(), ctasSqlStatement, null);
-    createCommand.processMetadata(sparkSession);
+    helper.initMeta(sparkSession);
   }
 
   @Override
@@ -64,8 +69,8 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
 
   @Override
   public void rebuild(CarbonTable mainTable, SparkSession sparkSession) {
-    if (createCommand != null) {
-      createCommand.processData(sparkSession);
+    if (helper != null) {
+      helper.initData(sparkSession);
     }
   }
 

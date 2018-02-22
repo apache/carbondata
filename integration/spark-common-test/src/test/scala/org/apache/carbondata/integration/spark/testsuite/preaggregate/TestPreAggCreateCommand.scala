@@ -265,7 +265,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
            | GROUP BY dob,name
        """.stripMargin)
     }
-    assert(e.getMessage.contains(s"$timeSeries keyword missing"))
+    assert(e.getMessage.contains("No dmproperty is required for 'preaggregate' datamap"))
     sql("DROP TABLE IF EXISTS maintabletime")
   }
 

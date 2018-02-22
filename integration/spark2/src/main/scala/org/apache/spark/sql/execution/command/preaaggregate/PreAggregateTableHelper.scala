@@ -32,29 +32,28 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider
-import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable}
+import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 
 /**
- * Below command class will be used to create pre-aggregate table
+ * Below helper class will be used to create pre-aggregate table
  * and updating the parent table about the child table information
  * It will be either success or nothing happen in case of failure:
  * 1. failed to create pre aggregate table.
  * 2. failed to update main table
  *
  */
-case class CarbonCreatePreAggregateTableCommand(
-    parentTable: CarbonTable,
+case class PreAggregateTableHelper(
+    var parentTable: CarbonTable,
     dataMapName: String,
     dataMapClassName: String,
     dataMapProperties: java.util.Map[String, String],
     queryString: String,
-    timeSeriesFunction: String)
-  extends AtomicRunnableCommand {
+    timeSeriesFunction: String) {
 
   var loadCommand: CarbonLoadDataCommand = _
 
-  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+  def initMeta(sparkSession: SparkSession): Seq[Row] = {
     val dmProperties = dataMapProperties.asScala
     val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
     val df = sparkSession.sql(updatedQuery)
@@ -122,17 +121,28 @@ case class CarbonCreatePreAggregateTableCommand(
 
     val table = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
     val tableInfo = table.getTableInfo
-    // child schema object which will be updated on parent table about the
+
+    val provider = if (timeSeriesFunction == null) {
+      DataMapProvider.PREAGGREGATE.toString
+    } else {
+      DataMapProvider.TIMESERIES.toString
+    }
+    // child schema object will be saved on parent table schema
     val childSchema = tableInfo.getFactTable.buildChildSchema(
       dataMapName,
-      DataMapProvider.PREAGGREGATE.toString,
+      provider,
       tableInfo.getDatabaseName,
       queryString,
-      "AGGREGATION")
+      provider)
     dmProperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
 
     // updating the parent table about child table
     PreAggregateUtil.updateMainTable(parentTable, childSchema, sparkSession)
+
+    // After updating the parent carbon table with data map entry extract the latest table object
+    // to be used in further create process.
+    parentTable = CarbonEnv.getCarbonTable(Some(parentTable.getDatabaseName),
+      parentTable.getTableName)(sparkSession)
 
     val updatedLoadQuery = if (timeSeriesFunction != null) {
       val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
@@ -157,17 +167,7 @@ case class CarbonCreatePreAggregateTableCommand(
     Seq.empty
   }
 
-  override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
-    // drop child table and undo the change in table info of main table
-    CarbonDropDataMapCommand(
-      dataMapName,
-      ifExistsSet = true,
-      Some(parentTable.getDatabaseName),
-      parentTable.getTableName).run(sparkSession)
-    Seq.empty
-  }
-
-  override def processData(sparkSession: SparkSession): Seq[Row] = {
+  def initData(sparkSession: SparkSession): Seq[Row] = {
     // load child table if parent table has existing segments
     // This will be used to check if the parent table has any segments or not. If not then no
     // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT

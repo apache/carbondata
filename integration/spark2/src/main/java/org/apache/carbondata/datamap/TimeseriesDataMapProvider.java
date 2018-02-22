@@ -23,7 +23,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.execution.command.preaaggregate.CarbonCreatePreAggregateTableCommand;
+import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateTableHelper;
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil;
 import scala.Tuple2;
 
@@ -38,10 +38,10 @@ public class TimeseriesDataMapProvider extends PreAggregateDataMapProvider {
     Tuple2<String, String> details =
         TimeSeriesUtil.getTimeSeriesGranularityDetails(dmProperties, dmProviderName);
     dmProperties.remove(details._1());
-    createCommand = new CarbonCreatePreAggregateTableCommand(
+    helper = new PreAggregateTableHelper(
         mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getClassName(),
         dmProperties, ctasSqlStatement, details._1());
-    createCommand.processMetadata(sparkSession);
+    helper.initMeta(sparkSession);
   }
 
 }
