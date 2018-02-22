@@ -26,6 +26,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterAll {
   var executorService: ExecutorService = _
@@ -764,6 +765,86 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     checkAnswer(sql("select count(*) from partitiontablewithoutpartcolumninfileheader"), Seq(Row(10)))
     sql("DROP TABLE IF EXISTS partitiontablewithoutpartcolumninfileheader")
   }
+
+  test("data loading with wrong format in static partition table") {
+    sql("DROP TABLE IF EXISTS partitionwrongformat")
+    sql(
+      """
+        | CREATE TABLE partitionwrongformat (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String)
+        | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    intercept[MalformedCarbonCommandException] {
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionwrongformat partition(projectjoindate='2016-12-01',salary='gg') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    }
+
+    intercept[MalformedCarbonCommandException] {
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionwrongformat partition(projectjoindate='2016',salary='1.0') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    }
+
+  }
+
+  test("data loading with default partition in static partition table") {
+    sql("DROP TABLE IF EXISTS partitiondefaultpartition")
+    sql(
+      """
+        | CREATE TABLE partitiondefaultpartition (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String)
+        | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultpartition partition(projectjoindate='__HIVE_DEFAULT_PARTITION__',salary='1.0') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(salary) from partitiondefaultpartition"), Seq(Row(10)))
+    checkExistence(sql("show partitions partitiondefaultpartition"), true, "__HIVE_DEFAULT_PARTITION__")
+  }
+
+  test("data loading with default partition in static partition table with fail badrecord") {
+    sql("DROP TABLE IF EXISTS partitiondefaultpartitionfail")
+    sql(
+      """
+        | CREATE TABLE partitiondefaultpartitionfail (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String)
+        | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultpartitionfail partition(projectjoindate='__HIVE_DEFAULT_PARTITION__',salary='1.0') OPTIONS('bad_records_logger_enable'='true', 'bad_records_action'='fail','DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(*) from partitiondefaultpartitionfail"), Seq(Row(10)))
+    checkExistence(sql("show partitions partitiondefaultpartitionfail"), true, "__HIVE_DEFAULT_PARTITION__")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultpartitionfail partition(projectjoindate='2016-12-01',salary='__HIVE_DEFAULT_PARTITION__') OPTIONS('bad_records_logger_enable'='true', 'bad_records_action'='fail','DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(*) from partitiondefaultpartitionfail"), Seq(Row(20)))
+  }
+
+  test("data loading with int partition issue") {
+    sql("DROP TABLE IF EXISTS intissue")
+    sql("create table intissue(a int) partitioned by (b int) stored by 'carbondata'")
+    sql("insert into intissue values(1,1)")
+    checkAnswer(sql("select * from intissue"), Seq(Row(1,1)))
+  }
+
+  test("data loading with int partition issue with global sort") {
+    sql("DROP TABLE IF EXISTS intissuesort")
+    sql("create table intissuesort(a int) partitioned by (b int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    sql("insert into intissuesort values(1,1)")
+    checkAnswer(sql("select * from intissuesort"), Seq(Row(1,1)))
+  }
+
+  test("data loading with decimal column fail issue") {
+    sql("DROP TABLE IF EXISTS partitiondecimalfailissue")
+    sql("CREATE TABLE IF NOT EXISTS partitiondecimalfailissue (ID Int, date Timestamp, country String, name String, phonetype String, serialname String) partitioned by (salary Decimal(17,2)) STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalDataWithHeader.csv' into table partitiondecimalfailissue")
+    sql(s"select * from partitiondecimalfailissue").show()
+    sql(s"insert into partitiondecimalfailissue partition(salary='13000000.7878788') select ID,date,country,name,phonetype,serialname from partitiondecimalfailissue" )
+    sql(s"select * from partitiondecimalfailissue").show(100)
+  }
+
+
 
 
   override def afterAll = {

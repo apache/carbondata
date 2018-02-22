@@ -39,6 +39,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.util.{CarbonSessionInfo, DataTypeUtil}
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -175,12 +176,41 @@ object CarbonScalaUtil {
       dataType: DataType,
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat): String = {
-    dataType match {
-      case TimestampType if timeStampFormat != null =>
-        timeStampFormat.format(DateTimeUtils.stringToTime(value))
-      case DateType if dateFormat != null =>
-        dateFormat.format(DateTimeUtils.stringToTime(value))
-      case _ => value
+    val defaultValue = value != null && value.equalsIgnoreCase(hivedefaultpartition)
+    try {
+      dataType match {
+        case TimestampType if timeStampFormat != null =>
+          if (defaultValue) {
+            timeStampFormat.format(new Date())
+          } else {
+            timeStampFormat.format(DateTimeUtils.stringToTime(value))
+          }
+        case DateType if dateFormat != null =>
+          if (defaultValue) {
+            dateFormat.format(new Date())
+          } else {
+            dateFormat.format(DateTimeUtils.stringToTime(value))
+          }
+        case _ =>
+          val convertedValue =
+            DataTypeUtil
+              .getDataBasedOnDataType(value, convertSparkToCarbonDataType(dataType))
+          if (convertedValue == null) {
+            if (defaultValue) {
+              return dataType match {
+                case BooleanType => "false"
+                case _ => "0"
+              }
+            }
+            throw new MalformedCarbonCommandException(
+              s"Value $value with datatype $dataType on static partition is not correct")
+          }
+          value
+      }
+    } catch {
+      case e: Exception =>
+        throw new MalformedCarbonCommandException(
+          s"Value $value with datatype $dataType on static partition is not correct")
     }
   }
 
@@ -283,11 +313,9 @@ object CarbonScalaUtil {
       }
       column.getDataType match {
         case CarbonDataTypes.TIMESTAMP =>
-          DataTypeUtil.getDataDataTypeForNoDictionaryColumn(value,
-            column.getDataType,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT).toString
+          DateTimeUtils.stringToTime(value).getTime.toString
         case CarbonDataTypes.DATE =>
-          DateTimeUtils.stringToDate(UTF8String.fromString(value)).get.toString
+          DateTimeUtils.stringToTime(value).getTime.toString
         case _ => value
       }
     } catch {
@@ -296,16 +324,16 @@ object CarbonScalaUtil {
     }
   }
 
-  private val hiveignorepartition = "__HIVE_IGNORE_PARTITION__"
+  private val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
 
+  private val hiveignorepartition = "__HIVE_IGNORE_PARTITION__"
   /**
    * Update partition values as per the right date and time format
    * @return updated partition spec
    */
   def updatePartitions(
       partitionSpec: Map[String, String],
-      table: CarbonTable): Map[String, String] = {
-    val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
+  table: CarbonTable): Map[String, String] = {
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
       cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)

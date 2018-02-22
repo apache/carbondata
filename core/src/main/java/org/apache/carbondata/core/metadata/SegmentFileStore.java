@@ -62,6 +62,9 @@ public class SegmentFileStore {
 
   private SegmentFile segmentFile;
 
+  /**
+   * Here key folder path and values are index files in it.
+   */
   private Map<String, List<String>> indexFilesMap;
 
   private String tablePath;
