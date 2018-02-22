@@ -29,7 +29,7 @@ import org.apache.carbondata.events.Event;
 /**
  * Interface for datamap factory, it is responsible for creating the datamap.
  */
-public interface DataMapFactory<T extends DataMap> {
+public interface IndexDataMapFactory<T extends IndexDataMap> {
 
   /**
    * Initialization of Datamap factory with the identifier and datamap name

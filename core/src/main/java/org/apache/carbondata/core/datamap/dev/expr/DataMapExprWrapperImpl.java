@@ -81,6 +81,6 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
   }
 
   @Override public DataMapType getDataMapType() {
-    return dataMap.getDataMapFactory().getDataMapType();
+    return dataMap.getIndexDataMapFactory().getDataMapType();
   }
 }

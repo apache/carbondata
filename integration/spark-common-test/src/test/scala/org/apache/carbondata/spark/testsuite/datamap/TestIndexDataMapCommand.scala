@@ -30,7 +30,7 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
-class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
+class TestIndexDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
   val testData = s"$resourcesPath/sample.csv"
 
@@ -65,13 +65,12 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   test("test datamap create with preagg") {
     sql("drop datamap if exists datamap3 on table datamaptest")
     sql(
-      "create datamap datamap3 on table datamaptest using 'preaggregate' dmproperties('key'='value') as select count(a) from datamaptest")
+      "create datamap datamap3 on table datamaptest using 'preaggregate' as select count(a) from datamaptest")
     val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 1)
     assert(dataMapSchemaList.get(0).getDataMapName.equals("datamap3"))
-    assert(dataMapSchemaList.get(0).getProperties.get("key").equals("value"))
     assert(dataMapSchemaList.get(0).getChildSchema.getTableName.equals("datamaptest_datamap3"))
   }
 
@@ -84,7 +83,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       sql("create table hiveMetaStoreTable (a string, b string, c string) stored by 'carbondata'")
 
       sql(
-        "create datamap datamap_hiveMetaStoreTable on table hiveMetaStoreTable using 'preaggregate' dmproperties('key'='value') as select count(a) from hiveMetaStoreTable")
+        "create datamap datamap_hiveMetaStoreTable on table hiveMetaStoreTable using 'preaggregate' as select count(a) from hiveMetaStoreTable")
       checkExistence(sql("show datamap on table hiveMetaStoreTable"), true, "datamap_hiveMetaStoreTable")
 
       sql("drop datamap datamap_hiveMetaStoreTable on table hiveMetaStoreTable")
@@ -107,7 +106,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       sql("create table hiveMetaStoreTable_1 (a string, b string, c string) stored by 'carbondata'")
 
       sql(
-        "create datamap datamap_hiveMetaStoreTable_1 on table hiveMetaStoreTable_1 using 'preaggregate' dmproperties('key'='value') as select count(a) from hiveMetaStoreTable_1")
+        "create datamap datamap_hiveMetaStoreTable_1 on table hiveMetaStoreTable_1 using 'preaggregate' as select count(a) from hiveMetaStoreTable_1")
 
       checkExistence(sql("show datamap on table hiveMetaStoreTable_1"),
         true,
@@ -128,7 +127,6 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP datamap10 ON TABLE datamaptest
          | USING 'preaggregate'
-         | DMPROPERTIES('key'='value')
          | AS SELECT COUNT(a) FROM datamaptest
          """.stripMargin)
     intercept[MalformedDataMapCommandException] {
@@ -136,7 +134,6 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
         s"""
            | CREATE DATAMAP datamap10 ON TABLE datamaptest
            | USING 'preaggregate'
-           | DMPROPERTIES('key'='value')
            | AS SELECT COUNT(a) FROM datamaptest
          """.stripMargin)
     }
@@ -160,8 +157,8 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     intercept[MetadataProcessException] {
       sql("drop table if exists datamapshowtest")
       sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
-      sql(s"CREATE DATAMAP datamap1 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
-      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
+      sql(s"CREATE DATAMAP datamap1 ON TABLE datamapshowtest USING '$newClass' ")
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' ")
       checkExistence(sql("SHOW DATAMAP ON TABLE datamapshowtest"), true, "datamap1", "datamap2", "(NA)", newClass)
     }
   }
@@ -171,7 +168,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       sql("drop table if exists datamapshowtest")
       sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
       sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
-      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' ")
       val frame = sql("show datamap on table datamapshowtest")
       assert(frame.collect().length == 2)
       checkExistence(frame, true, "datamap1", "datamap2", "(NA)", newClass, "default.datamapshowtest_datamap1")
@@ -189,7 +186,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       sql("drop table if exists datamapshowtest")
       sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
       sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
-      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' ")
       sql("drop datamap datamap1 on table datamapshowtest")
       val frame = sql("show datamap on table datamapshowtest")
       assert(frame.collect().length == 1)

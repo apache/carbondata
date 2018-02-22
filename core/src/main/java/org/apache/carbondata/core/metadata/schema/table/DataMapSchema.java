@@ -32,6 +32,7 @@ public class DataMapSchema implements Serializable, Writable {
 
   protected String dataMapName;
 
+  // this name can be class name of the DataMapProvider implementation or short name of it
   private String className;
 
   protected RelationIdentifier relationIdentifier;

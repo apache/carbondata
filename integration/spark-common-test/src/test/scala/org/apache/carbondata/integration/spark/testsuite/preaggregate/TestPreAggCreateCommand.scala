@@ -265,7 +265,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
            | GROUP BY dob,name
        """.stripMargin)
     }
-    assert(e.getMessage.contains(s"$timeSeries keyword missing"))
+    assert(e.getMessage.contains("Only 'path' dmproperty is allowed for this datamap"))
     sql("DROP TABLE IF EXISTS maintabletime")
   }
 
@@ -282,7 +282,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
           | GROUP BY column3,column5,column2
         """.stripMargin)
     }
-    assert(e.getMessage.contains("DataMap class 'abc' not found"))
+    assert(e.getMessage.contains("DataMap 'abc' not found"))
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 

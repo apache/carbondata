@@ -25,16 +25,16 @@ import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainDataMap, AbstractCoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.fgdatamap.{AbstractFineGrainIndexDataMap, AbstractFineGrainIndexDataMapFactory}
 import org.apache.carbondata.core.datamap.dev.{AbstractDataMapWriter, DataMapModel}
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
-import org.apache.carbondata.core.indexstore.Blocklet
+import org.apache.carbondata.core.indexstore.FineGrainBlocklet
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
@@ -47,7 +47,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
+class FGIndexDataMapFactory extends AbstractFineGrainIndexDataMapFactory {
   var identifier: AbsoluteTableIdentifier = _
   var dataMapSchema: DataMapSchema = _
 
@@ -63,43 +63,35 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
    * Return a new write for this datamap
    */
   override def createWriter(segmentId: String, dataWritePath: String): AbstractDataMapWriter = {
-    new CGDataMapWriter(identifier, segmentId, dataWritePath, dataMapSchema)
+    new FGDataMapWriter(identifier, segmentId, dataWritePath, dataMapSchema)
   }
 
   /**
    * Get the datamap for segmentid
    */
-  override def getDataMaps(segmentId: String) = {
-    val file = FileFactory.getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
+  override def getDataMaps(segmentId: String): java.util.List[AbstractFineGrainIndexDataMap] = {
+    val file = FileFactory
+      .getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
 
     val files = file.listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
     })
-    files.map {f =>
-      val dataMap: AbstractCoarseGrainDataMap = new CGDataMap()
+    files.map { f =>
+      val dataMap: AbstractFineGrainIndexDataMap = new FGIndexDataMap()
       dataMap.init(new DataMapModel(f.getCanonicalPath))
       dataMap
     }.toList.asJava
   }
 
-
   /**
-   * Get datamaps for distributable object.
+   * Get datamap for distributable object.
    */
   override def getDataMaps(
-      distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainDataMap] = {
+      distributable: DataMapDistributable): java.util.List[AbstractFineGrainIndexDataMap]= {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
-    val dataMap: AbstractCoarseGrainDataMap = new CGDataMap()
+    val dataMap: AbstractFineGrainIndexDataMap = new FGIndexDataMap()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath))
     Seq(dataMap).asJava
-  }
-
-  /**
-   *
-   * @param event
-   */
-  override def fireEvent(event: Event): Unit = {
-    ???
   }
 
   /**
@@ -107,31 +99,38 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
    *
    * @return
    */
-  override def toDistributable(segmentId: String) = {
-    val file = FileFactory.getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
+  override def toDistributable(segmentId: String): java.util.List[DataMapDistributable] = {
+    val file = FileFactory
+      .getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
 
     val files = file.listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
     })
     files.map { f =>
-      val d:DataMapDistributable = new BlockletDataMapDistributable(f.getCanonicalPath)
+      val d: DataMapDistributable = new BlockletDataMapDistributable(f.getCanonicalPath)
       d
     }.toList.asJava
   }
 
 
   /**
+   *
+   * @param event
+   */
+  override def fireEvent(event: Event):Unit = {
+    ???
+  }
+
+  /**
    * Clears datamap of the segment
    */
   override def clear(segmentId: String): Unit = {
-
   }
 
   /**
    * Clear all datamaps from memory
    */
   override def clear(): Unit = {
-
   }
 
   /**
@@ -143,9 +142,9 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
   }
 }
 
-class CGDataMap extends AbstractCoarseGrainDataMap {
+class FGIndexDataMap extends AbstractFineGrainIndexDataMap {
 
-  var maxMin: ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]))] = _
+  var maxMin: ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)] = _
   var FileReader: FileReader = _
   var filePath: String = _
   val compressor = new SnappyCompressor
@@ -157,11 +156,12 @@ class CGDataMap extends AbstractCoarseGrainDataMap {
     this.filePath = dataMapModel.getFilePath
     val size = FileFactory.getCarbonFile(filePath).getSize
     FileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
-    val footerLen = FileReader.readInt(filePath, size-4)
-    val bytes = FileReader.readByteArray(filePath, size-footerLen-4, footerLen)
+    val footerLen = FileReader.readInt(filePath, size - 4)
+    val bytes = FileReader.readByteArray(filePath, size - footerLen - 4, footerLen)
     val in = new ByteArrayInputStream(compressor.unCompressByte(bytes))
     val obj = new ObjectInputStream(in)
-    maxMin = obj.readObject().asInstanceOf[ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]))]]
+    maxMin = obj.readObject()
+      .asInstanceOf[ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)]]
   }
 
   /**
@@ -174,7 +174,7 @@ class CGDataMap extends AbstractCoarseGrainDataMap {
   override def prune(
       filterExp: FilterResolverIntf,
       segmentProperties: SegmentProperties,
-      partitions: java.util.List[String]): java.util.List[Blocklet] = {
+      partitions: java.util.List[String]): java.util.List[FineGrainBlocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()
     val expression = filterExp.getFilterExpression
     getEqualToExpression(expression, buffer)
@@ -182,21 +182,53 @@ class CGDataMap extends AbstractCoarseGrainDataMap {
       f.getChildren.get(1).evaluate(null).getString
     }
     val meta = findMeta(value(0).getBytes)
-    meta.map { f=>
-      new Blocklet(f._1, f._2+"")
-    }.asJava
+    meta.map { f =>
+      readAndFindData(f, value(0).getBytes())
+    }.filter(_.isDefined).map(_.get).asJava
   }
 
+  private def readAndFindData(meta: (String, Int, (Array[Byte], Array[Byte]), Long, Int),
+      value: Array[Byte]): Option[FineGrainBlocklet] = {
+    val bytes = FileReader.readByteArray(filePath, meta._4, meta._5)
+    val outputStream = new ByteArrayInputStream(compressor.unCompressByte(bytes))
+    val obj = new ObjectInputStream(outputStream)
+    val blockletsData = obj.readObject()
+      .asInstanceOf[ArrayBuffer[(Array[Byte], Seq[Seq[Int]], Seq[Int])]]
+
+    import scala.collection.Searching._
+    val searching = blockletsData
+      .search[(Array[Byte], Seq[Seq[Int]], Seq[Int])]((value, Seq(Seq(0)), Seq(0)))(new Ordering[
+      (Array[Byte], Seq[Seq[Int]], Seq[Int])] {
+      override def compare(x: (Array[Byte], Seq[Seq[Int]], Seq[Int]),
+          y: (Array[Byte], Seq[Seq[Int]], Seq[Int])) = {
+        ByteUtil.UnsafeComparer.INSTANCE.compareTo(x._1, y._1)
+      }
+    })
+    if (searching.insertionPoint >= 0) {
+      val f = blockletsData(searching.insertionPoint)
+      val pages = f._3.zipWithIndex.map { p =>
+        val pg = new FineGrainBlocklet.Page
+        pg.setPageId(p._1)
+        pg.setRowId(f._2(p._2).toArray)
+        pg
+      }
+      pages
+      Some(new FineGrainBlocklet(meta._1, meta._2.toString, pages.toList.asJava))
+    } else {
+      None
+    }
+
+  }
 
   private def findMeta(value: Array[Byte]) = {
     val tuples = maxMin.filter { f =>
-      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._1) <= 0 &&
-      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._2) >= 0
+      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._1) >= 0 &&
+      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._2) <= 0
     }
     tuples
   }
 
-  private def getEqualToExpression(expression: Expression, buffer: ArrayBuffer[Expression]): Unit = {
+  def getEqualToExpression(expression: Expression, buffer: ArrayBuffer[Expression]): Unit = {
     if (expression.isInstanceOf[EqualToExpression]) {
       buffer += expression
     } else {
@@ -214,26 +246,25 @@ class CGDataMap extends AbstractCoarseGrainDataMap {
   /**
    * Clear complete index table and release memory.
    */
-  override def clear() = {
+  override def clear():Unit = {
     ???
   }
 
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
 }
 
-class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
-    segmentId: String,
-    dataWritePath: String,
-    dataMapSchema: DataMapSchema)
-  extends AbstractDataMapWriter(identifier, segmentId, dataWritePath) {
+class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
+    segmentId: String, dataWriterPath: String, dataMapSchema: DataMapSchema)
+  extends AbstractDataMapWriter(identifier, segmentId, dataWriterPath) {
 
   var currentBlockId: String = null
-  val cgwritepath = dataWritePath + "/" +
-                    dataMapSchema.getDataMapName + System.nanoTime() + ".datamap"
-  lazy val stream: DataOutputStream = FileFactory
-    .getDataOutputStream(cgwritepath, FileFactory.getFileType(cgwritepath))
-  val blockletList = new ArrayBuffer[Array[Byte]]()
-  val maxMin = new ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]))]()
+  val fgwritepath = dataWriterPath + "/" + dataMapSchema.getDataMapName + System.nanoTime() +
+                    ".datamap"
+  val stream: DataOutputStream = FileFactory
+    .getDataOutputStream(fgwritepath, FileFactory.getFileType(fgwritepath))
+  val blockletList = new ArrayBuffer[(Array[Byte], Seq[Int], Seq[Int])]()
+  val maxMin = new ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)]()
+  var position: Long = 0
   val compressor = new SnappyCompressor
 
   /**
@@ -268,15 +299,46 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    */
   override def onBlockletEnd(blockletId: Int): Unit = {
     val sorted = blockletList
-      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
+      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l._1, r._1) <= 0)
+    var oldValue: (Array[Byte], Seq[Seq[Int]], Seq[Int]) = null
+    var addedLast: Boolean = false
+    val blockletListUpdated = new ArrayBuffer[(Array[Byte], Seq[Seq[Int]], Seq[Int])]()
+    // Merge all same column values to single row.
+    sorted.foreach { f =>
+      if (oldValue != null) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(f._1, oldValue._1) == 0) {
+          oldValue = (oldValue._1, oldValue._2 ++ Seq(f._2), oldValue._3 ++ f._3)
+          addedLast = false
+        } else {
+          blockletListUpdated += oldValue
+          oldValue = (f._1, Seq(f._2), f._3)
+          addedLast = true
+        }
+      } else {
+        oldValue = (f._1, Seq(f._2), f._3)
+        addedLast = false
+      }
+    }
+    if (!addedLast && oldValue != null) {
+      blockletListUpdated += oldValue
+    }
+
+    val out = new ByteOutputStream()
+    val outStream = new ObjectOutputStream(out)
+    outStream.writeObject(blockletListUpdated)
+    outStream.close()
+    val bytes = compressor.compressByte(out.getBytes)
+    stream.write(bytes)
     maxMin +=
-    ((currentBlockId+"", blockletId, (sorted.last, sorted.head)))
+    ((currentBlockId + "", blockletId, (blockletListUpdated.head._1, blockletListUpdated.last
+      ._1), position, bytes.length))
+    position += bytes.length
     blockletList.clear()
   }
 
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
-   * DataMapMeta returned in DataMapFactory.
+   * DataMapMeta returned in IndexDataMapFactory.
    *
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
@@ -285,20 +347,39 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
       pageId: Int,
       pages: Array[ColumnPage]): Unit = {
     val size = pages(0).getPageSize
-    val list = new ArrayBuffer[Array[Byte]]()
+    val list = new ArrayBuffer[(Array[Byte], Int)]()
     var i = 0
     while (i < size) {
       val bytes = pages(0).getBytes(i)
       val newBytes = new Array[Byte](bytes.length - 2)
       System.arraycopy(bytes, 2, newBytes, 0, newBytes.length)
-      list += newBytes
+      list += ((newBytes, i))
       i = i + 1
     }
     // Sort based on the column data in order to create index.
     val sorted = list
-      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
-    blockletList += sorted.head
-    blockletList += sorted.last
+      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l._1, r._1) <= 0)
+    var oldValue: (Array[Byte], Seq[Int], Seq[Int]) = null
+    var addedLast: Boolean = false
+    // Merge all same column values to single row.
+    sorted.foreach { f =>
+      if (oldValue != null) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(f._1, oldValue._1) == 0) {
+          oldValue = (oldValue._1, oldValue._2 ++ Seq(f._2), oldValue._3)
+          addedLast = false
+        } else {
+          blockletList += oldValue
+          oldValue = (f._1, Seq(f._2), Seq(pageId))
+          addedLast = true
+        }
+      } else {
+        oldValue = (f._1, Seq(f._2), Seq(pageId))
+        addedLast = false
+      }
+    }
+    if (!addedLast && oldValue != null) {
+      blockletList += oldValue
+    }
   }
 
 
@@ -315,15 +396,14 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
     stream.write(bytes)
     stream.writeInt(bytes.length)
     stream.close()
-    commitFile(cgwritepath)
+    commitFile(fgwritepath)
   }
-
-
 }
 
-class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
+class FGIndexDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/compaction/fil2.csv"
+
   override protected def beforeAll(): Unit = {
     //n should be about 5000000 of reset if size is default 1024
     val n = 150000
@@ -338,23 +418,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE normal_test OPTIONS('header'='false')")
   }
 
-  test("test cg datamap") {
-    sql("DROP TABLE IF EXISTS datamap_test_cg")
-    sql(
-      """
-        | CREATE TABLE datamap_test_cg(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
-      """.stripMargin)
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test_cg")
-    // register datamap writer
-    sql(s"create datamap cgdatamap on table datamap_test_cg using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_cg OPTIONS('header'='false')")
-    checkAnswer(sql("select * from datamap_test_cg where name='n502670'"),
-      sql("select * from normal_test where name='n502670'"))
-  }
-
-  test("test cg datamap with 2 datamaps ") {
+  test("test fg datamap") {
     sql("DROP TABLE IF EXISTS datamap_test")
     sql(
       """
@@ -364,8 +428,39 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
     // register datamap writer
-    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
+    sql(
+      s"""
+         | CREATE DATAMAP ggdatamap ON TABLE datamap_test
+         | USING '${classOf[FGIndexDataMapFactory].getName}'
+         | DMPROPERTIES('indexcolumns'='name')
+       """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
+    checkAnswer(sql("select * from datamap_test where name='n502670'"),
+      sql("select * from normal_test where name='n502670'"))
+  }
+
+  test("test fg datamap with 2 datamaps ") {
+    sql("DROP TABLE IF EXISTS datamap_test")
+    sql(
+      """
+        | CREATE TABLE datamap_test(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
+    // register datamap writer
+    sql(
+      s"""
+         | CREATE DATAMAP ggdatamap1 ON TABLE datamap_test
+         | USING '${classOf[FGIndexDataMapFactory].getName}'
+         | DMPROPERTIES('indexcolumns'='name')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP ggdatamap2 ON TABLE datamap_test
+         | USING '${classOf[FGIndexDataMapFactory].getName}'
+         | DMPROPERTIES('indexcolumns'='city')
+       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
@@ -374,6 +469,6 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
   override protected def afterAll(): Unit = {
     CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
-    sql("DROP TABLE IF EXISTS datamap_test_cg")
+    sql("DROP TABLE IF EXISTS datamap_test")
   }
 }
