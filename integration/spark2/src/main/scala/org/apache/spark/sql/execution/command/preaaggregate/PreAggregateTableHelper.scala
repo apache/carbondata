@@ -23,7 +23,6 @@ import scala.collection.mutable
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
@@ -121,7 +120,7 @@ case class PreAggregateTableHelper(
 
     val table = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
     val tableInfo = table.getTableInfo
-    
+
     // child schema object will be saved on parent table schema
     val childSchema = tableInfo.getFactTable.buildChildSchema(
       dataMapName,
