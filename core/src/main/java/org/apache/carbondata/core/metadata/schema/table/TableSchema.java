@@ -285,8 +285,7 @@ public class TableSchema implements Serializable, Writable {
                 // only = is allowed as special character , so replace with &
                 CarbonCommonConstants.DEFAULT_CHARSET)).replace("=","&"));
     properties.put("QUERYTYPE", queryType);
-    DataMapSchema dataMapSchema =
-        new DataMapSchema(dataMapName, className);
+    DataMapSchema dataMapSchema = new DataMapSchema(dataMapName, className);
     dataMapSchema.setProperties(properties);
 
     dataMapSchema.setChildSchema(this);

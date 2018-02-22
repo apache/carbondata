@@ -22,8 +22,8 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
-import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexDataMap;
+import org.apache.carbondata.core.datamap.dev.IndexDataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
@@ -40,7 +40,7 @@ import org.apache.carbondata.events.OperationContext;
 import org.apache.carbondata.events.OperationEventListener;
 
 /**
- * DataMap at the table level, user can add any number of datamaps for one table. Depends
+ * IndexDataMap at the table level, user can add any number of datamaps for one table. Depends
  * on the filter condition it can prune the blocklets.
  */
 public final class TableDataMap extends OperationEventListener {
@@ -49,7 +49,7 @@ public final class TableDataMap extends OperationEventListener {
 
   private DataMapSchema dataMapSchema;
 
-  private DataMapFactory dataMapFactory;
+  private IndexDataMapFactory indexDataMapFactory;
 
   private BlockletDetailsFetcher blockletDetailsFetcher;
 
@@ -59,11 +59,11 @@ public final class TableDataMap extends OperationEventListener {
    * It is called to initialize and load the required table datamap metadata.
    */
   public TableDataMap(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema,
-      DataMapFactory dataMapFactory, BlockletDetailsFetcher blockletDetailsFetcher,
+      IndexDataMapFactory indexDataMapFactory, BlockletDetailsFetcher blockletDetailsFetcher,
       SegmentPropertiesFetcher segmentPropertiesFetcher) {
     this.identifier = identifier;
     this.dataMapSchema = dataMapSchema;
-    this.dataMapFactory = dataMapFactory;
+    this.indexDataMapFactory = indexDataMapFactory;
     this.blockletDetailsFetcher = blockletDetailsFetcher;
     this.segmentPropertiesFetcher = segmentPropertiesFetcher;
   }
@@ -85,9 +85,9 @@ public final class TableDataMap extends OperationEventListener {
       if (filterExp == null) {
         pruneBlocklets = blockletDetailsFetcher.getAllBlocklets(segment, partitions);
       } else {
-        List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
+        List<IndexDataMap> dataMaps = indexDataMapFactory.getDataMaps(segment);
         segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment);
-        for (DataMap dataMap : dataMaps) {
+        for (IndexDataMap dataMap : dataMaps) {
           pruneBlocklets.addAll(dataMap.prune(filterExp, segmentProperties, partitions));
         }
       }
@@ -115,7 +115,7 @@ public final class TableDataMap extends OperationEventListener {
   public List<DataMapDistributable> toDistributable(List<Segment> segments) throws IOException {
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (Segment segment : segments) {
-      List<DataMapDistributable> list = dataMapFactory.toDistributable(segment);
+      List<DataMapDistributable> list = indexDataMapFactory.toDistributable(segment);
       for (DataMapDistributable distributable: list) {
         distributable.setDataMapSchema(dataMapSchema);
         distributable.setSegment(segment);
@@ -138,10 +138,10 @@ public final class TableDataMap extends OperationEventListener {
       FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     List<Blocklet> blocklets = new ArrayList<>();
-    List<DataMap> dataMaps = dataMapFactory.getDataMaps(distributable);
-    for (DataMap dataMap : dataMaps) {
+    List<IndexDataMap> indexDataMaps = indexDataMapFactory.getDataMaps(distributable);
+    for (IndexDataMap indexDataMap : indexDataMaps) {
       blocklets.addAll(
-          dataMap.prune(
+          indexDataMap.prune(
               filterExp,
               segmentPropertiesFetcher.getSegmentProperties(distributable.getSegment()),
               partitions));
@@ -150,13 +150,13 @@ public final class TableDataMap extends OperationEventListener {
     String writePath =
         identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + dataMapSchema
             .getDataMapName();
-    if (dataMapFactory.getDataMapType() == DataMapType.FG) {
+    if (indexDataMapFactory.getDataMapType() == DataMapType.FG) {
       FileFactory.mkdirs(writePath, FileFactory.getFileType(writePath));
     }
     for (Blocklet blocklet : blocklets) {
       ExtendedBlocklet detailedBlocklet =
           blockletDetailsFetcher.getExtendedBlocklet(blocklet, distributable.getSegment());
-      if (dataMapFactory.getDataMapType() == DataMapType.FG) {
+      if (indexDataMapFactory.getDataMapType() == DataMapType.FG) {
         String blockletwritePath =
             writePath + CarbonCommonConstants.FILE_SEPARATOR + System.nanoTime();
         detailedBlocklet.setDataMapWriterPath(blockletwritePath);
@@ -174,7 +174,7 @@ public final class TableDataMap extends OperationEventListener {
    */
   public void clear(List<Segment> segments) {
     for (Segment segment: segments) {
-      dataMapFactory.clear(segment);
+      indexDataMapFactory.clear(segment);
     }
   }
 
@@ -182,19 +182,19 @@ public final class TableDataMap extends OperationEventListener {
    * Clears all datamap
    */
   public void clear() {
-    dataMapFactory.clear();
+    indexDataMapFactory.clear();
   }
 
   public DataMapSchema getDataMapSchema() {
     return dataMapSchema;
   }
 
-  public DataMapFactory getDataMapFactory() {
-    return dataMapFactory;
+  public IndexDataMapFactory getIndexDataMapFactory() {
+    return indexDataMapFactory;
   }
 
   @Override public void onEvent(Event event, OperationContext opContext) throws Exception {
-    dataMapFactory.fireEvent(event);
+    indexDataMapFactory.fireEvent(event);
   }
 
   /**
@@ -209,8 +209,8 @@ public final class TableDataMap extends OperationEventListener {
       throws IOException {
     List<Segment> prunedSegments = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (Segment segment : segments) {
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
-      for (DataMap dataMap : dataMaps) {
+      List<IndexDataMap> dataMaps = indexDataMapFactory.getDataMaps(segment);
+      for (IndexDataMap dataMap : dataMaps) {
         if (dataMap.isScanRequired(filterExp)) {
           // If any one task in a given segment contains the data that means the segment need to
           // be scanned and we need to validate further data maps in the same segment

@@ -143,8 +143,9 @@ trait CarbonMetaStore {
 
   def listAllTables(sparkSession: SparkSession): Seq[CarbonTable]
 
-  def getThriftTableInfo(carbonTable: CarbonTable)(sparkSession: SparkSession):
-  org.apache.carbondata.format.TableInfo
+  def getThriftTableInfo(
+      carbonTable: CarbonTable
+  ): org.apache.carbondata.format.TableInfo
 
   def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable]
 

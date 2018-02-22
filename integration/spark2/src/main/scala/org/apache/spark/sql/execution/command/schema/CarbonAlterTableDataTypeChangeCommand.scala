@@ -74,7 +74,7 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       }
       // read the latest schema file
       val tableInfo: org.apache.carbondata.format.TableInfo =
-        metastore.getThriftTableInfo(carbonTable)(sparkSession)
+        metastore.getThriftTableInfo(carbonTable)
       // maintain the added column for schema evolution history
       var addColumnSchema: org.apache.carbondata.format.ColumnSchema = null
       var deletedColumnSchema: org.apache.carbondata.format.ColumnSchema = null

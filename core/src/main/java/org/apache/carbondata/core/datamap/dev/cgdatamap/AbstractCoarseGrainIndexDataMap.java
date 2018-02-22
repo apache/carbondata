@@ -16,9 +16,9 @@
  */
 package org.apache.carbondata.core.datamap.dev.cgdatamap;
 
-import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.IndexDataMap;
 import org.apache.carbondata.core.indexstore.Blocklet;
 
-public abstract class AbstractCoarseGrainDataMap implements DataMap<Blocklet> {
+public abstract class AbstractCoarseGrainIndexDataMap implements IndexDataMap<Blocklet> {
 
 }

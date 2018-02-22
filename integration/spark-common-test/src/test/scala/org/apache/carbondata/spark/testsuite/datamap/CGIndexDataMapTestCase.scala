@@ -25,9 +25,11 @@ import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainDataMap, AbstractCoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datamap.dev.{AbstractDataMapWriter, DataMapModel}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
+import org.apache.carbondata.core.datamap.dev.{AbstractDataMapWriter, DataMapModel}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainIndexDataMap, AbstractCoarseGrainIndexDataMapFactory}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
@@ -47,7 +49,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
+class CGIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFactory {
   var identifier: AbsoluteTableIdentifier = _
   var dataMapSchema: DataMapSchema = _
 
@@ -77,7 +79,7 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
     })
     files.map {f =>
-      val dataMap: AbstractCoarseGrainDataMap = new CGDataMap()
+      val dataMap: AbstractCoarseGrainIndexDataMap = new CGIndexDataMap()
       dataMap.init(new DataMapModel(f.getCanonicalPath))
       dataMap
     }.toList.asJava
@@ -88,9 +90,9 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
    * Get datamaps for distributable object.
    */
   override def getDataMaps(
-      distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainDataMap] = {
+      distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainIndexDataMap] = {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
-    val dataMap: AbstractCoarseGrainDataMap = new CGDataMap()
+    val dataMap: AbstractCoarseGrainIndexDataMap = new CGIndexDataMap()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath))
     Seq(dataMap).asJava
   }
@@ -145,7 +147,7 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
   }
 }
 
-class CGDataMap extends AbstractCoarseGrainDataMap {
+class CGIndexDataMap extends AbstractCoarseGrainIndexDataMap {
 
   var maxMin: ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]))] = _
   var FileReader: FileReader = _
@@ -278,7 +280,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
 
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
-   * DataMapMeta returned in DataMapFactory.
+   * DataMapMeta returned in IndexDataMapFactory.
    *
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
@@ -323,7 +325,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
 
 }
 
-class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
+class CGIndexDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/compaction/fil2.csv"
   override protected def beforeAll(): Unit = {
@@ -350,7 +352,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test_cg")
     // register datamap writer
-    sql(s"create datamap cgdatamap on table datamap_test_cg using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
+    sql(s"create datamap cgdatamap on table datamap_test_cg using '${classOf[CGIndexDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_cg OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test_cg where name='n502670'"),
       sql("select * from normal_test where name='n502670'"))
@@ -366,8 +368,8 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
     // register datamap writer
-    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
+    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGIndexDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
+    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGIndexDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
