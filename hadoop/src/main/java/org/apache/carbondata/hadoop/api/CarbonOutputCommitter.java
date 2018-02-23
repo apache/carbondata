@@ -79,7 +79,9 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     super.setupJob(context);
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
-    CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet);
+    if (loadModel.getSegmentId() == null) {
+      CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet);
+    }
     // Take segment lock
     segmentLock = CarbonLockFactory.getCarbonLockObj(
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier(),

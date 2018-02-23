@@ -98,7 +98,7 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
         Path indexFile = new Path(indexFileEntry.getKey());
         tableBlockIndexUniqueIdentifiers.add(
             new TableBlockIndexUniqueIdentifier(indexFile.getParent().toString(),
-                indexFile.getName(), indexFileEntry.getValue()));
+                indexFile.getName(), indexFileEntry.getValue(), segment.getSegmentNo()));
       }
       segmentMap.put(segment.getSegmentNo(), tableBlockIndexUniqueIdentifiers);
     }
@@ -221,17 +221,20 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
     BlockletDataMapDistributable mapDistributable = (BlockletDataMapDistributable) distributable;
     List<TableBlockIndexUniqueIdentifier> identifiers = new ArrayList<>();
     Path indexPath = new Path(mapDistributable.getFilePath());
+    String segmentNo = mapDistributable.getSegment().getSegmentNo();
     if (indexPath.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
       String parent = indexPath.getParent().toString();
-      identifiers.add(new TableBlockIndexUniqueIdentifier(parent, indexPath.getName(), null));
+      identifiers
+          .add(new TableBlockIndexUniqueIdentifier(parent, indexPath.getName(), null, segmentNo));
     } else if (indexPath.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
       CarbonFile carbonFile = FileFactory.getCarbonFile(indexPath.toString());
       String parentPath = carbonFile.getParentFile().getAbsolutePath();
       List<String> indexFiles = fileStore.getIndexFilesFromMergeFile(carbonFile.getAbsolutePath());
       for (String indexFile : indexFiles) {
-        identifiers
-            .add(new TableBlockIndexUniqueIdentifier(parentPath, indexFile, carbonFile.getName()));
+        identifiers.add(
+            new TableBlockIndexUniqueIdentifier(parentPath, indexFile, carbonFile.getName(),
+                segmentNo));
       }
     }
     List<DataMap> dataMaps;

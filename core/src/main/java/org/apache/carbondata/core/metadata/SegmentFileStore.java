@@ -523,6 +523,35 @@ public class SegmentFileStore {
   }
 
   /**
+   * Get the partition specs of the segment
+   * @param segmentId
+   * @param tablePath
+   * @return
+   * @throws IOException
+   */
+  public static List<PartitionSpec> getPartitionSpecs(String segmentId, String tablePath)
+      throws IOException {
+    LoadMetadataDetails segEntry = null;
+    LoadMetadataDetails[] details =
+        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath));
+    for (LoadMetadataDetails entry : details) {
+      if (entry.getLoadName().equals(segmentId)) {
+        segEntry = entry;
+        break;
+      }
+    }
+    if (segEntry != null && segEntry.getSegmentFile() != null) {
+      SegmentFileStore fileStore = new SegmentFileStore(tablePath, segEntry.getSegmentFile());
+      List<PartitionSpec> partitionSpecs = fileStore.getPartitionSpecs();
+      for (PartitionSpec spec : partitionSpecs) {
+        spec.setUuid(segmentId + "_" + segEntry.getLoadStartTime());
+      }
+      return partitionSpecs;
+    }
+    return null;
+  }
+
+  /**
    * Move the loaded data from temp folder to respective partition folder.
    * @param segmentFile
    * @param tmpFolder

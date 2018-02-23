@@ -41,6 +41,8 @@ public class PartitionSpec implements Serializable {
 
   private String location;
 
+  private String uuid;
+
   public PartitionSpec(List<String> partitions, String location) {
     this.partitions = partitions;
     this.locationPath = new Path(FileFactory.getUpdatedFilePath(location));
@@ -64,6 +66,14 @@ public class PartitionSpec implements Serializable {
     return locationPath;
   }
 
+  public String getUuid() {
+    return uuid;
+  }
+
+  public void setUuid(String uuid) {
+    this.uuid = uuid;
+  }
+
   @Override public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
@@ -72,7 +82,6 @@ public class PartitionSpec implements Serializable {
   }
 
   @Override public int hashCode() {
-
     return Objects.hash(locationPath);
   }
 

@@ -350,7 +350,8 @@ case class CarbonLoadDataCommand(
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration,
       operationContext: OperationContext,
-      LOGGER: LogService): Unit = {
+      LOGGER: LogService): Seq[Row] = {
+    var rows = Seq.empty[Row]
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       .getCarbonTableIdentifier
@@ -437,7 +438,7 @@ case class CarbonLoadDataCommand(
 
     if (carbonTable.isHivePartitionTable) {
       try {
-        loadDataWithPartition(
+        rows = loadDataWithPartition(
           sparkSession,
           carbonLoadModel,
           hadoopConf,
@@ -470,6 +471,7 @@ case class CarbonLoadDataCommand(
         updateModel,
         operationContext)
     }
+    rows
   }
 
   private def loadData(
@@ -479,7 +481,8 @@ case class CarbonLoadDataCommand(
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration,
       operationContext: OperationContext,
-      LOGGER: LogService): Unit = {
+      LOGGER: LogService): Seq[Row] = {
+    var rows = Seq.empty[Row]
     val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
       val dataFrameWithTupleId: DataFrame = getDataFrameWithTupleID()
       // getting all fields except tupleId field as it is not required in the value
@@ -499,7 +502,7 @@ case class CarbonLoadDataCommand(
         dictionaryDataFrame)
     }
     if (table.isHivePartitionTable) {
-      loadDataWithPartition(
+      rows = loadDataWithPartition(
         sparkSession,
         carbonLoadModel,
         hadoopConf,
@@ -518,6 +521,7 @@ case class CarbonLoadDataCommand(
         updateModel,
         operationContext)
     }
+    rows
   }
 
   /**
@@ -525,12 +529,13 @@ case class CarbonLoadDataCommand(
    * into partitoned data. The table relation would be converted to HadoopFSRelation to let spark
    * handling the partitioning.
    */
-  private def loadDataWithPartition(sparkSession: SparkSession,
+  private def loadDataWithPartition(
+      sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame],
       operationContext: OperationContext,
-      LOGGER: LogService): Unit = {
+      LOGGER: LogService): Seq[Row] = {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val identifier = TableIdentifier(table.getTableName, Some(table.getDatabaseName))
     val catalogTable: CatalogTable = logicalPartitionRelation.catalogTable.get
@@ -684,6 +689,7 @@ case class CarbonLoadDataCommand(
         persistedRDD = persistedRDDLocal
         transformedPlan
       }
+      CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
       val convertRelation = convertToLogicalRelation(
         catalogTable,
         sizeInBytes,
@@ -756,6 +762,15 @@ case class CarbonLoadDataCommand(
         throw new Exception(
           "Dataload is success. Auto-Compaction has failed. Please check logs.",
           e)
+    }
+    val specs =
+      SegmentFileStore.getPartitionSpecs(carbonLoadModel.getSegmentId, carbonLoadModel.getTablePath)
+    if (specs != null) {
+      specs.asScala.map{ spec =>
+        Row(spec.getPartitions.asScala.mkString("/"), spec.getLocation.toString, spec.getUuid)
+      }
+    } else {
+      Seq.empty[Row]
     }
   }
 
@@ -980,6 +995,11 @@ case class CarbonLoadDataCommand(
     if (currPartitions != null) {
       val currPartStr = ObjectSerializationUtil.convertObjectToString(currPartitions)
       options += (("currentpartition", currPartStr))
+    }
+    if (loadModel.getSegmentId != null) {
+      val currLoadEntry =
+        ObjectSerializationUtil.convertObjectToString(loadModel.getCurrentLoadMetadataDetail)
+      options += (("currentloadentry", currLoadEntry))
     }
     val hdfsRelation = HadoopFsRelation(
       location = catalog,

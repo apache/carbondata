@@ -28,13 +28,16 @@ public class BlockletDataMapModel extends DataMapModel {
 
   private byte[] fileData;
 
-  Map<String, BlockMetaInfo> blockMetaInfoMap;
+  private Map<String, BlockMetaInfo> blockMetaInfoMap;
+
+  private String segmentId;
 
   public BlockletDataMapModel(String filePath, byte[] fileData,
-      Map<String, BlockMetaInfo> blockMetaInfoMap) {
+      Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId) {
     super(filePath);
     this.fileData = fileData;
     this.blockMetaInfoMap = blockMetaInfoMap;
+    this.segmentId = segmentId;
   }
 
   public byte[] getFileData() {
@@ -43,5 +46,9 @@ public class BlockletDataMapModel extends DataMapModel {
 
   public Map<String, BlockMetaInfo> getBlockMetaInfoMap() {
     return blockMetaInfoMap;
+  }
+
+  public String getSegmentId() {
+    return segmentId;
   }
 }

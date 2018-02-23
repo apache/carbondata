@@ -219,7 +219,7 @@ public class BlockletDataMapIndexStore
       dataMap.init(new BlockletDataMapModel(
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
-          blockMetaInfoMap));
+          blockMetaInfoMap, identifier.getSegmentId()));
       lruCache.put(identifier.getUniqueTableSegmentIdentifier(), dataMap,
           dataMap.getMemorySize());
     }

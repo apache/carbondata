@@ -32,11 +32,14 @@ public class TableBlockIndexUniqueIdentifier {
 
   private String mergeIndexFileName;
 
+  private String segmentId;
+
   public TableBlockIndexUniqueIdentifier(String indexFilePath, String indexFileName,
-      String mergeIndexFileName) {
+      String mergeIndexFileName, String segmentId) {
     this.indexFilePath = indexFilePath;
     this.indexFileName = indexFileName;
     this.mergeIndexFileName = mergeIndexFileName;
+    this.segmentId = segmentId;
   }
 
   /**
@@ -58,6 +61,10 @@ public class TableBlockIndexUniqueIdentifier {
 
   public String getMergeIndexFileName() {
     return mergeIndexFileName;
+  }
+
+  public String getSegmentId() {
+    return segmentId;
   }
 
   @Override public boolean equals(Object o) {

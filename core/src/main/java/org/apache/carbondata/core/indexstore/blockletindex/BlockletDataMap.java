@@ -66,6 +66,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -117,6 +118,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private static int INDEX_FILE_NAME = 4;
 
+  private static int SEGMENTID = 5;
+
   private UnsafeMemoryDMStore unsafeMemoryDMStore;
 
   private UnsafeMemoryDMStore unsafeMemorySummaryDMStore;
@@ -136,6 +139,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
     Path path = new Path(blockletDataMapInfo.getFilePath());
     byte[] filePath = path.getParent().toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     byte[] fileName = path.getName().toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
+    byte[] segmentId =
+        blockletDataMapInfo.getSegmentId().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     DataMapRowImpl summaryRow = null;
     byte[] schemaBinary = null;
     // below 2 variables will be used for fetching the relative blocklet id. Relative blocklet ID
@@ -149,7 +154,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
         columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
         segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
         createSchema(segmentProperties);
-        createSummarySchema(segmentProperties, schemaBinary, filePath, fileName);
+        createSummarySchema(segmentProperties, schemaBinary, filePath, fileName,
+            segmentId);
       }
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
       BlockMetaInfo blockMetaInfo =
@@ -188,7 +194,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
           summaryRow,
           schemaBinary,
           filePath,
-          fileName);
+          fileName,
+          segmentId);
       unsafeMemorySummaryDMStore.finishWriting();
     }
     LOGGER.info(
@@ -360,7 +367,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
   }
 
   private void addTaskSummaryRowToUnsafeMemoryStore(DataMapRow summaryRow, byte[] schemaBinary,
-      byte[] filePath, byte[] fileName) {
+      byte[] filePath, byte[] fileName, byte[] segmentId) {
     // write the task summary info to unsafe memory store
     if (null != summaryRow) {
       // Add column schema , it is useful to generate segment properties in executor.
@@ -370,6 +377,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
       }
       summaryRow.setByteArray(filePath, INDEX_PATH);
       summaryRow.setByteArray(fileName, INDEX_FILE_NAME);
+      summaryRow.setByteArray(segmentId, SEGMENTID);
       try {
         unsafeMemorySummaryDMStore.addIndexRowToUnsafe(summaryRow);
       } catch (Exception e) {
@@ -558,7 +566,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
    * @throws MemoryException
    */
   private void createSummarySchema(SegmentProperties segmentProperties, byte[] schemaBinary,
-      byte[] filePath, byte[] fileName)
+      byte[] filePath, byte[] fileName, byte[] segmentId)
       throws MemoryException {
     List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>();
     getMinMaxSchema(segmentProperties, taskMinMaxSchemas);
@@ -571,6 +579,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
     // for storing file name
     taskMinMaxSchemas.add(
         new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, fileName.length));
+    // for storing segmentid
+    taskMinMaxSchemas.add(
+        new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, segmentId.length));
     unsafeMemorySummaryDMStore = new UnsafeMemoryDMStore(
         taskMinMaxSchemas.toArray(new CarbonRowSchema[taskMinMaxSchemas.size()]));
   }
@@ -664,7 +675,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
       boolean found = false;
       Path folderPath = new Path(fileDetails[0]);
       for (PartitionSpec spec : partitions) {
-        if (folderPath.equals(spec.getLocation())) {
+        if (folderPath.equals(spec.getLocation()) && isCorrectUUID(fileDetails, spec)) {
           found = true;
           break;
         }
@@ -675,6 +686,20 @@ public class BlockletDataMap implements DataMap, Cacheable {
     }
     // Prune with filters if the partitions are existed in this datamap
     return prune(filterExp);
+  }
+
+  private boolean isCorrectUUID(String[] fileDetails, PartitionSpec spec) {
+    boolean needToScan = false;
+    if (spec.getUuid() != null) {
+      String[] split = spec.getUuid().split("_");
+      if (split[0].equals(fileDetails[2]) && CarbonTablePath.DataFileUtil
+          .getTimeStampFromFileName(fileDetails[1]).equals(split[1])) {
+        needToScan = true;
+      }
+    } else {
+      needToScan = true;
+    }
+    return needToScan;
   }
 
   /**
@@ -761,11 +786,13 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private String[] getFileDetails() {
     try {
-      String[] fileDetails = new String[2];
+      String[] fileDetails = new String[3];
       DataMapRow unsafeRow = unsafeMemorySummaryDMStore.getUnsafeRow(0);
       fileDetails[0] =
           new String(unsafeRow.getByteArray(INDEX_PATH), CarbonCommonConstants.DEFAULT_CHARSET);
       fileDetails[1] = new String(unsafeRow.getByteArray(INDEX_FILE_NAME),
+          CarbonCommonConstants.DEFAULT_CHARSET);
+      fileDetails[2] = new String(unsafeRow.getByteArray(SEGMENTID),
           CarbonCommonConstants.DEFAULT_CHARSET);
       return fileDetails;
     } catch (Exception e) {

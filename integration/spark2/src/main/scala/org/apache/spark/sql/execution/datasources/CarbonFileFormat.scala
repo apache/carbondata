@@ -43,6 +43,7 @@ import org.apache.carbondata.core.indexstore
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeConverterImpl, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonOutputCommitter, CarbonTableOutputFormat}
@@ -115,13 +116,7 @@ with Serializable {
     model.setDictionaryServerPort(options.getOrElse("dictport", "-1").toInt)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
     model.setPartitionLoad(true)
-    // Set the update timestamp if user sets in case of update query. It needs to be updated
-    // in load status update time
-    val updateTimeStamp = options.get("updatetimestamp")
-    if (updateTimeStamp.isDefined) {
-      conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp.get)
-      model.setFactTimeStamp(updateTimeStamp.get.toLong)
-    }
+
     val staticPartition = options.getOrElse("staticpartition", null)
     if (staticPartition != null) {
       conf.set("carbon.staticpartition", staticPartition)
@@ -136,6 +131,26 @@ with Serializable {
     val currPartition = options.getOrElse("currentpartition", null)
     if (currPartition != null) {
       conf.set("carbon.currentpartition", currPartition)
+    }
+    // Update with the current in progress load.
+    val currEntry = options.getOrElse("currentloadentry", null)
+    if (currEntry != null) {
+      val loadEntry =
+        ObjectSerializationUtil.convertStringToObject(currEntry).asInstanceOf[LoadMetadataDetails]
+      val details =
+        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(model.getTablePath))
+      model.setSegmentId(loadEntry.getLoadName)
+      model.setFactTimeStamp(loadEntry.getLoadStartTime)
+      val list = new util.ArrayList[LoadMetadataDetails](details.toList.asJava)
+      list.add(loadEntry)
+      model.setLoadMetadataDetails(list)
+    }
+    // Set the update timestamp if user sets in case of update query. It needs to be updated
+    // in load status update time
+    val updateTimeStamp = options.get("updatetimestamp")
+    if (updateTimeStamp.isDefined) {
+      conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp.get)
+      model.setFactTimeStamp(updateTimeStamp.get.toLong)
     }
     CarbonTableOutputFormat.setLoadModel(conf, model)
 
