@@ -135,9 +135,6 @@ public interface CarbonFile {
 
   boolean createNewLockFile(String filePath, FileFactory.FileType fileType) throws IOException;
 
-  void setPermission(String directoryPath, FsPermission permission, String username, String group)
-      throws IOException;
-
   /**
    * Returns locations of the file
    * @return
