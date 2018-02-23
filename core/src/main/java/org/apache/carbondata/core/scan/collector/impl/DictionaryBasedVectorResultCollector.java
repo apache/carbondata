@@ -183,7 +183,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       allColumnInfo[i].vector = columnarBatch.columnVectors[i];
       if (null != allColumnInfo[i].dimension) {
         allColumnInfo[i].vector
-            .setBlockDataType(allColumnInfo[i].dimension.getDimension().getDataType());
+            .setBlockDataType(dimensionInfo.dataType[i]);
       }
     }
   }
