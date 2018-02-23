@@ -868,6 +868,15 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     }
   }
 
+  test("global sort badrecords fail on partition column message") {
+    sql("DROP TABLE IF EXISTS badrecordsPartitionfailmessage")
+    sql("create table badrecordsPartitionfailmessage(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
+    val ex = intercept[Exception] {
+      sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionfailmessage options('bad_records_action'='fail')")
+    }
+    println(ex.getMessage.startsWith("DataLoad failure: Data load failed due to bad record"))
+  }
+
 
   override def afterAll = {
     CarbonProperties.getInstance()

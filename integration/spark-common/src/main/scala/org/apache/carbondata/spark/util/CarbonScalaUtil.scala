@@ -22,13 +22,15 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.Date
 
+import com.univocity.parsers.common.TextParsingException
+import org.apache.spark.SparkException
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.execution.command.DataTypeInfo
+import org.apache.spark.sql.execution.command.{DataTypeInfo, UpdateTableModel}
 import org.apache.spark.sql.types._
-import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.carbondata.common.logging.LogService
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
@@ -39,6 +41,10 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.util.{CarbonSessionInfo, DataTypeUtil}
+import org.apache.carbondata.processing.exception.DataLoadingException
+import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CarbonScalaUtil {
@@ -524,4 +530,53 @@ object CarbonScalaUtil {
     }
   }
 
+  /**
+   * Retrieve error message from exception
+   */
+  def retrieveAndLogErrorMsg(ex: Throwable, logger: LogService): (String, String) = {
+    var errorMessage = "DataLoad failure"
+    var executorMessage = ""
+    if (ex != null) {
+      ex match {
+        case sparkException: SparkException =>
+          if (sparkException.getCause.isInstanceOf[DataLoadingException] ||
+              sparkException.getCause.isInstanceOf[CarbonDataLoadingException]) {
+            executorMessage = sparkException.getCause.getMessage
+            errorMessage = errorMessage + ": " + executorMessage
+          } else if (sparkException.getCause.isInstanceOf[TextParsingException]) {
+            executorMessage = CarbonDataProcessorUtil
+              .trimErrorMessage(sparkException.getCause.getMessage)
+            errorMessage = errorMessage + " : " + executorMessage
+          } else if (sparkException.getCause.isInstanceOf[SparkException]) {
+            val (executorMsgLocal, errorMsgLocal) =
+              retrieveAndLogErrorMsg(sparkException.getCause, logger)
+            executorMessage = executorMsgLocal
+            errorMessage = errorMsgLocal
+          }
+        case aex: AnalysisException =>
+          logger.error(aex.getMessage())
+          throw aex
+        case _ =>
+          if (ex.getCause != null) {
+            executorMessage = ex.getCause.getMessage
+            errorMessage = errorMessage + ": " + executorMessage
+          }
+      }
+    }
+    (executorMessage, errorMessage)
+  }
+
+  /**
+   * Update error inside update model
+   */
+  def updateErrorInUpdateModel(updateModel: UpdateTableModel, executorMessage: String): Unit = {
+    if (updateModel.executorErrors.failureCauses == FailureCauses.NONE) {
+      updateModel.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
+      if (null != executorMessage && !executorMessage.isEmpty) {
+        updateModel.executorErrors.errorMsg = executorMessage
+      } else {
+        updateModel.executorErrors.errorMsg = "Update failed as the data load has failed."
+      }
+    }
+  }
 }

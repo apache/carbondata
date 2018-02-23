@@ -275,7 +275,8 @@ case class CarbonLoadDataCommand(
             columnar,
             partitionStatus,
             hadoopConf,
-            operationContext)
+            operationContext,
+            LOGGER)
         } else {
           loadData(
             sparkSession,
@@ -283,7 +284,8 @@ case class CarbonLoadDataCommand(
             columnar,
             partitionStatus,
             hadoopConf,
-            operationContext)
+            operationContext,
+            LOGGER)
         }
         val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
           new LoadTablePostExecutionEvent(
@@ -347,7 +349,8 @@ case class CarbonLoadDataCommand(
       columnar: Boolean,
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration,
-      operationContext: OperationContext): Unit = {
+      operationContext: OperationContext,
+      LOGGER: LogService): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       .getCarbonTableIdentifier
@@ -439,7 +442,8 @@ case class CarbonLoadDataCommand(
           carbonLoadModel,
           hadoopConf,
           loadDataFrame,
-          operationContext)
+          operationContext,
+          LOGGER)
       } finally {
         server match {
           case Some(dictServer) =>
@@ -474,7 +478,8 @@ case class CarbonLoadDataCommand(
       columnar: Boolean,
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration,
-      operationContext: OperationContext): Unit = {
+      operationContext: OperationContext,
+      LOGGER: LogService): Unit = {
     val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
       val dataFrameWithTupleId: DataFrame = getDataFrameWithTupleID()
       // getting all fields except tupleId field as it is not required in the value
@@ -499,7 +504,7 @@ case class CarbonLoadDataCommand(
         carbonLoadModel,
         hadoopConf,
         loadDataFrame,
-        operationContext)
+        operationContext, LOGGER)
     } else {
       CarbonDataRDDFactory.loadCarbonData(
         sparkSession.sqlContext,
@@ -524,13 +529,11 @@ case class CarbonLoadDataCommand(
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame],
-      operationContext: OperationContext): Unit = {
+      operationContext: OperationContext,
+      LOGGER: LogService): Unit = {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val identifier = TableIdentifier(table.getTableName, Some(table.getDatabaseName))
     val catalogTable: CatalogTable = logicalPartitionRelation.catalogTable.get
-    val currentPartitions =
-      CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, identifier)
-
     var timeStampformatString = carbonLoadModel.getTimestampformat
     if (timeStampformatString.isEmpty) {
       timeStampformatString = carbonLoadModel.getDefaultTimestampFormat
@@ -711,6 +714,15 @@ case class CarbonLoadDataCommand(
           overwrite = false,
           ifPartitionNotExists = false)
       Dataset.ofRows(sparkSession, convertedPlan)
+    } catch {
+      case ex: Throwable =>
+        val (executorMessage, errorMessage) = CarbonScalaUtil.retrieveAndLogErrorMsg(ex, LOGGER)
+        if (updateModel.isDefined) {
+          CarbonScalaUtil.updateErrorInUpdateModel(updateModel.get, executorMessage)
+        }
+        LOGGER.info(errorMessage)
+        LOGGER.error(ex)
+        throw new Exception(errorMessage)
     } finally {
       CarbonSession.threadUnset("partition.operationcontext")
       if (isOverwriteTable) {
