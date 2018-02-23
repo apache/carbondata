@@ -398,6 +398,7 @@ object StreamHandoffRDD {
           throw new Exception("Failed to update table status for streaming segment")
         } else {
           streamSegment.get.setSegmentStatus(SegmentStatus.COMPACTED)
+          streamSegment.get.setMergedLoadName(loadModel.getSegmentId)
         }
 
         // refresh table status file
