@@ -2362,7 +2362,7 @@ public final class CarbonUtil {
       fileStore.readIndexFiles();
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
       for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
-        carbonIndexSize = +FileFactory.getCarbonFile(entry.getKey()).getSize();
+        carbonIndexSize += FileFactory.getCarbonFile(entry.getKey()).getSize();
         for (String blockFile : entry.getValue()) {
           carbonDataSize += FileFactory.getCarbonFile(blockFile).getSize();
         }
