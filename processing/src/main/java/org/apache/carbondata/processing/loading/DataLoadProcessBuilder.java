@@ -279,7 +279,7 @@ public final class DataLoadProcessBuilder {
       }
 
       if (!columnExist) {
-        throw new RuntimeException("Field " + sortCol + " does not exist.");
+        throw new CarbonDataLoadingException("Field " + sortCol + " does not exist.");
       }
     }
 

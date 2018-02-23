@@ -20,11 +20,13 @@ package org.apache.carbondata.processing.loading.partition.impl;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
 
+@InterfaceAudience.Internal
 public class RangePartitionerImpl implements Partitioner<CarbonRow> {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RangePartitionerImpl.class.getName());
@@ -44,7 +46,8 @@ public class RangePartitionerImpl implements Partitioner<CarbonRow> {
    * @param key key
    * @return partitionId
    */
-  @Override public int getPartition(CarbonRow key) {
+  @Override
+  public int getPartition(CarbonRow key) {
     int partition = 0;
     if (rangeBounds.length <= 128) {
       // If we have less than 128 partitions naive search

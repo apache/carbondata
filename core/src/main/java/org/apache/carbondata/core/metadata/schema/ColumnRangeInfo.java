@@ -17,10 +17,13 @@
 
 package org.apache.carbondata.core.metadata.schema;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+
 /**
  * interface for column range information. Currently we treat bucket and sort_column_range as
- * column ranges.
+ * value ranges for a column.
  */
+@InterfaceAudience.Internal
 public interface ColumnRangeInfo {
   int getNumOfRanges();
 }

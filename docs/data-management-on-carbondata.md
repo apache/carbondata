@@ -373,7 +373,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   - **SORT COLUMN BOUNDS:** Range bounds for sort columns.
 
     ```
-    OPTIONS('SORT_COLUMN_BOUNDS'='v11,v21,v31;v12,v22,v32;v12,v23,v33')
+    OPTIONS('SORT_COLUMN_BOUNDS'='v11,v21,v31;v12,v22,v32;v13,v23,v33')
     ```
     NOTE:
     * SORT_COLUMN_BOUNDS will be used only when the SORT_SCOPE is 'local_sort'.

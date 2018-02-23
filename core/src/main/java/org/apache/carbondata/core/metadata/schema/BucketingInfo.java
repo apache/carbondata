@@ -24,16 +24,18 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
  * Bucketing information
  */
+@InterfaceAudience.Internal
 public class BucketingInfo implements ColumnRangeInfo, Serializable, Writable {
   private static final long serialVersionUID = -0L;
   private List<ColumnSchema> listOfColumns;
-  // number of column ranges
+  // number of value ranges
   private int numOfRanges;
 
   public BucketingInfo() {
@@ -49,7 +51,8 @@ public class BucketingInfo implements ColumnRangeInfo, Serializable, Writable {
     return listOfColumns;
   }
 
-  @Override public int getNumOfRanges() {
+  @Override
+  public int getNumOfRanges() {
     return numOfRanges;
   }
 

@@ -52,7 +52,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
   private val totalLineNum = 2000
 
   private val originDateStatus: String = CarbonProperties.getInstance().getProperty(
-    CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+    CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+    CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
 
 
   override def beforeAll(): Unit = {

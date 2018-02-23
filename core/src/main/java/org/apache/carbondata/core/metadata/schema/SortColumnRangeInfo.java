@@ -20,9 +20,12 @@ package org.apache.carbondata.core.metadata.schema;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+
 /**
  * column ranges specified by sort column bounds
  */
+@InterfaceAudience.Internal
 public class SortColumnRangeInfo implements ColumnRangeInfo, Serializable {
   private static final long serialVersionUID = 1L;
   // indices for the sort columns in the raw row
@@ -33,7 +36,7 @@ public class SortColumnRangeInfo implements ColumnRangeInfo, Serializable {
   private String[] userSpecifiedRanges;
   // separator for the field values in each bound
   private String separator;
-  // number of column ranges
+  // number of value ranges for the columns
   private int numOfRanges;
 
   public SortColumnRangeInfo(int[] sortColumnIndex, boolean[] isSortColumnNoDict,
@@ -61,11 +64,13 @@ public class SortColumnRangeInfo implements ColumnRangeInfo, Serializable {
     return separator;
   }
 
-  @Override public int getNumOfRanges() {
+  @Override
+  public int getNumOfRanges() {
     return numOfRanges;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     final StringBuilder sb = new StringBuilder("SortColumnRangeInfo{");
     sb.append("sortColumnIndex=").append(Arrays.toString(sortColumnIndex));
     sb.append(", isSortColumnNoDict=").append(Arrays.toString(isSortColumnNoDict));

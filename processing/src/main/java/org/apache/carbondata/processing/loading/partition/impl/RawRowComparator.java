@@ -19,12 +19,14 @@ package org.apache.carbondata.processing.loading.partition.impl;
 
 import java.util.Comparator;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 
 /**
  * comparator for the converted row. The row has not been rearranged as 3-parted yet.
  */
+@InterfaceAudience.Internal
 public class RawRowComparator implements Comparator<CarbonRow> {
   private int[] sortColumnIndices;
   private boolean[] isSortColumnNoDict;
@@ -34,7 +36,8 @@ public class RawRowComparator implements Comparator<CarbonRow> {
     this.isSortColumnNoDict = isSortColumnNoDict;
   }
 
-  @Override public int compare(CarbonRow o1, CarbonRow o2) {
+  @Override
+  public int compare(CarbonRow o1, CarbonRow o2) {
     int diff = 0;
     int i = 0;
     for (int colIdx : sortColumnIndices) {

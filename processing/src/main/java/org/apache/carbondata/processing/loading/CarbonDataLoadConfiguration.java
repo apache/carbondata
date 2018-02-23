@@ -109,6 +109,7 @@ public class CarbonDataLoadConfiguration {
   private short writingCoresCount;
 
   private SortColumnRangeInfo sortColumnRangeInfo;
+
   public CarbonDataLoadConfiguration() {
   }
 
