@@ -56,7 +56,7 @@ import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.splits.TableSplit
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.MergeResult
-import org.apache.carbondata.spark.util.{CommonUtil, SparkDataTypeConverterImpl, Util}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, SparkDataTypeConverterImpl, Util}
 
 class CarbonMergerRDD[K, V](
     sc: SparkContext,
@@ -140,6 +140,14 @@ class CarbonMergerRDD[K, V](
           )
         }
         carbonLoadModel.setSegmentId(mergeNumber)
+
+        if(carbonTable.isHivePartitionTable) {
+          carbonLoadModel.setTaskNo(
+              CarbonScalaUtil.generateUniqueNumber(
+                  theSplit.index,
+                  mergeNumber.replace(".", ""), 0L))
+        }
+
         CommonUtil.setTempStoreLocation(theSplit.index, carbonLoadModel, true, false)
 
         // get destination segment properties as sent from driver which is of last segment.

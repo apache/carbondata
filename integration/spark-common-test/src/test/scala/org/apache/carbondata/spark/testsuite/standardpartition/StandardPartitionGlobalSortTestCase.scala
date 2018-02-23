@@ -179,7 +179,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
     val tasks = new util.ArrayList[Callable[String]]()
     var i = 0
-    val count = 50
+    val count = 5
     while (i < count) {
       tasks.add(new QueryTask(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE  partitionmultiplethreeconcurrent partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""))
       i = i + 1
@@ -199,7 +199,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       var result = "PASS"
       try {
         LOGGER.info("Executing :" + Thread.currentThread().getName)
-        sqlContext.newSession().sql(query)
+        sql(query)
       } catch {
         case ex: Exception =>
           ex.printStackTrace()
@@ -876,6 +876,45 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     println(ex.getMessage.startsWith("DataLoad failure: Data load failed due to bad record"))
   }
 
+  test("multiple compaction on partition table") {
+    sql("DROP TABLE IF EXISTS comp_dt2")
+    sql("create table comp_dt2(id int,name string) partitioned by (dt date,c4 int) stored by 'carbondata'")
+    sql("insert into comp_dt2 select 1,'A','2001-01-01',1")
+    sql("insert into comp_dt2 select 2,'B','2001-01-01',1")
+    sql("insert into comp_dt2 select 3,'C','2002-01-01',2")
+    sql("insert into comp_dt2 select 4,'D','2002-01-01',null")
+    assert(sql("select * from comp_dt2").collect().length == 4)
+    sql("Alter table comp_dt2 compact 'minor'")
+    assert(sql("select * from comp_dt2").collect().length == 4)
+    sql("clean files for table comp_dt2")
+    assert(sql("select * from comp_dt2").collect().length == 4)
+    sql("insert into comp_dt2 select 5,'E','2003-01-01',3")
+    sql("insert into comp_dt2 select 6,'F','2003-01-01',3")
+    sql("insert into comp_dt2 select 7,'G','2003-01-01',4")
+    sql("insert into comp_dt2 select 8,'H','2004-01-01',''")
+    assert(sql("select * from comp_dt2").collect().length == 8)
+    sql("Alter table comp_dt2 compact 'minor'")
+    sql("clean files for table comp_dt2")
+    assert(sql("select * from comp_dt2").collect().length == 8)
+    assert(sql("select * from comp_dt2").collect().length == 8)
+    sql("insert into comp_dt2 select 9,'H','2001-01-01',1")
+    sql("insert into comp_dt2 select 10,'I','2002-01-01',null")
+    sql("insert into comp_dt2 select 11,'J','2003-01-01',4")
+    sql("insert into comp_dt2 select 12,'K','2003-01-01',5")
+    assert(sql("select * from comp_dt2").collect().length == 12)
+    sql("Alter table comp_dt2 compact 'minor'")
+    assert(sql("show segments for table comp_dt2").collect().length == 8)
+    assert(sql("select * from comp_dt2").collect().length == 12)
+    sql("clean files for table comp_dt2")
+    assert(sql("select * from comp_dt2").collect().length == 12)
+    sql("insert into comp_dt2 select 13,'L','2004-01-01', 6")
+    assert(sql("select * from comp_dt2").collect().length == 13)
+    sql("Alter table comp_dt2 compact 'major'")
+    assert(sql("select * from comp_dt2").collect().length == 13)
+    assert(sql("show segments for table comp_dt2").collect().length == 3)
+    assert(sql("select * from comp_dt2").collect().length == 13)
+    sql("clean files for table comp_dt2")
+  }
 
   override def afterAll = {
     CarbonProperties.getInstance()

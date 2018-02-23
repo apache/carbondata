@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.spark.util
 
+import java.{lang, util}
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
-import java.util
 import java.util.Date
 
 import com.univocity.parsers.common.TextParsingException
@@ -33,7 +33,7 @@ import org.apache.spark.sql.types._
 import org.apache.carbondata.common.logging.LogService
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.metadata.ColumnIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
@@ -578,5 +578,16 @@ object CarbonScalaUtil {
         updateModel.executorErrors.errorMsg = "Update failed as the data load has failed."
       }
     }
+  }
+
+  /**
+   * Generate unique number to be used as partition number of file name
+   */
+  def generateUniqueNumber(taskId: Int,
+      segmentId: String,
+      partitionNumber: lang.Long): String = {
+    String.valueOf(Math.pow(10, 2).toInt + segmentId.toInt) +
+    String.valueOf(Math.pow(10, 5).toInt + taskId) +
+    String.valueOf(partitionNumber + Math.pow(10, 5).toInt)
   }
 }

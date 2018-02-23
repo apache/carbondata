@@ -197,9 +197,7 @@ with Serializable {
           taskIdMap.put(path, partitionNumber)
         }
         val taskID = context.getTaskAttemptID.getTaskID.getId
-        String.valueOf(Math.pow(10, 2).toInt + segmentId.toInt) +
-        String.valueOf(Math.pow(10, 5).toInt + taskID) +
-          String.valueOf(partitionNumber + Math.pow(10, 5).toInt)
+        CarbonScalaUtil.generateUniqueNumber(taskID, segmentId, partitionNumber)
       }
 
       override def getFileExtension(context: TaskAttemptContext): String = {

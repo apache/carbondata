@@ -449,8 +449,7 @@ public class SegmentFileStore {
             new SegmentFileStore(table.getTablePath(), segment.getSegmentFile());
         fileStore.readIndexFiles(SegmentStatus.MARKED_FOR_DELETE, false);
         if (forceDelete) {
-          deletePhysicalPartition(table.getTablePath(), partitionSpecs,
-              fileStore.segmentFile.locationMap);
+          deletePhysicalPartition(partitionSpecs, fileStore.getIndexFilesMap());
         }
         for (Map.Entry<String, List<String>> entry : fileStore.indexFilesMap.entrySet()) {
           String indexFile = entry.getKey();
@@ -487,7 +486,6 @@ public class SegmentFileStore {
       List<PartitionSpec> partitionSpecs) throws IOException {
     SegmentFileStore fileStore = new SegmentFileStore(tablePath, segmentFile);
     fileStore.readIndexFiles(SegmentStatus.SUCCESS, true);
-    Map<String, FolderDetails> locationMap = fileStore.getLocationMap();
     Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
     for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
       FileFactory.deleteFile(entry.getKey(), FileFactory.getFileType(entry.getKey()));
@@ -495,7 +493,7 @@ public class SegmentFileStore {
         FileFactory.deleteFile(file, FileFactory.getFileType(file));
       }
     }
-    deletePhysicalPartition(tablePath, partitionSpecs, locationMap);
+    deletePhysicalPartition(partitionSpecs, indexFilesMap);
     String segmentFilePath =
         CarbonTablePath.getSegmentFilesLocation(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
             + segmentFile;
@@ -503,16 +501,13 @@ public class SegmentFileStore {
     FileFactory.deleteFile(segmentFilePath, FileFactory.getFileType(segmentFilePath));
   }
 
-  private static void deletePhysicalPartition(String tablePath, List<PartitionSpec> partitionSpecs,
-      Map<String, FolderDetails> locationMap) {
-    for (Map.Entry<String, FolderDetails> entry : locationMap.entrySet()) {
-      String location = entry.getKey();
-      if (entry.getValue().isRelative) {
-        location = tablePath + CarbonCommonConstants.FILE_SEPARATOR + location;
-      }
-      boolean exists = pathExistsInPartitionSpec(partitionSpecs, new Path(location));
+  private static void deletePhysicalPartition(List<PartitionSpec> partitionSpecs,
+      Map<String, List<String>> locationMap) {
+    for (Map.Entry<String, List<String>> entry : locationMap.entrySet()) {
+      Path location = new Path(entry.getKey()).getParent();
+      boolean exists = pathExistsInPartitionSpec(partitionSpecs, location);
       if (!exists) {
-        FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location));
+        FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location.toString()));
       }
     }
   }
