@@ -141,7 +141,7 @@ public final class DataMapStoreManager {
    * Return a new datamap instance and registered in the store manager.
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
-  public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
+  private TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
       DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
     IndexDataMapFactory indexDataMapFactory;
     try {

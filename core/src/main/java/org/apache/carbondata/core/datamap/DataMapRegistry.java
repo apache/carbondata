@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DataMapRegistry {
   private static Map<String, String> shortNameToClassName = new ConcurrentHashMap<>();
 
-  static void registerDataMap(String datamapClassName, String shortName) {
+  public static void registerDataMap(String datamapClassName, String shortName) {
     Objects.requireNonNull(datamapClassName);
     Objects.requireNonNull(shortName);
     shortNameToClassName.put(shortName, datamapClassName);

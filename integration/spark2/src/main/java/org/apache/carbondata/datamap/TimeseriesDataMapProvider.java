@@ -19,6 +19,7 @@ package org.apache.carbondata.datamap;
 
 import java.util.Map;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
@@ -27,6 +28,7 @@ import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateTableHel
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil;
 import scala.Tuple2;
 
+@InterfaceAudience.Internal
 public class TimeseriesDataMapProvider extends PreAggregateDataMapProvider {
 
   @Override

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.datamap;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -26,6 +27,7 @@ import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateTableHel
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand;
 import scala.Some;
 
+@InterfaceAudience.Internal
 public class PreAggregateDataMapProvider implements DataMapProvider {
   protected PreAggregateTableHelper helper;
   protected CarbonDropTableCommand dropTableCommand;

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.datamap;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapRegistry;
@@ -29,6 +30,7 @@ import org.apache.carbondata.format.TableInfo;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil;
 
+@InterfaceAudience.Internal
 public class IndexDataMapProvider implements DataMapProvider {
 
   private TableInfo originalTableInfo;

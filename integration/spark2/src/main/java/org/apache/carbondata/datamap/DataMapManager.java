@@ -28,7 +28,7 @@ public class DataMapManager {
 
   private DataMapManager() { }
 
-  public static DataMapManager get() {
+  public static synchronized DataMapManager get() {
     if (INSTANCE == null) {
       INSTANCE = new DataMapManager();
     }
