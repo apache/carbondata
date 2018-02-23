@@ -33,14 +33,22 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
   @Override
   public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement,
       SparkSession sparkSession) throws MalformedDataMapCommandException {
-    if (!dataMapSchema.getProperties().isEmpty()) {
-      throw new MalformedDataMapCommandException(
-          "No dmproperty is required for 'preaggregate' datamap");
-    }
+    validateDmProperty(dataMapSchema);
     helper = new PreAggregateTableHelper(
         mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getClassName(),
         dataMapSchema.getProperties(), ctasSqlStatement, null);
     helper.initMeta(sparkSession);
+  }
+
+  private void validateDmProperty(DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
+    if (!dataMapSchema.getProperties().isEmpty()) {
+      if (dataMapSchema.getProperties().size() > 1 ||
+          !dataMapSchema.getProperties().containsKey(DataMapProperty.PATH)) {
+        throw new MalformedDataMapCommandException(
+            "Only 'path' dmproperty is allowed for this datamap");
+      }
+    }
   }
 
   @Override

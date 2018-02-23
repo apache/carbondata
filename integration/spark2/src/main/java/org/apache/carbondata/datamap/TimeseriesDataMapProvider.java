@@ -19,6 +19,7 @@ package org.apache.carbondata.datamap;
 
 import java.util.Map;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
