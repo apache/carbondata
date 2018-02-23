@@ -178,7 +178,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   SHOW TABLES IN defaultdb
   ```
 
-### ALTER TALBE
+### ALTER TABLE
 
   The following section introduce the commands to modify the physical or logical state of the existing table(s).
 
@@ -494,7 +494,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   [ WHERE { <filter_condition> } ]
   ```
   
-  alternatively the following the command can also be used for updating the CarbonData Table :
+  alternatively the following command can also be used for updating the CarbonData Table :
   
   ```
   UPDATE <table_name>
@@ -674,7 +674,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 #### Insert OVERWRITE
   
-  This command allows you to insert or load overwrite on a spcific partition.
+  This command allows you to insert or load overwrite on a specific partition.
   
   ```
    INSERT OVERWRITE TABLE table_name
@@ -898,50 +898,50 @@ will fetch the data from the main table **sales**
 For existing table with loaded data, data load to pre-aggregate table will be triggered by the 
 CREATE DATAMAP statement when user creates the pre-aggregate table.
 For incremental loads after aggregates tables are created, loading data to main table triggers 
-the load to pre-aggregate tables once main table loading is complete.These loads are automic 
+the load to pre-aggregate tables once main table loading is complete. These loads are automic 
 meaning that data on main table and aggregate tables are only visible to the user after all tables 
 are loaded
 
 ##### Querying data from pre-aggregate tables
-Pre-aggregate tables cannot be queries directly.Queries are to be made on main table.Internally 
-carbondata will check associated pre-aggregate tables with the main table and if the 
+Pre-aggregate tables cannot be queries directly. Queries are to be made on main table. Internally 
+carbondata will check associated pre-aggregate tables with the main table, and if the 
 pre-aggregate tables satisfy the query condition, the plan is transformed automatically to use 
-pre-aggregate table to fetch the data
+pre-aggregate table to fetch the data.
 
 ##### Compacting pre-aggregate tables
 Compaction command (ALTER TABLE COMPACT) need to be run separately on each pre-aggregate table.
 Running Compaction command on main table will **not automatically** compact the pre-aggregate 
 tables.Compaction is an optional operation for pre-aggregate table. If compaction is performed on
 main table but not performed on pre-aggregate table, all queries still can benefit from 
-pre-aggregate tables.To further improve performance on pre-aggregate tables, compaction can be 
+pre-aggregate tables. To further improve performance on pre-aggregate tables, compaction can be 
 triggered on pre-aggregate tables directly, it will merge the segments inside pre-aggregate table. 
 
 ##### Update/Delete Operations on pre-aggregate tables
 This functionality is not supported.
 
   NOTE (<b>RESTRICTION</b>):
-  * Update/Delete operations are <b>not supported</b> on main table which has pre-aggregate tables 
-  created on it.All the pre-aggregate tables <b>will have to be dropped</b> before update/delete 
-  operations can be performed on the main table.Pre-aggregate tables can be rebuilt manually 
+  Update/Delete operations are <b>not supported</b> on main table which has pre-aggregate tables 
+  created on it. All the pre-aggregate tables <b>will have to be dropped</b> before update/delete 
+  operations can be performed on the main table. Pre-aggregate tables can be rebuilt manually 
   after update/delete operations are completed
  
 ##### Delete Segment Operations on pre-aggregate tables
 This functionality is not supported.
 
   NOTE (<b>RESTRICTION</b>):
-  * Delete Segment operations are <b>not supported</b> on main table which has pre-aggregate tables 
-  created on it.All the pre-aggregate tables <b>will have to be dropped</b> before update/delete 
-  operations can be performed on the main table.Pre-aggregate tables can be rebuilt manually 
+  Delete Segment operations are <b>not supported</b> on main table which has pre-aggregate tables 
+  created on it. All the pre-aggregate tables <b>will have to be dropped</b> before update/delete 
+  operations can be performed on the main table. Pre-aggregate tables can be rebuilt manually 
   after delete segment operations are completed
   
 ##### Alter Table Operations on pre-aggregate tables
 This functionality is not supported.
 
   NOTE (<b>RESTRICTION</b>):
-  * Adding new column in new table does not have any affect on pre-aggregate tables. However if 
+  Adding new column in new table does not have any affect on pre-aggregate tables. However if 
   dropping or renaming a column has impact in pre-aggregate table, such operations will be 
-  rejected and error will be thrown.All the pre-aggregate tables <b>will have to be dropped</b> 
-  before Alter Operations can be performed on the main table.Pre-aggregate tables can be rebuilt 
+  rejected and error will be thrown. All the pre-aggregate tables <b>will have to be dropped</b> 
+  before Alter Operations can be performed on the main table. Pre-aggregate tables can be rebuilt 
   manually after Alter Table operations are completed
   
 ### Supporting timeseries data (Alpha feature in 1.3.0)
@@ -1012,7 +1012,7 @@ roll-up for the queries on these hierarchies.
   ```
   
   It is **not necessary** to create pre-aggregate tables for each granularity unless required for 
-  query.Carbondata can roll-up the data and fetch it.
+  query. Carbondata can roll-up the data and fetch it.
    
   For Example: For main table **sales** , If pre-aggregate tables were created as  
   

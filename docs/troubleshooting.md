@@ -177,7 +177,7 @@ Note :  Refrain from using "mvn clean package" without specifying the profile.
   Data loading fails with the following exception :
 
    ```
-   Data Load failure exeception
+   Data Load failure exception
    ```
 
   **Possible Cause**
@@ -208,7 +208,7 @@ Note :  Refrain from using "mvn clean package" without specifying the profile.
   Insertion fails with the following exception :
 
    ```
-   Data Load failure exeception
+   Data Load failure exception
    ```
 
   **Possible Cause**
