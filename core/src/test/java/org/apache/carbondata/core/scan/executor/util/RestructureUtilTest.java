@@ -85,6 +85,11 @@ public class RestructureUtilTest {
     queryDimension2.setDimension(tableComplexDimension2);
     QueryDimension queryDimension3 = new QueryDimension("Address");
     queryDimension3.setDimension(new CarbonDimension(columnSchema5, 3, 3, 3, 3));
+    QueryMeasure queryMeasure1 = new QueryMeasure("Age");
+    QueryMeasure queryMeasure2 = new QueryMeasure("Salary");
+    queryMeasure1.setMeasure(new CarbonMeasure(columnSchema3, 2));
+    queryMeasure2.setMeasure(new CarbonMeasure(columnSchema4, 4));
+    List<QueryMeasure> queryMeasures = Arrays.asList(queryMeasure1, queryMeasure2);
 
     List<QueryDimension> queryDimensions =
         Arrays.asList(queryDimension1, queryDimension2, queryDimension3);
@@ -92,7 +97,7 @@ public class RestructureUtilTest {
     List<QueryDimension> result = null;
     result = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo, queryDimensions,
-            tableBlockDimensions, tableComplexDimensions);
+            tableBlockDimensions, tableComplexDimensions, queryMeasures.size());
     List<CarbonDimension> resultDimension = new ArrayList<>(result.size());
     for (QueryDimension queryDimension : result) {
       resultDimension.add(queryDimension.getDimension());

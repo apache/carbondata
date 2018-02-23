@@ -175,6 +175,88 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table carbontable")
   }
 
+  test("Alter table change dataType with sort column after adding measure column test"){
+    sql("drop database if exists carbon cascade")
+    sql(s"create database carbon location '$dblocation'")
+    sql("use carbon")
+    sql(
+      """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
+        |STORED BY 'org.apache.carbondata.format'
+        |TBLPROPERTIES('SORT_COLUMNS' = 'c2')
+        |""".stripMargin)
+    sql("insert into carbontable select 'a',1,'aa','aaa'")
+    sql("insert into carbontable select 'b',1,'bb','bbb'")
+    sql("Alter table carbontable add columns (c6 int)")
+    sql("Alter table carbontable change c2 c2 bigint")
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
+      Seq(Row("a",1,"aa","aaa"), Row("b",1,"bb","bbb"))
+    )
+    sql("drop table carbontable")
+  }
+
+  test("Alter table change dataType with sort column after adding date datatype with default value test"){
+    sql("drop database if exists carbon cascade")
+    sql(s"create database carbon location '$dblocation'")
+    sql("use carbon")
+    sql(
+      """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
+        |STORED BY 'org.apache.carbondata.format'
+        |TBLPROPERTIES('SORT_COLUMNS' = 'c2')
+        |""".stripMargin)
+    sql("insert into carbontable select 'a',1,'aa','aaa'")
+    sql("insert into carbontable select 'b',1,'bb','bbb'")
+    sql("Alter table carbontable add columns (dateData date) TBLPROPERTIES('DEFAULT.VALUE.dateData' = '1999-01-01')")
+    sql("Alter table carbontable change c2 c2 bigint")
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
+      Seq(Row("a",1,"aa","aaa"), Row("b",1,"bb","bbb"))
+    )
+    sql("drop table carbontable")
+  }
+
+  test("Alter table change dataType with sort column after adding dimension column with default value test"){
+    sql("drop database if exists carbon cascade")
+    sql(s"create database carbon location '$dblocation'")
+    sql("use carbon")
+    sql(
+      """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
+        |STORED BY 'org.apache.carbondata.format'
+        |TBLPROPERTIES('SORT_COLUMNS' = 'c2')
+        |""".stripMargin)
+    sql("insert into carbontable select 'a',1,'aa','aaa'")
+    sql("insert into carbontable select 'b',1,'bb','bbb'")
+    sql("Alter table carbontable add columns (name String) TBLPROPERTIES('DEFAULT.VALUE.name' = 'hello')")
+    sql("Alter table carbontable change c2 c2 bigint")
+    checkAnswer(
+      sql("""select c1,c2,c3,c5,name from carbon.carbontable"""),
+      Seq(Row("a",1,"aa","aaa","hello"), Row("b",1,"bb","bbb","hello"))
+    )
+    sql("drop table carbontable")
+  }
+
+  test("Alter table change dataType with sort column after rename test"){
+    sql("drop database if exists carbon cascade")
+    sql(s"create database carbon location '$dblocation'")
+    sql("use carbon")
+    sql(
+      """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
+        |STORED BY 'org.apache.carbondata.format'
+        |TBLPROPERTIES('SORT_COLUMNS' = 'c2')
+        |""".stripMargin)
+    sql("insert into carbontable select 'a',1,'aa','aaa'")
+    sql("insert into carbontable select 'b',1,'bb','bbb'")
+    sql("Alter table carbontable add columns (name String) TBLPROPERTIES('DEFAULT.VALUE.name' = 'hello')")
+    sql("Alter table carbontable rename to carbontable1")
+    sql("Alter table carbontable1 change c2 c2 bigint")
+    checkAnswer(
+      sql("""select c1,c2,c3,c5,name from carbon.carbontable1"""),
+      Seq(Row("a",1,"aa","aaa","hello"), Row("b",1,"bb","bbb","hello"))
+    )
+    sql("drop table if exists carbontable")
+    sql("drop table if exists carbontable1")
+  }
+
   test("Alter table drop column test") {
     sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
