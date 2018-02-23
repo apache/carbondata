@@ -30,6 +30,9 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.locks.CarbonLockFactory;
+import org.apache.carbondata.core.locks.ICarbonLock;
+import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
@@ -60,6 +63,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonOutputCommitter.class.getName());
 
+  private ICarbonLock segmentLock;
+
   public CarbonOutputCommitter(Path outputPath, TaskAttemptContext context) throws IOException {
     super(outputPath, context);
   }
@@ -75,6 +80,13 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
     CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet);
+    // Take segment lock
+    segmentLock = CarbonLockFactory.getCarbonLockObj(
+        loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier(),
+        CarbonTablePath.addSegmentPrefix(loadModel.getSegmentId()) + LockUsage.LOCK);
+    if (!segmentLock.lockWithRetries()) {
+      throw new RuntimeException("Already segment is locked for loading, not supposed happen");
+    }
     CarbonTableOutputFormat.setLoadModel(context.getConfiguration(), loadModel);
   }
 
@@ -175,6 +187,9 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     } else {
       CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
     }
+    if (segmentLock != null) {
+      segmentLock.unlock();
+    }
   }
 
   /**
@@ -233,41 +248,49 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
    * @throws IOException
    */
   @Override public void abortJob(JobContext context, JobStatus.State state) throws IOException {
-    super.abortJob(context, state);
-    CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
-    CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
-    String segmentFileName = loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp();
-    LoadMetadataDetails metadataDetail = loadModel.getCurrentLoadMetadataDetail();
-    if (metadataDetail != null) {
-      // In case the segment file is already created for this job then just link it so that it will
-      // be used while cleaning.
-      if (!metadataDetail.getSegmentStatus().equals(SegmentStatus.SUCCESS)) {
-        String readPath = CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath())
-            + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName + CarbonTablePath.SEGMENT_EXT;
-        if (FileFactory.getCarbonFile(readPath).exists()) {
-          metadataDetail.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
+    try {
+      super.abortJob(context, state);
+      CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
+      CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
+      String segmentFileName = loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp();
+      LoadMetadataDetails metadataDetail = loadModel.getCurrentLoadMetadataDetail();
+      if (metadataDetail != null) {
+        // In case the segment file is already created for this job then just link it so that it
+        // will be used while cleaning.
+        if (!metadataDetail.getSegmentStatus().equals(SegmentStatus.SUCCESS)) {
+          String readPath = CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath())
+              + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName
+              + CarbonTablePath.SEGMENT_EXT;
+          if (FileFactory.getCarbonFile(readPath).exists()) {
+            metadataDetail.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
+          }
         }
       }
+      // Clean the temp files
+      CarbonFile segTmpFolder = FileFactory.getCarbonFile(
+          CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath())
+              + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName + ".tmp");
+      // delete temp segment folder
+      if (segTmpFolder.exists()) {
+        FileFactory.deleteAllCarbonFilesOfDir(segTmpFolder);
+      }
+      CarbonFile segmentFilePath = FileFactory.getCarbonFile(
+          CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath())
+              + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName
+              + CarbonTablePath.SEGMENT_EXT);
+      // Delete the temp data folders of this job if exists
+      if (segmentFilePath.exists()) {
+        SegmentFileStore fileStore = new SegmentFileStore(loadModel.getTablePath(),
+            segmentFileName + CarbonTablePath.SEGMENT_EXT);
+        SegmentFileStore.removeTempFolder(fileStore.getLocationMap(), segmentFileName + ".tmp",
+            loadModel.getTablePath());
+      }
+      LOGGER.error("Loading failed with job status : " + state);
+    } finally {
+      if (segmentLock != null) {
+        segmentLock.unlock();
+      }
     }
-    // Clean the temp files
-    CarbonFile segTmpFolder = FileFactory.getCarbonFile(
-        CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath())
-            + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName + ".tmp");
-    // delete temp segment folder
-    if (segTmpFolder.exists()) {
-      FileFactory.deleteAllCarbonFilesOfDir(segTmpFolder);
-    }
-    CarbonFile segmentFilePath = FileFactory.getCarbonFile(
-        CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath())
-            + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName + CarbonTablePath.SEGMENT_EXT);
-    // Delete the temp data folders of this job if exists
-    if (segmentFilePath.exists()) {
-      SegmentFileStore fileStore = new SegmentFileStore(loadModel.getTablePath(),
-          segmentFileName + CarbonTablePath.SEGMENT_EXT);
-      SegmentFileStore.removeTempFolder(fileStore.getLocationMap(), segmentFileName + ".tmp",
-          loadModel.getTablePath());
-    }
-    LOGGER.error("Loading failed with job status : " + state);
   }
 
 }

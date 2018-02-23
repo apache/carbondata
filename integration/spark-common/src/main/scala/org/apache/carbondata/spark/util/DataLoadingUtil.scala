@@ -46,8 +46,9 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
@@ -374,31 +375,37 @@ object DataLoadingUtil {
       carbonTable: CarbonTable,
       specs: util.List[PartitionSpec]): Unit = {
     if (isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
-      val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-      val carbonTableStatusLock =
-        CarbonLockFactory.getCarbonLockObj(
-          absoluteTableIdentifier,
-          LockUsage.TABLE_STATUS_LOCK
-        )
 
-      // Delete marked loads
-      val isUpdationRequired =
-        DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
-          absoluteTableIdentifier,
+      val (details, updationRequired) =
+        isUpdationRequired(
           isForceDeletion,
-          details,
-          carbonTable.getMetaDataFilepath
-        )
+          carbonTable,
+          absoluteTableIdentifier)
 
-      var updationCompletionStaus = false
 
-      if (isUpdationRequired) {
+      if (updationRequired) {
+        val carbonTableStatusLock =
+          CarbonLockFactory.getCarbonLockObj(
+            absoluteTableIdentifier,
+            LockUsage.TABLE_STATUS_LOCK
+          )
+        var locked = false
+        var updationCompletionStaus = false
         try {
           // Update load metadate file after cleaning deleted nodes
-          if (carbonTableStatusLock.lockWithRetries()) {
+          locked = carbonTableStatusLock.lockWithRetries()
+          if (locked) {
             LOGGER.info("Table status lock has been successfully acquired.")
-
+            // Again read status and check to verify updation required or not.
+            val (details, updationRequired) =
+              isUpdationRequired(
+                isForceDeletion,
+                carbonTable,
+                absoluteTableIdentifier)
+            if (!updationRequired) {
+              return
+            }
             // read latest table status again.
             val latestMetadata = SegmentStatusManager
               .readLoadMetadata(carbonTable.getMetaDataFilepath)
@@ -421,7 +428,9 @@ object DataLoadingUtil {
           }
           updationCompletionStaus = true
         } finally {
-          CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)
+          if (locked) {
+            CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)
+          }
         }
         if (updationCompletionStaus) {
           DeleteLoadFolders
@@ -430,6 +439,21 @@ object DataLoadingUtil {
         }
       }
     }
+  }
+
+  private def isUpdationRequired(isForceDeletion: Boolean,
+      carbonTable: CarbonTable,
+      absoluteTableIdentifier: AbsoluteTableIdentifier) = {
+    val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
+    // Delete marked loads
+    val isUpdationRequired =
+      DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
+        absoluteTableIdentifier,
+        isForceDeletion,
+        details,
+        carbonTable.getMetaDataFilepath
+      )
+    (details, isUpdationRequired)
   }
 
   /**

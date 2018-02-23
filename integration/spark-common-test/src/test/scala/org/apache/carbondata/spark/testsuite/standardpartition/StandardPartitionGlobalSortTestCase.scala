@@ -179,7 +179,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
     val tasks = new util.ArrayList[Callable[String]]()
     var i = 0
-    val count = 5
+    val count = 50
     while (i < count) {
       tasks.add(new QueryTask(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE  partitionmultiplethreeconcurrent partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""))
       i = i + 1
@@ -191,6 +191,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     }
     executorService.shutdown()
     checkAnswer(sql("select count(*) from partitionmultiplethreeconcurrent"), Seq(Row(10 * count)))
+    assert(sql("show segments for table partitionmultiplethreeconcurrent").count() == count)
   }
 
   class QueryTask(query: String) extends Callable[String] {
@@ -198,7 +199,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
       var result = "PASS"
       try {
         LOGGER.info("Executing :" + Thread.currentThread().getName)
-        sql(query)
+        sqlContext.newSession().sql(query)
       } catch {
         case ex: Exception =>
           ex.printStackTrace()
@@ -851,6 +852,21 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     checkAnswer(sql("select * from decimalissue"), Seq(Row(23,null)))
   }
 
+  test("data loading scalar query partition issue") {
+    sql("DROP TABLE IF EXISTS scalarissue")
+    sql("create table scalarissue(a int) partitioned by (salary double) stored by 'carbondata'")
+    sql("insert into scalarissue values(23,21.2)")
+    sql("DROP TABLE IF EXISTS scalarissue_hive")
+    sql("create table scalarissue_hive(a int,salary double) using parquet partitioned by (salary) ")
+    sql("set hive.exec.dynamic.partition.mode=nonstrict")
+    sql("insert into scalarissue_hive values(23,21.2)")
+    intercept[Exception] {
+      sql(s"select * from scalarissue_hive where salary = (select max(salary) from scalarissue_hive)").show()
+    }
+    intercept[Exception] {
+      sql(s"select * from scalarissue where salary = (select max(salary) from scalarissue)").show()
+    }
+  }
 
 
   override def afterAll = {
@@ -862,7 +878,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION ,
       CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
-//    dropTable
+    dropTable
     if (executorService != null && !executorService.isShutdown) {
       executorService.shutdownNow()
     }
