@@ -58,6 +58,7 @@ import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.FileHeader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.InputMetricsStats;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.util.CarbonTypeUtil;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -136,6 +137,9 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
   // return raw row for handoff
   private boolean useRawRow = false;
+
+  // InputMetricsStats
+  private InputMetricsStats inputMetricsStats;
 
   @Override public void initialize(InputSplit split, TaskAttemptContext context)
       throws IOException, InterruptedException {
@@ -392,8 +396,18 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
   @Override public Object getCurrentValue() throws IOException, InterruptedException {
     if (isVectorReader) {
+      int value = columnarBatch.numValidRows();
+      if (inputMetricsStats != null) {
+        inputMetricsStats.incrementRecordRead((long) value);
+      }
+
       return columnarBatch;
     }
+
+    if (inputMetricsStats != null) {
+      inputMetricsStats.incrementRecordRead(1L);
+    }
+
     return outputRow;
   }
 
@@ -728,6 +742,10 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
   public void setVectorReader(boolean isVectorReader) {
     this.isVectorReader = isVectorReader;
+  }
+
+  public void setInputMetricsStats(InputMetricsStats inputMetricsStats) {
+    this.inputMetricsStats = inputMetricsStats;
   }
 
   @Override public void close() throws IOException {
