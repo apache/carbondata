@@ -28,8 +28,8 @@ import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainDataMap, AbstractCoarseGrainDataMapFactory}
-import org.apache.carbondata.core.datamap.dev.{AbstractDataMapWriter, DataMap}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainIndexDataMapFactory, AbstractCoarseGrainIndexDataMap}
+import org.apache.carbondata.core.datamap.dev.AbstractDataMapWriter
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -47,7 +47,12 @@ class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll wit
     buildTestData()
 
     // register hook to the table to sleep, thus the other command will be executed
-    sql(s"create datamap test on table orders using '${classOf[WaitingDataMap].getName}' as select count(a) from hiveMetaStoreTable_1")
+    sql(
+      s"""
+         | create datamap test on table orders
+         | using '${classOf[WaitingIndexDataMap].getName}'
+         | as select count(a) from hiveMetaStoreTable_1")
+       """.stripMargin)
   }
 
   private def buildTestData(): Unit = {
@@ -101,7 +106,7 @@ class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll wit
     )
     while (!Global.overwriteRunning && count < 1000) {
       Thread.sleep(10)
-      // to avoid dead loop in case WaitingDataMap is not invoked
+      // to avoid dead loop in case WaitingIndexDataMap is not invoked
       count += 1
     }
     future
@@ -162,7 +167,7 @@ object Global {
   var overwriteRunning = false
 }
 
-class WaitingDataMap() extends AbstractCoarseGrainDataMapFactory {
+class WaitingIndexDataMap() extends AbstractCoarseGrainIndexDataMapFactory {
 
   override def init(identifier: AbsoluteTableIdentifier, dataMapSchema: DataMapSchema): Unit = { }
 
@@ -172,9 +177,9 @@ class WaitingDataMap() extends AbstractCoarseGrainDataMapFactory {
 
   override def clear(): Unit = {}
 
-  override def getDataMaps(distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainDataMap] = ???
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainIndexDataMap] = ???
 
-  override def getDataMaps(segmentId: String): util.List[AbstractCoarseGrainDataMap] = ???
+  override def getDataMaps(segmentId: String): util.List[AbstractCoarseGrainIndexDataMap] = ???
 
   override def createWriter(segmentId: String, writerPath: String): AbstractDataMapWriter = {
     new AbstractDataMapWriter(null, segmentId, writerPath) {

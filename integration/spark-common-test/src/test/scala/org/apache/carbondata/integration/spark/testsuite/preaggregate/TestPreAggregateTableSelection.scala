@@ -293,8 +293,8 @@ test("test PreAggregate table selection with timeseries and normal together") {
        | GROUP BY dob,name
        """.stripMargin)
 
-    val df = sql("SELECT timeseries(dob,'year') FROM maintabletime GROUP BY timeseries(dob,'year')")
-    preAggTableValidator(df.queryExecution.analyzed, "maintabletime_agg1_year")
+  val df = sql("SELECT timeseries(dob,'year') FROM maintabletime GROUP BY timeseries(dob,'year')")
+  preAggTableValidator(df.queryExecution.analyzed, "maintabletime_agg1_year")
   sql("DROP TABLE IF EXISTS maintabletime")
 
   }

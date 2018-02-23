@@ -14,21 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.datamap.dev.cgdatamap;
 
-import org.apache.carbondata.core.datamap.DataMapType;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+package org.apache.carbondata.datamap;
+
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 /**
- *  1. Any filter query which hits the table with datamap will call prune method of CGdatamap.
- *  2. The prune method of CGDatamap return list Blocklet , these blocklets contain the
- *     information of block and blocklet.
- *  3. Based on the splits scanrdd schedule the tasks.
+ * Property that can be specified when creating DataMap
  */
-public abstract class AbstractCoarseGrainDataMapFactory
-    implements DataMapFactory<AbstractCoarseGrainDataMap> {
+@InterfaceAudience.Internal
+public class DataMapProperty {
 
-  @Override public DataMapType getDataMapType() {
-    return DataMapType.CG;
-  }
+  /**
+   * Used to specify the store location of the datamap
+   */
+  public static final String PATH = "path";
 }

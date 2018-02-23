@@ -1,18 +1,11 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.List;
-import java.util.UUID;
 
 import org.apache.carbondata.core.cache.dictionary.AbstractDictionaryCacheTest;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -23,7 +16,7 @@ import mockit.MockUp;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestBlockletDataMap extends AbstractDictionaryCacheTest {
+public class TestBlockletIndexDataMap extends AbstractDictionaryCacheTest {
 
   ImplicitIncludeFilterExecutorImpl implicitIncludeFilterExecutor;
   @Before public void setUp() throws Exception {
@@ -49,8 +42,8 @@ public class TestBlockletDataMap extends AbstractDictionaryCacheTest {
       }
     };
 
-    BlockletDataMap blockletDataMap = new BlockletDataMap();
-    Method method = BlockletDataMap.class
+    BlockletIndexDataMap blockletDataMap = new BlockletIndexDataMap();
+    Method method = BlockletIndexDataMap.class
         .getDeclaredMethod("addBlockBasedOnMinMaxValue", FilterExecuter.class, byte[][].class,
             byte[][].class, String.class, int.class);
     method.setAccessible(true);

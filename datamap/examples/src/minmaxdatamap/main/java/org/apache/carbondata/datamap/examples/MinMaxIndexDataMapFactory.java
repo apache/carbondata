@@ -27,8 +27,8 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.dev.AbstractDataMapWriter;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainDataMap;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainDataMapFactory;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainIndexDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainIndexDataMapFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -38,7 +38,7 @@ import org.apache.carbondata.events.Event;
 /**
  * Min Max DataMap Factory
  */
-public class MinMaxDataMapFactory extends AbstractCoarseGrainDataMapFactory {
+public class MinMaxIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFactory {
 
   private AbsoluteTableIdentifier identifier;
 
@@ -63,11 +63,11 @@ public class MinMaxDataMapFactory extends AbstractCoarseGrainDataMapFactory {
    * @return
    * @throws IOException
    */
-  @Override public List<AbstractCoarseGrainDataMap> getDataMaps(String segmentId)
+  @Override public List<AbstractCoarseGrainIndexDataMap> getDataMaps(String segmentId)
       throws IOException {
-    List<AbstractCoarseGrainDataMap> dataMapList = new ArrayList<>();
-    // Form a dataMap of Type MinMaxDataMap.
-    MinMaxDataMap dataMap = new MinMaxDataMap();
+    List<AbstractCoarseGrainIndexDataMap> dataMapList = new ArrayList<>();
+    // Form a dataMap of Type MinMaxIndexDataMap.
+    MinMaxIndexDataMap dataMap = new MinMaxIndexDataMap();
     try {
       dataMap.init(new DataMapModel(
           identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId + File.separator));
@@ -100,7 +100,7 @@ public class MinMaxDataMapFactory extends AbstractCoarseGrainDataMapFactory {
   @Override public void clear() {
   }
 
-  @Override public List<AbstractCoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
+  @Override public List<AbstractCoarseGrainIndexDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
     return null;
   }

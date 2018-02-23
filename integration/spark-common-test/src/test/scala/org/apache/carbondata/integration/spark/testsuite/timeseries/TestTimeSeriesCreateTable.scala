@@ -200,7 +200,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | GROUP BY dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.equals("DataMap class 'abc' not found"))
+    assert(e.getMessage.equals("DataMap 'abc' not found"))
   }
 
   test("test timeseries create table: USING and catch MalformedCarbonCommandException") {
@@ -215,7 +215,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | GROUP BY dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.equals("DataMap class 'abc' not found"))
+    assert(e.getMessage.equals("DataMap 'abc' not found"))
   }
 
   test("test timeseries create table: Only one granularity level can be defined 1") {

@@ -27,7 +27,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 /**
  * Datamap is an entity which can store and retrieve index data.
  */
-public interface DataMap<T extends Blocklet> {
+public interface IndexDataMap<T extends Blocklet> {
 
   /**
    * It is called to load the data map to memory or to initialize it.

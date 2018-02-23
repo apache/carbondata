@@ -23,7 +23,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 
 /**
- * It is the model object to keep the information to build or initialize BlockletDataMap.
+ * It is the model object to keep the information to build or initialize BlockletIndexDataMap.
  */
 public class BlockletDataMapModel extends DataMapModel {
 
