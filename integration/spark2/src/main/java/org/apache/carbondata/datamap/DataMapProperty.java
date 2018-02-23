@@ -26,7 +26,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 public class DataMapProperty {
 
   /**
-   * Used for specifying the path of datamap store location
+   * Used to specify the store location of the datamap
    */
-  public final static String PATH = "path";
+  public static final String PATH = "path";
 }
