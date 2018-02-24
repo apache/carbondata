@@ -65,7 +65,7 @@ public class LocalFileLockTest {
 
     Assert.assertTrue(localLock1.unlock());
     Assert.assertTrue(localLock2.lock());
-
+    Assert.assertTrue(localLock2.unlock());
   }
 
 }
