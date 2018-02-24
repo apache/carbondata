@@ -18,6 +18,8 @@ package org.apache.carbondata.spark.testsuite.iud
 
 import java.io.File
 
+import scala.collection.mutable
+
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
@@ -46,6 +48,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy-MM-dd HHmmss")
   }
 
 
@@ -385,12 +388,12 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create table with column name as tupleID"){
     intercept[Exception] {
       sql("CREATE table carbontable (empno int, tupleID String, " +
-          "designation String, doj Timestamp, workgroupcategory int, " +
-          "workgroupcategoryname String, deptno int, deptname String, projectcode int, " +
-          "projectjoindate Timestamp, projectenddate Timestamp, attendance int, " +
-          "utilization int,salary int) STORED BY 'org.apache.carbondata.format' " +
-          "TBLPROPERTIES('DICTIONARY_INCLUDE'='empno,workgroupcategory,deptno,projectcode'," +
-          "'DICTIONARY_EXCLUDE'='empname')")
+        "designation String, doj Timestamp, workgroupcategory int, " +
+        "workgroupcategoryname String, deptno int, deptname String, projectcode int, " +
+        "projectjoindate Timestamp, projectenddate Timestamp, attendance int, " +
+        "utilization int,salary int) STORED BY 'org.apache.carbondata.format' " +
+        "TBLPROPERTIES('DICTIONARY_INCLUDE'='empno,workgroupcategory,deptno,projectcode'," +
+        "'DICTIONARY_EXCLUDE'='empname')")
     }
   }
 
@@ -416,7 +419,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
         sql("drop table if exists update_with_bad_record")
         sql("create table update_with_bad_record(item int, name String) stored by 'carbondata'")
         sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/IUD/bad_record.csv' into table " +
-            s"update_with_bad_record")
+          s"update_with_bad_record")
         sql("update update_with_bad_record set (item)=(3.45)").show()
         sql("drop table if exists update_with_bad_record")
       }
@@ -643,7 +646,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create table with tupleid as column name") {
     try {
       sql("create table create_with_tupleid_column(item int, tupleId String) stored by " +
-          "'carbondata'")
+        "'carbondata'")
     } catch {
       case ex: Exception =>
         assert(ex.getMessage.contains("not allowed in column name while creating table"))
@@ -654,7 +657,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "create table create_with_positionReference_column(item int, positionReference String) " +
-        "stored by 'carbondata'")
+          "stored by 'carbondata'")
     } catch {
       case ex: Exception =>
         assert(ex.getMessage.contains("not allowed in column name while creating table"))
@@ -665,7 +668,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "create table create_with_positionid_column(item int, positionId String) stored by " +
-        "'carbondata'")
+          "'carbondata'")
     } catch {
       case ex: Exception =>
         assert(ex.getMessage.contains("not allowed in column name while creating table"))
@@ -686,9 +689,9 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("update t set(c4) = ('yyy') where c3 = 3").show()
     checkAnswer(sql("select count(*) from t where c4 = 'yyy'"), Seq(Row(1)))
     val f = new File(dblocation + CarbonCommonConstants.FILE_SEPARATOR +
-                     CarbonCommonConstants.FILE_SEPARATOR + "t" +
-                     CarbonCommonConstants.FILE_SEPARATOR + "Fact" +
-                     CarbonCommonConstants.FILE_SEPARATOR + "Part0")
+      CarbonCommonConstants.FILE_SEPARATOR + "t" +
+      CarbonCommonConstants.FILE_SEPARATOR + "Fact" +
+      CarbonCommonConstants.FILE_SEPARATOR + "Part0")
     assert(f.list().length == 2)
   }
   test("test sentences func in update statement") {
@@ -704,6 +707,88 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       .contains("Unsupported data type: Array")
     sql("drop table if exists senten")
   }
+
+  test("update table with struct data ") {
+    sql("DROP TABLE IF EXISTS st")
+
+    sql("create table st (id int, structelem struct<id1:int, structelem: struct<id2:int, name:string>>)" +
+      "stored by 'carbondata'").show
+
+    sql(s"load data local inpath '$resourcesPath/structinstructnull.csv' into table st options('delimiter'=',' ,  " +
+      s"'fileheader'='id,structelem','COMPLEX_DELIMITER_LEVEL_1'='#', 'COMPLEX_DELIMITER_LEVEL_2'='|')")
+
+    sql("update st set (structelem) = (\"118$1005:xyz1\")").show
+    println("After update -")
+
+
+    checkAnswer(sql("select structelem.id1, structelem.structelem.id2, structelem.structelem.name from st limit 1")
+      ,Seq(Row(118,1005,"xyz1")) )
+
+    sql("select * from st ").show
+
+    sql("update st set (structelem) = (struct(structelem.id1+1, struct(structelem.structelem.id2+1," +
+      " structelem.structelem.name))) ").show
+
+    sql("select (struct(structelem.id1+1, struct(structelem.structelem.id2+1, structelem.structelem.name)))  from st ").show
+
+    checkAnswer(sql("select structelem.id1, structelem.structelem.id2, structelem.structelem.name from st limit 1")
+      ,Seq(Row(119,1006,"xyz1")) )
+
+    sql("update st set (structelem) = (struct(structelem.id1, structelem.structelem)) ").show
+    checkAnswer(sql("select structelem.id1, structelem.structelem.id2, structelem.structelem.name from st limit 1")
+      ,Seq(Row(119,1006,"xyz1")) )
+
+    
+    sql("DROP TABLE IF EXISTS st")
+  }
+
+  test("update table with struct of array data ") {
+    sql("DROP TABLE IF EXISTS STRUCT_OF_ARRAY_update1")
+
+    sql("create table STRUCT_OF_ARRAY_update1 (CUST_ID string, YEAR int, MONTH int, AGE int, " +
+      "GENDER string, EDUCATED string, IS_MARRIED string, STRUCT_OF_ARRAY struct<ID: int," +
+      "CHECK_DATE: timestamp,SNo: array<int>,sal1: array<double>,state: array<string>,date1: " +
+      "array<timestamp>>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT double, " +
+      "HQ_DEPOSIT double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
+      "('NO_INVERTED_INDEX'='STRUCT_OF_ARRAY')").show
+
+    sql(s"LOAD DATA INPATH '${resourcesPath}/structofarray.csv' INTO table STRUCT_OF_ARRAY_update1 " +
+      "options ('DELIMITER'=',', 'FILEHEADER'='CUST_ID,YEAR,MONTH,AGE,GENDER,EDUCATED," +
+      "IS_MARRIED,STRUCT_OF_ARRAY,CARD_COUNT,DEBIT_COUNT,CREDIT_COUNT,DEPOSIT,HQ_DEPOSIT'," +
+      "'COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'='&')")
+
+    sql("update STRUCT_OF_ARRAY_update1 set(struct_of_array)=(\"123457788$2017-09-26  " +
+      "000000$1099:3000$1099.123:3999.234$United States:HI$2019-09-26 000000:2016-09-26 000000\") where " +
+      "cust_id in ('Cust00000000000000000999') ").show
+
+    checkExistence(sql("select STRUCT_OF_ARRAY.date1[0] from struct_of_array_update1 where cust_id in ('Cust00000000000000000999')") , true,
+      "2019-09-26 00:00:00.0")
+
+    sql("DROP TABLE IF EXISTS STRUCT_OF_ARRAY_update1")
+  }
+
+  test("test array update ") {
+    sql("DROP TABLE IF EXISTS testarray")
+
+    sql("create table testarray(test1 int, test2 array<String>,test3 array<bigint>,test4 " +
+      "array<int>,test5 array<decimal>,test6 array<timestamp>,test7 array<double>) STORED BY 'org" +
+      ".apache.carbondata.format'").show
+
+    sql("LOAD DATA INPATH '" + resourcesPath +
+      "/array1.csv'  INTO TABLE testarray options ('DELIMITER'=',', 'QUOTECHAR'='\"', " +
+      "'COMPLEX_DELIMITER_LEVEL_1'='$', 'FILEHEADER'= 'test1,test2,test3,test4,test5,test6," +
+      "test7')");
+
+    sql("update testarray set (test4) = ('252$253')  ").show
+
+    sql("update testarray set (test2) = ('test$test1')  ").show
+
+    checkAnswer(sql("select test2,test4 from testarray where test1=1 ") , Seq(Row(mutable.ArraySeq("test", "test1"),mutable
+      .ArraySeq(252,253))))
+
+    sql("DROP TABLE IF EXISTS STRUCT_OF_ARRAY_update1")
+  }
+
 
   override def afterAll {
     sql("use default")

@@ -132,12 +132,18 @@ object CarbonScalaUtil {
           } else {
             delimiterLevel2
           }
+
           val builder = new StringBuilder()
+          var i = 0;
           s.foreach { x =>
             builder.append(getString(x, serializationNullFormat, delimiterLevel1,
-                delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+                delimiterLevel2, timeStampFormat, dateFormat, level + 1))
+            i = i + 1
+            if(i<s.length) {
+              builder.append(delimiter.replace("\\", ""))
+            }
           }
-          builder.substring(0, builder.length - 1)
+          builder.toString()
         case m: scala.collection.Map[Any, Any] =>
           throw new Exception("Unsupported data type: Map")
         case r: org.apache.spark.sql.Row =>
@@ -149,9 +155,12 @@ object CarbonScalaUtil {
           val builder = new StringBuilder()
           for (i <- 0 until r.length) {
             builder.append(getString(r(i), serializationNullFormat, delimiterLevel1,
-                delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+                delimiterLevel2, timeStampFormat, dateFormat, level + 1))
+            if(i<r.length-1) {
+              builder.append(delimiter.replace("\\", ""))
+            }
           }
-          builder.substring(0, builder.length - 1)
+          builder.toString()
         case other => other.toString
       }
     }
