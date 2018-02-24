@@ -32,7 +32,9 @@ import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.util.SchemaReader
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -253,8 +255,15 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession),
         tableIdentifier.table)
       val table = try {
-        SchemaReader.getTableInfo(identifier)
-      } catch {
+        val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
+        if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
+          SchemaReader.inferSchemaForExternalTable(identifier)
+        }
+        else {
+          SchemaReader.getTableInfo(identifier)
+        }
+      }
+        catch {
         case e: Throwable =>
           operationNotAllowed(s"Invalid table path provided: ${tablePath.get} ", tableHeader)
       }

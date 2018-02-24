@@ -47,7 +47,7 @@ import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstant
 import org.apache.carbondata.core.statusmanager.FileFormat
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.hadoop._
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
@@ -87,8 +87,12 @@ class CarbonScanRDD(
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)
-    val format = prepareInputFormatForDriver(job.getConfiguration)
-
+    val externalTable = tableInfo.getFactTable.getTableProperties.get("_external")
+    val format = if (externalTable != null && externalTable.equalsIgnoreCase("true")) {
+        prepareFileInputFormatForDriver(job.getConfiguration)
+    } else {
+       prepareInputFormatForDriver(job.getConfiguration)
+    }
     // initialise query_id for job
     job.getConfiguration.set("query.id", queryId)
 
@@ -421,6 +425,16 @@ class CarbonScanRDD(
     createInputFormat(conf)
   }
 
+  def prepareFileInputFormatForDriver(conf: Configuration): CarbonFileInputFormat[Object] = {
+    CarbonFileInputFormat.setTableInfo(conf, tableInfo)
+    CarbonFileInputFormat.setDatabaseName(conf, tableInfo.getDatabaseName)
+    CarbonFileInputFormat.setTableName(conf, tableInfo.getFactTable.getTableName)
+    if (partitionNames != null) {
+      CarbonFileInputFormat.setPartitionsToPrune(conf, partitionNames.asJava)
+    }
+    createFileInputFormat(conf)
+  }
+
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonTableInputFormat[Object] = {
     CarbonTableInputFormat.setCarbonReadSupport(conf, readSupport)
     val tableInfo1 = getTableInfo
@@ -430,6 +444,32 @@ class CarbonScanRDD(
     CarbonTableInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImpl)
     createInputFormat(conf)
   }
+
+  private def createFileInputFormat(conf: Configuration): CarbonFileInputFormat[Object] = {
+    val format = new CarbonFileInputFormat[Object]
+    CarbonFileInputFormat.setTablePath(conf,
+      identifier.appendWithLocalPrefix(identifier.getTablePath))
+    CarbonFileInputFormat.setQuerySegment(conf, identifier)
+    CarbonFileInputFormat.setFilterPredicates(conf, filterExpression)
+    CarbonFileInputFormat.setColumnProjection(conf, columnProjection)
+    CarbonFileInputFormat.setDataMapJob(conf, new SparkDataMapJob)
+    if (CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
+      CarbonTableInputFormat.setDataMapJob(conf, new SparkDataMapJob)
+    }
+
+    // when validate segments is disabled in thread local update it to CarbonTableInputFormat
+    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (carbonSessionInfo != null) {
+      CarbonTableInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getSessionParams
+        .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+                     identifier.getCarbonTableIdentifier.getDatabaseName + "." +
+                     identifier.getCarbonTableIdentifier.getTableName, "true").toBoolean)
+    }
+    format
+  }
+
 
   private def createInputFormat(conf: Configuration): CarbonTableInputFormat[Object] = {
     val format = new CarbonTableInputFormat[Object]

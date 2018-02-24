@@ -56,7 +56,7 @@ object StandardPartitionExample {
 
     spark.sql(
       s"""
-         | SELECT country,id,vin,phonenumver,area,salary
+         | SELECT country,id,vin,phonenumber,area,salary
          | FROM partitiontable0
       """.stripMargin).show()
 
