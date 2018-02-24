@@ -91,10 +91,21 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
 
   private InputMetricsStats inputMetricsStats;
 
-  public VectorizedCarbonRecordReader(QueryModel queryModel, InputMetricsStats inputMetricsStats) {
+  public VectorizedCarbonRecordReader(QueryModel queryModel, InputMetricsStats inputMetricsStats,
+      String enableBatch) {
     this.queryModel = queryModel;
     this.inputMetricsStats = inputMetricsStats;
-    enableReturningBatches();
+    if (enableBatch.equals("true")) {
+      enableReturningBatches();
+    }
+  }
+
+
+  /*
+ * Can be called before any rows are returned to enable returning columnar batches directly.
+ */
+  public void enableReturningBatches() {
+    returnColumnarBatch = true;
   }
 
   /**
@@ -273,12 +284,7 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     if (columnarBatch == null) initBatch();
   }
 
-  /*
-   * Can be called before any rows are returned to enable returning columnar batches directly.
-   */
-  private void enableReturningBatches() {
-    returnColumnarBatch = true;
-  }
+
 
   /**
    * Advances to the next batch of rows. Returns false if there are no more.

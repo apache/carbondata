@@ -33,7 +33,9 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.util.SchemaReader
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
@@ -144,19 +146,24 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       .getOrElse(Map.empty)
   }
 
-  def createCarbonTable(tableHeader: CreateTableHeaderContext,
-      skewSpecContext: SkewSpecContext,
-      bucketSpecContext: BucketSpecContext,
-      partitionColumns: ColTypeListContext,
-      columns : ColTypeListContext,
-      tablePropertyList : TablePropertyListContext,
-      locationSpecContext: SqlBaseParser.LocationSpecContext,
-      tableComment : Option[String],
-      ctas: TerminalNode,
-      query: QueryContext) : LogicalPlan = {
+  def createCarbonTable(createTableTuple: (CreateTableHeaderContext, SkewSpecContext,
+    BucketSpecContext, ColTypeListContext, ColTypeListContext, TablePropertyListContext,
+    LocationSpecContext, Option[String], TerminalNode, QueryContext, String)): LogicalPlan = {
     // val parser = new CarbonSpark2SqlParser
 
+    val (tableHeader, skewSpecContext,
+      bucketSpecContext,
+      partitionColumns,
+      columns,
+      tablePropertyList,
+      locationSpecContext,
+      tableComment,
+      ctas,
+      query,
+      provider) = createTableTuple
+
     val (tableIdentifier, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
+
     // TODO: implement temporary tables
     if (temp) {
       throw new ParseException(
@@ -256,13 +263,27 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession),
         tableIdentifier.table)
       val table = try {
-        SchemaReader.getTableInfo(identifier)
-      } catch {
+        val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
+        if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath)) &&
+            provider.equalsIgnoreCase("'Carbonfile'")) {
+          SchemaReader.inferSchema(identifier)
+        }
+        else {
+          SchemaReader.getTableInfo(identifier)
+        }
+      }
+        catch {
         case e: Throwable =>
           operationNotAllowed(s"Invalid table path provided: ${tablePath.get} ", tableHeader)
       }
       // set "_external" property, so that DROP TABLE will not delete the data
-      table.getFactTable.getTableProperties.put("_external", "true")
+      if (provider.equalsIgnoreCase("'Carbonfile'")) {
+        table.getFactTable.getTableProperties.put("_filelevelexternal", "true")
+        table.getFactTable.getTableProperties.put("_external", "false")
+      } else {
+        table.getFactTable.getTableProperties.put("_external", "true")
+        table.getFactTable.getTableProperties.put("_filelevelexternal", "false")
+      }
       table
     } else {
       // prepare table model of the collected tokens

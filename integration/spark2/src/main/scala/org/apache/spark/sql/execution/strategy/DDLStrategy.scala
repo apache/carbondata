@@ -110,7 +110,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           .tableExists(TableIdentifier(alterTableChangeDataTypeModel.tableName,
             alterTableChangeDataTypeModel.databaseName))(sparkSession)
         if (isCarbonTable) {
-          ExecutedCommandExec(dataTypeChange) :: Nil
+          val carbonTable = CarbonEnv.getCarbonTable(alterTableChangeDataTypeModel.databaseName,
+            alterTableChangeDataTypeModel.tableName)(sparkSession)
+          if (carbonTable != null && carbonTable.isFileLevelExternalTable) {
+            throw new MalformedCarbonCommandException(
+              "Unsupported alter operation on Carbon external fileformat table")
+          } else {
+            ExecutedCommandExec(dataTypeChange) :: Nil
+          }
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
@@ -119,7 +126,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           .tableExists(TableIdentifier(alterTableAddColumnsModel.tableName,
             alterTableAddColumnsModel.databaseName))(sparkSession)
         if (isCarbonTable) {
-          ExecutedCommandExec(addColumn) :: Nil
+          val carbonTable = CarbonEnv.getCarbonTable(alterTableAddColumnsModel.databaseName,
+            alterTableAddColumnsModel.tableName)(sparkSession)
+          if (carbonTable != null && carbonTable.isFileLevelExternalTable) {
+            throw new MalformedCarbonCommandException(
+              "Unsupported alter operation on Carbon external fileformat table")
+          } else {
+            ExecutedCommandExec(addColumn) :: Nil
+          }
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
@@ -128,7 +142,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           .tableExists(TableIdentifier(alterTableDropColumnModel.tableName,
             alterTableDropColumnModel.databaseName))(sparkSession)
         if (isCarbonTable) {
-          ExecutedCommandExec(dropColumn) :: Nil
+          val carbonTable = CarbonEnv.getCarbonTable(alterTableDropColumnModel.databaseName,
+            alterTableDropColumnModel.tableName)(sparkSession)
+          if (carbonTable != null && carbonTable.isFileLevelExternalTable) {
+            throw new MalformedCarbonCommandException(
+              "Unsupported alter operation on Carbon external fileformat table")
+          } else {
+            ExecutedCommandExec(dropColumn) :: Nil
+          }
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
