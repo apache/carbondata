@@ -289,7 +289,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 ### Table and Column Comment
 
-  You can provide more information on table by using table comment; similarly you can provide more information about a particular column using column comment. 
+  You can provide more information on table by using table comment. Similarly you can provide more information about a particular column using column comment. 
   You can see the column comment of an existing table using describe formatted command.
   
   ```
