@@ -53,7 +53,7 @@ import org.apache.carbondata.hadoop.util.ObjectSerializationUtil
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, Util}
 
-class CarbonFileFormat
+class SparkCarbonTableFormat
   extends FileFormat
     with DataSourceRegister
     with Logging

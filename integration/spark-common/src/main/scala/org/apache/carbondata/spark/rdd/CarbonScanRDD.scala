@@ -42,7 +42,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.filter.FilterUtil
 import org.apache.carbondata.core.scan.model.QueryModel
@@ -50,7 +50,7 @@ import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstant
 import org.apache.carbondata.core.statusmanager.FileFormat
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.hadoop._
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
@@ -90,13 +90,21 @@ class CarbonScanRDD(
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)
-    val format = prepareInputFormatForDriver(job.getConfiguration)
-
+    val fileLevelExternal = tableInfo.getFactTable().getTableProperties().get("_filelevelexternal")
+    val format = if (fileLevelExternal != null && fileLevelExternal.equalsIgnoreCase("true")) {
+      prepareFileInputFormatForDriver(job.getConfiguration)
+    } else {
+      prepareInputFormatForDriver(job.getConfiguration)
+    }
     // initialise query_id for job
     job.getConfiguration.set("query.id", queryId)
 
     // get splits
     val splits = format.getSplits(job)
+    if ((splits == null) && format.isInstanceOf[CarbonFileInputFormat[Object]]) {
+      throw new SparkException(
+        "CarbonData file not exist in the segment_null (SDK writer Output) path")
+    }
 
     // separate split
     // 1. for batch splits, invoke distributeSplits method to create partitions
@@ -113,7 +121,7 @@ class CarbonScanRDD(
     }
     val batchPartitions = distributeColumnarSplits(columnarSplits)
     // check and remove InExpression from filterExpression
-    checkAndRemoveInExpressinFromFilterExpression(format, batchPartitions)
+    checkAndRemoveInExpressinFromFilterExpression(batchPartitions)
     if (streamSplits.isEmpty) {
       batchPartitions.toArray
     } else {
@@ -354,7 +362,9 @@ class CarbonScanRDD(
         case _ =>
           // create record reader for CarbonData file format
           if (vectorReader) {
-            val carbonRecordReader = createVectorizedCarbonRecordReader(model, inputMetricsStats)
+            val carbonRecordReader = createVectorizedCarbonRecordReader(model,
+              inputMetricsStats,
+              "true")
             if (carbonRecordReader == null) {
               new CarbonRecordReader(model,
                 format.getReadSupportClass(attemptContext.getConfiguration), inputMetricsStats)
@@ -431,6 +441,16 @@ class CarbonScanRDD(
     createInputFormat(conf)
   }
 
+  def prepareFileInputFormatForDriver(conf: Configuration): CarbonFileInputFormat[Object] = {
+    CarbonFileInputFormat.setTableInfo(conf, tableInfo)
+    CarbonFileInputFormat.setDatabaseName(conf, tableInfo.getDatabaseName)
+    CarbonFileInputFormat.setTableName(conf, tableInfo.getFactTable.getTableName)
+    if (partitionNames != null) {
+      CarbonFileInputFormat.setPartitionsToPrune(conf, partitionNames.asJava)
+    }
+    createFileInputFormat(conf)
+  }
+
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonTableInputFormat[Object] = {
     CarbonTableInputFormat.setCarbonReadSupport(conf, readSupport)
     val tableInfo1 = getTableInfo
@@ -440,6 +460,32 @@ class CarbonScanRDD(
     CarbonTableInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImpl)
     createInputFormat(conf)
   }
+
+  private def createFileInputFormat(conf: Configuration): CarbonFileInputFormat[Object] = {
+    val format = new CarbonFileInputFormat[Object]
+    CarbonFileInputFormat.setTablePath(conf,
+      identifier.appendWithLocalPrefix(identifier.getTablePath))
+    CarbonFileInputFormat.setQuerySegment(conf, identifier)
+    CarbonFileInputFormat.setFilterPredicates(conf, filterExpression)
+    CarbonFileInputFormat.setColumnProjection(conf, columnProjection)
+    CarbonFileInputFormat.setDataMapJob(conf, new SparkDataMapJob)
+    if (CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
+      CarbonTableInputFormat.setDataMapJob(conf, new SparkDataMapJob)
+    }
+
+    // when validate segments is disabled in thread local update it to CarbonTableInputFormat
+    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (carbonSessionInfo != null) {
+      CarbonTableInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getSessionParams
+        .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+                     identifier.getCarbonTableIdentifier.getDatabaseName + "." +
+                     identifier.getCarbonTableIdentifier.getTableName, "true").toBoolean)
+    }
+    format
+  }
+
 
   private def createInputFormat(conf: Configuration): CarbonTableInputFormat[Object] = {
     val format = new CarbonTableInputFormat[Object]
@@ -485,7 +531,6 @@ class CarbonScanRDD(
    * @param identifiedPartitions
    */
   private def checkAndRemoveInExpressinFromFilterExpression(
-      format: CarbonTableInputFormat[Object],
       identifiedPartitions: mutable.Buffer[Partition]) = {
     if (null != filterExpression) {
       if (identifiedPartitions.nonEmpty &&
@@ -533,12 +578,13 @@ class CarbonScanRDD(
   }
 
   def createVectorizedCarbonRecordReader(queryModel: QueryModel,
-      inputMetricsStats: InputMetricsStats): RecordReader[Void, Object] = {
+      inputMetricsStats: InputMetricsStats, enableBatch: String): RecordReader[Void, Object] = {
     val name = "org.apache.carbondata.spark.vectorreader.VectorizedCarbonRecordReader"
     try {
       val cons = Class.forName(name).getDeclaredConstructors
       cons.head.setAccessible(true)
-      cons.head.newInstance(queryModel, inputMetricsStats).asInstanceOf[RecordReader[Void, Object]]
+      cons.head.newInstance(queryModel, inputMetricsStats, enableBatch)
+        .asInstanceOf[RecordReader[Void, Object]]
     } catch {
       case e: Exception =>
         LOGGER.error(e)
