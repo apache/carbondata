@@ -150,7 +150,6 @@ with Serializable {
     val updateTimeStamp = options.get("updatetimestamp")
     if (updateTimeStamp.isDefined) {
       conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp.get)
-      model.setFactTimeStamp(updateTimeStamp.get.toLong)
     }
     CarbonTableOutputFormat.setLoadModel(conf, model)
 

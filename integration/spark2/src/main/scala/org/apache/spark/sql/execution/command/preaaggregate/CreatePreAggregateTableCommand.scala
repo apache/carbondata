@@ -175,9 +175,7 @@ case class CreatePreAggregateTableCommand(
     // table.
     DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false,
       parentTable,
-      CarbonFilters.getCurrentPartitions(sparkSession,
-      TableIdentifier(parentTable.getTableName,
-        Some(parentTable.getDatabaseName))).map(_.asJava).orNull)
+      loadCommand.currPartitions)
     val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetaDataFilepath)
     if (loadAvailable.exists(load => load.getSegmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
       load.getSegmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS)) {

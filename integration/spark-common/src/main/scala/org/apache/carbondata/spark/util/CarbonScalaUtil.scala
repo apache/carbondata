@@ -40,7 +40,7 @@ import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType,
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
-import org.apache.carbondata.core.util.{CarbonSessionInfo, DataTypeUtil}
+import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
@@ -332,7 +332,6 @@ object CarbonScalaUtil {
 
   private val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
 
-  private val hiveignorepartition = "__HIVE_IGNORE_PARTITION__"
   /**
    * Update partition values as per the right date and time format
    * @return updated partition spec
@@ -381,7 +380,6 @@ object CarbonScalaUtil {
    * Update partition values as per the right date and time format
    */
   def updatePartitions(
-      carbonSessionInfo: CarbonSessionInfo,
       parts: Seq[CatalogTablePartition],
       table: CarbonTable): Seq[CatalogTablePartition] = {
     parts.map{ f =>
@@ -390,9 +388,6 @@ object CarbonScalaUtil {
           f.spec,
           table)
       f.copy(spec = changedSpec)
-    }.filterNot{ p =>
-      // Filter the special bad record ignore case string
-      p.spec.exists(_._2.equals(hiveignorepartition))
     }.groupBy(p => p.spec).map(f => f._2.head).toSeq // Avoid duplicates by do groupby
   }
 

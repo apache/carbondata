@@ -38,7 +38,7 @@ import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, Experime
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
@@ -146,14 +146,8 @@ class CarbonSessionCatalog(
       ignoreIfExists: Boolean): Unit = {
     try {
       val table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
-      // Get the properties from thread local
-      val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-      if (carbonSessionInfo != null) {
-        val updatedParts = CarbonScalaUtil.updatePartitions(carbonSessionInfo, parts, table)
-        super.createPartitions(tableName, updatedParts, ignoreIfExists)
-      } else {
-        super.createPartitions(tableName, parts, ignoreIfExists)
-      }
+      val updatedParts = CarbonScalaUtil.updatePartitions(parts, table)
+      super.createPartitions(tableName, updatedParts, ignoreIfExists)
     } catch {
       case e: Exception =>
         super.createPartitions(tableName, parts, ignoreIfExists)

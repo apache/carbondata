@@ -230,8 +230,7 @@ case class CarbonLoadDataCommand(
         DataLoadingUtil.deleteLoadsAndUpdateMetadata(
           isForceDeletion = false,
           table,
-          CarbonFilters.getCurrentPartitions(sparkSession,
-            TableIdentifier(tableName, databaseNameOp)).map(_.asJava).orNull)
+          currPartitions)
         // add the start entry for the new load in the table status file
         if (updateModel.isEmpty && !table.isHivePartitionTable) {
           CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
@@ -689,6 +688,10 @@ case class CarbonLoadDataCommand(
         persistedRDD = persistedRDDLocal
         transformedPlan
       }
+      if (updateModel.isDefined) {
+        carbonLoadModel.setFactTimeStamp(updateModel.get.updatedTimeStamp)
+      }
+      // Create and ddd the segment to the tablestatus.
       CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
       val convertRelation = convertToLogicalRelation(
         catalogTable,

@@ -96,9 +96,12 @@ public class BlockletDataMapIndexStore
   private Map<String, BlockMetaInfo> getBlockMetaInfoMap(TableBlockIndexUniqueIdentifier identifier,
       SegmentIndexFileStore indexFileStore) throws IOException {
     if (identifier.getMergeIndexFileName() != null) {
-      indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { FileFactory.getCarbonFile(
+      CarbonFile indexMergeFile = FileFactory.getCarbonFile(
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-              .getMergeIndexFileName()) });
+              .getMergeIndexFileName());
+      if (indexMergeFile.exists()) {
+        indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { indexMergeFile });
+      }
     }
     if (indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
       indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { FileFactory.getCarbonFile(
