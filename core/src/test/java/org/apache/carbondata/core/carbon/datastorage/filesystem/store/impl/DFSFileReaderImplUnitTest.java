@@ -38,7 +38,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 public class DFSFileReaderImplUnitTest {
-
   private static DFSFileReaderImpl dfsFileHolder;
   private static String fileName;
   private static String fileNameWithEmptyContent;
@@ -50,10 +49,8 @@ public class DFSFileReaderImplUnitTest {
     file = new File("Test.carbondata");
     fileWithEmptyContent = new File("TestEXception.carbondata");
 
-    if (!file.exists()) try {
-      file.createNewFile();
-    } catch (IOException e) {
-      e.printStackTrace();
+    if (file.exists()) {
+      file.delete();
     }
     if (!fileWithEmptyContent.exists()) try {
       fileWithEmptyContent.createNewFile();
@@ -61,10 +58,12 @@ public class DFSFileReaderImplUnitTest {
       e.printStackTrace();
     }
     try {
-      FileOutputStream of = new FileOutputStream(file, true);
+      FileOutputStream of = new FileOutputStream(file, false);
       BufferedWriter br = new BufferedWriter(new OutputStreamWriter(of, "UTF-8"));
       br.write("Hello World");
       br.close();
+      of.flush();
+      of.close();
     } catch (Exception e) {
       e.getMessage();
     }

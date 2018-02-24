@@ -23,6 +23,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -555,7 +556,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     sql(
       s"""
-         | LOAD DATA LOCAL INPATH '${storeLocation}'
+         | LOAD DATA LOCAL INPATH '${FileFactory.getUpdatedFilePath(storeLocation)}'
          | INTO TABLE hive_table
            """.stripMargin)
 
@@ -923,7 +924,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
 
     sql(
       s"""
-         | LOAD DATA LOCAL INPATH '${storeLocation}'
+         | LOAD DATA LOCAL INPATH '${FileFactory.getUpdatedFilePath(storeLocation)}'
          | INTO TABLE hive_table
            """.stripMargin)
 
