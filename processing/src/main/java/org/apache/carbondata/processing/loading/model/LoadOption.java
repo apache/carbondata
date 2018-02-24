@@ -19,6 +19,8 @@ package org.apache.carbondata.processing.loading.model;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.Maps;
@@ -201,6 +203,16 @@ public class LoadOption {
   public static String[] getCsvHeaderColumns(
       CarbonLoadModel carbonLoadModel,
       Configuration hadoopConf) throws IOException {
+    return getCsvHeaderColumns(carbonLoadModel, hadoopConf, new LinkedList<String>());
+  }
+
+  /**
+   * Return CSV header field names, with partition column
+   */
+  public static String[] getCsvHeaderColumns(
+      CarbonLoadModel carbonLoadModel,
+      Configuration hadoopConf,
+      List<String> staticPartitionCols) throws IOException {
     String delimiter;
     if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter())) {
       delimiter = CarbonCommonConstants.COMMA;
@@ -231,7 +243,7 @@ public class LoadOption {
     }
 
     if (!CarbonDataProcessorUtil.isHeaderValid(carbonLoadModel.getTableName(), csvColumns,
-        carbonLoadModel.getCarbonDataLoadSchema())) {
+        carbonLoadModel.getCarbonDataLoadSchema(), staticPartitionCols)) {
       if (csvFile == null) {
         LOG.error("CSV header in DDL is not proper."
             + " Column names in schema and CSV header are not the same.");
@@ -249,4 +261,5 @@ public class LoadOption {
     }
     return csvColumns;
   }
+
 }
