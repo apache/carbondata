@@ -36,20 +36,6 @@ public class CarbonHeaderReader {
   }
 
   /**
-   * It reads the metadata in FileFooter thrift object format.
-   *
-   * @return
-   * @throws IOException
-   */
-  public FileHeader readHeader() throws IOException {
-    ThriftReader thriftReader = openThriftReader(filePath);
-    thriftReader.open();
-    FileHeader header = (FileHeader) thriftReader.read();
-    thriftReader.close();
-    return header;
-  }
-
-  /**
    * Open the thrift reader
    *
    * @param filePath
@@ -63,6 +49,20 @@ public class CarbonHeaderReader {
         return new FileHeader();
       }
     });
+  }
+
+  /**
+   * It reads the metadata in FileFooter thrift object format.
+   *
+   * @return
+   * @throws IOException
+   */
+  public FileHeader readHeader() throws IOException {
+    ThriftReader thriftReader = openThriftReader(filePath);
+    thriftReader.open();
+    FileHeader header = (FileHeader) thriftReader.read();
+    thriftReader.close();
+    return header;
   }
 
 }

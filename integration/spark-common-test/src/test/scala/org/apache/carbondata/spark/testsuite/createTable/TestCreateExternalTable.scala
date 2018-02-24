@@ -30,14 +30,14 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS origin")
     // create carbon table and insert data
-    sql("CREATE TABLE origin(key INT, value STRING) STORED BY 'carbondata'")
-    sql("INSERT INTO origin select 100,'spark'")
-    sql("INSERT INTO origin select 200,'hive'")
+    sql("CREATE TABLE origin(name String, age int) STORED BY 'carbondata'")
+    sql("INSERT INTO origin select 'spark', 100")
+    sql("INSERT INTO origin select 'hive', 200")
     originDataPath = s"$storeLocation/origin"
   }
 
   override def afterAll(): Unit = {
-    sql("DROP TABLE IF EXISTS origin")
+  //  sql("DROP TABLE IF EXISTS origin")
   }
 
   test("create external table with existing files") {
@@ -49,9 +49,10 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
       s"""
          |CREATE EXTERNAL TABLE source
          |STORED BY 'carbondata'
-         |LOCATION '$storeLocation/origin'
+         |LOCATION '/home/root1/data/test'
        """.stripMargin)
-    checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
+    sql("select * from source").show(200,false)
+   //  checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
 
     val carbonTable = CarbonEnv.getCarbonTable(None, "source")(sqlContext.sparkSession)
     assert(carbonTable.isExternalTable)
@@ -61,6 +62,31 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
     // DROP TABLE should not delete data
     assert(new File(originDataPath).exists())
   }
+
+
+  test("create external table with existing files2") {
+    assert(new File(originDataPath).exists())
+    sql("DROP TABLE IF EXISTS source1")
+
+    // create external table with existing files
+    sql(
+      s"""
+         |CREATE EXTERNAL TABLE source1(name string, age int)
+         | row format delimited fields terminated by ',' stored as textfile
+         |LOCATION '/home/root1/data/test'
+       """.stripMargin)
+    sql("select * from source1").show(200,false)
+    //  checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
+
+    val carbonTable = CarbonEnv.getCarbonTable(None, "source1")(sqlContext.sparkSession)
+    assert(carbonTable.isExternalTable)
+
+    sql("DROP TABLE IF EXISTS source1")
+
+    // DROP TABLE should not delete data
+    assert(new File(originDataPath).exists())
+  }
+
 
   test("create external table with empty folder") {
     val exception = intercept[AnalysisException] {
