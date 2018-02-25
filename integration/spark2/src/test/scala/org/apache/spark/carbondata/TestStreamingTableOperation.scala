@@ -332,6 +332,12 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("select * from stream_table_filter where name like '%me_3%' and id < 30"),
       Seq(Row(3, "name_3", "city_3", 30000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
+    checkAnswer(sql("select count(*) from stream_table_filter where name like '%ame%'"),
+      Seq(Row(49)))
+
+    checkAnswer(sql("select count(*) from stream_table_filter where name like '%batch%'"),
+      Seq(Row(5)))
+
     checkAnswer(
       sql("select * from stream_table_filter where name >= 'name_3' and id < 4"),
       Seq(Row(3, "name_3", "city_3", 30000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
@@ -349,6 +355,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("select * from stream_table_filter where city like '%ty_1%' and ( id < 10 or id >= 100000001)"),
       Seq(Row(1, "name_1", "city_1", 10000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0")),
         Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+
+    checkAnswer(sql("select count(*) from stream_table_filter where city like '%city%'"),
+      Seq(Row(54)))
 
     checkAnswer(
       sql("select * from stream_table_filter where city > 'city_09' and city < 'city_10'"),
@@ -649,6 +658,12 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("select * from stream_table_filter_complex where name like '%me_3%' and id < 30"),
       Seq(Row(3, "name_3", "city_3", 30000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_3", "school_33")), 3))))
 
+    checkAnswer(sql("select count(*) from stream_table_filter_complex where name like '%ame%'"),
+      Seq(Row(49)))
+
+    checkAnswer(sql("select count(*) from stream_table_filter_complex where name like '%batch%'"),
+      Seq(Row(5)))
+
     checkAnswer(
       sql("select * from stream_table_filter_complex where name >= 'name_3' and id < 4"),
       Seq(Row(3, "name_3", "city_3", 30000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_3", "school_33")), 3))))
@@ -662,6 +677,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("select * from stream_table_filter_complex where city like '%ty_1%' and ( id < 10 or id >= 100000001)"),
       Seq(Row(1, "name_1", "city_1", 10000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_1", "school_11")), 1)),
         Row(100000001, "batch_1", "city_1", 0.1, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_1", "school_11")), 20))))
+
+    checkAnswer(sql("select count(*) from stream_table_filter_complex where city like '%city%'"),
+      Seq(Row(54)))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where city > 'city_09' and city < 'city_10'"),
@@ -1056,7 +1074,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     //Verify MergeTO column entry for compacted Segments
     newSegments.filter(_.getString(1).equals("Compacted")).foreach{ rw =>
       assertResult("Compacted")(rw.getString(1))
-      assertResult((Integer.parseInt(rw.getString(0))+2).toString)(rw.getString(4))
+      assert(Integer.parseInt(rw.getString(0)) < Integer.parseInt(rw.getString(4)))
     }
     checkAnswer(
       sql("select count(*) from streaming.stream_table_reopen"),
