@@ -95,6 +95,7 @@ class CarbonAppendableStreamSink(
       val statistic = new QueryStatistic()
 
       // fire pre event on every batch add
+      // in case of streaming options and optionsFinal can be same
       val operationContext = new OperationContext
       val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
         carbonTable.getCarbonTableIdentifier,
@@ -102,7 +103,7 @@ class CarbonAppendableStreamSink(
         carbonLoadModel.getFactFilePath,
         false,
         parameters.asJava,
-        null,
+        parameters.asJava,
         false
       )
       OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
