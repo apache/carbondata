@@ -277,7 +277,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     try {
-      Boolean result = exp.evaluate(createRow(value, dimOrdinalMax)).getBoolean();
+      Boolean result = exp.evaluate(convertRow(value, dimOrdinalMax)).getBoolean();
       return result == null ? false : result;
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
@@ -285,9 +285,13 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   }
 
   /**
-   * create row for row filter to evaluate expression
+   * convert encoded row to actual value row for filter to evaluate expression
+   * @param value this row will be converted to actual value
+   * @param dimOrdinalMax for measure column, its index in row = dimOrdinalMax + its ordinal
+   * @return actual value row
+   * @throws IOException
    */
-  private RowIntf createRow(RowIntf value, int dimOrdinalMax) throws IOException {
+  private RowIntf convertRow(RowIntf value, int dimOrdinalMax) throws IOException {
     Object[] record = new Object[value.size()];
     String memberString;
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
@@ -297,6 +301,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       if (!isDimensionPresentInCurrentBlock[i]) {
         // fill default value here
         record[index] = getDimensionDefaultValue(dimColumnEvaluatorInfo);
+        // already set value, so continue to set next dimension
         continue;
       }
       if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
@@ -305,6 +310,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         }
         byte[] memberBytes = (byte[]) value.getVal(index);
         if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+          // no dictionary
           if (null != memberBytes) {
             if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
               memberBytes = null;
@@ -315,6 +321,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
                 dimColumnEvaluatorInfo.getDimension().getDataType());
           }
         } else {
+          // dictionary
           int dictionaryValue = ByteUtil.toInt(memberBytes, 0);
           if (dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
               && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
@@ -330,6 +337,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           }
         }
       } else {
+        // complex
         record[index] = value.getVal(index);
       }
     }
@@ -341,11 +349,12 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       // in the current block measure list
       if (!isMeasurePresentInCurrentBlock[i]) {
         byte[] defaultValue = msrColumnEvalutorInfo.getCarbonColumn().getDefaultValue();
-        record[index] = RestructureUtil
-            .getMeasureDefaultValue(msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema(),
-                defaultValue);
+        record[index] = RestructureUtil.getMeasureDefaultValue(
+            msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema(), defaultValue);
+        // already set value, so continue to set next measure
         continue;
       }
+      // measure
       record[index] = value.getVal(index);
     }
     RowIntf row = new RowImpl();
