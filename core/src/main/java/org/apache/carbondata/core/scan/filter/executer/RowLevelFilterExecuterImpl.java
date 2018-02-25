@@ -60,6 +60,7 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnRes
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -276,10 +277,80 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     try {
-      return exp.evaluate(value).getBoolean();
+      Boolean result = exp.evaluate(createRow(value, dimOrdinalMax)).getBoolean();
+      return result == null ? false : result;
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
     }
+  }
+
+  /**
+   * create row for row filter to evaluate expression
+   */
+  private RowIntf createRow(RowIntf value, int dimOrdinalMax) throws IOException {
+    Object[] record = new Object[value.size()];
+    String memberString;
+    for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
+      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
+      int index = dimColumnEvaluatorInfo.getDimension().getOrdinal();
+      // if filter dimension is not present in the current add its default value
+      if (!isDimensionPresentInCurrentBlock[i]) {
+        // fill default value here
+        record[index] = getDimensionDefaultValue(dimColumnEvaluatorInfo);
+        continue;
+      }
+      if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
+        if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSilce()) {
+          record[index] = dimColumnEvaluatorInfo.getDimension().getDefaultValue();
+        }
+        byte[] memberBytes = (byte[]) value.getVal(index);
+        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+          if (null != memberBytes) {
+            if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
+              memberBytes = null;
+            } else if (memberBytes.length == 0) {
+              memberBytes = null;
+            }
+            record[index] = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(memberBytes,
+                dimColumnEvaluatorInfo.getDimension().getDataType());
+          }
+        } else {
+          int dictionaryValue = ByteUtil.toInt(memberBytes, 0);
+          if (dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
+              && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            memberString =
+                getFilterActualValueFromDictionaryValue(dimColumnEvaluatorInfo, dictionaryValue);
+            record[index] = DataTypeUtil.getDataBasedOnDataType(memberString,
+                dimColumnEvaluatorInfo.getDimension().getDataType());
+          } else if (
+              dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            Object member = getFilterActualValueFromDirectDictionaryValue(dimColumnEvaluatorInfo,
+                dictionaryValue);
+            record[index] = member;
+          }
+        }
+      } else {
+        record[index] = value.getVal(index);
+      }
+    }
+
+    for (int i = 0; i < msrColEvalutorInfoList.size(); i++) {
+      MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo = msrColEvalutorInfoList.get(i);
+      int index = msrColumnEvalutorInfo.getMeasure().getOrdinal() + dimOrdinalMax;
+      // add default value for the measure in case filter measure is not present
+      // in the current block measure list
+      if (!isMeasurePresentInCurrentBlock[i]) {
+        byte[] defaultValue = msrColumnEvalutorInfo.getCarbonColumn().getDefaultValue();
+        record[index] = RestructureUtil
+            .getMeasureDefaultValue(msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema(),
+                defaultValue);
+        continue;
+      }
+      record[index] = value.getVal(index);
+    }
+    RowIntf row = new RowImpl();
+    row.setValues(record);
+    return row;
   }
 
   /**
