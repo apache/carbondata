@@ -63,7 +63,6 @@ object DataFrameComplexTypeExample {
     df.write
       .format("carbondata")
       .option("tableName", complexTableName)
-      .option("single_pass", "true")
       .mode(SaveMode.Append)
       .save()
 
@@ -81,6 +80,9 @@ object DataFrameComplexTypeExample {
 
     // show segments
     spark.sql(s"SHOW SEGMENTS FOR TABLE ${complexTableName}").show(false)
+
+    // drop table
+    spark.sql(s"DROP TABLE IF EXISTS ${ complexTableName }")
 
     spark.stop()
   }
