@@ -40,6 +40,9 @@ import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, P
 import org.apache.carbondata.streaming.CarbonStreamException
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
+case class FileElement(school: Array[String], age: Integer)
+case class StreamData(id: Integer, name: String, city: String, salary: Float, file: FileElement)
+
 class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
   private val spark = sqlContext.sparkSession
@@ -1213,11 +1216,25 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       override def run(): Unit = {
         var qry: StreamingQuery = null
         try {
+          import spark.implicits._
           val readSocketDF = spark.readStream
             .format("socket")
             .option("host", "localhost")
             .option("port", port)
             .load()
+            .as[String]
+            .map(_.split(","))
+            .map { fields => {
+              val tmp = fields(4).split("\\$")
+              val file = FileElement(tmp(0).split(":"), tmp(1).toInt)
+              if (fields(1).equals("name_2")) {
+                StreamData(fields(0).toInt, fields(1), null, fields(3).toFloat, file)
+              } else if (fields(1).equals("name_6")) {
+                StreamData(null, fields(1), fields(2), fields(3).toFloat, file)
+              } else {
+                StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat, file)
+              }
+            } }
 
           // Write data from socket stream to carbondata file
           qry = readSocketDF.writeStream
@@ -1227,8 +1244,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .option("bad_records_action", badRecordAction)
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
-            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-              "org.apache.carbondata.streaming.parser.CSVStreamParserImp")
             .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
             .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
             .option(CarbonCommonConstants.ENABLE_AUTO_HANDOFF, autoHandoff)
@@ -1333,7 +1348,15 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       override def run(): Unit = {
         var qry: StreamingQuery = null
         try {
+          import spark.implicits._
           val readSocketDF = spark.readStream.text(csvDataDir)
+            .as[String]
+            .map(_.split(","))
+            .map { fields => {
+              val tmp = fields(4).split("\\$")
+              val file = FileElement(tmp(0).split(":"), tmp(1).toInt)
+              StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat, file)
+            } }
 
           // Write data from socket stream to carbondata file
           qry = readSocketDF.writeStream
@@ -1343,8 +1366,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
             .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-              "org.apache.carbondata.streaming.parser.CSVStreamParserImp")
             .start()
 
           qry.awaitTermination()
