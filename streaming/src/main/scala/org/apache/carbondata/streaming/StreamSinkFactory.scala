@@ -60,6 +60,7 @@ object StreamSinkFactory {
       parameters,
       "")
     // fire pre event before streamin is started
+    // in case of streaming options and optionsFinal can be same
     val operationContext = new OperationContext
     val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
       carbonTable.getCarbonTableIdentifier,
@@ -67,7 +68,7 @@ object StreamSinkFactory {
       carbonLoadModel.getFactFilePath,
       false,
       parameters.asJava,
-      null,
+      parameters.asJava,
       false
     )
     OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
