@@ -163,8 +163,8 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(csvDelimiter)
-    carbonLoadModel.setComplexDelimiterLevel1("\\$")
-    carbonLoadModel.setComplexDelimiterLevel2("\\:")
+    carbonLoadModel.setComplexDelimiterLevel1("$")
+    carbonLoadModel.setComplexDelimiterLevel2(":")
     carbonLoadModel.setColDictFilePath(extColFilePath)
     carbonLoadModel.setQuoteChar("\"");
     carbonLoadModel.setSerializationNullFormat(
