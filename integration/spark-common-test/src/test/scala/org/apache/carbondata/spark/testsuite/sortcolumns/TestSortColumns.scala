@@ -29,6 +29,13 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_DATE_FORMAT,
+      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+
     SparkUtil4Test.createTaskMockUp(sqlContext)
     dropTable
 
