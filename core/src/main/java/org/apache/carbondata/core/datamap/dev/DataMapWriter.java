@@ -18,6 +18,8 @@ package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -25,17 +27,21 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
- * Data Map writer
+ * Writer interface for datamap.
+ * Developer should implement this interface to write index files.
+ * Writer will be called for every new block/blocklet/page is created when data load is executing.
  */
-public abstract class AbstractDataMapWriter {
+@InterfaceAudience.Developer("DataMap")
+@InterfaceStability.Evolving
+public abstract class DataMapWriter {
 
   protected AbsoluteTableIdentifier identifier;
 
   protected String segmentId;
 
-  protected String writeDirectoryPath;
+  private String writeDirectoryPath;
 
-  public AbstractDataMapWriter(AbsoluteTableIdentifier identifier, String segmentId,
+  public DataMapWriter(AbsoluteTableIdentifier identifier, String segmentId,
       String writeDirectoryPath) {
     this.identifier = identifier;
     this.segmentId = segmentId;
@@ -70,7 +76,7 @@ public abstract class AbstractDataMapWriter {
 
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
-   * DataMapMeta returned in IndexDataMapFactory.
+   * DataMapMeta returned in DataMapFactory.
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
    */
@@ -83,10 +89,10 @@ public abstract class AbstractDataMapWriter {
   public abstract void finish() throws IOException;
 
   /**
-   * It copies the file from temp folder to actual folder
+   * It commits the index file by copying the file from temp folder to actual folder
    *
-   * @param dataMapFile
-   * @throws IOException
+   * @param dataMapFile file path of index file
+   * @throws IOException if IO fails
    */
   protected void commitFile(String dataMapFile) throws IOException {
     if (!dataMapFile.startsWith(writeDirectoryPath)) {

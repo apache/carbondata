@@ -26,8 +26,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
-import org.apache.carbondata.core.datamap.dev.{AbstractDataMapWriter, DataMapModel}
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainIndexDataMap, AbstractCoarseGrainIndexDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.{AbstractDataMapWriter, DataMapModel, DataMapWriter, IndexDataMapWriter}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainIndexDataMapFactory, CoarseGrainDataMap, CoarseGrainDataMapFactory, CoarseGrainIndexDataMap}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
@@ -47,7 +47,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class CGIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFactory {
+class CGDataMapFactory extends CoarseGrainDataMapFactory {
   var identifier: AbsoluteTableIdentifier = _
   var dataMapSchema: DataMapSchema = _
 
@@ -62,7 +62,7 @@ class CGIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFactory {
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segmentId: String, dataWritePath: String): AbstractDataMapWriter = {
+  override def createWriter(segmentId: String, dataWritePath: String): DataMapWriter = {
     new CGDataMapWriter(identifier, segmentId, dataWritePath, dataMapSchema)
   }
 
@@ -76,7 +76,7 @@ class CGIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFactory {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
     })
     files.map {f =>
-      val dataMap: AbstractCoarseGrainIndexDataMap = new CGIndexDataMap()
+      val dataMap: CoarseGrainDataMap = new CGDataMap()
       dataMap.init(new DataMapModel(f.getCanonicalPath))
       dataMap
     }.toList.asJava
@@ -87,9 +87,9 @@ class CGIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFactory {
    * Get datamaps for distributable object.
    */
   override def getDataMaps(
-      distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainIndexDataMap] = {
+      distributable: DataMapDistributable): java.util.List[CoarseGrainDataMap] = {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
-    val dataMap: AbstractCoarseGrainIndexDataMap = new CGIndexDataMap()
+    val dataMap: CoarseGrainDataMap = new CGDataMap()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath))
     Seq(dataMap).asJava
   }
@@ -143,7 +143,7 @@ class CGIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFactory {
   }
 }
 
-class CGIndexDataMap extends AbstractCoarseGrainIndexDataMap {
+class CGDataMap extends CoarseGrainDataMap {
 
   var maxMin: ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]))] = _
   var FileReader: FileReader = _
@@ -225,7 +225,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
     segmentId: String,
     dataWritePath: String,
     dataMapSchema: DataMapSchema)
-  extends AbstractDataMapWriter(identifier, segmentId, dataWritePath) {
+  extends DataMapWriter(identifier, segmentId, dataWritePath) {
 
   var currentBlockId: String = null
   val cgwritepath = dataWritePath + "/" +
@@ -276,7 +276,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
 
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
-   * DataMapMeta returned in IndexDataMapFactory.
+   * DataMapMeta returned in DataMapFactory.
    *
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
@@ -321,7 +321,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
 
 }
 
-class CGIndexDataMapTestCase extends QueryTest with BeforeAndAfterAll {
+class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/compaction/fil2.csv"
   override protected def beforeAll(): Unit = {
@@ -348,7 +348,7 @@ class CGIndexDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test_cg")
     // register datamap writer
-    sql(s"create datamap cgdatamap on table datamap_test_cg using '${classOf[CGIndexDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
+    sql(s"create datamap cgdatamap on table datamap_test_cg using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_cg OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test_cg where name='n502670'"),
       sql("select * from normal_test where name='n502670'"))
@@ -364,8 +364,8 @@ class CGIndexDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
     // register datamap writer
-    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGIndexDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGIndexDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
+    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
+    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))

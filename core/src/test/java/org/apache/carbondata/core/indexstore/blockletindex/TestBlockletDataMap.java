@@ -16,7 +16,7 @@ import mockit.MockUp;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestBlockletIndexDataMap extends AbstractDictionaryCacheTest {
+public class TestBlockletDataMap extends AbstractDictionaryCacheTest {
 
   ImplicitIncludeFilterExecutorImpl implicitIncludeFilterExecutor;
   @Before public void setUp() throws Exception {
@@ -42,8 +42,8 @@ public class TestBlockletIndexDataMap extends AbstractDictionaryCacheTest {
       }
     };
 
-    BlockletIndexDataMap blockletDataMap = new BlockletIndexDataMap();
-    Method method = BlockletIndexDataMap.class
+    BlockletDataMap blockletDataMap = new BlockletDataMap();
+    Method method = BlockletDataMap.class
         .getDeclaredMethod("addBlockBasedOnMinMaxValue", FilterExecuter.class, byte[][].class,
             byte[][].class, String.class, int.class);
     method.setAccessible(true);

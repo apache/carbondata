@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
+package org.apache.carbondata.core.datamap.dev.fgdatamap;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -24,13 +24,21 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 /**
- * FineGrainBlocklet
+ * Used for returning matched rows after applying
+ * {@link FineGrainDataMap#prune(FilterResolverIntf, SegmentProperties, List)}
  */
+@InterfaceAudience.Developer("DataMap")
+@InterfaceStability.Evolving
 public class FineGrainBlocklet extends Blocklet implements Serializable {
 
   private List<Page> pages;

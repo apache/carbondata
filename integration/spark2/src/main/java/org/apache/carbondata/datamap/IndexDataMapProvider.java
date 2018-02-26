@@ -22,7 +22,7 @@ import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapRegistry;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.dev.IndexDataMapFactory;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.format.TableInfo;
@@ -38,7 +38,7 @@ public class IndexDataMapProvider implements DataMapProvider {
   @Override
   public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement,
       SparkSession sparkSession) throws MalformedDataMapCommandException {
-    IndexDataMapFactory dataMapFactory = createIndexDataMapFactory(dataMapSchema);
+    DataMapFactory dataMapFactory = createIndexDataMapFactory(dataMapSchema);
     DataMapStoreManager.getInstance().registerDataMap(
         mainTable.getAbsoluteTableIdentifier(), dataMapSchema, dataMapFactory);
     originalTableInfo = PreAggregateUtil.updateMainTable(mainTable, dataMapSchema, sparkSession);
@@ -73,13 +73,13 @@ public class IndexDataMapProvider implements DataMapProvider {
     throw new UnsupportedOperationException();
   }
 
-  private IndexDataMapFactory createIndexDataMapFactory(DataMapSchema dataMapSchema)
+  private DataMapFactory createIndexDataMapFactory(DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
-    IndexDataMapFactory dataMapFactory;
+    DataMapFactory dataMapFactory;
     try {
       // try to create DataMapProvider instance by taking providerName as class name
-      Class<? extends IndexDataMapFactory> providerClass =
-          (Class<? extends IndexDataMapFactory>) Class.forName(dataMapSchema.getClassName());
+      Class<? extends DataMapFactory> providerClass =
+          (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getClassName());
       dataMapFactory = providerClass.newInstance();
     } catch (ClassNotFoundException e) {
       // try to create DataMapProvider instance by taking providerName as short name
@@ -91,14 +91,14 @@ public class IndexDataMapProvider implements DataMapProvider {
     return dataMapFactory;
   }
 
-  private IndexDataMapFactory getDataMapFactoryByShortName(String providerName)
+  private DataMapFactory getDataMapFactoryByShortName(String providerName)
       throws MalformedDataMapCommandException {
-    IndexDataMapFactory dataMapFactory;
+    DataMapFactory dataMapFactory;
     String className = DataMapRegistry.getDataMapClassName(providerName);
     if (className != null) {
       try {
-        Class<? extends IndexDataMapFactory> datamapClass =
-            (Class<? extends IndexDataMapFactory>) Class.forName(providerName);
+        Class<? extends DataMapFactory> datamapClass =
+            (Class<? extends DataMapFactory>) Class.forName(providerName);
         dataMapFactory = datamapClass.newInstance();
       } catch (ClassNotFoundException ex) {
         throw new MalformedDataMapCommandException(

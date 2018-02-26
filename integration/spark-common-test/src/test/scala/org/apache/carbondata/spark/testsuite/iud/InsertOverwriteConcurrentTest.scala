@@ -28,8 +28,8 @@ import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainIndexDataMapFactory, AbstractCoarseGrainIndexDataMap}
-import org.apache.carbondata.core.datamap.dev.AbstractDataMapWriter
+import org.apache.carbondata.core.datamap.dev.DataMapWriter
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainIndexDataMapFactory, CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -50,7 +50,7 @@ class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll wit
     sql(
       s"""
          | create datamap test on table orders
-         | using '${classOf[WaitingIndexDataMap].getName}'
+         | using '${classOf[WaitingDataMap].getName}'
          | as select count(a) from hiveMetaStoreTable_1")
        """.stripMargin)
   }
@@ -106,7 +106,7 @@ class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll wit
     )
     while (!Global.overwriteRunning && count < 1000) {
       Thread.sleep(10)
-      // to avoid dead loop in case WaitingIndexDataMap is not invoked
+      // to avoid dead loop in case WaitingDataMap is not invoked
       count += 1
     }
     future
@@ -167,7 +167,7 @@ object Global {
   var overwriteRunning = false
 }
 
-class WaitingIndexDataMap() extends AbstractCoarseGrainIndexDataMapFactory {
+class WaitingDataMap() extends CoarseGrainDataMapFactory {
 
   override def init(identifier: AbsoluteTableIdentifier, dataMapSchema: DataMapSchema): Unit = { }
 
@@ -177,12 +177,12 @@ class WaitingIndexDataMap() extends AbstractCoarseGrainIndexDataMapFactory {
 
   override def clear(): Unit = {}
 
-  override def getDataMaps(distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainIndexDataMap] = ???
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[CoarseGrainDataMap] = ???
 
-  override def getDataMaps(segmentId: String): util.List[AbstractCoarseGrainIndexDataMap] = ???
+  override def getDataMaps(segmentId: String): util.List[CoarseGrainDataMap] = ???
 
-  override def createWriter(segmentId: String, writerPath: String): AbstractDataMapWriter = {
-    new AbstractDataMapWriter(null, segmentId, writerPath) {
+  override def createWriter(segmentId: String, writerPath: String): DataMapWriter = {
+    new DataMapWriter(null, segmentId, writerPath) {
       override def onPageAdded(blockletId: Int, pageId: Int, pages: Array[ColumnPage]): Unit = { }
 
       override def onBlockletEnd(blockletId: Int): Unit = { }

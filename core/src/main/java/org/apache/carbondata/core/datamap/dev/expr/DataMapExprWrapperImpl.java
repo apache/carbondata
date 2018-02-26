@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
-import org.apache.carbondata.core.datamap.DataMapType;
+import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -80,7 +80,7 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
     return wrappers;
   }
 
-  @Override public DataMapType getDataMapType() {
-    return dataMap.getIndexDataMapFactory().getDataMapType();
+  @Override public DataMapLevel getDataMapType() {
+    return dataMap.getDataMapFactory().getDataMapType();
   }
 }

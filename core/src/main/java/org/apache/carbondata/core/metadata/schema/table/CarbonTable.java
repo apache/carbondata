@@ -776,7 +776,7 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * whether this table has aggregation IndexDataMap or not
+   * whether this table has aggregation DataMap or not
    */
   public boolean hasAggregationDataMap() {
     List<DataMapSchema> dataMapSchemaList = tableInfo.getDataMapSchemaList();
