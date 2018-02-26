@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
-import org.apache.carbondata.core.datamap.DataMapType;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -30,7 +30,7 @@ import org.apache.carbondata.events.Event;
 /**
  * Interface for datamap factory, it is responsible for creating the datamap.
  */
-public interface IndexDataMapFactory<T extends IndexDataMap> {
+public interface DataMapFactory<T extends DataMap> {
 
   /**
    * Initialization of Datamap factory with the identifier and datamap name
@@ -40,7 +40,7 @@ public interface IndexDataMapFactory<T extends IndexDataMap> {
   /**
    * Return a new write for this datamap
    */
-  AbstractDataMapWriter createWriter(Segment segment, String writeDirectoryPath);
+  DataMapWriter createWriter(Segment segment, String writeDirectoryPath);
 
   /**
    * Get the datamap for segmentid
@@ -82,5 +82,5 @@ public interface IndexDataMapFactory<T extends IndexDataMap> {
   /**
    *  Type of datamap whether it is FG or CG
    */
-  DataMapType getDataMapType();
+  DataMapLevel getDataMapType();
 }
