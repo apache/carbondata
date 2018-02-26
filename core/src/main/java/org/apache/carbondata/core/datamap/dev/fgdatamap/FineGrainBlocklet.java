@@ -27,10 +27,9 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
+
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 /**

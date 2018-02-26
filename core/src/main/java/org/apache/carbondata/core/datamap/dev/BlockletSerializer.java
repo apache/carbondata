@@ -19,13 +19,10 @@ package org.apache.carbondata.core.datamap.dev;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 /**
  * A serializer/deserializer for {@link FineGrainBlocklet}, it is used after prune the data
