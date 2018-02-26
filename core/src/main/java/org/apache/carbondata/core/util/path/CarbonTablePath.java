@@ -38,7 +38,7 @@ public class CarbonTablePath extends Path {
   private static final String DICTIONARY_META_EXT = ".dictmeta";
   private static final String SORT_INDEX_EXT = ".sortindex";
   private static final String SCHEMA_FILE = "schema";
-  private static final String TABLE_STATUS_FILE = "tablestatus";
+  public static final String TABLE_STATUS_FILE = "tablestatus";
   private static final String FACT_DIR = "Fact";
   private static final String SEGMENT_PREFIX = "Segment_";
   private static final String PARTITION_PREFIX = "Part";
@@ -174,6 +174,13 @@ public class CarbonTablePath extends Path {
    */
   public static String getTableStatusPath(String tablePath) {
     return getMetadataPath(tablePath) + File.separator + TABLE_STATUS_FILE;
+  }
+
+  /**
+   * Return table status file path based on `tablePath`
+   */
+  public static String getTableStatusFilePath(String tablePath) {
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + TABLE_STATUS_FILE;
   }
 
   /**
