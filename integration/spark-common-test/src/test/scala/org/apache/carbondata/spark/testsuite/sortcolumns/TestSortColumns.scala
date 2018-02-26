@@ -30,11 +30,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
 
     SparkUtil4Test.createTaskMockUp(sqlContext)
     dropTable
@@ -368,6 +364,8 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll = {
     dropTable
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 
   def dropTable = {
