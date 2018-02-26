@@ -48,6 +48,7 @@ object ValidateUtil {
     if (sortScope != null) {
       // Don't support use global sort on partitioned table.
       if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null &&
+          !carbonTable.isHivePartitionTable &&
           sortScope.equalsIgnoreCase(SortScopeOptions.SortScope.GLOBAL_SORT.toString)) {
         throw new MalformedCarbonCommandException("Don't support use global sort on partitioned " +
           "table.")

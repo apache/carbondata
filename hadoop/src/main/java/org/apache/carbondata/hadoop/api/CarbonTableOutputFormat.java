@@ -33,10 +33,10 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
+import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
 import org.apache.carbondata.processing.loading.TableProcessingOperations;
-import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable;
 import org.apache.carbondata.processing.loading.iterator.CarbonOutputIteratorWrapper;
 import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -57,7 +57,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
  * It also generate and writes dictionary data during load only if dictionary server is configured.
  */
 // TODO Move dictionary generater which is coded in spark to MR framework.
-public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, StringArrayWritable> {
+public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, ObjectArrayWritable> {
 
   private static final String LOAD_MODEL = "mapreduce.carbontable.load.model";
   private static final String DATABASE_NAME = "mapreduce.carbontable.databaseName";
@@ -228,12 +228,14 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
   }
 
   @Override
-  public RecordWriter<NullWritable, StringArrayWritable> getRecordWriter(
+  public RecordWriter<NullWritable, ObjectArrayWritable> getRecordWriter(
       TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
     loadModel.setTaskNo(taskAttemptContext.getConfiguration().get(
         "carbon.outputformat.taskno",
         String.valueOf(System.nanoTime())));
+    loadModel.setDataWritePath(
+        taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
     final CarbonOutputIteratorWrapper iteratorWrapper = new CarbonOutputIteratorWrapper();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
@@ -372,7 +374,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
     model.setCsvHeaderColumns(columns);
   }
 
-  public static class CarbonRecordWriter extends RecordWriter<NullWritable, StringArrayWritable> {
+  public static class CarbonRecordWriter extends RecordWriter<NullWritable, ObjectArrayWritable> {
 
     private CarbonOutputIteratorWrapper iteratorWrapper;
 
@@ -394,9 +396,9 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
       this.future = future;
     }
 
-    @Override public void write(NullWritable aVoid, StringArrayWritable strings)
+    @Override public void write(NullWritable aVoid, ObjectArrayWritable objects)
         throws InterruptedException {
-      iteratorWrapper.write(strings.get());
+      iteratorWrapper.write(objects.get());
     }
 
     @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {

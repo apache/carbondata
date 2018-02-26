@@ -83,7 +83,7 @@ public class BlockIndexStoreTest extends TestCase {
 //      assertTrue(false);
 //    }
 //    List<String> segmentIds = new ArrayList<>();
-//      segmentIds.add(info.getSegmentId());
+//      segmentIds.add(info.getSegment());
 //    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
 //  }
 //
@@ -151,7 +151,7 @@ public class BlockIndexStoreTest extends TestCase {
 //    }
 //    List<String> segmentIds = new ArrayList<>();
 //    for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
-//      segmentIds.add(tableBlockInfo.getSegmentId());
+//      segmentIds.add(tableBlockInfo.getSegment());
 //    }
 //    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
 //  }
@@ -223,7 +223,7 @@ public class BlockIndexStoreTest extends TestCase {
 //    }
 //    List<String> segmentIds = new ArrayList<>();
 //    for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
-//      segmentIds.add(tableBlockInfo.getSegmentId());
+//      segmentIds.add(tableBlockInfo.getSegment());
 //    }
 //    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
 //  }

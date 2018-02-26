@@ -83,12 +83,30 @@ public final class DataTypeUtil {
    */
   public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
       CarbonMeasure carbonMeasure) {
+    return getMeasureValueBasedOnDataType(msrValue, dataType,carbonMeasure, false);
+  }
+
+  /**
+   * This method will convert a given value to its specific type
+   *
+   * @param msrValue
+   * @param dataType
+   * @param carbonMeasure
+   * @return
+   */
+  public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
+      CarbonMeasure carbonMeasure, boolean useConverter) {
     if (dataType == DataTypes.BOOLEAN) {
       return BooleanConvert.parseBoolean(msrValue);
     } else if (DataTypes.isDecimal(dataType)) {
       BigDecimal bigDecimal =
           new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-      return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+      BigDecimal decimal = normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+      if (useConverter) {
+        return converter.convertToDecimal(decimal);
+      } else {
+        return decimal;
+      }
     } else if (dataType == DataTypes.SHORT) {
       return Short.parseShort(msrValue);
     } else if (dataType == DataTypes.INT) {
@@ -329,6 +347,63 @@ public final class DataTypeUtil {
       }
     } else {
       return ByteUtil.toBytes(dimensionValue);
+    }
+  }
+
+  public static Object getDataDataTypeForNoDictionaryColumn(String dimensionValue,
+      DataType actualDataType, String dateFormat) {
+    if (actualDataType == DataTypes.BOOLEAN) {
+      return BooleanConvert.parseBoolean(dimensionValue);
+    } else if (actualDataType == DataTypes.STRING) {
+      return converter.convertFromStringToUTF8String(dimensionValue);
+    } else if (actualDataType == DataTypes.SHORT) {
+      return Short.parseShort(dimensionValue);
+    } else if (actualDataType == DataTypes.INT) {
+      return Integer.parseInt(dimensionValue);
+    } else if (actualDataType == DataTypes.LONG) {
+      return Long.parseLong(dimensionValue);
+    } else if (actualDataType == DataTypes.TIMESTAMP) {
+      Date dateToStr = null;
+      DateFormat dateFormatter = null;
+      try {
+        if (null != dateFormat && !dateFormat.trim().isEmpty()) {
+          dateFormatter = new SimpleDateFormat(dateFormat);
+        } else {
+          dateFormatter = timeStampformatter.get();
+        }
+        dateToStr = dateFormatter.parse(dimensionValue);
+        return dateToStr.getTime();
+      } catch (ParseException e) {
+        throw new NumberFormatException(e.getMessage());
+      }
+    } else {
+      return converter.convertFromStringToUTF8String(dimensionValue);
+    }
+  }
+
+  public static byte[] getBytesDataDataTypeForNoDictionaryColumn(Object dimensionValue,
+      DataType actualDataType) {
+    if (dimensionValue == null) {
+      if (actualDataType == DataTypes.STRING) {
+        return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      } else {
+        return new byte[0];
+      }
+    }
+    if (actualDataType == DataTypes.BOOLEAN) {
+      return ByteUtil.toBytes((Boolean) dimensionValue);
+    } else if (actualDataType == DataTypes.STRING) {
+      return ByteUtil.toBytes(dimensionValue.toString());
+    } else if (actualDataType == DataTypes.SHORT) {
+      return ByteUtil.toBytes((Short) dimensionValue);
+    } else if (actualDataType == DataTypes.INT) {
+      return ByteUtil.toBytes((Integer) dimensionValue);
+    } else if (actualDataType == DataTypes.LONG) {
+      return ByteUtil.toBytes((Long) dimensionValue);
+    } else if (actualDataType == DataTypes.TIMESTAMP) {
+      return ByteUtil.toBytes((Long)dimensionValue);
+    } else {
+      return ByteUtil.toBytes(dimensionValue.toString());
     }
   }
 
@@ -726,6 +801,8 @@ public final class DataTypeUtil {
    */
   public static void setDataTypeConverter(DataTypeConverter converterLocal) {
     converter = converterLocal;
+    timeStampformatter.remove();
+    dateformatter.remove();
   }
 
   public static DataTypeConverter getDataTypeConverter() {

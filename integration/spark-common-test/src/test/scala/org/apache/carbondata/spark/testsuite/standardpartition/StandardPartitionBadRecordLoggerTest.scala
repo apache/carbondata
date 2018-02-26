@@ -204,23 +204,6 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
     )
   }
 
-  test("test load ddl command") {
-    sql(
-      """CREATE TABLE IF NOT EXISTS dataloadOptionTests(ID BigInt, date Timestamp, country
-           String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
-      """)
-    val csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
-    try {
-      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE dataloadOptionTests OPTIONS"
-          + "('bad_records_action'='FORCA', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-    } catch {
-      case ex: Exception =>
-        assert("option BAD_RECORDS_ACTION can have only either FORCE or IGNORE or REDIRECT"
-          .equals(ex.getMessage))
-    }
-  }
-
   def drop(): Unit = {
     sql("drop table IF EXISTS sales")
     sql("drop table IF EXISTS serializable_values")
@@ -237,6 +220,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
   override def afterAll {
     drop()
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

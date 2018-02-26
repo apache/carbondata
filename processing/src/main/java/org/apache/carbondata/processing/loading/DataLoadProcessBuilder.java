@@ -41,6 +41,7 @@ import org.apache.carbondata.processing.loading.steps.DataConverterProcessorStep
 import org.apache.carbondata.processing.loading.steps.DataConverterProcessorWithBucketingStepImpl;
 import org.apache.carbondata.processing.loading.steps.DataWriterBatchProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImpl;
+import org.apache.carbondata.processing.loading.steps.InputProcessorStepForPartitionImpl;
 import org.apache.carbondata.processing.loading.steps.InputProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.SortProcessorStepImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -56,12 +57,15 @@ public final class DataLoadProcessBuilder {
       CarbonIterator[] inputIterators) throws Exception {
     CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
-    if (!configuration.isSortTable() || sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
+    if ((!configuration.isSortTable() || sortScope.equals(SortScopeOptions.SortScope.NO_SORT))
+        && !loadModel.isPartitionLoad()) {
       return buildInternalForNoSort(inputIterators, configuration);
     } else if (configuration.getBucketingInfo() != null) {
       return buildInternalForBucketing(inputIterators, configuration);
     } else if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
       return buildInternalForBatchSort(inputIterators, configuration);
+    } else if (loadModel.isPartitionLoad()) {
+      return buildInternalForPartitionLoad(inputIterators, configuration, sortScope);
     } else {
       return buildInternal(inputIterators, configuration);
     }
@@ -94,6 +98,32 @@ public final class DataLoadProcessBuilder {
         new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
     // 3. Writes the sorted data in carbondata format.
     return new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
+  }
+
+  /**
+   * Build pipe line for partition load
+   */
+  private AbstractDataLoadProcessorStep buildInternalForPartitionLoad(
+      CarbonIterator[] inputIterators, CarbonDataLoadConfiguration configuration,
+      SortScopeOptions.SortScope sortScope) {
+    // Wraps with dummy processor.
+    AbstractDataLoadProcessorStep inputProcessorStep =
+        new InputProcessorStepForPartitionImpl(configuration, inputIterators);
+    if (sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT)) {
+      AbstractDataLoadProcessorStep sortProcessorStep =
+          new SortProcessorStepImpl(configuration, inputProcessorStep);
+      //  Writes the sorted data in carbondata format.
+      return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
+    } else if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
+      //  Sorts the data by SortColumn or not
+      AbstractDataLoadProcessorStep sortProcessorStep =
+          new SortProcessorStepImpl(configuration, inputProcessorStep);
+      // Writes the sorted data in carbondata format.
+      return new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
+    } else {
+      // In all other cases like global sort and no sort uses this step
+      return new CarbonRowDataWriterProcessorStepImpl(configuration, inputProcessorStep);
+    }
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBatchSort(CarbonIterator[] inputIterators,
@@ -222,6 +252,7 @@ public final class DataLoadProcessBuilder {
     configuration.setPreFetch(loadModel.isPreFetch());
     configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
+    configuration.setDataWritePath(loadModel.getDataWritePath());
     // For partition loading always use single core as it already runs in multiple
     // threads per partition
     if (carbonTable.isHivePartitionTable()) {

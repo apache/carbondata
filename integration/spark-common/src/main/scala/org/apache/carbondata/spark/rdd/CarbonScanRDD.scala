@@ -40,6 +40,7 @@ import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.scan.expression.Expression
@@ -68,7 +69,7 @@ class CarbonScanRDD(
     @transient serializedTableInfo: Array[Byte],
     @transient tableInfo: TableInfo,
     inputMetricsStats: InitInputMetrics,
-    @transient val partitionNames: Seq[String])
+    @transient val partitionNames: Seq[PartitionSpec])
   extends CarbonRDDWithTableInfo[InternalRow](spark.sparkContext, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")

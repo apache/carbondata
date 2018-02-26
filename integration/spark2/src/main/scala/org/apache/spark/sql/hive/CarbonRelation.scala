@@ -29,11 +29,14 @@ import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Stati
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
 
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 
 /**
@@ -209,9 +212,10 @@ case class CarbonRelation(
         .getValidAndInvalidSegments.getValidSegments.isEmpty) {
         sizeInBytesLocalValue = 0L
       } else {
-        val tablePath = CarbonStorePath.getCarbonTablePath(
+        val carbonTablePath = CarbonStorePath.getCarbonTablePath(
           carbonTable.getTablePath,
-          carbonTable.getCarbonTableIdentifier).getPath
+          carbonTable.getCarbonTableIdentifier)
+        val tablePath = carbonTablePath.getPath
         val fileType = FileFactory.getFileType(tablePath)
         if (FileFactory.isFileExist(tablePath, fileType)) {
           // get the valid segments
@@ -220,8 +224,14 @@ case class CarbonRelation(
           var size = 0L
           // for each segment calculate the size
           segments.foreach {validSeg =>
-            size = size + FileFactory.getDirectorySize(
-              CarbonTablePath.getSegmentPath(tablePath, validSeg))
+            if (validSeg.getSegmentFileName != null) {
+              val fileStore = new SegmentFileStore(tablePath, validSeg.getSegmentFileName)
+              size = size + CarbonUtil.getSizeOfSegment(
+                carbonTablePath, new Segment(validSeg.getSegmentNo, validSeg.getSegmentFileName))
+            } else {
+              size = size + FileFactory.getDirectorySize(
+                CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
+            }
           }
           // update the new table status time
           tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime

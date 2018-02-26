@@ -30,6 +30,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
@@ -67,7 +68,7 @@ case class CarbonDatasourceHadoopRelation(
 
   def buildScan(requiredColumns: Array[String],
       filters: Array[Filter],
-      partitions: Seq[String]): RDD[InternalRow] = {
+      partitions: Seq[PartitionSpec]): RDD[InternalRow] = {
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(schema, filter)
     }.reduceOption(new AndExpression(_, _))

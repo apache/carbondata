@@ -26,7 +26,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.PartitionMapFileStore;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -35,7 +36,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SingleThreadFinalSortFilesMerger;
@@ -129,19 +129,20 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private SortIntermediateFileMerger intermediateFileMerger;
 
-  private List<String> partitionNames;
+  private PartitionSpec partitionSpec;
+
   private SortParameters sortParameters;
 
   public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
       SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
-      List<String> partitionNames) {
+      PartitionSpec partitionSpec) {
     this.carbonLoadModel = carbonLoadModel;
     this.carbonTable = carbonTable;
     this.segmentProperties = segmentProperties;
     this.segmentId = carbonLoadModel.getSegmentId();
     this.compactionType = compactionType;
     this.tableName = tableName;
-    this.partitionNames = partitionNames;
+    this.partitionSpec = partitionSpec;
   }
 
   /**
@@ -168,14 +169,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     } catch (Exception e) {
       LOGGER.error(e, "Compaction failed: " + e.getMessage());
     } finally {
-      if (partitionNames != null) {
+      if (partitionSpec != null) {
         try {
-          new PartitionMapFileStore().writePartitionMapFile(
-              CarbonTablePath.getSegmentPath(
-                  carbonLoadModel.getTablePath(),
-                  carbonLoadModel.getSegmentId()),
-              carbonLoadModel.getTaskNo(),
-              partitionNames);
+          SegmentFileStore
+              .writeSegmentFile(carbonLoadModel.getTablePath(), carbonLoadModel.getTaskNo(),
+                  partitionSpec.getLocation().toString(), carbonLoadModel.getFactTimeStamp() + "",
+                  partitionSpec.getPartitions());
         } catch (IOException e) {
           LOGGER.error(e, "Compaction failed: " + e.getMessage());
           isCompactionSuccess = false;
@@ -401,9 +400,19 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * initialise carbon data writer instance
    */
   private void initDataHandler() throws Exception {
+    String carbonStoreLocation;
+    if (partitionSpec != null) {
+      carbonStoreLocation =
+          partitionSpec.getLocation().toString() + CarbonCommonConstants.FILE_SEPARATOR
+              + carbonLoadModel.getFactTimeStamp() + ".tmp";
+    } else {
+      carbonStoreLocation = CarbonDataProcessorUtil
+          .createCarbonStoreLocation(carbonTable.getTablePath(), carbonLoadModel.getDatabaseName(),
+              tableName, carbonLoadModel.getPartitionId(), carbonLoadModel.getSegmentId());
+    }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
-            tempStoreLocation);
+            tempStoreLocation, carbonStoreLocation);
     setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonTable,
         carbonFactDataHandlerModel);
     dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel,

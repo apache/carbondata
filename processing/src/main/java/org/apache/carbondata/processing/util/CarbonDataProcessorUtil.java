@@ -302,7 +302,7 @@ public final class CarbonDataProcessorUtil {
   }
 
   public static boolean isHeaderValid(String tableName, String[] csvHeader,
-      CarbonDataLoadSchema schema) {
+      CarbonDataLoadSchema schema, List<String> ignoreColumns) {
     Iterator<String> columnIterator =
         CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName).iterator();
     Set<String> csvColumns = new HashSet<String>(csvHeader.length);
@@ -311,7 +311,8 @@ public final class CarbonDataProcessorUtil {
     // file header should contain all columns of carbon table.
     // So csvColumns should contain all elements of columnIterator.
     while (columnIterator.hasNext()) {
-      if (!csvColumns.contains(columnIterator.next().toLowerCase())) {
+      String column = columnIterator.next().toLowerCase();
+      if (!csvColumns.contains(column) && !ignoreColumns.contains(column)) {
         return false;
       }
     }
@@ -377,7 +378,7 @@ public final class CarbonDataProcessorUtil {
    *
    * @return data directory path
    */
-  public static String checkAndCreateCarbonStoreLocation(String factStoreLocation,
+  public static String createCarbonStoreLocation(String factStoreLocation,
       String databaseName, String tableName, String partitionId, String segmentId) {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
@@ -385,7 +386,6 @@ public final class CarbonDataProcessorUtil {
         CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
-    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }
 
@@ -482,22 +482,19 @@ public final class CarbonDataProcessorUtil {
 
   /**
    * Get the number of partitions in global sort
-   * @param configuration
+   * @param globalSortPartitions
    * @return the number of partitions
    */
-  public static int getGlobalSortPartitions(CarbonDataLoadConfiguration configuration) {
+  public static int getGlobalSortPartitions(Object globalSortPartitions) {
     int numPartitions;
     try {
       // First try to get the number from ddl, otherwise get it from carbon properties.
-      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
-          == null) {
+      if (globalSortPartitions == null) {
         numPartitions = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
             CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT));
       } else {
-        numPartitions = Integer.parseInt(
-          configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
-            .toString());
+        numPartitions = Integer.parseInt(globalSortPartitions.toString());
       }
     } catch (Exception e) {
       numPartitions = 0;

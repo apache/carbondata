@@ -43,6 +43,7 @@ import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
@@ -65,8 +66,10 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.Path;
 import org.xerial.snappy.Snappy;
 
 /**
@@ -111,7 +114,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private static int SCHEMA = 2;
 
-  private static int PARTITION_INFO = 3;
+  private static int INDEX_PATH = 3;
+
+  private static int INDEX_FILE_NAME = 4;
+
+  private static int SEGMENTID = 5;
 
   private UnsafeMemoryDMStore unsafeMemoryDMStore;
 
@@ -121,8 +128,6 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private int[] columnCardinality;
 
-  private boolean isPartitionedSegment;
-
   @Override
   public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
     long startTime = System.currentTimeMillis();
@@ -131,7 +136,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     List<DataFileFooter> indexInfo = fileFooterConverter
         .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData());
-    isPartitionedSegment = blockletDataMapInfo.isPartitionedSegment();
+    Path path = new Path(blockletDataMapInfo.getFilePath());
+    byte[] filePath = path.getParent().toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
+    byte[] fileName = path.getName().toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
+    byte[] segmentId =
+        blockletDataMapInfo.getSegmentId().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     DataMapRowImpl summaryRow = null;
     byte[] schemaBinary = null;
     // below 2 variables will be used for fetching the relative blocklet id. Relative blocklet ID
@@ -145,7 +154,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
         columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
         segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
         createSchema(segmentProperties);
-        createSummarySchema(segmentProperties, blockletDataMapInfo.getPartitions(), schemaBinary);
+        createSummarySchema(segmentProperties, schemaBinary, filePath, fileName,
+            segmentId);
       }
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
       BlockMetaInfo blockMetaInfo =
@@ -182,8 +192,10 @@ public class BlockletDataMap implements DataMap, Cacheable {
     if (null != unsafeMemorySummaryDMStore) {
       addTaskSummaryRowToUnsafeMemoryStore(
           summaryRow,
-          blockletDataMapInfo.getPartitions(),
-          schemaBinary);
+          schemaBinary,
+          filePath,
+          fileName,
+          segmentId);
       unsafeMemorySummaryDMStore.finishWriting();
     }
     LOGGER.info(
@@ -354,8 +366,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return summaryRow;
   }
 
-  private void addTaskSummaryRowToUnsafeMemoryStore(DataMapRow summaryRow,
-      List<String> partitions, byte[] schemaBinary) throws IOException {
+  private void addTaskSummaryRowToUnsafeMemoryStore(DataMapRow summaryRow, byte[] schemaBinary,
+      byte[] filePath, byte[] fileName, byte[] segmentId) {
     // write the task summary info to unsafe memory store
     if (null != summaryRow) {
       // Add column schema , it is useful to generate segment properties in executor.
@@ -363,18 +375,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
       if (schemaBinary != null) {
         summaryRow.setByteArray(schemaBinary, SCHEMA);
       }
-      if (partitions != null && partitions.size() > 0) {
-        CarbonRowSchema[] minSchemas =
-            ((CarbonRowSchema.StructCarbonRowSchema) unsafeMemorySummaryDMStore
-                .getSchema()[PARTITION_INFO]).getChildSchemas();
-        DataMapRow partitionRow = new DataMapRowImpl(minSchemas);
-        for (int i = 0; i < partitions.size(); i++) {
-          partitionRow
-              .setByteArray(partitions.get(i).getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS),
-                  i);
-        }
-        summaryRow.setRow(partitionRow, PARTITION_INFO);
-      }
+      summaryRow.setByteArray(filePath, INDEX_PATH);
+      summaryRow.setByteArray(fileName, INDEX_FILE_NAME);
+      summaryRow.setByteArray(segmentId, SEGMENTID);
       try {
         unsafeMemorySummaryDMStore.addIndexRowToUnsafe(summaryRow);
       } catch (Exception e) {
@@ -560,27 +563,25 @@ public class BlockletDataMap implements DataMap, Cacheable {
    * once per datamap. It stores datamap level max/min of each column and partition information of
    * datamap
    * @param segmentProperties
-   * @param partitions
    * @throws MemoryException
    */
-  private void createSummarySchema(SegmentProperties segmentProperties, List<String> partitions,
-      byte[] schemaBinary)
+  private void createSummarySchema(SegmentProperties segmentProperties, byte[] schemaBinary,
+      byte[] filePath, byte[] fileName, byte[] segmentId)
       throws MemoryException {
     List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>();
     getMinMaxSchema(segmentProperties, taskMinMaxSchemas);
     // for storing column schema
     taskMinMaxSchemas.add(
         new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, schemaBinary.length));
-    if (partitions != null && partitions.size() > 0) {
-      CarbonRowSchema[] mapSchemas = new CarbonRowSchema[partitions.size()];
-      for (int i = 0; i < mapSchemas.length; i++) {
-        mapSchemas[i] = new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY);
-      }
-      CarbonRowSchema mapSchema =
-          new CarbonRowSchema.StructCarbonRowSchema(DataTypes.createDefaultStructType(),
-              mapSchemas);
-      taskMinMaxSchemas.add(mapSchema);
-    }
+    // for storing file path
+    taskMinMaxSchemas.add(
+        new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, filePath.length));
+    // for storing file name
+    taskMinMaxSchemas.add(
+        new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, fileName.length));
+    // for storing segmentid
+    taskMinMaxSchemas.add(
+        new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, segmentId.length));
     unsafeMemorySummaryDMStore = new UnsafeMemoryDMStore(
         taskMinMaxSchemas.toArray(new CarbonRowSchema[taskMinMaxSchemas.size()]));
   }
@@ -660,22 +661,24 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return blocklets;
   }
 
-  @Override public List<Blocklet> prune(FilterResolverIntf filterExp, List<String> partitions) {
+  @Override
+  public List<Blocklet> prune(FilterResolverIntf filterExp, List<PartitionSpec> partitions) {
     if (unsafeMemoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }
-    // First get the partitions which are stored inside datamap.
-    List<String> storedPartitions = getPartitions();
     // if it has partitioned datamap but there is no partitioned information stored, it means
     // partitions are dropped so return empty list.
-    if (isPartitionedSegment && (storedPartitions == null || storedPartitions.size() == 0)) {
-      return new ArrayList<>();
-    }
-    if (storedPartitions != null && storedPartitions.size() > 0) {
+    if (partitions != null) {
+      // First get the partitions which are stored inside datamap.
+      String[] fileDetails = getFileDetails();
       // Check the exact match of partition information inside the stored partitions.
       boolean found = false;
-      if (partitions != null && partitions.size() > 0) {
-        found = partitions.containsAll(storedPartitions);
+      Path folderPath = new Path(fileDetails[0]);
+      for (PartitionSpec spec : partitions) {
+        if (folderPath.equals(spec.getLocation()) && isCorrectUUID(fileDetails, spec)) {
+          found = true;
+          break;
+        }
       }
       if (!found) {
         return new ArrayList<>();
@@ -683,6 +686,20 @@ public class BlockletDataMap implements DataMap, Cacheable {
     }
     // Prune with filters if the partitions are existed in this datamap
     return prune(filterExp);
+  }
+
+  private boolean isCorrectUUID(String[] fileDetails, PartitionSpec spec) {
+    boolean needToScan = false;
+    if (spec.getUuid() != null) {
+      String[] split = spec.getUuid().split("_");
+      if (split[0].equals(fileDetails[2]) && CarbonTablePath.DataFileUtil
+          .getTimeStampFromFileName(fileDetails[1]).equals(split[1])) {
+        needToScan = true;
+      }
+    } else {
+      needToScan = true;
+    }
+    return needToScan;
   }
 
   /**
@@ -766,6 +783,23 @@ public class BlockletDataMap implements DataMap, Cacheable {
     detailInfo.setBlockSize(row.getLong(BLOCK_LENGTH));
     return blocklet;
   }
+
+  private String[] getFileDetails() {
+    try {
+      String[] fileDetails = new String[3];
+      DataMapRow unsafeRow = unsafeMemorySummaryDMStore.getUnsafeRow(0);
+      fileDetails[0] =
+          new String(unsafeRow.getByteArray(INDEX_PATH), CarbonCommonConstants.DEFAULT_CHARSET);
+      fileDetails[1] = new String(unsafeRow.getByteArray(INDEX_FILE_NAME),
+          CarbonCommonConstants.DEFAULT_CHARSET);
+      fileDetails[2] = new String(unsafeRow.getByteArray(SEGMENTID),
+          CarbonCommonConstants.DEFAULT_CHARSET);
+      return fileDetails;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 
   /**
    * Binary search used to get the first tentative index row based on
@@ -872,20 +906,6 @@ public class BlockletDataMap implements DataMap, Cacheable {
     DataMapRowImpl dataMapRow = new DataMapRowImpl(unsafeMemoryDMStore.getSchema());
     dataMapRow.setByteArray(buffer.array(), 0);
     return dataMapRow;
-  }
-
-  private List<String> getPartitions() {
-    DataMapRow unsafeRow = unsafeMemorySummaryDMStore.getUnsafeRow(0);
-    if (unsafeRow.getColumnCount() > PARTITION_INFO) {
-      List<String> partitions = new ArrayList<>();
-      DataMapRow row = unsafeRow.getRow(PARTITION_INFO);
-      for (int i = 0; i < row.getColumnCount(); i++) {
-        partitions.add(
-            new String(row.getByteArray(i), CarbonCommonConstants.DEFAULT_CHARSET_CLASS));
-      }
-      return partitions;
-    }
-    return null;
   }
 
   private byte[] getColumnSchemaBinary() {

@@ -28,6 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.util.CarbonUtil
@@ -98,6 +99,18 @@ case class CarbonCreateTableCommand(
           val partitionString =
             if (partitionInfo != null &&
                 partitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
+              // Restrict dictionary encoding on partition columns.
+              // TODO Need to decide wherher it is required
+              val dictionaryOnPartitionColumn =
+              partitionInfo.getColumnSchemaList.asScala.exists{p =>
+                p.hasEncoding(Encoding.DICTIONARY) && !p.hasEncoding(Encoding.DIRECT_DICTIONARY)
+              }
+              if (dictionaryOnPartitionColumn) {
+                throwMetadataException(
+                  dbName,
+                  tableName,
+                  s"Dictionary include cannot be applied on partition columns")
+              }
               s" PARTITIONED BY (${partitionInfo.getColumnSchemaList.asScala.map(
                 _.getColumnName).mkString(",")})"
             } else {

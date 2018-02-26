@@ -68,14 +68,25 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
         dateFormat = dataField.getTimestampFormat();
       }
       try {
-        byte[] value = DataTypeUtil
-            .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
-        if (dataType == DataTypes.STRING
-            && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-          throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-              + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+        if (!dataField.isUseActualData()) {
+          byte[] value = DataTypeUtil
+              .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
+          if (dataType == DataTypes.STRING
+              && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+            throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+                + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+          }
+          row.update(value, index);
+        } else {
+          Object value = DataTypeUtil
+              .getDataDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
+          if (dataType == DataTypes.STRING
+              && value.toString().length() > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+            throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+                + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+          }
+          row.update(value, index);
         }
-        row.update(value, index);
       } catch (CarbonDataLoadingException e) {
         throw e;
       } catch (Throwable ex) {
@@ -99,7 +110,9 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
   }
 
   private void updateWithNullValue(CarbonRow row) {
-    if (dataType == DataTypes.STRING) {
+    if (dataField.isUseActualData()) {
+      row.update(null, index);
+    } else if (dataType == DataTypes.STRING) {
       row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, index);
     } else {
       row.update(CarbonCommonConstants.EMPTY_BYTE_ARRAY, index);
