@@ -44,7 +44,7 @@ public interface DataMap<T extends Blocklet> {
    * @return
    */
   List<T> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<String> partitions);
+      List<String> partitions) throws IOException;
 
   // TODO Move this method to Abstract class
   /**

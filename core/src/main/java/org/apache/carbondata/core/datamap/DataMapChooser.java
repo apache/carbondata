@@ -228,6 +228,10 @@ public class DataMapChooser {
 
   private boolean contains(DataMapMeta mapMeta, List<ColumnExpression> columnExpressions,
       Set<ExpressionType> expressionTypes) {
+    if (mapMeta.getOptimizedOperation().contains(ExpressionType.MATCH)) {
+      // TODO: fix it with right logic
+      return true;
+    }
     if (mapMeta.getIndexedColumns().size() == 0 || columnExpressions.size() == 0) {
       return false;
     }

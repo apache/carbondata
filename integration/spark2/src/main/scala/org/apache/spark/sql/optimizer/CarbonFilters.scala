@@ -40,6 +40,8 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.datamap.TextMatch
+import org.apache.carbondata.datamap.expression.MatchExpression
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -133,6 +135,8 @@ object CarbonFilters {
           }, ExpressionType.CONTAINSWITH))
         case CastExpr(expr: Expression) =>
           Some(transformExpression(expr))
+        case TextMatch(queryString) =>
+          Some(new MatchExpression(queryString))
         case _ => None
       }
     }

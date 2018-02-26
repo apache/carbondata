@@ -15,33 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.filter.intf;
+package org.apache.carbondata.datamap.lucene;
 
-public enum ExpressionType {
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.datamap.DataMapDistributable;
 
-  AND,
-  OR,
-  NOT,
-  EQUALS,
-  NOT_EQUALS,
-  LESSTHAN,
-  LESSTHAN_EQUALTO,
-  GREATERTHAN,
-  GREATERTHAN_EQUALTO,
-  ADD,
-  SUBSTRACT,
-  DIVIDE,
-  MULTIPLY,
-  IN,
-  LIST,
-  NOT_IN,
-  UNKNOWN,
-  LITERAL,
-  RANGE,
-  FALSE,
-  TRUE,
-  STARTSWITH,
-  ENDSWITH,
-  CONTAINSWITH,
-  MATCH
+@InterfaceAudience.Internal
+class LuceneDataMapDistributable extends DataMapDistributable {
+  private String dataPath;
+
+  public LuceneDataMapDistributable(String dataPath) {
+    this.dataPath = dataPath;
+  }
 }
