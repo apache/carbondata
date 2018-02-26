@@ -42,7 +42,7 @@ public interface DataMap<T extends Blocklet> {
    * blocklets where these filters can exist.
    */
   List<T> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions);
+      List<PartitionSpec> partitions) throws IOException;
 
   // TODO Move this method to Abstract class
   /**

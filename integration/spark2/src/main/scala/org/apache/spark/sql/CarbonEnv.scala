@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
+import org.apache.carbondata.datamap.TextMatchUDF
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
@@ -65,6 +66,10 @@ class CarbonEnv {
     // only then the CarbonPreAggregateDataLoadingRules would be applied to split the average
     // column to sum and count.
     sparkSession.udf.register("preAggLoad", () => "")
+
+    // register for lucene datamap
+    // TODO: move it to proper place, it should be registered by datamap implementation
+    sparkSession.udf.register("text_match", new TextMatchUDF)
 
     // added for handling timeseries function like hour, minute, day , month , year
     sparkSession.udf.register("timeseries", new TimeSeriesFunction)

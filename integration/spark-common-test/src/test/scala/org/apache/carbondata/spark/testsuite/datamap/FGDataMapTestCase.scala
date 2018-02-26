@@ -246,7 +246,7 @@ class FGDataMap extends FineGrainDataMap {
    * Clear complete index table and release memory.
    */
   override def clear():Unit = {
-    ???
+
   }
 
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
