@@ -95,15 +95,69 @@ object DataLoadProcessorStepOnSpark {
     }
   }
 
+  def inputAndconvertFunc(
+      rows: Iterator[Array[AnyRef]],
+      index: Int,
+      modelBroadcast: Broadcast[CarbonLoadModel],
+      partialSuccessAccum: Accumulator[Int],
+      rowCounter: Accumulator[Int],
+      keepActualData: Boolean = false): Iterator[CarbonRow] = {
+    val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
+    val conf = DataLoadProcessBuilder.createConfiguration(model)
+    val rowParser = new RowParserImpl(conf.getDataFields, conf)
+    val isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(conf)
+    val badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(conf)
+    if (keepActualData) {
+      conf.getDataFields.foreach(_.setUseActualData(keepActualData))
+    }
+    val rowConverter = new RowConverterImpl(conf.getDataFields, conf, badRecordLogger)
+    rowConverter.initialize()
+
+    TaskContext.get().addTaskCompletionListener { context =>
+      val hasBadRecord: Boolean = CarbonBadRecordUtil.hasBadRecord(model)
+      close(conf, badRecordLogger, rowConverter)
+      GlobalSortHelper.badRecordsLogger(model, partialSuccessAccum, hasBadRecord)
+    }
+
+    TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
+      val hasBadRecord : Boolean = CarbonBadRecordUtil.hasBadRecord(model)
+      close(conf, badRecordLogger, rowConverter)
+      GlobalSortHelper.badRecordsLogger(model, partialSuccessAccum, hasBadRecord)
+
+      wrapException(e, model)
+    }
+
+    new Iterator[CarbonRow] {
+      override def hasNext: Boolean = rows.hasNext
+
+      override def next(): CarbonRow = {
+        var row : CarbonRow = null
+        if(isRawDataRequired) {
+          val rawRow = rows.next()
+          row = new CarbonRow(rowParser.parseRow(rawRow), rawRow)
+        } else {
+          row = new CarbonRow(rowParser.parseRow(rows.next()))
+        }
+        row = rowConverter.convert(row)
+        rowCounter.add(1)
+        row
+      }
+    }
+  }
+
   def convertFunc(
       rows: Iterator[CarbonRow],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
       partialSuccessAccum: Accumulator[Int],
-      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+      rowCounter: Accumulator[Int],
+      keepActualData: Boolean = false): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(conf)
+    if (keepActualData) {
+      conf.getDataFields.foreach(_.setUseActualData(keepActualData))
+    }
     val rowConverter = new RowConverterImpl(conf.getDataFields, conf, badRecordLogger)
     rowConverter.initialize()
 
