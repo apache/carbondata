@@ -46,9 +46,9 @@ import org.apache.spark.sql.SparkSession;
  *   <li> preaggregate: one type of MVDataMap that do pre-aggregate of single table </li>
  *   <li> timeseries: one type of MVDataMap that do pre-aggregate based on time dimension
  *     of the table </li>
- *   <li> class name of {@link DataMapFactory}
+ *   <li> class name of {@link org.apache.carbondata.core.datamap.dev.DataMapFactory}
  * implementation: Developer can implement new type of DataMap by extending
- * {@link DataMapFactory} </li>
+ * {@link org.apache.carbondata.core.datamap.dev.DataMapFactory} </li>
  * </ol>
  *
  * @since 1.4.0
