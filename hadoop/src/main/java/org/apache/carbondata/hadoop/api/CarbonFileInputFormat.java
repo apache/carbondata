@@ -181,7 +181,8 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
               SchemaReader.inferSchemaForExternalTable(getAbsoluteTableIdentifier(configuration));
           carbonTable = CarbonTable.buildFromTableInfo(tableInfoInfer);
         } else {
-          carbonTable = SchemaReader.readCarbonTableFromFilePath(getAbsoluteTableIdentifier(configuration));
+          carbonTable =
+              SchemaReader.readCarbonTableFromFilePath(getAbsoluteTableIdentifier(configuration));
         }
       }
       this.carbonTable = carbonTable;
@@ -348,8 +349,9 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
     }
-    TableDataMap blockletMap = DataMapStoreManager.getInstance()
-            .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
+    //    TableDataMap blockletMap = DataMapStoreManager.getInstance()
+    //            .getDataMap(identifier, BlockletDataMap.NAME,
+    //             BlockletDataMapFactory.class.getName());
 
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
       // get all valid segments and set them into the configuration
