@@ -358,7 +358,9 @@ class CarbonScanRDD(
         case _ =>
           // create record reader for CarbonData file format
           if (vectorReader) {
-            val carbonRecordReader = createVectorizedCarbonRecordReader(model, inputMetricsStats)
+            val carbonRecordReader = createVectorizedCarbonRecordReader(model,
+              inputMetricsStats,
+              "true")
             if (carbonRecordReader == null) {
               new CarbonRecordReader(model,
                 format.getReadSupportClass(attemptContext.getConfiguration), inputMetricsStats)
@@ -573,12 +575,13 @@ class CarbonScanRDD(
   }
 
   def createVectorizedCarbonRecordReader(queryModel: QueryModel,
-      inputMetricsStats: InputMetricsStats): RecordReader[Void, Object] = {
+      inputMetricsStats: InputMetricsStats, enableBatch: String): RecordReader[Void, Object] = {
     val name = "org.apache.carbondata.spark.vectorreader.VectorizedCarbonRecordReader"
     try {
       val cons = Class.forName(name).getDeclaredConstructors
       cons.head.setAccessible(true)
-      cons.head.newInstance(queryModel, inputMetricsStats).asInstanceOf[RecordReader[Void, Object]]
+      cons.head.newInstance(queryModel, inputMetricsStats, enableBatch)
+        .asInstanceOf[RecordReader[Void, Object]]
     } catch {
       case e: Exception =>
         LOGGER.error(e)

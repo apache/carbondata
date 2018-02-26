@@ -28,8 +28,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.writer.ThriftWriter;
+
+
 
 /**
  * TODO: It should be removed after store manager implementation.
@@ -110,9 +110,9 @@ public class SchemaReader {
         CarbonUtil.inferSchemaFileExternalTable(identifier.getTablePath(), identifier, false);
 
     // Write the tableInfo into the schema Path.
-    String schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath());
+    // String schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath());
 
-    String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaPath);
+    // String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaPath);
     //    CarbonMetadata.getInstance().loadTableMetadata(tableInfo);
     //    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     //    org.apache.carbondata.format.TableInfo thriftTableInfo =
@@ -125,14 +125,14 @@ public class SchemaReader {
     //            tableInfo.getLastUpdatedTime());
     //    thriftTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history()
     //        .add(schemaEvolutionEntry);
-//    FileFactory.FileType fileType = FileFactory.getFileType(schemaMetadataPath);
-//    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-//      FileFactory.mkdirs(schemaMetadataPath, fileType);
-//    }
-//    ThriftWriter thriftWriter = new ThriftWriter(schemaPath, false);
-//    thriftWriter.open();
-//    thriftWriter.write(tableInfo);
-//    thriftWriter.close();
+    //    FileFactory.FileType fileType = FileFactory.getFileType(schemaMetadataPath);
+    //    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
+    //      FileFactory.mkdirs(schemaMetadataPath, fileType);
+    //    }
+    //    ThriftWriter thriftWriter = new ThriftWriter(schemaPath, false);
+    //    thriftWriter.open();
+    //    thriftWriter.write(tableInfo);
+    //    thriftWriter.close();
 
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     TableInfo wrapperTableInfo = schemaConverter
