@@ -26,8 +26,8 @@ import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.AbstractDataMapWriter
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainIndexDataMap, AbstractCoarseGrainIndexDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.DataMapWriter
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -37,7 +37,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
 
-class C2IndexDataMapFactory() extends AbstractCoarseGrainIndexDataMapFactory {
+class C2DataMapFactory() extends CoarseGrainDataMapFactory {
 
   var identifier: AbsoluteTableIdentifier = _
 
@@ -52,12 +52,12 @@ class C2IndexDataMapFactory() extends AbstractCoarseGrainIndexDataMapFactory {
 
   override def clear(): Unit = {}
 
-  override def getDataMaps(distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainIndexDataMap] = ???
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[CoarseGrainDataMap] = ???
 
-  override def getDataMaps(segmentId: String): util.List[AbstractCoarseGrainIndexDataMap] = ???
+  override def getDataMaps(segmentId: String): util.List[CoarseGrainDataMap] = ???
 
-  override def createWriter(segmentId: String, dataWritePath: String): AbstractDataMapWriter =
-    IndexDataMapWriterSuite.dataMapWriterC2Mock(identifier, segmentId, dataWritePath)
+  override def createWriter(segmentId: String, dataWritePath: String): DataMapWriter =
+    DataMapWriterSuite.dataMapWriterC2Mock(identifier, segmentId, dataWritePath)
 
   override def getMeta: DataMapMeta = new DataMapMeta(List("c2").asJava, List(ExpressionType.EQUALS).asJava)
 
@@ -72,7 +72,7 @@ class C2IndexDataMapFactory() extends AbstractCoarseGrainIndexDataMapFactory {
 
 }
 
-class IndexDataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
+class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
   def buildTestData(numRows: Int): DataFrame = {
     import sqlContext.implicits._
     sqlContext.sparkContext.parallelize(1 to numRows, 1)
@@ -92,7 +92,7 @@ class IndexDataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
   test("test write datamap 2 pages") {
     sql(s"CREATE TABLE carbon1(c1 STRING, c2 STRING, c3 INT) STORED BY 'org.apache.carbondata.format'")
     // register datamap writer
-    sql(s"CREATE DATAMAP test ON TABLE carbon1 USING '${classOf[C2IndexDataMapFactory].getName}'")
+    sql(s"CREATE DATAMAP test ON TABLE carbon1 USING '${classOf[C2DataMapFactory].getName}'")
     val df = buildTestData(33000)
 
     // save dataframe to carbon file
@@ -104,21 +104,21 @@ class IndexDataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
 
-    assert(IndexDataMapWriterSuite.callbackSeq.head.contains("block start"))
-    assert(IndexDataMapWriterSuite.callbackSeq.last.contains("block end"))
+    assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
+    assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
     assert(
-      IndexDataMapWriterSuite.callbackSeq.slice(1, IndexDataMapWriterSuite.callbackSeq.length - 1) == Seq(
+      DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
         "blocklet start 0",
         "add page data: blocklet 0, page 0",
         "add page data: blocklet 0, page 1",
         "blocklet end: 0"
       ))
-    IndexDataMapWriterSuite.callbackSeq = Seq()
+    DataMapWriterSuite.callbackSeq = Seq()
   }
 
   test("test write datamap 2 blocklet") {
     sql(s"CREATE TABLE carbon2(c1 STRING, c2 STRING, c3 INT) STORED BY 'org.apache.carbondata.format'")
-    sql(s"CREATE DATAMAP test ON TABLE carbon2 USING '${classOf[C2IndexDataMapFactory].getName}'")
+    sql(s"CREATE DATAMAP test ON TABLE carbon2 USING '${classOf[C2DataMapFactory].getName}'")
 
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "1")
@@ -138,12 +138,12 @@ class IndexDataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
 
-    assert(IndexDataMapWriterSuite.callbackSeq.head.contains("block start"))
-    assert(IndexDataMapWriterSuite.callbackSeq.last.contains("block end"))
+    assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
+    assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
     // corrected test case the min "carbon.blockletgroup.size.in.mb" size could not be less than
     // 64 MB
     assert(
-      IndexDataMapWriterSuite.callbackSeq.slice(1, IndexDataMapWriterSuite.callbackSeq.length - 1) == Seq(
+      DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
         "blocklet start 0",
         "add page data: blocklet 0, page 0",
         "add page data: blocklet 0, page 1",
@@ -157,7 +157,7 @@ class IndexDataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
         "add page data: blocklet 0, page 9",
         "blocklet end: 0"
       ))
-    IndexDataMapWriterSuite.callbackSeq = Seq()
+    DataMapWriterSuite.callbackSeq = Seq()
   }
 
   override def afterAll {
@@ -165,13 +165,13 @@ class IndexDataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
   }
 }
 
-object IndexDataMapWriterSuite {
+object DataMapWriterSuite {
 
   var callbackSeq: Seq[String] = Seq[String]()
 
   def dataMapWriterC2Mock(identifier: AbsoluteTableIdentifier, segmentId: String,
       dataWritePath: String) =
-    new AbstractDataMapWriter(identifier, segmentId, dataWritePath) {
+    new DataMapWriter(identifier, segmentId, dataWritePath) {
 
     override def onPageAdded(
         blockletId: Int,

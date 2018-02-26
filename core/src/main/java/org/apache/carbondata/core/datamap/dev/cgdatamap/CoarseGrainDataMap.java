@@ -14,11 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.datamap.dev.fgdatamap;
+package org.apache.carbondata.core.datamap.dev.cgdatamap;
 
-import org.apache.carbondata.core.datamap.dev.IndexDataMap;
-import org.apache.carbondata.core.indexstore.FineGrainBlocklet;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.indexstore.Blocklet;
 
-public abstract class AbstractFineGrainIndexDataMap implements IndexDataMap<FineGrainBlocklet> {
+/**
+ * DataMap for Coarse Grain level, see {@link org.apache.carbondata.core.datamap.DataMapLevel#CG}
+ */
+@InterfaceAudience.Developer("DataMap")
+@InterfaceStability.Evolving
+public abstract class CoarseGrainDataMap implements DataMap<Blocklet> {
 
 }

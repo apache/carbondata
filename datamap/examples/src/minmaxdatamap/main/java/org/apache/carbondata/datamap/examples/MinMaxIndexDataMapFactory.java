@@ -25,10 +25,10 @@ import java.util.List;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
-import org.apache.carbondata.core.datamap.dev.AbstractDataMapWriter;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainIndexDataMap;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainIndexDataMapFactory;
+import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -38,7 +38,7 @@ import org.apache.carbondata.events.Event;
 /**
  * Min Max DataMap Factory
  */
-public class MinMaxIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFactory {
+public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
 
   private AbsoluteTableIdentifier identifier;
 
@@ -52,7 +52,7 @@ public class MinMaxIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFa
    * @param segmentId
    * @return
    */
-  @Override public AbstractDataMapWriter createWriter(String segmentId, String dataWritePath) {
+  @Override public DataMapWriter createWriter(String segmentId, String dataWritePath) {
     return new MinMaxDataWriter(identifier, segmentId, dataWritePath);
   }
 
@@ -63,9 +63,9 @@ public class MinMaxIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFa
    * @return
    * @throws IOException
    */
-  @Override public List<AbstractCoarseGrainIndexDataMap> getDataMaps(String segmentId)
+  @Override public List<CoarseGrainDataMap> getDataMaps(String segmentId)
       throws IOException {
-    List<AbstractCoarseGrainIndexDataMap> dataMapList = new ArrayList<>();
+    List<CoarseGrainDataMap> dataMapList = new ArrayList<>();
     // Form a dataMap of Type MinMaxIndexDataMap.
     MinMaxIndexDataMap dataMap = new MinMaxIndexDataMap();
     try {
@@ -100,7 +100,7 @@ public class MinMaxIndexDataMapFactory extends AbstractCoarseGrainIndexDataMapFa
   @Override public void clear() {
   }
 
-  @Override public List<AbstractCoarseGrainIndexDataMap> getDataMaps(DataMapDistributable distributable)
+  @Override public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
     return null;
   }

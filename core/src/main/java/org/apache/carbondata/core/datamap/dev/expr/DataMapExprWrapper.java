@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.core.datamap.DataMapType;
+import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
@@ -72,6 +72,6 @@ public interface DataMapExprWrapper extends Serializable {
    * Get the datamap type.
    * @return
    */
-  DataMapType getDataMapType();
+  DataMapLevel getDataMapType();
 
 }
