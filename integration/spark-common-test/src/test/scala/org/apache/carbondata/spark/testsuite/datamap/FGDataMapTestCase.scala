@@ -25,9 +25,10 @@ import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.dev.fgdatamap.{AbstractFineGrainIndexDataMap, AbstractFineGrainIndexDataMapFactory}
-import org.apache.carbondata.core.datamap.dev.{AbstractDataMapWriter, DataMapModel}
+import org.apache.carbondata.core.datamap.dev.{DataMapModel}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainDataMap, FineGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapWriter}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
@@ -35,7 +36,7 @@ import org.apache.carbondata.core.datastore.compression.SnappyCompressor
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
-import org.apache.carbondata.core.indexstore.{Blocklet, FineGrainBlocklet, PartitionSpec}
+import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
@@ -48,7 +49,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class FGIndexDataMapFactory extends AbstractFineGrainIndexDataMapFactory {
+class FGDataMapFactory extends FineGrainDataMapFactory {
   var identifier: AbsoluteTableIdentifier = _
   var dataMapSchema: DataMapSchema = _
 
@@ -63,14 +64,14 @@ class FGIndexDataMapFactory extends AbstractFineGrainIndexDataMapFactory {
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segment: Segment, dataWritePath: String): AbstractDataMapWriter = {
+  override def createWriter(segment: Segment, dataWritePath: String): DataMapWriter = {
     new FGDataMapWriter(identifier, segment, dataWritePath, dataMapSchema)
   }
 
   /**
    * Get the datamap for segmentid
    */
-  override def getDataMaps(segment: Segment): java.util.List[AbstractFineGrainIndexDataMap] = {
+  override def getDataMaps(segment: Segment): java.util.List[FineGrainDataMap] = {
     val file = FileFactory
       .getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo))
 
@@ -78,7 +79,7 @@ class FGIndexDataMapFactory extends AbstractFineGrainIndexDataMapFactory {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
     })
     files.map { f =>
-      val dataMap: AbstractFineGrainIndexDataMap = new FGIndexDataMap()
+      val dataMap: FineGrainDataMap = new FGDataMap()
       dataMap.init(new DataMapModel(f.getCanonicalPath))
       dataMap
     }.toList.asJava
@@ -88,9 +89,9 @@ class FGIndexDataMapFactory extends AbstractFineGrainIndexDataMapFactory {
    * Get datamap for distributable object.
    */
   override def getDataMaps(
-      distributable: DataMapDistributable): java.util.List[AbstractFineGrainIndexDataMap]= {
+      distributable: DataMapDistributable): java.util.List[FineGrainDataMap]= {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
-    val dataMap: AbstractFineGrainIndexDataMap = new FGIndexDataMap()
+    val dataMap: FineGrainDataMap = new FGDataMap()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath))
     Seq(dataMap).asJava
   }
@@ -142,7 +143,7 @@ class FGIndexDataMapFactory extends AbstractFineGrainIndexDataMapFactory {
   }
 }
 
-class FGIndexDataMap extends AbstractFineGrainIndexDataMap {
+class FGDataMap extends FineGrainDataMap {
 
   var maxMin: ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)] = _
   var FileReader: FileReader = _
@@ -253,7 +254,7 @@ class FGIndexDataMap extends AbstractFineGrainIndexDataMap {
 
 class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
     segment: Segment, dataWriterPath: String, dataMapSchema: DataMapSchema)
-  extends AbstractDataMapWriter(identifier, segment, dataWriterPath) {
+  extends DataMapWriter(identifier, segment, dataWriterPath) {
 
   var currentBlockId: String = null
   val fgwritepath = dataWriterPath + "/" + dataMapSchema.getDataMapName + System.nanoTime() +
@@ -336,7 +337,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
 
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
-   * DataMapMeta returned in IndexDataMapFactory.
+   * DataMapMeta returned in DataMapFactory.
    *
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
@@ -398,7 +399,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
   }
 }
 
-class FGIndexDataMapTestCase extends QueryTest with BeforeAndAfterAll {
+class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/compaction/fil2.csv"
 
@@ -429,7 +430,7 @@ class FGIndexDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP ggdatamap ON TABLE datamap_test
-         | USING '${classOf[FGIndexDataMapFactory].getName}'
+         | USING '${classOf[FGDataMapFactory].getName}'
          | DMPROPERTIES('indexcolumns'='name')
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
@@ -450,13 +451,13 @@ class FGIndexDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP ggdatamap1 ON TABLE datamap_test
-         | USING '${classOf[FGIndexDataMapFactory].getName}'
+         | USING '${classOf[FGDataMapFactory].getName}'
          | DMPROPERTIES('indexcolumns'='name')
        """.stripMargin)
     sql(
       s"""
          | CREATE DATAMAP ggdatamap2 ON TABLE datamap_test
-         | USING '${classOf[FGIndexDataMapFactory].getName}'
+         | USING '${classOf[FGDataMapFactory].getName}'
          | DMPROPERTIES('indexcolumns'='city')
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")

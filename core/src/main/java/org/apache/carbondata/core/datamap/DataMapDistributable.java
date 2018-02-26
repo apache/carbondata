@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datamap;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
@@ -27,6 +28,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 /**
  * Distributable class for datamap.
  */
+@InterfaceAudience.Internal
 public abstract class DataMapDistributable extends InputSplit
     implements Distributable, Serializable {
 

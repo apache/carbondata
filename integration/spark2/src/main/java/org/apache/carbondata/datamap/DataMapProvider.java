@@ -18,7 +18,6 @@
 package org.apache.carbondata.datamap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -34,7 +33,7 @@ import org.apache.spark.sql.SparkSession;
  * <ol>
  *   <li> MVDataMap: materialized view type of DataMap to accelerate olap style query,
  * like SPJG query (select, predicate, join, groupby) </li>
- *   <li> IndexDataMap: index type of DataMap to accelerate filter query </li>
+ *   <li> DataMap: index type of DataMap to accelerate filter query </li>
  * </ol>
  *
  * <p>
@@ -47,15 +46,14 @@ import org.apache.spark.sql.SparkSession;
  *   <li> preaggregate: one type of MVDataMap that do pre-aggregate of single table </li>
  *   <li> timeseries: one type of MVDataMap that do pre-aggregate based on time dimension
  *     of the table </li>
- *   <li> class name of {@link org.apache.carbondata.core.datamap.dev.IndexDataMapFactory}
- * implementation: Developer can implement new type of IndexDataMap by extending
- * {@link org.apache.carbondata.core.datamap.dev.IndexDataMapFactory} </li>
+ *   <li> class name of {@link org.apache.carbondata.core.datamap.dev.DataMapFactory}
+ * implementation: Developer can implement new type of DataMap by extending
+ * {@link org.apache.carbondata.core.datamap.dev.DataMapFactory} </li>
  * </ol>
  *
  * @since 1.4.0
  */
-@InterfaceAudience.Developer("DataMap")
-@InterfaceStability.Unstable
+@InterfaceAudience.Internal
 public interface DataMapProvider {
 
   /**

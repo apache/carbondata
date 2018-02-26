@@ -74,12 +74,12 @@ public class DataMapChooser {
       Expression expression = resolverIntf.getFilterExpression();
       // First check for FG datamaps if any exist
       List<TableDataMap> allDataMapFG =
-          DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapType.FG);
+          DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.FG);
       ExpressionTuple tuple = selectDataMap(expression, allDataMapFG);
       if (tuple.dataMapExprWrapper == null) {
         // Check for CG datamap
         List<TableDataMap> allDataMapCG =
-            DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapType.CG);
+            DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.CG);
         tuple = selectDataMap(expression, allDataMapCG);
       }
       if (tuple.dataMapExprWrapper != null) {
@@ -212,10 +212,10 @@ public class DataMapChooser {
       List<ColumnExpression> columnExpressions, Set<ExpressionType> expressionTypes) {
     List<DataMapTuple> tuples = new ArrayList<>();
     for (TableDataMap dataMap : allDataMap) {
-      if (contains(dataMap.getIndexDataMapFactory().getMeta(), columnExpressions, expressionTypes))
+      if (contains(dataMap.getDataMapFactory().getMeta(), columnExpressions, expressionTypes))
       {
         tuples.add(
-            new DataMapTuple(dataMap.getIndexDataMapFactory().getMeta().getIndexedColumns().size(),
+            new DataMapTuple(dataMap.getDataMapFactory().getMeta().getIndexedColumns().size(),
                 dataMap));
       }
     }

@@ -19,8 +19,15 @@ package org.apache.carbondata.core.datamap;
 
 import java.util.List;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 
+/**
+ * Metadata of the datamap, set by DataMap developer
+ */
+@InterfaceAudience.Developer("DataMap")
+@InterfaceStability.Evolving
 public class DataMapMeta {
 
   private List<String> indexedColumns;

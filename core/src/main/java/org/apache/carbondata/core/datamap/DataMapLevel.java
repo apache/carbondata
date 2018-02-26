@@ -16,6 +16,22 @@
  */
 package org.apache.carbondata.core.datamap;
 
-public enum DataMapType {
-  CG,FG;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+
+/**
+ * Index level of the datamap
+ */
+@InterfaceAudience.Developer("DataMap")
+@InterfaceStability.Evolving
+public enum DataMapLevel {
+  /**
+   * Coarse Grain Index, index is of blocklet level
+   */
+  CG,
+
+  /**
+   * Fine Grain Index, index is of row level
+   */
+  FG;
 }
