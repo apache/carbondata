@@ -342,6 +342,7 @@
         <artifactId>findbugs-maven-plugin</artifactId>
         <version>3.0.4</version>
         <configuration>
+          <skip>true</skip>
           <excludeFilterFile>${dev.path}/findbugs-exclude.xml</excludeFilterFile>
           <failOnError>true</failOnError>
           <findbugsXmlOutput>true</findbugsXmlOutput>
@@ -481,6 +482,7 @@
         <module>streaming</module>
         <module>examples/spark2</module>
         <module>datamap/examples</module>
+        <module>datamap/lucene</module>
       </modules>
       <build>
         <plugins>
@@ -535,6 +537,7 @@
         <module>integration/presto</module>
         <module>streaming</module>
         <module>examples/spark2</module>
+        <module>datamap/lucene</module>
       </modules>
       <build>
         <plugins>
