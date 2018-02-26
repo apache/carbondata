@@ -42,8 +42,8 @@ import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 case class FileElement(school: Array[String], age: Integer)
 case class StreamData(id: Integer, name: String, city: String, salary: java.lang.Float,
-    tax: BigDecimal, percent: java.lang.Double, birthday: Date,
-    register: Timestamp, updated: Timestamp,
+    tax: BigDecimal, percent: java.lang.Double, birthday: String,
+    register: String, updated: String,
     file: FileElement)
 
 class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
@@ -507,7 +507,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select * from stream_table_filter where id is null order by name"),
       Seq(Row(null, "", "", null, null, null, null, null, null),
-        Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+        Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
     checkAnswer(
       sql("select * from stream_table_filter where name = ''"),
@@ -515,7 +515,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and name <> ''"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
     checkAnswer(
       sql("select * from stream_table_filter where city = ''"),
@@ -523,7 +523,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and city <> ''"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
     checkAnswer(
       sql("select * from stream_table_filter where salary is null"),
@@ -531,7 +531,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and salary is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
     checkAnswer(
       sql("select * from stream_table_filter where tax is null"),
@@ -539,7 +539,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and tax is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
     checkAnswer(
       sql("select * from stream_table_filter where percent is null"),
@@ -547,7 +547,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and percent is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
     checkAnswer(
       sql("select * from stream_table_filter where birthday is null"),
@@ -555,7 +555,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and birthday is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
     checkAnswer(
       sql("select * from stream_table_filter where register is null"),
@@ -563,7 +563,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and register is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
     checkAnswer(
       sql("select * from stream_table_filter where updated is null"),
@@ -571,7 +571,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and updated is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"))))
 
     // agg
     checkAnswer(
@@ -801,7 +801,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null order by name"),
       Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null)),
-        Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
+        Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where name = ''"),
@@ -809,7 +809,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and name <> ''"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where city = ''"),
@@ -817,7 +817,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and city <> ''"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where salary is null"),
@@ -825,7 +825,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and salary is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where tax is null"),
@@ -833,7 +833,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and tax is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where percent is null"),
@@ -841,7 +841,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and salary is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where birthday is null"),
@@ -849,7 +849,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and birthday is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where register is null"),
@@ -857,7 +857,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and register is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where updated is null"),
@@ -865,7 +865,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and updated is not null"),
-      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
+      Seq(Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     // agg
     checkAnswer(
@@ -1170,7 +1170,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
                 // illegal number
                 stringBuilder.append(index.toString + "abc,name_" + index
                                      + ",city_" + index + "," + (10000.00 * index).toString + ",0.01,80.01" +
-                                     ",1990-01-01,2010-01-01 10:01:01,2010-01-01 10:01:01" +
+                                     ",1990-01-01,2010-01-0110:01:01,2010-01-01 10:01:01" +
                                      ",school_" + index + ":school_" + index + index + "$" + index)
               } else if (index == 9) {
                 stringBuilder.append(index.toString + ",name_" + index
@@ -1223,20 +1223,20 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .as[String]
             .map(_.split(","))
             .map { fields => {
-              val tmp = fields(9).split("\\$")
-              val file = FileElement(tmp(0).split(":"), tmp(1).toInt)
-              if (fields(1).equals("")) {
-                StreamData(null, null, null, null, null, null, null, null, null, null)
-              } else if (fields(1).equals("name_6")) {
-                StreamData(null, fields(1), fields(2), fields(3).toFloat,
-                    BigDecimal.valueOf(fields(4).toDouble), fields(5).toDouble,
-                    Date.valueOf(fields(6)), Timestamp.valueOf(fields(7)),
-                    Timestamp.valueOf(fields(8)), file)
+              if (fields.length == 0) {
+                StreamData(null, "", "", null, null, null, null, null, null, null)
               } else {
-                StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat,
-                    BigDecimal.valueOf(fields(4).toDouble), fields(5).toDouble,
-                    Date.valueOf(fields(6)), Timestamp.valueOf(fields(7)),
-                    Timestamp.valueOf(fields(8)), file)
+                val tmp = fields(9).split("\\$")
+                val file = FileElement(tmp(0).split(":"), tmp(1).toInt)
+                if (fields(1).equals("name_6")) {
+                  StreamData(null, fields(1), fields(2), fields(3).toFloat,
+                      BigDecimal.valueOf(fields(4).toDouble), fields(5).toDouble,
+                      fields(6), fields(7), fields(8), file)
+                } else {
+                  StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat,
+                      BigDecimal.valueOf(fields(4).toDouble), fields(5).toDouble,
+                      fields(6), fields(7), fields(8), file)
+                }
               }
             } }
 
@@ -1361,8 +1361,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
               val file = FileElement(tmp(0).split(":"), tmp(1).toInt)
               StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat,
                   BigDecimal.valueOf(fields(4).toDouble), fields(5).toDouble,
-                  Date.valueOf(fields(6)), Timestamp.valueOf(fields(7)),
-                  Timestamp.valueOf(fields(8)), file)
+                  fields(6), fields(7), fields(8), file)
             } }
 
           // Write data from socket stream to carbondata file
