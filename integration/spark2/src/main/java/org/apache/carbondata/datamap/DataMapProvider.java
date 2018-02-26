@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.datamap;
 
+import java.io.IOException;
+
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -62,7 +64,7 @@ public interface DataMapProvider {
    * Implementation should initialize metadata for datamap, like creating table
    */
   void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement,
-      SparkSession sparkSession) throws MalformedDataMapCommandException;
+      SparkSession sparkSession) throws MalformedDataMapCommandException, IOException;
 
   /**
    * Initialize a datamap's data.
