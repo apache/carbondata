@@ -16,9 +16,23 @@
  */
 package org.apache.carbondata.core.datamap.dev.cgdatamap;
 
-import org.apache.carbondata.core.datamap.dev.IndexDataMap;
-import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datamap.DataMapLevel;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 
-public abstract class AbstractCoarseGrainIndexDataMap implements IndexDataMap<Blocklet> {
+/**
+ *  Factory for {@link CoarseGrainDataMap}
+ *  1. Any filter query which hits the table with datamap will call prune method of CGdatamap.
+ *  2. The prune method of CGDatamap return list Blocklet , these blocklets contain the
+ *     information of block and blocklet.
+ *  3. Based on the splits scanrdd schedule the tasks.
+ */
+@InterfaceAudience.Developer("DataMap")
+@InterfaceStability.Evolving
+public abstract class CoarseGrainDataMapFactory implements DataMapFactory<CoarseGrainDataMap> {
 
+  @Override public DataMapLevel getDataMapType() {
+    return DataMapLevel.CG;
+  }
 }

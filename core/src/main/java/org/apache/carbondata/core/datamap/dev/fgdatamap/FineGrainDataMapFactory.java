@@ -16,10 +16,14 @@
  */
 package org.apache.carbondata.core.datamap.dev.fgdatamap;
 
-import org.apache.carbondata.core.datamap.DataMapType;
-import org.apache.carbondata.core.datamap.dev.IndexDataMapFactory;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datamap.DataMapLevel;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 
 /**
+ *  Factory for {@link FineGrainDataMap}
+ *
  *  1. Any filter query which hits the table with datamap will call prune method of FGdatamap.
  *  2. The prune method of FGDatamap return list FineGrainBlocklet , these blocklets contain the
  *     information of block, blocklet, page and rowids information as well.
@@ -29,10 +33,12 @@ import org.apache.carbondata.core.datamap.dev.IndexDataMapFactory;
  *  5. In filterscanner we check the datamapwriterpath from split and reNoteads the
  *     bitset if exists. And pass this bitset as input to it.
  */
-public abstract class AbstractFineGrainIndexDataMapFactory
-    implements IndexDataMapFactory<AbstractFineGrainIndexDataMap> {
+@InterfaceAudience.Developer("DataMap")
+@InterfaceStability.Evolving
+public abstract class FineGrainDataMapFactory
+    implements DataMapFactory<FineGrainDataMap> {
 
-  @Override public DataMapType getDataMapType() {
-    return DataMapType.FG;
+  @Override public DataMapLevel getDataMapType() {
+    return DataMapLevel.FG;
   }
 }

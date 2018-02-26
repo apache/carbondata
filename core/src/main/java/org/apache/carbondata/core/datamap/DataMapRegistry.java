@@ -21,6 +21,27 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+
+/**
+ * Developer can register a datamap implementation with a short name.
+ * After registration, user can use short name to create the datamap, like
+ * <p>
+ * {@code
+ *  CREATE DATAMAP dm ON TABLE table
+ *  USING 'short-name-of-the-datamap'
+ * }
+ * otherwise, user should use the class name of the datamap implementation to create the datamap
+ * (subclass of {@link org.apache.carbondata.core.datamap.dev.DataMapFactory})
+ * <p>
+ * {@code
+ *  CREATE DATAMAP dm ON TABLE table
+ *  USING 'class-name-of-the-datamap'
+ * }
+ */
+@InterfaceAudience.Developer("DataMap")
+@InterfaceStability.Evolving
 public class DataMapRegistry {
   private static Map<String, String> shortNameToClassName = new ConcurrentHashMap<>();
 
