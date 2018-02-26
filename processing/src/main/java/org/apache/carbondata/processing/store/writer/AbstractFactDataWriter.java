@@ -228,13 +228,21 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
 
   private void notifyDataMapBlockStart() {
     if (listener != null) {
-      listener.onBlockStart(carbonDataFileName, constructFactFileFullPath());
+      try {
+        listener.onBlockStart(carbonDataFileName, constructFactFileFullPath());
+      } catch (IOException e) {
+        throw new CarbonDataWriterException("Problem while writing datamap", e);
+      }
     }
   }
 
   private void notifyDataMapBlockEnd() {
     if (listener != null) {
-      listener.onBlockEnd(carbonDataFileName);
+      try {
+        listener.onBlockEnd(carbonDataFileName);
+      } catch (IOException e) {
+        throw new CarbonDataWriterException("Problem while writing datamap", e);
+      }
     }
     blockletId = 0;
   }
