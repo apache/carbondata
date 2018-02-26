@@ -41,7 +41,10 @@ import org.apache.carbondata.streaming.CarbonStreamException
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 case class FileElement(school: Array[String], age: Integer)
-case class StreamData(id: Integer, name: String, city: String, salary: Float, file: FileElement)
+case class StreamData(id: Integer, name: String, city: String, salary: java.lang.Float,
+    tax: BigDecimal, percent: java.lang.Double, birthday: Date,
+    register: Timestamp, updated: Timestamp,
+    file: FileElement)
 
 class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
@@ -1154,7 +1157,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         val clientSocket = serverSocket.accept()
         val socketWriter = new PrintWriter(clientSocket.getOutputStream())
         var index = 0
-        var timeRow = true
         for (_ <- 1 to writeNums) {
           // write 5 records per iteration
           val stringBuilder = new StringBuilder()
@@ -1170,20 +1172,16 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
                                      + ",city_" + index + "," + (10000.00 * index).toString + ",0.01,80.01" +
                                      ",1990-01-01,2010-01-01 10:01:01,2010-01-01 10:01:01" +
                                      ",school_" + index + ":school_" + index + index + "$" + index)
+              } else if (index == 9) {
+                stringBuilder.append(index.toString + ",name_" + index
+                                     + ",city_" + index + "," + (10000.00 * index).toString + ",0.04,80.04" +
+                                     ",1990-01-04,2010-01-04 10:01:01,2010-01-04 10:01:01" +
+                                     ",school_" + index + ":school_" + index + index + "$" + index)
               } else {
-
-                if (index == 9 && timeRow) {
-                  timeRow = false
-                  stringBuilder.append(index.toString + ",name_" + index
-                                       + ",city_" + index + "," + (10000.00 * index).toString + ",0.04,80.04" +
-                                       ",1990-01-04,2010-01-04 10:01:01,2010-01-04 10:01:01" +
-                                       ",school_" + index + ":school_" + index + index + "$" + index)
-                } else {
-                  stringBuilder.append(index.toString + ",name_" + index
-                                       + ",city_" + index + "," + (10000.00 * index).toString + ",0.01,80.01" +
-                                       ",1990-01-01,2010-01-01 10:01:01,2010-01-01 10:01:01" +
-                                       ",school_" + index + ":school_" + index + index + "$" + index)
-                }
+                stringBuilder.append(index.toString + ",name_" + index
+                                     + ",city_" + index + "," + (10000.00 * index).toString + ",0.01,80.01" +
+                                     ",1990-01-01,2010-01-01 10:01:01,2010-01-01 10:01:01" +
+                                     ",school_" + index + ":school_" + index + index + "$" + index)
               }
             } else {
               stringBuilder.append(index.toString + ",name_" + index
@@ -1225,14 +1223,20 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .as[String]
             .map(_.split(","))
             .map { fields => {
-              val tmp = fields(4).split("\\$")
+              val tmp = fields(9).split("\\$")
               val file = FileElement(tmp(0).split(":"), tmp(1).toInt)
-              if (fields(1).equals("name_2")) {
-                StreamData(fields(0).toInt, fields(1), null, fields(3).toFloat, file)
+              if (fields(1).equals("")) {
+                StreamData(null, null, null, null, null, null, null, null, null, null)
               } else if (fields(1).equals("name_6")) {
-                StreamData(null, fields(1), fields(2), fields(3).toFloat, file)
+                StreamData(null, fields(1), fields(2), fields(3).toFloat,
+                    BigDecimal.valueOf(fields(4).toDouble), fields(5).toDouble,
+                    Date.valueOf(fields(6)), Timestamp.valueOf(fields(7)),
+                    Timestamp.valueOf(fields(8)), file)
               } else {
-                StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat, file)
+                StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat,
+                    BigDecimal.valueOf(fields(4).toDouble), fields(5).toDouble,
+                    Date.valueOf(fields(6)), Timestamp.valueOf(fields(7)),
+                    Timestamp.valueOf(fields(8)), file)
               }
             } }
 
@@ -1353,9 +1357,12 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .as[String]
             .map(_.split(","))
             .map { fields => {
-              val tmp = fields(4).split("\\$")
+              val tmp = fields(9).split("\\$")
               val file = FileElement(tmp(0).split(":"), tmp(1).toInt)
-              StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat, file)
+              StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat,
+                  BigDecimal.valueOf(fields(4).toDouble), fields(5).toDouble,
+                  Date.valueOf(fields(6)), Timestamp.valueOf(fields(7)),
+                  Timestamp.valueOf(fields(8)), file)
             } }
 
           // Write data from socket stream to carbondata file

@@ -67,8 +67,7 @@ class CarbonAppendableStreamSink(
   private val carbonTablePath = CarbonStorePath
     .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
   private val fileLogPath = carbonTablePath.getStreamingLogDir
-  private val fileLog = new FileStreamSinkLog(FileStreamSinkLog.VERSION,
-    sparkSession, fileLogPath)
+  private val fileLog = new FileStreamSinkLog(FileStreamSinkLog.VERSION, sparkSession, fileLogPath)
   // prepare configuration
   private val hadoopConf = {
     val conf = sparkSession.sessionState.newHadoopConf()
