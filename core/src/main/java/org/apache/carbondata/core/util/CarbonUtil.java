@@ -2223,7 +2223,7 @@ public final class CarbonUtil {
     };
     if (schemaExists == false) {
       List<String> filePaths =
-          getFilePathExternalFilePath(carbonDataFilePath);
+          getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null");
       CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(filePaths.get(0));
       FileHeader fileHeader = carbonHeaderReader.readHeader();
       List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();

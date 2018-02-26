@@ -22,6 +22,7 @@ import java.util
 
 import scala.collection.mutable.ArrayBuffer
 
+import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapred.JobConf
@@ -44,6 +45,7 @@ import org.apache.spark.sql.execution.DataSourceScanExec
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.datasources.parquet.{ParquetLogRedirector, ParquetOutputWriter, ParquetReadSupport, VectorizedParquetRecordReader}
 import org.apache.spark.sql.execution.datasources.text.{TextOptions, TextOutputWriter}
+import org.apache.spark.sql.execution.vectorized.ColumnarBatch
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.sources.{BaseRelation, DataSourceRegister, Filter, RelationProvider}
 import org.apache.spark.sql.types.{AtomicType, IntegerType, StructField, StructType}
@@ -51,6 +53,7 @@ import org.apache.spark.sql.types.{AtomicType, IntegerType, StructField, StructT
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, TableDataMap}
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.reader.CarbonHeaderReader
@@ -59,7 +62,7 @@ import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, TaskMetricsMap, ThreadLocalSessionInfo}
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonTableInputFormat, DataMapJob}
 import org.apache.carbondata.hadoop.streaming.CarbonStreamRecordReader
-import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader, InputMetricsStats}
+import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader, InputMetricsStats}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.rdd.{CarbonSparkPartition, SparkDataMapJob}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -133,20 +136,26 @@ class CarbonFileLevelFormat extends FileFormat
           CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
       }
     }
+    vectorizedReader.toBoolean
+  }
 
+
+  override def supportBatch(sparkSession: SparkSession, schema: StructType): Boolean = {
     val conf = sparkSession.sessionState.conf
-    conf.wholeStageEnabled && vectorizedReader.toBoolean &&
+    conf.wholeStageEnabled &&
     schema.length <= conf.wholeStageMaxNumFields &&
     schema.forall(_.dataType.isInstanceOf[AtomicType])
   }
 
+
   def createVectorizedCarbonRecordReader(queryModel: QueryModel,
-      inputMetricsStats: InputMetricsStats): RecordReader[Void, Object] = {
+      inputMetricsStats: InputMetricsStats, enableBatch: String): RecordReader[Void, Object] = {
     val name = "org.apache.carbondata.spark.vectorreader.VectorizedCarbonRecordReader"
     try {
       val cons = Class.forName(name).getDeclaredConstructors
       cons.head.setAccessible(true)
-      cons.head.newInstance(queryModel, inputMetricsStats).asInstanceOf[RecordReader[Void, Object]]
+      cons.head.newInstance(queryModel, inputMetricsStats, enableBatch)
+        .asInstanceOf[RecordReader[Void, Object]]
     } catch {
       case e: Exception =>
         LOGGER.error(e)
@@ -201,8 +210,13 @@ class CarbonFileLevelFormat extends FileFormat
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)
+    var supportBatchValue : Boolean = false
 
     val readVector = supportVector(sparkSession, dataSchema)
+    if (readVector) {
+       supportBatchValue = supportBatch(sparkSession, dataSchema)
+    }
+
     CarbonFileInputFormat.setTableName(job.getConfiguration, "dummyexternal")
     CarbonFileInputFormat.setDatabaseName(job.getConfiguration, "default")
     val dataMapJob: DataMapJob = CarbonFileInputFormat.getDataMapJob(job.getConfiguration)
@@ -238,7 +252,7 @@ class CarbonFileLevelFormat extends FileFormat
       val conf1 = new Configuration()
       conf1.set("mapreduce.input.carboninputformat.tableName", "externaldummy")
       conf1.set("mapreduce.input.carboninputformat.databaseName", "default")
-      conf1.set("mapreduce.input.fileinputformat.inputdir", options.get("path").get)
+      conf1.set("mapreduce.input.fileinputformat.inputdir", tablePath)
       CarbonFileInputFormat.setColumnProjection(conf1, carbonProjection)
       val attemptContext = new TaskAttemptContextImpl(conf1, attemptId)
 
@@ -257,11 +271,20 @@ class CarbonFileLevelFormat extends FileFormat
       //      // Try to push down filters when filter push-down is enabled.
       //      // Notice: This push-down is RowGroups level, not individual records.
       //      if (pushed.isDefined) {
-      //        ParquetInputFormat.setFilterPredicate(hadoopAttemptContext.getConfiguration, pushed.get)
+      //        ParquetInputFormat.setFilterPredicate(hadoopAttemptContext.getConfiguration,
+      // pushed.get)
       //      }
-      split.setDetailInfo(prunedBlocklets.get(0).getDetailInfo)
+      // split.setDetailInfo(prunedBlocklets.get(0).getDetailInfo)
+      val detailInfo = prunedBlocklets.get(0).getDetailInfo
+      detailInfo.readColumnSchema(detailInfo.getColumnSchemaBinary)
+      split.setDetailInfo(detailInfo)
+
       val carbonReader = if (readVector) {
-        val vectorizedReader = createVectorizedCarbonRecordReader(model, null)
+        // val batchSupport = supportBatch(sparkSession, dataSchema)
+        val vectorizedReader = createVectorizedCarbonRecordReader(model,
+          null,
+          supportBatchValue.toString)
+        // val vectorizedReader = VectorizedCarbonRecordReader()
         vectorizedReader.initialize(split, attemptContext)
         logDebug(s"Appending $partitionSchema ${ file.partitionValues }")
         vectorizedReader
@@ -272,7 +295,7 @@ class CarbonFileLevelFormat extends FileFormat
         reader
       }
 
-      val iter = new RecordReaderIterator(carbonReader)
+      val iter = new CarbonRecordReaderIterator(carbonReader)
       Option(TaskContext.get()).foreach(_.addTaskCompletionListener(_ => iter.close()))
 
       iter.asInstanceOf[Iterator[InternalRow]]
@@ -282,10 +305,13 @@ class CarbonFileLevelFormat extends FileFormat
       //      } else {
       //        val fullSchema = requiredSchema.toAttributes ++ partitionSchema.toAttributes
       //        val joinedRow = new JoinedRow()
-      //        val appendPartitionColumns = GenerateUnsafeProjection.generate(fullSchema, fullSchema)
+      //        val appendPartitionColumns = GenerateUnsafeProjection.generate(fullSchema,
+      // fullSchema)
       //
-      //        // This is a horrible erasure hack...  if we type the iterator above, then it actually check
-      //        // the type in next() and we get a class cast exception.  If we make that function return
+      //        // This is a horrible erasure hack...  if we type the iterator above, then it
+      // actually check
+      //        // the type in next() and we get a class cast exception.  If we make that function
+      // return
       //        // Object, then we can defer the cast until later!
       //        if (partitionSchema.length == 0) {
       //          // There is no partition columns
@@ -366,7 +392,8 @@ class CarbonFileLevelFormat extends FileFormat
 ////        val joinedRow = new JoinedRow()
 ////        val appendPartitionColumns = GenerateUnsafeProjection.generate(fullSchema, fullSchema)
 ////
-////        // This is a horrible erasure hack...  if we type the iterator above, then it actually check
+////        // This is a horrible erasure hack...  if we type the iterator above, then it
+  // actually check
 ////        // the type in next() and we get a class cast exception.  If we make that function return
 ////        // Object, then we can defer the cast until later!
 ////        if (partitionSchema.length == 0) {
