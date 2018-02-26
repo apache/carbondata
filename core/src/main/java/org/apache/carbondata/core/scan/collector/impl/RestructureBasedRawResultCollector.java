@@ -81,12 +81,23 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
         if (tableBlockExecutionInfos.getDimensionInfo().getDimensionExists()[i]) {
           // get the dictionary key ordinal as column cardinality in segment properties
           // will only be for dictionary encoded columns
-          CarbonDimension currentBlockDimension = segmentProperties.getDimensions()
-              .get(dictionaryColumnBlockIndex[dimCounterInCurrentBlock]);
-          updatedColumnCardinality.add(
-              segmentProperties.getDimColumnsCardinality()[currentBlockDimension.getKeyOrdinal()]);
-          updatedDimensionPartitioner.add(
-              segmentProperties.getDimensionPartitions()[currentBlockDimension.getKeyOrdinal()]);
+          CarbonDimension currentBlockDimension = null;
+          for (CarbonDimension dimension : segmentProperties.getDimensions()) {
+            if (!dimension.isComplex() &&
+                    dimCounterInCurrentBlock <= dictionaryColumnBlockIndex.length - 1 &&
+                    dimension.getOrdinal() ==
+                            dictionaryColumnBlockIndex[dimCounterInCurrentBlock]) {
+              currentBlockDimension = dimension;
+            }
+          }
+          if (currentBlockDimension != null) {
+            updatedColumnCardinality.add(
+                segmentProperties.getDimColumnsCardinality()
+                        [currentBlockDimension.getKeyOrdinal()]);
+            updatedDimensionPartitioner.add(
+                      segmentProperties.getDimensionPartitions()
+                              [currentBlockDimension.getKeyOrdinal()]);
+          }
           dimCounterInCurrentBlock++;
         } else {
           // partitioner index will be 1 every column will be in columnar format
@@ -131,12 +142,18 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
     for (int i = 0; i < dictionaryColumnBlockIndex.length; i++) {
       // get the dictionary key ordinal as column cardinality in segment properties
       // will only be for dictionary encoded columns
-      CarbonDimension currentBlockDimension =
-          segmentProperties.getDimensions().get(dictionaryColumnBlockIndex[i]);
-      updatedColumnCardinality[i] =
-          segmentProperties.getDimColumnsCardinality()[currentBlockDimension.getKeyOrdinal()];
-      updatedDimensionPartitioner[i] =
-          segmentProperties.getDimensionPartitions()[currentBlockDimension.getKeyOrdinal()];
+      CarbonDimension currentBlockDimension = null;
+      for (CarbonDimension dimension : segmentProperties.getDimensions()) {
+        if (!dimension.isComplex() && dimension.getOrdinal() == dictionaryColumnBlockIndex[i]) {
+          currentBlockDimension = dimension;
+        }
+      }
+      if (currentBlockDimension != null) {
+        updatedColumnCardinality[i] =
+            segmentProperties.getDimColumnsCardinality()[currentBlockDimension.getKeyOrdinal()];
+        updatedDimensionPartitioner[i] =
+            segmentProperties.getDimensionPartitions()[currentBlockDimension.getKeyOrdinal()];
+      }
     }
     if (dictionaryColumnBlockIndex.length > 0) {
       int[] dimensionBitLength =

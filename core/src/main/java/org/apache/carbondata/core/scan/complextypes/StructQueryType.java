@@ -124,4 +124,14 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
 
     return new GenericInternalRow(fields);
   }
+  @Override public DataOutputStream getDataBasedOnDataTypeFromSurrogates(
+          ByteBuffer surrogateData , DataOutputStream out) throws IOException {
+    int childLength = surrogateData.getInt();
+    out.writeInt(childLength);
+    for (int i = 0; i < childLength; i++) {
+      children.get(i).getDataBasedOnDataTypeFromSurrogates(surrogateData , out);
+    }
+    return out;
+  }
+
 }

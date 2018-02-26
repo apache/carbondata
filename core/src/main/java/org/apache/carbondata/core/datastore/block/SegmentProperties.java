@@ -395,6 +395,7 @@ public class SegmentProperties {
           }
           counter = dimensonOrdinal;
           complexTypeOrdinal = assignComplexOrdinal(carbonDimension, complexTypeOrdinal);
+          isComplexDimensionStarted = false;
           continue;
         } else {
           // for no dictionary dimension

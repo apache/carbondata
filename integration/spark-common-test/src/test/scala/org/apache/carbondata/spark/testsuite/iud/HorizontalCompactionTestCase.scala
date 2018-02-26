@@ -27,7 +27,7 @@ import org.apache.spark.sql.test.util.QueryTest
 class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "false")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
     sql("""drop database if exists iud4 cascade""")
     sql("""create database iud4""")
     sql("""use iud4""")
@@ -49,7 +49,6 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled, "true")
   }
-
 
 
   test("test IUD Horizontal Compaction Update Alter Clean.") {
@@ -352,47 +351,100 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   }
   test("test the compaction after alter command") // As per bug Carbondata-2016
   {
-      sql(
-        "CREATE TABLE CUSTOMER1 ( C_CUSTKEY INT , C_NAME STRING , C_ADDRESS STRING , C_NATIONKEY INT , C_PHONE STRING , C_ACCTBAL DECIMAL(15,2) , C_MKTSEGMENT STRING , C_COMMENT STRING) stored by 'carbondata'")
+    sql(
+      "CREATE TABLE CUSTOMER1 ( C_CUSTKEY INT , C_NAME STRING , C_ADDRESS STRING , C_NATIONKEY INT , C_PHONE STRING , C_ACCTBAL DECIMAL(15,2) , C_MKTSEGMENT STRING , C_COMMENT STRING) stored by 'carbondata'")
 
-      sql(
-        "insert into customer1 values(1,'vandana','noida',1,'123456789',45987.78,'hello','comment')")
+    sql(
+      "insert into customer1 values(1,'vandana','noida',1,'123456789',45987.78,'hello','comment')")
 
-      sql(
-        "insert into customer1 values(2,'vandana','noida',2,'123456789',487.78,'hello','comment')")
+    sql(
+      "insert into customer1 values(2,'vandana','noida',2,'123456789',487.78,'hello','comment')")
 
-      sql(
-        " insert into customer1 values(3,'geetika','delhi',3,'123456789',487897.78,'hello','comment')")
+    sql(
+      " insert into customer1 values(3,'geetika','delhi',3,'123456789',487897.78,'hello','comment')")
 
-      sql(
-        "insert into customer1 values(4,'sangeeta','delhi',3,'123456789',48789.78,'hello','comment')")
+    sql(
+      "insert into customer1 values(4,'sangeeta','delhi',3,'123456789',48789.78,'hello','comment')")
 
-      sql(
-        "alter table customer1 add columns (shortfield short) TBLPROPERTIES ('DEFAULT.VALUE.shortfield'='32767')")
+    sql(
+      "alter table customer1 add columns (shortfield short) TBLPROPERTIES ('DEFAULT.VALUE.shortfield'='32767')")
 
-      sql(
-        "alter table customer1 add columns (intfield int) TBLPROPERTIES ('DEFAULT.VALUE.intfield'='2147483647')")
+    sql(
+      "alter table customer1 add columns (intfield int) TBLPROPERTIES ('DEFAULT.VALUE.intfield'='2147483647')")
 
-      sql(
-        "alter table customer1 add columns (longfield bigint) TBLPROPERTIES ('DEFAULT.VALUE.longfield'='9223372036854775807')")
+    sql(
+      "alter table customer1 add columns (longfield bigint) TBLPROPERTIES ('DEFAULT.VALUE.longfield'='9223372036854775807')")
 
-      sql("alter table customer1 compact 'minor' ").show()
+    sql("alter table customer1 compact 'minor' ").show()
 
-    checkAnswer(sql("select shortfield from customer1"),Seq(Row(32767),Row(32767),Row(32767),Row(32767)))
-    checkAnswer(sql("select intfield from customer1"),Seq(Row(2147483647),Row(2147483647),Row(2147483647),Row(2147483647)))
-    checkAnswer(sql("select longfield from customer1"),Seq(Row(9223372036854775807L),Row(9223372036854775807L),Row(9223372036854775807L),Row(9223372036854775807L)))
+    checkAnswer(sql("select shortfield from customer1"), Seq(Row(32767), Row(32767), Row(32767), Row(32767)))
+    checkAnswer(sql("select intfield from customer1"), Seq(Row(2147483647), Row(2147483647), Row(2147483647), Row(2147483647)))
+    checkAnswer(sql("select longfield from customer1"), Seq(Row(9223372036854775807L), Row(9223372036854775807L), Row(9223372036854775807L), Row(9223372036854775807L)))
 
   }
+
+
+  test("test compaction for complex types ") {
+    sql("DROP TABLE IF EXISTS complex_filter ")
+    sql("DROP TABLE IF EXISTS st ")
+
+    sql("create table st (id int, name string , structelem struct<id1:int, structelem: struct<id2:int, name:string>> )" +
+      "stored by 'carbondata' TBLPROPERTIES ('DICTIONARY_INCLUDE'='name') ").show
+
+    sql(s"load data local inpath '$resourcesPath/structinstructnull.csv' into table st options('delimiter'=',' ,  " +
+      s"'fileheader'='id,name,structelem','COMPLEX_DELIMITER_LEVEL_1'='#', 'COMPLEX_DELIMITER_LEVEL_2'='|')")
+
+    sql("alter table st add columns (newcol string )").show
+
+    sql(s"load data local inpath '$resourcesPath/structinstructnull_addcol.csv' into table st options('delimiter'=',' ,  " +
+      s"'fileheader'='id,name,structelem,newcol','COMPLEX_DELIMITER_LEVEL_1'='#', 'COMPLEX_DELIMITER_LEVEL_2'='|')")
+
+    sql("alter table st compact 'major'")
+
+    sql("desc table st ").show(false)
+
+    sql("select * from st ").show(false);
+
+    checkAnswer(sql("select id,name,structelem.structelem.name from st where id=4"), Seq(Row(4, "name4", "pqr"), Row(4, "name4", "pqr")));
+
+    sql(
+      "create table complex_filter(test1 int, test2 array<String>,test3 array<bigint>,test4 " +
+        "array<int> ) STORED BY 'org" +
+        ".apache.carbondata.format'").show()
+
+    sql("LOAD DATA INPATH '" + resourcesPath +
+      "/array1.csv'  INTO TABLE complex_filter options ('DELIMITER'=',', 'QUOTECHAR'='\"', " +
+      "'COMPLEX_DELIMITER_LEVEL_1'='$', 'FILEHEADER'= 'test1,test2,test3,test4' )")
+
+    sql("LOAD DATA INPATH '" + resourcesPath +
+      "/array1.csv'  INTO TABLE complex_filter options ('DELIMITER'=',', 'QUOTECHAR'='\"', " +
+      "'COMPLEX_DELIMITER_LEVEL_1'='$', 'FILEHEADER'= 'test1,test2,test3,test4' )")
+
+    sql("alter table complex_filter compact 'major'")
+
+    sql("desc table complex_filter ").show(false)
+
+    sql("select * from complex_filter ").show(false);
+
+
+    checkAnswer(sql("select test1,test2[0],test3[0],test4[0] from complex_filter "),
+      Seq(Row(1, "hello", 12345, 123456), Row(1, "hello", 12345, 123456), Row(2, "welcome", 9876, 13456), Row(2, "welcome", 9876, 13456)));
+
+    sql("DROP TABLE IF EXISTS st ")
+
+    sql("DROP TABLE IF EXISTS complex_filter ")
+
+  }
+
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
     sql("use default")
     sql("drop database if exists iud4 cascade")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
+      .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled, "true")
     sql("""drop table if exists t_carbn01""")
     sql("""drop table if exists customer1""")
   }
-
 }
 

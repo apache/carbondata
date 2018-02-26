@@ -1,0 +1,7 @@
+1,name1,111#1001|abc,newcol1
+2,name2,222#2002|xyz,newcol2
+null,name3,333#3003|def,newcol3
+4,name4,null#4004|pqr,newcol4
+5,name5,555#null|ghi,newcol5
+6,name6,666#6006|null,newcol6
+7,name7,null,null

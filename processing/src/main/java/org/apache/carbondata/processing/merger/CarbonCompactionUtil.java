@@ -306,6 +306,26 @@ public class CarbonCompactionUtil {
     }
   }
 
+  public static void updateComplexTypeColumnSchemaAndGetCardinality(
+          Map<String, Integer> columnCardinalityMap,
+          List<ColumnSchema> updatedColumnSchemaList ,
+          List<Integer> updatedCardinalityList , CarbonDimension dimension)  {
+    Integer value = columnCardinalityMap.get(dimension.getColumnId());
+    if (null == value) {
+      updatedCardinalityList.add(getDimensionDefaultCardinality(dimension));
+    } else {
+      updatedCardinalityList.add(value);
+    }
+    updatedColumnSchemaList.add(dimension.getColumnSchema());
+    if (dimension.getNumberOfChild() > 0) {
+      for (CarbonDimension childDimension : dimension.getListOfChildDimensions()) {
+        updateComplexTypeColumnSchemaAndGetCardinality(columnCardinalityMap ,
+                updatedColumnSchemaList ,updatedCardinalityList , childDimension) ;
+      }
+    }
+
+  }
+
   /**
    * This method will return the updated cardinality according to the master schema
    *
@@ -320,13 +340,9 @@ public class CarbonCompactionUtil {
         carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<Integer> updatedCardinalityList = new ArrayList<>(columnCardinalityMap.size());
     for (CarbonDimension dimension : masterDimensions) {
-      Integer value = columnCardinalityMap.get(dimension.getColumnId());
-      if (null == value) {
-        updatedCardinalityList.add(getDimensionDefaultCardinality(dimension));
-      } else {
-        updatedCardinalityList.add(value);
-      }
-      updatedColumnSchemaList.add(dimension.getColumnSchema());
+      updateComplexTypeColumnSchemaAndGetCardinality(columnCardinalityMap,
+              updatedColumnSchemaList ,
+                updatedCardinalityList , dimension);
     }
     // add measures to the column schema list
     List<CarbonMeasure> masterSchemaMeasures =
