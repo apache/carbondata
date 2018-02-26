@@ -74,15 +74,15 @@ import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWrit
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPreparator;
-import org.apache.carbondata.processing.util.TableOptionConstant;
+import org.apache.carbondata.processing.loading.DataLoadExecutor;
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator;
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable;
 import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
-import org.apache.carbondata.processing.loading.DataLoadExecutor;
-import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.util.TableOptionConstant;
 
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
@@ -471,7 +471,7 @@ public class StoreCreator {
     listOfLoadFolderDetails.add(loadMetadataDetails);
 
     String dataLoadLocation = schema.getCarbonTable().getMetaDataFilepath() + File.separator
-        + CarbonCommonConstants.LOADMETADATA_FILENAME;
+        + CarbonTablePath.TABLE_STATUS_FILE;
 
     DataOutputStream dataOutputStream;
     Gson gsonObjectToWrite = new Gson();

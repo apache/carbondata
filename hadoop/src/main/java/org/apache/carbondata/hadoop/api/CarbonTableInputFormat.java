@@ -64,6 +64,7 @@ import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.statusmanager.FileFormat;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -341,7 +342,10 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    */
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
-    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
+    LoadMetadataDetails[] loadMetadataDetails = SegmentStatusManager
+        .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
+    SegmentUpdateStatusManager updateStatusManager =
+        new SegmentUpdateStatusManager(identifier, loadMetadataDetails);
     CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
@@ -355,7 +359,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // get all valid segments and set them into the configuration
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
-        segmentStatusManager.getValidAndInvalidSegments();
+        segmentStatusManager.getValidAndInvalidSegments(loadMetadataDetails);
 
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
       List<Segment> validSegments = segments.getValidSegments();
@@ -435,7 +439,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // do block filtering and get split
     List<InputSplit> splits =
         getSplits(job, filterInterface, filteredSegmentToAccess, matchedPartitions, partitionInfo,
-            null);
+            null, updateStatusManager);
     // pass the invalid segment to task side in order to remove index entry in task side
     if (invalidSegments.size() > 0) {
       for (InputSplit split : splits) {
@@ -616,7 +620,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
           CarbonInputFormatUtil.resolveFilter(filter, identifier, tableProvider);
       // do block filtering and get split
       List<InputSplit> splits = getSplits(job, filterInterface, segmentList, matchedPartitions,
-          partitionInfo, oldPartitionIdList);
+          partitionInfo, oldPartitionIdList, new SegmentUpdateStatusManager(identifier));
       // pass the invalid segment to task side in order to remove index entry in task side
       if (invalidSegments.size() > 0) {
         for (InputSplit split : splits) {
@@ -667,7 +671,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    */
   private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
       List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
-      List<Integer> oldPartitionIdList) throws IOException {
+      List<Integer> oldPartitionIdList, SegmentUpdateStatusManager updateStatusManager)
+      throws IOException {
 
     List<InputSplit> result = new LinkedList<InputSplit>();
     UpdateVO invalidBlockVOForSegmentId = null;
@@ -675,8 +680,6 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
         getOrCreateCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
-    SegmentUpdateStatusManager updateStatusManager =
-        new SegmentUpdateStatusManager(absoluteTableIdentifier);
 
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
@@ -930,9 +933,12 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       List<PartitionSpec> partitions) throws IOException {
     TableDataMap blockletMap = DataMapStoreManager.getInstance()
         .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
-    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
+    LoadMetadataDetails[] loadMetadataDetails = SegmentStatusManager
+        .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
+    SegmentUpdateStatusManager updateStatusManager =
+        new SegmentUpdateStatusManager(identifier, loadMetadataDetails);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
-        new SegmentStatusManager(identifier).getValidAndInvalidSegments();
+        new SegmentStatusManager(identifier).getValidAndInvalidSegments(loadMetadataDetails);
     Map<String, Long> blockRowCountMapping = new HashMap<>();
     Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();
 
