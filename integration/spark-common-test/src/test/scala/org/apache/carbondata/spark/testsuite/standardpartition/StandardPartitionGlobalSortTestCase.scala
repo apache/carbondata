@@ -927,6 +927,92 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     assert(exMessage.getMessage.contains("day is not a valid partition column in table default.partitionnocolumn"))
   }
 
+  test("data loading with default partition in static partition table with batchsort") {
+    sql("DROP TABLE IF EXISTS partitiondefaultbatchsort")
+    sql(
+      """
+        | CREATE TABLE partitiondefaultbatchsort (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String)
+        | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='BATCH_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultbatchsort OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(*) from partitiondefaultbatchsort"), Seq(Row(10)))
+  }
+
+  test("data loading with default partition in static partition table with nosort") {
+    sql("DROP TABLE IF EXISTS partitiondefaultnosort")
+    sql(
+      """
+        | CREATE TABLE partitiondefaultnosort (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String)
+        | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='NO_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultnosort OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(*) from partitiondefaultnosort"), Seq(Row(10)))
+  }
+
+  test("data loading with default partition in static partition table with rename") {
+    sql("DROP TABLE IF EXISTS partitiondefaultrename")
+    sql("DROP TABLE IF EXISTS partitiondefaultrename_new")
+    sql(
+      """
+        | CREATE TABLE partitiondefaultrename (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String)
+        | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultrename OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(*) from partitiondefaultrename"), Seq(Row(10)))
+    sql(s"alter table partitiondefaultrename rename to partitiondefaultrename_new")
+    checkAnswer(sql("select count(*) from partitiondefaultrename_new"), Seq(Row(10)))
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultrename_new OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(*) from partitiondefaultrename_new"), Seq(Row(20)))
+  }
+
+  test("data loading with default partition in static partition table with rename first") {
+    sql("DROP TABLE IF EXISTS partitiondefaultrenamefirst")
+    sql("DROP TABLE IF EXISTS partitiondefaultrenamefirst_new")
+    sql(
+      """
+        | CREATE TABLE partitiondefaultrenamefirst (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectenddate Timestamp,attendance int,
+        |  utilization int, doj Timestamp, empname String)
+        | PARTITIONED BY (projectjoindate Timestamp, salary decimal)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"alter table partitiondefaultrenamefirst rename to partitiondefaultrenamefirst_new")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondefaultrenamefirst_new OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(*) from partitiondefaultrenamefirst_new"), Seq(Row(10)))
+  }
+
+  test("data loading for global partition table for two partition column with no columns in csv") {
+    sql("DROP TABLE IF EXISTS partitiontwonocolumns")
+    sql(
+      """
+        | CREATE TABLE partitiontwonocolumns (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int,doj Timestamp, empname String)
+        | PARTITIONED BY (newcol1 date, newcol2 int)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiontwonocolumns partition(newcol1='2016-08-09', newcol2='20') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitiontwonocolumns order by empno"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
+
+    checkAnswer(sql("select distinct cast(newcol1 as string) from partitiontwonocolumns"), Seq(Row("2016-08-09")))
+  }
+
   override def afterAll = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,

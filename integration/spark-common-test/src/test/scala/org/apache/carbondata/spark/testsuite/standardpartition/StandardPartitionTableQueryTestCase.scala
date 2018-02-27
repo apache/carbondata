@@ -300,6 +300,27 @@ test("Creation of partition table should fail if the colname in table schema and
     FileFactory.deleteAllCarbonFilesOfDir(file)
   }
 
+  test("set partition location with static column partition with load command") {
+    sql("drop table if exists staticpartitionsetloc")
+    sql(
+      """
+        | CREATE TABLE staticpartitionsetloc (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp,attendance int,
+        |  deptname String,projectcode int,
+        |  utilization int,salary int,projectenddate Date,doj Timestamp)
+        | PARTITIONED BY (empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    val location = metastoredb +"/" +"ravi1"
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionsetloc partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    intercept[Exception] {
+      sql(s"""alter table staticpartitionsetloc partition (empname='ravi') set location '$location'""")
+    }
+    val file = FileFactory.getCarbonFile(location)
+    FileFactory.deleteAllCarbonFilesOfDir(file)
+  }
+
   test("add external partition with static column partition with load command with diffrent schema") {
 
     sql(

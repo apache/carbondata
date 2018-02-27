@@ -20,6 +20,7 @@ package org.apache.spark.sql.hive
 import scala.collection.generic.SeqFactory
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry}
@@ -170,6 +171,15 @@ class CarbonSessionCatalog(
       allPartitions,
       partitionFilters,
       sparkSession.sessionState.conf.sessionLocalTimeZone)
+  }
+
+  /**
+   * Update the storageformat with new location information
+   */
+  def updateStorageLocation(
+      path: Path,
+      storage: CatalogStorageFormat): CatalogStorageFormat = {
+    storage.copy(locationUri = Some(path.toUri))
   }
 }
 

@@ -265,6 +265,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         RefreshCarbonTableCommand(tableIdentifier.database,
           tableIdentifier.table).run(sparkSession)
         ExecutedCommandExec(RefreshTable(tableIdentifier)) :: Nil
+      case alterSetLoc@AlterTableSetLocationCommand(tableName, _, _) =>
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableName)(sparkSession)
+        if (isCarbonTable) {
+          throw new UnsupportedOperationException("Set partition location is not supported")
+        } else {
+          ExecutedCommandExec(alterSetLoc) :: Nil
+        }
       case _ => Nil
     }
   }
