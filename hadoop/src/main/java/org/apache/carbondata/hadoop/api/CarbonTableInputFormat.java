@@ -359,53 +359,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       List<Segment> validSegments = segments.getValidSegments();
       streamSegments = segments.getStreamSegments();
       if (validSegments.size() == 0) {
-        if (streamSegments.size() != 0) {
-          return getSplitsOfStreaming(job, identifier, streamSegments);
-        }
-        // check for externalTable segment (Segment_null)
-        {
-          // process and resolve the expression
-          Expression filter = getFilterPredicates(job.getConfiguration());
-          TableProvider tableProvider = new SingleTableProvider(carbonTable);
-          // this will be null in case of corrupt schema file.
-          PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
-          CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
-
-          // prune partitions for filter query on partition table
-          BitSet matchedPartitions = null;
-          if (partitionInfo != null
-              && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
-            matchedPartitions = setMatchedPartitions(null, filter, partitionInfo, null);
-            if (matchedPartitions != null) {
-              if (matchedPartitions.cardinality() == 0) {
-                return new ArrayList<InputSplit>();
-              } else if (matchedPartitions.cardinality() == partitionInfo.getNumPartitions()) {
-                matchedPartitions = null;
-              }
-            }
-          }
-
-          FilterResolverIntf filterInterface = CarbonInputFormatUtil
-              .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
-
-          String segmentDir = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null");
-          FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
-          if (FileFactory.isFileExist(segmentDir, fileType)) {
-            // if external table Segments are found, add it to the List
-            List<String> externalTableSegments = new ArrayList<String>();
-            externalTableSegments.add("null");
-
-            // do block filtering and get split
-            List<InputSplit> splits =
-                getSplits(job, filterInterface, externalTableSegments, matchedPartitions,
-                    partitionInfo, null);
-
-            return splits;
-          } else {
-            // assert case ?
-            return null;
-          }
-        }
+        return getSplitsOfStreaming(job, identifier, streamSegments);
       }
 
 
