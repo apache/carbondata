@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.datamap.preaggregate;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.datamap.MVDataMapRules;
 
 import org.apache.spark.sql.SparkSession;
@@ -25,6 +26,7 @@ import org.apache.spark.sql.catalyst.rules.Rule;
 import org.apache.spark.sql.hive.CarbonPreAggregateDataLoadingRules;
 import org.apache.spark.sql.hive.CarbonPreAggregateQueryRules;
 
+@InterfaceAudience.Internal
 public class PreaggregateMVDataMapRules implements MVDataMapRules {
 
   @Override
