@@ -227,6 +227,8 @@ class CarbonFileLevelFormat extends FileFormat
         segments.add("null")
         var partition = new java.util.ArrayList[String]()
 
+        // clean the blocklet
+        blockletMap.clear()
         val prunedBlocklets = blockletMap
           .prune(segments, model.getFilterExpressionResolverTree, partition)
 
