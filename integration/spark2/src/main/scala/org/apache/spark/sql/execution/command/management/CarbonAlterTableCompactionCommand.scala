@@ -83,13 +83,13 @@ case class CarbonAlterTableCompactionCommand(
       val loadMetadataEvent = new LoadMetadataEvent(table, true)
       OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
     }
-    if (SegmentStatusManager.isLoadInProgressInTable(table)) {
-      throw new ConcurrentOperationException(table, "loading", "compaction")
-    }
     Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    if (SegmentStatusManager.isLoadInProgressInTable(table)) {
+      throw new ConcurrentOperationException(table, "loading", "compaction")
+    }
     operationContext.setProperty("compactionException", "true")
     var compactionType: CompactionType = null
     var compactionException = "true"
