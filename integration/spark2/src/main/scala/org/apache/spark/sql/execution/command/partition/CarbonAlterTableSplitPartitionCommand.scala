@@ -68,7 +68,7 @@ case class CarbonAlterTableSplitPartitionCommand(
       throwMetadataException(dbName, tableName, "table not found")
     }
     carbonMetaStore.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
-    if (null == CarbonMetadata.getInstance.getCarbonTable(dbName, tableName)) {
+    if (null == (CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession))) {
       LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
       throwMetadataException(dbName, tableName, "table not found")
     }
