@@ -251,7 +251,7 @@ class CarbonFileLevelFormat extends FileFormat
         reader
       }
 
-      val iter = new CarbonRecordReaderIterator(carbonReader)
+      val iter = new RecordReaderIterator(carbonReader)
       Option(TaskContext.get()).foreach(_.addTaskCompletionListener(_ => iter.close()))
 
       iter.asInstanceOf[Iterator[InternalRow]]
