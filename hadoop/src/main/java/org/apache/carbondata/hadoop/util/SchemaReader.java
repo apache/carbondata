@@ -39,21 +39,23 @@ public class SchemaReader {
   public static CarbonTable readCarbonTableFromStore(AbsoluteTableIdentifier identifier)
       throws IOException {
     String schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath());
-    if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) || FileFactory
-        .isFileExist(schemaFilePath, FileFactory.FileType.HDFS) || FileFactory
-        .isFileExist(schemaFilePath, FileFactory.FileType.S3) || FileFactory
-        .isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
+    if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
+        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
+        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.S3) ||
+        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
       String tableName = identifier.getCarbonTableIdentifier().getTableName();
 
       org.apache.carbondata.format.TableInfo tableInfo =
           CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(identifier.getTablePath()));
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-      TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(tableInfo,
-          identifier.getCarbonTableIdentifier().getDatabaseName(), tableName,
+      TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+          tableInfo,
+          identifier.getCarbonTableIdentifier().getDatabaseName(),
+          tableName,
           identifier.getTablePath());
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
-      return CarbonMetadata.getInstance()
-          .getCarbonTable(identifier.getCarbonTableIdentifier().getTableUniqueName());
+      return CarbonMetadata.getInstance().getCarbonTable(
+          identifier.getCarbonTableIdentifier().getTableUniqueName());
     } else {
       throw new IOException("File does not exist: " + schemaFilePath);
     }
@@ -89,16 +91,21 @@ public class SchemaReader {
    * @param identifier
    * @return
    */
-  public static TableInfo getTableInfo(AbsoluteTableIdentifier identifier) throws IOException {
+  public static TableInfo getTableInfo(AbsoluteTableIdentifier identifier)
+      throws IOException {
     org.apache.carbondata.format.TableInfo thriftTableInfo =
         CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(identifier.getTablePath()));
     ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
         new ThriftWrapperSchemaConverterImpl();
-    CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
-    return thriftWrapperSchemaConverter
-        .fromExternalToWrapperTableInfo(thriftTableInfo, carbonTableIdentifier.getDatabaseName(),
-            carbonTableIdentifier.getTableName(), identifier.getTablePath());
+    CarbonTableIdentifier carbonTableIdentifier =
+        identifier.getCarbonTableIdentifier();
+    return thriftWrapperSchemaConverter.fromExternalToWrapperTableInfo(
+        thriftTableInfo,
+        carbonTableIdentifier.getDatabaseName(),
+        carbonTableIdentifier.getTableName(),
+        identifier.getTablePath());
   }
+
 
   public static TableInfo inferSchemaForExternalTable(AbsoluteTableIdentifier identifier)
       throws IOException {
@@ -108,32 +115,6 @@ public class SchemaReader {
     // Return the TableInfo.
     org.apache.carbondata.format.TableInfo tableInfo =
         CarbonUtil.inferSchemaFileExternalTable(identifier.getTablePath(), identifier, false);
-
-    // Write the tableInfo into the schema Path.
-    // String schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath());
-
-    // String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaPath);
-    //    CarbonMetadata.getInstance().loadTableMetadata(tableInfo);
-    //    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    //    org.apache.carbondata.format.TableInfo thriftTableInfo =
-    //        schemaConverter.fromWrapperToExternalTableInfo(
-    //            tableInfo,
-    //            tableInfo.getDatabaseName(),
-    //            tableInfo.getFactTable().getTableName());
-    //    org.apache.carbondata.format.SchemaEvolutionEntry schemaEvolutionEntry =
-    //        new org.apache.carbondata.format.SchemaEvolutionEntry(
-    //            tableInfo.getLastUpdatedTime());
-    //    thriftTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history()
-    //        .add(schemaEvolutionEntry);
-    //    FileFactory.FileType fileType = FileFactory.getFileType(schemaMetadataPath);
-    //    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-    //      FileFactory.mkdirs(schemaMetadataPath, fileType);
-    //    }
-    //    ThriftWriter thriftWriter = new ThriftWriter(schemaPath, false);
-    //    thriftWriter.open();
-    //    thriftWriter.write(tableInfo);
-    //    thriftWriter.close();
-
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     TableInfo wrapperTableInfo = schemaConverter
         .fromExternalToWrapperTableInfo(tableInfo, identifier.getDatabaseName(),

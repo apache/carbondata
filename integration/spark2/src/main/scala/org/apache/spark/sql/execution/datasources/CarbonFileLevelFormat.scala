@@ -163,33 +163,6 @@ class CarbonFileLevelFormat extends FileFormat
     }
   }
 
-
-//  private def createFileInputFormat(conf: Configuration): CarbonFileInputFormat[Object] = {
-//    val format = new CarbonFileInputFormat[Object]
-//    CarbonFileInputFormat.setTablePath(conf,
-//      identifier.appendWithLocalPrefix(identifier.getTablePath))
-//    CarbonFileInputFormat.setQuerySegment(conf, identifier)
-//    CarbonFileInputFormat.setFilterPredicates(conf, filterExpression)
-//    CarbonFileInputFormat.setColumnProjection(conf, columnProjection)
-//    CarbonFileInputFormat.setDataMapJob(conf, new SparkDataMapJob)
-//    if (CarbonProperties.getInstance().getProperty(
-//      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-//      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
-//      CarbonTableInputFormat.setDataMapJob(conf, new SparkDataMapJob)
-//    }
-//
-//    // when validate segments is disabled in thread local update it to CarbonTableInputFormat
-//    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-//    if (carbonSessionInfo != null) {
-//      CarbonTableInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getSessionParams
-//        .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-//                     identifier.getCarbonTableIdentifier.getDatabaseName + "." +
-//                     identifier.getCarbonTableIdentifier.getTableName, "true").toBoolean)
-//    }
-//    format
-//  }
-
-
   override def buildReaderWithPartitionValues(sparkSession: SparkSession,
       dataSchema: StructType,
       partitionSchema: StructType,
@@ -222,10 +195,6 @@ class CarbonFileLevelFormat extends FileFormat
     val dataMapJob: DataMapJob = CarbonFileInputFormat.getDataMapJob(job.getConfiguration)
     val format = new CarbonFileInputFormat[Object]
 
-
-
-    // val inputSplits = format.getSplits(job).asInstanceOf[CarbonSparkPartition].split.value
-
     (file: PartitionedFile) => {
       assert(file.partitionValues.numFields == partitionSchema.size)
 
@@ -245,9 +214,6 @@ class CarbonFileLevelFormat extends FileFormat
       val blockletMap: TableDataMap = DataMapStoreManager.getInstance
         .chooseDataMap(identifier)
 
-      // val split = format.getSplits(job).asInstanceOf[CarbonSparkPartition].split.value
-
-      //split.setDetailInfo()
       val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
       val conf1 = new Configuration()
       conf1.set("mapreduce.input.carboninputformat.tableName", "externaldummy")
@@ -264,17 +230,7 @@ class CarbonFileLevelFormat extends FileFormat
 
       val prunedBlocklets = blockletMap
         .prune(segments, model.getFilterExpressionResolverTree, partition)
-     //  split.setDetailInfo(prunedBlocklets.get
-      //      val carbonTable = createTable(dataSchema).getMeta
-      //      val queryModel = carbonTable.createQuery(projection, filter)
 
-      //      // Try to push down filters when filter push-down is enabled.
-      //      // Notice: This push-down is RowGroups level, not individual records.
-      //      if (pushed.isDefined) {
-      //        ParquetInputFormat.setFilterPredicate(hadoopAttemptContext.getConfiguration,
-      // pushed.get)
-      //      }
-      // split.setDetailInfo(prunedBlocklets.get(0).getDetailInfo)
       val detailInfo = prunedBlocklets.get(0).getDetailInfo
       detailInfo.readColumnSchema(detailInfo.getColumnSchemaBinary)
       split.setDetailInfo(detailInfo)
@@ -299,155 +255,8 @@ class CarbonFileLevelFormat extends FileFormat
       Option(TaskContext.get()).foreach(_.addTaskCompletionListener(_ => iter.close()))
 
       iter.asInstanceOf[Iterator[InternalRow]]
-      // UnsafeRowParquetRecordReader appends the columns internally to avoid another copy.
-      //      if (carbonReader.isInstanceOf[VectorizedCarbonRecordReader] && readVector) {
-      //        iter.asInstanceOf[Iterator[InternalRow]]
-      //      } else {
-      //        val fullSchema = requiredSchema.toAttributes ++ partitionSchema.toAttributes
-      //        val joinedRow = new JoinedRow()
-      //        val appendPartitionColumns = GenerateUnsafeProjection.generate(fullSchema,
-      // fullSchema)
-      //
-      //        // This is a horrible erasure hack...  if we type the iterator above, then it
-      // actually check
-      //        // the type in next() and we get a class cast exception.  If we make that function
-      // return
-      //        // Object, then we can defer the cast until later!
-      //        if (partitionSchema.length == 0) {
-      //          // There is no partition columns
-      //          iter.asInstanceOf[Iterator[InternalRow]]
-      //        } else {
-      //          iter.asInstanceOf[Iterator[InternalRow]]
-      //            .map(d => appendPartitionColumns(joinedRow(d, file.partitionValues)))
-      //        }
-      //      }
     }
   }
-
-
-//  override def buildReader(
-//      sparkSession: SparkSession,
-//      dataSchema: StructType,
-//      partitionSchema: StructType,
-//      requiredSchema: StructType,
-//      filters: Seq[Filter],
-//      options: Map[String, String],
-//      hadoopConf: Configuration): (PartitionedFile) => Iterator[InternalRow] = {
-//
-//    val filter = filters.flatMap { filter =>
-//      CarbonFilters.createCarbonFilter(dataSchema, filter)
-//    }.reduceOption(new AndExpression(_, _))
-//
-//    val projection = requiredSchema.map(_.name).toArray
-//
-//    val conf = new Configuration()
-//    val jobConf = new JobConf(conf)
-//    SparkHadoopUtil.get.addCredentials(jobConf)
-//    val job = Job.getInstance(jobConf)
-//
-//    val readVector = supportVector(sparkSession, dataSchema)
-//    val format = new CarbonFileInputFormat[Object]
-//    // val inputSplits = format.getSplits(job).asInstanceOf[CarbonSparkPartition].split.value
-//
-//    (file: PartitionedFile) => {
-//      assert(file.partitionValues.numFields == partitionSchema.size)
-//
-//      val fileSplit =
-//        new FileSplit(new Path(new URI(file.filePath)), file.start, file.length, Array.empty)
-//
-//      val split = CarbonInputSplit.from("null", "0", fileSplit, ColumnarFormatVersion.V3 , null)
-//
-//      val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
-//      val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
-//      val model = format.createQueryModel(split, attemptContext)
-////      val carbonTable = createTable(dataSchema).getMeta
-////      val queryModel = carbonTable.createQuery(projection, filter)
-//
-////      // Try to push down filters when filter push-down is enabled.
-////      // Notice: This push-down is RowGroups level, not individual records.
-////      if (pushed.isDefined) {
-////        ParquetInputFormat.setFilterPredicate(hadoopAttemptContext.getConfiguration, pushed.get)
-////      }
-//        val carbonReader = if (readVector) {
-//          val vectorizedReader = createVectorizedCarbonRecordReader(model, null)
-//          vectorizedReader.initialize(split, attemptContext)
-//          logDebug(s"Appending $partitionSchema ${ file.partitionValues }")
-//          vectorizedReader
-//        } else {
-//          val reader = new CarbonRecordReader(model,
-//            format.getReadSupportClass(attemptContext.getConfiguration), null)
-//          reader.initialize(split, attemptContext)
-//          reader
-//       }
-//
-//      val iter = new RecordReaderIterator(carbonReader)
-//      Option(TaskContext.get()).foreach(_.addTaskCompletionListener(_ => iter.close()))
-//
-//      iter.asInstanceOf[Iterator[InternalRow]]
-//      // UnsafeRowParquetRecordReader appends the columns internally to avoid another copy.
-////      if (carbonReader.isInstanceOf[VectorizedCarbonRecordReader] && readVector) {
-////        iter.asInstanceOf[Iterator[InternalRow]]
-////      } else {
-////        val fullSchema = requiredSchema.toAttributes ++ partitionSchema.toAttributes
-////        val joinedRow = new JoinedRow()
-////        val appendPartitionColumns = GenerateUnsafeProjection.generate(fullSchema, fullSchema)
-////
-////        // This is a horrible erasure hack...  if we type the iterator above, then it
-  // actually check
-////        // the type in next() and we get a class cast exception.  If we make that function return
-////        // Object, then we can defer the cast until later!
-////        if (partitionSchema.length == 0) {
-////          // There is no partition columns
-////          iter.asInstanceOf[Iterator[InternalRow]]
-////        } else {
-////          iter.asInstanceOf[Iterator[InternalRow]]
-////            .map(d => appendPartitionColumns(joinedRow(d, file.partitionValues)))
-////        }
-////      }
-//    }
-//  }
-//
-////    (file: PartitionedFile) => if (inputSplits.getAllSplits.size() > 0) {
-////      val recordReader = format.createRecordReader(inputSplits, attemptContext)
-////
-////      recordReader.initialize(inputSplits, attemptContext)
-////
-////      new Iterator[Any] {
-////        private var havePair = false
-////        private var finished = false
-////
-////
-////        override def hasNext: Boolean = {
-////          if (!finished && !havePair) {
-////            finished = !recordReader.nextKeyValue
-////            havePair = !finished
-////          }
-////          !finished
-////        }
-////
-////        override def next(): Any = {
-////          if (!hasNext) {
-////            throw new java.util.NoSuchElementException("End of stream")
-////          }
-////          havePair = false
-////          val value = recordReader.getCurrentValue
-////          value
-////        }
-////
-////        private def close() {
-////          TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId)
-////        }
-////      }
-////    } else {
-////      new Iterator[Any] {
-////        override def hasNext: Boolean = false
-////
-////        override def next(): Any = throw new java.util.NoSuchElementException("End of stream")
-////      }
-////    }
-////
-////    iterator.asInstanceOf[Iterator[InternalRow]]
-
 }
 
 
