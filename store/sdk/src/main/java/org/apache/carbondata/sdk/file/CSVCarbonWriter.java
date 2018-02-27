@@ -23,7 +23,7 @@ import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
-import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable;
+import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.hadoop.conf.Configuration;
@@ -42,9 +42,9 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 @InterfaceAudience.Internal
 class CSVCarbonWriter extends CarbonWriter {
 
-  private RecordWriter<NullWritable, StringArrayWritable> recordWriter;
+  private RecordWriter<NullWritable, ObjectArrayWritable> recordWriter;
   private TaskAttemptContext context;
-  private StringArrayWritable writable;
+  private ObjectArrayWritable writable;
 
   CSVCarbonWriter(CarbonLoadModel loadModel) throws IOException {
     Configuration hadoopConf = new Configuration();
@@ -57,7 +57,7 @@ class CSVCarbonWriter extends CarbonWriter {
     TaskAttemptContextImpl context = new TaskAttemptContextImpl(hadoopConf, attemptID);
     this.recordWriter = format.getRecordWriter(context);
     this.context = context;
-    this.writable = new StringArrayWritable();
+    this.writable = new ObjectArrayWritable();
   }
 
   /**
