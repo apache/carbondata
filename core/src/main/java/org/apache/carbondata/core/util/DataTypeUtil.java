@@ -726,6 +726,8 @@ public final class DataTypeUtil {
    */
   public static void setDataTypeConverter(DataTypeConverter converterLocal) {
     converter = converterLocal;
+    timeStampformatter.remove();
+    dateformatter.remove();
   }
 
   public static DataTypeConverter getDataTypeConverter() {
