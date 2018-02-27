@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap.expression;
+package org.apache.carbondata.core.scan.expression;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -36,7 +37,7 @@ public class MatchExpression extends Expression {
   @Override
   public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    return null;
+    return new ExpressionResult(DataTypes.BOOLEAN,true);
   }
 
   @Override

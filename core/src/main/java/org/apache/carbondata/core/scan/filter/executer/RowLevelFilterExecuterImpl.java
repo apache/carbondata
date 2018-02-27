@@ -50,6 +50,7 @@ import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.MatchExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -190,6 +191,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   @Override
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
       boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
+    if (exp instanceof MatchExpression) {
+      return rawBlockletColumnChunks.getBitSetGroup();
+    }
     readColumnChunks(rawBlockletColumnChunks);
     // CHECKSTYLE:ON
 
