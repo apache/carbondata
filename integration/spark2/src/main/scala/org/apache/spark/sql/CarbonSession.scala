@@ -76,6 +76,7 @@ class CarbonSession(@transient val sc: SparkContext,
   }
 
   // materialized view rules, currently one datamap is supported: PreaggregateDataMap
+  @transient
   private var mvDataMapRules: mutable.Seq[MVDataMapRules] = mutable.Seq()
 
   def addMVDataMapRules(rules: Seq[MVDataMapRules]): Unit =
