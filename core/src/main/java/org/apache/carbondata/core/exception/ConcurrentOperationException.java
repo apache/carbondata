@@ -17,21 +17,10 @@
 
 package org.apache.carbondata.core.exception;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
-
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
-/**
- * This exception will be thrown when executing concurrent operations which
- * is not supported in carbon.
- *
- * For example, when INSERT OVERWRITE is executing, other operations are not
- * allowed, so this exception will be thrown
- */
-@InterfaceAudience.User
-@InterfaceStability.Stable
-public class ConcurrentOperationException extends Exception {
+public class ConcurrentOperationException extends MalformedCarbonCommandException {
 
   public ConcurrentOperationException(String dbName, String tableName, String command1,
       String command2) {
@@ -48,3 +37,4 @@ public class ConcurrentOperationException extends Exception {
   }
 
 }
+
