@@ -84,7 +84,7 @@ public class DataMapWriterListener {
     LOG.info("DataMapWriter " + writer + " added");
   }
 
-  public void onBlockStart(String blockId, String blockPath) {
+  public void onBlockStart(String blockId, String blockPath) throws IOException {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
         writer.onBlockStart(blockId);
@@ -92,7 +92,7 @@ public class DataMapWriterListener {
     }
   }
 
-  public void onBlockEnd(String blockId) {
+  public void onBlockEnd(String blockId) throws IOException {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
         writer.onBlockEnd(blockId);
@@ -122,7 +122,7 @@ public class DataMapWriterListener {
    * @param pageId     sequence number of page, start from 0
    * @param tablePage  page data
    */
-  public void onPageAdded(int blockletId, int pageId, TablePage tablePage) {
+  public void onPageAdded(int blockletId, int pageId, TablePage tablePage) throws IOException {
     Set<Map.Entry<List<String>, List<DataMapWriter>>> entries = registry.entrySet();
     for (Map.Entry<List<String>, List<DataMapWriter>> entry : entries) {
       List<String> indexedColumns = entry.getKey();

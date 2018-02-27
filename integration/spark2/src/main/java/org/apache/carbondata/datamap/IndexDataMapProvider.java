@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.datamap;
 
+import java.io.IOException;
+
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
@@ -37,7 +39,7 @@ public class IndexDataMapProvider implements DataMapProvider {
 
   @Override
   public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement,
-      SparkSession sparkSession) throws MalformedDataMapCommandException {
+      SparkSession sparkSession) throws MalformedDataMapCommandException, IOException {
     DataMapFactory dataMapFactory = createIndexDataMapFactory(dataMapSchema);
     DataMapStoreManager.getInstance().registerDataMap(
         mainTable.getAbsoluteTableIdentifier(), dataMapSchema, dataMapFactory);

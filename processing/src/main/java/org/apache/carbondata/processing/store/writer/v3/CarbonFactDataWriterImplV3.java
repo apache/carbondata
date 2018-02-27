@@ -110,7 +110,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    * @param tablePage
    */
   @Override public void writeTablePage(TablePage tablePage)
-      throws CarbonDataWriterException {
+      throws CarbonDataWriterException,IOException {
     // condition for writting all the pages
     if (!tablePage.isLastPage()) {
       boolean isAdded = false;
@@ -148,7 +148,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     }
   }
 
-  private void addPageData(TablePage tablePage) {
+  private void addPageData(TablePage tablePage) throws IOException {
     blockletDataHolder.addPage(tablePage);
     if (listener != null) {
       if (pageId == 0) {
