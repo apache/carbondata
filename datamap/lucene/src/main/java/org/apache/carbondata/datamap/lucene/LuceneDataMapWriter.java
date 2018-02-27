@@ -93,12 +93,10 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   private String getIndexPath() {
     if (isFineGrain) {
-      return CarbonTablePath.getSegmentPath(identifier.getTablePath(), segmentId) + File.separator
-          + dataMapName;
+      return genDataMapStorePath(identifier.getTablePath(), segmentId, dataMapName);
     } else {
       // TODO: where write data in coarse grain data map
-      return CarbonTablePath.getSegmentPath(identifier.getTablePath(), segmentId) + File.separator
-          + dataMapName;
+      return genDataMapStorePath(identifier.getTablePath(), segmentId, dataMapName);
     }
   }
 
@@ -318,6 +316,13 @@ public class LuceneDataMapWriter extends DataMapWriter {
    */
   public void finish() throws IOException {
 
+  }
+
+  /**
+   * Return store path for datamap
+   */
+  static String genDataMapStorePath(String tablePath, String segmentId, String dataMapName) {
+    return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName;
   }
 
 }

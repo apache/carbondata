@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * CG level of lucene DataMap
@@ -43,8 +44,8 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
     FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer);
     try {
       dataMap.init(new DataMapModel(
-          tableIdentifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId +
-              File.separator + dataMapName));
+          LuceneDataMapWriter.genDataMapStorePath(
+              tableIdentifier.getTablePath(), segmentId, dataMapName)));
     } catch (MemoryException e) {
       LOGGER.error("failed to get lucene datamap , detail is {}" + e.getMessage());
       return lstDataMap;
