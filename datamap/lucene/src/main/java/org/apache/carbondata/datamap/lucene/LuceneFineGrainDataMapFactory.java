@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.datamap.lucene;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +27,6 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * CG level of lucene DataMap
