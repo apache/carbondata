@@ -312,6 +312,11 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   test("Test with different date types") {
     val path = s"$projectPath/examples/spark2/src/main/resources/data.csv"
 
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/mm/dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd hh:mm:ss")
+
     sql("DROP TABLE IF EXISTS carbon_localsort_difftypes")
     sql(
       s"""
@@ -361,6 +366,13 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
     checkAnswer(sql("SELECT * FROM carbon_globalsort_difftypes ORDER BY shortField"),
       sql("SELECT * FROM carbon_localsort_difftypes ORDER BY shortField"))
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 
   private def resetConf() {
