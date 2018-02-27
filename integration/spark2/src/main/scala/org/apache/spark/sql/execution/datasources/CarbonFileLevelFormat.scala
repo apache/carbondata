@@ -183,11 +183,11 @@ class CarbonFileLevelFormat extends FileFormat
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)
-    var supportBatchValue : Boolean = false
+    var supportBatchValue: Boolean = false
 
     val readVector = supportVector(sparkSession, dataSchema)
     if (readVector) {
-       supportBatchValue = supportBatch(sparkSession, dataSchema)
+      supportBatchValue = supportBatch(sparkSession, dataSchema)
     }
 
     CarbonFileInputFormat.setTableName(job.getConfiguration, "dummyexternal")
@@ -198,63 +198,68 @@ class CarbonFileLevelFormat extends FileFormat
     (file: PartitionedFile) => {
       assert(file.partitionValues.numFields == partitionSchema.size)
 
-      val fileSplit =
-        new FileSplit(new Path(new URI(file.filePath)), file.start, file.length, Array.empty)
+      if (file.filePath.endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
+        val fileSplit =
+          new FileSplit(new Path(new URI(file.filePath)), file.start, file.length, Array.empty)
 
+        val path: String = options.get("path").get
+        val endindex: Int = path.indexOf("Fact") - 1
+        val tablePath = path.substring(0, endindex)
+        lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
+          tablePath,
+          "default",
+          "externaldummy")
+        val split = CarbonInputSplit.from("null", "0", fileSplit, ColumnarFormatVersion.V3, null)
+        val blockletMap: TableDataMap = DataMapStoreManager.getInstance
+          .chooseDataMap(identifier)
 
-      val path : String = options.get("path").get
-      val endindex : Int = path.indexOf("Fact") - 1
-      val tablePath = path.substring(0, endindex)
-      lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
-        tablePath,
-        "default",
-        "externaldummy")
+        val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
+        val conf1 = new Configuration()
+        conf1.set("mapreduce.input.carboninputformat.tableName", "externaldummy")
+        conf1.set("mapreduce.input.carboninputformat.databaseName", "default")
+        conf1.set("mapreduce.input.fileinputformat.inputdir", tablePath)
+        CarbonFileInputFormat.setColumnProjection(conf1, carbonProjection)
+        val attemptContext = new TaskAttemptContextImpl(conf1, attemptId)
 
-      val split = CarbonInputSplit.from("null", "0", fileSplit, ColumnarFormatVersion.V3 , null)
-      val blockletMap: TableDataMap = DataMapStoreManager.getInstance
-        .chooseDataMap(identifier)
+        val model = format.createQueryModel(split, attemptContext)
 
-      val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
-      val conf1 = new Configuration()
-      conf1.set("mapreduce.input.carboninputformat.tableName", "externaldummy")
-      conf1.set("mapreduce.input.carboninputformat.databaseName", "default")
-      conf1.set("mapreduce.input.fileinputformat.inputdir", tablePath)
-      CarbonFileInputFormat.setColumnProjection(conf1, carbonProjection)
-      val attemptContext = new TaskAttemptContextImpl(conf1, attemptId)
+        var segments = new java.util.ArrayList[String]()
+        segments.add("null")
+        var partition = new java.util.ArrayList[String]()
 
-      val model = format.createQueryModel(split, attemptContext)
+        val prunedBlocklets = blockletMap
+          .prune(segments, model.getFilterExpressionResolverTree, partition)
 
-      var segments  = new java.util.ArrayList[String]()
-      segments.add("null")
-      var partition  = new java.util.ArrayList[String]()
+        val detailInfo = prunedBlocklets.get(0).getDetailInfo
+        detailInfo.readColumnSchema(detailInfo.getColumnSchemaBinary)
+        split.setDetailInfo(detailInfo)
 
-      val prunedBlocklets = blockletMap
-        .prune(segments, model.getFilterExpressionResolverTree, partition)
+        val carbonReader = if (readVector) {
+          // val batchSupport = supportBatch(sparkSession, dataSchema)
+          val vectorizedReader = createVectorizedCarbonRecordReader(model,
+            null,
+            supportBatchValue.toString)
+          // val vectorizedReader = VectorizedCarbonRecordReader()
+          vectorizedReader.initialize(split, attemptContext)
+          logDebug(s"Appending $partitionSchema ${ file.partitionValues }")
+          vectorizedReader
+        } else {
+          val reader = new CarbonRecordReader(model,
+            format.getReadSupportClass(attemptContext.getConfiguration), null)
+          reader.initialize(split, attemptContext)
+          reader
+        }
 
-      val detailInfo = prunedBlocklets.get(0).getDetailInfo
-      detailInfo.readColumnSchema(detailInfo.getColumnSchemaBinary)
-      split.setDetailInfo(detailInfo)
+        val iter = new RecordReaderIterator(carbonReader)
+        Option(TaskContext.get()).foreach(_.addTaskCompletionListener(_ => iter.close()))
 
-      val carbonReader = if (readVector) {
-        // val batchSupport = supportBatch(sparkSession, dataSchema)
-        val vectorizedReader = createVectorizedCarbonRecordReader(model,
-          null,
-          supportBatchValue.toString)
-        // val vectorizedReader = VectorizedCarbonRecordReader()
-        vectorizedReader.initialize(split, attemptContext)
-        logDebug(s"Appending $partitionSchema ${ file.partitionValues }")
-        vectorizedReader
-      } else {
-        val reader = new CarbonRecordReader(model,
-          format.getReadSupportClass(attemptContext.getConfiguration), null)
-        reader.initialize(split, attemptContext)
-        reader
+        iter.asInstanceOf[Iterator[InternalRow]]
       }
-
-      val iter = new RecordReaderIterator(carbonReader)
-      Option(TaskContext.get()).foreach(_.addTaskCompletionListener(_ => iter.close()))
-
-      iter.asInstanceOf[Iterator[InternalRow]]
+      else {
+        null
+        // to do : input PartitionedFile itself should have only .carbondata file.
+        // because don't know the side effects of returning null here
+      }
     }
   }
 }
