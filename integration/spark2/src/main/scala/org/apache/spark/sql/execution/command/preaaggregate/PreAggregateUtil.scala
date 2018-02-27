@@ -346,11 +346,13 @@ object PreAggregateUtil {
         carbonTable)
     }
     // if parent column relation is of size more than one that means aggregate table
-    // column is derived from multiple column of main table
-    // or if expression is not a instance of attribute reference
+    // column is derived from multiple column of main table or if size is zero then it means
+    // column is present in select statement is some constants for example count(*)
+    // and if expression is not a instance of attribute reference
     // then use column name which is passed
     val columnName =
-    if (parentColumnsName.size > 1 && !expression.isInstanceOf[AttributeReference]) {
+    if ((parentColumnsName.size > 1 || parentColumnsName.isEmpty) &&
+        !expression.isInstanceOf[AttributeReference]) {
       newColumnName
     } else {
       expression.asInstanceOf[AttributeReference].name
