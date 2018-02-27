@@ -256,9 +256,9 @@ class CarbonFileLevelFormat extends FileFormat
         iter.asInstanceOf[Iterator[InternalRow]]
       }
       else {
-        null
+        Iterator.empty
         // to do : input PartitionedFile itself should have only .carbondata file.
-        // because don't know the side effects of returning null here
+        // because don't know the side effects of returning Iterator.empty here
       }
     }
   }
