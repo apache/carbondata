@@ -61,12 +61,10 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
 
-    sql("SELECT * FROM datamap_test ORDER BY id").show
-
     //    sql("select * from normal_test where name='n34000'").show
-    sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10')").show
-    sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10*')").show
-    sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('city:c020')").show
+    checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test where name='n10'"))
+//    checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10*')"), sql(s"SELECT * FROM datamap_test WHERE name like 'n10%'"))
+    checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM datamap_test WHERE city='c020'"))
 
     //    checkAnswer(
     //      sql("select * from datamap_test where match('name:n34000')"),
