@@ -122,10 +122,10 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
   }
 
   /**
-   * Return the query string in the first MATCH expression in the expression tree
+   * Return the query string in the first TEXT_MATCH expression in the expression tree
    */
   private String getQueryString(Expression expression) {
-    if (expression.getFilterExpressionType() == ExpressionType.MATCH) {
+    if (expression.getFilterExpressionType() == ExpressionType.TEXT_MATCH) {
       return expression.getString();
     }
 

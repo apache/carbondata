@@ -125,7 +125,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
     //    optimizedOperations.add(ExpressionType.LESSTHAN);
     //    optimizedOperations.add(ExpressionType.LESSTHAN_EQUALTO);
     //    optimizedOperations.add(ExpressionType.NOT);
-    optimizedOperations.add(ExpressionType.MATCH);
+    optimizedOperations.add(ExpressionType.TEXT_MATCH);
     this.dataMapMeta = new DataMapMeta(indexedColumns, optimizedOperations);
 
     // get analyzer
@@ -138,8 +138,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    */
   public DataMapWriter createWriter(String segmentId, String writeDirectoryPath) {
     LOGGER.info("lucene data write to " + writeDirectoryPath);
-    return new LuceneDataMapWriter(tableIdentifier, dataMapName, segmentId, writeDirectoryPath,
-        dataMapMeta, true);
+    return new LuceneDataMapWriter(
+        tableIdentifier, dataMapName, segmentId, writeDirectoryPath, true);
   }
 
   /**

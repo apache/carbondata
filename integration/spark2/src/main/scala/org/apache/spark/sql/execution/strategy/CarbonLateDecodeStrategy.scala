@@ -527,7 +527,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     predicate match {
       case u: ScalaUDF if u.function.isInstanceOf[TextMatchUDF] =>
         if (u.children.size > 1) {
-          throw new MalformedCarbonCommandException("MATCH UDF syntax: MATCH('luceneQuerySyntax')")
+          throw new MalformedCarbonCommandException("TEXT_MATCH UDF syntax: TEXT_MATCH('luceneQuerySyntax')")
         }
         Some(TextMatch(u.children.head.toString()))
 

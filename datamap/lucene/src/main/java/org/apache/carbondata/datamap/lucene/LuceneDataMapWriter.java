@@ -24,13 +24,13 @@ import java.io.UnsupportedEncodingException;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -84,20 +84,20 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   private static final String ROWID_NAME = "rowId";
 
-  public LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String dataMapName,
-      String segmentId, String writeDirectoryPath, DataMapMeta dataMapMeta, boolean isFineGrain) {
+  LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String dataMapName, String segmentId,
+      String writeDirectoryPath, boolean isFineGrain) {
     super(identifier, segmentId, writeDirectoryPath);
     this.dataMapName = dataMapName;
     this.isFineGrain = isFineGrain;
   }
 
-  public String getIndexPath() {
+  private String getIndexPath() {
     if (isFineGrain) {
-      return identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId + File.separator
+      return CarbonTablePath.getSegmentPath(identifier.getTablePath(), segmentId) + File.separator
           + dataMapName;
     } else {
       // TODO: where write data in coarse grain data map
-      return identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId + File.separator
+      return CarbonTablePath.getSegmentPath(identifier.getTablePath(), segmentId) + File.separator
           + dataMapName;
     }
   }

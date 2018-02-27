@@ -228,7 +228,7 @@ public class DataMapChooser {
 
   private boolean contains(DataMapMeta mapMeta, List<ColumnExpression> columnExpressions,
       Set<ExpressionType> expressionTypes) {
-    if (mapMeta.getOptimizedOperation().contains(ExpressionType.MATCH)) {
+    if (mapMeta.getOptimizedOperation().contains(ExpressionType.TEXT_MATCH)) {
       // TODO: fix it with right logic
       return true;
     }

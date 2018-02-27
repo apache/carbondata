@@ -41,7 +41,7 @@ public class MatchExpression extends Expression {
 
   @Override
   public ExpressionType getFilterExpressionType() {
-    return ExpressionType.MATCH;
+    return ExpressionType.TEXT_MATCH;
   }
 
   @Override

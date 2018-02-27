@@ -106,9 +106,6 @@
       </resource>
       <resource>
         <directory>.</directory>
-        <includes>
-          <include>CARBON_SPARK_INTERFACELogResource.properties</include>
-        </includes>
       </resource>
     </resources>
     <plugins>
