@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -35,10 +36,10 @@ public abstract class AbstractDataMapWriter {
 
   protected String writeDirectoryPath;
 
-  public AbstractDataMapWriter(AbsoluteTableIdentifier identifier, String segmentId,
+  public AbstractDataMapWriter(AbsoluteTableIdentifier identifier, Segment segment,
       String writeDirectoryPath) {
     this.identifier = identifier;
-    this.segmentId = segmentId;
+    this.segmentId = segment.getSegmentNo();
     this.writeDirectoryPath = writeDirectoryPath;
   }
 

@@ -52,9 +52,8 @@ public class MinMaxDataMapFactory extends AbstractCoarseGrainDataMapFactory {
    * @param segment
    * @return
    */
-  @Override public AbstractDataMapWriter createWriter(Segment segment) {
-    return new MinMaxDataWriter(identifier, segment.getSegmentNo(),
-        CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo()));
+  @Override public AbstractDataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
+    return new MinMaxDataWriter(identifier, segment, writeDirectoryPath);
   }
 
   /**

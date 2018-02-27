@@ -260,13 +260,8 @@ public class SegmentUpdateStatusManager {
 
   /**
    * Returns all delta file paths of specified block
-   *
-   * @param tupleId
-   * @param extension
-   * @return
-   * @throws Exception
    */
-  public List<String> getDeltaFiles(String tupleId, String extension) throws Exception {
+  private List<String> getDeltaFiles(String tupleId, String extension) throws Exception {
     try {
       String segment = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID);
       String completeBlockName = CarbonTablePath.addDataPartPrefix(
@@ -405,10 +400,8 @@ public class SegmentUpdateStatusManager {
   public CarbonFile[] getDeleteDeltaFilesList(final Segment segmentId, final String blockName) {
     String segmentPath = CarbonTablePath.getSegmentPath(
         identifier.getTablePath(), segmentId.getSegmentNo());
-
     CarbonFile segDir =
         FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
-
     for (SegmentUpdateDetails block : updateDetails) {
       if ((block.getBlockName().equalsIgnoreCase(blockName)) &&
           (block.getSegmentName().equalsIgnoreCase(segmentId.getSegmentNo()))
