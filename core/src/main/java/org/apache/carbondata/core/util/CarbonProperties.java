@@ -1351,4 +1351,22 @@ public final class CarbonProperties {
         unsafeSortStorageMemory + "");
   }
 
+  /**
+   * Get the heap memory pooling threshold bytes.
+   */
+  public int getHeapMemoryPoolingThresholdBytes() {
+    int thresholdSize;
+    try {
+      thresholdSize = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES,
+              CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT));
+    } catch (NumberFormatException exc) {
+      LOGGER.error(
+          "The heap memory pooling threshold bytes is invalid. Using the default value "
+              + CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
+      thresholdSize = Integer.parseInt(CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
+    }
+    return thresholdSize;
+  }
+
 }

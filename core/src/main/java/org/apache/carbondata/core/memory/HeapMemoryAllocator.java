@@ -23,6 +23,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import javax.annotation.concurrent.GuardedBy;
 
+import org.apache.carbondata.core.util.CarbonProperties;
+
 /**
  * Code ported from Apache Spark {org.apache.spark.unsafe.memory} package
  * A simple {@link MemoryAllocator} that can allocate up to 16GB using a JVM long primitive array.
@@ -32,7 +34,16 @@ public class HeapMemoryAllocator implements MemoryAllocator {
   @GuardedBy("this") private final Map<Long, LinkedList<WeakReference<long[]>>>
       bufferPoolsBySize = new HashMap<>();
 
-  private static final int POOLING_THRESHOLD_BYTES = 1024 * 1024;
+  private int poolingThresholdBytes = 1024 * 1024;
+  private boolean shouldPooling = true;
+
+  public HeapMemoryAllocator() {
+    poolingThresholdBytes = CarbonProperties.getInstance().getHeapMemoryPoolingThresholdBytes();
+    // if set 'poolingThresholdBytes' to -1, it should not go through the pooling mechanism.
+    if (poolingThresholdBytes == -1) {
+      shouldPooling = false;
+    }
+  }
 
   /**
    * Returns true if allocations of the given size should go through the pooling mechanism and
@@ -40,7 +51,7 @@ public class HeapMemoryAllocator implements MemoryAllocator {
    */
   private boolean shouldPool(long size) {
     // Very small allocations are less likely to benefit from pooling.
-    return size >= POOLING_THRESHOLD_BYTES;
+    return shouldPooling && (size >= poolingThresholdBytes);
   }
 
   @Override public MemoryBlock allocate(long size) throws OutOfMemoryError {
