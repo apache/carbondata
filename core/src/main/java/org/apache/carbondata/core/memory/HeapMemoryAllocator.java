@@ -34,7 +34,7 @@ public class HeapMemoryAllocator implements MemoryAllocator {
   @GuardedBy("this") private final Map<Long, LinkedList<WeakReference<long[]>>>
       bufferPoolsBySize = new HashMap<>();
 
-  private int poolingThresholdBytes = 1024 * 1024;
+  private int poolingThresholdBytes;
   private boolean shouldPooling = true;
 
   public HeapMemoryAllocator() {
