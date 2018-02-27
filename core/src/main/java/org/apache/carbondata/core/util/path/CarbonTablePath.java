@@ -170,6 +170,13 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * Return metadata path based on `tablePath`
+   */
+  public static String getTableStatusPath(String tablePath) {
+    return getMetadataPath(tablePath) + File.separator + TABLE_STATUS_FILE;
+  }
+
+  /**
    * @param columnId unique column identifier
    * @return absolute path of dictionary meta file
    */
