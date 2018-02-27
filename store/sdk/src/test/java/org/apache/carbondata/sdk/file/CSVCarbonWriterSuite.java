@@ -36,7 +36,7 @@ public class CSVCarbonWriterSuite {
 
   @Test
   public void testWriteFiles() throws IOException {
-    String path = "/home/root1/data/testWriteFiles";
+    String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
     Field[] fields = new Field[2];
@@ -45,7 +45,7 @@ public class CSVCarbonWriterSuite {
 
     writeFilesAndVerify(new Schema(fields), path);
 
-    // FileUtils.deleteDirectory(new File(path));
+    FileUtils.deleteDirectory(new File(path));
   }
 
   @Test
