@@ -814,7 +814,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
       handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT,
       autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean
   ): Unit = {
-    val identifier = new TableIdentifier(tableName, Option("streaming"))
+    val identifier = new TableIdentifier(tableName, Option("streaming1"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)
       .asInstanceOf[CarbonRelation].metaData.carbonTable
     val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
