@@ -53,10 +53,33 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     //data source file format
     sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION '$writerOutputFilePath' """)
 
+    sql("Describe formatted sdkOutputTable").show(false)
+
     sql("select * from sdkOutputTable").show(false)
+
+    sql("select * from sdkOutputTable limit 3").show(false)
+
+    sql("select name from sdkOutputTable").show(false)
+
+    sql("select age from sdkOutputTable").show(false)
+
+    sql("select * from sdkOutputTable where age > 2 and age < 8").show(200,false)
+
+    sql("select * from sdkOutputTable where name = 'robot3'").show(200,false)
+
+    sql("select * from sdkOutputTable where name like 'robo%' limit 5").show(200,false)
+
+    sql("select * from sdkOutputTable where name like '%obot%' limit 2").show(200,false)
+
+    sql("select sum(age) from sdkOutputTable where name like 'robot1%' ").show(200,false)
+
+    sql("select count(*) from sdkOutputTable where name like 'robot%' ").show(200,false)
+
+    sql("select count(*) from sdkOutputTable").show(200,false)
 
     sql("DROP TABLE sdkOutputTable")
 
+    // drop table should not delete the files
     assert(new File(writerOutputFilePath).exists())
   }
 }
