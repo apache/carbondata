@@ -1364,7 +1364,8 @@ public final class CarbonProperties {
       LOGGER.error(
           "The heap memory pooling threshold bytes is invalid. Using the default value "
               + CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
-      thresholdSize = Integer.parseInt(CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
+      thresholdSize = Integer.parseInt(
+          CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
     }
     return thresholdSize;
   }
