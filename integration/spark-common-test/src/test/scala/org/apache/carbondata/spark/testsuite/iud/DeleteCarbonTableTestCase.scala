@@ -194,7 +194,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("delete from update_status_files where age=5").show()
     val carbonTable = CarbonEnv
       .getCarbonTable(Some("iud_db"), "update_status_files")(sqlContext.sparkSession)
-    val metaPath = carbonTable.getMetaDataFilepath
+    val metaPath = carbonTable.getMetadataPath
     val files = FileFactory.getCarbonFile(metaPath)
     val result = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.getClass
     if(result.getCanonicalName.contains("CarbonFileMetastore")) {

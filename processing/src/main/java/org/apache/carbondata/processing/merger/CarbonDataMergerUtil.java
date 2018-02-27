@@ -1005,14 +1005,8 @@ public final class CarbonDataMergerUtil {
   /**
    * This method traverses Update Delta Files inside the seg and return true
    * if UpdateDelta Files are more than IUD Compaction threshold.
-   *
-   * @param seg
-   * @param identifier
-   * @param segmentUpdateStatusManager
-   * @param numberDeltaFilesThreshold
-   * @return
    */
-  public static Boolean checkUpdateDeltaFilesInSeg(Segment seg,
+  private static Boolean checkUpdateDeltaFilesInSeg(Segment seg,
       AbsoluteTableIdentifier identifier, SegmentUpdateStatusManager segmentUpdateStatusManager,
       int numberDeltaFilesThreshold) {
 
