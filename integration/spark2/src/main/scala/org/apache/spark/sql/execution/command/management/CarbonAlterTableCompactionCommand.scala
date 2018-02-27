@@ -181,7 +181,7 @@ case class CarbonAlterTableCompactionCommand(
     if (compactionType == CompactionType.STREAMING) {
       StreamHandoffRDD.startStreamingHandoffThread(
         carbonLoadModel,
-        sqlContext.sparkSession)
+        sqlContext.sparkSession, true)
       return
     }
 

@@ -279,15 +279,21 @@ object StreamHandoffRDD {
    */
   def startStreamingHandoffThread(
       carbonLoadModel: CarbonLoadModel,
-      sparkSession: SparkSession
+      sparkSession: SparkSession,
+      isDDL: Boolean
   ): Unit = {
-    // start a new thread to execute streaming segment handoff
-    val handoffThread = new Thread() {
-      override def run(): Unit = {
-        iterateStreamingHandoff(carbonLoadModel, sparkSession)
-      }
+    if (isDDL) {
+      iterateStreamingHandoff(carbonLoadModel, sparkSession)
     }
-    handoffThread.start()
+    else {
+      // start a new thread to execute streaming segment handoff
+      val handoffThread = new Thread() {
+        override def run(): Unit = {
+          iterateStreamingHandoff(carbonLoadModel, sparkSession)
+        }
+      }
+      handoffThread.start()
+    }
   }
 
   /**

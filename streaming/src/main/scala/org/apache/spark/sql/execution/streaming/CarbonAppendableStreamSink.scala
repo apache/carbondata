@@ -178,7 +178,8 @@ class CarbonAppendableStreamSink(
       if (enableAutoHandoff) {
         StreamHandoffRDD.startStreamingHandoffThread(
           carbonLoadModel,
-          sparkSession)
+          sparkSession,
+          false)
       }
     }
   }
