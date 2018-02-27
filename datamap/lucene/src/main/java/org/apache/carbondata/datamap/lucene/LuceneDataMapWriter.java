@@ -52,6 +52,9 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.solr.store.hdfs.HdfsDirectory;
 
+/**
+ * Implementation to write lucene index while loading
+ */
 @InterfaceAudience.Internal
 public class LuceneDataMapWriter extends DataMapWriter {
   /**

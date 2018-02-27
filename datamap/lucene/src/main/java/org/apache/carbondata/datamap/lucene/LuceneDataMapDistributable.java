@@ -22,9 +22,15 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 
 @InterfaceAudience.Internal
 class LuceneDataMapDistributable extends DataMapDistributable {
+
+  // TODO: seems no one use this?
   private String dataPath;
 
-  public LuceneDataMapDistributable(String dataPath) {
+  LuceneDataMapDistributable(String dataPath) {
     this.dataPath = dataPath;
+  }
+
+  public String getDataPath() {
+    return dataPath;
   }
 }

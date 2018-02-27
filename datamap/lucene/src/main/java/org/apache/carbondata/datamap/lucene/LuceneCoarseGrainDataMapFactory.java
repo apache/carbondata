@@ -31,6 +31,9 @@ import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.memory.MemoryException;
 
+/**
+ * FG level of lucene DataMap
+ */
 @InterfaceAudience.Internal
 public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<CoarseGrainDataMap> {
   private static final LogService LOGGER =
