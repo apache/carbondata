@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.types.StructType;
 
 /**
- * CSV Stream Parser.
+ * CSV Stream Parser, it is also the default parser.
  */
 public class CSVStreamParserImp implements CarbonStreamParser {
 

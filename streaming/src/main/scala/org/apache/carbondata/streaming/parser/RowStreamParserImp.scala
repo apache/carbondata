@@ -30,7 +30,7 @@ import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConst
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
- * SparkSQL Row Stream Parser, it is also the default parser.
+ * SparkSQL Row Stream Parser.
  */
 class RowStreamParserImp extends CarbonStreamParser {
 
