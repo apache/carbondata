@@ -77,21 +77,6 @@ public class LuceneCoarseGrainDataMap extends CoarseGrainDataMap {
   private IndexSearcher indexSearcher = null;
 
   /**
-   * datamap name
-   */
-  private String dataMapName = null;
-
-  /**
-   * segment id
-   */
-  private String segmentId = null;
-
-  /**
-   * talbe identifier
-   */
-  private AbsoluteTableIdentifier tableIdentifier = null;
-
-  /**
    * default max values to return
    */
   private static int MAX_RESULT_NUMBER = 100;
@@ -99,14 +84,10 @@ public class LuceneCoarseGrainDataMap extends CoarseGrainDataMap {
   /**
    * analyzer for lucene index
    */
-  private Analyzer analyzer = null;
+  private Analyzer analyzer;
 
-  LuceneCoarseGrainDataMap(AbsoluteTableIdentifier tableIdentifier, String dataMapName,
-      String segmentId, Analyzer analyzer) {
+  LuceneCoarseGrainDataMap(Analyzer analyzer) {
     this.analyzer = analyzer;
-    this.dataMapName = dataMapName;
-    this.segmentId = segmentId;
-    this.tableIdentifier = tableIdentifier;
   }
 
   /**

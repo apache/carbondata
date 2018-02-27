@@ -29,7 +29,6 @@ import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -72,21 +71,6 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
   private IndexSearcher indexSearcher = null;
 
   /**
-   * datamap name
-   */
-  private String dataMapName = null;
-
-  /**
-   * segment id
-   */
-  private String segmentId = null;
-
-  /**
-   * talbe identifier
-   */
-  private AbsoluteTableIdentifier tableIdentifier = null;
-
-  /**
    * default max values to return
    */
   private static int MAX_RESULT_NUMBER = 100;
@@ -94,14 +78,10 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
   /**
    * analyzer for lucene index
    */
-  private Analyzer analyzer = null;
+  private Analyzer analyzer;
 
-  LuceneFineGrainDataMap(AbsoluteTableIdentifier tableIdentifier, String dataMapName,
-      String segmentId, Analyzer analyzer) {
+  LuceneFineGrainDataMap(Analyzer analyzer) {
     this.analyzer = analyzer;
-    this.dataMapName = dataMapName;
-    this.segmentId = segmentId;
-    this.tableIdentifier = tableIdentifier;
   }
 
   /**
