@@ -17,9 +17,7 @@
 
 package org.apache.spark.sql.execution.command.table
 
-import scala.collection.JavaConverters._
-
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.MetadataCommand
@@ -44,13 +42,25 @@ private[sql] case class CarbonShowTablesCommand ( databaseName: Option[String],
     var tables =
       tableIdentifierPattern.map(catalog.listTables(db, _)).getOrElse(catalog.listTables(db))
     val externalCatalog = sparkSession.sharedState.externalCatalog
+    // this method checks whether the table is mainTable or datamap based on property "isVisible"
+    def isMainTable(tableIdent: TableIdentifier) = {
+      var isMainTable = true
+      try {
+        isMainTable = externalCatalog.getTable(db, tableIdent.table).storage.properties
+          .getOrElse("isVisible", true).toString.toBoolean
+      } catch {
+        case ex: Throwable =>
+        // ignore the exception for show tables
+      }
+      isMainTable
+    }
     // tables will be filtered for all the dataMaps to show only main tables
     tables.collect {
-      case tableIdent if externalCatalog.getTable(db, tableIdent.table).storage.properties
-        .getOrElse("isVisible", true).toString.toBoolean =>
+      case tableIdent if isMainTable(tableIdent) =>
         val isTemp = catalog.isTemporaryTable(tableIdent)
         Row(tableIdent.database.getOrElse("default"), tableIdent.table, isTemp)
     }
+
   }
 
 }
