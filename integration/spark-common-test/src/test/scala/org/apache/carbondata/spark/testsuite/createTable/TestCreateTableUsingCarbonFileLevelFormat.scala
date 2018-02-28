@@ -121,8 +121,6 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     assert(new File(writerOutputFilePath1).exists())
   }
 
-<<<<<<< e3784b61dcf389d862653dabdf780c60ddf169b7
-=======
 
   test("should not allow to alter datasource carbontable ") {
     assert(new File(writerOutputFilePath1).exists())
