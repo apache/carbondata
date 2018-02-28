@@ -34,11 +34,13 @@ import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, M
 class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("drop database if exists otherDB cascade")
     sql("drop table if exists PreAggMain")
     sql("drop table if exists PreAggMain1")
     sql("drop table if exists PreAggMain2")
     sql("drop table if exists maintable")
     sql("drop table if exists showTables")
+    sql("drop table if exists Preagg_twodb")
     sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
     sql("create table preaggMain1 (a string, b string, c string) stored by 'carbondata' tblProperties('DICTIONARY_INCLUDE' = 'a')")
     sql("create table preaggMain2 (a string, b string, c string) stored by 'carbondata'")
@@ -377,11 +379,30 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 
-  test("test show tables filterted with datamaps"){
+  test("test show tables filterted with datamaps") {
     sql("create table showTables(name string, age int) stored by 'carbondata'")
     sql("create datamap preAgg on table showTables using 'preaggregate' as select sum(age) from showTables")
     sql("show tables").show()
     assert(!sql("show tables").collect().contains("showTables_preagg"))
+  }
+
+  test("test create main and preagg table of same name in two database") {
+    sql("drop table if exists Preagg_twodb")
+    sql("create table Preagg_twodb(name string, age int) stored by 'carbondata'")
+    sql("create datamap sameName on table Preagg_twodb using 'preaggregate' as select sum(age) from Preagg_twodb")
+    sql("create database otherDB")
+    sql("use otherDB")
+    sql("drop table if exists Preagg_twodb")
+    sql("create table Preagg_twodb(name string, age int) stored by 'carbondata'")
+    try {
+      sql(
+        "create datamap sameName on table Preagg_twodb using 'preaggregate' as select sum(age) from Preagg_twodb")
+      assert(true)
+    } catch {
+      case ex: Exception =>
+        assert(false)
+    }
+    sql("use default")
   }
 
   def getCarbontable(plan: LogicalPlan) : CarbonTable ={
@@ -405,12 +426,14 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     carbonTable
   }
 
-  override def afterAll {
+  override def afterAll { 
+    sql("drop database if exists otherDB cascade")
     sql("drop table if exists maintable")
     sql("drop table if exists PreAggMain")
     sql("drop table if exists PreAggMain1")
     sql("drop table if exists PreAggMain2")
     sql("drop table if exists maintabletime")
     sql("drop table if exists showTables")
+    sql("drop table if exists Preagg_twodb")
   }
 }
