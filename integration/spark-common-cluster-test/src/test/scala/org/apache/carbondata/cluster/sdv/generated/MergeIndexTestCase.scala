@@ -18,6 +18,16 @@
 
 package org.apache.carbondata.cluster.sdv.generated
 
+import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
+
 /**
  * Test Class for AlterTableTestCase to verify all scenerios
  */
@@ -84,25 +94,36 @@ class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/VmaLL100' INTO TABLE carbon_automation_nonmerge OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/VmaLL100' INTO TABLE carbon_automation_nonmerge OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')""").collect
     val rows = sql("""Select count(*) from carbon_automation_nonmerge""").collect()
-    assert(getIndexFileCount("default", "carbon_automation_nonmerge", "0") == 2)
-    assert(getIndexFileCount("default", "carbon_automation_nonmerge", "1") == 2)
-    assert(getIndexFileCount("default", "carbon_automation_nonmerge", "1") == 2)
+    assert(getIndexFileCount("default", "carbon_automation_nonmerge", "0") == 1)
+    assert(getIndexFileCount("default", "carbon_automation_nonmerge", "1") == 1)
+    assert(getIndexFileCount("default", "carbon_automation_nonmerge", "2") == 1)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
-    sql("ALTER TABLE carbon_automation_nonmerge COMPACT 'minor'").collect()
+    sql("ALTER TABLE carbon_automation_nonmerge COMPACT 'major'").collect()
     assert(getIndexFileCount("default", "carbon_automation_nonmerge", "0.1") == 0)
+    assert(getMergedIndexFileCount("default", "carbon_automation_nonmerge", "0.1") == 1)
     checkAnswer(sql("""Select count(*) from carbon_automation_nonmerge"""), rows)
   }
 
   private def getIndexFileCount(dbName: String, tableName: String, segment: String): Int = {
+    getFileCount(dbName, tableName, segment, CarbonTablePath.INDEX_FILE_EXT)
+  }
+
+  private def getMergedIndexFileCount(dbName: String, tableName: String, segment: String): Int = {
+    getFileCount(dbName, tableName, segment, CarbonTablePath.MERGE_INDEX_FILE_EXT)
+  }
+
+  private def getFileCount(dbName: String,
+      tableName: String,
+      segment: String,
+      suffix: String): Int = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName, tableName)
     val identifier = carbonTable.getAbsoluteTableIdentifier
     val path = CarbonTablePath
       .getSegmentPath(identifier.getTablePath, segment)
     val carbonFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = {
-        file.getName.endsWith(CarbonTablePath
-          .INDEX_FILE_EXT)
+        file.getName.endsWith(suffix)
       }
     })
     if (carbonFiles != null) {
