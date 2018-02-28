@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.scan.executor.infos;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
+
 /**
  * This method will information about the query dimensions whether they exist in particular block
  * and their default value
@@ -54,6 +56,10 @@ public class DimensionInfo {
    * count of no dictionary columns not existing in the current block
    */
   private int newNoDictionaryColumnCount;
+  /**
+  * maintains the block datatype
+  */
+  public DataType[] dataType;
 
   /**
    * @param dimensionExists

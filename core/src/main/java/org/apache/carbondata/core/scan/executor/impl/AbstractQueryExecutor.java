@@ -303,7 +303,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<QueryDimension> currentBlockQueryDimensions = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             queryModel.getQueryDimension(), tableBlockDimensions,
-            segmentProperties.getComplexDimensions());
+            segmentProperties.getComplexDimensions(), queryModel.getQueryMeasures().size());
     blockExecutionInfo.setBlockId(
         CarbonUtil.getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segmentId));
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
