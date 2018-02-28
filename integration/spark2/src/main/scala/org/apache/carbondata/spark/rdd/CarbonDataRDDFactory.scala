@@ -544,6 +544,9 @@ object CarbonDataRDDFactory {
       }
       try {
         // compaction handling
+        if (carbonTable.isHivePartitionTable) {
+          carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
+        }
         handleSegmentMerging(sqlContext, carbonLoadModel, carbonTable, operationContext)
       } catch {
         case e: Exception =>

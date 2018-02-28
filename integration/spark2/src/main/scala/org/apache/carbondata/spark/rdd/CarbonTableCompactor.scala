@@ -96,6 +96,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           segList,
           compactionModel.compactionType
         )
+        if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+          carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
+        }
       }
       else {
         loadsToMerge.clear()
