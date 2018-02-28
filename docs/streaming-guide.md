@@ -152,6 +152,8 @@ property name | default | description
 --- | --- | ---
 carbon.streaming.auto.handoff.enabled | true | whether to auto trigger handoff operation
 
+## Stream parser
+
 ## Close streaming table
 Use below command to handoff all streaming segments to columnar format segments and modify the streaming property to false, this table becomes a normal table.
 ```sql
