@@ -92,18 +92,29 @@ class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
     val table = CarbonMetadata.getInstance().getCarbonTable("default","carbon_automation_nonmerge")
     new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment("0.1", table.getTablePath, false)
     assert(getIndexFileCount("default", "carbon_automation_nonmerge", "0.1") == 0)
+    assert(getMergedIndexFileCount("default", "carbon_automation_nonmerge", "0.1") == 1)
     checkAnswer(sql("""Select count(*) from carbon_automation_nonmerge"""), rows)
   }
 
   private def getIndexFileCount(dbName: String, tableName: String, segment: String): Int = {
+    getFileCount(dbName, tableName, segment, CarbonTablePath.INDEX_FILE_EXT)
+  }
+
+  private def getMergedIndexFileCount(dbName: String, tableName: String, segment: String): Int = {
+    getFileCount(dbName, tableName, segment, CarbonTablePath.MERGE_INDEX_FILE_EXT)
+  }
+
+  private def getFileCount(dbName: String,
+      tableName: String,
+      segment: String,
+      suffix: String): Int = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName, tableName)
     val identifier = carbonTable.getAbsoluteTableIdentifier
     val path = CarbonTablePath
       .getSegmentPath(identifier.getTablePath, segment)
     val carbonFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = {
-        file.getName.endsWith(CarbonTablePath
-          .INDEX_FILE_EXT)
+        file.getName.endsWith(suffix)
       }
     })
     if (carbonFiles != null) {
