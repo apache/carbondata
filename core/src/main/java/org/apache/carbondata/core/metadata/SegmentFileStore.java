@@ -371,19 +371,23 @@ public class SegmentFileStore {
       }
       Path path = new Path(location);
       // Update the status to delete if path equals
-      for (PartitionSpec spec : partitionSpecs) {
-        if (path.equals(spec.getLocation())) {
-          entry.getValue().setStatus(SegmentStatus.MARKED_FOR_DELETE.getMessage());
-          updateSegment = true;
-          break;
+      if (null != partitionSpecs) {
+        for (PartitionSpec spec : partitionSpecs) {
+          if (path.equals(spec.getLocation())) {
+            entry.getValue().setStatus(SegmentStatus.MARKED_FOR_DELETE.getMessage());
+            updateSegment = true;
+            break;
+          }
         }
       }
     }
-    String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath);
-    writePath =
-        writePath + CarbonCommonConstants.FILE_SEPARATOR + segment.getSegmentNo() + "_" + uniqueId
-            + CarbonTablePath.SEGMENT_EXT;
-    writeSegmentFile(segmentFile, writePath);
+    if (updateSegment) {
+      String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath);
+      writePath =
+          writePath + CarbonCommonConstants.FILE_SEPARATOR + segment.getSegmentNo() + "_" + uniqueId
+              + CarbonTablePath.SEGMENT_EXT;
+      writeSegmentFile(segmentFile, writePath);
+    }
     // Check whether we can completly remove the segment.
     boolean deleteSegment = true;
     for (Map.Entry<String, FolderDetails> entry : segmentFile.getLocationMap().entrySet()) {

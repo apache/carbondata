@@ -914,6 +914,17 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     assert(sql("show segments for table comp_dt2").collect().length == 3)
     assert(sql("select * from comp_dt2").collect().length == 13)
     sql("clean files for table comp_dt2")
+    assert(sql("show segments for table comp_dt2").collect().length == 1)
+    assert(sql("select * from comp_dt2").collect().length == 13)
+  }
+
+  test("test insert into partition column which does not exists") {
+    sql("drop table if exists partitionNoColumn")
+    sql("create table partitionNoColumn (name string, dob date) partitioned by(year int,month int) stored by 'carbondata'")
+    val exMessage = intercept[Exception] {
+      sql("insert into partitionNoColumn partition(year=2014,month=01,day=01) select 'martin','2014-04-07'")
+    }
+    assert(exMessage.getMessage.contains("day is not a valid partition column in table default.partitionnocolumn"))
   }
 
   override def afterAll = {
@@ -976,5 +987,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partitiondecimal")
     sql("drop table if exists partitiondecimalstatic")
     sql("drop table if exists partitiondatadelete")
+    sql("drop table if exists comp_dt2")
+    sql("drop table if exists partitionNoColumn")
   }
 }
