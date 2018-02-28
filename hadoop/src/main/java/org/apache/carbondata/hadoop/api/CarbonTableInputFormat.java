@@ -929,7 +929,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     TableDataMap blockletMap = DataMapStoreManager.getInstance().getDefaultDataMap(identifier);
     LoadMetadataDetails[] loadMetadataDetails = SegmentStatusManager
         .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
-    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier, loadMetadataDetails);
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(
+        identifier, loadMetadataDetails);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
         new SegmentStatusManager(identifier).getValidAndInvalidSegments(loadMetadataDetails);
     Map<String, Long> blockRowCountMapping = new HashMap<>();
