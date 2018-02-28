@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
@@ -136,23 +137,26 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
   /**
    * Return a new write for this datamap
    */
-  public DataMapWriter createWriter(String segmentId, String writeDirectoryPath) {
+  @Override
+  public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
     LOGGER.info("lucene data write to " + writeDirectoryPath);
     return new LuceneDataMapWriter(
-        tableIdentifier, dataMapName, segmentId, writeDirectoryPath, true);
+        tableIdentifier, dataMapName, segment, writeDirectoryPath, true);
   }
 
   /**
    * Get all distributable objects of a segmentid
    */
-  public List<DataMapDistributable> toDistributable(String segmentId) {
+  @Override
+  public List<DataMapDistributable> toDistributable(Segment segment) {
     List<DataMapDistributable> lstDataMapDistribute = new ArrayList<DataMapDistributable>();
     DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
-        CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segmentId));
+        CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()));
     lstDataMapDistribute.add(luceneDataMapDistributable);
     return lstDataMapDistribute;
   }
 
+  @Override
   public void fireEvent(Event event) {
 
   }
@@ -160,13 +164,15 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
   /**
    * Clears datamap of the segment
    */
-  public void clear(String segmentId) {
+  @Override
+  public void clear(Segment segment) {
 
   }
 
   /**
    * Clear all datamaps from memory
    */
+  @Override
   public void clear() {
 
   }

@@ -26,6 +26,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -41,13 +42,14 @@ public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<Co
   /**
    * Get the datamap for segmentid
    */
-  public List<CoarseGrainDataMap> getDataMaps(String segmentId) throws IOException {
+  @Override
+  public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<CoarseGrainDataMap> lstDataMap = new ArrayList<>();
     CoarseGrainDataMap dataMap = new LuceneCoarseGrainDataMap(analyzer);
     try {
       dataMap.init(new DataMapModel(
           LuceneDataMapWriter.genDataMapStorePath(
-              tableIdentifier.getTablePath(), segmentId, dataMapName)));
+              tableIdentifier.getTablePath(), segment.getSegmentNo(), dataMapName)));
     } catch (MemoryException e) {
       LOGGER.error("failed to get lucene datamap , detail is {}" + e.getMessage());
       return lstDataMap;
@@ -59,9 +61,10 @@ public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<Co
   /**
    * Get datamaps for distributable object.
    */
+  @Override
   public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
-    return getDataMaps(distributable.getSegmentId());
+    return getDataMaps(distributable.getSegment());
   }
 
   @Override

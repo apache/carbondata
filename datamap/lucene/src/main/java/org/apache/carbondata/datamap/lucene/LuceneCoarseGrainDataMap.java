@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
@@ -133,7 +134,7 @@ public class LuceneCoarseGrainDataMap extends CoarseGrainDataMap {
    */
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<String> partitions) throws IOException {
+      List<PartitionSpec> partitions) throws IOException {
 
     // convert filter expr into lucene list query
     List<String> fields = new ArrayList<String>();

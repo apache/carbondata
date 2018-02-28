@@ -24,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -84,9 +85,9 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   private static final String ROWID_NAME = "rowId";
 
-  LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String dataMapName, String segmentId,
+  LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String dataMapName, Segment segment,
       String writeDirectoryPath, boolean isFineGrain) {
-    super(identifier, segmentId, writeDirectoryPath);
+    super(identifier, segment, writeDirectoryPath);
     this.dataMapName = dataMapName;
     this.isFineGrain = isFineGrain;
   }
