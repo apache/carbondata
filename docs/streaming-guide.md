@@ -152,7 +152,53 @@ property name | default | description
 --- | --- | ---
 carbon.streaming.auto.handoff.enabled | true | whether to auto trigger handoff operation
 
-## Stream parser
+## Stream data parser
+Config the property "carbon.stream.parser" to define a stream parser to convert InternalRow to Object[] when write stream data.
+
+property name | default | description
+--- | --- | ---
+carbon.stream.parser | org.apache.carbondata.streaming.parser.CSVStreamParserImp | the class of the stream parser
+
+Currently CarbonData support two parsers, as following:
+
+### org.apache.carbondata.streaming.parser.CSVStreamParserImp
+This is the default stream parser, it gets a line data(String type) from the first index of InternalRow and converts this String to Object[].
+
+### org.apache.carbondata.streaming.parser.RowStreamParserImp
+This stream parser will auto convert InternalRow to Object[] according to schema of this `DataSet`, for example:
+
+```scala
+ case class FileElement(school: Array[String], age: Int)
+ case class StreamData(id: Int, name: String, city: String, salary: Float, file: FileElement)
+ ...
+
+ var qry: StreamingQuery = null
+ val readSocketDF = spark.readStream
+   .format("socket")
+   .option("host", "localhost")
+   .option("port", 9099)
+   .load()
+   .as[String]
+   .map(_.split(","))
+   .map { fields => {
+     val tmp = fields(4).split("\\$")
+     val file = FileElement(tmp(0).split(":"), tmp(1).toInt)
+     StreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat, file)
+   } }
+
+ // Write data from socket stream to carbondata file
+ qry = readSocketDF.writeStream
+   .format("carbondata")
+   .trigger(ProcessingTime("5 seconds"))
+   .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
+   .option("dbName", "default")
+   .option("tableName", "carbon_table")
+   .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+     CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
+   .start()
+
+ ...
+```
 
 ## Close streaming table
 Use below command to handoff all streaming segments to columnar format segments and modify the streaming property to false, this table becomes a normal table.
