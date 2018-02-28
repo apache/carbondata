@@ -32,7 +32,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.parquet.filter2.compat.FilterCompat
 import org.apache.parquet.hadoop.{ParquetInputFormat, ParquetRecordReader}
 import org.apache.parquet.hadoop.codec.CodecConfig
-import org.apache.spark.{TaskContext, TaskKilledException}
+import org.apache.spark.{SparkException, TaskContext, TaskKilledException}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{SQLContext, SparkSession}
@@ -54,11 +54,14 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, TableDataMap}
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.reader.CarbonHeaderReader
+import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.model.QueryModel
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, TaskMetricsMap, ThreadLocalSessionInfo}
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonTableInputFormat, DataMapJob}
 import org.apache.carbondata.hadoop.streaming.CarbonStreamRecordReader
@@ -81,6 +84,9 @@ class CarbonFileLevelFormat extends FileFormat
     val filePaths = CarbonUtil.getFilePathExternalFilePath(
       options.get("path").get)
     // + "/Fact/Part0/Segment_null")
+    if (filePaths.size() == 0){
+      throw new SparkException("CarbonData file is not present in the location mentioned in DDL" )
+    }
     val carbonHeaderReader: CarbonHeaderReader = new CarbonHeaderReader(filePaths.get(0))
     val fileHeader = carbonHeaderReader.readHeader
     val table_columns: java.util.List[org.apache.carbondata.format.ColumnSchema] = fileHeader
@@ -171,7 +177,7 @@ class CarbonFileLevelFormat extends FileFormat
       options: Map[String, String],
       hadoopConf: Configuration): (PartitionedFile) => Iterator[InternalRow] = {
 
-    val filter = filters.flatMap { filter =>
+    val filter : Option[Expression] = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(dataSchema, filter)
     }.reduceOption(new AndExpression(_, _))
 
@@ -192,6 +198,7 @@ class CarbonFileLevelFormat extends FileFormat
 
     CarbonFileInputFormat.setTableName(job.getConfiguration, "dummyexternal")
     CarbonFileInputFormat.setDatabaseName(job.getConfiguration, "default")
+    // CarbonFileInputFormat.setColumnProjection(conf, columnProjection)
     val dataMapJob: DataMapJob = CarbonFileInputFormat.getDataMapJob(job.getConfiguration)
     val format = new CarbonFileInputFormat[Object]
 
@@ -219,6 +226,10 @@ class CarbonFileLevelFormat extends FileFormat
         conf1.set("mapreduce.input.carboninputformat.databaseName", "default")
         conf1.set("mapreduce.input.fileinputformat.inputdir", tablePath)
         CarbonFileInputFormat.setColumnProjection(conf1, carbonProjection)
+        filter match {
+          case Some(c) => CarbonFileInputFormat.setFilterPredicates(conf1, c)
+          case None => None
+        }
         val attemptContext = new TaskAttemptContextImpl(conf1, attemptId)
 
         val model = format.createQueryModel(split, attemptContext)
@@ -229,6 +240,11 @@ class CarbonFileLevelFormat extends FileFormat
 
         // clean the blocklet
         blockletMap.clear()
+        val segmentPath = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null")
+        val indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(segmentPath)
+        if (indexFiles.size() == 0){
+          throw new SparkException("Index file not present to read the carbondata file")
+        }
         val prunedBlocklets = blockletMap
           .prune(segments, model.getFilterExpressionResolverTree, partition)
 
