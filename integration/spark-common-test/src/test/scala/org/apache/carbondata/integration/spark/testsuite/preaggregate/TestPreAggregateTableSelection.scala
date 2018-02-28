@@ -39,6 +39,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists agg6")
     sql("drop table if exists agg7")
     sql("DROP TABLE IF EXISTS maintabledict")
+    sql("DROP TABLE IF EXISTS maintablestring")
     sql("CREATE TABLE mainTable(id int, name string, city string, age string) STORED BY 'org.apache.carbondata.format'")
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select name from mainTable group by name")
     sql("create datamap agg1 on table mainTable using 'preaggregate' as select name,sum(age) from mainTable group by name")
@@ -335,6 +336,23 @@ test("test PreAggregate table selection with timeseries and normal together") {
     checkAnswer(df, Seq(Row(10,10.0)))
   }
 
+  test("test PreAggregate table selection for avg with maintable having count on string type") {
+    sql(
+      "create table maintablestring(year int,month int,name string,salary int,dob string) stored" +
+      " by 'carbondata' tblproperties('DICTIONARY_INCLUDE'='name')")
+    sql("insert into maintablestring select 10,11,'x',12,'2014-01-01 00:00:00'")
+    sql("insert into maintablestring select 10,11,'x',12,'2014-01-01 00:00:00'")
+    sql("insert into maintablestring select 10,11,'y',12,'2014-01-01 00:00:00'")
+    sql("insert into maintablestring select 10,11,'xy',12,'2014-01-01 00:00:00'")
+    sql("select name,count(name) from maintablestring group by name").show()
+    sql(
+      "create datamap aggstring on table maintablestring using 'preaggregate' as select name, count(name) from " +
+      "maintablestring group by name")
+    val df = sql("select name,count(name) from maintablestring group by name")
+    checkAnswer(df, Seq(Row("x",2), Row("y",1), Row("xy",1)))
+  }
+
+
 
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
@@ -342,6 +360,7 @@ test("test PreAggregate table selection with timeseries and normal together") {
     sql("drop table if exists lineitem")
     sql("DROP TABLE IF EXISTS maintabletime")
     sql("DROP TABLE IF EXISTS maintabledict")
+    sql("DROP TABLE IF EXISTS maintablestring")
   }
 
 }
