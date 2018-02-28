@@ -230,6 +230,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     val df = sql("select name, sum(age) from filtertable where age = '29' group by name, age")
     preAggTableValidator(df.queryExecution.analyzed, "filtertable_agg9")
     checkAnswer(df, Row("vishal", 29))
+    sql("drop table filtertable")
   }
 
   test("test PreAggregate table selection 29") {
@@ -247,6 +248,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     val df = sql("select sum(id) from grouptable group by city")
     preAggTableValidator(df.queryExecution.analyzed, "grouptable_agg9")
     checkAnswer(df, Seq(Row(3), Row(3), Row(4), Row(7)))
+    sql("drop table grouptable")
   }
 
   test("test PreAggregate table selection 30") {

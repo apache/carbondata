@@ -20,6 +20,7 @@ import java.io.File
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
@@ -77,10 +78,10 @@ class CarbonSession(@transient val sc: SparkContext,
 
   // materialized view rules, currently one datamap is supported: PreaggregateDataMap
   @transient
-  private var mvDataMapRules: mutable.Seq[MVDataMapRules] = mutable.Seq()
+  private var mvDataMapRules = ArrayBuffer[MVDataMapRules]()
 
-  def addMVDataMapRules(rules: Seq[MVDataMapRules]): Unit =
-    mvDataMapRules = mvDataMapRules ++ rules
+  def addMVDataMapRules(rules: ArrayBuffer[MVDataMapRules]): Unit =
+    mvDataMapRules ++= rules
 
   def getMVDataMapRules: Seq[MVDataMapRules] = mvDataMapRules
 }
@@ -89,7 +90,7 @@ object CarbonSession {
 
   implicit class CarbonBuilder(builder: Builder) {
 
-    private var mvDataMap: mutable.Seq[MVDataMapRules] = mutable.Seq()
+    private var mvDataMap = ArrayBuffer[MVDataMapRules]()
 
     def getOrCreateCarbonSession(): SparkSession = {
       getOrCreateCarbonSession(null, null)
@@ -206,13 +207,13 @@ object CarbonSession {
     private def addDataMapRules(session: CarbonSession) = {
       // by default, enable PreaggregateDataMap
       if (mvDataMap.isEmpty) {
-        mvDataMap = mvDataMap :+ new PreaggregateMVDataMapRules
+        mvDataMap += new PreaggregateMVDataMapRules
       }
       session.addMVDataMapRules(mvDataMap)
     }
 
     def enableMVDataMap(mvDataMapRules: MVDataMapRules): CarbonBuilder = {
-      mvDataMap = mvDataMap :+ mvDataMapRules
+      mvDataMap += mvDataMapRules
       this
     }
 
