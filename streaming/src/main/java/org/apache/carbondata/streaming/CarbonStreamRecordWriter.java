@@ -179,75 +179,81 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       initializeAtFirstRow();
     }
 
-    // parse and convert row
-    currentRow.setData(rowParser.parseRow((Object[]) value));
-    converter.convert(currentRow);
-
     // null bit set
     nullBitSet.clear();
-    for (int i = 0; i < dataFields.length; i++) {
-      if (null == currentRow.getObject(i)) {
-        nullBitSet.set(i);
+    Object[] rowData = (Object[]) value;
+    currentRow.setRawData(rowData);
+    // parse and convert row
+    currentRow.setData(rowParser.parseRow(rowData));
+    CarbonRow updatedCarbonRow = converter.convert(currentRow);
+    if (updatedCarbonRow == null) {
+      output.skipRow();
+      currentRow.clearData();
+    } else {
+      for (int i = 0; i < dataFields.length; i++) {
+        if (null == currentRow.getObject(i)) {
+          nullBitSet.set(i);
+        }
       }
-    }
-    output.nextRow();
-    byte[] b = nullBitSet.toByteArray();
-    output.writeShort(b.length);
-    if (b.length > 0) {
-      output.writeBytes(b);
-    }
-    int dimCount = 0;
-    Object columnValue;
+      output.nextRow();
+      byte[] b = nullBitSet.toByteArray();
+      output.writeShort(b.length);
+      if (b.length > 0) {
+        output.writeBytes(b);
+      }
+      int dimCount = 0;
+      Object columnValue;
 
-    // primitive type dimension
-    for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
-      columnValue = currentRow.getObject(dimCount);
-      if (null != columnValue) {
-        if (isNoDictionaryDimensionColumn[dimCount]) {
+      // primitive type dimension
+      for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
+        columnValue = currentRow.getObject(dimCount);
+        if (null != columnValue) {
+          if (isNoDictionaryDimensionColumn[dimCount]) {
+            byte[] col = (byte[]) columnValue;
+            output.writeShort(col.length);
+            output.writeBytes(col);
+          } else {
+            output.writeInt((int) columnValue);
+          }
+        }
+      }
+      // complex type dimension
+      for (; dimCount < dimensionWithComplexCount; dimCount++) {
+        columnValue = currentRow.getObject(dimCount);
+        if (null != columnValue) {
           byte[] col = (byte[]) columnValue;
           output.writeShort(col.length);
           output.writeBytes(col);
-        } else {
-          output.writeInt((int) columnValue);
         }
       }
-    }
-    // complex type dimension
-    for (; dimCount < dimensionWithComplexCount; dimCount++) {
-      columnValue = currentRow.getObject(dimCount);
-      if (null != columnValue) {
-        byte[] col = (byte[]) columnValue;
-        output.writeShort(col.length);
-        output.writeBytes(col);
-      }
-    }
-    // measure
-    DataType dataType;
-    for (int msrCount = 0; msrCount < measureCount; msrCount++) {
-      columnValue = currentRow.getObject(dimCount + msrCount);
-      if (null != columnValue) {
-        dataType = measureDataTypes[msrCount];
-        if (dataType == DataTypes.BOOLEAN) {
-          output.writeBoolean((boolean) columnValue);
-        } else if (dataType == DataTypes.SHORT) {
-          output.writeShort((short) columnValue);
-        } else if (dataType == DataTypes.INT) {
-          output.writeInt((int) columnValue);
-        } else if (dataType == DataTypes.LONG) {
-          output.writeLong((long) columnValue);
-        } else if (dataType == DataTypes.DOUBLE) {
-          output.writeDouble((double) columnValue);
-        } else if (DataTypes.isDecimal(dataType)) {
-          BigDecimal val = (BigDecimal) columnValue;
-          byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-          output.writeShort(bigDecimalInBytes.length);
-          output.writeBytes(bigDecimalInBytes);
-        } else {
-          String msg =
-              "unsupported data type:" + dataFields[dimCount + msrCount].getColumn().getDataType()
-                  .getName();
-          LOGGER.error(msg);
-          throw new IOException(msg);
+      // measure
+      DataType dataType;
+      for (int msrCount = 0; msrCount < measureCount; msrCount++) {
+        columnValue = currentRow.getObject(dimCount + msrCount);
+        if (null != columnValue) {
+          dataType = measureDataTypes[msrCount];
+          if (dataType == DataTypes.BOOLEAN) {
+            output.writeBoolean((boolean) columnValue);
+          } else if (dataType == DataTypes.SHORT) {
+            output.writeShort((short) columnValue);
+          } else if (dataType == DataTypes.INT) {
+            output.writeInt((int) columnValue);
+          } else if (dataType == DataTypes.LONG) {
+            output.writeLong((long) columnValue);
+          } else if (dataType == DataTypes.DOUBLE) {
+            output.writeDouble((double) columnValue);
+          } else if (DataTypes.isDecimal(dataType)) {
+            BigDecimal val = (BigDecimal) columnValue;
+            byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
+            output.writeShort(bigDecimalInBytes.length);
+            output.writeBytes(bigDecimalInBytes);
+          } else {
+            String msg =
+                "unsupported data type:" + dataFields[dimCount + msrCount].getColumn().getDataType()
+                .getName();
+            LOGGER.error(msg);
+            throw new IOException(msg);
+          }
         }
       }
     }

@@ -45,8 +45,12 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
   private val spark = sqlContext.sparkSession
   private val dataFilePath = s"$resourcesPath/streamSample.csv"
+  def currentPath: String = new File(this.getClass.getResource("/").getPath + "../../")
+    .getCanonicalPath
+  val badRecordFilePath: File =new File(currentPath + "/target/test/badRecords")
 
   override def beforeAll {
+    badRecordFilePath.mkdirs()
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -1562,6 +1566,68 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     assertResult("true")(resultStreaming(0).getString(1).trim)
   }
 
+
+  test("test bad_record_action IGNORE on streaming table") {
+
+sql("drop table if exists streaming.bad_record_ignore")
+    sql(
+      s"""
+         | CREATE TABLE streaming.bad_record_ignore(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('streaming'='true')
+         | """.stripMargin)
+
+    executeStreamingIngest(
+      tableName = "bad_record_ignore",
+      batchNums = 2,
+      rowNumsEachBatch = 10,
+      intervalOfSource = 1,
+      intervalOfIngest = 1,
+      continueSeconds = 8,
+      generateBadRecords = true,
+      badRecordAction = "ignore",
+      autoHandoff = false
+    )
+
+    checkAnswer(sql("select count(*) from streaming.bad_record_ignore"), Seq(Row(19)))
+  }
+
+  test("test bad_record_action REDIRECT on streaming table") {
+    sql("drop table if exists streaming.bad_record_redirect")
+    sql(
+      s"""
+         | CREATE TABLE streaming.bad_record_redirect(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('streaming'='true')
+         | """.stripMargin)
+
+    executeStreamingIngest(
+      tableName = "bad_record_redirect",
+      batchNums = 2,
+      rowNumsEachBatch = 10,
+      intervalOfSource = 1,
+      intervalOfIngest = 1,
+      continueSeconds = 8,
+      generateBadRecords = true,
+      badRecordAction = "redirect",
+      autoHandoff = false,
+      badRecordsPath = badRecordFilePath.getCanonicalPath
+    )
+    assert(new File(badRecordFilePath.getCanonicalFile + "/streaming/bad_record_redirect").isDirectory)
+    checkAnswer(sql("select count(*) from streaming.bad_record_redirect"), Seq(Row(19)))
+  }
+
+
   def createWriteSocketThread(
       serverSocket: ServerSocket,
       writeNums: Int,
@@ -1625,7 +1691,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       badRecordAction: String = "force",
       intervalSecond: Int = 2,
       handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT,
-      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean
+      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean,
+      badRecordsPath: String = CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL
   ): Thread = {
     new Thread() {
       override def run(): Unit = {
@@ -1643,6 +1710,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .trigger(ProcessingTime(s"$intervalSecond seconds"))
             .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
             .option("bad_records_action", badRecordAction)
+            .option("BAD_RECORD_PATH", badRecordsPath)
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
             .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
@@ -1676,7 +1744,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       generateBadRecords: Boolean,
       badRecordAction: String,
       handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT,
-      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean
+      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean,
+      badRecordsPath: String = CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL
   ): Unit = {
     val identifier = new TableIdentifier(tableName, Option("streaming"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)
@@ -1698,7 +1767,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         badRecordAction = badRecordAction,
         intervalSecond = intervalOfIngest,
         handoffSize = handoffSize,
-        autoHandoff = autoHandoff)
+        autoHandoff = autoHandoff,
+        badRecordsPath = badRecordsPath)
       thread1.start()
       thread2.start()
       Thread.sleep(continueSeconds * 1000)

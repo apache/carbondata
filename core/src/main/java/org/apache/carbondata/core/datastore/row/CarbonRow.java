@@ -91,4 +91,8 @@ public class CarbonRow implements Serializable {
   public void setRangeId(short rangeId) {
     this.rangeId = rangeId;
   }
+
+  public void clearData() {
+    this.data = null;
+  }
 }
