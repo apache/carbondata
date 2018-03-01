@@ -259,7 +259,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       val table = try {
         val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
         if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath)) &&
-            provider.equalsIgnoreCase("carbondatafileformat")) {
+            provider.equalsIgnoreCase("'carbondatafileformat'")) {
           SchemaReader.inferSchemaForExternalTable(identifier)
         }
         else {
