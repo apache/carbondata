@@ -2103,6 +2103,7 @@ public final class CarbonUtil {
     wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
+    wrapperColumnSchema.setSchemaOrdinal(externalColumnSchema.getSchemaOrdinal());
     Map<String, String> properties = externalColumnSchema.getColumnProperties();
     if (properties != null) {
       if (properties.get(CarbonCommonConstants.SORT_COLUMNS) != null) {
