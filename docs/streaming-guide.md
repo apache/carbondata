@@ -161,11 +161,9 @@ carbon.stream.parser | org.apache.carbondata.streaming.parser.CSVStreamParserImp
 
 Currently CarbonData support two parsers, as following:
 
-### org.apache.carbondata.streaming.parser.CSVStreamParserImp
-This is the default stream parser, it gets a line data(String type) from the first index of InternalRow and converts this String to Object[].
+**1. org.apache.carbondata.streaming.parser.CSVStreamParserImp**: This is the default stream parser, it gets a line data(String type) from the first index of InternalRow and converts this String to Object[].
 
-### org.apache.carbondata.streaming.parser.RowStreamParserImp
-This stream parser will auto convert InternalRow to Object[] according to schema of this `DataSet`, for example:
+**2. org.apache.carbondata.streaming.parser.RowStreamParserImp**: This stream parser will auto convert InternalRow to Object[] according to schema of this `DataSet`, for example:
 
 ```scala
  case class FileElement(school: Array[String], age: Int)
@@ -199,6 +197,34 @@ This stream parser will auto convert InternalRow to Object[] according to schema
 
  ...
 ```
+
+### How to implement a customized stream parser
+If user needs to implement a customized stream parser to convert a specific InternalRow to Object[], it needs to implement `initialize` method and `parserRow` method of interface `CarbonStreamParser`, for example:
+
+```scala
+ package org.XXX.XXX.streaming.parser
+ 
+ import org.apache.hadoop.conf.Configuration
+ import org.apache.spark.sql.catalyst.InternalRow
+ import org.apache.spark.sql.types.StructType
+ 
+ class XXXStreamParserImp extends CarbonStreamParser {
+ 
+   override def initialize(configuration: Configuration, structType: StructType): Unit = {
+     // user can get the properties from "configuration"
+   }
+   
+   override def parserRow(value: InternalRow): Array[Object] = {
+     // convert InternalRow to Object[](Array[Object] in Scala) 
+   }
+   
+   override def close(): Unit = {
+   }
+ }
+   
+```
+
+and then set the property "carbon.stream.parser" to "org.XXX.XXX.streaming.parser.XXXStreamParserImp".
 
 ## Close streaming table
 Use below command to handoff all streaming segments to columnar format segments and modify the streaming property to false, this table becomes a normal table.
