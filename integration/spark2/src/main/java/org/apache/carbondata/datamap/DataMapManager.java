@@ -40,9 +40,9 @@ public class DataMapManager {
    */
   public DataMapProvider getDataMapProvider(DataMapSchema dataMapSchema) {
     DataMapProvider provider;
-    if (dataMapSchema.getClassName().equalsIgnoreCase(PREAGGREGATE.toString())) {
+    if (dataMapSchema.getProviderName().equalsIgnoreCase(PREAGGREGATE.toString())) {
       provider = new PreAggregateDataMapProvider();
-    } else if (dataMapSchema.getClassName().equalsIgnoreCase(TIMESERIES.toString())) {
+    } else if (dataMapSchema.getProviderName().equalsIgnoreCase(TIMESERIES.toString())) {
       provider = new TimeseriesDataMapProvider();
     } else {
       provider = new IndexDataMapProvider();

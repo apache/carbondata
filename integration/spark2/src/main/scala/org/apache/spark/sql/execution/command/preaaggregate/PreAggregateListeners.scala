@@ -271,21 +271,22 @@ object CommitPreAggregateListener extends OperationEventListener {
       operationContext.getProperty("isCompaction")).getOrElse("false").toString.toBoolean
     val dataMapSchemas =
       carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getDataMapSchemaList
+      .asScala.filter(_.getChildSchema != null)
     // extract all child LoadCommands
     val childLoadCommands = if (!isCompactionFlow) {
       // If not compaction flow then the key for load commands will be tableName
-        dataMapSchemas.asScala.map { dataMapSchema =>
+        dataMapSchemas.map { dataMapSchema =>
           operationContext.getProperty(dataMapSchema.getChildSchema.getTableName)
             .asInstanceOf[CarbonLoadDataCommand]
         }
       } else {
       // If not compaction flow then the key for load commands will be tableName_Compaction
-        dataMapSchemas.asScala.map { dataMapSchema =>
+        dataMapSchemas.map { dataMapSchema =>
           operationContext.getProperty(dataMapSchema.getChildSchema.getTableName + "_Compaction")
             .asInstanceOf[CarbonLoadDataCommand]
         }
       }
-     if (dataMapSchemas.size() > 0) {
+     if (dataMapSchemas.nonEmpty) {
        val uuid = operationContext.getProperty("uuid").toString
       // keep committing until one fails
       val renamedDataMaps = childLoadCommands.takeWhile { childLoadCommand =>
@@ -299,7 +300,7 @@ object CommitPreAggregateListener extends OperationEventListener {
         renameDataMapTableStatusFiles(oldTableSchemaPath, newTableSchemaPath, uuid)
       }
       // if true then the commit for one of the child tables has failed
-      val commitFailed = renamedDataMaps.lengthCompare(dataMapSchemas.size()) != 0
+      val commitFailed = renamedDataMaps.lengthCompare(dataMapSchemas.length) != 0
       if (commitFailed) {
         LOGGER.warn("Reverting table status file to original state")
         renamedDataMaps.foreach {

@@ -36,13 +36,13 @@ public class TimeseriesDataMapProvider extends PreAggregateDataMapProvider {
   public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement,
       SparkSession sparkSession) {
     Map<String, String> dmProperties = dataMapSchema.getProperties();
-    String dmProviderName = dataMapSchema.getClassName();
+    String dmProviderName = dataMapSchema.getProviderName();
     TimeSeriesUtil.validateTimeSeriesGranularity(dmProperties, dmProviderName);
     Tuple2<String, String> details =
         TimeSeriesUtil.getTimeSeriesGranularityDetails(dmProperties, dmProviderName);
     dmProperties.remove(details._1());
     helper = new PreAggregateTableHelper(
-        mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getClassName(),
+        mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getProviderName(),
         dmProperties, ctasSqlStatement, new Some(details._1()), false);
     helper.initMeta(sparkSession);
   }
