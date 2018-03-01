@@ -33,6 +33,12 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
+/**
+ * Interface used to write stream data to stream table
+ * when integrate with Spark Streaming.
+ *
+ * NOTE: Current integration with Spark Streaming is an alpha feature.
+ */
 class CarbonStreamSparkStreamingWriter(val sparkSession: SparkSession,
     val carbonTable: CarbonTable,
     val configuration: Configuration) {

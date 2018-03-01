@@ -25,7 +25,9 @@ import org.apache.carbondata.streaming.CarbonStreamSparkStreamingWriter
 
 /**
  * Create [[CarbonStreamSparkStreamingWriter]] for stream table
- * when integrate with Spark Streaming
+ * when integrate with Spark Streaming.
+ *
+ * NOTE: Current integration with Spark Streaming is an alpha feature.
  */
 object CarbonSparkStreamingFactory {
 

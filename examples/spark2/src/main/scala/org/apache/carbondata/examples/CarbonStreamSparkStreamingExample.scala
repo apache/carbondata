@@ -38,6 +38,8 @@ import org.apache.carbondata.streaming.parser.CarbonStreamParser
 /**
  * This example introduces how to use Spark Streaming to write data
  * to CarbonData stream table.
+ *
+ * NOTE: Current integration with Spark Streaming is an alpha feature.
  */
 // scalastyle:off println
 object CarbonStreamSparkStreamingExample {
