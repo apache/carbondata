@@ -61,30 +61,6 @@ public class SchemaReader {
     }
   }
 
-  public static CarbonTable readCarbonTableFromFilePath(AbsoluteTableIdentifier identifier)
-      throws IOException {
-    String schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath());
-    if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) || FileFactory
-        .isFileExist(schemaFilePath, FileFactory.FileType.HDFS) || FileFactory
-        .isFileExist(schemaFilePath, FileFactory.FileType.S3) || FileFactory
-        .isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
-      String tableName = identifier.getCarbonTableIdentifier().getTableName();
-
-      org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.inferSchemaFileExternalTable(
-          CarbonTablePath.getSchemaFilePath(identifier.getTablePath()), identifier, false);
-      SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-      TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(tableInfo,
-          identifier.getCarbonTableIdentifier().getDatabaseName(), tableName,
-          identifier.getTablePath());
-      wrapperTableInfo.getFactTable().getTableProperties().put("_external", "true");
-      CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
-      return CarbonMetadata.getInstance()
-          .getCarbonTable(identifier.getCarbonTableIdentifier().getTableUniqueName());
-    } else {
-      throw new IOException("File does not exist: " + schemaFilePath);
-    }
-  }
-
   /**
    * the method returns the Wrapper TableInfo
    *
@@ -111,7 +87,6 @@ public class SchemaReader {
       throws IOException {
     // This routine is going to infer schema from the carbondata file footer
     // Convert the ColumnSchema -> TableSchema -> TableInfo.
-    // From TableInfo write it back into the file store Metadata Folder.
     // Return the TableInfo.
     org.apache.carbondata.format.TableInfo tableInfo =
         CarbonUtil.inferSchemaFileExternalTable(identifier.getTablePath(), identifier, false);
