@@ -167,7 +167,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
           carbonTable = CarbonTable.buildFromTableInfo(tableInfoInfer);
         } else {
           carbonTable =
-              SchemaReader.readCarbonTableFromFilePath(getAbsoluteTableIdentifier(configuration));
+              SchemaReader.readCarbonTableFromStore(getAbsoluteTableIdentifier(configuration));
         }
       }
       this.carbonTable = carbonTable;

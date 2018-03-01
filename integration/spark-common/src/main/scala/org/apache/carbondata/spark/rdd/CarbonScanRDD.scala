@@ -42,7 +42,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.filter.FilterUtil
 import org.apache.carbondata.core.scan.model.QueryModel
@@ -90,8 +90,8 @@ class CarbonScanRDD(
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)
-    val externalTable = tableInfo.getFactTable.getTableProperties.get("_external")
-    val format = if (externalTable != null && externalTable.equalsIgnoreCase("true")) {
+    val fileLevelExternal = tableInfo.getFactTable().getTableProperties().get("_filelevelexternal")
+    val format = if (fileLevelExternal != null && fileLevelExternal.equalsIgnoreCase("true")){
         prepareFileInputFormatForDriver(job.getConfiguration)
     } else {
        prepareInputFormatForDriver(job.getConfiguration)
@@ -101,6 +101,10 @@ class CarbonScanRDD(
 
     // get splits
     val splits = format.getSplits(job)
+    if ((splits == null) && format.isInstanceOf[CarbonFileInputFormat[Object]]) {
+      throw new SparkException(
+        "CarbonData file not exist in the segment_null (SDK writer Output) path")
+    }
 
     // separate split
     // 1. for batch splits, invoke distributeSplits method to create partitions
