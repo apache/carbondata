@@ -24,7 +24,7 @@ import scala.util.Random
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 
 class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
@@ -42,9 +42,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE normal_test OPTIONS('header'='false')")
-  }
 
-  test("test lucene fine grain data map") {
     sql("DROP TABLE IF EXISTS datamap_test")
     sql(
       """
@@ -52,11 +50,65 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'carbondata'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
+  }
 
+  test("validate TEXT_COLUMNS DataMap property") {
+    // require TEXT_COLUMNS
+    var exception = intercept[MalformedDataMapCommandException](sql(
+      s"""
+         | CREATE DATAMAP dm1 ON TABLE datamap_test
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+      """.stripMargin))
+
+    assertResult("Lucene DataMap require proper TEXT_COLUMNS property.")(exception.getMessage)
+
+    // illegal argumnet.
+    exception = intercept[MalformedDataMapCommandException](sql(
+      s"""
+         | CREATE DATAMAP dm1 ON TABLE datamap_test
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | DMProperties('text_COLUMNS'='name, ')
+      """.stripMargin))
+
+    assertResult("TEXT_COLUMNS contains illegal argumnet.")(exception.getMessage)
+
+    // not exists
+    exception = intercept[MalformedDataMapCommandException](sql(
+      s"""
+         | CREATE DATAMAP dm1 ON TABLE datamap_test
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | DMProperties('text_COLUMNS'='city,school')
+    """.stripMargin))
+
+    assertResult("TEXT_COLUMNS: school does not exist in table. Please check create DataMap statement.")(exception.getMessage)
+
+    // duplicate columns
+    exception = intercept[MalformedDataMapCommandException](sql(
+      s"""
+         | CREATE DATAMAP dm1 ON TABLE datamap_test
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | DMProperties('text_COLUMNS'='name,city,name')
+      """.stripMargin))
+
+    assertResult("TEXT_COLUMNS has duplicate columns :name")(exception.getMessage)
+
+    // only support String DataType
+    exception = intercept[MalformedDataMapCommandException](sql(
+    s"""
+         | CREATE DATAMAP dm1 ON TABLE datamap_test
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | DMProperties('text_COLUMNS'='city,id')
+      """.stripMargin))
+
+    assertResult("TEXT_COLUMNS only supports String column. Unsupported column: id, DataType: INT")(exception.getMessage)
+  }
+
+  test("test lucene fine grain data map") {
     sql(
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
          | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | DMProperties('TEXT_COLUMNS'='Name , cIty')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
