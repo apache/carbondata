@@ -2188,7 +2188,7 @@ public final class CarbonUtil {
 
   public static List<String> getFilePathExternalFilePath(String path) {
 
-    // scan all the carbondata files and get the latest task ID.
+    // return the list of carbondata files in the given path.
     CarbonFile segment = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
     CarbonFile[] dataFiles = segment.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
