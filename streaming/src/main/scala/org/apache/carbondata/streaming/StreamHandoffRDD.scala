@@ -284,8 +284,7 @@ object StreamHandoffRDD {
   ): Unit = {
     if (isDDL) {
       iterateStreamingHandoff(carbonLoadModel, sparkSession)
-    }
-    else {
+    } else {
       // start a new thread to execute streaming segment handoff
       val handoffThread = new Thread() {
         override def run(): Unit = {
