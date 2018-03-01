@@ -804,6 +804,12 @@ public class CarbonTable implements Serializable {
     return external != null && external.equalsIgnoreCase("true");
   }
 
+  public boolean isFileLevelExternalTable() {
+    String external = tableInfo.getFactTable().getTableProperties().get("_filelevelexternal");
+    return external != null && external.equalsIgnoreCase("true");
+  }
+
+
   public long size() throws IOException {
     Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this);
     Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
