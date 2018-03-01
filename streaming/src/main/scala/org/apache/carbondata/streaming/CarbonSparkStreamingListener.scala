@@ -15,29 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.streaming.parser;
+package org.apache.carbondata.streaming
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.types.StructType;
+import org.apache.spark.scheduler.SparkListener
+import org.apache.spark.scheduler.SparkListenerApplicationEnd
 
-/**
- * Stream parser interface
- */
-public interface CarbonStreamParser {
+class CarbonSparkStreamingListener extends SparkListener {
 
-  String CARBON_STREAM_PARSER = "carbon.stream.parser";
-
-  String CARBON_STREAM_PARSER_DEFAULT =
-      "org.apache.carbondata.streaming.parser.CSVStreamParserImp";
-
-  String CARBON_STREAM_PARSER_ROW_PARSER =
-      "org.apache.carbondata.streaming.parser.RowStreamParserImp";
-
-  void initialize(Configuration configuration, StructType structType);
-
-  Object[] parserRow(InternalRow value);
-
-  void close();
-
+  /**
+   * When Spark Streaming App stops, remove all locks for stream table.
+   */
+  override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+    CarbonStreamSparkStreaming.cleanAllLockAfterStop()
+  }
 }
