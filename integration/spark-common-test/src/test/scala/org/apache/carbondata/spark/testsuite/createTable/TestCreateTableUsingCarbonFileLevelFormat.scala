@@ -143,44 +143,6 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
   }
 
 
-  test("Read sdk writer output file without index file should fail") {
-    assert(new File(writerOutputFilePath2).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
-
-    //data source file format
-    sql(
-      s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-         |'$writerOutputFilePath2' """.stripMargin)
-
-    //org.apache.spark.SparkException: Index file not present to read the carbondata file
-    val exception = intercept[org.apache.spark.SparkException]
-    {
-      sql("select * from sdkOutputTable").show(false)
-    }
-    assert(exception.getMessage().contains("Index file not present to read the carbondata file"))
-
-    sql("DROP TABLE sdkOutputTable")
-    // drop table should not delete the files
-    assert(new File(writerOutputFilePath2).exists())
-  }
-
-
-  test("Read sdk writer output file without Carbondata file should fail") {
-    assert(new File(writerOutputFilePath3).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
-
-    val exception = intercept[org.apache.spark.SparkException] {
-      //    data source file format
-      sql(
-        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-           |'$writerOutputFilePath3' """.stripMargin)
-    }
-    assert(exception.getMessage()
-      .contains("CarbonData file is not present in the location mentioned in DDL"))
-
-    // drop table should not delete the files
-    assert(new File(writerOutputFilePath3).exists())
-  }
 
 
   test("Read sdk writer output file without any file should fail") {
@@ -243,4 +205,46 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     // drop table should not delete the files
     assert(new File(writerOutputFilePath5).exists())
   }
+
+
+  test("Read sdk writer output file without index file should fail") {
+    assert(new File(writerOutputFilePath2).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    //data source file format
+    sql(
+      s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+         |'$writerOutputFilePath2' """.stripMargin)
+
+    //org.apache.spark.SparkException: Index file not present to read the carbondata file
+    val exception = intercept[org.apache.spark.SparkException]
+    {
+      sql("select * from sdkOutputTable").show(false)
+    }
+    assert(exception.getMessage().contains("Index file not present to read the carbondata file"))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerOutputFilePath2).exists())
+  }
+
+
+  test("Read sdk writer output file without Carbondata file should fail") {
+    assert(new File(writerOutputFilePath3).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    val exception = intercept[org.apache.spark.SparkException] {
+      //    data source file format
+      sql(
+        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+           |'$writerOutputFilePath3' """.stripMargin)
+    }
+    assert(exception.getMessage()
+      .contains("CarbonData file is not present in the location mentioned in DDL"))
+
+    // drop table should not delete the files
+    assert(new File(writerOutputFilePath3).exists())
+  }
+
+
 }
