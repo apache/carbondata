@@ -40,7 +40,7 @@ object StandardPartitionExample {
     spark.sparkContext.setLogLevel("ERROR")
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "YYYY/MM/DD")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 
     /**
      * 1. Partition basic usages
@@ -64,6 +64,8 @@ object StandardPartitionExample {
       s"""
        LOAD DATA LOCAL INPATH '$testData' into table origintable
        """)
+
+    spark.sql("select * from origintable").show(false)
 
     // create partition table with logdate as partition column
 
