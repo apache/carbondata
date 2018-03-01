@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
@@ -33,14 +34,15 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
@@ -49,6 +51,8 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
  */
 @InterfaceAudience.Internal
 abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFactory<T> {
+
+  static final String TEXT_COLUMNS = "text_columns";
 
   /**
    * Logger
@@ -77,7 +81,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
 
   @Override
   public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema)
-      throws IOException {
+      throws IOException, MalformedDataMapCommandException {
     Objects.requireNonNull(identifier);
     Objects.requireNonNull(dataMapSchema);
 
@@ -98,40 +102,69 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
       throw new IOException(errorMessage);
     }
 
-    TableInfo tableInfo = carbonTable.getTableInfo();
-    List<ColumnSchema> lstCoumnSchemas = tableInfo.getFactTable().getListOfColumns();
-
-    // currently add all columns into lucene indexer
-    // TODO:only add index columns
-    List<String> indexedColumns = new ArrayList<String>();
-    for (ColumnSchema columnSchema : lstCoumnSchemas) {
-      if (!columnSchema.isInvisible()) {
-        indexedColumns.add(columnSchema.getColumnName());
-      }
-    }
-
-    // get indexed columns
-    //    Map<String, String> properties = dataMapSchema.getProperties();
-    //    String columns = properties.get("text_column");
-    //    if (columns != null) {
-    //      String[] columnArray = columns.split(CarbonCommonConstants.COMMA, -1);
-    //      Collections.addAll(indexedColumns, columnArray);
-    //    }
+    // validate DataMapSchema and get index columns
+    List<String> indexedColumns =  validateAndGetIndexedColumns(dataMapSchema, carbonTable);
 
     // add optimizedOperations
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
-    //    optimizedOperations.add(ExpressionType.EQUALS);
-    //    optimizedOperations.add(ExpressionType.GREATERTHAN);
-    //    optimizedOperations.add(ExpressionType.GREATERTHAN_EQUALTO);
-    //    optimizedOperations.add(ExpressionType.LESSTHAN);
-    //    optimizedOperations.add(ExpressionType.LESSTHAN_EQUALTO);
-    //    optimizedOperations.add(ExpressionType.NOT);
+    // optimizedOperations.add(ExpressionType.EQUALS);
+    // optimizedOperations.add(ExpressionType.GREATERTHAN);
+    // optimizedOperations.add(ExpressionType.GREATERTHAN_EQUALTO);
+    // optimizedOperations.add(ExpressionType.LESSTHAN);
+    // optimizedOperations.add(ExpressionType.LESSTHAN_EQUALTO);
+    // optimizedOperations.add(ExpressionType.NOT);
     optimizedOperations.add(ExpressionType.TEXT_MATCH);
     this.dataMapMeta = new DataMapMeta(indexedColumns, optimizedOperations);
 
     // get analyzer
     // TODO: how to get analyzer ?
     analyzer = new StandardAnalyzer();
+  }
+
+  /**
+   * validate Lucene DataMap
+   * 1. require TEXT_COLUMNS property
+   * 2. TEXT_COLUMNS can't contains illegal argument(empty, blank)
+   * 3. TEXT_COLUMNS can't contains duplicate same columns
+   * 4. TEXT_COLUMNS should be exists in table columns
+   * 5. TEXT_COLUMNS support only String DataType columns
+   */
+  private List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
+      CarbonTable carbonTable) throws MalformedDataMapCommandException {
+    String textColumnsStr = dataMapSchema.getProperties().get(TEXT_COLUMNS);
+    if (textColumnsStr == null || StringUtils.isBlank(textColumnsStr)) {
+      throw new MalformedDataMapCommandException(
+          "Lucene DataMap require proper TEXT_COLUMNS property.");
+    }
+    String[] textColumns = textColumnsStr.split(",", -1);
+    for (int i = 0; i < textColumns.length; i++) {
+      textColumns[i] = textColumns[i].trim().toLowerCase();
+    }
+    for (int i = 0; i < textColumns.length; i++) {
+      if (textColumns[i].isEmpty()) {
+        throw new MalformedDataMapCommandException("TEXT_COLUMNS contains illegal argument.");
+      }
+      for (int j = i + 1; j < textColumns.length; j++) {
+        if (textColumns[i].equals(textColumns[j])) {
+          throw new MalformedDataMapCommandException(
+              "TEXT_COLUMNS has duplicate columns :" + textColumns[i]);
+        }
+      }
+    }
+    List<String> textColumnList = new ArrayList<String>(textColumns.length);
+    for (int i = 0; i < textColumns.length; i++) {
+      CarbonColumn column = carbonTable.getColumnByName(carbonTable.getTableName(), textColumns[i]);
+      if (null == column) {
+        throw new MalformedDataMapCommandException("TEXT_COLUMNS: " + textColumns[i]
+            + " does not exist in table. Please check create DataMap statement.");
+      } else if (column.getDataType() != DataTypes.STRING) {
+        throw new MalformedDataMapCommandException(
+            "TEXT_COLUMNS only supports String column. " + "Unsupported column: " + textColumns[i]
+                + ", DataType: " + column.getDataType());
+      }
+      textColumnList.add(column.getColName());
+    }
+    return textColumnList;
   }
 
   /**

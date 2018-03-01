@@ -163,7 +163,8 @@ public final class DataMapStoreManager {
   }
 
   public TableDataMap registerDataMap(AbsoluteTableIdentifier identifier,
-      DataMapSchema dataMapSchema,  DataMapFactory dataMapFactory) throws IOException {
+      DataMapSchema dataMapSchema,  DataMapFactory dataMapFactory)
+      throws IOException, MalformedDataMapCommandException {
     String table = identifier.getCarbonTableIdentifier().getTableUniqueName();
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(identifier);
