@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+
 /**
  * Represents one load of carbondata
  */
@@ -74,6 +78,23 @@ public class Segment implements Serializable {
       return new Segment(split[0], null);
     }
     return new Segment(segmentId, null);
+  }
+
+  /**
+   * Read the table status and get the segment corresponding to segmentNo
+   * @param segmentNo
+   * @param tablePath
+   * @return
+   */
+  public static Segment getSegment(String segmentNo, String tablePath) {
+    LoadMetadataDetails[] loadMetadataDetails =
+        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath));
+    for (LoadMetadataDetails details: loadMetadataDetails) {
+      if (details.getLoadName().equals(segmentNo)) {
+        return new Segment(details.getLoadName(), details.getSegmentFile());
+      }
+    }
+    return null;
   }
 
   @Override public boolean equals(Object o) {

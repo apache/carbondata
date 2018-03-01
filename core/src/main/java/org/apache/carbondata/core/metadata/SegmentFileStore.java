@@ -195,7 +195,7 @@ public class SegmentFileStore {
    * @param partitionSpecs
    */
   public static SegmentFile getSegmentFileForPhysicalDataPartitions(String tablePath,
-      List<PartitionSpec> partitionSpecs) {
+      List<PartitionSpec> partitionSpecs) throws IOException {
     SegmentFile segmentFile = null;
     for (PartitionSpec spec : partitionSpecs) {
       String location = spec.getLocation().toString();
@@ -220,6 +220,9 @@ public class SegmentFileStore {
         folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
         for (CarbonFile file : listFiles) {
           if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+            List<String> indexFiles =
+                new SegmentIndexFileStore().getIndexFilesFromMergeFile(file.getAbsolutePath());
+            folderDetails.getFiles().addAll(indexFiles);
             folderDetails.setMergeFileName(file.getName());
           } else {
             folderDetails.getFiles().add(file.getName());
@@ -302,6 +305,10 @@ public class SegmentFileStore {
     readIndexFiles(SegmentStatus.SUCCESS, false);
   }
 
+  public SegmentFile getSegmentFile() {
+    return segmentFile;
+  }
+
   /**
    * Reads all index files as per the status of the file. In case of @ignoreStatus is true it just
    * reads all index files
@@ -374,6 +381,30 @@ public class SegmentFileStore {
       }
     }
     return indexFiles;
+  }
+
+  /**
+   * Gets all carbon index files from this segment
+   * @return
+   */
+  public List<CarbonFile> getIndexCarbonFiles() {
+    Map<String, String> indexFiles = getIndexFiles();
+    Set<String> files = new HashSet<>();
+    for (Map.Entry<String, String> entry: indexFiles.entrySet()) {
+      Path path = new Path(entry.getKey());
+      files.add(entry.getKey());
+      if (entry.getValue() != null) {
+        files.add(new Path(path.getParent(), entry.getValue()).toString());
+      }
+    }
+    List<CarbonFile> carbonFiles = new ArrayList<>();
+    for (String indexFile : files) {
+      CarbonFile carbonFile = FileFactory.getCarbonFile(indexFile);
+      if (carbonFile.exists()) {
+        carbonFiles.add(carbonFile);
+      }
+    }
+    return carbonFiles;
   }
 
   /**
