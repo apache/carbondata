@@ -44,6 +44,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
@@ -314,7 +315,7 @@ public class SegmentFileStore {
     }
     SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
     indexFilesMap = new HashMap<>();
-    indexFileStore.readAllIIndexOfSegment(this, status, ignoreStatus);
+    indexFileStore.readAllIIndexOfSegment(this.segmentFile, tablePath, status, ignoreStatus);
     Map<String, byte[]> carbonIndexMap = indexFileStore.getCarbonIndexMapWithFullPath();
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     for (Map.Entry<String, byte[]> entry : carbonIndexMap.entrySet()) {
@@ -326,6 +327,30 @@ public class SegmentFileStore {
       }
       indexFilesMap.put(entry.getKey(), blocks);
     }
+  }
+
+  /**
+   * Reads all index files and get the schema of each index file
+   * @throws IOException
+   */
+  public static Map<String, List<ColumnSchema>> getSchemaFiles(SegmentFile segmentFile,
+      String tablePath) throws IOException {
+    Map<String, List<ColumnSchema>> schemaMap = new HashMap<>();
+    if (segmentFile == null) {
+      return schemaMap;
+    }
+    SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
+    indexFileStore.readAllIIndexOfSegment(segmentFile, tablePath, SegmentStatus.SUCCESS, true);
+    Map<String, byte[]> carbonIndexMap = indexFileStore.getCarbonIndexMapWithFullPath();
+    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    for (Map.Entry<String, byte[]> entry : carbonIndexMap.entrySet()) {
+      List<DataFileFooter> indexInfo =
+          fileFooterConverter.getIndexInfo(entry.getKey(), entry.getValue());
+      if (indexInfo.size() > 0) {
+        schemaMap.put(entry.getKey(), indexInfo.get(0).getColumnInTable());
+      }
+    }
+    return schemaMap;
   }
 
   /**

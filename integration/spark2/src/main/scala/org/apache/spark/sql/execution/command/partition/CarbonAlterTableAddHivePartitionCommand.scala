@@ -75,7 +75,12 @@ case class CarbonAlterTableAddHivePartitionCommand(
 
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
-    AlterTableDropPartitionCommand(tableName, partitionSpecsAndLocs.map(_._1), true, false, true)
+    AlterTableDropPartitionCommand(
+      tableName,
+      partitionSpecsAndLocs.map(_._1),
+      ifExists = true,
+      purge = false,
+      retainData = true).run(sparkSession)
     val msg = s"Got exception $exception when processing data of add partition." +
               "Dropping partitions to the metadata"
     LogServiceFactory.getLogService(this.getClass.getCanonicalName).error(msg)
@@ -88,6 +93,17 @@ case class CarbonAlterTableAddHivePartitionCommand(
       val segmentFile = SegmentFileStore.getSegmentFileForPhysicalDataPartitions(table.getTablePath,
         partitionSpecsAndLocsTobeAdded)
       if (segmentFile != null) {
+        val indexToSchemas = SegmentFileStore.getSchemaFiles(segmentFile, table.getTablePath)
+        val tableColums = table.getTableInfo.getFactTable.getListOfColumns.asScala
+        var isSameSchema = indexToSchemas.asScala.exists{ case(key, columnSchemas) =>
+          columnSchemas.asScala.exists { col =>
+            tableColums.exists(p => p.getColumnUniqueId.equals(col.getColumnUniqueId))
+          } && columnSchemas.size() == tableColums.length
+        }
+        if (!isSameSchema) {
+          throw new UnsupportedOperationException(
+            "Schema of index files located in location is not matching with current table schema")
+        }
         val loadModel = new CarbonLoadModel
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
         // Create new entry in tablestatus file
