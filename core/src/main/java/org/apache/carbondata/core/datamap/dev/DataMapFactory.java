@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datamap.dev;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
@@ -34,7 +35,8 @@ public interface DataMapFactory<T extends DataMap> {
   /**
    * Initialization of Datamap factory with the identifier and datamap name
    */
-  void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema) throws IOException;
+  void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema)
+      throws IOException, MalformedDataMapCommandException;
 
   /**
    * Return a new write for this datamap
