@@ -227,7 +227,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             }
 
           } else {
-            (sel, updateRelation(tab._1, tab._2, tab._4, Some(tab._3.get)))
+            (sel, updateRelation(tab._1, tab._2, tab._4, tab._3))
           }
         val rel = tab._3 match {
           case Some(a) => UpdateTable(relation, columns, selectStmt, Some(tab._3.get), where)

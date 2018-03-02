@@ -99,15 +99,13 @@ object CarbonSortColumnsExample {
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE no_sort_columns_table
-         | OPTIONS('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData',
-         | 'COMPLEX_DELIMITER_LEVEL_1'='#')
+         | OPTIONS('COMPLEX_DELIMITER_LEVEL_1'='#')
        """.stripMargin)
     spark.sql(
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE sort_columns_table
-         | OPTIONS('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData',
-         | 'COMPLEX_DELIMITER_LEVEL_1'='#')
+         | OPTIONS('COMPLEX_DELIMITER_LEVEL_1'='#')
        """.stripMargin)
     // scalastyle:on
 
