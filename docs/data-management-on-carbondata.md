@@ -979,7 +979,7 @@ This functionality is not supported.
   
 ### Supporting timeseries data (Alpha feature in 1.3.0)
 CarbonData has built-in understanding of time hierarchy and levels: year, month, day, hour, minute, second.
-Timeseries pre-aggregate tables can be created with different granularity and CarbonData can do automatic 
+Timeseries pre-aggregate tables can be created for the hierarchy and CarbonData can do automatic 
 roll-up for the queries on these hierarchies.
 
   ```
