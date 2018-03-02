@@ -19,9 +19,10 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
  * This example is for standard partition, same as hive and spark partition
