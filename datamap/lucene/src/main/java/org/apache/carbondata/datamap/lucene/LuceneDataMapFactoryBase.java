@@ -120,6 +120,14 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
     analyzer = new StandardAnalyzer();
   }
 
+  /**
+   * validate Lucene DataMap
+   * 1. require TEXT_COLUMNS property
+   * 2. TEXT_COLUMNS can't contains illegal argument(empty, blank)
+   * 3. TEXT_COLUMNS can't contains duplicate same columns
+   * 4. TEXT_COLUMNS should be exists in table columns
+   * 5. TEXT_COLUMNS support only String DataType columns
+   */
   private List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
       CarbonTable carbonTable) throws MalformedDataMapCommandException {
     String textColumnsStr = dataMapSchema.getProperties().get(TEXT_COLUMNS);
@@ -133,7 +141,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
     }
     for (int i = 0; i < textColumns.length; i++) {
       if (textColumns[i].isEmpty()) {
-        throw new MalformedDataMapCommandException("TEXT_COLUMNS contains illegal argumnet.");
+        throw new MalformedDataMapCommandException("TEXT_COLUMNS contains illegal argument.");
       }
       for (int j = i + 1; j < textColumns.length; j++) {
         if (textColumns[i].equals(textColumns[j])) {

@@ -70,7 +70,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | DMProperties('text_COLUMNS'='name, ')
       """.stripMargin))
 
-    assertResult("TEXT_COLUMNS contains illegal argumnet.")(exception.getMessage)
+    assertResult("TEXT_COLUMNS contains illegal argument.")(exception.getMessage)
 
     // not exists
     exception = intercept[MalformedDataMapCommandException](sql(
