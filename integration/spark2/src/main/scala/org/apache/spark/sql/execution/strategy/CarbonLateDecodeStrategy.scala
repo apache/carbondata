@@ -145,7 +145,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       filterPredicates: Seq[Expression],
       scanBuilder: (Seq[Attribute], Array[Filter],
         ArrayBuffer[AttributeReference], Seq[PartitionSpec]) => RDD[InternalRow]) = {
-    val names = relation.catalogTable.get.partitionColumnNames
+    val names = relation.catalogTable match {
+      case Some(table) => table.partitionColumnNames
+      case _ => Seq.empty
+    }
     // Get the current partitions from table.
     var partitions: Seq[PartitionSpec] = null
     if (names.nonEmpty) {
