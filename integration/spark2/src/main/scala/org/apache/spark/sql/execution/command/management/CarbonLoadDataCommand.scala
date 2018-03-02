@@ -563,13 +563,20 @@ case class CarbonLoadDataCommand(
     var partitionsLen = 0
     val sortScope = CarbonDataProcessorUtil.getSortScope(carbonLoadModel.getSortScope)
     val partitionValues = if (partition.nonEmpty) {
-      partition.filter(_._2.nonEmpty).map{ case(col, value) =>
-        val field = catalogTable.schema.find(_.name.equalsIgnoreCase(col)).get
-        CarbonScalaUtil.convertToDateAndTimeFormats(
-          value.get,
-          field.dataType,
-          timeStampFormat,
-          dateFormat)
+      partition.filter(_._2.nonEmpty).map { case (col, value) =>
+        catalogTable.schema.find(_.name.equalsIgnoreCase(col)) match {
+          case Some(c) =>
+            CarbonScalaUtil.convertToDateAndTimeFormats(
+              value.get,
+              c.dataType,
+              timeStampFormat,
+              dateFormat)
+          case None =>
+            throw new AnalysisException(s"$col is not a valid partition column in table ${
+              carbonLoadModel
+                .getDatabaseName
+            }.${ carbonLoadModel.getTableName }")
+        }
       }.toArray
     } else {
       Array[String]()

@@ -53,7 +53,7 @@ case class CarbonCreateDataMapCommand(
       throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
     }
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val dbName = tableIdentifier.database.getOrElse("default")
+    val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     val tableName = tableIdentifier.table + "_" + dataMapName
     val newDmProperties = if (dmProperties.get(TimeSeriesUtil.TIMESERIES_EVENTTIME).isDefined) {
       dmProperties.updated(TimeSeriesUtil.TIMESERIES_EVENTTIME,
