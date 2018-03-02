@@ -777,7 +777,7 @@ public final class FilterUtil {
         columnFilterInfo.setFilterList(filterValuesList);
       }
     } catch (FilterIllegalMemberException e) {
-      LOGGER.audit(e.getMessage());
+      LOGGER.error(e.getMessage());
     }
     return columnFilterInfo;
   }
@@ -817,7 +817,7 @@ public final class FilterUtil {
         }
       }
     } catch (FilterIllegalMemberException e) {
-      LOGGER.audit(e.getMessage());
+      LOGGER.error(e.getMessage());
     }
 
     if (null == defaultValues) {

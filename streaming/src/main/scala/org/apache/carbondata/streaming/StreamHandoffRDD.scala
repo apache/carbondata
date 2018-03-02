@@ -351,7 +351,7 @@ object StreamHandoffRDD {
       LOGGER.info("********clean up done**********")
       LOGGER.audit(s"Handoff is failed for " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-      LOGGER.warn("Cannot write load metadata file as handoff failed")
+      LOGGER.error("Cannot write load metadata file as handoff failed")
       throw new Exception(errorMessage)
     }
 

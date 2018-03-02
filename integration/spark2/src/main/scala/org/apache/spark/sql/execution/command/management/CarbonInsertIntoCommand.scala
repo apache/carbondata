@@ -52,7 +52,7 @@ case class CarbonInsertIntoCommand(
       isPersistEnabledUserValue.equalsIgnoreCase("true") || containsLimit(child)
     val df =
       if (isPersistRequired) {
-        LOGGER.audit("Persist enabled for Insert operation")
+        LOGGER.info("Persist enabled for Insert operation")
         Dataset.ofRows(sparkSession, child)
           .persist(StorageLevel.MEMORY_AND_DISK)
       } else {

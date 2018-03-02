@@ -48,7 +48,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
    * @throws Exception
    */
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    LOGGER.audit("Connected " + ctx);
+    LOGGER.info("Connected " + ctx);
     super.channelActive(ctx);
   }
 

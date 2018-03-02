@@ -110,8 +110,13 @@ public final class CarbonDataProcessorUtil {
    */
   public static void createLocations(String[] locations) {
     for (String loc : locations) {
-      if (!new File(loc).mkdirs()) {
-        LOGGER.warn("Error occurs while creating dirs: " + loc);
+      File dir = new File(loc);
+      if (dir.exists()) {
+        LOGGER.warn("dir already exists, skip dir creation: " + loc);
+      } else {
+        if (!dir.mkdirs()) {
+          LOGGER.error("Error occurs while creating dir: " + loc);
+        }
       }
     }
   }
@@ -433,7 +438,7 @@ public final class CarbonDataProcessorUtil {
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
                 .toString());
       }
-      LOGGER.warn("sort scope is set to " + sortScope);
+      LOGGER.info("sort scope is set to " + sortScope);
     } catch (Exception e) {
       sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
       LOGGER.warn("Exception occured while resolving sort scope. " +
@@ -453,7 +458,7 @@ public final class CarbonDataProcessorUtil {
       } else {
         sortScope = SortScopeOptions.getSortScope(sortScopeString);
       }
-      LOGGER.warn("sort scope is set to " + sortScope);
+      LOGGER.info("sort scope is set to " + sortScope);
     } catch (Exception e) {
       sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
       LOGGER.warn("Exception occured while resolving sort scope. " +
@@ -481,7 +486,7 @@ public final class CarbonDataProcessorUtil {
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
                 .toString());
       }
-      LOGGER.warn("batch sort size is set to " + batchSortSizeInMb);
+      LOGGER.info("batch sort size is set to " + batchSortSizeInMb);
     } catch (Exception e) {
       batchSortSizeInMb = 0;
       LOGGER.warn("Exception occured while resolving batch sort size. " +

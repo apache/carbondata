@@ -84,7 +84,7 @@ public class TableDictionaryGenerator
     } catch (InterruptedException e) {
       LOGGER.error("Error loading the dictionary: " + e.getMessage());
     }
-    LOGGER.audit("Total time taken to write dictionary file is: " +
+    LOGGER.info("Total time taken to write dictionary file is: " +
             (System.currentTimeMillis() - start));
   }
 

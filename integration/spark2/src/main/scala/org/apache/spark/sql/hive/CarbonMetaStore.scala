@@ -184,10 +184,10 @@ object CarbonMetaStoreFactory {
   def createCarbonMetaStore(conf: RuntimeConfig): CarbonMetaStore = {
     val readSchemaFromHiveMetaStore = readSchemaFromHive(conf)
     if (readSchemaFromHiveMetaStore) {
-      LOGGER.audit("Hive based carbon metastore is enabled")
+      LOGGER.info("Hive based carbon metastore is enabled")
       new CarbonHiveMetaStore()
     } else {
-      LOGGER.audit("File based carbon metastore is enabled")
+      LOGGER.info("File based carbon metastore is enabled")
       new CarbonFileMetastore()
     }
   }

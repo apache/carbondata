@@ -113,7 +113,7 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
             new InetSocketAddress(newPort) :
             new InetSocketAddress(hostToBind, newPort);
         bootstrap.bind(address).sync();
-        LOGGER.audit("Dictionary Server started, Time spent " + (System.currentTimeMillis() - start)
+        LOGGER.info("Dictionary Server started, Time spent " + (System.currentTimeMillis() - start)
             + " Listening on port " + newPort);
         this.port = newPort;
         this.host = hostToBind;

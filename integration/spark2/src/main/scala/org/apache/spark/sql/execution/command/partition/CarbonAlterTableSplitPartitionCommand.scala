@@ -167,7 +167,6 @@ case class CarbonAlterTableSplitPartitionCommand(
       CacheProvider.getInstance().dropAllCache()
       val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
       LOGGER.info("Locks released after alter table add/split partition action.")
-      LOGGER.audit("Locks released after alter table add/split partition action.")
       if (success) {
         LOGGER.info(s"Alter table add/split partition is successful for table $dbName.$tableName")
         LOGGER.audit(s"Alter table add/split partition is successful for table $dbName.$tableName")
