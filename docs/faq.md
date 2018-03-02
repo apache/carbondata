@@ -25,7 +25,8 @@
 * [What is Carbon Lock Type?](#what-is-carbon-lock-type)
 * [How to resolve Abstract Method Error?](#how-to-resolve-abstract-method-error)
 * [How Carbon will behave when execute insert operation in abnormal scenarios?](#how-carbon-will-behave-when-execute-insert-operation-in-abnormal-scenarios)
-* [Why aggregate query is not fetching data from aggregate table?] (#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
+* [Why aggregate query is not fetching data from aggregate table?](#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
+* [Why all executors are showing success in Spark UI even after the compaction or Dataload command failed?](#Why-all-executors-are-showing-success-in-Spark-UI-even-after-the-compaction-or-Dataload-command-failed)
 
 ## What are Bad Records?
 Records that fail to get loaded into the CarbonData due to data type incompatibility or are empty or have incompatible format are classified as Bad Records.
@@ -177,5 +178,12 @@ create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondat
 create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp group by ctry;
 select cntry,sum(gdp) from gdp21,pop1 where cntry=ctry group by cntry;
 ```
+
+## Why all executors are showing success in Spark UI even after the compaction or Dataload command failed?
+Spark executor throws a failure exception only after the failed carbon command has retired for a max number of retry attempts. By default, the max number of retry attempt in Spark executor is 3, but the carbon command does only one attempt to execute in-case of below command. Hence the Spark executor displays this one attempt as successful but the command has actually failed to execute.
+The commands with this behavior are: 
+* Compaction query 
+* Load query with Bad-Record
+Task attempt or executor logs can be checked to observe the failure reason.
 
 
