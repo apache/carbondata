@@ -38,8 +38,18 @@ object PreAggregateTableExample {
 
     // 1. simple usage for Pre-aggregate tables creation and query
     spark.sql("DROP TABLE IF EXISTS mainTable")
+    spark.sql("DROP TABLE IF EXISTS mainTable_other")
     spark.sql("""
                 | CREATE TABLE mainTable
+                | (id Int,
+                | name String,
+                | city String,
+                | age Int)
+                | STORED BY 'org.apache.carbondata.format'
+              """.stripMargin)
+
+    spark.sql("""
+                | CREATE TABLE mainTable_other
                 | (id Int,
                 | name String,
                 | city String,
@@ -51,6 +61,10 @@ object PreAggregateTableExample {
        LOAD DATA LOCAL INPATH '$testData' into table mainTable
        """)
 
+    spark.sql(s"""
+       LOAD DATA LOCAL INPATH '$testData' into table mainTable_other
+       """)
+
     spark.sql(
       s"""create datamap preagg_sum on table mainTable using 'preaggregate' as
          | select id,sum(age) from mainTable group by id"""
@@ -59,14 +73,17 @@ object PreAggregateTableExample {
       s"""create datamap preagg_avg on table mainTable using 'preaggregate' as
          | select id,avg(age) from mainTable group by id"""
         .stripMargin)
+
     spark.sql(
-      s"""create datamap preagg_count on table mainTable using 'preaggregate' as
+      s"""create datamap preagg_count_age on table mainTable using 'preaggregate' as
          | select id,count(age) from mainTable group by id"""
         .stripMargin)
+
     spark.sql(
       s"""create datamap preagg_min on table mainTable using 'preaggregate' as
          | select id,min(age) from mainTable group by id"""
         .stripMargin)
+
     spark.sql(
       s"""create datamap preagg_max on table mainTable using 'preaggregate' as
          | select id,max(age) from mainTable group by id"""
@@ -74,8 +91,38 @@ object PreAggregateTableExample {
 
     spark.sql(
       s"""
+         | create datamap preagg_case on table mainTable using 'preaggregate' as
+         | select name,sum(case when age=35 then id else 0 end) from mainTable group by name
+         | """.stripMargin)
+
+    spark.sql(
+      s"""create datamap preagg_count on table maintable using 'preaggregate' as
+         | select name, count(*) from maintable group by name""".stripMargin)
+
+    spark.sql(
+      s"""
          | SELECT id,max(age)
          | FROM mainTable group by id
+      """.stripMargin).show()
+
+    spark.sql(
+      s"""
+         | select name, count(*) from
+         | mainTable group by name
+      """.stripMargin).show()
+
+    spark.sql(
+      s"""
+         | select name as NewName,
+         | sum(case when age=35 then id else 0 end) as sum
+         | from mainTable group by name order by name
+      """.stripMargin).show()
+
+    spark.sql(
+      s"""
+         | select t1.name,t1.city from mainTable_other t1 join
+         | (select name as newnewname,sum(age) as sum
+         | from mainTable group by name )t2 on t1.name=t2.newnewname
       """.stripMargin).show()
 
     // 2.compare the performance : with pre-aggregate VS main table
@@ -160,6 +207,7 @@ object PreAggregateTableExample {
     // scalastyle:on
 
     spark.sql("DROP TABLE IF EXISTS mainTable")
+    spark.sql("DROP TABLE IF EXISTS mainTable_other")
     spark.sql("DROP TABLE IF EXISTS personTable")
     spark.sql("DROP TABLE IF EXISTS personTableWithoutAgg")
 
