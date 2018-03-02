@@ -109,19 +109,20 @@ public class SegmentIndexFileStore {
           location = tablePath + CarbonCommonConstants.FILE_SEPARATOR + location;
         }
         String mergeFileName = locations.getValue().getMergeFileName();
+        if (mergeFileName != null) {
+          CarbonFile mergeFile = FileFactory
+              .getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + mergeFileName);
+          if (mergeFile.exists() && !indexFiles.contains(mergeFile.getAbsolutePath())) {
+            carbonIndexFiles.add(mergeFile);
+            indexFiles.add(mergeFile.getAbsolutePath());
+          }
+        }
         for (String indexFile : locations.getValue().getFiles()) {
           CarbonFile carbonFile = FileFactory
               .getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + indexFile);
           if (carbonFile.exists() && !indexFiles.contains(carbonFile.getAbsolutePath())) {
             carbonIndexFiles.add(carbonFile);
             indexFiles.add(carbonFile.getAbsolutePath());
-          } else if (mergeFileName != null) {
-            CarbonFile mergeFile = FileFactory
-                .getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + mergeFileName);
-            if (mergeFile.exists() && !indexFiles.contains(mergeFile.getAbsolutePath())) {
-              carbonIndexFiles.add(mergeFile);
-              indexFiles.add(mergeFile.getAbsolutePath());
-            }
           }
         }
       }

@@ -103,7 +103,9 @@ public class CarbonIndexFileMergeWriter {
   private SegmentIndexFIleMergeStatus mergePartitionSegment(List<String> indexFileNamesTobeAdded,
       SegmentFileStore sfs, CarbonFile[] indexFiles) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
-    fileStore.readAllIIndexOfSegment(sfs, SegmentStatus.SUCCESS, true);
+    fileStore
+        .readAllIIndexOfSegment(sfs.getSegmentFile(), sfs.getTablePath(), SegmentStatus.SUCCESS,
+            true);
     Map<String, byte[]> indexMap = fileStore.getCarbonIndexMapWithFullPath();
     Map<String, Map<String, byte[]>> indexLocationMap = new HashMap<>();
     for (Map.Entry<String, byte[]> entry: indexMap.entrySet()) {
