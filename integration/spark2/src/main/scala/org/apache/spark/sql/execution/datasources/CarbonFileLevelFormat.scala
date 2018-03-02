@@ -18,56 +18,38 @@
 package org.apache.spark.sql
 
 import java.net.URI
-import java.util
 
 import scala.collection.mutable.ArrayBuffer
 
-import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
-import org.apache.parquet.filter2.compat.FilterCompat
-import org.apache.parquet.hadoop.{ParquetInputFormat, ParquetRecordReader}
-import org.apache.parquet.hadoop.codec.CodecConfig
-import org.apache.spark.{SparkException, TaskContext, TaskKilledException}
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+import org.apache.spark.{SparkException, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
-import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, JoinedRow, UnsafeRow}
-import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
-import org.apache.spark.sql.catalyst.util.CompressionCodecs
-import org.apache.spark.sql.execution.DataSourceScanExec
 import org.apache.spark.sql.execution.datasources._
-import org.apache.spark.sql.execution.datasources.parquet.{ParquetLogRedirector, ParquetOutputWriter, ParquetReadSupport, VectorizedParquetRecordReader}
-import org.apache.spark.sql.execution.datasources.text.{TextOptions, TextOutputWriter}
-import org.apache.spark.sql.execution.vectorized.ColumnarBatch
+import org.apache.spark.sql.execution.datasources.text.TextOutputWriter
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.sources.{BaseRelation, DataSourceRegister, Filter, RelationProvider}
-import org.apache.spark.sql.types.{AtomicType, IntegerType, StructField, StructType}
+import org.apache.spark.sql.sources.{DataSourceRegister, Filter}
+import org.apache.spark.sql.types.{AtomicType, StructField, StructType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, TableDataMap}
-import org.apache.carbondata.core.indexstore.BlockletDetailInfo
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.reader.CarbonHeaderReader
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.model.QueryModel
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, TaskMetricsMap, ThreadLocalSessionInfo}
-import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonTableInputFormat, DataMapJob}
-import org.apache.carbondata.hadoop.streaming.CarbonStreamRecordReader
-import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader, InputMetricsStats}
-import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.rdd.{CarbonSparkPartition, SparkDataMapJob}
+import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader, InputMetricsStats}
+import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, DataMapJob}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 
@@ -84,8 +66,8 @@ class CarbonFileLevelFormat extends FileFormat
     val filePaths = CarbonUtil.getFilePathExternalFilePath(
       options.get("path").get)
     // + "/Fact/Part0/Segment_null")
-    if (filePaths.size() == 0){
-      throw new SparkException("CarbonData file is not present in the location mentioned in DDL" )
+    if (filePaths.size() == 0) {
+      throw new SparkException("CarbonData file is not present in the location mentioned in DDL")
     }
     val carbonHeaderReader: CarbonHeaderReader = new CarbonHeaderReader(filePaths.get(0))
     val fileHeader = carbonHeaderReader.readHeader
@@ -242,7 +224,7 @@ class CarbonFileLevelFormat extends FileFormat
         blockletMap.clear()
         val segmentPath = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null")
         val indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(segmentPath)
-        if (indexFiles.size() == 0){
+        if (indexFiles.size() == 0) {
           throw new SparkException("Index file not present to read the carbondata file")
         }
         val prunedBlocklets = blockletMap
