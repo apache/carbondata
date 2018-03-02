@@ -32,7 +32,7 @@
 
   <properties>
     <carbondata.jar.dir>scala-${scala.binary.version}</carbondata.jar.dir>
-    <carbondata.jar.basename>carbondata_${scala.binary.version}-${project.version}-shade-hadoop${hadoop.version}.jar</carbondata.jar.basename>
+    <carbondata.jar.basename>apache-carbondata-${project.version}-bin-spark${spark.version}-hadoop${hadoop.version}.jar</carbondata.jar.basename>
     <carbondata.jar>${project.build.directory}/${carbondata.jar.dir}/${carbondata.jar.basename}</carbondata.jar>
     <hadoop.deps.scope>provided</hadoop.deps.scope>
     <spark.deps.scope>provided</spark.deps.scope>
