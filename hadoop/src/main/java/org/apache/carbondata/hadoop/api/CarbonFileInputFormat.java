@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,10 +30,12 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.DataMapType;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -241,7 +242,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
   /**
    * Set list of segments to access
    */
-  public static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
+  public static void setSegmentsToAccess(Configuration configuration, List<Segment> validSegments) {
     configuration.set(INPUT_SEGMENT_NUMBERS, CarbonUtil.convertToString(validSegments));
   }
 
@@ -255,7 +256,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
         .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tbName, "*");
     if (!segmentNumbersFromProperty.trim().equals("*")) {
       CarbonFileInputFormat
-          .setSegmentsToAccess(conf, Arrays.asList(segmentNumbersFromProperty.split(",")));
+          .setSegmentsToAccess(conf, Segment.toSegmentList(segmentNumbersFromProperty.split(",")));
     }
   }
 
@@ -277,12 +278,14 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
   /**
    * set list of partitions to prune
    */
-  public static void setPartitionsToPrune(Configuration configuration, List<String> partitions) {
+  public static void setPartitionsToPrune(Configuration configuration,
+      List<PartitionSpec> partitions) {
     if (partitions == null) {
       return;
     }
     try {
-      String partitionString = ObjectSerializationUtil.convertObjectToString(partitions);
+      String partitionString =
+          ObjectSerializationUtil.convertObjectToString(new ArrayList<>(partitions));
       configuration.set(PARTITIONS_TO_PRUNE, partitionString);
     } catch (Exception e) {
       throw new RuntimeException("Error while setting patition information to Job", e);
@@ -292,10 +295,11 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
   /**
    * get list of partitions to prune
    */
-  private static List<String> getPartitionsToPrune(Configuration configuration) throws IOException {
+  private static List<PartitionSpec> getPartitionsToPrune(Configuration configuration)
+      throws IOException {
     String partitionString = configuration.get(PARTITIONS_TO_PRUNE);
     if (partitionString != null) {
-      return (List<String>) ObjectSerializationUtil.convertStringToObject(partitionString);
+      return (List<PartitionSpec>) ObjectSerializationUtil.convertStringToObject(partitionString);
     }
     return null;
   }
@@ -348,8 +352,9 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
       FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
       if (FileFactory.isFileExist(segmentDir, fileType)) {
         // if external table Segments are found, add it to the List
-        List<String> externalTableSegments = new ArrayList<String>();
-        externalTableSegments.add("null");
+        List<Segment> externalTableSegments = new ArrayList<Segment>();
+        Segment seg = new Segment("null", null);
+        externalTableSegments.add(seg);
 
         // do block filtering and get split
         List<InputSplit> splits =
@@ -372,7 +377,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
    * @throws IOException
    */
   private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
-      List<String> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
+      List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
       List<Integer> oldPartitionIdList) throws IOException {
 
     List<InputSplit> result = new LinkedList<InputSplit>();
@@ -408,8 +413,8 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
         }
         // When iud is done then only get delete delta files for a block
         try {
-          deleteDeltaFilePath =
-              updateStatusManager.getDeleteDeltaFilePath(inputSplit.getPath().toString());
+          deleteDeltaFilePath = updateStatusManager
+              .getDeleteDeltaFilePath(inputSplit.getPath().toString(), inputSplit.getSegmentId());
         } catch (Exception e) {
           throw new IOException(e);
         }
@@ -438,7 +443,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
    */
   private List<CarbonInputSplit> getDataBlocksOfSegment(JobContext job,
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
-      BitSet matchedPartitions, List<String> segmentIds, PartitionInfo partitionInfo,
+      BitSet matchedPartitions, List<Segment> segmentIds, PartitionInfo partitionInfo,
       List<Integer> oldPartitionIdList) throws IOException {
 
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
@@ -453,7 +458,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
     TableDataMap blockletMap =
         DataMapStoreManager.getInstance().chooseDataMap(absoluteTableIdentifier);
     DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
-    List<String> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
+    List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     List<ExtendedBlocklet> prunedBlocklets;
     if (distributedCG || blockletMap.getDataMapFactory().getDataMapType() == DataMapType.FG) {
       DistributableDataMapFormat datamapDstr =

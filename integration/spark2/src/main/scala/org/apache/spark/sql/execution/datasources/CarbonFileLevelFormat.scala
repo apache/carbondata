@@ -18,6 +18,7 @@
 package org.apache.spark.sql
 
 import java.net.URI
+import java.util
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -39,7 +40,8 @@ import org.apache.spark.sql.types.{AtomicType, StructField, StructType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, TableDataMap}
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment, TableDataMap}
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.reader.CarbonHeaderReader
@@ -216,9 +218,10 @@ class CarbonFileLevelFormat extends FileFormat
 
         val model = format.createQueryModel(split, attemptContext)
 
-        var segments = new java.util.ArrayList[String]()
-        segments.add("null")
-        var partition = new java.util.ArrayList[String]()
+        var segments= new java.util.ArrayList[Segment]()
+        val seg = new Segment("null", null)
+        segments.add(seg)
+        var partition : java.util.List[PartitionSpec] = new java.util.ArrayList[PartitionSpec]()
 
         // clean the blocklet
         blockletMap.clear()

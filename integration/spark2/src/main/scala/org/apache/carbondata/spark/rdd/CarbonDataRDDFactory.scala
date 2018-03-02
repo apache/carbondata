@@ -97,12 +97,12 @@ object CarbonDataRDDFactory {
     configuredMdtPath = CarbonUtil.checkAndAppendFileSystemURIScheme(configuredMdtPath)
     val lock = CarbonLockFactory.getCarbonLockObj(
       configuredMdtPath + CarbonCommonConstants.FILE_SEPARATOR +
-        CarbonCommonConstants.SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER,
+      CarbonCommonConstants.SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER,
       LockUsage.SYSTEMLEVEL_COMPACTION_LOCK)
 
     if (lock.lockWithRetries()) {
       LOGGER.info(s"Acquired the compaction lock for table ${ carbonLoadModel.getDatabaseName }" +
-          s".${ carbonLoadModel.getTableName }")
+                  s".${ carbonLoadModel.getTableName }")
       try {
         startCompactionThreads(
           sqlContext,
@@ -123,21 +123,21 @@ object CarbonDataRDDFactory {
       }
     } else {
       LOGGER.audit("Not able to acquire the system level compaction lock for table " +
-          s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       LOGGER.error("Not able to acquire the compaction lock for table " +
-          s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       CarbonCompactionUtil
-          .createCompactionRequiredFile(carbonTable.getMetadataPath, compactionType)
+        .createCompactionRequiredFile(carbonTable.getMetadataPath, compactionType)
       // throw exception only in case of DDL trigger.
       if (compactionModel.isDDLTrigger) {
         CarbonException.analysisException(
           s"Compaction is in progress, compaction request for table " +
-            s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}" +
-            " is in queue.")
-      } else {
-        LOGGER.error("Compaction is in progress, compaction request for table " +
           s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}" +
           " is in queue.")
+      } else {
+        LOGGER.error("Compaction is in progress, compaction request for table " +
+                     s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}" +
+                     " is in queue.")
       }
     }
   }
@@ -192,8 +192,8 @@ object CarbonDataRDDFactory {
               skipCompactionTables.toList.asJava)
             while (null != tableForCompaction) {
               LOGGER.info("Compaction request has been identified for table " +
-                  s"${ tableForCompaction.getDatabaseName }." +
-                  s"${ tableForCompaction.getTableName}")
+                          s"${ tableForCompaction.getDatabaseName }." +
+                          s"${ tableForCompaction.getTableName}")
               val table: CarbonTable = tableForCompaction
               val metadataPath = table.getMetadataPath
               val compactionType = CarbonCompactionUtil.determineCompactionType(metadataPath)
@@ -210,7 +210,7 @@ object CarbonDataRDDFactory {
                 compactionModel.isDDLTrigger,
                 CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
                   TableIdentifier(table.getTableName,
-                  Some(table.getDatabaseName))))
+                    Some(table.getDatabaseName))))
               // proceed for compaction
               try {
                 CompactionFactory.getCompactor(
@@ -223,20 +223,20 @@ object CarbonDataRDDFactory {
               } catch {
                 case e: Exception =>
                   LOGGER.error("Exception in compaction thread for table " +
-                      s"${ tableForCompaction.getDatabaseName }." +
-                      s"${ tableForCompaction.getTableName }")
+                               s"${ tableForCompaction.getDatabaseName }." +
+                               s"${ tableForCompaction.getTableName }")
                 // not handling the exception. only logging as this is not the table triggered
                 // by user.
               } finally {
                 // delete the compaction required file in case of failure or success also.
                 if (!CarbonCompactionUtil
-                    .deleteCompactionRequiredFile(metadataPath, compactionType)) {
+                  .deleteCompactionRequiredFile(metadataPath, compactionType)) {
                   // if the compaction request file is not been able to delete then
                   // add those tables details to the skip list so that it wont be considered next.
                   skipCompactionTables.+=:(tableForCompaction.getCarbonTableIdentifier)
                   LOGGER.error("Compaction request file can not be deleted for table " +
-                      s"${ tableForCompaction.getDatabaseName }." +
-                      s"${ tableForCompaction.getTableName }")
+                               s"${ tableForCompaction.getDatabaseName }." +
+                               s"${ tableForCompaction.getTableName }")
                 }
               }
               // ********* check again for all the tables.
@@ -485,26 +485,26 @@ object CarbonDataRDDFactory {
       }
       // as no record loaded in new segment, new segment should be deleted
       val newEntryLoadStatus =
-      if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap &&
-          !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
+        if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap &&
+            !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
 
-        LOGGER.audit(s"Data load is failed for " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
-                     " as there is no data to load")
-        LOGGER.warn("Cannot write load metadata file as data load failed")
+          LOGGER.audit(s"Data load is failed for " +
+                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
+                       " as there is no data to load")
+          LOGGER.warn("Cannot write load metadata file as data load failed")
 
-        SegmentStatus.MARKED_FOR_DELETE
-      } else {
-        loadStatus
-      }
+          SegmentStatus.MARKED_FOR_DELETE
+        } else {
+          loadStatus
+        }
 
       writeDictionary(carbonLoadModel, result, writeAll = false)
       operationContext.setProperty(carbonTable.getTableUniqueName + "_Segment",
         carbonLoadModel.getSegmentId)
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
         new LoadTablePreStatusUpdateEvent(
-        carbonTable.getCarbonTableIdentifier,
-        carbonLoadModel)
+          carbonTable.getCarbonTableIdentifier,
+          carbonLoadModel)
       OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
       val done =
         updateTableStatus(
@@ -723,7 +723,7 @@ object CarbonDataRDDFactory {
         isCompactionTriggerByDDl,
         CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
           TableIdentifier(carbonTable.getTableName,
-          Some(carbonTable.getDatabaseName))))
+            Some(carbonTable.getDatabaseName))))
       var storeLocation = ""
       val configuredStore = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
       if (null != configuredStore && configuredStore.nonEmpty) {
@@ -1029,10 +1029,16 @@ object CarbonDataRDDFactory {
     val startTime = System.currentTimeMillis
     val activeNodes = DistributionUtil
       .ensureExecutorsAndGetNodeList(blockList, sqlContext.sparkContext)
-    val nodeBlockMapping =
-      CarbonLoaderUtil
-        .nodeBlockMapping(blockList.toSeq.asJava, -1, activeNodes.toList.asJava).asScala
-        .toSeq
+    val skewedDataOptimization = CarbonProperties.getInstance()
+      .isLoadSkewedDataOptimizationEnabled()
+    val blockAssignStrategy = if (skewedDataOptimization) {
+      CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_SIZE_FIRST
+    } else {
+      CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST
+    }
+    LOGGER.info(s"Allocating block to nodes using strategy: $blockAssignStrategy")
+    val nodeBlockMapping = CarbonLoaderUtil.nodeBlockMapping(blockList.toSeq.asJava, -1,
+      activeNodes.toList.asJava, blockAssignStrategy).asScala.toSeq
     val timeElapsed: Long = System.currentTimeMillis - startTime
     LOGGER.info("Total Time taken in block allocation: " + timeElapsed)
     LOGGER.info(s"Total no of blocks: ${ blockList.length }, " +
@@ -1040,7 +1046,9 @@ object CarbonDataRDDFactory {
     var str = ""
     nodeBlockMapping.foreach { entry =>
       val tableBlock = entry._2
-      str = str + "#Node: " + entry._1 + " no.of.blocks: " + tableBlock.size()
+      val totalSize = tableBlock.asScala.map(_.asInstanceOf[TableBlockInfo].getBlockLength).sum
+      str = str + "#Node: " + entry._1 + ", no.of.blocks: " + tableBlock.size() +
+            f", totalsize.of.blocks: ${totalSize * 0.1 * 10 / 1024 /1024}%.2fMB"
       tableBlock.asScala.foreach(tableBlockInfo =>
         if (!tableBlockInfo.getLocations.exists(hostentry =>
           hostentry.equalsIgnoreCase(entry._1)
