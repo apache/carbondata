@@ -49,7 +49,7 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
     this.mergedAddresses = merger.getMergedAddresses();
     this.rowPageIndexes = merger.getRowPageIndexes();
     this.rowPages = merger.getUnsafeCarbonRowPages();
-    LOGGER.audit("Processing unsafe inmemory rows page with size : " + actualSize);
+    LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
     this.comparator = new IntermediateSortTempRowComparator(noDictSortColumnMapping);
   }
 

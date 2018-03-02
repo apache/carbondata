@@ -268,16 +268,14 @@ object CompareTest {
   private def loadCarbonTable(spark: SparkSession, input: DataFrame, tableName: String): Double = {
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_DATA_FILE_VERSION,
-      "3"
+      "V3"
     )
     spark.sql(s"drop table if exists $tableName")
     time {
       input.write
           .format("carbondata")
           .option("tableName", tableName)
-          .option("tempCSV", "false")
           .option("single_pass", "true")
-          .option("dictionary_exclude", "id") // id is high cardinality column
           .option("table_blocksize", "32")
           .mode(SaveMode.Overwrite)
           .save()

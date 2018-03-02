@@ -48,7 +48,7 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
   public UnsafeInmemoryMergeHolder(UnsafeCarbonRowPage rowPage, byte index) {
     this.actualSize = rowPage.getBuffer().getActualSize();
     this.rowPage = rowPage;
-    LOGGER.audit("Processing unsafe inmemory rows page with size : " + actualSize);
+    LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
     this.comparator = new UnsafeRowComparator(rowPage);
     this.baseObject = rowPage.getDataBlock().getBaseObject();
     currentRow = new UnsafeCarbonRowForMerge();

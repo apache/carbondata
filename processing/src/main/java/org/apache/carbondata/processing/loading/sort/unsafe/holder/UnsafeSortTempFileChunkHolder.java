@@ -131,7 +131,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       stream = FileFactory.getDataInputStream(tempFile.getPath(), FileFactory.FileType.LOCAL,
           readBufferSize, compressorName);
       this.entryCount = stream.readInt();
-      LOGGER.audit("Processing unsafe mode file rows with size : " + entryCount);
+      LOGGER.info("Processing unsafe mode file rows with size : " + entryCount);
       if (prefetch) {
         new DataFetcher(false).call();
         totalRecordFetch += currentBuffer.length;

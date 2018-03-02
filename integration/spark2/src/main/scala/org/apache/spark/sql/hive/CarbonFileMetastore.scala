@@ -487,7 +487,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
   private def touchSchemaFileSystemTime(): Long = {
     val (timestampFile, timestampFileType) = getTimestampFileAndType()
     if (!FileFactory.isFileExist(timestampFile, timestampFileType)) {
-      LOGGER.audit(s"Creating timestamp file for $timestampFile")
+      LOGGER.info(s"Creating timestamp file for $timestampFile")
       FileFactory
         .createNewFile(timestampFile,
           timestampFileType,

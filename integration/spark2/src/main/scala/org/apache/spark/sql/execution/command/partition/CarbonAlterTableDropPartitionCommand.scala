@@ -158,7 +158,6 @@ case class CarbonAlterTableDropPartitionCommand(
       CacheProvider.getInstance().dropAllCache()
       AlterTableUtil.releaseLocks(locks)
       LOGGER.info("Locks released after alter table drop partition action.")
-      LOGGER.audit("Locks released after alter table drop partition action.")
     }
     LOGGER.info(s"Alter table drop partition is successful for table $dbName.$tableName")
     LOGGER.audit(s"Alter table drop partition is successful for table $dbName.$tableName")
