@@ -180,7 +180,6 @@ public final class CarbonDataProcessorUtil {
         segmentId, isCompactionFlow, isAltPartitionFlow);
   }
 
-
   /**
    * This method will form the key for getting the temporary location set in carbon properties
    *
