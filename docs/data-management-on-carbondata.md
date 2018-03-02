@@ -983,28 +983,66 @@ Timeseries pre-aggregate tables can be created with different granularity and Ca
 roll-up for the queries on these hierarchies.
 
   ```
-  CREATE DATAMAP agg_hour
+  CREATE DATAMAP agg_year
   ON TABLE sales
   USING "timeseries"
   DMPROPERTIES (
-        'event_time'='order_time',
-        'hour_granularity'='1',
-  ) 
-  AS
-    SELECT 
-        order_time, 
-        country,
-        sex, 
-        sum(quantity), 
-        max(quantity), 
-        count(user_id), 
-        sum(price),
-        avg(price) 
-    FROM sales 
-    GROUP BY order_time, country, sex
+  'event_time'='order_time',
+  'year_granualrity'='1',
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+    
+  CREATE DATAMAP agg_month
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time'='order_time',
+  'month_granualrity'='1',
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+    
+  CREATE DATAMAP agg_day
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time'='order_time',
+  'day_granualrity'='1',
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+        
+  CREATE DATAMAP agg_sales_hour
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time'='order_time',
+  'hour_granualrity'='1',
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+  
+  CREATE DATAMAP agg_minute
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time'='order_time',
+  'minute_granualrity'='1',
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
+    
+  CREATE DATAMAP agg_minute
+  ON TABLE sales
+  USING "timeseries"
+  DMPROPERTIES (
+  'event_time'='order_time',
+  'minute_granualrity'='1',
+  ) AS
+  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+   avg(price) FROM sales GROUP BY order_time, country, sex
   ```
-  User also can use other granularity: second_granularity, minute_granularity, 
-  day_granularity, month_granularity, year_granularity   
   For Querying data and automatically roll-up to the desired aggregation level, CarbonData supports 
   UDF as
   ```
@@ -1026,44 +1064,24 @@ roll-up for the queries on these hierarchies.
   
   ```
   CREATE DATAMAP agg_day
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-      'event_time'='order_time',
-      'day_granularity'='1',
-  ) 
-  AS
-      SELECT 
-          order_time, 
-          country, 
-          sex, 
-          sum(quantity), 
-          max(quantity),
-          count(user_id), 
-          sum(price),
-          avg(price) 
-      FROM sales 
-      GROUP BY order_time, country, sex
-        
-  CREATE DATAMAP agg_sales_hour
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-      'event_time'='order_time',
-      'hour_granularity'='1',
-  ) 
-  AS
-      SELECT 
-          order_time, 
-          country, 
-          sex, 
-          sum(quantity),
-          max(quantity), 
-          count(user_id), 
-          sum(price),
-          avg(price) 
-      FROM sales 
-      GROUP BY order_time, country, sex
+    ON TABLE sales
+    USING "timeseries"
+    DMPROPERTIES (
+    'event_time'='order_time',
+    'day_granualrity'='1',
+    ) AS
+    SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+     avg(price) FROM sales GROUP BY order_time, country, sex
+          
+    CREATE DATAMAP agg_sales_hour
+    ON TABLE sales
+    USING "timeseries"
+    DMPROPERTIES (
+    'event_time'='order_time',
+    'hour_granualrity'='1',
+    ) AS
+    SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+     avg(price) FROM sales GROUP BY order_time, country, sex
   ```
   
   Queries like below will be rolled-up and fetched from pre-aggregate tables
