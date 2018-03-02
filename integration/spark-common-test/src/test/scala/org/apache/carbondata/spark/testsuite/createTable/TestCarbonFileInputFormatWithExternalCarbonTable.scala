@@ -19,17 +19,17 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io.File
 
-import org.apache.spark.sql.{AnalysisException, CarbonEnv}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAndAfterAll {
+class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   var writerOutputFilePath1: String = _
   var writerOutputFilePath2: String = _
   var writerOutputFilePath3: String = _
   var writerOutputFilePath4: String = _
   var writerOutputFilePath5: String = _
+  var writerOutputFilePath6: String = _
 
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -37,8 +37,7 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     writerOutputFilePath1 = new File(this.getClass.getResource("/").getPath
                                     +
                                     "../." +
-                                    "./src/test/resources/carbonFileLevelFormat/WriterOutput1/Fact" +
-                                    "/Part0/Segment_null/").getCanonicalPath
+                                    "./src/test/resources/carbonFileLevelFormat/WriterOutput1").getCanonicalPath
     //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
     writerOutputFilePath1 = writerOutputFilePath1.replace("\\", "/");
 
@@ -76,21 +75,30 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
     writerOutputFilePath5 = writerOutputFilePath5.replace("\\", "/");
 
+    writerOutputFilePath6 = new File(this.getClass.getResource("/").getPath
+                                     +
+                                     "../." +
+                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput6")
+      .getCanonicalPath
+    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+    writerOutputFilePath6 = writerOutputFilePath6.replace("\\", "/");
+
 
   }
 
   override def afterAll(): Unit = {
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+//    sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
 
   //TO DO, need to remove segment dependency and tableIdentifier Dependency
   test("read multiple carbondata files (sdk Writer Output) using the CarbonFileLevelFormat ") {
-    assert(new File(writerOutputFilePath1).exists())
+    assert(new File(writerOutputFilePath6).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //data source file format
-    sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION '$writerOutputFilePath1' """)
+    //new provider carbondatafileformat
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION '$writerOutputFilePath6' """)
 
     sql("Describe formatted sdkOutputTable").show(false)
 
@@ -118,17 +126,17 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(writerOutputFilePath1).exists())
+    assert(new File(writerOutputFilePath6).exists())
   }
 
-
+/*
   test("should not allow to alter datasource carbontable ") {
     assert(new File(writerOutputFilePath1).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
     sql(
-      s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+      sCREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
          |'$writerOutputFilePath1' """.stripMargin)
 
     val exception = intercept[org.apache.carbondata.spark.exception.MalformedCarbonCommandException]
@@ -243,4 +251,5 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     // drop table should not delete the files
     assert(new File(writerOutputFilePath5).exists())
   }
+  */
 }

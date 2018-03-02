@@ -166,7 +166,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
           carbonTable = CarbonTable.buildFromTableInfo(tableInfoInfer);
         } else {
           carbonTable =
-              SchemaReader.readCarbonTableFromFilePath(getAbsoluteTableIdentifier(configuration));
+              SchemaReader.readCarbonTableFromStore(getAbsoluteTableIdentifier(configuration));
         }
       }
       this.carbonTable = carbonTable;
@@ -177,7 +177,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
   }
 
   public static void setTablePath(Configuration configuration, String tablePath) {
-    configuration.set(FileInputFormat.INPUT_DIR_RECURSIVE, tablePath);
+    configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
   public static void setPartitionIdList(Configuration configuration, List<String> partitionIds) {

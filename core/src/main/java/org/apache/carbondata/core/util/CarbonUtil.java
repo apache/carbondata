@@ -2096,6 +2096,7 @@ public final class CarbonUtil {
     wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
+    wrapperColumnSchema.setSchemaOrdinal(externalColumnSchema.getSchemaOrdinal());
     Map<String, String> properties = externalColumnSchema.getColumnProperties();
     if (properties != null) {
       if (properties.get(CarbonCommonConstants.SORT_COLUMNS) != null) {
@@ -2181,7 +2182,7 @@ public final class CarbonUtil {
 
   public static List<String> getFilePathExternalFilePath(String path) {
 
-    // scan all the carbondata files and get the latest task ID.
+    // return the list of carbondata files in the given path.
     CarbonFile segment = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
     CarbonFile[] dataFiles = segment.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {

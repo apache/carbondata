@@ -324,6 +324,7 @@ class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSes
     val fileStorage = helper.getFileStorage(ctx.createFileFormat)
 
     if (fileStorage.equalsIgnoreCase("'carbondata'") ||
+        fileStorage.equalsIgnoreCase("'carbondatafileformat'") ||
         fileStorage.equalsIgnoreCase("'org.apache.carbondata.format'")) {
       helper.createCarbonTable(
         tableHeader = ctx.createTableHeader,
@@ -335,7 +336,9 @@ class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSes
         locationSpecContext = ctx.locationSpec(),
         tableComment = Option(ctx.STRING()).map(string),
         ctas = ctx.AS,
-        query = ctx.query)
+        query = ctx.query,
+        provider = fileStorage
+        )
     } else {
       super.visitCreateHiveTable(ctx)
     }

@@ -152,10 +152,12 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       locationSpecContext: SqlBaseParser.LocationSpecContext,
       tableComment : Option[String],
       ctas: TerminalNode,
-      query: QueryContext) : LogicalPlan = {
+      query: QueryContext,
+      provider : String) : LogicalPlan = {
     // val parser = new CarbonSpark2SqlParser
 
     val (tableIdentifier, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
+
     // TODO: implement temporary tables
     if (temp) {
       throw new ParseException(
@@ -256,7 +258,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         tableIdentifier.table)
       val table = try {
         val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
-        if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
+        if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath)) &&
+            provider.equalsIgnoreCase("'carbondatafileformat'")) {
           SchemaReader.inferSchemaForExternalTable(identifier)
         }
         else {
@@ -268,7 +271,13 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
           operationNotAllowed(s"Invalid table path provided: ${tablePath.get} ", tableHeader)
       }
       // set "_external" property, so that DROP TABLE will not delete the data
-      table.getFactTable.getTableProperties.put("_external", "true")
+      if (provider.equalsIgnoreCase("'carbondatafileformat'")) {
+        table.getFactTable.getTableProperties.put("_filelevelexternal", "true")
+        table.getFactTable.getTableProperties.put("_external", "false")
+      } else {
+        table.getFactTable.getTableProperties.put("_external", "true")
+        table.getFactTable.getTableProperties.put("_filelevelexternal", "false")
+      }
       table
     } else {
       // prepare table model of the collected tokens
