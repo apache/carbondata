@@ -25,7 +25,7 @@ import org.apache.spark.sql.SaveMode
  * This example is for pre-aggregate tables.
  */
 
-object PreAggregateTableExample {
+object PreAggregateDataMapExample {
 
   def main(args: Array[String]) {
 
@@ -65,29 +65,44 @@ object PreAggregateTableExample {
        LOAD DATA LOCAL INPATH '$testData' into table mainTable_other
        """)
 
+    // 1. create pre-aggregate table by datamap
+
+    // sum() be hit
     spark.sql(
       s"""create datamap preagg_sum on table mainTable using 'preaggregate' as
          | select id,sum(age) from mainTable group by id"""
         .stripMargin)
+
+    // avg() and sum() both be hit, because avg = sum()/count()
     spark.sql(
       s"""create datamap preagg_avg on table mainTable using 'preaggregate' as
          | select id,avg(age) from mainTable group by id"""
         .stripMargin)
 
+    // count() be hit
     spark.sql(
       s"""create datamap preagg_count_age on table mainTable using 'preaggregate' as
          | select id,count(age) from mainTable group by id"""
         .stripMargin)
 
+    // min() be hit
     spark.sql(
       s"""create datamap preagg_min on table mainTable using 'preaggregate' as
          | select id,min(age) from mainTable group by id"""
         .stripMargin)
 
+    // max() be hit
     spark.sql(
       s"""create datamap preagg_max on table mainTable using 'preaggregate' as
          | select id,max(age) from mainTable group by id"""
         .stripMargin)
+
+    // show datamap
+    spark.sql("show datamap on table mainTable").show(false)
+
+    // drop datamap
+    spark.sql("drop datamap preagg_count on table mainTable").show()
+    spark.sql("show datamap on table mainTable").show(false)
 
     spark.sql(
       s"""
@@ -138,19 +153,19 @@ object PreAggregateTableExample {
       .map(x => ("No." + r.nextInt(100000), "name" + x % 8, "city" + x % 50, x % 60))
       .toDF("ID", "name", "city", "age")
 
-    // Create table with pre-aggregate table
+    // Create table with pre-aggregate
     df.write.format("carbondata")
       .option("tableName", "personTable")
       .option("compress", "true")
       .mode(SaveMode.Overwrite).save()
 
-    // Create table without pre-aggregate table
+    // Create table without pre-aggregate
     df.write.format("carbondata")
       .option("tableName", "personTableWithoutAgg")
       .option("compress", "true")
       .mode(SaveMode.Overwrite).save()
 
-    // Create pre-aggregate table
+    // create pre-aggregate table by datamap
     spark.sql("""
        CREATE datamap preagg_avg on table personTable using 'preaggregate' as
        | select id,avg(age) from personTable group by id
