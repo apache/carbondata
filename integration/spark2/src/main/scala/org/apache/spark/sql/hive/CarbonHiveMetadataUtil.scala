@@ -49,6 +49,7 @@ object CarbonHiveMetadataUtil {
         LOGGER.audit(
           s"Error While deleting the table $databaseName.$tableName during drop carbon table" +
           e.getMessage)
+        throw e
     }
   }
 

@@ -136,9 +136,12 @@ case class CarbonCreateTableCommand(
           case e: AnalysisException => throw e
           case e: Exception =>
             // call the drop table to delete the created table.
-            CarbonEnv.getInstance(sparkSession).carbonMetastore
-              .dropTable(tableIdentifier)(sparkSession)
-
+            try {
+              CarbonEnv.getInstance(sparkSession).carbonMetastore
+                .dropTable(tableIdentifier)(sparkSession)
+            } catch {
+              case _: Exception => // No operation
+            }
             val msg = s"Create table'$tableName' in database '$dbName' failed"
             LOGGER.audit(msg.concat(", ").concat(e.getMessage))
             LOGGER.error(e, msg)
