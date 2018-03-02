@@ -90,23 +90,22 @@ public class SegmentIndexFileStore {
   /**
    * Read all index files and keep the cache in it.
    *
-   * @param segmentFileStore
+   * @param segmentFile
    * @throws IOException
    */
-  public void readAllIIndexOfSegment(SegmentFileStore segmentFileStore, SegmentStatus status,
-      boolean ignoreStatus) throws IOException {
+  public void readAllIIndexOfSegment(SegmentFileStore.SegmentFile segmentFile, String tablePath,
+      SegmentStatus status, boolean ignoreStatus) throws IOException {
     List<CarbonFile> carbonIndexFiles = new ArrayList<>();
-    if (segmentFileStore.getLocationMap() == null) {
+    if (segmentFile == null) {
       return;
     }
-    for (Map.Entry<String, SegmentFileStore.FolderDetails> locations : segmentFileStore
+    for (Map.Entry<String, SegmentFileStore.FolderDetails> locations : segmentFile
         .getLocationMap().entrySet()) {
       String location = locations.getKey();
 
       if (locations.getValue().getStatus().equals(status.getMessage()) || ignoreStatus) {
         if (locations.getValue().isRelative()) {
-          location =
-              segmentFileStore.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + location;
+          location = tablePath + CarbonCommonConstants.FILE_SEPARATOR + location;
         }
         for (String indexFile : locations.getValue().getFiles()) {
           CarbonFile carbonFile = FileFactory
