@@ -127,14 +127,14 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
    ```
     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                                   productNumber Int,
-                                   productName String,
-                                   storeCity String,
-                                   storeProvince String,
-                                   productCategory String,
-                                   productBatch String,
-                                   saleQuantity Int,
-                                   revenue Int)
+                                   productNumber INT,
+                                   productName STRING,
+                                   storeCity STRING,
+                                   storeProvince STRING,
+                                   productCategory STRING,
+                                   productBatch STRING,
+                                   saleQuantity INT,
+                                   revenue INT)
     STORED BY 'carbondata'
     TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
                    'SORT_SCOPE'='NO_SORT')
@@ -647,13 +647,13 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   Example:
   ```
    CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                                productNumber Int,
-                                productName String,
-                                storeCity String,
-                                storeProvince String,
-                                saleQuantity Int,
-                                revenue Int)
-  PARTITIONED BY (productCategory String, productBatch String)
+                                productNumber INT,
+                                productName STRING,
+                                storeCity STRING,
+                                storeProvince STRING,
+                                saleQuantity INT,
+                                revenue INT)
+  PARTITIONED BY (productCategory STRING, productBatch STRING)
   STORED BY 'carbondata'
   ```
 		
@@ -745,12 +745,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   Example:
   ```
   CREATE TABLE IF NOT EXISTS hash_partition_table(
-      col_A String,
-      col_B Int,
-      col_C Long,
-      col_D Decimal(10,2),
-      col_F Timestamp
-  ) PARTITIONED BY (col_E Long)
+      col_A STRING,
+      col_B INT,
+      col_C LONG,
+      col_D DECIMAL(10,2),
+      col_F TIMESTAMP
+  ) PARTITIONED BY (col_E LONG)
   STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='9')
   ```
 
@@ -773,11 +773,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   Example:
   ```
   CREATE TABLE IF NOT EXISTS range_partition_table(
-      col_A String,
-      col_B Int,
-      col_C Long,
-      col_D Decimal(10,2),
-      col_E Long
+      col_A STRING,
+      col_B INT,
+      col_C LONG,
+      col_D DECIMAL(10,2),
+      col_E LONG
    ) partitioned by (col_F Timestamp)
    PARTITIONED BY 'carbondata'
    TBLPROPERTIES('PARTITION_TYPE'='RANGE',
@@ -800,12 +800,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   Example:
   ```
   CREATE TABLE IF NOT EXISTS list_partition_table(
-      col_B Int,
-      col_C Long,
-      col_D Decimal(10,2),
-      col_E Long,
-      col_F Timestamp
-   ) PARTITIONED BY (col_A String)
+      col_B INT,
+      col_C LONG,
+      col_D DECIMAL(10,2),
+      col_E LONG,
+      col_F TIMESTAMP
+   ) PARTITIONED BY (col_A STRING)
    STORED BY 'carbondata'
    TBLPROPERTIES('PARTITION_TYPE'='LIST',
    'LIST_INFO'='aaaa, bbbb, (cccc, dddd), eeee')
@@ -861,22 +861,22 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 
 ## PRE-AGGREGATE TABLES
-  Carbondata supports pre aggregating of data so that OLAP kind of queries can fetch data 
-  much faster.Aggregate tables are created as datamaps so that the handling is as efficient as 
-  other indexing support.Users can create as many aggregate tables they require as datamaps to 
-  improve their query performance,provided the storage requirements and loading speeds are 
+  CarbonData supports pre aggregating of data so that OLAP kind of queries can fetch data 
+  much faster. Aggregate tables are created as datamaps so that the handling is as efficient as 
+  other indexing support. Users can create as many aggregate tables they require as datamaps to 
+  improve their query performance, provided the storage requirements and loading speeds are 
   acceptable.
   
   For main table called **sales** which is defined as 
   
   ```
   CREATE TABLE sales (
-  order_time timestamp,
-  user_id string,
-  sex string,
-  country string,
-  quantity int,
-  price bigint)
+            order_time timestamp,
+            user_id STRING,
+            sex STRING,
+            country STRING,
+            quantity INT,
+            price BIGINT)
   STORED BY 'carbondata'
   ```
   
@@ -944,7 +944,7 @@ pre-aggregate table to fetch the data.
 ##### Compacting pre-aggregate tables
 Compaction command (ALTER TABLE COMPACT) need to be run separately on each pre-aggregate table.
 Running Compaction command on main table will **not automatically** compact the pre-aggregate 
-tables.Compaction is an optional operation for pre-aggregate table. If compaction is performed on
+tables. Compaction is an optional operation for pre-aggregate table. If compaction is performed on
 main table but not performed on pre-aggregate table, all queries still can benefit from 
 pre-aggregate tables. To further improve performance on pre-aggregate tables, compaction can be 
 triggered on pre-aggregate tables directly, it will merge the segments inside pre-aggregate table. 
@@ -963,7 +963,7 @@ This functionality is not supported.
 
   NOTE (<b>RESTRICTION</b>):
   Delete Segment operations are <b>not supported</b> on main table which has pre-aggregate tables 
-  created on it. All the pre-aggregate tables <b>will have to be dropped</b> before update/delete 
+  created on it. All the pre-aggregate tables <b>will have to be dropped</b> before delete segment 
   operations can be performed on the main table. Pre-aggregate tables can be rebuilt manually 
   after delete segment operations are completed
   
@@ -974,12 +974,12 @@ This functionality is not supported.
   Adding new column in new table does not have any affect on pre-aggregate tables. However if 
   dropping or renaming a column has impact in pre-aggregate table, such operations will be 
   rejected and error will be thrown. All the pre-aggregate tables <b>will have to be dropped</b> 
-  before Alter Operations can be performed on the main table. Pre-aggregate tables can be rebuilt 
-  manually after Alter Table operations are completed
+  before alter operations can be performed on the main table. Pre-aggregate tables can be rebuilt 
+  manually after alter table operations are completed
   
 ### Supporting timeseries data (Alpha feature in 1.3.0)
-Carbondata has built-in understanding of time hierarchy and levels: year, month, day, hour, minute.
-Multiple pre-aggregate tables can be created for the hierarchy and Carbondata can do automatic 
+CarbonData has built-in understanding of time hierarchy and levels: year, month, day, hour, minute, second.
+Timeseries pre-aggregate tables can be created for the hierarchy and CarbonData can do automatic 
 roll-up for the queries on these hierarchies.
 
   ```
@@ -1043,21 +1043,24 @@ roll-up for the queries on these hierarchies.
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
   ```
-  
-  For Querying data and automatically roll-up to the desired aggregation level,Carbondata supports 
+  For Querying data and automatically roll-up to the desired aggregation level, CarbonData supports 
   UDF as
   ```
   timeseries(timeseries column name, 'aggregation level')
   ```
+  Examples
   ```
-  Select timeseries(order_time, 'hour'), sum(quantity) from sales group by timeseries(order_time,
-  'hour')
+  SELECT 
+        timeseries(order_time, 'hour'), 
+        sum(quantity) 
+  FROM sales 
+  GROUP BY timeseries(order_time, 'hour')
   ```
   
   It is **not necessary** to create pre-aggregate tables for each granularity unless required for 
-  query. Carbondata can roll-up the data and fetch it.
+  query. CarbonData can roll-up the data and fetch it.
    
-  For Example: For main table **sales** , If pre-aggregate tables were created as  
+  For Example: For main table **sales**, If timeseries pre-aggregate tables were created as  
   
   ```
   CREATE DATAMAP agg_day
@@ -1091,10 +1094,10 @@ roll-up for the queries on these hierarchies.
   ```
   
   NOTE (<b>RESTRICTION</b>):
-  * Only value of 1 is supported for hierarchy levels. Other hierarchy levels are not supported. 
-  Other hierarchy levels are not supported
-  * pre-aggregate tables for the desired levels needs to be created one after the other
-  * pre-aggregate tables created for each level needs to be dropped separately 
+  * Only 1 is supported for granularity value of timeseries pre-aggregate table. Other granularity value are not supported.
+  * Only one granularity can be defined on creating one timeseries pre-aggregate table. Other granularity are created separately.
+  * Pre-aggregate tables for the desired levels needs to be created one after the other
+  * Pre-aggregate tables are created for each level needs to be dropped separately 
     
 
 ## BUCKETING
@@ -1119,14 +1122,14 @@ roll-up for the queries on these hierarchies.
   Example:
   ```
   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                                productNumber Int,
-                                saleQuantity Int,
-                                productName String,
-                                storeCity String,
-                                storeProvince String,
-                                productCategory String,
-                                productBatch String,
-                                revenue Int)
+                                productNumber INT,
+                                saleQuantity INT,
+                                productName STRING,
+                                storeCity STRING,
+                                storeProvince STRING,
+                                productCategory STRING,
+                                productBatch STRING,
+                                revenue INT)
   STORED BY 'carbondata'
   TBLPROPERTIES ('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='productName')
   ```
@@ -1201,7 +1204,7 @@ roll-up for the queries on these hierarchies.
   NOTE:
   carbon.input.segments: Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
   
-  If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query.
+  If user wants to query with segments reading in multi threading mode, then CarbonSession. threadSet can be used instead of SET query.
   ```
   CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
   ```
@@ -1211,7 +1214,7 @@ roll-up for the queries on these hierarchies.
   SET carbon.input.segments.<database_name>.<table_name> = *;
   ```
   
-  If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query. 
+  If user wants to query with segments reading in multi threading mode, then CarbonSession. threadSet can be used instead of SET query. 
   ```
   CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","*");
   ```
