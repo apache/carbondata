@@ -1610,6 +1610,11 @@ public final class CarbonCommonConstants {
       "carbon.heap.memory.pooling.threshold.bytes";
   public static final String CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT = "1048576";
 
+  @CarbonProperty
+  public static final String CARBON_SHOW_DATAMAPS = "carbon.query.show.datamaps";
+
+  public static final String CARBON_SHOW_DATAMAPS_DEFAULT = "true";
+
   private CarbonCommonConstants() {
   }
 }
