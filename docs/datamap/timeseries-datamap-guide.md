@@ -1,14 +1,25 @@
 # CarbonData Timeseries DataMap
 
-## Supporting timeseries data (Alpha feature in 1.3.0)
+* [Timeseries DataMap](#timeseries-datamap-intoduction-(alpha-feature-in-1.3.0))
+* [Compaction](#compacting-pre-aggregate-tables)
+* [Data Management](#data-management-with-pre-aggregate-tables)
+
+## Timeseries DataMap Intoduction (Alpha feature in 1.3.0)
 Timeseries DataMap a pre-aggregate table implementation based on 'preaggregate' DataMap. 
 Difference is that Timerseries DataMap has built-in understanding of time hierarchy and 
 levels: year, month, day, hour, minute, so that it supports automatic roll-up in time dimension 
 for query.
+
+The data loading, querying, compaction command and its behavior is the same as preaggregate DataMap.
+Please refer to [Pre-aggregate DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/preaggregate-datamap-guide.md)
+for more information.
   
-For instance, user can create multiple timeseries datamap on the main table which has a *event_time*
-column, one datamap for one time granularity. Then Carbondata can do automatic roll-up for queries 
-on the main table.
+To use this datamap, user can create multiple timeseries datamap on the main table which has 
+a *event_time* column, one datamap for one time granularity. Then Carbondata can do automatic 
+roll-up for queries on the main table.
+
+For example, below statement effectively create multiple pre-aggregate tables  on main table called 
+**timeseries**
 
 ```
 CREATE DATAMAP agg_year
@@ -126,10 +137,10 @@ the future CarbonData release.
 * timeseries datamaps created for each level needs to be dropped separately 
       
 
-#### Compacting timeseries datamp
+## Compacting timeseries datamp
 Refer to Compaction section in [preaggregation datamap](https://github.com/apache/carbondata/blob/master/docs/datamap/preaggregate-datamap-guide.md). 
 Same applies to timeseries datamap.
 
-#### Data Management on timeseries datamap
+## Data Management on timeseries datamap
 Refer to Data Management section in [preaggregation datamap](https://github.com/apache/carbondata/blob/master/docs/datamap/preaggregate-datamap-guide.md).
 Same applies to timeseries datamap.
