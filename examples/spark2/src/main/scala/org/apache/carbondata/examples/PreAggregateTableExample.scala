@@ -99,6 +99,8 @@ object PreAggregateTableExample {
       s"""create datamap preagg_count on table maintable using 'preaggregate' as
          | select name, count(*) from maintable group by name""".stripMargin)
 
+    spark.sql("show datamap on table maintable").show
+    
     spark.sql(
       s"""
          | SELECT id,max(age)

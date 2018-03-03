@@ -1,5 +1,13 @@
 # CarbonData Pre-aggregate DataMap
   
+* [Quick Example](#quick-example)
+* [DataMap Management](#datamap-management)
+* [Pre-aggregate Table](#preaggregate-datamap-introduction)
+* [Loading Data](#loading-data)
+* [Querying Data](#querying-data)
+* [Compaction](#compacting-pre-aggregate-tables)
+* [Data Management](#data-management-with-pre-aggregate-tables)
+
 ## Quick example
 Download and unzip spark-2.2.0-bin-hadoop2.7.tgz, and export $SPARK_HOME
 
@@ -85,7 +93,35 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
   spark.stop
 ```
 
-##PRE-AGGREGATE DataMap  
+#### DataMap Management
+DataMap can be created using following DDL
+  ```
+  CREATE DATAMAP [IF NOT EXISTS] datamap_name
+  ON TABLE main_table
+  USING "datamap_provider"
+  DMPROPERTIES ('key'='value', ...)
+  AS
+    SELECT statement
+  ```
+The string followed by USING is called DataMap Provider, in this version CarbonData supports two 
+kinds of DataMap: 
+1. preaggregate, for pre-aggregate table. No DMPROPERTY is required for this DataMap
+2. timeseries, for timeseries roll-up table. Please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md)
+
+DataMap can be dropped using following DDL
+  ```
+  DROP DATAMAP [IF EXISTS] datamap_name
+  ON TABLE main_table
+  ```
+To show all DataMaps created, use:
+  ```
+  SHOW DATAMAP 
+  ON TABLE main_table
+  ```
+It will show all DataMaps created on main table.
+
+
+## Preaggregate DataMap Introduction
   Pre-aggregate tables are created as DataMaps and managed as tables internally by CarbonData. 
   User can create as many pre-aggregate datamaps required to improve query performance, 
   provided the storage requirements and loading speeds are acceptable.
@@ -163,7 +199,7 @@ SELECT country, max(price) from sales GROUP BY country
 will query against main table **sales** only, because it does not satisfy pre-aggregate table 
 selection logic. 
 
-#### Loading data to pre-aggregate tables
+## Loading data
 For existing table with loaded data, data load to pre-aggregate table will be triggered by the 
 CREATE DATAMAP statement when user creates the pre-aggregate table. For incremental loads after 
 aggregates tables are created, loading data to main table triggers the load to pre-aggregate tables 
@@ -174,7 +210,7 @@ meaning that data on main table and pre-aggregate tables are only visible to the
 tables are loaded successfully, if one of these loads fails, new data are not visible in all tables 
 as if the load operation is not happened.   
 
-#### Querying data from pre-aggregate tables
+## Querying data
 As a technique for query acceleration, Pre-aggregate tables cannot be queries directly. 
 Queries are to be made on main table. While doing query planning, internally CarbonData will check 
 associated pre-aggregate tables with the main table, and do query plan transformation accordingly. 
@@ -183,7 +219,8 @@ User can verify whether a query can leverage pre-aggregate table or not by execu
 command, which will show the transformed logical plan, and thus user can check whether pre-aggregate
 table is selected.
 
-#### Compacting pre-aggregate tables
+
+## Compacting pre-aggregate tables
 Running Compaction command (`ALTER TABLE COMPACT`) on main table will **not automatically** 
 compact the pre-aggregate tables created on the main table. User need to run Compaction command 
 separately on each pre-aggregate table to compact them.
@@ -193,8 +230,10 @@ main table but not performed on pre-aggregate table, all queries still can benef
 pre-aggregate tables. To further improve the query performance, compaction on pre-aggregate tables 
 can be triggered to merge the segments and files in the pre-aggregate tables. 
 
-#### Data Management on pre-aggregate tables
-Once there is pre-aggregate table created on the main table, following command on the main table
+## Data Management with pre-aggregate tables
+In current implementation, data consistence need to maintained for both main table and pre-aggregate
+tables. Once there is pre-aggregate table created on the main table, following command on the main 
+table
 is not supported:
 1. Data management command: `UPDATE/DELETE/DELETE SEGMENT`. 
 2. Schema management command: `ALTER TABLE DROP COLUMN`, `ALTER TABLE CHANGE DATATYPE`, 
