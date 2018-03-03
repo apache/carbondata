@@ -105,47 +105,47 @@ object CompareTest {
     // ===========================================================================
     Query(
       "select max(city) from $table",
-      "full scan",
+      "full scan city",
       "full scan city column"
     ),
     Query(
       "select max(country) from $table",
-      "full scan",
+      "full scan country",
       "full scan country column"
     ),
     Query(
       "select max(planet) from $table",
-      "full scan",
+      "full scan planet",
       "full scan planet column"
     ),
     Query(
       "select max(id) from $table",
-      "full scan",
+      "full scan id",
       "full scan id column"
     ),
     Query(
       "select max(m1) from $table",
-      "full scan",
+      "full scan m1",
       "full scan short column"
     ),
     Query(
       "select max(m2) from $table",
-      "full scan",
+      "full scan m2",
       "full scan int column"
     ),
     Query(
       "select max(m3) from $table",
-      "full scan",
+      "full scan m3",
       "full scan long column"
     ),
     Query(
       "select max(m4) from $table",
-      "full scan",
+      "full scan m4",
       "full scan double column"
     ),
     Query(
       "select max(m5) from $table",
-      "full scan",
+      "full scan m5",
       "full scan decimal column"
     ),
     // ===========================================================================
@@ -153,42 +153,42 @@ object CompareTest {
     // ===========================================================================
     Query(
       "select country, sum(m1) as metric from $table group by country order by metric",
-      "aggregate",
+      "sum(m1) groupby country",
       "group by on big data, on medium card column, medium result set,"
     ),
     Query(
       "select city, sum(m1) as metric from $table group by city order by metric",
-      "aggregate",
+      "sum(m1) groupby city",
       "group by on big data, on low card column, small result set,"
     ),
     Query(
       "select id, sum(m1) as metric from $table group by id order by metric desc limit 100",
-      "topN",
+      "topN sum(m1) groupby id",
       "top N on high card column"
     ),
     Query(
       "select country,sum(m1) as metric from $table group by country order by metric desc limit 10",
-      "topN",
+      "topN sum(m1) groupby country",
       "top N on medium card column"
     ),
     Query(
       "select city,sum(m1) as metric from $table group by city order by metric desc limit 10",
-      "topN",
+      "topN sum(m1) groupby city",
       "top N on low card column"
     ),
     Query(
       "select count(distinct id) from $table",
-      "count distinct",
+      "count distinct id",
       "count distinct of high card column"
     ),
     Query(
       "select count(distinct country) from $table",
-      "count distinct",
+      "count distinct country",
       "count distinct of medium card column"
     ),
     Query(
       "select count(distinct city) from $table",
-      "count distinct",
+      "count distinct city",
       "count distinct of low card column"
     ),
     // ===========================================================================
@@ -197,90 +197,90 @@ object CompareTest {
     Query(
       "select country, sum(m1) as metric from $table where city='city8' group by country " +
           "order by metric",
-      "filter scan and aggregate",
+      "filter city groupby country",
       "group by on large data, small result set"
     ),
     Query(
       "select id, sum(m1) as metric from $table where planet='planet10' group by id " +
           "order by metric",
-      "filter scan and aggregate",
+      "filter planet groupby id",
       "group by on medium data, large result set"
     ),
     Query(
       "select city, sum(m1) as metric from $table where country='country12' group by city " +
           "order by metric",
-      "filter scan and aggregate",
+      "filter country groupby city and topN",
       "group by on medium data, small result set"
     ),
     // ===========================================================================
     // ==                             FILTER SCAN                               ==
     // ===========================================================================
     Query(
-      "select * from $table where city = 'city3' ",
-      "filter scan",
+      "select count(*) from $table where city = 'city3' ",
+      "filter city",
       "filter on low card dimension, limit, large result set"
     ),
     Query(
-      "select * from $table where city = 'city3' limit 10000",
-      "filter scan",
+      "select count(*) from $table where city = 'city3' limit 10000",
+      "filter city",
       "filter on low card dimension, limit, medium result set"
     ),
     Query(
-      "select * from $table where country = 'country9' ",
-      "filter scan",
+      "select count(*) from $table where country = 'country9' ",
+      "filter country",
       "filter on low card dimension, medium result set"
     ),
     Query(
-      "select * from $table where planet = 'planet101' ",
-      "filter scan",
+      "select count(*) from $table where planet = 'planet101' ",
+      "filter planet",
       "filter on medium card dimension, small result set"
     ),
     Query(
-      "select * from $table where id = 'IDENTIFIER408938' ",
-      "filter scan",
+      "select count(*) from $table where id = 'IDENTIFIER408938' ",
+      "filter id",
       "filter on high card dimension, small result set"
     ),
     Query(
-      "select * from $table where country='country10000'  ",
-      "filter scan",
+      "select count(*) from $table where country='country10000'  ",
+      "filter country",
       "filter on low card dimension, not exist"
     ),
     Query(
-      "select * from $table where country='country2' and city ='city8' ",
-      "filter scan",
+      "select count(*) from $table where country='country2' and city ='city8' ",
+      "filter 2 columns",
       "filter on 2 dimensions, small result set"
     ),
     Query(
-      "select * from $table where city='city1' and country='country2' and planet ='planet3' ",
-      "filter scan",
+      "select count(*) from $table where city='city1' and country='country2' and planet ='planet3' ",
+      "filter 3 columns",
       "filter on 3 dimensions, small result set"
     ),
     Query(
-      "select * from $table where m1 < 3",
-      "filter scan",
+      "select count(*) from $table where m1 < 3",
+      "filter short measure",
       "filter on measure, small result set"
     ),
     Query(
-      "select * from $table where m5 < 100.0",
-      "filter scan",
+      "select count(*) from $table where m5 < 100.0",
+      "filter decimal measure",
       "filter on measure, small result set"
     ),
     // ===========================================================================
     // ==                    FUZZY MATCH FILTER SCAN                            ==
     // ===========================================================================
     Query(
-      "select * from $table where id like 'IDENTIFIER1%' ",
-      "fuzzy filter scan",
+      "select count(*) from $table where id like 'IDENTIFIER1%' ",
+      "fuzzy filter id, IDENTIFIER1%",
       "like filter, big result set"
     ),
     Query(
-      "select * from $table where id like '%111'",
-      "fuzzy filter scan",
+      "select count(*) from $table where id like '%111'",
+      "fuzzy filter id %111",
       "like filter, medium result set"
     ),
     Query(
-      "select * from $table where id like 'xyz%' ",
-      "fuzzy filter scan",
+      "select count(*) from $table where id like 'xyz%' ",
+      "fuzzy filter id, xyz%",
       "like filter, full scan but not exist"
     )
   )
@@ -389,8 +389,8 @@ object CompareTest {
           s"${index + 1}:" +
           s"""$table1:${table1Result(index)._1.formatted("%.2f")}, """ +
           s"""$table2:${table2Result(index)._1.formatted("%.2f")}, """ +
-          s""""fetched":${table1Result(index)._2.length}, """ +
-          s"""q:"${query.queryType}",  """
+          s"""rs:${table1Result(index)._2.length}, """ +
+          s"""q:"${query.queryType}" """
       )
     }
   }
@@ -412,14 +412,14 @@ object CompareTest {
         .getOrCreateCarbonSession(storeLocation)
     spark.sparkContext.setLogLevel("warn")
 
-    val table1 = carbonTableName("3")
-    val table2 = parquetTableName
+    val table1 = parquetTableName
+    val table2 = carbonTableName("3")
 
     // load data
     prepareTable(spark, table1, table2)
 
     // uncomment it if want to skip loading
-    // spark.read.parquet(table2).createOrReplaceTempView(table2)
+    // spark.read.parquet(table1).createOrReplaceTempView(table1)
 
     runTest(spark, table1, table2)
 
