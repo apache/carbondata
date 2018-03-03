@@ -231,7 +231,7 @@ pre-aggregate tables. To further improve the query performance, compaction on pr
 can be triggered to merge the segments and files in the pre-aggregate tables. 
 
 ## Data Management with pre-aggregate tables
-In current implementation, data consistence need to maintained for both main table and pre-aggregate
+In current implementation, data consistence need to be maintained for both main table and pre-aggregate
 tables. Once there is pre-aggregate table created on the main table, following command on the main 
 table
 is not supported:

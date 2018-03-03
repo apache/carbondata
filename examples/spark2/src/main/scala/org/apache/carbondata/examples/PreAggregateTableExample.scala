@@ -100,7 +100,7 @@ object PreAggregateTableExample {
          | select name, count(*) from maintable group by name""".stripMargin)
 
     spark.sql("show datamap on table maintable").show
-    
+
     spark.sql(
       s"""
          | SELECT id,max(age)
