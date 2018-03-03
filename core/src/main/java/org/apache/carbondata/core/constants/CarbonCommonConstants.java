@@ -650,10 +650,6 @@ public final class CarbonCommonConstants {
    */
   public static final int DEFAULT_MAX_QUERY_EXECUTION_TIME = 60;
   /**
-   * LOADMETADATA_FILENAME
-   */
-  public static final String LOADMETADATA_FILENAME = "tablestatus";
-  /**
    * TABLE UPDATE STATUS FILENAME
    */
   public static final String TABLEUPDATESTATUS_FILENAME = "tableupdatestatus";

@@ -73,6 +73,21 @@ public class SegmentUpdateStatusManager {
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
   private boolean isPartitionTable;
 
+  public SegmentUpdateStatusManager(AbsoluteTableIdentifier absoluteTableIdentifier,
+      LoadMetadataDetails[] segmentDetails) {
+    this.absoluteTableIdentifier = absoluteTableIdentifier;
+    carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
+        absoluteTableIdentifier.getCarbonTableIdentifier());
+    // current it is used only for read function scenarios, as file update always requires to work
+    // on latest file status.
+    this.segmentDetails = segmentDetails;
+    if (segmentDetails.length > 0) {
+      isPartitionTable = segmentDetails[0].getSegmentFile() != null;
+    }
+    updateDetails = readLoadMetadata();
+    populateMap();
+  }
+
   /**
    * @param absoluteTableIdentifier
    */
@@ -80,11 +95,10 @@ public class SegmentUpdateStatusManager {
     this.absoluteTableIdentifier = absoluteTableIdentifier;
     carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
         absoluteTableIdentifier.getCarbonTableIdentifier());
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     segmentDetails =
-        segmentStatusManager.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
+        SegmentStatusManager.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
     if (segmentDetails.length > 0) {
       isPartitionTable = segmentDetails[0].getSegmentFile() != null;
     }
@@ -732,16 +746,10 @@ public class SegmentUpdateStatusManager {
    * @return updateStatusFileName
    */
   private String getUpdatedStatusIdentifier() {
-    SegmentStatusManager ssm = new SegmentStatusManager(absoluteTableIdentifier);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
-    LoadMetadataDetails[] loadDetails =
-        ssm.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
-    if (loadDetails.length == 0) {
+    if (segmentDetails.length == 0) {
       return null;
     }
-    return loadDetails[0].getUpdateStatusFileName();
+    return segmentDetails[0].getUpdateStatusFileName();
   }
 
   /**

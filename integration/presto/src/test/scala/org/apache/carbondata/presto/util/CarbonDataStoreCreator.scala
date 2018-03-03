@@ -535,7 +535,7 @@ object CarbonDataStoreCreator {
         loadMetadataDetails.getTimeStamp(readCurrentTime()))
       listOfLoadFolderDetails.add(loadMetadataDetails)
       val dataLoadLocation: String = schema.getCarbonTable.getMetaDataFilepath + File.separator +
-                                     CarbonCommonConstants.LOADMETADATA_FILENAME
+                                     CarbonTablePath.TABLE_STATUS_FILE
       val gsonObjectToWrite: Gson = new Gson()
       val writeOperation: AtomicFileOperations = new AtomicFileOperationsImpl(
         dataLoadLocation,
