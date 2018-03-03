@@ -38,9 +38,9 @@ case class Query(sqlText: String, queryType: String, desc: String)
 // scalastyle:off println
 object CompareTest {
 
-  def parquetTableName: String = "comparetest_parquet"
-  def orcTableName: String = "comparetest_orc"
-  def carbonTableName(version: String): String = s"comparetest_carbonV$version"
+  def parquetTableName: String = "parquet"
+  def orcTableName: String = "orc"
+  def carbonTableName(version: String): String = s"carbonV$version"
 
   // Table schema:
   // +-------------+-----------+-------------+-------------+------------+
@@ -68,9 +68,15 @@ object CompareTest {
     val rdd = spark.sparkContext
         .parallelize(1 to 10 * 1000 * 1000, 4)
         .map { x =>
-          ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, "IDENTIFIER" + x.toString,
-              (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13,
-              BigDecimal.valueOf(x.toDouble / 11))
+          ("city" + x % 8,
+            "country" + x % 1103,
+            "planet" + x % 10007,
+            "IDENTIFIER" + x.toString,
+            (x % 16).toShort,
+            x / 2,
+            (x << 1).toLong,
+            x.toDouble / 13,
+            BigDecimal.valueOf(x.toDouble / 11))
         }.map { x =>
       Row(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9)
     }
@@ -95,47 +101,52 @@ object CompareTest {
   // performance test queries, they are designed to test various data access type
   val queries: Array[Query] = Array(
     // ===========================================================================
-    // ==                     FULL SCAN AGGREGATION                             ==
+    // ==                     SINGLE COLUMN FULL SCAN                           ==
     // ===========================================================================
     Query(
-      "select sum(m1) from $table",
+      "select max(city) from $table",
       "full scan",
-      "full scan query, 1 aggregate"
+      "full scan city column"
     ),
     Query(
-      "select sum(m1), sum(m2) from $table",
+      "select max(country) from $table",
       "full scan",
-      "full scan query, 2 aggregate"
+      "full scan country column"
     ),
     Query(
-      "select sum(m1), sum(m2), sum(m3) from $table",
+      "select max(planet) from $table",
       "full scan",
-      "full scan query, 3 aggregate"
+      "full scan planet column"
     ),
     Query(
-      "select sum(m1), sum(m2), sum(m3), sum(m4) from $table",
+      "select max(id) from $table",
       "full scan",
-      "full scan query, 4 aggregate"
+      "full scan id column"
     ),
     Query(
-      "select sum(m1), sum(m2), sum(m3), sum(m4), avg(m5) from $table",
+      "select max(m1) from $table",
       "full scan",
-      "full scan query, 5 aggregate"
+      "full scan short column"
     ),
     Query(
-      "select count(distinct id) from $table",
+      "select max(m2) from $table",
       "full scan",
-      "full scan and count distinct of high card column"
+      "full scan int column"
     ),
     Query(
-      "select count(distinct country) from $table",
+      "select max(m3) from $table",
       "full scan",
-      "full scan and count distinct of medium card column"
+      "full scan long column"
     ),
     Query(
-      "select count(distinct city) from $table",
+      "select max(m4) from $table",
       "full scan",
-      "full scan and count distinct of low card column"
+      "full scan double column"
+    ),
+    Query(
+      "select max(m5) from $table",
+      "full scan",
+      "full scan decimal column"
     ),
     // ===========================================================================
     // ==                      FULL SCAN GROUP BY AGGREGATE                     ==
@@ -165,6 +176,21 @@ object CompareTest {
       "topN",
       "top N on low card column"
     ),
+    Query(
+      "select count(distinct id) from $table",
+      "count distinct",
+      "count distinct of high card column"
+    ),
+    Query(
+      "select count(distinct country) from $table",
+      "count distinct",
+      "count distinct of medium card column"
+    ),
+    Query(
+      "select count(distinct city) from $table",
+      "count distinct",
+      "count distinct of low card column"
+    ),
     // ===========================================================================
     // ==                  FILTER SCAN GROUP BY AGGREGATION                     ==
     // ===========================================================================
@@ -190,24 +216,29 @@ object CompareTest {
     // ==                             FILTER SCAN                               ==
     // ===========================================================================
     Query(
+      "select * from $table where city = 'city3' ",
+      "filter scan",
+      "filter on low card dimension, limit, large result set"
+    ),
+    Query(
       "select * from $table where city = 'city3' limit 10000",
       "filter scan",
-      "filter on low card dimension, limit, medium result set, fetch all columns"
+      "filter on low card dimension, limit, medium result set"
     ),
     Query(
       "select * from $table where country = 'country9' ",
       "filter scan",
-      "filter on low card dimension, medium result set, fetch all columns"
+      "filter on low card dimension, medium result set"
     ),
     Query(
       "select * from $table where planet = 'planet101' ",
       "filter scan",
-      "filter on medium card dimension, small result set, fetch all columns"
+      "filter on medium card dimension, small result set"
     ),
     Query(
-      "select * from $table where id = '408938' ",
+      "select * from $table where id = 'IDENTIFIER408938' ",
       "filter scan",
-      "filter on high card dimension"
+      "filter on high card dimension, small result set"
     ),
     Query(
       "select * from $table where country='country10000'  ",
@@ -217,20 +248,28 @@ object CompareTest {
     Query(
       "select * from $table where country='country2' and city ='city8' ",
       "filter scan",
-      "filter on 2 dimensions, small result set, fetch all columns"
+      "filter on 2 dimensions, small result set"
     ),
     Query(
       "select * from $table where city='city1' and country='country2' and planet ='planet3' ",
       "filter scan",
-      "filter on 3 dimensions, small result set, fetch all columns"
+      "filter on 3 dimensions, small result set"
     ),
     Query(
       "select * from $table where m1 < 3",
       "filter scan",
-      "filter on measure, small result set, fetch all columns"
+      "filter on measure, small result set"
     ),
     Query(
-      "select * from $table where id like '1%' ",
+      "select * from $table where m5 < 100.0",
+      "filter scan",
+      "filter on measure, small result set"
+    ),
+    // ===========================================================================
+    // ==                    FUZZY MATCH FILTER SCAN                            ==
+    // ===========================================================================
+    Query(
+      "select * from $table where id like 'IDENTIFIER1%' ",
       "fuzzy filter scan",
       "like filter, big result set"
     ),
@@ -268,17 +307,15 @@ object CompareTest {
   private def loadCarbonTable(spark: SparkSession, input: DataFrame, tableName: String): Double = {
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_DATA_FILE_VERSION,
-      "3"
+      "V3"
     )
     spark.sql(s"drop table if exists $tableName")
     time {
       input.write
           .format("carbondata")
           .option("tableName", tableName)
-          .option("tempCSV", "false")
           .option("single_pass", "true")
-          .option("dictionary_exclude", "id") // id is high cardinality column
-          .option("table_blocksize", "32")
+          .option("table_blocksize", "128")
           .mode(SaveMode.Overwrite)
           .save()
     }
@@ -310,7 +347,7 @@ object CompareTest {
       val rt = time {
         result = spark.sql(sqlText).collect()
       }
-      println(s"=> $rt sec")
+      println(s"=> $rt sec, ${result.size} rows")
       (rt, result)
     }
   }
@@ -348,15 +385,12 @@ object CompareTest {
     }
     // print all response time in JSON format, so that it can be analyzed later
     queries.zipWithIndex.foreach { case (query, index) =>
-      println("{" +
-          s""""query":"${index + 1}", """ +
-          s""""$table1 time":${table1Result(index)._1}, """ +
-          s""""$table2 time":${table2Result(index)._1}, """ +
+      println(
+          s"${index + 1}:" +
+          s"""$table1:${table1Result(index)._1.formatted("%.2f")}, """ +
+          s"""$table2:${table2Result(index)._1.formatted("%.2f")}, """ +
           s""""fetched":${table1Result(index)._2.length}, """ +
-          s""""type":"${query.queryType}", """ +
-          s""""desc":"${query.desc}",  """ +
-          s""""date": "${formatter.format(date)}" """ +
-          "}"
+          s"""q:"${query.queryType}",  """
       )
     }
   }
@@ -365,7 +399,6 @@ object CompareTest {
     CarbonProperties.getInstance()
         .addProperty("carbon.enable.vector.reader", "true")
         .addProperty("enable.unsafe.sort", "true")
-        .addProperty("carbon.blockletgroup.size.in.mb", "32")
         .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
     import org.apache.spark.sql.CarbonSession._
     val rootPath = new File(this.getClass.getResource("/").getPath
@@ -379,9 +412,15 @@ object CompareTest {
         .getOrCreateCarbonSession(storeLocation)
     spark.sparkContext.setLogLevel("warn")
 
-    val table1 = parquetTableName
-    val table2 = carbonTableName("3")
+    val table1 = carbonTableName("3")
+    val table2 = parquetTableName
+
+    // load data
     prepareTable(spark, table1, table2)
+
+    // uncomment it if want to skip loading
+    // spark.read.parquet(table2).createOrReplaceTempView(table2)
+
     runTest(spark, table1, table2)
 
     CarbonUtil.deleteFoldersAndFiles(new File(table1))
