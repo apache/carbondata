@@ -57,8 +57,7 @@ class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
 
     val table = CarbonMetadata.getInstance().getCarbonTable("default","carbon_automation_merge")
     val carbonTablePath = new CarbonTablePath(table.getCarbonTableIdentifier, table.getTablePath)
-    new CarbonIndexFileMergeWriter()
-      .mergeCarbonIndexFilesOfSegment(carbonTablePath.getSegmentDir("0","0"), false)
+    new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment("0", table.getTablePath, false)
     assert(getIndexFileCount("default", "carbon_automation_merge", "0") == 0)
     checkAnswer(sql("""Select count(*) from carbon_automation_nonmerge"""),
       sql("""Select count(*) from carbon_automation_merge"""))
@@ -76,10 +75,8 @@ class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
     assert(getIndexFileCount("default", "carbon_automation_nonmerge", "1") == 2)
     val table = CarbonMetadata.getInstance().getCarbonTable("default","carbon_automation_nonmerge")
     val carbonTablePath = new CarbonTablePath(table.getCarbonTableIdentifier, table.getTablePath)
-    new CarbonIndexFileMergeWriter()
-      .mergeCarbonIndexFilesOfSegment(carbonTablePath.getSegmentDir("0","0"), false)
-    new CarbonIndexFileMergeWriter()
-      .mergeCarbonIndexFilesOfSegment(carbonTablePath.getSegmentDir("0","1"), false)
+    new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment("0", table.getTablePath, false)
+    new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment("1", table.getTablePath, false)
     assert(getIndexFileCount("default", "carbon_automation_nonmerge", "0") == 0)
     assert(getIndexFileCount("default", "carbon_automation_nonmerge", "1") == 0)
     checkAnswer(sql("""Select count(*) from carbon_automation_nonmerge"""), rows)
@@ -100,8 +97,7 @@ class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
     sql("ALTER TABLE carbon_automation_nonmerge COMPACT 'minor'").collect()
     val table = CarbonMetadata.getInstance().getCarbonTable("default","carbon_automation_nonmerge")
     val carbonTablePath = new CarbonTablePath(table.getCarbonTableIdentifier, table.getTablePath)
-    new CarbonIndexFileMergeWriter()
-      .mergeCarbonIndexFilesOfSegment(carbonTablePath.getSegmentDir("0","0.1"), false)
+    new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment("0.1", table.getTablePath, false)
     assert(getIndexFileCount("default", "carbon_automation_nonmerge", "0.1") == 0)
     checkAnswer(sql("""Select count(*) from carbon_automation_nonmerge"""), rows)
   }
