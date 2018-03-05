@@ -218,7 +218,7 @@ class CarbonFileLevelFormat extends FileFormat
 
         val model = format.createQueryModel(split, attemptContext)
 
-        var segments= new java.util.ArrayList[Segment]()
+        var segments = new java.util.ArrayList[Segment]()
         val seg = new Segment("null", null)
         segments.add(seg)
         var partition : java.util.List[PartitionSpec] = new java.util.ArrayList[PartitionSpec]()

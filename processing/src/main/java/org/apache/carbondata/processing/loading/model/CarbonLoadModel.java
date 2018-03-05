@@ -41,8 +41,6 @@ public class CarbonLoadModel implements Serializable {
 
   private String colDictFilePath;
 
-  private String partitionId;
-
   private CarbonDataLoadSchema carbonDataLoadSchema;
 
   private boolean aggLoadRequest;
@@ -391,7 +389,6 @@ public class CarbonLoadModel implements Serializable {
     copy.tableName = tableName;
     copy.factFilePath = factFilePath;
     copy.databaseName = databaseName;
-    copy.partitionId = partitionId;
     copy.aggLoadRequest = aggLoadRequest;
     copy.loadMetadataDetails = loadMetadataDetails;
     copy.isRetentionRequest = isRetentionRequest;
@@ -446,7 +443,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.tableName = tableName;
     copyObj.factFilePath = null;
     copyObj.databaseName = databaseName;
-    copyObj.partitionId = uniqueId;
     copyObj.aggLoadRequest = aggLoadRequest;
     copyObj.loadMetadataDetails = loadMetadataDetails;
     copyObj.isRetentionRequest = isRetentionRequest;
@@ -486,21 +482,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.isAggLoadRequest = isAggLoadRequest;
     copyObj.sortColumnsBoundsStr = sortColumnsBoundsStr;
     return copyObj;
-  }
-
-
-  /**
-   * @return the partitionId
-   */
-  public String getPartitionId() {
-    return partitionId;
-  }
-
-  /**
-   * @param partitionId the partitionId to set
-   */
-  public void setPartitionId(String partitionId) {
-    this.partitionId = partitionId;
   }
 
   /**
