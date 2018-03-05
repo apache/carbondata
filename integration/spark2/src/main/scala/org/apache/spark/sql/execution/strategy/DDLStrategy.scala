@@ -179,6 +179,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             CarbonDescribeFormattedCommand(
               resultPlan,
               plan.output,
+              partitionSpec,
               identifier)) :: Nil
         } else {
           Nil
