@@ -21,6 +21,7 @@ import java.io.File
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
@@ -45,24 +46,21 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     writerOutputFilePath2 = new File(this.getClass.getResource("/").getPath
                                      +
                                      "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput2/Fact" +
-                                     "/Part0/Segment_null/").getCanonicalPath
+                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput2").getCanonicalPath
     //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
     writerOutputFilePath2 = writerOutputFilePath2.replace("\\", "/");
 
     writerOutputFilePath3 = new File(this.getClass.getResource("/").getPath
                                      +
                                      "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput3/Fact" +
-                                     "/Part0/Segment_null/").getCanonicalPath
+                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput3").getCanonicalPath
     //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
     writerOutputFilePath3 = writerOutputFilePath3.replace("\\", "/");
 
     writerOutputFilePath4 = new File(this.getClass.getResource("/").getPath
                                      +
                                      "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput4/Fact" +
-                                     "/Part0/Segment_null/").getCanonicalPath
+                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput4").getCanonicalPath
     //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
     writerOutputFilePath4 = writerOutputFilePath4.replace("\\", "/");
 
@@ -70,8 +68,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     writerOutputFilePath5 = new File(this.getClass.getResource("/").getPath
                                      +
                                      "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput5/Fact" +
-                                     "/Part0/Segment_null/").getCanonicalPath
+                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput5").getCanonicalPath
     //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
     writerOutputFilePath5 = writerOutputFilePath5.replace("\\", "/");
 
@@ -87,7 +84,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
   }
 
   override def afterAll(): Unit = {
-//    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
 
@@ -98,7 +95,8 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
     //new provider carbondatafileformat
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION '$writerOutputFilePath6' """)
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
+         |'$writerOutputFilePath6' """.stripMargin)
 
     sql("Describe formatted sdkOutputTable").show(false)
 
@@ -129,21 +127,23 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     assert(new File(writerOutputFilePath6).exists())
   }
 
-/*
+
+
   test("should not allow to alter datasource carbontable ") {
     assert(new File(writerOutputFilePath1).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
     sql(
-      sCREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
          |'$writerOutputFilePath1' """.stripMargin)
 
-    val exception = intercept[org.apache.carbondata.spark.exception.MalformedCarbonCommandException]
-      {
-        sql("Alter table sdkOutputTable change age age BIGINT")
-      }
-    assert(exception.getMessage().contains("Unsupported alter operation on hive table"))
+    val exception = intercept[MalformedCarbonCommandException]
+    {
+      sql("Alter table sdkOutputTable change age age BIGINT")
+    }
+    assert(exception.getMessage()
+      .contains("Unsupported alter operation on Carbon external fileformat table"))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -157,11 +157,11 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
     //data source file format
     sql(
-      s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
          |'$writerOutputFilePath2' """.stripMargin)
 
     //org.apache.spark.SparkException: Index file not present to read the carbondata file
-    val exception = intercept[org.apache.spark.SparkException]
+    val exception = intercept[java.lang.RuntimeException]
     {
       sql("select * from sdkOutputTable").show(false)
     }
@@ -177,14 +177,15 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     assert(new File(writerOutputFilePath3).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    val exception = intercept[org.apache.spark.SparkException] {
+    val exception = intercept[Exception] {
       //    data source file format
-      sql(
-        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-           |'$writerOutputFilePath3' """.stripMargin)
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
+         |'$writerOutputFilePath3' """.stripMargin)
     }
     assert(exception.getMessage()
-      .contains("CarbonData file is not present in the location mentioned in DDL"))
+      .contains("Operation not allowed: Invalid table path provided:"))
+
 
     // drop table should not delete the files
     assert(new File(writerOutputFilePath3).exists())
@@ -195,20 +196,21 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     assert(new File(writerOutputFilePath4).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    val exception = intercept[org.apache.spark.SparkException] {
+    val exception = intercept[Exception] {
       //data source file format
       sql(
-        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-           |'$writerOutputFilePath4' """.stripMargin)
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
+         |'$writerOutputFilePath4' """.stripMargin)
 
       sql("select * from sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
-      .contains("CarbonData file is not present in the location mentioned in DDL"))
+        .contains("Operation not allowed: Invalid table path provided:"))
 
     // drop table should not delete the files
     assert(new File(writerOutputFilePath4).exists())
   }
+
 
   test("Read sdk writer output file withSchema") {
     assert(new File(writerOutputFilePath5).exists())
@@ -219,8 +221,8 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
     //data source file format
     sql(
-      s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-         |'$writerOutputFilePath1' """.stripMargin)
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
+         |'$writerOutputFilePath5' """.stripMargin)
 
     sql("Describe formatted sdkOutputTable").show(false)
 
@@ -251,5 +253,5 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     // drop table should not delete the files
     assert(new File(writerOutputFilePath5).exists())
   }
-  */
+
 }

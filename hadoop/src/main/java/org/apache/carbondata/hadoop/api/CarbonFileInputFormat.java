@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -37,6 +38,7 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -356,6 +358,12 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
         Segment seg = new Segment("null", null);
         externalTableSegments.add(seg);
 
+        Map<String, String> indexFiles =
+            new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir);
+
+        if (indexFiles.size() == 0) {
+          throw new RuntimeException("Index file not present to read the carbondata file");
+        }
         // do block filtering and get split
         List<InputSplit> splits =
             getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null);

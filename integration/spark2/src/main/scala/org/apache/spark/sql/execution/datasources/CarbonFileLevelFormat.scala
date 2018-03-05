@@ -222,6 +222,8 @@ class CarbonFileLevelFormat extends FileFormat
         val seg = new Segment("null", null)
         segments.add(seg)
         var partition : java.util.List[PartitionSpec] = new java.util.ArrayList[PartitionSpec]()
+//      TODO : handle the partition for CarbonFileLevelFormat
+//      partition = getPartitionsToPrune
 
         // clean the blocklet
         blockletMap.clear()
@@ -231,7 +233,7 @@ class CarbonFileLevelFormat extends FileFormat
           throw new SparkException("Index file not present to read the carbondata file")
         }
         val prunedBlocklets = blockletMap
-          .prune(segments, model.getFilterExpressionResolverTree, partition)
+          .prune(segments, model.getFilterExpressionResolverTree, null)
 
         val detailInfo = prunedBlocklets.get(0).getDetailInfo
         detailInfo.readColumnSchema(detailInfo.getColumnSchemaBinary)

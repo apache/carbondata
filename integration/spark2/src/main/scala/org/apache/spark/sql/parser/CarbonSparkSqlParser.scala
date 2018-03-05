@@ -147,17 +147,18 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       skewSpecContext: SkewSpecContext,
       bucketSpecContext: BucketSpecContext,
       partitionColumns: ColTypeListContext,
-      columns : ColTypeListContext,
-      tablePropertyList : TablePropertyListContext,
+      columns: ColTypeListContext,
+      tablePropertyList: TablePropertyListContext,
       locationSpecContext: SqlBaseParser.LocationSpecContext,
-      tableComment : Option[String],
-      ctas: TerminalNode,
-      query: QueryContext,
-      provider : String) : LogicalPlan = {
+      tableComment: Option[String],
+      ctx: CreateHiveTableContext,
+      provider: String): LogicalPlan = {
     // val parser = new CarbonSpark2SqlParser
 
     val (tableIdentifier, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
 
+    val query = ctx.query()
+    val ctas = ctx.AS()
     // TODO: implement temporary tables
     if (temp) {
       throw new ParseException(
