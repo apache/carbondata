@@ -1011,14 +1011,14 @@ public final class CarbonLoaderUtil {
    * Merge index files with in the segment of partitioned table
    * @param segmentId
    * @param tablePath
-   * @param uniqueId
    * @return
    * @throws IOException
    */
-  public static String mergeIndexFilesinPartitionedSegment(String segmentId, String tablePath,
-      String uniqueId) throws IOException {
+  public static String mergeIndexFilesinPartitionedSegment(String segmentId, String tablePath)
+      throws IOException {
     CarbonIndexFileMergeWriter.SegmentIndexFIleMergeStatus segmentIndexFIleMergeStatus =
         new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment(segmentId, tablePath);
+    String uniqueId = "";
     if (segmentIndexFIleMergeStatus != null) {
       uniqueId = System.currentTimeMillis() + "";
       String newSegmentFileName = segmentId + "_" + uniqueId + CarbonTablePath.SEGMENT_EXT;

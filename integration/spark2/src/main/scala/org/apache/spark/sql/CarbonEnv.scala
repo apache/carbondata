@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive.{HiveSessionCatalog, _}
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -130,6 +131,17 @@ object CarbonEnv {
   }
 
   /**
+   * Method
+   * 1. To initialize Listeners to their respective events in the OperationListenerBus
+   * 2. To register common listeners
+   *
+   */
+  def init(sparkSession: SparkSession): Unit = {
+    initListeners
+    registerCommonListener(sparkSession)
+  }
+
+  /**
    * Method to initialize Listeners to their respective events in the OperationListenerBus.
    */
   def initListeners(): Unit = {
@@ -151,6 +163,14 @@ object CarbonEnv {
       .addListener(classOf[LoadMetadataEvent], CompactionProcessMetaListener)
       .addListener(classOf[LoadTablePostStatusUpdateEvent], CommitPreAggregateListener)
       .addListener(classOf[AlterTableCompactionPostStatusUpdateEvent], CommitPreAggregateListener)
+  }
+
+  def registerCommonListener(sparkSession: SparkSession): Unit = {
+    val clsName = sparkSession.sparkContext.conf
+      .get(CarbonCommonConstants.CARBON_COMMON_LISTENER_REGISTER_CLASSNAME)
+    if (null != clsName && !clsName.isEmpty) {
+      CarbonReflectionUtils.createObject(clsName)
+    }
   }
 
   /**

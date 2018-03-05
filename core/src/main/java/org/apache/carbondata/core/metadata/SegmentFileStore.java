@@ -370,7 +370,7 @@ public class SegmentFileStore {
       for (Map.Entry<String, FolderDetails> entry : getLocationMap().entrySet()) {
         String location = entry.getKey();
         if (entry.getValue().isRelative) {
-          location = tablePath + CarbonCommonConstants.FILE_SEPARATOR + location;
+          location = tablePath + location;
         }
         if (entry.getValue().status.equals(SegmentStatus.SUCCESS.getMessage())) {
           for (String indexFile : entry.getValue().getFiles()) {

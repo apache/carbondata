@@ -2357,12 +2357,28 @@ public final class CarbonUtil {
       throws IOException {
     long carbonDataSize = 0L;
     long carbonIndexSize = 0L;
+    List<String> listOfFilesRead = new ArrayList<>();
     HashMap<String, Long> dataAndIndexSize = new HashMap<String, Long>();
     if (fileStore.getLocationMap() != null) {
       fileStore.readIndexFiles();
+      Map<String, String> indexFiles = fileStore.getIndexFiles();
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
       for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
-        carbonIndexSize += FileFactory.getCarbonFile(entry.getKey()).getSize();
+        // get the size of carbonindex file
+        String indexFile = entry.getKey();
+        String mergeIndexFile = indexFiles.get(indexFile);
+        if (null != mergeIndexFile) {
+          String mergeIndexPath = indexFile
+              .substring(0, indexFile.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1)
+              + mergeIndexFile;
+          if (!listOfFilesRead.contains(mergeIndexPath)) {
+            carbonIndexSize += FileFactory.getCarbonFile(mergeIndexPath).getSize();
+            listOfFilesRead.add(mergeIndexPath);
+          }
+        } else {
+          carbonIndexSize += FileFactory.getCarbonFile(indexFile).getSize();
+        }
+        // get the size of carbondata files
         for (String blockFile : entry.getValue()) {
           carbonDataSize += FileFactory.getCarbonFile(blockFile).getSize();
         }

@@ -19,8 +19,10 @@ package org.apache.carbondata.core.indexstore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
@@ -82,8 +84,9 @@ public class BlockletDataMapIndexStore
     if (dataMap == null) {
       try {
         SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
+        Set<String> filesRead = new HashSet<>();
         Map<String, BlockMetaInfo> blockMetaInfoMap =
-            getBlockMetaInfoMap(identifier, indexFileStore);
+            getBlockMetaInfoMap(identifier, indexFileStore, filesRead);
         dataMap = loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap);
       } catch (MemoryException e) {
         LOGGER.error("memory exception when loading datamap: " + e.getMessage());
@@ -94,13 +97,14 @@ public class BlockletDataMapIndexStore
   }
 
   private Map<String, BlockMetaInfo> getBlockMetaInfoMap(TableBlockIndexUniqueIdentifier identifier,
-      SegmentIndexFileStore indexFileStore) throws IOException {
+      SegmentIndexFileStore indexFileStore, Set<String> filesRead) throws IOException {
     if (identifier.getMergeIndexFileName() != null) {
       CarbonFile indexMergeFile = FileFactory.getCarbonFile(
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getMergeIndexFileName());
-      if (indexMergeFile.exists()) {
+      if (indexMergeFile.exists() && !filesRead.contains(indexMergeFile.getPath())) {
         indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { indexMergeFile });
+        filesRead.add(indexMergeFile.getPath());
       }
     }
     if (indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
@@ -152,10 +156,10 @@ public class BlockletDataMapIndexStore
       }
       if (missedIdentifiers.size() > 0) {
         SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
-
+        Set<String> filesRead = new HashSet<>();
         for (TableBlockIndexUniqueIdentifier identifier: missedIdentifiers) {
           Map<String, BlockMetaInfo> blockMetaInfoMap =
-              getBlockMetaInfoMap(identifier, indexFileStore);
+              getBlockMetaInfoMap(identifier, indexFileStore, filesRead);
           blockletDataMaps.add(
               loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap));
         }

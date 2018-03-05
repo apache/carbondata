@@ -1276,6 +1276,9 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SESSIONSTATE_CLASSNAME = "spark.carbon.sessionstate.classname";
 
+  public static final String CARBON_COMMON_LISTENER_REGISTER_CLASSNAME =
+      "spark.carbon.common.listener.register.classname";
+
   @CarbonProperty
   public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT =
       "carbon.lease.recovery.retry.count";

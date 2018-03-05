@@ -182,15 +182,4 @@ public class LoadEvents {
     }
   }
 
-  public static class LoadTableMergePartitionEvent extends Event {
-    private String segmentPath;
-
-    public LoadTableMergePartitionEvent(String segmentPath) {
-      this.segmentPath = segmentPath;
-    }
-
-    public String getSegmentPath() {
-      return segmentPath;
-    }
-  }
 }
