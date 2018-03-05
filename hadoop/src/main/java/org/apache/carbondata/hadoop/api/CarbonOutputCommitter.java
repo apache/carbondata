@@ -160,13 +160,9 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       if (operationContext != null) {
         LoadEvents.LoadTablePostStatusUpdateEvent postStatusUpdateEvent =
             new LoadEvents.LoadTablePostStatusUpdateEvent(loadModel);
-        LoadEvents.LoadTableMergePartitionEvent loadTableMergePartitionEvent =
-            new LoadEvents.LoadTableMergePartitionEvent(readPath);
         try {
           OperationListenerBus.getInstance()
               .fireEvent(postStatusUpdateEvent, (OperationContext) operationContext);
-          OperationListenerBus.getInstance()
-              .fireEvent(loadTableMergePartitionEvent, (OperationContext) operationContext);
         } catch (Exception e) {
           throw new IOException(e);
         }

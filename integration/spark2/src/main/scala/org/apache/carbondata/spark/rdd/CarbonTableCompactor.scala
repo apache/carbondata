@@ -246,7 +246,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           carbonLoadModel,
           compactionType,
           segmentFileName)
-      val compactionLoadStatusPostEvent = AlterTableCompactionPostStatusUpdateEvent(carbonTable,
+
+      val compactionLoadStatusPostEvent = AlterTableCompactionPostStatusUpdateEvent(sc.sparkSession,
+        carbonTable,
         carbonMergerMapping,
         carbonLoadModel,
         mergedLoadName)

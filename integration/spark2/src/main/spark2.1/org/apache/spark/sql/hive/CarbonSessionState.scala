@@ -79,7 +79,7 @@ class CarbonSessionCatalog(
   }
 
   // Initialize all listeners to the Operation bus.
-  CarbonEnv.initListeners()
+  CarbonEnv.init(sparkSession)
 
   /**
    * This method will invalidate carbonrelation from cache if carbon table is updated in
