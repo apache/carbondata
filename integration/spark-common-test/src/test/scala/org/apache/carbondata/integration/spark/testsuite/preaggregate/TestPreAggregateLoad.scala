@@ -17,13 +17,16 @@
 
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, DataFrame, Row}
 import org.apache.spark.util.SparkUtil4Test
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 
 class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
 
@@ -414,6 +417,102 @@ test("check load and select for avg double datatype") {
     val rows = sql("select age,avg(age) from maintable group by age").collect()
     sql("create datamap maintbl_douoble on table maintable using 'preaggregate' as select avg(age) from maintable group by age")
     checkAnswer(sql("select age,avg(age) from maintable group by age"), rows)
+  }
+
+  test("test whether all segments are loaded into pre-aggregate table if segments are set on main table 5") {
+    sql("DROP TABLE IF EXISTS segmaintable")
+    sql(
+      """
+        | CREATE TABLE segmaintable(
+        |     id INT,
+        |     name STRING,
+        |     city STRING,
+        |     age INT)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    //  check value before set segments
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 52)))
+
+    sql("set carbon.input.segments.default.segmaintable=0")
+    //  check value after set segments
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 26)))
+
+    sql(
+      s"""
+         | CREATE DATAMAP preagg_sum
+         | ON TABLE segmaintable
+         | USING 'preaggregate'
+         | AS SELECT id, SUM(age)
+         | FROM segmaintable
+         | GROUP BY id
+       """.stripMargin)
+    sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
+
+    checkAnswer(sql("SELECT * FROM segmaintable_preagg_sum"), Seq(Row(1, 52), Row(1, 26)))
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 26)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      false, "segmaintable_preagg_sum")
+
+    // set *
+    sql("set carbon.input.segments.default.segmaintable=*")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 78)))
+
+    // TODO: should support match pre-aggregate table when set carbon.input.segments.default.segmaintable=*
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+
+    // reset
+    sql("reset")
+    checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      Seq(Row(1, 78)))
+    checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
+      true, "segmaintable_preagg_sum")
+  }
+
+  /**
+   * check whether the pre-aggregate tables are in DataFrame
+   * @param df
+   * @param exists
+   * @param preAggTableNames
+   */
+  def checkPreAggTable(df: DataFrame, exists: Boolean, preAggTableNames: String*): Unit = {
+    val plan = df.queryExecution.analyzed
+    for (preAggTableName <- preAggTableNames) {
+      var isValidPlan = false
+      plan.transform {
+        // first check if any preaTable1 scala function is applied it is present is in plan
+        // then call is from create preaTable1regate table class so no need to transform the query plan
+        case ca: CarbonRelation =>
+          if (ca.isInstanceOf[CarbonDatasourceHadoopRelation]) {
+            val relation = ca.asInstanceOf[CarbonDatasourceHadoopRelation]
+            if (relation.carbonTable.getTableName.equalsIgnoreCase(preAggTableName)) {
+              isValidPlan = true
+            }
+          }
+          ca
+        case logicalRelation: LogicalRelation =>
+          if (logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) {
+            val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+            if (relation.carbonTable.getTableName.equalsIgnoreCase(preAggTableName)) {
+              isValidPlan = true
+            }
+          }
+          logicalRelation
+      }
+
+      if (exists != isValidPlan) {
+        assert(false)
+      } else {
+        assert(true)
+      }
+    }
   }
 
 }
