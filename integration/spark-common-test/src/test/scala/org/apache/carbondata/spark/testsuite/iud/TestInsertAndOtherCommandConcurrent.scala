@@ -29,7 +29,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory, DataMapWriter}
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.indexstore.schema.FilterType
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -269,15 +269,15 @@ class WaitingDataMap() extends DataMapFactory {
 
   override def fireEvent(event: Event): Unit = ???
 
-  override def clear(segmentId: String): Unit = {}
+  override def clear(segmentId: Segment): Unit = {}
 
   override def clear(): Unit = {}
 
   override def getDataMaps(distributable: DataMapDistributable): java.util.List[DataMap] = ???
 
-  override def getDataMaps(segmentId: String): util.List[DataMap] = ???
+  override def getDataMaps(segmentId: Segment): util.List[DataMap] = ???
 
-  override def createWriter(segmentId: String): DataMapWriter = {
+  override def createWriter(segmentId: Segment): DataMapWriter = {
     new DataMapWriter {
       override def onPageAdded(blockletId: Int, pageId: Int, pages: Array[ColumnPage]): Unit = { }
 
@@ -299,5 +299,5 @@ class WaitingDataMap() extends DataMapFactory {
 
   override def getMeta: DataMapMeta = new DataMapMeta(List("o_country").asJava, FilterType.EQUALTO)
 
-  override def toDistributable(segmentId: String): util.List[DataMapDistributable] = ???
+  override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = ???
 }

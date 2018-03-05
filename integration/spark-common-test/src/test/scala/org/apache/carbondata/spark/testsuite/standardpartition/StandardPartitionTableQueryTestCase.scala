@@ -22,6 +22,7 @@ import org.apache.spark.sql.{DataFrame, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -260,15 +261,128 @@ test("Creation of partition table should fail if the colname in table schema and
     }
   }
 
-  test("add partition based on location on partition table should fail"){
+
+  test("add partition based on location on partition table"){
     sql("drop table if exists partitionTable")
     sql(
       """create table partitionTable (id int,name String) partitioned by(email string) stored by 'carbondata'
       """.stripMargin)
     sql("insert into partitionTable select 1,'huawei','abc'")
+    val location = metastoredb +"/" +"def"
     checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc")))
-    intercept[Exception]{
-      sql("alter table partitionTable add partition (email='def') location 'abc/part1'")
+    sql(s"""alter table partitionTable add partition (email='def') location '$location'""")
+    sql("insert into partitionTable select 1,'huawei','def'")
+    checkAnswer(sql("select email from partitionTable"), Seq(Row("def"), Row("abc")))
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location))
+  }
+
+  test("add partition with static column partition with load command") {
+    sql(
+      """
+        | CREATE TABLE staticpartitionlocload (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp,attendance int,
+        |  deptname String,projectcode int,
+        |  utilization int,salary int,projectenddate Date,doj Timestamp)
+        | PARTITIONED BY (empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    val location = metastoredb +"/" +"ravi"
+    sql(s"""alter table staticpartitionlocload add partition (empname='ravi') location '$location'""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocload partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    val frame = sql("select count(empno) from staticpartitionlocload")
+    verifyPartitionInfo(frame, Seq("empname=ravi"))
+    checkAnswer(sql("select count(empno) from staticpartitionlocload"), Seq(Row(10)))
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocload partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql("select count(empno) from staticpartitionlocload"), Seq(Row(20)))
+    val file = FileFactory.getCarbonFile(location)
+    assert(file.exists())
+    FileFactory.deleteAllCarbonFilesOfDir(file)
+  }
+
+  test("set partition location with static column partition with load command") {
+    sql("drop table if exists staticpartitionsetloc")
+    sql(
+      """
+        | CREATE TABLE staticpartitionsetloc (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp,attendance int,
+        |  deptname String,projectcode int,
+        |  utilization int,salary int,projectenddate Date,doj Timestamp)
+        | PARTITIONED BY (empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    val location = metastoredb +"/" +"ravi1"
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionsetloc partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    intercept[Exception] {
+      sql(s"""alter table staticpartitionsetloc partition (empname='ravi') set location '$location'""")
+    }
+    val file = FileFactory.getCarbonFile(location)
+    FileFactory.deleteAllCarbonFilesOfDir(file)
+  }
+
+  test("add external partition with static column partition with load command with diffrent schema") {
+
+    sql(
+      """
+        | CREATE TABLE staticpartitionlocloadother (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp,attendance int,
+        |  deptname String,projectcode int,
+        |  utilization int,salary int,projectenddate Date,doj Timestamp)
+        | PARTITIONED BY (empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    val location = metastoredb +"/" +"ravi"
+    sql(s"""alter table staticpartitionlocloadother add partition (empname='ravi') location '$location'""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother partition(empname='indra') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(
+      """
+        | CREATE TABLE staticpartitionextlocload (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp,attendance int,
+        |  deptname String,projectcode int,
+        |  utilization int,salary int,projectenddate Date,doj Timestamp)
+        | PARTITIONED BY (empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    intercept[Exception] {
+      sql(s"""alter table staticpartitionextlocload add partition (empname='ravi') location '$location'""")
+    }
+    assert(sql(s"show partitions staticpartitionextlocload").count() == 0)
+    val file = FileFactory.getCarbonFile(location)
+    if(file.exists()) {
+      FileFactory.deleteAllCarbonFilesOfDir(file)
+    }
+  }
+
+  test("add external partition with static column partition with load command") {
+
+    sql(
+      """
+        | CREATE TABLE staticpartitionlocloadother_new (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp,attendance int,
+        |  deptname String,projectcode int,
+        |  utilization int,salary int,projectenddate Date,doj Timestamp)
+        | PARTITIONED BY (empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    val location = metastoredb +"/" +"ravi1"
+    sql(s"""alter table staticpartitionlocloadother_new add partition (empname='ravi') location '$location'""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='indra') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(20)))
+    sql(s"""ALTER TABLE staticpartitionlocloadother_new DROP PARTITION(empname='ravi')""")
+    checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(10)))
+    sql(s"""alter table staticpartitionlocloadother_new add partition (empname='ravi') location '$location'""")
+    checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(20)))
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql(s"select count(deptname) from staticpartitionlocloadother_new"), Seq(Row(30)))
+    val file = FileFactory.getCarbonFile(location)
+    if(file.exists()) {
+      FileFactory.deleteAllCarbonFilesOfDir(file)
     }
   }
 
@@ -295,7 +409,7 @@ test("Creation of partition table should fail if the colname in table schema and
         .asInstanceOf[CarbonScanRDD]
     }
     assert(scanRDD.nonEmpty)
-    assert(!partitionNames.map(f => scanRDD.head.partitionNames.exists(_.equals(f))).exists(!_))
+    assert(!partitionNames.map(f => scanRDD.head.partitionNames.exists(_.getPartitions.contains(f))).exists(!_))
   }
 
   override def afterAll = {
@@ -318,6 +432,11 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists badrecordsPartitionintnull")
     sql("drop table if exists badrecordsPartitionintnullalt")
     sql("drop table if exists partitionTable")
+    sql("drop table if exists staticpartitionlocload")
+    sql("drop table if exists staticpartitionextlocload")
+    sql("drop table if exists staticpartitionlocloadother")
+    sql("drop table if exists staticpartitionextlocload_new")
+    sql("drop table if exists staticpartitionlocloadother_new")
   }
 
 }

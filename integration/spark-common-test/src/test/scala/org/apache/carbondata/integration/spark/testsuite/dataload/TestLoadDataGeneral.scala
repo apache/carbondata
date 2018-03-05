@@ -177,6 +177,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     intercept[Exception] {
       sql("insert into load32000chardata_dup select dim1,concat(load32000chardata.dim2,'aaaa'),mes1 from load32000chardata").show()
     }
+    sql(s"LOAD DATA LOCAL INPATH '$testdata' into table load32000chardata_dup OPTIONS('FILEHEADER'='dim1,dim2,mes1')")
     intercept[Exception] {
       sql("update load32000chardata_dup set(load32000chardata_dup.dim2)=(select concat(load32000chardata.dim2,'aaaa') from load32000chardata)").show()
     }

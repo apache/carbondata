@@ -30,6 +30,7 @@ import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.{QueryExecution, SQLExecution}
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{SerializableConfiguration, Utils}
 
 import org.apache.carbondata.common.CarbonIterator
@@ -44,6 +45,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.streaming.{CarbonStreamException, StreamHandoffRDD}
@@ -73,6 +75,20 @@ class CarbonAppendableStreamSink(
     parameters.foreach { entry =>
       conf.set(entry._1, entry._2)
     }
+    // properties below will be used for default CarbonStreamParser
+    conf.set("carbon_complex_delimiter_level_1",
+      carbonLoadModel.getComplexDelimiterLevel1)
+    conf.set("carbon_complex_delimiter_level_2",
+      carbonLoadModel.getComplexDelimiterLevel2)
+    conf.set(
+      DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT,
+      carbonLoadModel.getSerializationNullFormat().split(",")(1))
+    conf.set(
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      carbonLoadModel.getTimestampformat())
+    conf.set(
+      CarbonCommonConstants.CARBON_DATE_FORMAT,
+      carbonLoadModel.getDateFormat())
     conf
   }
   // segment max size(byte)
@@ -95,6 +111,7 @@ class CarbonAppendableStreamSink(
       val statistic = new QueryStatistic()
 
       // fire pre event on every batch add
+      // in case of streaming options and optionsFinal can be same
       val operationContext = new OperationContext
       val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
         carbonTable.getCarbonTableIdentifier,
@@ -102,7 +119,7 @@ class CarbonAppendableStreamSink(
         carbonLoadModel.getFactFilePath,
         false,
         parameters.asJava,
-        null,
+        parameters.asJava,
         false
       )
       OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
@@ -161,7 +178,8 @@ class CarbonAppendableStreamSink(
       if (enableAutoHandoff) {
         StreamHandoffRDD.startStreamingHandoffThread(
           carbonLoadModel,
-          sparkSession)
+          sparkSession,
+          false)
       }
     }
   }
@@ -222,6 +240,7 @@ object CarbonAppendableStreamSink {
           server.get.initializeDictionaryGenerator(carbonTable)
         }
 
+        val rowSchema = queryExecution.analyzed.schema
         // write data file
         result = sparkSession.sparkContext.runJob(queryExecution.toRdd,
           (taskContext: TaskContext, iterator: Iterator[InternalRow]) => {
@@ -232,7 +251,8 @@ object CarbonAppendableStreamSink {
               sparkPartitionId = taskContext.partitionId(),
               sparkAttemptNumber = taskContext.attemptNumber(),
               committer,
-              iterator
+              iterator,
+              rowSchema
             )
           })
 
@@ -279,7 +299,8 @@ object CarbonAppendableStreamSink {
       sparkPartitionId: Int,
       sparkAttemptNumber: Int,
       committer: FileCommitProtocol,
-      iterator: Iterator[InternalRow]
+      iterator: Iterator[InternalRow],
+      rowSchema: StructType
   ): TaskCommitMessage = {
 
     val jobId = CarbonInputFormatUtil.getJobId(new Date, sparkStageId)
@@ -310,7 +331,7 @@ object CarbonAppendableStreamSink {
 
         val streamParser =
           Class.forName(parserName).newInstance.asInstanceOf[CarbonStreamParser]
-        streamParser.initialize(taskAttemptContext.getConfiguration)
+        streamParser.initialize(taskAttemptContext.getConfiguration, rowSchema)
 
         StreamSegment.appendBatchData(new InputIterator(iterator, streamParser),
           taskAttemptContext, carbonLoadModel)

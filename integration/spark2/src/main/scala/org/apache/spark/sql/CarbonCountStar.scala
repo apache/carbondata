@@ -55,7 +55,9 @@ case class CarbonCountStar(
         CarbonFilters.getPartitions(
           Seq.empty,
           sparkSession,
-          TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName))).asJava),
+          TableIdentifier(
+            carbonTable.getTableName,
+            Some(carbonTable.getDatabaseName))).map(_.asJava).orNull),
       absoluteTableIdentifier)
     val value = new GenericInternalRow(Seq(Long.box(rowCount)).toArray.asInstanceOf[Array[Any]])
     val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)

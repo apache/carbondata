@@ -28,14 +28,20 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.filesystem.AbstractDFSCarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapModel;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.PartitionMapFileStore;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.util.DataFileFooterConverter;
+
+import org.apache.hadoop.fs.LocatedFileStatus;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 
 /**
  * Class to handle loading, unloading,clearing,storing of the table
@@ -75,28 +81,57 @@ public class BlockletDataMapIndexStore
     BlockletDataMap dataMap = (BlockletDataMap) lruCache.get(lruCacheKey);
     if (dataMap == null) {
       try {
-        String segmentPath = CarbonTablePath.getSegmentPath(
-            identifier.getAbsoluteTableIdentifier().getTablePath(),
-            identifier.getSegmentId());
-        Map<String, BlockMetaInfo> blockMetaInfoMap = new HashMap<>();
-        CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
-        CarbonFile[] carbonFiles = carbonFile.locationAwareListFiles();
         SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
-        indexFileStore.readAllIIndexOfSegment(carbonFiles);
-        PartitionMapFileStore partitionFileStore = new PartitionMapFileStore();
-        partitionFileStore.readAllPartitionsOfSegment(carbonFiles, segmentPath);
-        for (CarbonFile file : carbonFiles) {
-          blockMetaInfoMap
-              .put(file.getAbsolutePath(), new BlockMetaInfo(file.getLocations(), file.getSize()));
-        }
-        dataMap =
-            loadAndGetDataMap(identifier, indexFileStore, partitionFileStore, blockMetaInfoMap);
+        Map<String, BlockMetaInfo> blockMetaInfoMap =
+            getBlockMetaInfoMap(identifier, indexFileStore);
+        dataMap = loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap);
       } catch (MemoryException e) {
         LOGGER.error("memory exception when loading datamap: " + e.getMessage());
         throw new RuntimeException(e.getMessage(), e);
       }
     }
     return dataMap;
+  }
+
+  private Map<String, BlockMetaInfo> getBlockMetaInfoMap(TableBlockIndexUniqueIdentifier identifier,
+      SegmentIndexFileStore indexFileStore) throws IOException {
+    if (identifier.getMergeIndexFileName() != null) {
+      CarbonFile indexMergeFile = FileFactory.getCarbonFile(
+          identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+              .getMergeIndexFileName());
+      if (indexMergeFile.exists()) {
+        indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { indexMergeFile });
+      }
+    }
+    if (indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
+      indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { FileFactory.getCarbonFile(
+          identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+              .getIndexFileName()) });
+    }
+    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    Map<String, BlockMetaInfo> blockMetaInfoMap = new HashMap<>();
+    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(
+        identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+            .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()));
+    for (DataFileFooter footer : indexInfo) {
+      String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
+      blockMetaInfoMap.put(blockPath, createBlockMetaInfo(blockPath));
+    }
+    return blockMetaInfoMap;
+  }
+
+  private BlockMetaInfo createBlockMetaInfo(String carbonDataFile) throws IOException {
+    CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile);
+    if (carbonFile instanceof AbstractDFSCarbonFile) {
+      RemoteIterator<LocatedFileStatus> iter =
+          ((AbstractDFSCarbonFile)carbonFile).fs.listLocatedStatus(new Path(carbonDataFile));
+      LocatedFileStatus fileStatus = iter.next();
+      String[] location = fileStatus.getBlockLocations()[0].getHosts();
+      long len = fileStatus.getLen();
+      return new BlockMetaInfo(location, len);
+    } else {
+      return new BlockMetaInfo(new String[]{"localhost"}, carbonFile.getSize());
+    }
   }
 
   @Override
@@ -116,34 +151,13 @@ public class BlockletDataMapIndexStore
         }
       }
       if (missedIdentifiers.size() > 0) {
-        Map<String, SegmentIndexFileStore> segmentIndexFileStoreMap = new HashMap<>();
-        Map<String, PartitionMapFileStore> partitionFileStoreMap = new HashMap<>();
-        Map<String, BlockMetaInfo> blockMetaInfoMap = new HashMap<>();
+        SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
 
         for (TableBlockIndexUniqueIdentifier identifier: missedIdentifiers) {
-          SegmentIndexFileStore indexFileStore =
-              segmentIndexFileStoreMap.get(identifier.getSegmentId());
-          PartitionMapFileStore partitionFileStore =
-              partitionFileStoreMap.get(identifier.getSegmentId());
-          String segmentPath = CarbonTablePath.getSegmentPath(
-              identifier.getAbsoluteTableIdentifier().getTablePath(),
-              identifier.getSegmentId());
-          if (indexFileStore == null) {
-            CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
-            CarbonFile[] carbonFiles = carbonFile.locationAwareListFiles();
-            indexFileStore = new SegmentIndexFileStore();
-            indexFileStore.readAllIIndexOfSegment(carbonFiles);
-            segmentIndexFileStoreMap.put(identifier.getSegmentId(), indexFileStore);
-            partitionFileStore = new PartitionMapFileStore();
-            partitionFileStore.readAllPartitionsOfSegment(carbonFiles, segmentPath);
-            partitionFileStoreMap.put(identifier.getSegmentId(), partitionFileStore);
-            for (CarbonFile file : carbonFiles) {
-              blockMetaInfoMap.put(FileFactory.getUpdatedFilePath(file.getAbsolutePath()),
-                  new BlockMetaInfo(file.getLocations(), file.getSize()));
-            }
-          }
+          Map<String, BlockMetaInfo> blockMetaInfoMap =
+              getBlockMetaInfoMap(identifier, indexFileStore);
           blockletDataMaps.add(
-              loadAndGetDataMap(identifier, indexFileStore, partitionFileStore, blockMetaInfoMap));
+              loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap));
         }
       }
     } catch (Throwable e) {
@@ -194,7 +208,6 @@ public class BlockletDataMapIndexStore
   private BlockletDataMap loadAndGetDataMap(
       TableBlockIndexUniqueIdentifier identifier,
       SegmentIndexFileStore indexFileStore,
-      PartitionMapFileStore partitionFileStore,
       Map<String, BlockMetaInfo> blockMetaInfoMap)
       throws IOException, MemoryException {
     String uniqueTableSegmentIdentifier =
@@ -206,10 +219,10 @@ public class BlockletDataMapIndexStore
     BlockletDataMap dataMap;
     synchronized (lock) {
       dataMap = new BlockletDataMap();
-      dataMap.init(new BlockletDataMapModel(identifier.getFilePath(),
-          indexFileStore.getFileData(identifier.getCarbonIndexFileName()),
-          partitionFileStore.getPartitions(identifier.getCarbonIndexFileName()),
-          partitionFileStore.isPartionedSegment(), blockMetaInfoMap));
+      dataMap.init(new BlockletDataMapModel(
+          identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+              .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
+          blockMetaInfoMap, identifier.getSegmentId()));
       lruCache.put(identifier.getUniqueTableSegmentIdentifier(), dataMap,
           dataMap.getMemorySize());
     }

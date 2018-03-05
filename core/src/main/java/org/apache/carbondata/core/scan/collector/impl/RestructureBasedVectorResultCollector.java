@@ -88,6 +88,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
 
   /**
    * Gets the default value for each CarbonMeasure
+   *
    * @param carbonMeasure
    * @return
    */
@@ -95,8 +96,6 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
     return RestructureUtil.getMeasureDefaultValueByType(carbonMeasure.getColumnSchema(),
         carbonMeasure.getDefaultValue());
   }
-
-
 
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
     throw new UnsupportedOperationException("collectData is not supported here");
@@ -239,6 +238,8 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
           } else if (DataTypes.isDecimal(dataType)) {
             vector.putDecimals(columnVectorInfo.vectorOffset, columnVectorInfo.size,
                 ((Decimal) defaultValue).toJavaBigDecimal(), measure.getPrecision());
+          } else if (dataType == DataTypes.BOOLEAN) {
+            vector.putBoolean(columnVectorInfo.vectorOffset, (Boolean) defaultValue);
           } else {
             vector.putDoubles(columnVectorInfo.vectorOffset, columnVectorInfo.size,
                 (double) defaultValue);

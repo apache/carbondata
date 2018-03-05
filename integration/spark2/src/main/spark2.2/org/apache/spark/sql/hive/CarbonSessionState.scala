@@ -20,6 +20,7 @@ package org.apache.spark.sql.hive
 import scala.collection.generic.SeqFactory
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry}
@@ -44,9 +45,10 @@ import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlPa
 import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.util.CarbonReflectionUtils
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -144,14 +146,8 @@ class CarbonSessionCatalog(
       ignoreIfExists: Boolean): Unit = {
     try {
       val table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
-      // Get the properties from thread local
-      val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-      if (carbonSessionInfo != null) {
-        val updatedParts = CarbonScalaUtil.updatePartitions(carbonSessionInfo, parts, table)
-        super.createPartitions(tableName, updatedParts, ignoreIfExists)
-      } else {
-        super.createPartitions(tableName, parts, ignoreIfExists)
-      }
+      val updatedParts = CarbonScalaUtil.updatePartitions(parts, table)
+      super.createPartitions(tableName, updatedParts, ignoreIfExists)
     } catch {
       case e: Exception =>
         super.createPartitions(tableName, parts, ignoreIfExists)
@@ -175,6 +171,15 @@ class CarbonSessionCatalog(
       allPartitions,
       partitionFilters,
       sparkSession.sessionState.conf.sessionLocalTimeZone)
+  }
+
+  /**
+   * Update the storageformat with new location information
+   */
+  def updateStorageLocation(
+      path: Path,
+      storage: CatalogStorageFormat): CatalogStorageFormat = {
+    storage.copy(locationUri = Some(path.toUri))
   }
 }
 
@@ -397,9 +402,17 @@ class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSes
     super.visitCreateTable(ctx)
   }
 
-  override def visitShowTables(ctx: ShowTablesContext): LogicalPlan = withOrigin(ctx) {
-    CarbonShowTablesCommand(
-      Option(ctx.db).map(_.getText),
-      Option(ctx.pattern).map(string))
+  override def visitShowTables(ctx: ShowTablesContext): LogicalPlan = {
+    withOrigin(ctx) {
+      if (CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,
+          CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT).toBoolean) {
+        super.visitShowTables(ctx)
+      } else {
+        CarbonShowTablesCommand(
+          Option(ctx.db).map(_.getText),
+          Option(ctx.pattern).map(string))
+      }
+    }
   }
 }

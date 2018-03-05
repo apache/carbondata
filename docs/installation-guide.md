@@ -141,7 +141,6 @@ mv carbondata.tar.gz carbonlib/
 
 ```
 ./bin/spark-submit
---conf spark.sql.hive.thriftServer.singleSession=true
 --class org.apache.carbondata.spark.thriftserver.CarbonThriftServer
 $SPARK_HOME/carbonlib/$CARBON_ASSEMBLY_JAR <carbon_store_path>
 ```
@@ -151,13 +150,23 @@ $SPARK_HOME/carbonlib/$CARBON_ASSEMBLY_JAR <carbon_store_path>
 | CARBON_ASSEMBLY_JAR | CarbonData assembly jar name present in the `$SPARK_HOME/carbonlib/` folder. | carbondata_2.xx-x.x.x-SNAPSHOT-shade-hadoop2.7.2.jar |
 | carbon_store_path | This is a parameter to the CarbonThriftServer class. This a HDFS path where CarbonData files will be kept. Strongly Recommended to put same as carbon.storelocation parameter of carbon.properties. | `hdfs://<host_name>:port/user/hive/warehouse/carbon.store` |
 
+**NOTE**: From Spark 1.6, by default the Thrift server runs in multi-session mode. Which means each JDBC/ODBC connection owns a copy of their own SQL configuration and temporary function registry. Cached tables are still shared though. If you prefer to run the Thrift server in single-session mode and share all SQL configuration and temporary function registry, please set option `spark.sql.hive.thriftServer.singleSession` to `true`. You may either add this option to `spark-defaults.conf`, or pass it to `spark-submit.sh` via `--conf`:
+
+```
+./bin/spark-submit
+--conf spark.sql.hive.thriftServer.singleSession=true
+--class org.apache.carbondata.spark.thriftserver.CarbonThriftServer
+$SPARK_HOME/carbonlib/$CARBON_ASSEMBLY_JAR <carbon_store_path>
+```
+
+**But** in single-session mode, if one user changes the database from one connection, the database of the other connections will be changed too.
+
 **Examples**
    
    * Start with default memory and executors.
 
 ```
 ./bin/spark-submit
---conf spark.sql.hive.thriftServer.singleSession=true
 --class org.apache.carbondata.spark.thriftserver.CarbonThriftServer 
 $SPARK_HOME/carbonlib
 /carbondata_2.xx-x.x.x-SNAPSHOT-shade-hadoop2.7.2.jar
@@ -167,7 +176,7 @@ hdfs://<host_name>:port/user/hive/warehouse/carbon.store
    * Start with Fixed executors and resources.
 
 ```
-./bin/spark-submit --conf spark.sql.hive.thriftServer.singleSession=true 
+./bin/spark-submit
 --class org.apache.carbondata.spark.thriftserver.CarbonThriftServer 
 --num-executors 3 --driver-memory 20g --executor-memory 250g 
 --executor-cores 32 

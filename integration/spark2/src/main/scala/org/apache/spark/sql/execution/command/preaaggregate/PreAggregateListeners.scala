@@ -29,6 +29,7 @@ import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompac
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable}
@@ -227,11 +228,17 @@ object LoadPostAggregateListener extends OperationEventListener {
             operationContext.getProperty(
               s"${parentTableDatabase}_${parentTableName}_Segment").toString)
         } else {
-            (TableIdentifier(table.getTableName, Some(table.getDatabaseName)),
-              carbonLoadModel.getSegmentId)
+            val currentSegmentFile = operationContext.getProperty("current.segmentfile")
+            val segment = if (currentSegmentFile != null) {
+              new Segment(carbonLoadModel.getSegmentId, currentSegmentFile.toString)
+            } else {
+              Segment.toSegment(carbonLoadModel.getSegmentId)
+            }
+            (TableIdentifier(table.getTableName, Some(table.getDatabaseName)), segment.toString)
         }
+
         PreAggregateUtil.startDataLoadForDataMap(
-            parentTableIdentifier,
+        parentTableIdentifier,
             segmentToLoad,
             validateSegments = false,
             childLoadCommand,

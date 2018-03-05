@@ -23,8 +23,6 @@ import java.net.ServerSocket
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 
 // scalastyle:off println
@@ -34,23 +32,9 @@ object CarbonStructuredStreamingExample {
     // setup paths
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/examples/spark2/target/store"
-    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target"
+
+    val spark = ExampleUtils.createCarbonSession("CarbonStructuredStreamingExample", 4)
     val streamTableName = s"stream_table"
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
-    import org.apache.spark.sql.CarbonSession._
-    val spark = SparkSession
-      .builder()
-      .master("local")
-      .appName("CarbonStructuredStreamingExample")
-      .config("spark.sql.warehouse.dir", warehouse)
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
-
-    spark.sparkContext.setLogLevel("ERROR")
 
     val requireCreateTable = true
     val useComplexDataType = false

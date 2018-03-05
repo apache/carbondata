@@ -4,7 +4,7 @@
   <parent>
     <artifactId>carbondata-parent</artifactId>
     <groupId>org.apache.carbondata</groupId>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.4.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -24,6 +24,12 @@
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-spark-common</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-streaming_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <scope>${spark.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

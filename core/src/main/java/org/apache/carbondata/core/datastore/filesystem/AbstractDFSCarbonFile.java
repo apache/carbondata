@@ -42,6 +42,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.compress.BZip2Codec;
 import org.apache.hadoop.io.compress.CompressionCodec;
@@ -412,15 +413,21 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
 
   @Override
   public boolean createNewFile(String filePath, FileFactory.FileType fileType, boolean doAs,
-      final FsPermission permission) throws IOException {
+      FsPermission permission) throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
     FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-    boolean result = fs.createNewFile(path);
-    if (null != permission) {
-      fs.setPermission(path, permission);
+    if (fs.exists(path)) {
+      return false;
+    } else {
+      if (permission == null) {
+        permission = FsPermission.getFileDefault().applyUMask(FsPermission.getUMask(fs.getConf()));
+      }
+      // Pass the permissions duringg file creation itself
+      fs.create(path, permission, false, fs.getConf().getInt("io.file.buffer.size", 4096),
+          fs.getDefaultReplication(path), fs.getDefaultBlockSize(path), null).close();
+      return true;
     }
-    return result;
   }
 
   @Override public boolean deleteFile(String filePath, FileFactory.FileType fileType)
@@ -453,16 +460,15 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
     FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-    if (fs.createNewFile(path)) {
-      fs.deleteOnExit(path);
+    if (fs.exists(path)) {
+      return false;
+    } else {
+      // Pass the permissions duringg file creation itself
+      fs.create(path, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL), false,
+          fs.getConf().getInt("io.file.buffer.size", 4096), fs.getDefaultReplication(path),
+          fs.getDefaultBlockSize(path), null).close();
       return true;
     }
-    return false;
-  }
-
-  @Override
-  public void setPermission(String directoryPath, FsPermission permission, String username,
-      String group) throws IOException {
   }
 
   @Override

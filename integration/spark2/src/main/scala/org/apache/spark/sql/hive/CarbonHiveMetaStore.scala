@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{schema, AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
@@ -183,6 +183,18 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
   }
 
   /**
+   * Generates schema string from TableInfo
+   */
+  override def generateTableSchemaString(
+      tableInfo: schema.table.TableInfo,
+      absoluteTableIdentifier: AbsoluteTableIdentifier): String = {
+    val schemaEvolutionEntry = new schema.SchemaEvolutionEntry
+    schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
+    tableInfo.getFactTable.getSchemaEvalution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
+    CarbonUtil.convertToMultiGsonStrings(tableInfo, " ", "", ",")
+  }
+
+  /**
    * This method will is used to remove the evolution entry in case of failure.
    *
    * @param carbonTableIdentifier
@@ -210,7 +222,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val childSchemas = thriftTableInfo.dataMapSchemas
-    childSchemas.remove(childSchemas.size())
+    childSchemas.remove(childSchemas.size() - 1)
     val carbonTableIdentifier = absoluteTableIdentifier.getCarbonTableIdentifier
     updateHiveMetaStoreForAlter(carbonTableIdentifier,
       carbonTableIdentifier,

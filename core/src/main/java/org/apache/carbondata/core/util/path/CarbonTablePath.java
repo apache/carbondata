@@ -38,7 +38,7 @@ public class CarbonTablePath extends Path {
   private static final String DICTIONARY_META_EXT = ".dictmeta";
   private static final String SORT_INDEX_EXT = ".sortindex";
   private static final String SCHEMA_FILE = "schema";
-  private static final String TABLE_STATUS_FILE = "tablestatus";
+  public static final String TABLE_STATUS_FILE = "tablestatus";
   private static final String FACT_DIR = "Fact";
   private static final String SEGMENT_PREFIX = "Segment_";
   private static final String PARTITION_PREFIX = "Part";
@@ -48,7 +48,7 @@ public class CarbonTablePath extends Path {
   public static final String CARBON_DATA_EXT = ".carbondata";
   public static final String INDEX_FILE_EXT = ".carbonindex";
   public static final String MERGE_INDEX_FILE_EXT = ".carbonindexmerge";
-  public static final String PARTITION_MAP_EXT = ".partitionmap";
+  public static final String SEGMENT_EXT = ".segment";
 
   private static final String STREAMING_DIR = ".streaming";
   private static final String STREAMING_LOG_DIR = "log";
@@ -75,7 +75,12 @@ public class CarbonTablePath extends Path {
    * @param carbonFilePath
    */
   public static String getFolderContainingFile(String carbonFilePath) {
-    return carbonFilePath.substring(0, carbonFilePath.lastIndexOf('/'));
+    int lastIndex = carbonFilePath.lastIndexOf('/');
+    // below code for handling windows environment
+    if (-1 == lastIndex) {
+      lastIndex = carbonFilePath.lastIndexOf(File.separator);
+    }
+    return carbonFilePath.substring(0, lastIndex);
   }
 
   /**
@@ -106,17 +111,6 @@ public class CarbonTablePath extends Path {
     int pos = fileNameWithPath.lastIndexOf('.');
     if (pos != -1) {
       return fileNameWithPath.substring(pos).startsWith(CARBON_DATA_EXT);
-    }
-    return false;
-  }
-
-  /**
-   * Return true if the fileNameWithPath ends with partition map file extension name
-   */
-  public static boolean isPartitionMapFile(String fileNameWithPath) {
-    int pos = fileNameWithPath.lastIndexOf('.');
-    if (pos != -1) {
-      return fileNameWithPath.substring(pos).startsWith(PARTITION_MAP_EXT);
     }
     return false;
   }
@@ -173,6 +167,20 @@ public class CarbonTablePath extends Path {
    */
   public static String getMetadataPath(String tablePath) {
     return tablePath + File.separator + METADATA_DIR;
+  }
+
+  /**
+   * Return metadata path based on `tablePath`
+   */
+  public static String getTableStatusPath(String tablePath) {
+    return getMetadataPath(tablePath) + File.separator + TABLE_STATUS_FILE;
+  }
+
+  /**
+   * Return table status file path based on `tablePath`
+   */
+  public static String getTableStatusFilePath(String tablePath) {
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + TABLE_STATUS_FILE;
   }
 
   /**
@@ -667,6 +675,18 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * This method will remove strings in path and return short block id
+   *
+   * @param blockId
+   * @return shortBlockId
+   */
+  public static String getShortBlockIdForPartitionTable(String blockId) {
+    return blockId.replace(SEGMENT_PREFIX, "")
+        .replace(DATA_PART_PREFIX, "")
+        .replace(CARBON_DATA_EXT, "");
+  }
+
+  /**
    * This method will append strings in path and return block id
    *
    * @param shortBlockId
@@ -735,4 +755,12 @@ public class CarbonTablePath extends Path {
   public static String getSegmentPath(String tablePath, String segmentId) {
     return tablePath + "/Fact/Part0/Segment_" + segmentId;
   }
+
+  /**
+   * Get the segment file locations of table
+   */
+  public static String getSegmentFilesLocation(String tablePath) {
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments";
+  }
+
 }

@@ -18,26 +18,23 @@
 package org.apache.carbondata.spark.rdd
 
 import java.util
-import java.util.{List, Map}
+import java.util.List
 import java.util.concurrent.ExecutorService
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 
-import org.apache.carbondata.core.metadata.PartitionMapFileStore
-import org.apache.carbondata.core.metadata.PartitionMapFileStore.PartitionMapper
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.MergeResultImpl
-import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.LOGGER
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -99,6 +96,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           segList,
           compactionModel.compactionType
         )
+        if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+          carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
+        }
       }
       else {
         loadsToMerge.clear()
@@ -136,39 +136,19 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     var finalMergeStatus = false
     val databaseName: String = carbonLoadModel.getDatabaseName
     val factTableName = carbonLoadModel.getTableName
-    val validSegments: Array[String] = CarbonDataMergerUtil
-      .getValidSegments(loadsToMerge).split(',')
-    val partitionMapper = if (carbonTable.isHivePartitionTable) {
-      var partitionMap: util.Map[String, util.List[String]] = null
-      validSegments.foreach { segmentId =>
-        val localMapper = new PartitionMapFileStore()
-        localMapper.readAllPartitionsOfSegment(
-          CarbonTablePath.getSegmentPath(carbonLoadModel.getTablePath, segmentId))
-        if (partitionMap == null) {
-          partitionMap = localMapper.getPartitionMap
-        } else {
-          partitionMap.putAll(localMapper.getPartitionMap)
-        }
-      }
-      val mapper = new PartitionMapper()
-      mapper.setPartitionMap(partitionMap)
-      mapper
-    } else {
-      null
-    }
+    val validSegments: List[Segment] = CarbonDataMergerUtil.getValidSegments(loadsToMerge)
     val carbonMergerMapping = CarbonMergerMapping(
       tablePath,
       carbonTable.getMetaDataFilepath,
       mergedLoadName,
       databaseName,
       factTableName,
-      validSegments,
+      validSegments.asScala.toArray,
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
       compactionType,
       maxSegmentColCardinality = null,
       maxSegmentColumnSchemaList = null,
-      currentPartitions = partitions,
-      partitionMapper)
+      currentPartitions = partitions)
     carbonLoadModel.setTablePath(carbonMergerMapping.hdfsStoreLocation)
     carbonLoadModel.setLoadMetadataDetails(
       SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath).toList.asJava)
@@ -221,11 +201,28 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
 
     if (finalMergeStatus) {
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
-      new PartitionMapFileStore().mergePartitionMapFiles(
-        CarbonTablePath.getSegmentPath(tablePath, mergedLoadNumber),
-        carbonLoadModel.getFactTimeStamp + "")
+      var segmentFileName: String = null
+      if (carbonTable.isHivePartitionTable) {
+        val readPath =
+          CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
+          CarbonCommonConstants.FILE_SEPARATOR + carbonLoadModel.getFactTimeStamp + ".tmp"
+        // Merge all partition files into a single file.
+        segmentFileName =
+          mergedLoadNumber + "_" + carbonLoadModel.getFactTimeStamp
+        val segmentFile = SegmentFileStore
+          .mergeSegmentFiles(readPath,
+            segmentFileName,
+            CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath))
+        if (segmentFile != null) {
+          SegmentFileStore
+            .moveFromTempFolder(segmentFile,
+              carbonLoadModel.getFactTimeStamp + ".tmp",
+              carbonLoadModel.getTablePath)
+        }
+        segmentFileName = segmentFileName + CarbonTablePath.SEGMENT_EXT
+      }
       // trigger event for compaction
-      val alterTableCompactionPreStatusUpdateEvent: AlterTableCompactionPreStatusUpdateEvent =
+      val alterTableCompactionPreStatusUpdateEvent =
       AlterTableCompactionPreStatusUpdateEvent(sc.sparkSession,
         carbonTable,
         carbonMergerMapping,
@@ -242,9 +239,13 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
            .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
              carbonTable.getMetaDataFilepath,
              carbonLoadModel)) ||
-        CarbonDataMergerUtil
-          .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath,
-            mergedLoadNumber, carbonLoadModel, compactionType)
+        CarbonDataMergerUtil.updateLoadMetadataWithMergeStatus(
+          loadsToMerge,
+            carbonTable.getMetaDataFilepath,
+            mergedLoadNumber,
+          carbonLoadModel,
+          compactionType,
+          segmentFileName)
       val compactionLoadStatusPostEvent = AlterTableCompactionPostStatusUpdateEvent(carbonTable,
         carbonMergerMapping,
         carbonLoadModel,
@@ -271,7 +272,11 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           false
       }
       operationContext.setProperty("commitComplete", commitComplete)
-      if (!statusFileUpdation && !commitComplete) {
+      // here either of the conditions can be true, when delete segment is fired after compaction
+      // has started, statusFileUpdation will be false , but at the same time commitComplete can be
+      // true because compaction for all datamaps will be finished at a time to the maximum level
+      // possible (level 1, 2 etc). so we need to check for either condition
+      if (!statusFileUpdation || !commitComplete) {
         LOGGER.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +

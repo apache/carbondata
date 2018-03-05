@@ -74,7 +74,6 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -269,7 +268,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfoList.add(getBlockExecutionInfoForBlock(queryModel, abstractIndex,
           dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
           dataRefNode.numberOfNodes(), dataRefNode.getBlockInfos().get(0).getFilePath(),
-          dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath()));
+          dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
+          dataRefNode.getBlockInfos().get(0).getSegmentId()));
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
@@ -291,7 +291,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   protected BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
       AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath,
-      String[] deleteDeltaFiles)
+      String[] deleteDeltaFiles, String segmentId)
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
@@ -303,12 +303,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<QueryDimension> currentBlockQueryDimensions = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             queryModel.getQueryDimension(), tableBlockDimensions,
-            segmentProperties.getComplexDimensions());
-    int tableFactPathLength = CarbonStorePath
-        .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getTablePath(),
-            queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
-        .length() + 1;
-    blockExecutionInfo.setBlockId(filePath.substring(tableFactPathLength));
+            segmentProperties.getComplexDimensions(), queryModel.getQueryMeasures().size());
+    blockExecutionInfo.setBlockId(
+        CarbonUtil.getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segmentId));
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
     blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
@@ -457,6 +454,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     return blockExecutionInfo;
   }
 
+
+
   /**
    * This method will be used to get fixed key length size this will be used
    * to create a row from column chunk
@@ -586,15 +585,27 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   @Override public void finish() throws QueryExecutionException {
     CarbonUtil.clearBlockCache(queryProperties.dataBlocks);
+    Throwable exceptionOccurred = null;
     if (null != queryIterator) {
-      queryIterator.close();
+      // catch if there is any exception so that it can be rethrown after clearing all the resources
+      // else if any exception is thrown from this point executor service will not be terminated
+      try {
+        queryIterator.close();
+      } catch (Throwable e) {
+        exceptionOccurred = e;
+      }
     }
+    // clear all the unsafe memory used for the given task ID
     UnsafeMemoryManager.INSTANCE.freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
     if (null != queryProperties.executorService) {
       // In case of limit query when number of limit records is already found so executors
       // must stop all the running execution otherwise it will keep running and will hit
       // the query performance.
       queryProperties.executorService.shutdownNow();
+    }
+    // if there is any exception re throw the exception
+    if (null != exceptionOccurred) {
+      throw new QueryExecutionException(exceptionOccurred);
     }
   }
 

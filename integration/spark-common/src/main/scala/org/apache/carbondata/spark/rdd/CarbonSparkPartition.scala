@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import org.apache.spark.{Partition, SerializableWritable}
 
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
 
 class CarbonSparkPartition(
@@ -26,7 +27,7 @@ class CarbonSparkPartition(
     val idx: Int,
     @transient val multiBlockSplit: CarbonMultiBlockSplit,
     val partitionId: Int = 0,
-    val partitionNames: Option[Seq[String]] = None)
+    val partitionSpec: Option[PartitionSpec] = None)
     extends Partition {
 
   val split = new SerializableWritable[CarbonMultiBlockSplit](multiBlockSplit)

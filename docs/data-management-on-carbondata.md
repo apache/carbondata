@@ -26,7 +26,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 * [UPDATE AND DELETE](#update-and-delete)
 * [COMPACTION](#compaction)
 * [PARTITION](#partition)
-* [PRE-AGGREGATE TABLES](#pre-aggregate-tables)
 * [BUCKETING](#bucketing)
 * [SEGMENT MANAGEMENT](#segment-management)
 
@@ -39,7 +38,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   STORED BY 'carbondata'
   [TBLPROPERTIES (property_name=property_value, ...)]
   [LOCATION 'path']
-  ```  
+  ```
   
 ### Usage Guidelines
 
@@ -101,11 +100,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      These properties are table level compaction configurations, if not specified, system level configurations in carbon.properties will be used.
      Following are 5 configurations:
      
-     * MAJOR_COMPACTION_SIZE: same meaning with carbon.major.compaction.size, size in MB.
-     * AUTO_LOAD_MERGE: same meaning with carbon.enable.auto.load.merge.
-     * COMPACTION_LEVEL_THRESHOLD: same meaning with carbon.compaction.level.threshold.
-     * COMPACTION_PRESERVE_SEGMENTS: same meaning with carbon.numberof.preserve.segments.
-     * ALLOWED_COMPACTION_DAYS: same meaning with carbon.allowed.compaction.days.     
+     * MAJOR_COMPACTION_SIZE: same meaning as carbon.major.compaction.size, size in MB.
+     * AUTO_LOAD_MERGE: same meaning as carbon.enable.auto.load.merge.
+     * COMPACTION_LEVEL_THRESHOLD: same meaning as carbon.compaction.level.threshold.
+     * COMPACTION_PRESERVE_SEGMENTS: same meaning as carbon.numberof.preserve.segments.
+     * ALLOWED_COMPACTION_DAYS: same meaning as carbon.allowed.compaction.days.     
 
      ```
      TBLPROPERTIES ('MAJOR_COMPACTION_SIZE'='2048',
@@ -127,26 +126,17 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
    ```
     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                                   productNumber Int,
-                                   productName String,
-                                   storeCity String,
-                                   storeProvince String,
-                                   productCategory String,
-                                   productBatch String,
-                                   saleQuantity Int,
-                                   revenue Int)
+                                   productNumber INT,
+                                   productName STRING,
+                                   storeCity STRING,
+                                   storeProvince STRING,
+                                   productCategory STRING,
+                                   productBatch STRING,
+                                   saleQuantity INT,
+                                   revenue INT)
     STORED BY 'carbondata'
-    TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber',
-                   'NO_INVERTED_INDEX'='productBatch',
-                   'SORT_COLUMNS'='productName,storeCity',
-                   'SORT_SCOPE'='NO_SORT',
-                   'TABLE_BLOCKSIZE'='512',
-                   'MAJOR_COMPACTION_SIZE'='2048',
-                   'AUTO_LOAD_MERGE'='true',
-                   'COMPACTION_LEVEL_THRESHOLD'='5,6',
-                   'COMPACTION_PRESERVE_SEGMENTS'='10',
-				   'streaming'='true',
-                   'ALLOWED_COMPACTION_DAYS'='5')
+    TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
+                   'SORT_SCOPE'='NO_SORT')
    ```
 
 ## CREATE DATABASE 
@@ -187,7 +177,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   SHOW TABLES IN defaultdb
   ```
 
-### ALTER TALBE
+### ALTER TABLE
 
   The following section introduce the commands to modify the physical or logical state of the existing table(s).
 
@@ -200,9 +190,9 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
      Examples:
      ```
-     ALTER TABLE carbon RENAME TO carbondata
+     ALTER TABLE carbon RENAME TO carbonTable
      OR
-     ALTER TABLE test_db.carbon RENAME TO test_db.carbondata
+     ALTER TABLE test_db.carbon RENAME TO test_db.carbonTable
      ```
 
    - **ADD COLUMNS**
@@ -265,17 +255,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2)
      ```
-- **MERGE INDEX**
-   
-     This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
-     ```
-      ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
-      ```
-      
-      Examples:
-      ```
-      ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
-      ```
 
 ### DROP TABLE
   
@@ -305,15 +284,48 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * Before executing this command the old table schema and data should be copied into the new database location.
   * If the table is aggregate table, then all the aggregate tables should be copied to the new database location.
   * For old store, the time zone of the source and destination cluster should be same.
-  * If old cluster uses HIVE meta store, refresh will not work as schema file does not exist in file system.
+  * If old cluster used HIVE meta store to store schema, refresh will not work as schema file does not exist in file system.
+
+### Table and Column Comment
+
+  You can provide more information on table by using table comment. Similarly you can provide more information about a particular column using column comment. 
+  You can see the column comment of an existing table using describe formatted command.
   
+  ```
+  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name[(col_name data_type [COMMENT col_comment], ...)]
+    [COMMENT table_comment]
+  STORED BY 'carbondata'
+  [TBLPROPERTIES (property_name=property_value, ...)]
+  ```
+  
+  Example:
+  ```
+  CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
+                                productNumber Int COMMENT 'unique serial number for product')
+  COMMENT “This is table comment”
+   STORED BY 'carbondata'
+   TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber')
+  ```
+  You can also SET and UNSET table comment using ALTER command.
+
+  Example to SET table comment:
+  
+  ```
+  ALTER TABLE carbon SET TBLPROPERTIES ('comment'='this table comment is modified');
+  ```
+  
+  Example to UNSET table comment:
+  
+  ```
+  ALTER TABLE carbon UNSET TBLPROPERTIES ('comment');
+  ```
 
 ## LOAD DATA
 
 ### LOAD FILES TO CARBONDATA TABLE
   
   This command is used to load csv files to carbondata, OPTIONS are not mandatory for data loading process. 
-  Inside OPTIONS user can provide either of any options like DELIMITER, QUOTECHAR, FILEHEADER, ESCAPECHAR, MULTILINE as per requirement.
+  Inside OPTIONS user can provide any options like DELIMITER, QUOTECHAR, FILEHEADER, ESCAPECHAR, MULTILINE as per requirement.
   
   ```
   LOAD DATA [LOCAL] INPATH 'folder_path' 
@@ -341,6 +353,16 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     OPTIONS('COMMENTCHAR'='#')
     ```
 
+  - **HEADER:** When you load the CSV file without the file header and the file header is the same with the table schema, then add 'HEADER'='false' to load data SQL as user need not provide the file header. By default the value is 'true'.
+  false: CSV file is without file header.
+  true: CSV file is with file header.
+  
+    ```
+    OPTIONS('HEADER'='false') 
+    ```
+
+	NOTE: If the HEADER option exist and is set to 'true', then the FILEHEADER option is not required.
+	
   - **FILEHEADER:** Headers can be provided in the LOAD DATA command if headers are missing in the source files.
 
     ```
@@ -353,7 +375,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     OPTIONS('MULTILINE'='true') 
     ```
 
-  - **ESCAPECHAR:** Escape char can be provided if user want strict validation of escape character on CSV.
+  - **ESCAPECHAR:** Escape char can be provided if user want strict validation of escape character in CSV files.
 
     ```
     OPTIONS('ESCAPECHAR'='\') 
@@ -413,6 +435,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    ```
    LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
    options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
+   'HEADER'='false',
    'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,
    workgroupcategoryname,deptno,deptname,projectcode,
    projectjoindate,projectenddate,attendance,utilization,salary',
@@ -435,10 +458,10 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * BAD_RECORDS_ACTION property can have four type of actions for bad records FORCE, REDIRECT, IGNORE and FAIL.
   * FAIL option is its Default value. If the FAIL option is used, then data loading fails if any bad records are found.
   * If the REDIRECT option is used, CarbonData will add all bad records in to a separate CSV file. However, this file must not be used for subsequent data loading because the content may not exactly match the source record. You are advised to cleanse the original source record for further data ingestion. This option is used to remind you which records are bad records.
-  * If the FORCE option is used, then it auto-corrects the data by storing the bad records as NULL before Loading data.
+  * If the FORCE option is used, then it auto-converts the data by storing the bad records as NULL before Loading data.
   * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
   * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
-  * The maximum number of characters per column is 100000. If there are more than 100000 characters in a column, data loading will fail.
+  * The maximum number of characters per column is 32000. If there are more than 32000 characters in a column, data loading will fail.
 
   Example:
 
@@ -503,7 +526,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   [ WHERE { <filter_condition> } ]
   ```
   
-  alternatively the following the command can also be used for updating the CarbonData Table :
+  alternatively the following command can also be used for updating the CarbonData Table :
   
   ```
   UPDATE <table_name>
@@ -563,7 +586,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 ## COMPACTION
 
   Compaction improves the query performance significantly. 
-  During the load data, several CarbonData files are generated, this is because data is sorted only within each load (per load segment and one B+ tree index).
   
   There are two types of compaction, Minor and Major compaction.
   
@@ -587,6 +609,8 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   In Major compaction, multiple segments can be merged into one large segment. 
   User will specify the compaction size until which segments can be merged, Major compaction is usually done during the off-peak time.
+  Configure the property carbon.major.compaction.size with appropriate value in MB.
+  
   This command merges the specified number of segments into one segment: 
      
   ```
@@ -622,13 +646,13 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   Example:
   ```
    CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                                productNumber Int,
-                                productName String,
-                                storeCity String,
-                                storeProvince String,
-                                saleQuantity Int,
-                                revenue Int)
-  PARTITIONED BY (productCategory String, productBatch String)
+                                productNumber INT,
+                                productName STRING,
+                                storeCity STRING,
+                                storeProvince STRING,
+                                saleQuantity INT,
+                                revenue INT)
+  PARTITIONED BY (productCategory STRING, productBatch STRING)
   STORED BY 'carbondata'
   ```
 		
@@ -638,21 +662,19 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   ```
   LOAD DATA [LOCAL] INPATH 'folder_path' 
-    INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
-    OPTIONS(property_name=property_value, ...)
-  NSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) SELECT STATMENT 
+  INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
+  OPTIONS(property_name=property_value, ...)    
+  INSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATMENT>
   ```
   
   Example:
   ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.txt'
-    INTO TABLE locationTable
-    PARTITION (country = 'US', state = 'CA')
-    
+  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
+  INTO TABLE locationTable
+  PARTITION (country = 'US', state = 'CA')  
   INSERT INTO TABLE locationTable
-    PARTITION (country = 'US', state = 'AL')
-    SELECT * FROM another_user au 
-    WHERE au.country = 'US' AND au.state = 'AL';
+  PARTITION (country = 'US', state = 'AL')
+  SELECT <columns list excluding partition columns> FROM another_user
   ```
 
 #### Load Data Using Dynamic Partition
@@ -661,12 +683,10 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   Example:
   ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.txt'
-    INTO TABLE locationTable
-          
+  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
+  INTO TABLE locationTable          
   INSERT INTO TABLE locationTable
-    SELECT * FROM another_user au 
-    WHERE au.country = 'US' AND au.state = 'AL';
+  SELECT <columns list excluding partition columns> FROM another_user
   ```
 
 #### Show Partitions
@@ -686,23 +706,23 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 #### Insert OVERWRITE
   
-  This command allows you to insert or load overwrite on a spcific partition.
+  This command allows you to insert or load overwrite on a specific partition.
   
   ```
    INSERT OVERWRITE TABLE table_name
-    PARTITION (column = 'partition_name')
-    select_statement
+   PARTITION (column = 'partition_name')
+   select_statement
   ```
   
   Example:
   ```
   INSERT OVERWRITE TABLE partitioned_user
-    PARTITION (country = 'US')
-    SELECT * FROM another_user au 
-    WHERE au.country = 'US';
+  PARTITION (country = 'US')
+  SELECT * FROM another_user au 
+  WHERE au.country = 'US';
   ```
 
-### CARBONDATA PARTITION(HASH,RANGE,LIST) -- Alpha feature, this partition not supports update and delete data.
+### CARBONDATA PARTITION(HASH,RANGE,LIST) -- Alpha feature, this partition feature does not support update and delete data.
 
   The partition supports three type:(Hash,Range,List), similar to other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column.
 
@@ -724,12 +744,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   Example:
   ```
   CREATE TABLE IF NOT EXISTS hash_partition_table(
-      col_A String,
-      col_B Int,
-      col_C Long,
-      col_D Decimal(10,2),
-      col_F Timestamp
-  ) PARTITIONED BY (col_E Long)
+      col_A STRING,
+      col_B INT,
+      col_C LONG,
+      col_D DECIMAL(10,2),
+      col_F TIMESTAMP
+  ) PARTITIONED BY (col_E LONG)
   STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='9')
   ```
 
@@ -752,11 +772,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   Example:
   ```
   CREATE TABLE IF NOT EXISTS range_partition_table(
-      col_A String,
-      col_B Int,
-      col_C Long,
-      col_D Decimal(10,2),
-      col_E Long
+      col_A STRING,
+      col_B INT,
+      col_C LONG,
+      col_D DECIMAL(10,2),
+      col_E LONG
    ) partitioned by (col_F Timestamp)
    PARTITIONED BY 'carbondata'
    TBLPROPERTIES('PARTITION_TYPE'='RANGE',
@@ -779,12 +799,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   Example:
   ```
   CREATE TABLE IF NOT EXISTS list_partition_table(
-      col_B Int,
-      col_C Long,
-      col_D Decimal(10,2),
-      col_E Long,
-      col_F Timestamp
-   ) PARTITIONED BY (col_A String)
+      col_B INT,
+      col_C LONG,
+      col_D DECIMAL(10,2),
+      col_E LONG,
+      col_F TIMESTAMP
+   ) PARTITIONED BY (col_A STRING)
    STORED BY 'carbondata'
    TBLPROPERTIES('PARTITION_TYPE'='LIST',
    'LIST_INFO'='aaaa, bbbb, (cccc, dddd), eeee')
@@ -838,251 +858,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * The partitioned column can be excluded from SORT_COLUMNS, this will let other columns to do the efficient sorting.
   * When writing SQL on a partition table, try to use filters on the partition column.
 
-
-## PRE-AGGREGATE TABLES
-  Carbondata supports pre aggregating of data so that OLAP kind of queries can fetch data 
-  much faster.Aggregate tables are created as datamaps so that the handling is as efficient as 
-  other indexing support.Users can create as many aggregate tables they require as datamaps to 
-  improve their query performance,provided the storage requirements and loading speeds are 
-  acceptable.
-  
-  For main table called **sales** which is defined as 
-  
-  ```
-  CREATE TABLE sales (
-  order_time timestamp,
-  user_id string,
-  sex string,
-  country string,
-  quantity int,
-  price bigint)
-  STORED BY 'carbondata'
-  ```
-  
-  user can create pre-aggregate tables using the DDL
-  
-  ```
-  CREATE DATAMAP agg_sales
-  ON TABLE sales
-  USING "preaggregate"
-  AS
-  SELECT country, sex, sum(quantity), avg(price)
-  FROM sales
-  GROUP BY country, sex
-  ```
-  
-<b><p align="left">Functions supported in pre-aggregate tables</p></b>
-
-| Function | Rollup supported |
-|-----------|----------------|
-| SUM | Yes |
-| AVG | Yes |
-| MAX | Yes |
-| MIN | Yes |
-| COUNT | Yes |
-
-
-##### How pre-aggregate tables are selected
-For the main table **sales** and pre-aggregate table **agg_sales** created above, queries of the 
-kind
-```
-SELECT country, sex, sum(quantity), avg(price) from sales GROUP BY country, sex
-
-SELECT sex, sum(quantity) from sales GROUP BY sex
-
-SELECT sum(price), country from sales GROUP BY country
-``` 
-
-will be transformed by Query Planner to fetch data from pre-aggregate table **agg_sales**
-
-But queries of kind
-```
-SELECT user_id, country, sex, sum(quantity), avg(price) from sales GROUP BY country, sex
-
-SELECT sex, avg(quantity) from sales GROUP BY sex
-
-SELECT max(price), country from sales GROUP BY country
-```
-
-will fetch the data from the main table **sales**
-
-##### Loading data to pre-aggregate tables
-For existing table with loaded data, data load to pre-aggregate table will be triggered by the 
-CREATE DATAMAP statement when user creates the pre-aggregate table.
-For incremental loads after aggregates tables are created, loading data to main table triggers 
-the load to pre-aggregate tables once main table loading is complete.These loads are automic 
-meaning that data on main table and aggregate tables are only visible to the user after all tables 
-are loaded
-
-##### Querying data from pre-aggregate tables
-Pre-aggregate tables cannot be queries directly.Queries are to be made on main table.Internally 
-carbondata will check associated pre-aggregate tables with the main table and if the 
-pre-aggregate tables satisfy the query condition, the plan is transformed automatically to use 
-pre-aggregate table to fetch the data
-
-##### Compacting pre-aggregate tables
-Compaction is an optional operation for pre-aggregate table. If compaction is performed on main 
-table but not performed on pre-aggregate table, all queries still can benefit from pre-aggregate 
-table.To further improve performance on pre-aggregate table, compaction can be triggered on 
-pre-aggregate tables directly, it will merge the segments inside pre-aggregation table. 
-To do that, use ALTER TABLE COMPACT command on the pre-aggregate table just like the main table
-
-  NOTE:
-  * If the aggregate function used in the pre-aggregate table creation included distinct-count,
-     during compaction, the pre-aggregate table values are recomputed.This would a costly 
-     operation as compared to the compaction of pre-aggregate tables containing other aggregate 
-     functions alone
- 
-##### Update/Delete Operations on pre-aggregate tables
-This functionality is not supported.
-
-  NOTE (<b>RESTRICTION</b>):
-  * Update/Delete operations are <b>not supported</b> on main table which has pre-aggregate tables 
-  created on it.All the pre-aggregate tables <b>will have to be dropped</b> before update/delete 
-  operations can be performed on the main table.Pre-aggregate tables can be rebuilt manually 
-  after update/delete operations are completed
- 
-##### Delete Segment Operations on pre-aggregate tables
-This functionality is not supported.
-
-  NOTE (<b>RESTRICTION</b>):
-  * Delete Segment operations are <b>not supported</b> on main table which has pre-aggregate tables 
-  created on it.All the pre-aggregate tables <b>will have to be dropped</b> before update/delete 
-  operations can be performed on the main table.Pre-aggregate tables can be rebuilt manually 
-  after delete segment operations are completed
-  
-##### Alter Table Operations on pre-aggregate tables
-This functionality is not supported.
-
-  NOTE (<b>RESTRICTION</b>):
-  * Adding new column in new table does not have any affect on pre-aggregate tables. However if 
-  dropping or renaming a column has impact in pre-aggregate table, such operations will be 
-  rejected and error will be thrown.All the pre-aggregate tables <b>will have to be dropped</b> 
-  before Alter Operations can be performed on the main table.Pre-aggregate tables can be rebuilt 
-  manually after Alter Table operations are completed
-  
-### Supporting timeseries data (Alpha feature in 1.3.0)
-Carbondata has built-in understanding of time hierarchy and levels: year, month, day, hour, minute.
-Multiple pre-aggregate tables can be created for the hierarchy and Carbondata can do automatic 
-roll-up for the queries on these hierarchies.
-
-  ```
-  CREATE DATAMAP agg_year
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-  'event_time’=’order_time’,
-  'year_granualrity’=’1’,
-  ) AS
-  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-   avg(price) FROM sales GROUP BY order_time, country, sex
-    
-  CREATE DATAMAP agg_month
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-  'event_time’=’order_time’,
-  'month_granualrity’=’1’,
-  ) AS
-  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-   avg(price) FROM sales GROUP BY order_time, country, sex
-    
-  CREATE DATAMAP agg_day
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-  'event_time’=’order_time’,
-  'day_granualrity’=’1’,
-  ) AS
-  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-   avg(price) FROM sales GROUP BY order_time, country, sex
-        
-  CREATE DATAMAP agg_sales_hour
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-  'event_time’=’order_time’,
-  'hour_granualrity’=’1’,
-  ) AS
-  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-   avg(price) FROM sales GROUP BY order_time, country, sex
-  
-  CREATE DATAMAP agg_minute
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-  'event_time’=’order_time’,
-  'minute_granualrity’=’1’,
-  ) AS
-  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-   avg(price) FROM sales GROUP BY order_time, country, sex
-    
-  CREATE DATAMAP agg_minute
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-  'event_time’=’order_time’,
-  'minute_granualrity’=’1’,
-  ) AS
-  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-   avg(price) FROM sales GROUP BY order_time, country, sex
-  ```
-  
-  For Querying data and automatically roll-up to the desired aggregation level,Carbondata supports 
-  UDF as
-  ```
-  timeseries(timeseries column name, ‘aggregation level’)
-  ```
-  ```
-  Select timeseries(order_time, ‘hour’), sum(quantity) from sales group by timeseries(order_time,
-  ’hour’)
-  ```
-  
-  It is **not necessary** to create pre-aggregate tables for each granularity unless required for 
-  query
-  .Carbondata
-   can roll-up the data and fetch it
-   
-  For Example: For main table **sales** , If pre-aggregate tables were created as  
-  
-  ```
-  CREATE DATAMAP agg_day
-    ON TABLE sales
-    USING "timeseries"
-    DMPROPERTIES (
-    'event_time’=’order_time’,
-    'day_granualrity’=’1’,
-    ) AS
-    SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-     avg(price) FROM sales GROUP BY order_time, country, sex
-          
-    CREATE DATAMAP agg_sales_hour
-    ON TABLE sales
-    USING "timeseries"
-    DMPROPERTIES (
-    'event_time’=’order_time’,
-    'hour_granualrity’=’1’,
-    ) AS
-    SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-     avg(price) FROM sales GROUP BY order_time, country, sex
-  ```
-  
-  Queries like below will be rolled-up and fetched from pre-aggregate tables
-  ```
-  Select timeseries(order_time, ‘month’), sum(quantity) from sales group by timeseries(order_time,
-    ’month’)
-    
-  Select timeseries(order_time, ‘year’), sum(quantity) from sales group by timeseries(order_time,
-    ’year’)
-  ```
-  
-  NOTE (<b>RESTRICTION</b>):
-  * Only value of 1 is supported for hierarchy levels. Other hierarchy levels are not supported. 
-  Other hierarchy levels are not supported
-  * pre-aggregate tables for the desired levels needs to be created one after the other
-  * pre-aggregate tables created for each level needs to be dropped separately 
-    
-
 ## BUCKETING
 
   Bucketing feature can be used to distribute/organize the table/partition data into multiple files such
@@ -1099,20 +874,20 @@ roll-up for the queries on these hierarchies.
   ```
 
   NOTE:
-  * Bucketing can not be performed for columns of Complex Data Types.
-  * Columns in the BUCKETCOLUMN parameter must be only dimension. The BUCKETCOLUMN parameter can not be a measure or a combination of measures and dimensions.
+  * Bucketing cannot be performed for columns of Complex Data Types.
+  * Columns in the BUCKETCOLUMN parameter must be dimensions. The BUCKETCOLUMN parameter cannot be a measure or a combination of measures and dimensions.
 
   Example:
   ```
   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                                productNumber Int,
-                                saleQuantity Int,
-                                productName String,
-                                storeCity String,
-                                storeProvince String,
-                                productCategory String,
-                                productBatch String,
-                                revenue Int)
+                                productNumber INT,
+                                saleQuantity INT,
+                                productName STRING,
+                                storeCity STRING,
+                                storeProvince STRING,
+                                productCategory STRING,
+                                productBatch STRING,
+                                revenue INT)
   STORED BY 'carbondata'
   TBLPROPERTIES ('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='productName')
   ```
@@ -1121,7 +896,7 @@ roll-up for the queries on these hierarchies.
 
 ### SHOW SEGMENT
 
-  This command is used to get the segments of CarbonData table.
+  This command is used to list the segments of CarbonData table.
 
   ```
   SHOW SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
@@ -1187,7 +962,7 @@ roll-up for the queries on these hierarchies.
   NOTE:
   carbon.input.segments: Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
   
-  If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query.
+  If user wants to query with segments reading in multi threading mode, then CarbonSession. threadSet can be used instead of SET query.
   ```
   CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
   ```
@@ -1197,7 +972,7 @@ roll-up for the queries on these hierarchies.
   SET carbon.input.segments.<database_name>.<table_name> = *;
   ```
   
-  If user wants to query with segments reading in multi threading mode, then CarbonSession.threadSet can be used instead of SET query. 
+  If user wants to query with segments reading in multi threading mode, then CarbonSession. threadSet can be used instead of SET query. 
   ```
   CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","*");
   ```

@@ -74,9 +74,11 @@ public class CarbonLockUtil {
   public static ICarbonLock getLockObject(AbsoluteTableIdentifier absoluteTableIdentifier,
       String lockType, String errorMsg) {
     ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, lockType);
-    LOGGER.info("Trying to acquire lock: " + carbonLock);
+    LOGGER.info("Trying to acquire lock: " + lockType + "for table: " +
+        absoluteTableIdentifier.toString());
     if (carbonLock.lockWithRetries()) {
-      LOGGER.info("Successfully acquired the lock " + carbonLock);
+      LOGGER.info("Successfully acquired the lock " + lockType + "for table: " +
+          absoluteTableIdentifier.toString());
     } else {
       LOGGER.error(errorMsg);
       throw new RuntimeException(errorMsg);

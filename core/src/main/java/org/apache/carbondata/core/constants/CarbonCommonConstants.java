@@ -650,10 +650,6 @@ public final class CarbonCommonConstants {
    */
   public static final int DEFAULT_MAX_QUERY_EXECUTION_TIME = 60;
   /**
-   * LOADMETADATA_FILENAME
-   */
-  public static final String LOADMETADATA_FILENAME = "tablestatus";
-  /**
    * TABLE UPDATE STATUS FILENAME
    */
   public static final String TABLEUPDATESTATUS_FILENAME = "tableupdatestatus";
@@ -1597,6 +1593,23 @@ public final class CarbonCommonConstants {
   public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP =
       "carbon.query.validate.directqueryondatamap";
   public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "true";
+
+  /**
+   * If the heap memory allocations of the given size is greater or equal than this value,
+   * it should go through the pooling mechanism.
+   * But if set this size to -1, it should not go through the pooling mechanism.
+   * Default value is 1048576(1MB, the same as Spark).
+   * Unit: byte.
+   */
+  @CarbonProperty
+  public static final String CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES =
+      "carbon.heap.memory.pooling.threshold.bytes";
+  public static final String CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT = "1048576";
+
+  @CarbonProperty
+  public static final String CARBON_SHOW_DATAMAPS = "carbon.query.show.datamaps";
+
+  public static final String CARBON_SHOW_DATAMAPS_DEFAULT = "true";
 
   private CarbonCommonConstants() {
   }

@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
@@ -71,7 +72,7 @@ public class DataMapWriterListener {
     }
     List<String> columns = factory.getMeta().getIndexedColumns();
     List<DataMapWriter> writers = registry.get(columns);
-    DataMapWriter writer = factory.createWriter(segmentId);
+    DataMapWriter writer = factory.createWriter(new Segment(segmentId, null));
     if (writers != null) {
       writers.add(writer);
     } else {

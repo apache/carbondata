@@ -40,6 +40,10 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists restructure_bad")
     sql("drop table if exists restructure_badnew")
     sql("drop table if exists allKeyCol")
+    sql("drop table if exists testalterwithboolean")
+    sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
+
+
     // clean data folder
     CarbonProperties.getInstance()
     sql(
@@ -126,6 +130,28 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("select distinct(msrField) from restructure").show(2000,false)
     checkAnswer(sql("select distinct(msrField) from restructure"),
       Row(new BigDecimal("123.45").setScale(2, RoundingMode.HALF_UP)))
+  }
+
+  // test alter add LONG datatype before load, see CARBONDATA-2131
+  test("test add long column before load") {
+    sql("drop table if exists alterLong")
+    sql("create table alterLong (name string) stored by 'carbondata'")
+    sql("alter table alterLong add columns(newCol long)")
+    sql("insert into alterLong select 'a',60000")
+    checkAnswer(sql("select * from alterLong"), Row("a", 60000))
+    sql("drop table if exists alterLong")
+  }
+
+  // test alter add LONG datatype after load, see CARBONDATA-2131
+  test("test add long column after load") {
+    sql("drop table if exists alterLong1")
+    sql("create table alterLong1 (name string) stored by 'carbondata'")
+    sql("insert into alterLong1 select 'a'")
+    sql("alter table alterLong1 add columns(newCol long)")
+    checkAnswer(sql("select * from alterLong1"), Row("a", null))
+    sql("insert into alterLong1 select 'b',70")
+    checkAnswer(sql("select * from alterLong1"), Seq(Row("a", null),Row("b", 70)))
+    sql("drop table if exists alterLong1")
   }
 
   test("test add all datatype supported dictionary column") {
@@ -544,7 +570,20 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists restructure1")
     sql("drop table if exists restructure")
   }
-
+test("test alter command for boolean data type with correct default measure value") {
+  sql("create table testalterwithboolean(id int,name string) stored by 'carbondata' ")
+  sql("insert into testalterwithboolean values(1,'anubhav')  ")
+  sql(
+    "alter table testalterwithboolean add columns(booleanfield boolean) tblproperties('default.value.booleanfield'='true')")
+  checkAnswer(sql("select * from testalterwithboolean"),Seq(Row(1,"anubhav",true)))
+}
+  test("test alter command for boolean data type with out default measure value") {
+    sql("create table testalterwithbooleanwithoutdefaultvalue(id int,name string) stored by 'carbondata' ")
+    sql("insert into testalterwithbooleanwithoutdefaultvalue values(1,'anubhav')  ")
+    sql(
+      "alter table testalterwithbooleanwithoutdefaultvalue add columns(booleanfield boolean)")
+    checkAnswer(sql("select * from testalterwithbooleanwithoutdefaultvalue"),Seq(Row(1,"anubhav",null)))
+  }
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("drop table if exists table1")
@@ -558,5 +597,8 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists defaultSortColumnsWithAlter")
     sql("drop table if exists specifiedSortColumnsWithAlter")
     sql("drop table if exists allKeyCol")
+    sql("drop table if exists testalterwithboolean")
+    sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
+
   }
 }

@@ -117,22 +117,25 @@ public final class CarbonDataProcessorUtil {
       }
     }
   }
+
   /**
+   *
    * This method will form the local data folder store location
    *
-   * @param databaseName
-   * @param tableName
+   * @param carbonTable
    * @param taskId
    * @param partitionId
    * @param segmentId
+   * @param isCompactionFlow
+   * @param isAltPartitionFlow
    * @return
    */
-  public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
+  public static String[] getLocalDataFolderLocation(CarbonTable carbonTable, String tableName,
       String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
       boolean isAltPartitionFlow) {
     String tempLocationKey =
-        getTempStoreLocationKey(databaseName, tableName, segmentId, taskId, isCompactionFlow,
-            isAltPartitionFlow);
+        getTempStoreLocationKey(carbonTable.getDatabaseName(), tableName,
+            segmentId, taskId, isCompactionFlow, isAltPartitionFlow);
     String baseTempStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey);
     if (baseTempStorePath == null) {
@@ -145,7 +148,6 @@ public final class CarbonDataProcessorUtil {
     String[] baseTmpStorePathArray = StringUtils.split(baseTempStorePath, File.pathSeparator);
     String[] localDataFolderLocArray = new String[baseTmpStorePathArray.length];
 
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     for (int i = 0 ; i < baseTmpStorePathArray.length; i++) {
       String tmpStore = baseTmpStorePathArray[i];
       CarbonTablePath carbonTablePath =
@@ -156,6 +158,26 @@ public final class CarbonDataProcessorUtil {
       localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
     }
     return localDataFolderLocArray;
+  }
+
+  /**
+   * This method will form the local data folder store location
+   *
+   * @param databaseName
+   * @param tableName
+   * @param taskId
+   * @param partitionId
+   * @param segmentId
+   * @param isCompactionFlow
+   * @param isAltPartitionFlow
+   * @return
+   */
+  public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
+      String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
+      boolean isAltPartitionFlow) {
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
+    return getLocalDataFolderLocation(carbonTable, tableName, taskId, partitionId,
+        segmentId, isCompactionFlow, isAltPartitionFlow);
   }
 
   /**
@@ -302,7 +324,7 @@ public final class CarbonDataProcessorUtil {
   }
 
   public static boolean isHeaderValid(String tableName, String[] csvHeader,
-      CarbonDataLoadSchema schema) {
+      CarbonDataLoadSchema schema, List<String> ignoreColumns) {
     Iterator<String> columnIterator =
         CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName).iterator();
     Set<String> csvColumns = new HashSet<String>(csvHeader.length);
@@ -311,7 +333,8 @@ public final class CarbonDataProcessorUtil {
     // file header should contain all columns of carbon table.
     // So csvColumns should contain all elements of columnIterator.
     while (columnIterator.hasNext()) {
-      if (!csvColumns.contains(columnIterator.next().toLowerCase())) {
+      String column = columnIterator.next().toLowerCase();
+      if (!csvColumns.contains(column) && !ignoreColumns.contains(column)) {
         return false;
       }
     }
@@ -377,7 +400,7 @@ public final class CarbonDataProcessorUtil {
    *
    * @return data directory path
    */
-  public static String checkAndCreateCarbonStoreLocation(String factStoreLocation,
+  public static String createCarbonStoreLocation(String factStoreLocation,
       String databaseName, String tableName, String partitionId, String segmentId) {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
@@ -385,7 +408,6 @@ public final class CarbonDataProcessorUtil {
         CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
-    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }
 
@@ -482,22 +504,19 @@ public final class CarbonDataProcessorUtil {
 
   /**
    * Get the number of partitions in global sort
-   * @param configuration
+   * @param globalSortPartitions
    * @return the number of partitions
    */
-  public static int getGlobalSortPartitions(CarbonDataLoadConfiguration configuration) {
+  public static int getGlobalSortPartitions(Object globalSortPartitions) {
     int numPartitions;
     try {
       // First try to get the number from ddl, otherwise get it from carbon properties.
-      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
-          == null) {
+      if (globalSortPartitions == null) {
         numPartitions = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
             CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT));
       } else {
-        numPartitions = Integer.parseInt(
-          configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
-            .toString());
+        numPartitions = Integer.parseInt(globalSortPartitions.toString());
       }
     } catch (Exception e) {
       numPartitions = 0;

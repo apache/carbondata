@@ -28,6 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.util.CarbonUtil
@@ -38,7 +39,8 @@ case class CarbonCreateTableCommand(
     tableInfo: TableInfo,
     ifNotExistsSet: Boolean = false,
     tableLocation: Option[String] = None,
-    createDSTable: Boolean = true)
+    createDSTable: Boolean = true,
+    isVisible: Boolean = true)
   extends MetadataCommand {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
@@ -97,11 +99,26 @@ case class CarbonCreateTableCommand(
           val partitionString =
             if (partitionInfo != null &&
                 partitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
+              // Restrict dictionary encoding on partition columns.
+              // TODO Need to decide wherher it is required
+              val dictionaryOnPartitionColumn =
+              partitionInfo.getColumnSchemaList.asScala.exists{p =>
+                p.hasEncoding(Encoding.DICTIONARY) && !p.hasEncoding(Encoding.DIRECT_DICTIONARY)
+              }
+              if (dictionaryOnPartitionColumn) {
+                throwMetadataException(
+                  dbName,
+                  tableName,
+                  s"Dictionary include cannot be applied on partition columns")
+              }
               s" PARTITIONED BY (${partitionInfo.getColumnSchemaList.asScala.map(
                 _.getColumnName).mkString(",")})"
             } else {
               ""
             }
+          // isVisible property is added to hive table properties to differentiate between main
+          // table and datamaps(like preaggregate). It is false only for datamaps. This is added
+          // to improve the show tables performance when filtering the datamaps from main tables
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tableName
                |(${ rawSchema })
@@ -110,7 +127,8 @@ case class CarbonCreateTableCommand(
                |  tableName "$tableName",
                |  dbName "$dbName",
                |  tablePath "$tablePath",
-               |  path "$tablePath"
+               |  path "$tablePath",
+               |  isVisible "$isVisible"
                |  $carbonSchemaString)
                |  $partitionString
              """.stripMargin)
@@ -124,7 +142,7 @@ case class CarbonCreateTableCommand(
             val msg = s"Create table'$tableName' in database '$dbName' failed"
             LOGGER.audit(msg.concat(", ").concat(e.getMessage))
             LOGGER.error(e, msg)
-            throwMetadataException(dbName, tableName, msg)
+            throwMetadataException(dbName, tableName, msg.concat(", ").concat(e.getMessage))
         }
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =

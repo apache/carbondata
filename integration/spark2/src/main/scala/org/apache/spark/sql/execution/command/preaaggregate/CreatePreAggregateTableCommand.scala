@@ -27,6 +27,7 @@ import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
+import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -79,7 +80,7 @@ case class CreatePreAggregateTableCommand(
     )
     tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, neworder.mkString(","))
     tableProperties.put("sort_scope", parentTable.getTableInfo.getFactTable.
-      getTableProperties.getOrDefault("sort_scope", CarbonCommonConstants
+      getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT))
     tableProperties
       .put(CarbonCommonConstants.TABLE_BLOCKSIZE, parentTable.getBlockSizeInMB.toString)
@@ -97,8 +98,6 @@ case class CreatePreAggregateTableCommand(
       None,
       isAlterFlow = false,
       None)
-
-
     // updating the relation identifier, this will be stored in child table
     // which can be used during dropping of pre-aggreate table as parent table will
     // also get updated
@@ -119,7 +118,7 @@ case class CreatePreAggregateTableCommand(
       CarbonEnv.getTablePath(tableModel.databaseNameOp, tableModel.tableName)(sparkSession)
     }
     CarbonCreateTableCommand(TableNewProcessor(tableModel),
-      tableModel.ifNotExistsSet, Some(tablePath)).run(sparkSession)
+      tableModel.ifNotExistsSet, Some(tablePath), isVisible = false).run(sparkSession)
 
     val table = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
     val tableInfo = table.getTableInfo
@@ -133,21 +132,19 @@ case class CreatePreAggregateTableCommand(
     dmProperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
 
     // updating the parent table about child table
-    PreAggregateUtil.updateMainTable(
-      CarbonEnv.getDatabaseName(parentTableIdentifier.database)(sparkSession),
-      parentTableIdentifier.table,
-      childSchema,
-      sparkSession)
-    // After updating the parent carbon table with data map entry extract the latest table object
-    // to be used in further create process.
-    parentTable = CarbonEnv.getCarbonTable(parentTableIdentifier.database,
-      parentTableIdentifier.table)(sparkSession)
+    try {
+      PreAggregateUtil.updateMainTable(
+        CarbonEnv.getDatabaseName(parentTableIdentifier.database)(sparkSession),
+        parentTableIdentifier.table,
+        childSchema,
+        sparkSession)
+    } catch {
+      case ex: Exception =>
+        undoMetadata(sparkSession, ex)
+        throw ex
+    }
     val updatedLoadQuery = if (timeSeriesFunction.isDefined) {
-      val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
-        .filter(p => p.getDataMapName
-          .equalsIgnoreCase(dataMapName)).head
-        .asInstanceOf[AggregationDataMapSchema]
-      PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMap.getChildSchema,
+      PreAggregateUtil.createTimeSeriesSelectQueryFromMain(childSchema.getChildSchema,
         parentTable.getTableName,
         parentTable.getDatabaseName)
     }
@@ -156,11 +153,8 @@ case class CreatePreAggregateTableCommand(
     }
     val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
       updatedLoadQuery)).drop("preAggLoad")
-    val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
-      .filter(dataMap => dataMap.getDataMapName.equalsIgnoreCase(dataMapName)).head
-      .asInstanceOf[AggregationDataMapSchema]
     loadCommand = PreAggregateUtil.createLoadCommandForChild(
-      dataMap.getChildSchema.getListOfColumns,
+      childSchema.getChildSchema.getListOfColumns,
       tableIdentifier,
       dataFrame,
       false,
@@ -175,7 +169,8 @@ case class CreatePreAggregateTableCommand(
       dataMapName,
       ifExistsSet = true,
       parentTableIdentifier.database,
-      parentTableIdentifier.table).run(sparkSession)
+      parentTableIdentifier.table,
+      forceDrop = true).run(sparkSession)
     Seq.empty
   }
 
@@ -184,24 +179,17 @@ case class CreatePreAggregateTableCommand(
     // This will be used to check if the parent table has any segments or not. If not then no
     // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT
     // table.
-    DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, parentTable)
+    DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false,
+      parentTable,
+      CarbonFilters.getCurrentPartitions(sparkSession,
+      TableIdentifier(parentTable.getTableName,
+        Some(parentTable.getDatabaseName))).map(_.asJava).orNull)
     val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetaDataFilepath)
     if (loadAvailable.exists(load => load.getSegmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
       load.getSegmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS)) {
       throw new UnsupportedOperationException(
         "Cannot create pre-aggregate table when insert is in progress on main table")
     } else if (loadAvailable.nonEmpty) {
-      val updatedQuery = if (timeSeriesFunction.isDefined) {
-        val dataMap = parentTable.getTableInfo.getDataMapSchemaList.asScala
-          .filter(p => p.getDataMapName
-            .equalsIgnoreCase(dataMapName)).head
-          .asInstanceOf[AggregationDataMapSchema]
-        PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMap.getChildSchema,
-          parentTable.getTableName,
-          parentTable.getDatabaseName)
-      } else {
-        queryString
-      }
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.
       loadCommand.dataFrame = Some(PreAggregateUtil

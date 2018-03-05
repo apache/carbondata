@@ -80,7 +80,7 @@ In order to build CarbonData project it is necessary to specify the spark profil
 
 ## How Carbon will behave when execute insert operation in abnormal scenarios?
 Carbon support insert operation, you can refer to the syntax mentioned in [DML Operations on CarbonData](dml-operation-on-carbondata.md).
-First, create a soucre table in spark-sql and load data into this created table.
+First, create a source table in spark-sql and load data into this created table.
 
 ```
 CREATE TABLE source_table(
@@ -124,7 +124,7 @@ id  city    name
 
 As result shows, the second column is city in carbon table, but what inside is name, such as jack. This phenomenon is same with insert data into hive table.
 
-If you want to insert data into corresponding column in carbon table, you have to specify the column order same in insert statment. 
+If you want to insert data into corresponding column in carbon table, you have to specify the column order same in insert statement. 
 
 ```
 INSERT INTO TABLE carbon_table SELECT id, city, name FROM source_table;

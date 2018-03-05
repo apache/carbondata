@@ -143,4 +143,9 @@ public class AbsoluteTableIdentifier implements Serializable {
   public String getTableName() {
     return carbonTableIdentifier.getTableName();
   }
+
+  public String toString() {
+    return carbonTableIdentifier.toString();
+  }
+
 }

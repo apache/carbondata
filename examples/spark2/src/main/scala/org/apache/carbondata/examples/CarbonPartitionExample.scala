@@ -26,6 +26,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 object CarbonPartitionExample {
 
@@ -195,7 +196,7 @@ object CarbonPartitionExample {
     try {
       spark.sql("""SHOW PARTITIONS t1""").show(100, false)
     } catch {
-      case ex: AnalysisException => LOGGER.error(ex.getMessage())
+      case ex: ProcessMetaDataException => LOGGER.error(ex.getMessage())
     }
     spark.sql("""SHOW PARTITIONS t0""").show(100, false)
     spark.sql("""SHOW PARTITIONS t3""").show(100, false)

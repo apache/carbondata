@@ -54,11 +54,11 @@ object CarbonDataFrameExample {
     // Saves dataframe to carbondata file
     df.write
       .format("carbondata")
-      .option("tableName", "carbon_table")
+      .option("tableName", "carbon_df_table")
       .mode(SaveMode.Overwrite)
       .save()
 
-    spark.sql(""" SELECT * FROM carbon_table """).show()
+    spark.sql(""" SELECT * FROM carbon_df_table """).show()
 
     // Specify schema
     import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType}
@@ -72,7 +72,7 @@ object CarbonDataFrameExample {
       .format("carbondata")
       .schema(customSchema)
       // .option("dbname", "db_name") the system will use "default" as dbname if not set this option
-      .option("tableName", "carbon_table")
+      .option("tableName", "carbon_df_table")
       .load()
 
     // Dataframe operations
@@ -80,7 +80,7 @@ object CarbonDataFrameExample {
     carbondf.select($"c1", $"number" + 10).show()
     carbondf.filter($"number" > 31).show()
 
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
+    spark.sql("DROP TABLE IF EXISTS carbon_df_table")
 
     spark.stop()
   }

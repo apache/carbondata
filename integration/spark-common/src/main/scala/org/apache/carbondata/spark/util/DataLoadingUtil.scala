@@ -18,7 +18,8 @@
 package org.apache.carbondata.spark.util
 
 import java.text.SimpleDateFormat
-import java.util.{Date, Locale}
+import java.util
+import java.util.{Date, List, Locale}
 
 import scala.collection.{immutable, mutable}
 import scala.collection.JavaConverters._
@@ -43,9 +44,11 @@ import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
@@ -122,11 +125,11 @@ object DataLoadingUtil {
 
     optionsFinal.put(
       "complex_delimiter_level_1",
-      options.getOrElse("complex_delimiter_level_1", "\\$"))
+      options.getOrElse("complex_delimiter_level_1", "$"))
 
     optionsFinal.put(
       "complex_delimiter_level_2",
-      options.getOrElse("complex_delimiter_level_2", "\\:"))
+      options.getOrElse("complex_delimiter_level_2", ":"))
 
     optionsFinal.put(
       "dateformat",
@@ -221,7 +224,9 @@ object DataLoadingUtil {
       options: immutable.Map[String, String],
       optionsFinal: mutable.Map[String, String],
       carbonLoadModel: CarbonLoadModel,
-      hadoopConf: Configuration): Unit = {
+      hadoopConf: Configuration,
+      partition: Map[String, Option[String]] = Map.empty,
+      isDataFrame: Boolean = false): Unit = {
     carbonLoadModel.setTableName(table.getTableName)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTablePath(table.getTablePath)
@@ -323,18 +328,21 @@ object DataLoadingUtil {
         delimeter.equalsIgnoreCase(complex_delimeter_level2)) {
       CarbonException.analysisException(s"Field Delimiter and Complex types delimiter are same")
     } else {
-      carbonLoadModel.setComplexDelimiterLevel1(
-        CarbonUtil.delimiterConverter(complex_delimeter_level1))
-      carbonLoadModel.setComplexDelimiterLevel2(
-        CarbonUtil.delimiterConverter(complex_delimeter_level2))
+      carbonLoadModel.setComplexDelimiterLevel1(complex_delimeter_level1)
+      carbonLoadModel.setComplexDelimiterLevel2(complex_delimeter_level2)
     }
     // set local dictionary path, and dictionary file extension
     carbonLoadModel.setAllDictPath(all_dictionary_path)
     carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimeter))
     carbonLoadModel.setCsvHeader(fileHeader)
     carbonLoadModel.setColDictFilePath(column_dict)
+
+    val ignoreColumns = new util.ArrayList[String]()
+    if (!isDataFrame) {
+      ignoreColumns.addAll(partition.filter(_._2.isDefined).keys.toList.asJava)
+    }
     carbonLoadModel.setCsvHeaderColumns(
-      CommonUtil.getCsvHeaderColumns(carbonLoadModel, hadoopConf))
+      CommonUtil.getCsvHeaderColumns(carbonLoadModel, hadoopConf, ignoreColumns))
 
     val validatedMaxColumns = CommonUtil.validateMaxColumns(
       carbonLoadModel.getCsvHeaderColumns,
@@ -362,33 +370,40 @@ object DataLoadingUtil {
 
   def deleteLoadsAndUpdateMetadata(
       isForceDeletion: Boolean,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      specs: util.List[PartitionSpec]): Unit = {
     if (isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
-      val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-      val carbonTableStatusLock =
-        CarbonLockFactory.getCarbonLockObj(
-          absoluteTableIdentifier,
-          LockUsage.TABLE_STATUS_LOCK
-        )
 
-      // Delete marked loads
-      val isUpdationRequired =
-        DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
-          absoluteTableIdentifier,
+      val (details, updationRequired) =
+        isUpdationRequired(
           isForceDeletion,
-          details,
-          carbonTable.getMetaDataFilepath
-        )
+          carbonTable,
+          absoluteTableIdentifier)
 
-      var updationCompletionStaus = false
 
-      if (isUpdationRequired) {
+      if (updationRequired) {
+        val carbonTableStatusLock =
+          CarbonLockFactory.getCarbonLockObj(
+            absoluteTableIdentifier,
+            LockUsage.TABLE_STATUS_LOCK
+          )
+        var locked = false
+        var updationCompletionStaus = false
         try {
           // Update load metadate file after cleaning deleted nodes
-          if (carbonTableStatusLock.lockWithRetries()) {
+          locked = carbonTableStatusLock.lockWithRetries()
+          if (locked) {
             LOGGER.info("Table status lock has been successfully acquired.")
-
+            // Again read status and check to verify updation required or not.
+            val (details, updationRequired) =
+              isUpdationRequired(
+                isForceDeletion,
+                carbonTable,
+                absoluteTableIdentifier)
+            if (!updationRequired) {
+              return
+            }
             // read latest table status again.
             val latestMetadata = SegmentStatusManager
               .readLoadMetadata(carbonTable.getMetaDataFilepath)
@@ -411,15 +426,32 @@ object DataLoadingUtil {
           }
           updationCompletionStaus = true
         } finally {
-          CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)
+          if (locked) {
+            CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)
+          }
         }
         if (updationCompletionStaus) {
           DeleteLoadFolders
             .physicalFactAndMeasureMetadataDeletion(absoluteTableIdentifier,
-              carbonTable.getMetaDataFilepath, isForceDeletion)
+              carbonTable.getMetaDataFilepath, isForceDeletion, specs)
         }
       }
     }
+  }
+
+  private def isUpdationRequired(isForceDeletion: Boolean,
+      carbonTable: CarbonTable,
+      absoluteTableIdentifier: AbsoluteTableIdentifier) = {
+    val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
+    // Delete marked loads
+    val isUpdationRequired =
+      DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
+        absoluteTableIdentifier,
+        isForceDeletion,
+        details,
+        carbonTable.getMetaDataFilepath
+      )
+    (details, isUpdationRequired)
   }
 
   /**

@@ -19,25 +19,30 @@ package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation}
+import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 
 class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("drop database if exists otherDB cascade")
     sql("drop table if exists PreAggMain")
     sql("drop table if exists PreAggMain1")
     sql("drop table if exists PreAggMain2")
     sql("drop table if exists maintable")
+    sql("drop table if exists showTables")
+    sql("drop table if exists Preagg_twodb")
     sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
     sql("create table preaggMain1 (a string, b string, c string) stored by 'carbondata' tblProperties('DICTIONARY_INCLUDE' = 'a')")
     sql("create table preaggMain2 (a string, b string, c string) stored by 'carbondata'")
@@ -234,6 +239,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
   val timeSeries = TIMESERIES.toString
   test("remove agg tables from show table command") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,"false")
     sql("DROP TABLE IF EXISTS tbl_1")
     sql("DROP TABLE IF EXISTS sparktable")
     sql("create table if not exists  tbl_1(imei string,age int,mac string ,prodate timestamp,update timestamp,gamepoint double,contrid double) stored by 'carbondata' ")
@@ -246,6 +252,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
       ".eventTime'='prodate', 'timeseries.hierarchy'='hour=1,day=1,month=1,year=1') as select prodate," +
       "mac from tbl_1 group by prodate,mac")
     checkExistence(sql("show tables"), false, "tbl_1_preagg_sum","tbl_1_agg2_day","tbl_1_agg2_hour","tbl_1_agg2_month","tbl_1_agg2_year")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
   }
 
   test("test pre agg  create table 21: create with preaggregate and hierarchy") {
@@ -302,12 +309,14 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("remove  agg tables from show table command") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,"false")
     sql("DROP TABLE IF EXISTS tbl_1")
     sql("create table if not exists  tbl_1(imei string,age int,mac string ,prodate timestamp,update timestamp,gamepoint double,contrid double) stored by 'carbondata' ")
     sql("create datamap agg1 on table tbl_1 using 'preaggregate' as select mac, sum(age) from tbl_1 group by mac")
     sql("create table if not exists  sparktable(imei string,age int,mac string ,prodate timestamp,update timestamp,gamepoint double,contrid double) ")
     checkExistence(sql("show tables"), false, "tbl_1_agg1")
     checkExistence(sql("show tables"), true, "sparktable","tbl_1")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS, CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
   }
 
 
@@ -376,6 +385,36 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 
+  test("test show tables filterted with datamaps") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,"false")
+    sql("create table showTables(name string, age int) stored by 'carbondata'")
+    sql(
+      "create datamap preAgg on table showTables using 'preaggregate' as select sum(age) from showTables")
+    sql("show tables").show()
+    checkExistence(sql("show tables"), false, "showtables_preagg")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
+    checkExistence(sql("show tables"), true, "showtables_preagg")
+  }
+
+  test("test create main and preagg table of same name in two database") {
+    sql("drop table if exists Preagg_twodb")
+    sql("create table Preagg_twodb(name string, age int) stored by 'carbondata'")
+    sql("create datamap sameName on table Preagg_twodb using 'preaggregate' as select sum(age) from Preagg_twodb")
+    sql("create database otherDB")
+    sql("use otherDB")
+    sql("drop table if exists Preagg_twodb")
+    sql("create table Preagg_twodb(name string, age int) stored by 'carbondata'")
+    try {
+      sql(
+        "create datamap sameName on table Preagg_twodb using 'preaggregate' as select sum(age) from Preagg_twodb")
+      assert(true)
+    } catch {
+      case ex: Exception =>
+        assert(false)
+    }
+    sql("use default")
+  }
+
   def getCarbontable(plan: LogicalPlan) : CarbonTable ={
     var carbonTable : CarbonTable = null
     plan.transform {
@@ -398,10 +437,16 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,
+        CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
+    sql("drop database if exists otherDB cascade")
     sql("drop table if exists maintable")
     sql("drop table if exists PreAggMain")
     sql("drop table if exists PreAggMain1")
     sql("drop table if exists PreAggMain2")
     sql("drop table if exists maintabletime")
+    sql("drop table if exists showTables")
+    sql("drop table if exists Preagg_twodb")
   }
 }

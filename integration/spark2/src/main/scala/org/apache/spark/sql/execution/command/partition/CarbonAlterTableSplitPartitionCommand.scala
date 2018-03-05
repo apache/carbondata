@@ -68,7 +68,7 @@ case class CarbonAlterTableSplitPartitionCommand(
       throwMetadataException(dbName, tableName, "table not found")
     }
     carbonMetaStore.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
-    if (null == CarbonMetadata.getInstance.getCarbonTable(dbName, tableName)) {
+    if (null == (CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession))) {
       LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
       throwMetadataException(dbName, tableName, "table not found")
     }
@@ -215,7 +215,7 @@ case class CarbonAlterTableSplitPartitionCommand(
       var i = 0
       validSegments.foreach { segmentId =>
         threadArray(i) = SplitThread(sqlContext, carbonLoadModel, executor,
-          segmentId, partitionId, oldPartitionIdList)
+          segmentId.getSegmentNo, partitionId, oldPartitionIdList)
         threadArray(i).start()
         i += 1
       }
@@ -225,7 +225,7 @@ case class CarbonAlterTableSplitPartitionCommand(
       val identifier = AbsoluteTableIdentifier.from(carbonLoadModel.getTablePath,
         carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
       val refresher = DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
-      refresher.refreshSegments(validSegments.asJava)
+      refresher.refreshSegments(validSegments.map(_.getSegmentNo).asJava)
     } catch {
       case e: Exception =>
         LOGGER.error(s"Exception when split partition: ${ e.getMessage }")

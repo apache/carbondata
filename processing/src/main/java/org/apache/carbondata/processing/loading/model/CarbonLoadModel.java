@@ -188,6 +188,16 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean isAggLoadRequest;
 
+  /**
+   * It directly writes data directly to nosort processor bypassing all other processors.
+   */
+  private boolean isPartitionLoad;
+
+  /**
+   * Flder path to where data should be written for this load.
+   */
+  private String dataWritePath;
+
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
   }
@@ -401,6 +411,7 @@ public class CarbonLoadModel implements Serializable {
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.badRecordsLocation = badRecordsLocation;
     copy.isAggLoadRequest = isAggLoadRequest;
+    copy.isPartitionLoad = isPartitionLoad;
     return copy;
   }
 
@@ -454,6 +465,7 @@ public class CarbonLoadModel implements Serializable {
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.isAggLoadRequest = isAggLoadRequest;
     copy.badRecordsLocation = badRecordsLocation;
+    copy.isPartitionLoad = isPartitionLoad;
     return copy;
   }
 
@@ -854,5 +866,21 @@ public class CarbonLoadModel implements Serializable {
 
   public void setSkipEmptyLine(String skipEmptyLine) {
     this.skipEmptyLine = skipEmptyLine;
+  }
+
+  public boolean isPartitionLoad() {
+    return isPartitionLoad;
+  }
+
+  public void setPartitionLoad(boolean partitionLoad) {
+    isPartitionLoad = partitionLoad;
+  }
+
+  public String getDataWritePath() {
+    return dataWritePath;
+  }
+
+  public void setDataWritePath(String dataWritePath) {
+    this.dataWritePath = dataWritePath;
   }
 }

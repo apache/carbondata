@@ -29,6 +29,7 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
@@ -38,9 +39,11 @@ import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -197,8 +200,8 @@ class StreamHandoffRDD[K, V](
   override protected def getPartitions: Array[Partition] = {
     val job = Job.getInstance(FileFactory.getConfiguration)
     val inputFormat = new CarbonTableInputFormat[Array[Object]]()
-    val segmentList = new util.ArrayList[String](1)
-    segmentList.add(handOffSegmentId)
+    val segmentList = new util.ArrayList[Segment](1)
+    segmentList.add(Segment.toSegment(handOffSegmentId))
     val splits = inputFormat.getSplitsOfStreaming(
       job,
       carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier,
@@ -276,15 +279,20 @@ object StreamHandoffRDD {
    */
   def startStreamingHandoffThread(
       carbonLoadModel: CarbonLoadModel,
-      sparkSession: SparkSession
+      sparkSession: SparkSession,
+      isDDL: Boolean
   ): Unit = {
-    // start a new thread to execute streaming segment handoff
-    val handoffThread = new Thread() {
-      override def run(): Unit = {
-        iterateStreamingHandoff(carbonLoadModel, sparkSession)
+    if (isDDL) {
+      iterateStreamingHandoff(carbonLoadModel, sparkSession)
+    } else {
+      // start a new thread to execute streaming segment handoff
+      val handoffThread = new Thread() {
+        override def run(): Unit = {
+          iterateStreamingHandoff(carbonLoadModel, sparkSession)
+        }
       }
+      handoffThread.start()
     }
-    handoffThread.start()
   }
 
   /**
@@ -306,7 +314,18 @@ object StreamHandoffRDD {
         SegmentStatus.INSERT_IN_PROGRESS,
         carbonLoadModel.getFactTimeStamp,
         false)
+      val operationContext = new OperationContext()
+      val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
+        new LoadTablePreStatusUpdateEvent(
+          carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCarbonTableIdentifier,
+          carbonLoadModel)
+      OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
+
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, carbonLoadModel, true, false)
+      val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =
+        new LoadTablePostStatusUpdateEvent(carbonLoadModel)
+      OperationListenerBus.getInstance()
+        .fireEvent(loadTablePostStatusUpdateEvent, operationContext)
       // convert a streaming segment to columnar segment
       val status = new StreamHandoffRDD(
         sparkSession.sparkContext,
@@ -398,6 +417,7 @@ object StreamHandoffRDD {
           throw new Exception("Failed to update table status for streaming segment")
         } else {
           streamSegment.get.setSegmentStatus(SegmentStatus.COMPACTED)
+          streamSegment.get.setMergedLoadName(loadModel.getSegmentId)
         }
 
         // refresh table status file

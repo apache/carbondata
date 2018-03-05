@@ -19,6 +19,7 @@ package org.apache.carbondata.streaming.parser;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.types.StructType;
 
 /**
  * Stream parser interface
@@ -27,9 +28,13 @@ public interface CarbonStreamParser {
 
   String CARBON_STREAM_PARSER = "carbon.stream.parser";
 
-  String CARBON_STREAM_PARSER_DEFAULT = "org.apache.carbondata.streaming.parser.CSVStreamParserImp";
+  String CARBON_STREAM_PARSER_DEFAULT =
+      "org.apache.carbondata.streaming.parser.CSVStreamParserImp";
 
-  void initialize(Configuration configuration);
+  String CARBON_STREAM_PARSER_ROW_PARSER =
+      "org.apache.carbondata.streaming.parser.RowStreamParserImp";
+
+  void initialize(Configuration configuration, StructType structType);
 
   Object[] parserRow(InternalRow value);
 

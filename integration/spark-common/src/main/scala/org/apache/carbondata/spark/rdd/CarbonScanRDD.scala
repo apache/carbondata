@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
+import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
@@ -39,9 +40,11 @@ import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.scan.expression.Expression
+import org.apache.carbondata.core.scan.filter.FilterUtil
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.statusmanager.FileFormat
@@ -51,7 +54,7 @@ import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
-import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
+import org.apache.carbondata.spark.util.{SparkDataTypeConverterImpl, Util}
 
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
@@ -66,7 +69,7 @@ class CarbonScanRDD(
     @transient serializedTableInfo: Array[Byte],
     @transient tableInfo: TableInfo,
     inputMetricsStats: InitInputMetrics,
-    @transient val partitionNames: Seq[String])
+    @transient val partitionNames: Seq[PartitionSpec])
   extends CarbonRDDWithTableInfo[InternalRow](spark.sparkContext, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -109,6 +112,8 @@ class CarbonScanRDD(
       }
     }
     val batchPartitions = distributeColumnarSplits(columnarSplits)
+    // check and remove InExpression from filterExpression
+    checkAndRemoveInExpressinFromFilterExpression(format, batchPartitions)
     if (streamSplits.isEmpty) {
       batchPartitions.toArray
     } else {
@@ -341,6 +346,7 @@ class CarbonScanRDD(
           val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
             .asInstanceOf[CarbonStreamRecordReader]
           streamReader.setVectorReader(vectorReader)
+          streamReader.setInputMetricsStats(inputMetricsStats)
           model.setStatisticsRecorder(
             CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId))
           streamReader.setQueryModel(model)
@@ -362,17 +368,20 @@ class CarbonScanRDD(
           }
       }
 
+      // add task completion before calling initialize as initialize method will internally call
+      // for usage of unsafe method for processing of one blocklet and if there is any exception
+      // while doing that the unsafe memory occupied for that task will not get cleared
+      context.addTaskCompletionListener { _ =>
+        reader.close()
+        close()
+        logStatistics(queryStartTime, model.getStatisticsRecorder)
+      }
+      // initialize the reader
       reader.initialize(inputSplit, attemptContext)
 
       new Iterator[Any] {
         private var havePair = false
         private var finished = false
-
-        context.addTaskCompletionListener { _ =>
-          reader.close()
-          close()
-          logStatistics(queryStartTime, model.getStatisticsRecorder)
-        }
 
         override def hasNext: Boolean = {
           if (context.isInterrupted) {
@@ -394,10 +403,6 @@ class CarbonScanRDD(
           value
         }
 
-        private def close() {
-          TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId)
-          inputMetricsStats.updateAndClose()
-        }
       }
     } else {
       new Iterator[Any] {
@@ -409,6 +414,11 @@ class CarbonScanRDD(
 
 
     iterator.asInstanceOf[Iterator[InternalRow]]
+  }
+
+  private def close() {
+    TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId)
+    inputMetricsStats.updateAndClose()
   }
 
   def prepareInputFormatForDriver(conf: Configuration): CarbonTableInputFormat[Object] = {
@@ -456,12 +466,60 @@ class CarbonScanRDD(
   }
 
   def logStatistics(queryStartTime: Long, recorder: QueryStatisticsRecorder): Unit = {
-    val queryStatistic = new QueryStatistic()
-    queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
-      System.currentTimeMillis - queryStartTime)
-    recorder.recordStatistics(queryStatistic)
-    // print executor query statistics for each task_id
-    recorder.logStatisticsAsTableExecutor()
+    if (null != recorder) {
+      val queryStatistic = new QueryStatistic()
+      queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
+        System.currentTimeMillis - queryStartTime)
+      recorder.recordStatistics(queryStatistic)
+      // print executor query statistics for each task_id
+      recorder.logStatisticsAsTableExecutor()
+    }
+  }
+
+  /**
+   * This method will check and remove InExpression from filterExpression to prevent the List
+   * Expression values from serializing and deserializing on executor
+   *
+   * @param format
+   * @param identifiedPartitions
+   */
+  private def checkAndRemoveInExpressinFromFilterExpression(
+      format: CarbonTableInputFormat[Object],
+      identifiedPartitions: mutable.Buffer[Partition]) = {
+    if (null != filterExpression) {
+      if (identifiedPartitions.nonEmpty &&
+          !checkForBlockWithoutBlockletInfo(identifiedPartitions)) {
+        FilterUtil.removeInExpressionNodeWithPositionIdColumn(filterExpression)
+      }
+    }
+  }
+
+  /**
+   * This method will check for presence of any block from old store (version 1.1). If any of the
+   * blocks identified does not contain the blocklet info that means that block is from old store
+   *
+   * @param identifiedPartitions
+   * @return
+   */
+  private def checkForBlockWithoutBlockletInfo(
+      identifiedPartitions: mutable.Buffer[Partition]): Boolean = {
+    var isBlockWithoutBlockletInfoPresent = false
+    breakable {
+      identifiedPartitions.foreach { value =>
+        val inputSplit = value.asInstanceOf[CarbonSparkPartition].split.value
+        val splitList = if (inputSplit.isInstanceOf[CarbonMultiBlockSplit]) {
+          inputSplit.asInstanceOf[CarbonMultiBlockSplit].getAllSplits
+        } else {
+          new java.util.ArrayList().add(inputSplit.asInstanceOf[CarbonInputSplit])
+        }.asInstanceOf[java.util.List[CarbonInputSplit]]
+        // check for block from old store (version 1.1 and below)
+        if (Util.isBlockWithoutBlockletInfoExists(splitList)) {
+          isBlockWithoutBlockletInfoPresent = true
+          break
+        }
+      }
+    }
+    isBlockWithoutBlockletInfoPresent
   }
 
   /**

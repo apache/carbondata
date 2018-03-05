@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.util;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
@@ -26,18 +27,33 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
   private static final long serialVersionUID = -1718154403432354200L;
 
   public Object convertToDecimal(Object data) {
-    return new java.math.BigDecimal(data.toString());
+    if (null == data) {
+      return null;
+    }
+    if (data instanceof BigDecimal) {
+      return data;
+    }
+    return new BigDecimal(data.toString());
   }
 
   public Object convertFromByteToUTF8String(Object data) {
+    if (null == data) {
+      return null;
+    }
     return new String((byte[]) data, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
   }
 
   public byte[] convertFromStringToByte(Object data) {
+    if (null == data) {
+      return null;
+    }
     return data.toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
   }
 
   public Object convertFromStringToUTF8String(Object data) {
+    if (null == data) {
+      return null;
+    }
     return data.toString();
   }
 }

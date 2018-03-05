@@ -33,6 +33,7 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
@@ -97,78 +98,78 @@ public class SegmentStatusManager {
    * @throws IOException
    */
   public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
+    return getValidAndInvalidSegments(null);
+  }
+
+  /**
+   * get valid segment for given load status details.
+   *
+   */
+  public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(
+      LoadMetadataDetails[] loadMetadataDetails) throws IOException {
 
     // @TODO: move reading LoadStatus file to separate class
-    List<String> listOfValidSegments = new ArrayList<>(10);
-    List<String> listOfValidUpdatedSegments = new ArrayList<>(10);
-    List<String> listOfInvalidSegments = new ArrayList<>(10);
-    List<String> listOfStreamSegments = new ArrayList<>(10);
+    List<Segment> listOfValidSegments = new ArrayList<>(10);
+    List<Segment> listOfValidUpdatedSegments = new ArrayList<>(10);
+    List<Segment> listOfInvalidSegments = new ArrayList<>(10);
+    List<Segment> listOfStreamSegments = new ArrayList<>(10);
+    List<Segment> listOfInProgressSegments = new ArrayList<>(10);
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
-                    absoluteTableIdentifier.getCarbonTableIdentifier());
-    String dataPath = carbonTablePath.getTableStatusFilePath();
-    DataInputStream dataInputStream = null;
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
 
-    // Use GSON to deserialize the load information
-    Gson gson = new Gson();
-
-    AtomicFileOperations fileOperation =
-            new AtomicFileOperationsImpl(dataPath, FileFactory.getFileType(dataPath));
-    LoadMetadataDetails[] loadFolderDetailsArray;
     try {
-      if (FileFactory.isFileExist(dataPath, FileFactory.getFileType(dataPath))) {
-        dataInputStream = fileOperation.openForRead();
-        BufferedReader buffReader =
-            new BufferedReader(new InputStreamReader(dataInputStream, "UTF-8"));
-        loadFolderDetailsArray = gson.fromJson(buffReader, LoadMetadataDetails[].class);
-        // if loadFolderDetailsArray is null, assign a empty array
-        if (null == loadFolderDetailsArray) {
-          loadFolderDetailsArray = new LoadMetadataDetails[0];
-        }
-        //just directly iterate Array
-        for (LoadMetadataDetails segment : loadFolderDetailsArray) {
-          if (SegmentStatus.SUCCESS == segment.getSegmentStatus() ||
-              SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus() ||
-              SegmentStatus.LOAD_PARTIAL_SUCCESS == segment.getSegmentStatus() ||
-              SegmentStatus.STREAMING == segment.getSegmentStatus() ||
-              SegmentStatus.STREAMING_FINISH == segment.getSegmentStatus()) {
-            // check for merged loads.
-            if (null != segment.getMergedLoadName()) {
-              if (!listOfValidSegments.contains(segment.getMergedLoadName())) {
-                listOfValidSegments.add(segment.getMergedLoadName());
-              }
-              // if merged load is updated then put it in updated list
-              if (SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus()) {
-                listOfValidUpdatedSegments.add(segment.getMergedLoadName());
-              }
-              continue;
+      if (loadMetadataDetails == null) {
+        loadMetadataDetails = readTableStatusFile(carbonTablePath.getTableStatusFilePath());
+      }
+      //just directly iterate Array
+      for (LoadMetadataDetails segment : loadMetadataDetails) {
+        if (SegmentStatus.SUCCESS == segment.getSegmentStatus()
+            || SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus()
+            || SegmentStatus.LOAD_PARTIAL_SUCCESS == segment.getSegmentStatus()
+            || SegmentStatus.STREAMING == segment.getSegmentStatus()
+            || SegmentStatus.STREAMING_FINISH == segment.getSegmentStatus()) {
+          // check for merged loads.
+          if (null != segment.getMergedLoadName()) {
+            Segment seg = new Segment(segment.getMergedLoadName(), segment.getSegmentFile());
+            if (!listOfValidSegments.contains(seg)) {
+              listOfValidSegments.add(seg);
             }
-
+            // if merged load is updated then put it in updated list
             if (SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus()) {
-
-              listOfValidUpdatedSegments.add(segment.getLoadName());
+              listOfValidUpdatedSegments.add(seg);
             }
-            if (SegmentStatus.STREAMING == segment.getSegmentStatus() ||
-                SegmentStatus.STREAMING_FINISH == segment.getSegmentStatus()) {
-              listOfStreamSegments.add(segment.getLoadName());
-              continue;
-            }
-            listOfValidSegments.add(segment.getLoadName());
-          } else if ((SegmentStatus.LOAD_FAILURE == segment.getSegmentStatus() ||
-              SegmentStatus.COMPACTED == segment.getSegmentStatus() ||
-              SegmentStatus.MARKED_FOR_DELETE == segment.getSegmentStatus())) {
-            listOfInvalidSegments.add(segment.getLoadName());
+            continue;
           }
+
+          if (SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus()) {
+
+            listOfValidUpdatedSegments
+                .add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
+          }
+          if (SegmentStatus.STREAMING == segment.getSegmentStatus()
+              || SegmentStatus.STREAMING_FINISH == segment.getSegmentStatus()) {
+            listOfStreamSegments
+                .add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
+            continue;
+          }
+          listOfValidSegments.add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
+        } else if ((SegmentStatus.LOAD_FAILURE == segment.getSegmentStatus()
+            || SegmentStatus.COMPACTED == segment.getSegmentStatus()
+            || SegmentStatus.MARKED_FOR_DELETE == segment.getSegmentStatus())) {
+          listOfInvalidSegments.add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
+        } else if (SegmentStatus.INSERT_IN_PROGRESS == segment.getSegmentStatus() ||
+            SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == segment.getSegmentStatus()) {
+          listOfInProgressSegments
+              .add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
         }
       }
     } catch (IOException e) {
       LOG.error(e);
       throw e;
-    } finally {
-      CarbonUtil.closeStreams(dataInputStream);
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
-            listOfInvalidSegments, listOfStreamSegments);
+        listOfInvalidSegments, listOfStreamSegments, listOfInProgressSegments);
   }
 
   /**
@@ -179,26 +180,32 @@ public class SegmentStatusManager {
    */
   public static LoadMetadataDetails[] readLoadMetadata(String metadataFolderPath) {
     String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.LOADMETADATA_FILENAME;
-    return readTableStatusFile(metadataFileName);
+        + CarbonTablePath.TABLE_STATUS_FILE;
+    try {
+      return readTableStatusFile(metadataFileName);
+    } catch (IOException e) {
+      return new LoadMetadataDetails[0];
+    }
   }
 
   /**
    * Reads the table status file with the specified UUID if non empty.
    */
-  public static LoadMetadataDetails[] readLoadMetadata(String metaDataFolderPath, String uuid) {
+  public static LoadMetadataDetails[] readLoadMetadata(String metaDataFolderPath, String uuid)
+      throws IOException {
     String tableStatusFileName;
     if (uuid.isEmpty()) {
       tableStatusFileName = metaDataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonCommonConstants.LOADMETADATA_FILENAME;
+          + CarbonTablePath.TABLE_STATUS_FILE;
     } else {
       tableStatusFileName = metaDataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonCommonConstants.LOADMETADATA_FILENAME + CarbonCommonConstants.UNDERSCORE + uuid;
+          + CarbonTablePath.TABLE_STATUS_FILE + CarbonCommonConstants.UNDERSCORE + uuid;
     }
     return readTableStatusFile(tableStatusFileName);
   }
 
-  public static LoadMetadataDetails[] readTableStatusFile(String tableStatusPath) {
+  public static LoadMetadataDetails[] readTableStatusFile(String tableStatusPath)
+      throws IOException {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
@@ -219,7 +226,7 @@ public class SegmentStatusManager {
           gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
     } catch (IOException e) {
       LOG.error(e, "Failed to read metadata of load");
-      return new LoadMetadataDetails[0];
+      throw e;
     } finally {
       closeStreams(buffReader, inStream, dataInputStream);
     }
@@ -688,28 +695,34 @@ public class SegmentStatusManager {
 
 
   public static class ValidAndInvalidSegmentsInfo {
-    private final List<String> listOfValidSegments;
-    private final List<String> listOfValidUpdatedSegments;
-    private final List<String> listOfInvalidSegments;
-    private final List<String> listOfStreamSegments;
+    private final List<Segment> listOfValidSegments;
+    private final List<Segment> listOfValidUpdatedSegments;
+    private final List<Segment> listOfInvalidSegments;
+    private final List<Segment> listOfStreamSegments;
+    private final List<Segment> listOfInProgressSegments;
 
-    private ValidAndInvalidSegmentsInfo(List<String> listOfValidSegments,
-        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments,
-        List<String> listOfStreamSegments) {
+    private ValidAndInvalidSegmentsInfo(List<Segment> listOfValidSegments,
+        List<Segment> listOfValidUpdatedSegments, List<Segment> listOfInvalidUpdatedSegments,
+        List<Segment> listOfStreamSegments, List<Segment> listOfInProgressSegments) {
       this.listOfValidSegments = listOfValidSegments;
       this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
       this.listOfInvalidSegments = listOfInvalidUpdatedSegments;
       this.listOfStreamSegments = listOfStreamSegments;
+      this.listOfInProgressSegments = listOfInProgressSegments;
     }
-    public List<String> getInvalidSegments() {
+    public List<Segment> getInvalidSegments() {
       return listOfInvalidSegments;
     }
-    public List<String> getValidSegments() {
+    public List<Segment> getValidSegments() {
       return listOfValidSegments;
     }
 
-    public List<String> getStreamSegments() {
+    public List<Segment> getStreamSegments() {
       return listOfStreamSegments;
+    }
+
+    public List<Segment> getListOfInProgressSegments() {
+      return listOfInProgressSegments;
     }
   }
 

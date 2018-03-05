@@ -63,13 +63,15 @@ public class RestructureUtil {
    */
   public static List<QueryDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
       BlockExecutionInfo blockExecutionInfo, List<QueryDimension> queryDimensions,
-      List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension) {
+      List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension,
+      int measureCount) {
     List<QueryDimension> presentDimension =
         new ArrayList<QueryDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     boolean[] isDimensionExists = new boolean[queryDimensions.size()];
     Object[] defaultValues = new Object[queryDimensions.size()];
     // create dimension information instance
     DimensionInfo dimensionInfo = new DimensionInfo(isDimensionExists, defaultValues);
+    dimensionInfo.dataType = new DataType[queryDimensions.size() + measureCount];
     int newDictionaryColumnCount = 0;
     int newNoDictionaryColumnCount = 0;
     // selecting only those dimension which is present in the query
@@ -78,6 +80,8 @@ public class RestructureUtil {
       if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         presentDimension.add(queryDimension);
         isDimensionExists[dimIndex] = true;
+        dimensionInfo.dataType[queryDimension.getQueryOrder()] =
+            queryDimension.getDimension().getDataType();
       } else {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
           if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
@@ -92,6 +96,8 @@ public class RestructureUtil {
             currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
+            dimensionInfo.dataType[currentBlockDimension.getQueryOrder()] =
+                currentBlockDimension.getDimension().getDataType();
             break;
           }
         }
@@ -109,6 +115,8 @@ public class RestructureUtil {
             currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
+            dimensionInfo.dataType[currentBlockDimension.getQueryOrder()] =
+                currentBlockDimension.getDimension().getDataType();
             break;
           }
         }
@@ -295,6 +303,9 @@ public class RestructureUtil {
       } else if (dataType == DataTypes.INT) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         measureDefaultValue = Integer.parseInt(value);
+      } else if (dataType == DataTypes.BOOLEAN) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Boolean.valueOf(value);
       } else if (DataTypes.isDecimal(dataType)) {
         BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
         if (columnSchema.getScale() > decimal.scale()) {
@@ -323,7 +334,7 @@ public class RestructureUtil {
       byte[] defaultValue) {
     Object measureDefaultValue = null;
     if (!isDefaultValueNull(defaultValue)) {
-      String value = null;
+      String value;
       DataType dataType = columnSchema.getDataType();
       if (dataType == DataTypes.SHORT) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
@@ -334,6 +345,9 @@ public class RestructureUtil {
       } else if (dataType == DataTypes.LONG) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         measureDefaultValue = Long.parseLong(value);
+      } else if (dataType == DataTypes.BOOLEAN) {
+        value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        measureDefaultValue = Boolean.valueOf(value);
       } else if (DataTypes.isDecimal(dataType)) {
         BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
         if (columnSchema.getScale() > decimal.scale()) {

@@ -17,11 +17,15 @@
 
 package org.apache.carbondata.events
 
+import org.apache.spark.SparkContext
+
 
 case class CreateDatabasePreExecutionEvent(databaseName: String) extends Event
   with DatabaseEventInfo
 
-case class CreateDatabasePostExecutionEvent(databaseName: String, dataBasePath: String)
+case class CreateDatabasePostExecutionEvent(databaseName: String,
+    dataBasePath: String,
+    sparkContext: SparkContext)
   extends Event with DatabaseEventInfo
 
 case class CreateDatabaseAbortExecutionEvent(databaseName: String)

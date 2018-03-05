@@ -167,13 +167,11 @@ object CarbonBatchSparkStreamingExample {
         .map(fields => DStreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat))
 
       batchData.foreachRDD { (rdd: RDD[DStreamData], time: Time) => {
-        val df = SparkSession.builder().getOrCreate()
-          .createDataFrame(rdd).toDF("id", "name", "city", "salary")
+        val df = spark.createDataFrame(rdd).toDF("id", "name", "city", "salary")
         println("at time: " + time.toString() + " the count of received data: " + df.count())
         df.write
           .format("carbondata")
           .option("tableName", tableName)
-          .option("single_pass", "true")
           .mode(SaveMode.Append)
           .save()
       }}

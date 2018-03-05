@@ -49,6 +49,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     sql("create datamap agg6 on table mainTable using 'preaggregate' as select name,min(age) from mainTable group by name")
     sql("create datamap agg7 on table mainTable using 'preaggregate' as select name,max(age) from mainTable group by name")
     sql("create datamap agg8 on table maintable using 'preaggregate' as select name, sum(id), avg(id) from maintable group by name")
+    sql("create datamap agg9 on table maintable using 'preaggregate' as select name, count(*) from maintable group by name")
     sql("CREATE TABLE mainTableavg(id int, name string, city string, age bigint) STORED BY 'org.apache.carbondata.format'")
     sql("create datamap agg0 on table mainTableavg using 'preaggregate' as select name,sum(age), avg(age) from mainTableavg group by name")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table mainTable")
@@ -64,6 +65,11 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
   test("test PreAggregate table selection 1") {
     val df = sql("select name from mainTable group by name")
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
+  }
+
+  test("test PreAggregate table selection with count(*)") {
+    val df = sql("select name, count(*) from mainTable group by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg9")
   }
 
   test("test PreAggregate table selection 2") {
@@ -342,6 +348,7 @@ test("test PreAggregate table selection with timeseries and normal together") {
     sql("drop table if exists lineitem")
     sql("DROP TABLE IF EXISTS maintabletime")
     sql("DROP TABLE IF EXISTS maintabledict")
+    sql("DROP TABLE IF EXISTS mainTableavg")
   }
 
 }

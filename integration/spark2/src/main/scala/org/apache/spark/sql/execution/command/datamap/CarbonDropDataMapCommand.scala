@@ -47,13 +47,14 @@ case class CarbonDropDataMapCommand(
     dataMapName: String,
     ifExistsSet: Boolean,
     databaseNameOp: Option[String],
-    tableName: String)
+    tableName: String,
+    forceDrop: Boolean = false)
   extends AtomicRunnableCommand {
 
+  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   var commandToRun: CarbonDropTableCommand = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK)
     val carbonEnv = CarbonEnv.getInstance(sparkSession)
@@ -64,6 +65,7 @@ case class CarbonDropDataMapCommand(
     catalog.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
+      forceDropTableFromMetaStore(sparkSession)
       locksToBeAcquired foreach {
         lock => carbonLocks += CarbonLockUtil.getLockObject(tableIdentifier, lock)
       }
@@ -74,6 +76,10 @@ case class CarbonDropDataMapCommand(
         case ex: NoSuchTableException =>
           throw ex
       }
+      // If datamap to be dropped in parent table then drop the datamap from metastore and remove
+      // entry from parent table.
+      // If force drop is true then remove the datamap from hivemetastore. No need to remove from
+      // parent as the first condition would have taken care of it.
       if (carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList.size() > 0) {
         val dataMapSchema = carbonTable.get.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
           find(_._1.getDataMapName.equalsIgnoreCase(dataMapName))
@@ -85,7 +91,6 @@ case class CarbonDropDataMapCommand(
               ifExistsSet,
               sparkSession)
           OperationListenerBus.getInstance.fireEvent(dropDataMapPreEvent, operationContext)
-
           carbonTable.get.getTableInfo.getDataMapSchemaList.remove(dataMapSchema.get._2)
           val schemaConverter = new ThriftWrapperSchemaConverterImpl
           PreAggregateUtil.updateSchemaInfo(
@@ -111,13 +116,12 @@ case class CarbonDropDataMapCommand(
         } else if (!ifExistsSet) {
           throw new NoSuchDataMapException(dataMapName, tableName)
         }
-      } else if ((carbonTable.isDefined &&
-        carbonTable.get.getTableInfo.getDataMapSchemaList.size() == 0)) {
+      } else if (carbonTable.isDefined &&
+        carbonTable.get.getTableInfo.getDataMapSchemaList.size() == 0) {
         if (!ifExistsSet) {
           throw new NoSuchDataMapException(dataMapName, tableName)
         }
       }
-
     } catch {
       case e: NoSuchDataMapException =>
         throw e
@@ -135,6 +139,33 @@ case class CarbonDropDataMapCommand(
       }
     }
     Seq.empty
+  }
+
+  /**
+   * Used to drop child datamap from hive metastore if it exists.
+   * forceDrop will be true only when an exception occurs in main table status updation for
+   * parent table or in processData from CreatePreAggregateTableCommand.
+   */
+  private def forceDropTableFromMetaStore(sparkSession: SparkSession): Unit = {
+    if (forceDrop) {
+      val childTableName = tableName + "_" + dataMapName
+      LOGGER.info(s"Trying to force drop $childTableName from metastore")
+      val childCarbonTable: Option[CarbonTable] = try {
+        Some(CarbonEnv.getCarbonTable(databaseNameOp, childTableName)(sparkSession))
+      } catch {
+        case _: Exception =>
+          LOGGER.warn(s"Child table $childTableName not found in metastore")
+          None
+      }
+      if (childCarbonTable.isDefined) {
+        commandToRun = CarbonDropTableCommand(
+          ifExistsSet = true,
+          Some(childCarbonTable.get.getDatabaseName),
+          childCarbonTable.get.getTableName,
+          dropChildTable = true)
+        commandToRun.processMetadata(sparkSession)
+      }
+    }
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {

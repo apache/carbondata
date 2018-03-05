@@ -35,6 +35,7 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
@@ -61,15 +62,20 @@ object DeleteExecution {
       dataRdd: RDD[Row],
       timestamp: String,
       isUpdateOperation: Boolean,
-      executorErrors: ExecutionErrors): Seq[String] = {
+      executorErrors: ExecutionErrors): Seq[Segment] = {
 
     var res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] = null
     val database = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
-    val factPath = carbonTablePath.getFactDir
-    var segmentsTobeDeleted = Seq.empty[String]
+    val isPartitionTable = carbonTable.isHivePartitionTable
+    val factPath = if (isPartitionTable) {
+      carbonTablePath.getPath
+    } else {
+      carbonTablePath.getFactDir
+    }
+    var segmentsTobeDeleted = Seq.empty[Segment]
 
     val deleteRdd = if (isUpdateOperation) {
       val schema =
@@ -104,7 +110,7 @@ object DeleteExecution {
         CarbonFilters.getPartitions(
           Seq.empty,
           sparkSession,
-          TableIdentifier(tableName, databaseNameOp)).asJava)
+          TableIdentifier(tableName, databaseNameOp)).map(_.asJava).orNull)
     val segmentUpdateStatusMngr = new SegmentUpdateStatusManager(absoluteTableIdentifier)
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)
@@ -134,7 +140,7 @@ object DeleteExecution {
     ).collect()
 
     // if no loads are present then no need to do anything.
-    if (res.isEmpty) {
+    if (res.flatten.isEmpty) {
       return segmentsTobeDeleted
     }
 
@@ -144,12 +150,12 @@ object DeleteExecution {
     // all or none : update status file, only if complete delete opeartion is successfull.
     def checkAndUpdateStatusFiles(): Unit = {
       val blockUpdateDetailsList = new util.ArrayList[SegmentUpdateDetails]()
-      val segmentDetails = new util.HashSet[String]()
+      val segmentDetails = new util.HashSet[Segment]()
       res.foreach(resultOfSeg => resultOfSeg.foreach(
         resultOfBlock => {
           if (resultOfBlock._1 == SegmentStatus.SUCCESS) {
             blockUpdateDetailsList.add(resultOfBlock._2._1)
-            segmentDetails.add(resultOfBlock._2._1.getSegmentName)
+            segmentDetails.add(new Segment(resultOfBlock._2._1.getSegmentName, null))
             // if this block is invalid then decrement block count in map.
             if (CarbonUpdateUtil.isBlockInvalid(resultOfBlock._2._1.getSegmentStatus)) {
               CarbonUpdateUtil.decrementDeletedBlockCount(resultOfBlock._2._1,
@@ -250,7 +256,7 @@ object DeleteExecution {
             countOfRows = countOfRows + 1
           }
 
-          val blockPath = CarbonUpdateUtil.getTableBlockPath(TID, factPath)
+          val blockPath = CarbonUpdateUtil.getTableBlockPath(TID, factPath, isPartitionTable)
           val completeBlockName = CarbonTablePath
             .addDataPartPrefix(CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.BLOCK_ID) +
                                CarbonCommonConstants.FACT_FILE_EXT)
