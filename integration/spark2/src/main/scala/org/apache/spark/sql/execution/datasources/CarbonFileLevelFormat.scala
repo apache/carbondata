@@ -101,7 +101,7 @@ class CarbonFileLevelFormat extends FileFormat
       }
 
       override def getFileExtension(context: TaskAttemptContext): String = {
-        ".txt" + CodecStreams.getCompressionExtension(context)
+        CarbonTablePath.CARBON_DATA_EXT
       }
     }
   }

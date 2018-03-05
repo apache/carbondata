@@ -152,7 +152,6 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
    */
   private CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
 
-
     if (carbonTable == null) {
       // carbon table should be created either from deserialized table info (schema saved in
       // hive metastore) or by reading schema in HDFS (schema saved in HDFS)

@@ -818,6 +818,7 @@ object CarbonDataRDDFactory {
     done
   }
 
+
   /**
    * repartition the input data for partition table.
    */
