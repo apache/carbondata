@@ -2225,7 +2225,13 @@ public final class CarbonUtil {
     if (schemaExists == false) {
       List<String> filePaths =
           getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null");
-      CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(filePaths.get(0));
+      String fistFilePath = null;
+      try {
+        fistFilePath = filePaths.get(0);
+      } catch (Exception e) {
+        LOGGER.error("CarbonData file is not present in the table location");
+      }
+      CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath);
       FileHeader fileHeader = carbonHeaderReader.readHeader();
       List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
       List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
