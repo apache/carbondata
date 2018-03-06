@@ -107,7 +107,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test pre agg create table 13") {
-    intercept[Exception] {
+    val exception: Exception = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
            | create datamap preagg19 on table PreAggMain
@@ -116,10 +116,11 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
            | from PreAggMain group by a
          """.stripMargin)
     }
+    assert(exception.getMessage.equals("Distinct is not supported On Pre Aggregation"))
   }
 
   test("test pre agg create table 14") {
-    intercept[Exception] {
+    val exception = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
            | create datamap preagg20 on table PreAggMain
@@ -128,6 +129,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
            | group by a
          """.stripMargin)
     }
+    assert(exception.getMessage.equals("Distinct is not supported On Pre Aggregation"))
   }
 
   test("test pre agg create table 15") {
