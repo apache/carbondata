@@ -66,17 +66,6 @@ class TestPreAggregateExpressions extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("DESCRIBE FORMATTED mainTable_agg2"), true, "maintable_column_0_sum")
   }
 
-  test("test pre agg create table with expression 4") {
-    sql(
-      s"""
-         | CREATE DATAMAP agg3 ON TABLE mainTable USING 'preaggregate' AS
-         | SELECT name,
-         | sum(CASE WHEN age=27 THEN id ELSE 0 END)
-         | FROM mainTable GROUP BY name
-         | """.stripMargin)
-    checkExistence(sql("DESCRIBE FORMATTED mainTable_agg3"), true, "maintable_column_0_sum")
-  }
-
   test("test pre agg create table with expression 5") {
     sql(
       s"""
@@ -115,12 +104,6 @@ class TestPreAggregateExpressions extends QueryTest with BeforeAndAfterAll {
     val df = sql("select sum(case when age=35 then id else 0 end) from maintable")
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg1")
     checkAnswer(df, Seq(Row(6.0)))
-  }
-
-  test("test pre agg table selection with expression 4") {
-    val df = sql("select sum(case when age=27 then id else 0 end) from maintable")
-    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg3")
-    checkAnswer(df, Seq(Row(2.0)))
   }
 
   test("test pre agg table selection with expression 5") {
