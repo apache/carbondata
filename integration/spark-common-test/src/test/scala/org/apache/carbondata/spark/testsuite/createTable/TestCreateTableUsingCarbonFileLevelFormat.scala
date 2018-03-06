@@ -91,7 +91,17 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
-    sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION '$writerOutputFilePath1' """)
+    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+      //data source file format
+      sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath1') """)
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      //data source file format
+      sql(
+        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+           |'$writerOutputFilePath1' """.stripMargin)
+    } else{
+      // TO DO
+    }
 
     sql("Describe formatted sdkOutputTable").show(false)
 
@@ -127,10 +137,18 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     assert(new File(writerOutputFilePath1).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //data source file format
-    sql(
-      s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-         |'$writerOutputFilePath1' """.stripMargin)
+
+    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+      //data source file format
+      sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath1') """)
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      //data source file format
+      sql(
+        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+           |'$writerOutputFilePath1' """.stripMargin)
+    } else{
+      // TO DO
+    }
 
     val exception = intercept[MalformedCarbonCommandException]
       {
@@ -148,11 +166,17 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     assert(new File(writerOutputFilePath2).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //data source file format
-    sql(
-      s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-         |'$writerOutputFilePath2' """.stripMargin)
-
+    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+      //data source file format
+      sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath2') """)
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      //data source file format
+      sql(
+        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+           |'$writerOutputFilePath2' """.stripMargin)
+    } else{
+      // TO DO
+    }
     //org.apache.spark.SparkException: Index file not present to read the carbondata file
     val exception = intercept[org.apache.spark.SparkException]
     {
@@ -172,9 +196,17 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
 
     val exception = intercept[org.apache.spark.SparkException] {
       //    data source file format
-      sql(
-        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-           |'$writerOutputFilePath3' """.stripMargin)
+      if (sqlContext.sparkContext.version.startsWith("2.1")) {
+        //data source file format
+        sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath3') """)
+      } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+        //data source file format
+        sql(
+          s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+             |'$writerOutputFilePath3' """.stripMargin)
+      } else{
+        // TO DO
+      }
     }
     assert(exception.getMessage()
       .contains("CarbonData file is not present in the location mentioned in DDL"))
@@ -190,9 +222,17 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
 
     val exception = intercept[org.apache.spark.SparkException] {
       //data source file format
-      sql(
-        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-           |'$writerOutputFilePath4' """.stripMargin)
+      if (sqlContext.sparkContext.version.startsWith("2.1")) {
+        //data source file format
+        sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath4') """)
+      } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+        //data source file format
+        sql(
+          s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+             |'$writerOutputFilePath4' """.stripMargin)
+      } else{
+        // TO DO
+      }
 
       sql("select * from sdkOutputTable").show(false)
     }
@@ -210,10 +250,17 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     //data source file format
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //data source file format
-    sql(
-      s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-         |'$writerOutputFilePath5' """.stripMargin)
+    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+      //data source file format
+      sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath5') """)
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      //data source file format
+      sql(
+        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
+           |'$writerOutputFilePath5' """.stripMargin)
+    } else{
+      // TO DO
+    }
 
     sql("Describe formatted sdkOutputTable").show(false)
 
