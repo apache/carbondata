@@ -91,8 +91,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     createTableWithComplexType(
       tableName = "stream_table_filter_complex", streaming = true, withBatchLoad = true)
 
-    // 10. fault tolerant
-    createTable(tableName = "stream_table_tolerant", streaming = true, withBatchLoad = true)
 
     // 11. table for delete segment test
     createTable(tableName = "stream_table_delete_id", streaming = true, withBatchLoad = false)
@@ -132,7 +130,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES ('streaming' = 'false')
       """.stripMargin)
     sql("DROP TABLE correct")
-    intercept[MalformedCarbonCommandException] {
+    val exceptionMsg = intercept[MalformedCarbonCommandException] {
       sql(
         """
           | create table wrong(
@@ -141,30 +139,37 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES ('streaming' = 'invalid')
         """.stripMargin)
     }
+    assert(exceptionMsg.getMessage.equals("Table property \'streaming\' should be either \'true\' or \'false\'"))
   }
 
   test("test blocking update and delete operation on streaming table") {
-    intercept[MalformedCarbonCommandException] {
+    val exceptionMsgUpdate = intercept[MalformedCarbonCommandException] {
       sql("""UPDATE source d SET (d.c2) = (d.c2 + 1) WHERE d.c1 = 'a'""").show()
     }
-    intercept[MalformedCarbonCommandException] {
+    val exceptionMsgDelete = intercept[MalformedCarbonCommandException] {
       sql("""DELETE FROM source WHERE d.c1 = 'a'""").show()
     }
+    assert(exceptionMsgUpdate.getMessage.equals("Data update is not allowed for streaming table"))
+    assert(exceptionMsgDelete.getMessage.equals("Date delete is not allowed for streaming table"))
   }
 
   test("test blocking alter table operation on streaming table") {
-    intercept[MalformedCarbonCommandException] {
+    val addColException = intercept[MalformedCarbonCommandException] {
       sql("""ALTER TABLE source ADD COLUMNS (c6 string)""").show()
     }
-    intercept[MalformedCarbonCommandException] {
+    val dropColException = intercept[MalformedCarbonCommandException] {
       sql("""ALTER TABLE source DROP COLUMNS (c1)""").show()
     }
-    intercept[MalformedCarbonCommandException] {
+    val renameException = intercept[MalformedCarbonCommandException] {
       sql("""ALTER TABLE source RENAME to t""").show()
     }
-    intercept[MalformedCarbonCommandException] {
-      sql("""ALTER TABLE source CHANGE c1 c1 int""").show()
+    val changeDataTypeException = intercept[MalformedCarbonCommandException] {
+      sql("""ALTER TABLE source CHANGE c2 c2 bigint""").show()
     }
+    assertResult("Alter table add column is not allowed for streaming table")(addColException.getMessage)
+    assertResult("Alter table drop column is not allowed for streaming table")(dropColException.getMessage)
+    assertResult("Alter rename table is not allowed for streaming table")(renameException.getMessage)
+    assertResult("Alter table change datatype is not allowed for streaming table")(changeDataTypeException.getMessage)
   }
 
   override def afterAll {
@@ -180,14 +185,12 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_1s")
     sql("drop table if exists streaming.stream_table_filter ")
     sql("drop table if exists streaming.stream_table_filter_complex")
-    sql("drop table if exists streaming.stream_table_tolerant")
     sql("drop table if exists streaming.stream_table_delete_id")
     sql("drop table if exists streaming.stream_table_delete_date")
     sql("drop table if exists streaming.stream_table_handoff")
     sql("drop table if exists streaming.stream_table_reopen")
     sql("drop table if exists streaming.stream_table_drop")
     sql("drop table if exists streaming.agg_table_block")
-    sql("drop table if exists streaming.agg_table_block_agg0")
   }
 
   // normal table not support streaming ingest
@@ -994,14 +997,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from streaming.stream_table_handoff"),
       Seq(Row(2 * 100))
     )
-
-    try {
-      sql("ALTER TABLE stream_table_handoff SET TBLPROPERTIES('streaming'='false')")
-      assert(false, "unsupport disable streaming properties")
-    } catch {
-      case _ =>
-        assert(true)
-    }
   }
 
   test("auto hand off, close and reopen streaming table") {
