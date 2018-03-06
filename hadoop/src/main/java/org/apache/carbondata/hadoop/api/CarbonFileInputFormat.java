@@ -333,8 +333,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
       throw new IOException("Missing/Corrupt schema file for table.");
     }
     //    TableDataMap blockletMap = DataMapStoreManager.getInstance()
-    //            .getDataMap(identifier, BlockletDataMap.NAME,
-    //             BlockletDataMapFactory.class.getName());
+    //        .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
 
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
       // get all valid segments and set them into the configuration

@@ -18,6 +18,8 @@
 package org.apache.carbondata.processing.loading.model;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -258,6 +260,19 @@ public class LoadOption {
             "CSV header in input file is not proper. Column names in schema and csv header are not "
                 + "the same. Input file : " + CarbonUtil.removeAKSK(csvFile));
       }
+    }
+    // In case of static partition columns  if it is not exist in header, add it in the end.
+
+    if (staticPartitionCols.size() > 0) {
+      List<String> csvColumnListTemp = Arrays.asList(csvColumns);
+      List<String> csvColumnList = new ArrayList<>(csvColumnListTemp);
+      for (String staticPartitionCol: staticPartitionCols) {
+        if (!csvColumnList.contains(staticPartitionCol)) {
+          csvColumnList.add(staticPartitionCol);
+        }
+      }
+      String []csvResult = new String[csvColumnList.size()];
+      return csvColumnList.toArray(csvResult);
     }
     return csvColumns;
   }

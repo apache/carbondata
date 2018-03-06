@@ -84,23 +84,7 @@ public class TestMapReduceCarbonFileInputFormat {
     return 0;
   }
 
-  @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {
-    try {
-      String outPath = "target/output";
-      CarbonProjection carbonProjection = new CarbonProjection();
-      carbonProjection.addColumn("name");
-      carbonProjection.addColumn("age");
-      runJob(outPath, carbonProjection, null, "sdkOutputTable", "default",
-          "./src/test/resources/carbonFileLevelFormat/WriterOutput/");
-      Assert.assertEquals("Count lines are not matching", 100, countTheLines(outPath));
-      Assert.assertEquals("Column count are not matching", 2, countTheColumns(outPath));
-    } catch (Exception e) {
-      e.printStackTrace();
-      Assert.assertTrue("failed", false);
-      throw e;
-    } finally {
-    }
-  }
+
 
   private void runJob(String outPath, CarbonProjection projection, Expression filter,
       String tableName, String databaseName, String tablePath) throws Exception {
@@ -131,19 +115,18 @@ public class TestMapReduceCarbonFileInputFormat {
     boolean status = job.waitForCompletion(true);
   }
 
-
   @Test public void testGetSplits() throws Exception {
     CarbonFileInputFormat carbonFileInputFormat = new CarbonFileInputFormat();
     JobConf jobConf = new JobConf(new Configuration());
     Job job = Job.getInstance(jobConf);
     job.getConfiguration().set("query.id", UUID.randomUUID().toString());
     org.apache.hadoop.mapreduce.lib.input.FileInputFormat
-        .addInputPath(job, new Path("./src/test/resources/carbonFileLevelFormat/WriterOutput/"));
+        .addInputPath(job, new Path("./src/test/resources/carbonFileLevelFormat/WriterOutput1/"));
     CarbonTableInputFormat.setDatabaseName(job.getConfiguration(), "default");
-    CarbonTableInputFormat.setTableName(job.getConfiguration(), "sdkOutputTable");
+    CarbonTableInputFormat.setTableName(job.getConfiguration(), "sdkOutputTable1");
     // list files to get the carbondata file
     String segmentPath = CarbonTablePath
-        .getSegmentPath("./src/test/resources/carbonFileLevelFormat/WriterOutput/Fact" + "/Part0/",
+        .getSegmentPath("./src/test/resources/carbonFileLevelFormat/WriterOutput1/Fact" + "/Part0/",
             "null");
     File segmentDir = new File(segmentPath);
     if (segmentDir.exists() && segmentDir.isDirectory()) {
@@ -157,7 +140,25 @@ public class TestMapReduceCarbonFileInputFormat {
       }
     }
     List splits = carbonFileInputFormat.getSplits(job);
-    Assert.assertTrue(splits != null && splits.size() == 1);
+    Assert.assertTrue(splits != null && splits.size() == 3);
+  }
+
+  @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {
+    try {
+      String outPath = "target/output";
+      CarbonProjection carbonProjection = new CarbonProjection();
+      carbonProjection.addColumn("name");
+      carbonProjection.addColumn("age");
+      runJob(outPath, carbonProjection, null, "sdkOutputTable", "default",
+          "./src/test/resources/carbonFileLevelFormat/WriterOutput/");
+      Assert.assertEquals("Count lines are not matching", 100, countTheLines(outPath));
+      Assert.assertEquals("Column count are not matching", 2, countTheColumns(outPath));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.assertTrue("failed", false);
+      throw e;
+    } finally {
+    }
   }
 
   public static class Map extends Mapper<Void, Object[], Text, Text> {
