@@ -144,7 +144,6 @@ public class CarbonLoadModelBuilder {
     String column_dict = optionsFinal.get("columndict");
     validateDateTimeFormat(timestampformat, "TimestampFormat");
     validateDateTimeFormat(dateFormat, "DateFormat");
-    validateSortScope(sort_scope);
 
     if (Boolean.parseBoolean(bad_records_logger_enable) ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {

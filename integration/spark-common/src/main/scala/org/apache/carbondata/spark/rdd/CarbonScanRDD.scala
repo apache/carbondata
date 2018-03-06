@@ -527,7 +527,6 @@ class CarbonScanRDD(
    * This method will check and remove InExpression from filterExpression to prevent the List
    * Expression values from serializing and deserializing on executor
    *
-   * @param format
    * @param identifiedPartitions
    */
   private def checkAndRemoveInExpressinFromFilterExpression(
