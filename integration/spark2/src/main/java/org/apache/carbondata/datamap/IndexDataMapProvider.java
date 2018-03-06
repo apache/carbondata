@@ -81,14 +81,14 @@ public class IndexDataMapProvider implements DataMapProvider {
     try {
       // try to create DataMapProvider instance by taking providerName as class name
       Class<? extends DataMapFactory> providerClass =
-          (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getClassName());
+          (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getProviderName());
       dataMapFactory = providerClass.newInstance();
     } catch (ClassNotFoundException e) {
       // try to create DataMapProvider instance by taking providerName as short name
-      dataMapFactory = getDataMapFactoryByShortName(dataMapSchema.getClassName());
+      dataMapFactory = getDataMapFactoryByShortName(dataMapSchema.getProviderName());
     } catch (Throwable e) {
       throw new MetadataProcessException(
-          "failed to create DataMapProvider '" + dataMapSchema.getClassName() + "'", e);
+          "failed to create DataMapProvider '" + dataMapSchema.getProviderName() + "'", e);
     }
     return dataMapFactory;
   }

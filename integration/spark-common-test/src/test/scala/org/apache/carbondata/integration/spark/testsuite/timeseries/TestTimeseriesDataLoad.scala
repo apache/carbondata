@@ -24,6 +24,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
 import org.apache.carbondata.core.util.CarbonProperties
@@ -270,7 +271,7 @@ class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
         Row(Timestamp.valueOf("2016-02-23 01:02:30.0"), 40),
         Row(Timestamp.valueOf("2016-02-23 01:02:40.0"), 50),
         Row(Timestamp.valueOf("2016-02-23 01:02:50.0"), 50)))
-    val e: Exception = intercept[TableAlreadyExistsException] {
+    val e: Exception = intercept[MalformedDataMapCommandException] {
       sql(
         s"""
            | CREATE DATAMAP agg0_second ON TABLE mainTable
@@ -282,7 +283,8 @@ class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
            | GROUP BY mytime
         """.stripMargin)
     }
-    assert(e.getMessage.contains("already exists in database"))
+    assert(e.getMessage.contains("DataMap name 'agg0_second' already exist"))
+    sql("DROP DATAMAP agg0_second ON TABLE mainTable")
   }
 
   test("create datamap with 'if not exists' after load data into mainTable and create datamap") {

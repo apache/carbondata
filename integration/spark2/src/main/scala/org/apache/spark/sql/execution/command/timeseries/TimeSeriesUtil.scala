@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql.execution.command.timeseries
 
+import scala.collection.mutable
+
 import org.apache.spark.sql.execution.command.{DataMapField, Field}
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
@@ -172,14 +174,14 @@ object TimeSeriesUtil {
    * @param fieldMapping     fields from select plan
    * @param timeSeriesColumn timeseries column name
    */
-  def validateEventTimeColumnExitsInSelect(fieldMapping: scala.collection.mutable
-  .LinkedHashMap[Field, DataMapField],
+  def validateEventTimeColumnExitsInSelect(
+      fieldMapping: mutable.LinkedHashMap[Field, DataMapField],
       timeSeriesColumn: String) : Any = {
-    val isTimeSeriesColumnExits = fieldMapping
-      .exists(obj => obj._2.columnTableRelationList.isDefined &&
-                     obj._2.columnTableRelationList.get(0).parentColumnName
-                       .equalsIgnoreCase(timeSeriesColumn) &&
-                     obj._2.aggregateFunction.isEmpty)
+    val isTimeSeriesColumnExits = fieldMapping.exists { case (_, f) =>
+      f.columnTableRelationList.isDefined &&
+      f.columnTableRelationList.get.head.parentColumnName.equalsIgnoreCase(timeSeriesColumn) &&
+      f.aggregateFunction.isEmpty
+    }
     if(!isTimeSeriesColumnExits) {
       throw new MalformedCarbonCommandException(s"Time series column ${ timeSeriesColumn } does " +
                                                 s"not exists in select")

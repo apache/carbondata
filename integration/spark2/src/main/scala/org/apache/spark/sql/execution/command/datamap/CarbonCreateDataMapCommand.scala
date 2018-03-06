@@ -53,24 +53,23 @@ case class CarbonCreateDataMapCommand(
       throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
     }
 
-    validateDataMapName(mainTable)
+    if (mainTable.getDataMapSchema(dataMapName) != null) {
+      if (!ifNotExistsSet) {
+        throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")
+      } else {
+        return Seq.empty
+      }
+    }
+
     dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
-    dataMapSchema.setProperties(new java.util.HashMap[String, String](dmProperties.asJava))
+    dataMapSchema.setProperties(new java.util.HashMap[String, String](
+      dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
     dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema)
     dataMapProvider.initMeta(mainTable, dataMapSchema, queryString.orNull, sparkSession)
 
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${tableIdentifier.table}")
     Seq.empty
-  }
-
-  private def validateDataMapName(carbonTable: CarbonTable): Unit = {
-    val existingDataMaps = carbonTable.getTableInfo.getDataMapSchemaList
-    existingDataMaps.asScala.foreach { dataMapSchema =>
-      if (dataMapSchema.getDataMapName.equalsIgnoreCase(dataMapName)) {
-        throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")
-      }
-    }
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {

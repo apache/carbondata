@@ -275,7 +275,7 @@ public class TableInfo implements Serializable, Writable {
         DataMapSchema childSchema = new DataMapSchema();
         childSchema.readFields(in);
         DataMapSchema dataMapSchema = DataMapSchemaFactory.INSTANCE
-            .getDataMapSchema(childSchema.getDataMapName(), childSchema.getClassName());
+            .getDataMapSchema(childSchema.getDataMapName(), childSchema.getProviderName());
         dataMapSchema.setChildSchema(childSchema.getChildSchema());
         dataMapSchema.setRelationIdentifier(childSchema.getRelationIdentifier());
         dataMapSchema.setProperties(childSchema.getProperties());

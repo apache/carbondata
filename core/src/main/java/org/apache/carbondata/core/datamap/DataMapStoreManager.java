@@ -33,7 +33,6 @@ import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
@@ -89,8 +88,7 @@ public final class DataMapStoreManager {
     List<TableDataMap> dataMaps = new ArrayList<>();
     if (dataMapSchemaList != null) {
       for (DataMapSchema dataMapSchema : dataMapSchemaList) {
-        if (!dataMapSchema.getClassName().equalsIgnoreCase(
-            DataMapProvider.PREAGGREGATE.toString())) {
+        if (dataMapSchema.isIndexDataMap()) {
           dataMaps.add(getDataMap(carbonTable.getAbsoluteTableIdentifier(), dataMapSchema));
         }
       }
@@ -144,20 +142,21 @@ public final class DataMapStoreManager {
    * Return a new datamap instance and registered in the store manager.
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
-  private TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
+  // TODO: make it private
+  public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
       DataMapSchema dataMapSchema) throws MalformedDataMapCommandException, IOException {
     DataMapFactory dataMapFactory;
     try {
       // try to create datamap by reflection to test whether it is a valid DataMapFactory class
       Class<? extends DataMapFactory> factoryClass =
-          (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getClassName());
+          (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getProviderName());
       dataMapFactory = factoryClass.newInstance();
     } catch (ClassNotFoundException e) {
       throw new MalformedDataMapCommandException(
-          "DataMap '" + dataMapSchema.getClassName() + "' not found");
+          "DataMap '" + dataMapSchema.getProviderName() + "' not found");
     } catch (Throwable e) {
       throw new MetadataProcessException(
-          "failed to create DataMap '" + dataMapSchema.getClassName() + "'", e);
+          "failed to create DataMap '" + dataMapSchema.getProviderName() + "'", e);
     }
     return registerDataMap(identifier, dataMapSchema, dataMapFactory);
   }

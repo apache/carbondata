@@ -151,7 +151,7 @@ public class CarbonTable implements Serializable {
     List<DataMapSchema> dataMapSchemas = new ArrayList<>();
     for (DataMapSchema dataMapSchema : tableInfo.getDataMapSchemaList()) {
       DataMapSchema newDataMapSchema = DataMapSchemaFactory.INSTANCE
-          .getDataMapSchema(dataMapSchema.getDataMapName(), dataMapSchema.getClassName());
+          .getDataMapSchema(dataMapSchema.getDataMapName(), dataMapSchema.getProviderName());
       newDataMapSchema.setChildSchema(dataMapSchema.getChildSchema());
       newDataMapSchema.setProperties(dataMapSchema.getProperties());
       newDataMapSchema.setRelationIdentifier(dataMapSchema.getRelationIdentifier());
@@ -641,6 +641,10 @@ public class CarbonTable implements Serializable {
     return null != partitionInfo && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE;
   }
 
+  public PartitionInfo getPartitionInfo() {
+    return tablePartitionMap.get(getTableName());
+  }
+
   /**
    * @return absolute table identifier
    */
@@ -796,6 +800,16 @@ public class CarbonTable implements Serializable {
 
   public boolean hasDataMapSchema() {
     return hasDataMapSchema;
+  }
+
+  public DataMapSchema getDataMapSchema(String dataMapName) {
+    List<DataMapSchema> dataMaps = tableInfo.getDataMapSchemaList();
+    for (DataMapSchema dataMap : dataMaps) {
+      if (dataMap.getDataMapName().equalsIgnoreCase(dataMapName)) {
+        return dataMap;
+      }
+    }
+    return null;
   }
 
   public boolean isChildDataMap() {
