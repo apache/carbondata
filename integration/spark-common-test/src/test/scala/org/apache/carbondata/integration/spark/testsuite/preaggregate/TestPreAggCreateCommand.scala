@@ -39,17 +39,13 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists otherDB cascade")
     sql("drop table if exists PreAggMain")
     sql("drop table if exists PreAggMain1")
-    sql("drop table if exists PreAggMain2")
     sql("drop table if exists maintable")
     sql("drop table if exists showTables")
     sql("drop table if exists Preagg_twodb")
     sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
     sql("create table preaggMain1 (a string, b string, c string) stored by 'carbondata' tblProperties('DICTIONARY_INCLUDE' = 'a')")
-    sql("create table preaggMain2 (a string, b string, c string) stored by 'carbondata'")
     sql("create table maintable (column1 int, column6 string, column5 string, column2 string, column3 int, column4 int) stored by 'carbondata' tblproperties('dictionary_include'='column1,column6', 'dictionary_exclude'='column3,column5')")
-
   }
-
 
   test("test pre agg create table 1") {
     sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
@@ -59,26 +55,11 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test pre agg create table 2") {
-    sql("create datamap preagg2 on table PreAggMain using 'preaggregate' as select a as a1,sum(b) from PreAggMain group by a")
+    sql("create datamap preagg2 on table PreAggMain using 'preaggregate' as select a as a1,sum(b) as udfsum from PreAggMain group by a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), true, "preaggmain_a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), true, "preaggmain_b_sum")
     sql("drop datamap preagg2 on table PreAggMain")
   }
-
-  test("test pre agg create table 3") {
-    sql("create datamap preagg3 on table PreAggMain using 'preaggregate' as select a,sum(b) as sum from PreAggMain group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg3"), true, "preaggmain_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg3"), true, "preaggmain_b_sum")
-    sql("drop datamap preagg3 on table PreAggMain")
-  }
-
-  test("test pre agg create table 4") {
-    sql("create datamap preagg4 on table PreAggMain using 'preaggregate' as select a as a1,sum(b) as sum from PreAggMain group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), true, "preaggmain_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), true, "preaggmain_b_sum")
-    sql("drop datamap preagg4 on table PreAggMain")
-  }
-
 
   test("test pre agg create table 5") {
     sql("create datamap preagg11 on table PreAggMain1 using 'preaggregate'as select a,sum(b) from PreAggMain1 group by a")
@@ -86,22 +67,6 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg11"), true, "preaggmain1_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg11"), true, "DICTIONARY")
     sql("drop datamap preagg11 on table PreAggMain1")
-  }
-
-  test("test pre agg create table 6") {
-    sql("create datamap preagg12 on table PreAggMain1 using 'preaggregate' as select a as a1,sum(b) from PreAggMain1 group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "preaggmain1_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "preaggmain1_b_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "DICTIONARY")
-    sql("drop datamap preagg12 on table PreAggMain1")
-  }
-
-  test("test pre agg create table 7") {
-    sql("create datamap preagg13 on table PreAggMain1 using 'preaggregate' as select a,sum(b) as sum from PreAggMain1 group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), true, "preaggmain1_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), true, "preaggmain1_b_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), true, "DICTIONARY")
-    sql("drop datamap preagg13 on table PreAggMain1")
   }
 
   test("test pre agg create table 8") {
@@ -112,68 +77,69 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap preagg14 on table PreAggMain1")
   }
 
-
   test("test pre agg create table 9") {
-    sql("create datamap preagg15 on table PreAggMain2 using 'preaggregate' as select a,avg(b) from PreAggMain2 group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain2_preagg15"), true, "preaggmain2_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain2_preagg15"), true, "preaggmain2_b_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain2_preagg15"), true, "preaggmain2_b_count")
-    sql("drop datamap preagg15 on table PreAggMain2")
+    sql("create datamap preagg15 on table PreAggMain using 'preaggregate' as select a,avg(b) from PreAggMain group by a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg15"), true, "preaggmain_a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg15"), true, "preaggmain_b_sum")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg15"), true, "preaggmain_b_count")
+    sql("drop datamap preagg15 on table PreAggMain")
   }
 
   test("test pre agg create table 10") {
-    sql("create datamap preagg16 on table PreAggMain2 using 'preaggregate' as select a as a1,max(b) from PreAggMain2 group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain2_preagg16"), true, "preaggmain2_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain2_preagg16"), true, "preaggmain2_b_max")
-    sql("drop datamap preagg16 on table PreAggMain2")
+    sql("create datamap preagg16 on table PreAggMain using 'preaggregate' as select a as a1,max(b) from PreAggMain group by a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg16"), true, "preaggmain_a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg16"), true, "preaggmain_b_max")
+    sql("drop datamap preagg16 on table PreAggMain")
   }
 
   test("test pre agg create table 11") {
-    sql("create datamap preagg17 on table PreAggMain2 using 'preaggregate' as select a,min(b) from PreAggMain2 group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain2_preagg17"), true, "preaggmain2_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain2_preagg17"), true, "preaggmain2_b_min")
-    sql("drop datamap preagg17 on table PreAggMain2")
+    sql("create datamap preagg17 on table PreAggMain using 'preaggregate' as select a,min(b) from PreAggMain group by a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg17"), true, "preaggmain_a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg17"), true, "preaggmain_b_min")
+    sql("drop datamap preagg17 on table PreAggMain")
   }
 
   test("test pre agg create table 12") {
-    sql("create datamap preagg18 on table PreAggMain2 using 'preaggregate' as select a as a1,count(b) from PreAggMain2 group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain2_preagg18"), true, "preaggmain2_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain2_preagg18"), true, "preaggmain2_b_count")
-    sql("drop datamap preagg18 on table PreAggMain2")
+    sql("create datamap preagg18 on table PreAggMain using 'preaggregate' as select a as a1,count(b) from PreAggMain group by a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg18"), true, "preaggmain_a")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg18"), true, "preaggmain_b_count")
+    sql("drop datamap preagg18 on table PreAggMain")
   }
 
   test("test pre agg create table 13") {
-    intercept[Exception] {
+    val exception: Exception = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
-           | create datamap preagg19 on table PreAggMain2
+           | create datamap preagg19 on table PreAggMain
            | using 'preaggregate'
            | as select a as a1,count(distinct b)
-           | from PreAggMain2 group by a
+           | from PreAggMain group by a
          """.stripMargin)
     }
+    assert(exception.getMessage.equals("Distinct is not supported On Pre Aggregation"))
   }
 
   test("test pre agg create table 14") {
-    intercept[Exception] {
+    val exception = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
-           | create datamap preagg20 on table PreAggMain2
+           | create datamap preagg20 on table PreAggMain
            | using 'preaggregate'
-           | as select a as a1,sum(distinct b) from PreAggMain2
+           | as select a as a1,sum(distinct b) from PreAggMain
            | group by a
          """.stripMargin)
     }
+    assert(exception.getMessage.equals("Distinct is not supported On Pre Aggregation"))
   }
 
   test("test pre agg create table 15") {
     intercept[Exception] {
       sql(
         s"""
-           | create datamap preagg21 on table PreAggMain2
+           | create datamap preagg21 on table PreAggMain
            | using 'preaggregate'
            | as select a as a1,sum(b)
-           | from PreAggMain2
+           | from PreAggMain
            | where a='vishal'
            | group by a
          """.stripMargin)
@@ -342,15 +308,13 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("test show tables filterted with datamaps") {
+  test("test show tables filtered with datamaps") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,"false")
-    sql("create table showTables(name string, age int) stored by 'carbondata'")
-    sql(
-      "create datamap preAgg on table showTables using 'preaggregate' as select sum(age) from showTables")
+    sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
     sql("show tables").show()
-    checkExistence(sql("show tables"), false, "showtables_preagg")
+    checkExistence(sql("show tables"), false, "preaggmain_preagg1")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
-    checkExistence(sql("show tables"), true, "showtables_preagg")
+    checkExistence(sql("show tables"), true, "preaggmain_preagg1")
   }
 
   test("test create main and preagg table of same name in two database") {
@@ -401,7 +365,6 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintable")
     sql("drop table if exists PreAggMain")
     sql("drop table if exists PreAggMain1")
-    sql("drop table if exists PreAggMain2")
     sql("drop table if exists maintabletime")
     sql("drop table if exists showTables")
     sql("drop table if exists Preagg_twodb")
