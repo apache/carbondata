@@ -64,7 +64,7 @@ public class AggregationDataMapSchema extends DataMapSchema {
 
   private Set aggExpToColumnMapping;
 
-  public AggregationDataMapSchema(String dataMapName, String className) {
+  AggregationDataMapSchema(String dataMapName, String className) {
     super(dataMapName, className);
   }
 

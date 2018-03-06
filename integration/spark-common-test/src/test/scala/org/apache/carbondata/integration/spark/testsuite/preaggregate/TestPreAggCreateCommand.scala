@@ -19,7 +19,7 @@ package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
+import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
@@ -248,9 +248,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
       s"""create datamap preagg_sum on table tbl_1 using 'preaggregate' as select mac,avg(age) from tbl_1 group by mac"""
         .stripMargin)
     sql(
-      "create datamap agg2 on table tbl_1 using 'preaggregate' DMPROPERTIES ('timeseries" +
-      ".eventTime'='prodate', 'timeseries.hierarchy'='hour=1,day=1,month=1,year=1') as select prodate," +
-      "mac from tbl_1 group by prodate,mac")
+      "create datamap agg2 on table tbl_1 using 'preaggregate' as select prodate, mac from tbl_1 group by prodate,mac")
     checkExistence(sql("show tables"), false, "tbl_1_preagg_sum","tbl_1_agg2_day","tbl_1_agg2_hour","tbl_1_agg2_month","tbl_1_agg2_year")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
   }
@@ -303,8 +301,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
           | GROUP BY column3,column5,column2
         """.stripMargin)
     }
-    assert(e.getMessage.contains(
-      s"Unknown datamap provider/class abc"))
+    assert(e.getMessage.contains(s"DataMap 'abc' not found"))
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 
@@ -324,66 +321,26 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS tbl_1")
     sql("create table if not exists  tbl_1(imei string,age int,mac string ,prodate timestamp,update timestamp,gamepoint double,contrid double) stored by 'carbondata' ")
     sql(
-      "create datamap agg2 on table tbl_1 using 'preaggregate' DMPROPERTIES ('timeseries" +
-      ".eventTime'='prodate', 'timeseries.hierarchy'='hour=1,day=1,month=1,year=1') as select prodate," +
-      "mac from tbl_1 group by prodate,mac")
+      "create datamap agg2 on table tbl_1 using 'preaggregate' as select prodate, mac from tbl_1 group by prodate,mac")
     checkExistence(sql("show tables"), false, "tbl_1_agg2_day","tbl_1_agg2_hour","tbl_1_agg2_month","tbl_1_agg2_year")
   }
 
   test("test pre agg create table 21: should support 'if not exists'") {
-    try {
-      sql(
-        """
-          | CREATE DATAMAP IF NOT EXISTS agg0 ON TABLE mainTable
-          | USING 'preaggregate'
-          | AS SELECT
-          |   column3,
-          |   sum(column3),
-          |   column5,
-          |   sum(column5)
-          | FROM maintable
-          | GROUP BY column3,column5,column2
-        """.stripMargin)
-
-      sql(
-        """
-          | CREATE DATAMAP IF NOT EXISTS agg0 ON TABLE mainTable
-          | USING 'preaggregate'
-          | AS SELECT
-          |   column3,
-          |   sum(column3),
-          |   column5,
-          |   sum(column5)
-          | FROM maintable
-          | GROUP BY column3,column5,column2
-        """.stripMargin)
-      assert(true)
-    } catch {
-      case _: Exception =>
-        assert(false)
-    }
+    sql(
+      """
+        | CREATE DATAMAP IF NOT EXISTS agg0 ON TABLE mainTable
+        | USING 'preaggregate'
+        | AS SELECT
+        |   column3,
+        |   sum(column3),
+        |   column5,
+        |   sum(column5)
+        | FROM maintable
+        | GROUP BY column3,column5,column2
+      """.stripMargin)
     sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
   }
 
-  test("test pre agg create table 22: don't support 'create datamap if exists'") {
-    val e: Exception = intercept[AnalysisException] {
-      sql(
-        """
-          | CREATE DATAMAP IF EXISTS agg0 ON TABLE mainTable
-          | USING 'preaggregate'
-          | AS SELECT
-          |   column3,
-          |   sum(column3),
-          |   column5,
-          |   sum(column5)
-          | FROM maintable
-          | GROUP BY column3,column5,column2
-        """.stripMargin)
-      assert(true)
-    }
-    assert(e.getMessage.contains("identifier matching regex"))
-    sql("DROP DATAMAP IF EXISTS agg0 ON TABLE maintable")
-  }
 
   test("test show tables filterted with datamaps") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,"false")

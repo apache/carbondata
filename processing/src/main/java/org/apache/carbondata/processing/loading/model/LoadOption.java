@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.loading.model;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -112,11 +113,11 @@ public class LoadOption {
 
     optionsFinal.put(
         "complex_delimiter_level_1",
-        Maps.getOrDefault(options,"complex_delimiter_level_1", "\\$"));
+        Maps.getOrDefault(options,"complex_delimiter_level_1", "$"));
 
     optionsFinal.put(
         "complex_delimiter_level_2",
-        Maps.getOrDefault(options, "complex_delimiter_level_2", "\\:"));
+        Maps.getOrDefault(options, "complex_delimiter_level_2", ":"));
 
     optionsFinal.put(
         "dateformat",
@@ -259,7 +260,23 @@ public class LoadOption {
                 + "the same. Input file : " + CarbonUtil.removeAKSK(csvFile));
       }
     }
-    return csvColumns;
+
+    // In case of static partition columns just change the name of header if already exists as
+    // we should not take the column from csv file and add them as new columns at the end.
+    if (staticPartitionCols.size() > 0) {
+      List<String> updatedColumns = new ArrayList<>();
+      for (int i = 0; i < csvColumns.length; i++) {
+        if (staticPartitionCols.contains(csvColumns[i])) {
+          updatedColumns.add(csvColumns[i] + "1");
+        } else {
+          updatedColumns.add(csvColumns[i]);
+        }
+      }
+      updatedColumns.addAll(staticPartitionCols);
+      return updatedColumns.toArray(new String[updatedColumns.size()]);
+    } else {
+      return csvColumns;
+    }
   }
 
 }

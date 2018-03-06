@@ -37,7 +37,7 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
       SparkSession sparkSession) throws MalformedDataMapCommandException {
     validateDmProperty(dataMapSchema);
     helper = new PreAggregateTableHelper(
-        mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getClassName(),
+        mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getProviderName(),
         dataMapSchema.getProperties(), ctasSqlStatement, null, false);
     helper.initMeta(sparkSession);
   }

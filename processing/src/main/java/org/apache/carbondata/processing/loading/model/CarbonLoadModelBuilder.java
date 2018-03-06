@@ -148,11 +148,12 @@ public class CarbonLoadModelBuilder {
 
     if (Boolean.parseBoolean(bad_records_logger_enable) ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
-      bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path);
       if (!CarbonUtil.isValidBadStorePath(bad_record_path)) {
         throw new InvalidLoadOptionException("Invalid bad records location.");
       }
+      bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path);
     }
+
     carbonLoadModel.setBadRecordsLocation(bad_record_path);
 
     validateGlobalSortPartitions(global_sort_partitions);
@@ -226,10 +227,8 @@ public class CarbonLoadModelBuilder {
         delimeter.equalsIgnoreCase(complex_delimeter_level2)) {
       throw new InvalidLoadOptionException("Field Delimiter and Complex types delimiter are same");
     } else {
-      carbonLoadModel.setComplexDelimiterLevel1(
-          CarbonUtil.delimiterConverter(complex_delimeter_level1));
-      carbonLoadModel.setComplexDelimiterLevel2(
-          CarbonUtil.delimiterConverter(complex_delimeter_level2));
+      carbonLoadModel.setComplexDelimiterLevel1(complex_delimeter_level1);
+      carbonLoadModel.setComplexDelimiterLevel2(complex_delimeter_level2);
     }
     // set local dictionary path, and dictionary file extension
     carbonLoadModel.setAllDictPath(all_dictionary_path);
@@ -320,10 +319,13 @@ public class CarbonLoadModelBuilder {
 
   private void validateSortScope(String sortScope) throws InvalidLoadOptionException {
     if (sortScope != null) {
-      // Don't support use global sort on partitioned table.
+      // We support global sort for Hive standard partition, but don't support
+      // global sort for other partition type.
       if (table.getPartitionInfo(table.getTableName()) != null &&
+          !table.isHivePartitionTable() &&
           sortScope.equalsIgnoreCase(SortScopeOptions.SortScope.GLOBAL_SORT.toString())) {
-        throw new InvalidLoadOptionException("Don't support use global sort on partitioned table.");
+        throw new InvalidLoadOptionException("Don't support use global sort on "
+            + table.getPartitionInfo().getPartitionType() +  " partition table.");
       }
     }
   }
