@@ -264,8 +264,7 @@ public class LoadOption {
     // In case of static partition columns  if it is not exist in header, add it in the end.
 
     if (staticPartitionCols.size() > 0) {
-      List<String> csvColumnListTemp = Arrays.asList(csvColumns);
-      List<String> csvColumnList = new ArrayList<>(csvColumnListTemp);
+      List<String> csvColumnList = new ArrayList<>(Arrays.asList(csvColumns));
       for (String staticPartitionCol: staticPartitionCols) {
         if (!csvColumnList.contains(staticPartitionCol)) {
           csvColumnList.add(staticPartitionCol);
