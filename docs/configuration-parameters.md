@@ -38,6 +38,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.data.file.version | 3 | If this parameter value is set to 1, then CarbonData will support the data load which is in old format(0.x version). If the value is set to 2(1.x onwards version), then CarbonData will support the data load of new format only. The default value for this parameter is 3(latest version is set as default version). It improves the query performance by ~20% to 50%. For configuring V3 format explicitly, add carbon.data.file.version = V3 in carbon.properties file. |
 | carbon.streaming.auto.handoff.enabled | true | If this parameter value is set to true, auto trigger handoff function will be enabled.|
 | carbon.streaming.segment.max.size | 1024000000 | This parameter defines the maximum size of the streaming segment. Setting this parameter to appropriate value will avoid impacting the streaming ingestion. The value is in bytes.|
+| carbon.query.show.datamaps | true | If this parameter value is set to true, show tables command will list all the tables including datatmaps(eg: Preaggregate table), else datamaps will be excluded from the table list. |
 
 ##  Performance Configuration
 This section provides the details of all the configurations required for CarbonData Performance Optimization.
