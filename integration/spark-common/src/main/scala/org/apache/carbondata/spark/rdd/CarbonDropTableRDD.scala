@@ -30,7 +30,7 @@ class CarbonDropTableRDD[V: ClassTag](
     valueClass: Value[V],
     databaseName: String,
     tableName: String)
-  extends CarbonRDD[V](sc, Nil) {
+  extends CarbonRDD[V](sc, Nil, sc.hadoopConfiguration) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 

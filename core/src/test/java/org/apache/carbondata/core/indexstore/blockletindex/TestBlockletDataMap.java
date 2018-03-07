@@ -1,18 +1,11 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.List;
-import java.util.UUID;
 
 import org.apache.carbondata.core.cache.dictionary.AbstractDictionaryCacheTest;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;

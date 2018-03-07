@@ -50,7 +50,7 @@ object PartitionDropper {
     val bucketInfo = carbonTable.getBucketingInfo(tableName)
     val bucketNumber = bucketInfo match {
       case null => 1
-      case _ => bucketInfo.getNumberOfBuckets
+      case _ => bucketInfo.getNumOfRanges
     }
     val partitionIndex = oldPartitionIds.indexOf(Integer.valueOf(partitionId))
     val targetPartitionId = partitionInfo.getPartitionType match {

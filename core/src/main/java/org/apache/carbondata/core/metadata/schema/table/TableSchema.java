@@ -278,20 +278,28 @@ public class TableSchema implements Serializable, Writable {
     RelationIdentifier relationIdentifier =
         new RelationIdentifier(databaseName, tableName, tableId);
     Map<String, String> properties = new HashMap<>();
-    properties.put("CHILD_SELECT QUERY",
-        CarbonUtil.encodeToString(
-            queryString.trim().getBytes(
-                // replace = to with & as hive metastore does not allow = inside. For base 64
-                // only = is allowed as special character , so replace with &
-                CarbonCommonConstants.DEFAULT_CHARSET)).replace("=","&"));
-    properties.put("QUERYTYPE", queryType);
-    DataMapSchema dataMapSchema =
-        new DataMapSchema(dataMapName, className);
+    if (queryString != null) {
+      properties.put(
+          "CHILD_SELECT QUERY",
+          CarbonUtil.encodeToString(queryString.trim().getBytes(
+              // replace = to with & as hive metastore does not allow = inside. For base 64
+              // only = is allowed as special character , so replace with &
+              CarbonCommonConstants.DEFAULT_CHARSET)).replace("=", "&"));
+      properties.put("QUERYTYPE", queryType);
+    }
+    DataMapSchema dataMapSchema = new DataMapSchema(dataMapName, className);
     dataMapSchema.setProperties(properties);
 
     dataMapSchema.setChildSchema(this);
     dataMapSchema.setRelationIdentifier(relationIdentifier);
     return dataMapSchema;
+  }
+
+  /**
+   * Create a {@link TableSchemaBuilder} to create {@link TableSchema}
+   */
+  public static TableSchemaBuilder builder() {
+    return new TableSchemaBuilder();
   }
 
 }

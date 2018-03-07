@@ -271,46 +271,45 @@ object CommitPreAggregateListener extends OperationEventListener {
       operationContext.getProperty("isCompaction")).getOrElse("false").toString.toBoolean
     val dataMapSchemas =
       carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getDataMapSchemaList
+      .asScala.filter(_.getChildSchema != null)
     // extract all child LoadCommands
     val childLoadCommands = if (!isCompactionFlow) {
       // If not compaction flow then the key for load commands will be tableName
-        dataMapSchemas.asScala.map { dataMapSchema =>
+        dataMapSchemas.map { dataMapSchema =>
           operationContext.getProperty(dataMapSchema.getChildSchema.getTableName)
             .asInstanceOf[CarbonLoadDataCommand]
         }
       } else {
       // If not compaction flow then the key for load commands will be tableName_Compaction
-        dataMapSchemas.asScala.map { dataMapSchema =>
+        dataMapSchemas.map { dataMapSchema =>
           operationContext.getProperty(dataMapSchema.getChildSchema.getTableName + "_Compaction")
             .asInstanceOf[CarbonLoadDataCommand]
         }
       }
-     if (dataMapSchemas.size() > 0) {
+     if (dataMapSchemas.nonEmpty) {
        val uuid = operationContext.getProperty("uuid").toString
       // keep committing until one fails
       val renamedDataMaps = childLoadCommands.takeWhile { childLoadCommand =>
         val childCarbonTable = childLoadCommand.table
-        val carbonTablePath =
-          new CarbonTablePath(childCarbonTable.getCarbonTableIdentifier,
-            childCarbonTable.getTablePath)
         // Generate table status file name with UUID, forExample: tablestatus_1
-        val oldTableSchemaPath = carbonTablePath.getTableStatusFilePathWithUUID(uuid)
+        val oldTableSchemaPath = CarbonTablePath.getTableStatusFilePathWithUUID(
+          childCarbonTable.getTablePath, uuid)
         // Generate table status file name without UUID, forExample: tablestatus
-        val newTableSchemaPath = carbonTablePath.getTableStatusFilePath
+        val newTableSchemaPath = CarbonTablePath.getTableStatusFilePath(
+          childCarbonTable.getTablePath)
         renameDataMapTableStatusFiles(oldTableSchemaPath, newTableSchemaPath, uuid)
       }
       // if true then the commit for one of the child tables has failed
-      val commitFailed = renamedDataMaps.lengthCompare(dataMapSchemas.size()) != 0
+      val commitFailed = renamedDataMaps.lengthCompare(dataMapSchemas.length) != 0
       if (commitFailed) {
         LOGGER.warn("Reverting table status file to original state")
         renamedDataMaps.foreach {
           loadCommand =>
             val carbonTable = loadCommand.table
-            val carbonTablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
-              carbonTable.getTablePath)
             // rename the backup tablestatus i.e tablestatus_backup_UUID to tablestatus
-            val backupTableSchemaPath = carbonTablePath.getTableStatusFilePath + "_backup_" + uuid
-            val tableSchemaPath = carbonTablePath.getTableStatusFilePath
+            val backupTableSchemaPath =
+              CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath) + "_backup_" + uuid
+            val tableSchemaPath = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
             markInProgressSegmentAsDeleted(backupTableSchemaPath, operationContext, loadCommand)
             renameDataMapTableStatusFiles(backupTableSchemaPath, tableSchemaPath, "")
         }
@@ -377,9 +376,8 @@ object CommitPreAggregateListener extends OperationEventListener {
       operationContext: OperationContext,
       uuid: String): Unit = {
     childTables.foreach { childTable =>
-      val carbonTablePath = new CarbonTablePath(childTable.getCarbonTableIdentifier,
-        childTable.getTablePath)
-      val metaDataDir = FileFactory.getCarbonFile(carbonTablePath.getMetadataDirectoryPath)
+      val metaDataDir = FileFactory.getCarbonFile(
+        CarbonTablePath.getMetadataPath(childTable.getTablePath))
       val tableStatusFiles = metaDataDir.listFiles(new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = {
           file.getName.contains(uuid) || file.getName.contains("backup")

@@ -18,8 +18,9 @@
 package org.apache.carbondata.spark.testsuite.dataload
 
 import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 /**
  * This class will test data load in which number of columns in data are more than

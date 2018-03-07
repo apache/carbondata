@@ -16,9 +16,7 @@
  */
 package org.apache.carbondata.core.service;
 
-import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator;
 import org.apache.carbondata.core.service.impl.DictionaryFactory;
-import org.apache.carbondata.core.service.impl.PathFactory;
 
 /**
  * Interface to get services
@@ -30,20 +28,6 @@ public class CarbonCommonFactory {
    */
   public static DictionaryService getDictionaryService() {
     return DictionaryFactory.getInstance();
-  }
-
-  /**
-   * @return path service
-   */
-  public static PathService getPathService() {
-    return PathFactory.getInstance();
-  }
-
-  /**
-   * @return unique id generator
-   */
-  public static ColumnUniqueIdService getColumnUniqueIdGenerator() {
-    return ColumnUniqueIdGenerator.getInstance();
   }
 
 }

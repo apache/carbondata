@@ -31,7 +31,7 @@
     <Bug pattern="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE"/>
   </Match>
   <Match>
-    <Class name="org.apache.carbondata.core.datastore.impl.FileHolderImpl"/>
+    <Class name="org.apache.carbondata.core.datastore.impl.FileReaderImpl"/>
     <Method name="getDataInputStream"/>
     <Bug pattern="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE"/>
   </Match>

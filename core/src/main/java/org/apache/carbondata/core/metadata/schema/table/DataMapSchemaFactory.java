@@ -24,15 +24,16 @@ public class DataMapSchemaFactory {
   /**
    * Below class will be used to get data map schema object
    * based on class name
-   * @param className
+   * @param providerName
    * @return data map schema
    */
-  public DataMapSchema getDataMapSchema(String dataMapName, String className) {
-    if (DataMapProvider.PREAGGREGATE.getClassName().equals(className) ||
-        DataMapProvider.TIMESERIES.getClassName().equals(className)) {
-      return new AggregationDataMapSchema(dataMapName, className);
+  public DataMapSchema getDataMapSchema(String dataMapName, String providerName) {
+    if (providerName.equalsIgnoreCase(DataMapProvider.PREAGGREGATE.toString())) {
+      return new AggregationDataMapSchema(dataMapName, providerName);
+    } else if (providerName.equalsIgnoreCase(DataMapProvider.TIMESERIES.toString())) {
+      return new AggregationDataMapSchema(dataMapName, providerName);
     } else {
-      return new DataMapSchema(dataMapName, className);
+      return new DataMapSchema(dataMapName, providerName);
     }
   }
 }

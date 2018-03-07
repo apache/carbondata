@@ -99,6 +99,7 @@
     <module>core</module>
     <module>processing</module>
     <module>hadoop</module>
+    <module>store/sdk</module>
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
     <module>assembly</module>
@@ -261,6 +262,11 @@
         <version>4.11</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest_${scala.binary.version}</artifactId>
+        <version>2.2.1</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -336,6 +342,7 @@
         <artifactId>findbugs-maven-plugin</artifactId>
         <version>3.0.4</version>
         <configuration>
+          <skip>true</skip>
           <excludeFilterFile>${dev.path}/findbugs-exclude.xml</excludeFilterFile>
           <failOnError>true</failOnError>
           <findbugsXmlOutput>true</findbugsXmlOutput>
@@ -437,6 +444,7 @@
         <module>format</module>
         <module>integration/spark2</module>
         <module>examples/spark2</module>
+        <module>datamap/examples</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
         <module>examples/flink</module>
@@ -473,6 +481,8 @@
         <module>integration/presto</module>
         <module>streaming</module>
         <module>examples/spark2</module>
+        <module>datamap/examples</module>
+        <module>datamap/lucene</module>
       </modules>
       <build>
         <plugins>
@@ -527,6 +537,7 @@
         <module>integration/presto</module>
         <module>streaming</module>
         <module>examples/spark2</module>
+        <module>datamap/lucene</module>
       </modules>
       <build>
         <plugins>
@@ -567,6 +578,12 @@
     </profile>
     <profile>
       <id>include-all</id>
+    </profile>
+    <profile>
+      <id>store-sdk</id>
+      <modules>
+        <module>store/sdk</module>
+      </modules>
     </profile>
     <profile>
       <id>sdvtest</id>

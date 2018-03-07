@@ -23,6 +23,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider;
+
 /**
  * Child schema class to maintain the child table details inside parent table
  */
@@ -32,9 +34,18 @@ public class DataMapSchema implements Serializable, Writable {
 
   protected String dataMapName;
 
-  private String className;
+  /**
+   * There are two kind of DataMaps:
+   * 1. Index DataMap: provider name is class name of implementation class of DataMapFactory
+   * 2. OLAP DataMap: provider name is one of the {@link DataMapProvider#shortName}
+   */
+  private String providerName;
 
-  protected RelationIdentifier relationIdentifier;
+  /**
+   * identifier of the parent table
+   */
+  private RelationIdentifier relationIdentifier;
+
   /**
    * child table schema
    */
@@ -45,16 +56,19 @@ public class DataMapSchema implements Serializable, Writable {
    */
   protected Map<String, String> properties;
 
+  /**
+   * WARN: This constructor should be used by deserialization only
+   */
   public DataMapSchema() {
   }
 
-  public DataMapSchema(String dataMapName, String className) {
+  public DataMapSchema(String dataMapName, String providerName) {
     this.dataMapName = dataMapName;
-    this.className = className;
+    this.providerName = providerName;
   }
 
-  public String getClassName() {
-    return className;
+  public String getProviderName() {
+    return providerName;
   }
 
   public TableSchema getChildSchema() {
@@ -85,9 +99,22 @@ public class DataMapSchema implements Serializable, Writable {
     this.properties = properties;
   }
 
+  /**
+   * Return true if this datamap is an Index DataMap
+   * @return
+   */
+  public boolean isIndexDataMap() {
+    if (providerName.equalsIgnoreCase(DataMapProvider.PREAGGREGATE.getShortName()) ||
+        providerName.equalsIgnoreCase(DataMapProvider.TIMESERIES.getShortName())) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   @Override public void write(DataOutput out) throws IOException {
     out.writeUTF(dataMapName);
-    out.writeUTF(className);
+    out.writeUTF(providerName);
     boolean isRelationIdentifierExists = null != relationIdentifier;
     out.writeBoolean(isRelationIdentifierExists);
     if (isRelationIdentifierExists) {
@@ -111,7 +138,7 @@ public class DataMapSchema implements Serializable, Writable {
 
   @Override public void readFields(DataInput in) throws IOException {
     this.dataMapName = in.readUTF();
-    this.className = in.readUTF();
+    this.providerName = in.readUTF();
     boolean isRelationIdnentifierExists = in.readBoolean();
     if (isRelationIdnentifierExists) {
       this.relationIdentifier = new RelationIdentifier(null, null, null);

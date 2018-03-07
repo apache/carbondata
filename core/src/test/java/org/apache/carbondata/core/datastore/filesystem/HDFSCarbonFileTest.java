@@ -58,7 +58,7 @@ public class HDFSCarbonFileTest {
     @BeforeClass
     static public void setUp() throws IOException {
         Configuration config = new Configuration();
-//adding local hadoop configuration
+        // adding local hadoop configuration
         config.addResource(new Path("core-site.xml"));
         config.addResource(new Path("hdfs-site.xml"));
         fileName = "Test.carbondata"; //this path is HDFS path
@@ -75,6 +75,7 @@ public class HDFSCarbonFileTest {
             BufferedWriter br = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
             br.write("Hello World");
             br.close();
+            os.close();
             fs.close();
 
             fileStatus = new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName));
@@ -369,7 +370,13 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        assertEquals(hdfsCarbonFile.renameForce(fileName), false);
+        new MockUp<WebHdfsFileSystem>(){
+            @Mock
+            public boolean rename(final Path src, final Path dst) throws IOException {
+                return true;
+            }
+        };
+        assertEquals(hdfsCarbonFile.renameForce(fileName), true);
     }
 
     @Test

@@ -17,7 +17,15 @@
 package org.apache.carbondata.processing.loading.steps;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -25,7 +33,9 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
@@ -65,21 +75,21 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     child.initialize();
   }
 
-  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
     String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
-            tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
-            configuration.getSegmentId() + "", false, false);
+            tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()),
+            configuration.getSegmentId(), false, false);
     CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 
-  public CarbonFactDataHandlerModel getDataHandlerModel(int partitionId) {
+  public CarbonFactDataHandlerModel getDataHandlerModel() {
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
-    String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
+    String[] storeLocation = getStoreLocation(tableIdentifier);
     return CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(configuration,
-        storeLocation, partitionId, 0);
+        storeLocation, 0, 0);
   }
 
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
@@ -89,11 +99,15 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     String tableName = tableIdentifier.getTableName();
     try {
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
+          .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
               System.currentTimeMillis());
+      ExecutorService rangeExecutorService = Executors.newFixedThreadPool(iterators.length,
+          new CarbonThreadFactory("WriterForwardPool: " + tableName));
+      List<Future<Void>> rangeExecutorServiceSubmitList = new ArrayList<>(iterators.length);
       int i = 0;
+      // do this concurrently
       for (Iterator<CarbonRowBatch> iterator : iterators) {
-        String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
+        String[] storeLocation = getStoreLocation(tableIdentifier);
 
         CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
             .createCarbonFactDataHandlerModel(configuration, storeLocation, i, 0);
@@ -111,9 +125,19 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         if (!rowsNotExist) {
           finish(dataHandler);
         }
+        rangeExecutorServiceSubmitList.add(
+            rangeExecutorService.submit(new WriterForwarder(iterator, tableIdentifier, i)));
         i++;
       }
-
+      try {
+        rangeExecutorService.shutdown();
+        rangeExecutorService.awaitTermination(2, TimeUnit.DAYS);
+        for (int j = 0; j < rangeExecutorServiceSubmitList.size(); j++) {
+          rangeExecutorServiceSubmitList.get(j).get();
+        }
+      } catch (InterruptedException | ExecutionException e) {
+        throw new CarbonDataWriterException(e);
+      }
     } catch (CarbonDataWriterException e) {
       LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
       throw new CarbonDataLoadingException(
@@ -127,6 +151,51 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override protected String getStepName() {
     return "Data Writer";
+  }
+
+  /**
+   * Used to forward rows to different ranges based on range id.
+   */
+  private final class WriterForwarder implements Callable<Void> {
+    private Iterator<CarbonRowBatch> insideRangeIterator;
+    private CarbonTableIdentifier tableIdentifier;
+    private int rangeId;
+
+    public WriterForwarder(Iterator<CarbonRowBatch> insideRangeIterator,
+        CarbonTableIdentifier tableIdentifier, int rangeId) {
+      this.insideRangeIterator = insideRangeIterator;
+      this.tableIdentifier = tableIdentifier;
+      this.rangeId = rangeId;
+    }
+
+    @Override public Void call() throws Exception {
+      LOGGER.info("Process writer forward for table " + tableIdentifier.getTableName()
+          + ", range: " + rangeId);
+      processRange(insideRangeIterator, tableIdentifier, rangeId);
+      return null;
+    }
+  }
+
+  private void processRange(Iterator<CarbonRowBatch> insideRangeIterator,
+      CarbonTableIdentifier tableIdentifier, int rangeId) {
+    String[] storeLocation = getStoreLocation(tableIdentifier);
+
+    CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
+        .createCarbonFactDataHandlerModel(configuration, storeLocation, rangeId, 0);
+    CarbonFactHandler dataHandler = null;
+    boolean rowsNotExist = true;
+    while (insideRangeIterator.hasNext()) {
+      if (rowsNotExist) {
+        rowsNotExist = false;
+        dataHandler = CarbonFactHandlerFactory
+            .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
+        dataHandler.initialise();
+      }
+      processBatch(insideRangeIterator.next(), dataHandler);
+    }
+    if (!rowsNotExist) {
+      finish(dataHandler);
+    }
   }
 
   public void finish(CarbonFactHandler dataHandler) {
@@ -147,10 +216,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(rowCounter.get());
     processingComplete(dataHandler);
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-        .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
+        .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
             System.currentTimeMillis());
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-        .recordMdkGenerateTotalTime(configuration.getPartitionId(), System.currentTimeMillis());
+        .recordMdkGenerateTotalTime(CarbonTablePath.DEPRECATED_PATITION_ID,
+            System.currentTimeMillis());
   }
 
   private void processingComplete(CarbonFactHandler dataHandler) throws CarbonDataLoadingException {

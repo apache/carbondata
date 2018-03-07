@@ -491,8 +491,7 @@ public class SegmentFileStore {
   public static void cleanSegments(CarbonTable table, List<PartitionSpec> partitionSpecs,
       boolean forceDelete) throws IOException {
 
-    LoadMetadataDetails[] details =
-        SegmentStatusManager.readLoadMetadata(table.getMetaDataFilepath());
+    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
     // scan through each segment.
     for (LoadMetadataDetails segment : details) {
       // if this segment is valid then only we will go for deletion of related

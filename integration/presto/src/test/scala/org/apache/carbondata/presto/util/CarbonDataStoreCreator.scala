@@ -52,7 +52,7 @@ import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolut
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata,
 CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter,
 CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
@@ -135,7 +135,6 @@ object CarbonDataStoreCreator {
       loadModel.setCsvHeaderColumns(loadModel.getCsvHeader.split(","))
       loadModel.setTaskNo("0")
       loadModel.setSegmentId("0")
-      loadModel.setPartitionId("0")
       loadModel.setFactTimeStamp(System.currentTimeMillis())
       loadModel.setMaxColumns("15")
       executeGraph(loadModel, storePath)
@@ -324,10 +323,8 @@ object CarbonDataStoreCreator {
     )
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
-    val carbonTablePath: CarbonTablePath = CarbonStorePath.getCarbonTablePath(
-      absoluteTableIdentifier.getTablePath,
-      absoluteTableIdentifier.getCarbonTableIdentifier)
-    val schemaFilePath: String = carbonTablePath.getSchemaFilePath
+    val schemaFilePath: String = CarbonTablePath.getSchemaFilePath(
+      absoluteTableIdentifier.getTablePath)
     val schemaMetadataPath: String =
       CarbonTablePath.getFolderContainingFile(schemaFilePath)
     CarbonMetadata.getInstance.loadTableMetadata(tableInfo)
@@ -386,7 +383,6 @@ object CarbonDataStoreCreator {
       .getInstance.createCache(CacheType.REVERSE_DICTIONARY)
 
     for (i <- set.indices) {
-      //      val dim = getDimension(dims, i).get
       val columnIdentifier: ColumnIdentifier =
         new ColumnIdentifier(dims.get(i).getColumnId, null, null)
 
@@ -534,7 +530,7 @@ object CarbonDataStoreCreator {
       loadMetadataDetails.setLoadStartTime(
         loadMetadataDetails.getTimeStamp(readCurrentTime()))
       listOfLoadFolderDetails.add(loadMetadataDetails)
-      val dataLoadLocation: String = schema.getCarbonTable.getMetaDataFilepath + File.separator +
+      val dataLoadLocation: String = schema.getCarbonTable.getMetadataPath + File.separator +
                                      CarbonTablePath.TABLE_STATUS_FILE
       val gsonObjectToWrite: Gson = new Gson()
       val writeOperation: AtomicFileOperations = new AtomicFileOperationsImpl(

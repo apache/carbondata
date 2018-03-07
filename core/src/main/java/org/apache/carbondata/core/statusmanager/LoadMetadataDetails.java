@@ -132,6 +132,7 @@ public class LoadMetadataDetails implements Serializable {
     return partitionCount;
   }
 
+  @Deprecated
   public void setPartitionCount(String partitionCount) {
     this.partitionCount = partitionCount;
   }
@@ -341,15 +342,6 @@ public class LoadMetadataDetails implements Serializable {
    */
   public void setMajorCompacted(String majorCompacted) {
     this.majorCompacted = majorCompacted;
-  }
-
-  /**
-   * To get isDeleted property.
-   *
-   * @return isDeleted
-   */
-  public String getIsDeleted() {
-    return isDeleted;
   }
 
   /**

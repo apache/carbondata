@@ -29,7 +29,7 @@ import org.apache.carbondata.spark.rdd.CarbonRDD
 class UpdateCoalescedRDD[T: ClassTag](
     @transient var prev: RDD[T],
     nodeList: Array[String])
-  extends CarbonRDD[T](prev.context, Nil) {
+  extends CarbonRDD[T](prev.context, Nil, prev.sparkContext.hadoopConfiguration) {
 
   override def getPartitions: Array[Partition] = {
     new DataLoadPartitionCoalescer(prev, nodeList).run

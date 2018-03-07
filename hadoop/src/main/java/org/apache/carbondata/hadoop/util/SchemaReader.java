@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverte
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -37,8 +37,7 @@ public class SchemaReader {
 
   public static CarbonTable readCarbonTableFromStore(AbsoluteTableIdentifier identifier)
       throws IOException {
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier);
-    String schemaFilePath = carbonTablePath.getSchemaFilePath();
+    String schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath());
     if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
         FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
         FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.S3) ||
@@ -46,7 +45,7 @@ public class SchemaReader {
       String tableName = identifier.getCarbonTableIdentifier().getTableName();
 
       org.apache.carbondata.format.TableInfo tableInfo =
-          CarbonUtil.readSchemaFile(carbonTablePath.getSchemaFilePath());
+          CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(identifier.getTablePath()));
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
       TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
           tableInfo,
@@ -63,22 +62,21 @@ public class SchemaReader {
   /**
    * the method returns the Wrapper TableInfo
    *
-   * @param absoluteTableIdentifier
+   * @param identifier
    * @return
    */
-  public static TableInfo getTableInfo(AbsoluteTableIdentifier absoluteTableIdentifier)
+  public static TableInfo getTableInfo(AbsoluteTableIdentifier identifier)
       throws IOException {
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     org.apache.carbondata.format.TableInfo thriftTableInfo =
-        CarbonUtil.readSchemaFile(carbonTablePath.getSchemaFilePath());
+        CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(identifier.getTablePath()));
     ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
         new ThriftWrapperSchemaConverterImpl();
     CarbonTableIdentifier carbonTableIdentifier =
-        absoluteTableIdentifier.getCarbonTableIdentifier();
+        identifier.getCarbonTableIdentifier();
     return thriftWrapperSchemaConverter.fromExternalToWrapperTableInfo(
         thriftTableInfo,
         carbonTableIdentifier.getDatabaseName(),
         carbonTableIdentifier.getTableName(),
-        absoluteTableIdentifier.getTablePath());
+        identifier.getTablePath());
   }
 }

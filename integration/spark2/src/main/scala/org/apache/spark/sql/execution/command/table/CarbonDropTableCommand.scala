@@ -28,12 +28,12 @@ import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
-import org.apache.carbondata.spark.exception.{ConcurrentOperationException, ProcessMetaDataException}
 
 case class CarbonDropTableCommand(
     ifExistsSet: Boolean,
@@ -147,7 +147,10 @@ case class CarbonDropTableCommand(
       // delete the table folder
       val tablePath = carbonTable.getTablePath
       val fileType = FileFactory.getFileType(tablePath)
-      if (FileFactory.isFileExist(tablePath, fileType)) {
+
+      // delete table data only if it is not external table
+      if (FileFactory.isFileExist(tablePath, fileType) &&
+          !carbonTable.isExternalTable) {
         val file = FileFactory.getCarbonFile(tablePath, fileType)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }

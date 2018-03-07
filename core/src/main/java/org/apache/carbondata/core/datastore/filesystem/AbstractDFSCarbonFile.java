@@ -51,7 +51,7 @@ import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.io.compress.Lz4Codec;
 import org.apache.hadoop.io.compress.SnappyCodec;
 
-public abstract  class AbstractDFSCarbonFile implements CarbonFile {
+public abstract class AbstractDFSCarbonFile implements CarbonFile {
   /**
    * LOGGER
    */
@@ -262,18 +262,28 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
       int bufferSize, boolean append) throws IOException {
     Path pt = new Path(path);
-    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    FileSystem fileSystem = pt.getFileSystem(FileFactory.getConfiguration());
     FSDataOutputStream stream = null;
     if (append) {
       // append to a file only if file already exists else file not found
       // exception will be thrown by hdfs
       if (CarbonUtil.isFileExists(path)) {
-        stream = fs.append(pt, bufferSize);
+        if (FileFactory.FileType.S3 == fileType) {
+          DataInputStream dataInputStream = fileSystem.open(pt);
+          int count = dataInputStream.available();
+          // create buffer
+          byte[] byteStreamBuffer = new byte[count];
+          dataInputStream.read(byteStreamBuffer);
+          stream = fileSystem.create(pt, true, bufferSize);
+          stream.write(byteStreamBuffer);
+        } else {
+          stream = fileSystem.append(pt, bufferSize);
+        }
       } else {
-        stream = fs.create(pt, true, bufferSize);
+        stream = fileSystem.create(pt, true, bufferSize);
       }
     } else {
-      stream = fs.create(pt, true, bufferSize);
+      stream = fileSystem.create(pt, true, bufferSize);
     }
     return stream;
   }

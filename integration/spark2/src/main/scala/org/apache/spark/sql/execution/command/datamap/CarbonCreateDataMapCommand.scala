@@ -16,17 +16,16 @@
  */
 package org.apache.spark.sql.execution.command.datamap
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.preaaggregate.CreatePreAggregateTableCommand
-import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider._
-import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, MalformedDataMapCommandException}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.datamap.{DataMapManager, DataMapProvider}
 
 /**
  * Below command class will be used to create datamap on table
@@ -41,96 +40,53 @@ case class CarbonCreateDataMapCommand(
     ifNotExistsSet: Boolean = false)
   extends AtomicRunnableCommand {
 
-  var createPreAggregateTableCommands: CreatePreAggregateTableCommand = _
-  var tableIsExists: Boolean = false
+  private var dataMapProvider: DataMapProvider = _
+  private var mainTable: CarbonTable = _
+  private var dataMapSchema: DataMapSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     // since streaming segment does not support building index and pre-aggregate yet,
     // so streaming table does not support create datamap
-    val carbonTable =
-    CarbonEnv.getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
-    if (carbonTable.isStreamingTable) {
+    mainTable =
+      CarbonEnv.getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
+    if (mainTable.isStreamingTable) {
       throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
     }
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
-    val tableName = tableIdentifier.table + "_" + dataMapName
-    val newDmProperties = if (dmProperties.get(TimeSeriesUtil.TIMESERIES_EVENTTIME).isDefined) {
-      dmProperties.updated(TimeSeriesUtil.TIMESERIES_EVENTTIME,
-        dmProperties.get(TimeSeriesUtil.TIMESERIES_EVENTTIME).get.trim)
-    } else {
-      dmProperties
-    }
-    val dataMapProvider = {
-      try {
-        DataMapProvider.getDataMapProvider(dmClassName)
-      } catch {
-        case e: UnsupportedOperationException =>
-          throw new MalformedDataMapCommandException(e.getMessage)
-      }
-    }
-    if (sparkSession.sessionState.catalog.listTables(dbName)
-      .exists(_.table.equalsIgnoreCase(tableName))) {
-      LOGGER.audit(
-        s"Table creation with Database name [$dbName] and Table name [$tableName] failed. " +
-          s"Table [$tableName] already exists under database [$dbName]")
-      tableIsExists = true
+
+    if (mainTable.getDataMapSchema(dataMapName) != null) {
       if (!ifNotExistsSet) {
-        throw new TableAlreadyExistsException(dbName, tableName)
-      }
-    } else {
-      TimeSeriesUtil.validateTimeSeriesGranularity(newDmProperties, dmClassName)
-      createPreAggregateTableCommands = if (dataMapProvider == TIMESERIES) {
-        val details = TimeSeriesUtil
-          .getTimeSeriesGranularityDetails(newDmProperties, dmClassName)
-        val updatedDmProperties = newDmProperties - details._1
-        CreatePreAggregateTableCommand(
-          dataMapName,
-          tableIdentifier,
-          dataMapProvider,
-          updatedDmProperties,
-          queryString.get,
-          Some(details._1),
-          ifNotExistsSet = ifNotExistsSet)
+        throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")
       } else {
-        CreatePreAggregateTableCommand(
-          dataMapName,
-          tableIdentifier,
-          dataMapProvider,
-          newDmProperties,
-          queryString.get,
-          ifNotExistsSet = ifNotExistsSet)
+        return Seq.empty
       }
-      createPreAggregateTableCommands.processMetadata(sparkSession)
     }
+
+    dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
+    dataMapSchema.setProperties(new java.util.HashMap[String, String](
+      dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
+    dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema)
+    dataMapProvider.initMeta(mainTable, dataMapSchema, queryString.orNull, sparkSession)
+
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${tableIdentifier.table}")
     Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
-      dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
-      if (!tableIsExists) {
-        createPreAggregateTableCommands.processData(sparkSession)
-      } else {
-        Seq.empty
+    if (dataMapProvider != null) {
+      dataMapProvider.initData(mainTable, sparkSession)
+      if (mainTable.isAutoRefreshDataMap) {
+        dataMapProvider.rebuild(mainTable, sparkSession)
       }
-    } else {
-      throw new MalformedDataMapCommandException("Unknown datamap provider/class " + dmClassName)
     }
+    Seq.empty
   }
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
-    if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
-      dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
-      if (!tableIsExists && createPreAggregateTableCommands != null) {
-        createPreAggregateTableCommands.undoMetadata(sparkSession, exception)
-      } else {
-        Seq.empty
-      }
-    } else {
-      throw new MalformedDataMapCommandException("Unknown datamap provider/class " + dmClassName)
+    if (dataMapProvider != null) {
+      dataMapProvider.freeMeta(mainTable, dataMapSchema, sparkSession)
     }
+    Seq.empty
   }
 }
 

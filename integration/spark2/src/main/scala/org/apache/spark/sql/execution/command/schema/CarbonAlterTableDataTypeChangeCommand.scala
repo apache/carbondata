@@ -27,7 +27,6 @@ import org.apache.spark.util.AlterTableUtil
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{AlterTableDataTypeChangePostEvent, AlterTableDataTypeChangePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
@@ -74,18 +73,18 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
         throwMetadataException(dbName, tableName, s"Invalid Column: $columnName")
       }
       // read the latest schema file
-      val carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
-      val tableInfo: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
+      val tableInfo: org.apache.carbondata.format.TableInfo =
+        metastore.getThriftTableInfo(carbonTable)
       // maintain the added column for schema evolution history
-      var addColumnSchema: ColumnSchema = null
-      var deletedColumnSchema: ColumnSchema = null
+      var addColumnSchema: org.apache.carbondata.format.ColumnSchema = null
+      var deletedColumnSchema: org.apache.carbondata.format.ColumnSchema = null
       val columnSchemaList = tableInfo.fact_table.table_columns.asScala.filter(!_.isInvisible)
       columnSchemaList.foreach { columnSchema =>
         if (columnSchema.column_name.equalsIgnoreCase(columnName)) {
           deletedColumnSchema = columnSchema.deepCopy
-          columnSchema.setData_type(DataTypeConverterUtil
-            .convertToThriftDataType(alterTableDataTypeChangeModel.dataTypeInfo.dataType))
+          columnSchema.setData_type(
+            DataTypeConverterUtil.convertToThriftDataType(
+              alterTableDataTypeChangeModel.dataTypeInfo.dataType))
           columnSchema.setPrecision(alterTableDataTypeChangeModel.dataTypeInfo.precision)
           columnSchema.setScale(alterTableDataTypeChangeModel.dataTypeInfo.scale)
           addColumnSchema = columnSchema
@@ -97,8 +96,8 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
       tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
         .setTime_stamp(System.currentTimeMillis)
-      AlterTableUtil
-        .updateSchemaInfo(carbonTable, schemaEvolutionEntry, tableInfo)(sparkSession,
+      AlterTableUtil.updateSchemaInfo(
+        carbonTable, schemaEvolutionEntry, tableInfo)(sparkSession,
           sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
       val alterTablePostExecutionEvent: AlterTableDataTypeChangePostEvent =
         new AlterTableDataTypeChangePostEvent(sparkSession, carbonTable,

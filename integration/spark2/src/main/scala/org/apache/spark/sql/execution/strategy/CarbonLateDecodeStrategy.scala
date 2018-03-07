@@ -35,12 +35,14 @@ import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.datamap.{TextMatch, TextMatchUDF}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -437,7 +439,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val cols = info.getListOfColumns.asScala
       val sortColumn = carbonTable.
         getDimensionByTableName(carbonTable.getTableName).get(0).getColName
-      val numBuckets = info.getNumberOfBuckets
+      val numBuckets = info.getNumOfRanges
       val bucketColumns = cols.flatMap { n =>
         val attrRef = output.find(_.name.equalsIgnoreCase(n.getColumnName))
         attrRef match {
@@ -527,6 +529,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
    */
   protected[sql] def translateFilter(predicate: Expression, or: Boolean = false): Option[Filter] = {
     predicate match {
+      case u: ScalaUDF if u.function.isInstanceOf[TextMatchUDF] =>
+        if (u.children.size > 1) {
+          throw new MalformedCarbonCommandException(
+            "TEXT_MATCH UDF syntax: TEXT_MATCH('luceneQuerySyntax')")
+        }
+        Some(TextMatch(u.children.head.toString()))
+
       case or@Or(left, right) =>
 
         val leftFilter = translateFilter(left, true)
@@ -614,7 +623,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case c@LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
-      case StartsWith(a: Attribute, Literal(v, t)) =>
+      case s@StartsWith(a: Attribute, Literal(v, t)) =>
         Some(sources.StringStartsWith(a.name, v.toString))
       case c@EndsWith(a: Attribute, Literal(v, t)) =>
         Some(CarbonEndsWith(c))

@@ -328,7 +328,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
         return "test";
       }
     };
-    assertTrue(FilterUtil.getFilterListForRS(expression, columnExpression, defaultValues,
+    assertTrue(FilterUtil.getFilterListForRS(expression, defaultValues,
         defaultSurrogate) instanceof ColumnFilterInfo);
   }
 

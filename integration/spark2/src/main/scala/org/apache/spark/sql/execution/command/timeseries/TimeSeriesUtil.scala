@@ -16,14 +16,16 @@
  */
 package org.apache.spark.sql.execution.command.timeseries
 
+import scala.collection.mutable
+
 import org.apache.spark.sql.execution.command.{DataMapField, Field}
 
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
 import org.apache.carbondata.core.metadata.schema.datamap.Granularity
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.preagg.TimeSeriesUDF
-import org.apache.carbondata.spark.exception.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 
 /**
  * Utility class for time series to keep
@@ -63,13 +65,13 @@ object TimeSeriesUtil {
    * @return whether find  only one granularity
    */
   def validateTimeSeriesGranularity(
-      dmProperties: Map[String, String],
+      dmProperties: java.util.Map[String, String],
       dmClassName: String): Boolean = {
     var isFound = false
 
     // 1. granularity only support one
     for (granularity <- Granularity.values()) {
-      if (dmProperties.get(granularity.getName).isDefined) {
+      if (dmProperties.containsKey(granularity.getName)) {
         if (isFound) {
           throw new MalformedDataMapCommandException(
             s"Only one granularity level can be defined")
@@ -104,14 +106,14 @@ object TimeSeriesUtil {
    * @return key and value tuple
    */
   def getTimeSeriesGranularityDetails(
-      dmProperties: Map[String, String],
+      dmProperties: java.util.Map[String, String],
       dmClassName: String): (String, String) = {
 
     val defaultValue = "1"
     for (granularity <- Granularity.values()) {
-      if (dmProperties.get(granularity.getName).isDefined &&
-        dmProperties.get(granularity.getName).get.trim.equalsIgnoreCase(defaultValue)) {
-        return (granularity.toString.toLowerCase, dmProperties.get(granularity.getName).get)
+      if (dmProperties.containsKey(granularity.getName) &&
+        dmProperties.get(granularity.getName).trim.equalsIgnoreCase(defaultValue)) {
+        return (granularity.toString.toLowerCase, dmProperties.get(granularity.getName))
       }
     }
 
@@ -172,14 +174,14 @@ object TimeSeriesUtil {
    * @param fieldMapping     fields from select plan
    * @param timeSeriesColumn timeseries column name
    */
-  def validateEventTimeColumnExitsInSelect(fieldMapping: scala.collection.mutable
-  .LinkedHashMap[Field, DataMapField],
+  def validateEventTimeColumnExitsInSelect(
+      fieldMapping: mutable.LinkedHashMap[Field, DataMapField],
       timeSeriesColumn: String) : Any = {
-    val isTimeSeriesColumnExits = fieldMapping
-      .exists(obj => obj._2.columnTableRelationList.isDefined &&
-                     obj._2.columnTableRelationList.get(0).parentColumnName
-                       .equalsIgnoreCase(timeSeriesColumn) &&
-                     obj._2.aggregateFunction.isEmpty)
+    val isTimeSeriesColumnExits = fieldMapping.exists { case (_, f) =>
+      f.columnTableRelationList.isDefined &&
+      f.columnTableRelationList.get.head.parentColumnName.equalsIgnoreCase(timeSeriesColumn) &&
+      f.aggregateFunction.isEmpty
+    }
     if(!isTimeSeriesColumnExits) {
       throw new MalformedCarbonCommandException(s"Time series column ${ timeSeriesColumn } does " +
                                                 s"not exists in select")
@@ -194,8 +196,8 @@ object TimeSeriesUtil {
    * @param timeSeriesColumn
    *                         timeseries column name
    */
-  def updateTimeColumnSelect(fieldMapping: scala.collection.mutable
-  .LinkedHashMap[Field, DataMapField],
+  def updateTimeColumnSelect(
+      fieldMapping: scala.collection.mutable.LinkedHashMap[Field, DataMapField],
       timeSeriesColumn: String,
       timeSeriesFunction: String) : Any = {
     val isTimeSeriesColumnExits = fieldMapping

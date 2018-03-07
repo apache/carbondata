@@ -21,9 +21,12 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil4Test
 import org.scalatest.{BeforeAndAfterAll, Ignore}
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
+
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 
 class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
 
@@ -389,7 +392,7 @@ test("check load and select for avg double datatype") {
          | group by id
        """.stripMargin)
 
-    val e: Exception = intercept[TableAlreadyExistsException] {
+    val e: Exception = intercept[MalformedDataMapCommandException] {
       sql(
         s"""
            | create datamap preagg_sum
@@ -399,7 +402,7 @@ test("check load and select for avg double datatype") {
            | group by id
        """.stripMargin)
     }
-    assert(e.getMessage.contains("already exists in database"))
+    assert(e.getMessage.contains("DataMap name 'preagg_sum' already exist"))
     checkAnswer(sql(s"select * from maintable_preagg_sum"),
       Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
     sql("drop table if exists maintable")

@@ -49,6 +49,10 @@ public enum DataMapProvider {
     return className;
   }
 
+  public String getShortName() {
+    return shortName;
+  }
+
   private boolean isEqual(String dataMapClass) {
     return (dataMapClass != null &&
         (dataMapClass.equals(className) ||

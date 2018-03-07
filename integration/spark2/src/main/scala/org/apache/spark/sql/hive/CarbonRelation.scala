@@ -37,7 +37,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * Represents logical plan for one carbon table
@@ -212,10 +212,7 @@ case class CarbonRelation(
         .getValidAndInvalidSegments.getValidSegments.isEmpty) {
         sizeInBytesLocalValue = 0L
       } else {
-        val carbonTablePath = CarbonStorePath.getCarbonTablePath(
-          carbonTable.getTablePath,
-          carbonTable.getCarbonTableIdentifier)
-        val tablePath = carbonTablePath.getPath
+        val tablePath = carbonTable.getTablePath
         val fileType = FileFactory.getFileType(tablePath)
         if (FileFactory.isFileExist(tablePath, fileType)) {
           // get the valid segments
@@ -225,9 +222,9 @@ case class CarbonRelation(
           // for each segment calculate the size
           segments.foreach {validSeg =>
             if (validSeg.getSegmentFileName != null) {
-              val fileStore = new SegmentFileStore(tablePath, validSeg.getSegmentFileName)
               size = size + CarbonUtil.getSizeOfSegment(
-                carbonTablePath, new Segment(validSeg.getSegmentNo, validSeg.getSegmentFileName))
+                carbonTable.getTablePath,
+                new Segment(validSeg.getSegmentNo, validSeg.getSegmentFileName))
             } else {
               size = size + FileFactory.getDirectorySize(
                 CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))

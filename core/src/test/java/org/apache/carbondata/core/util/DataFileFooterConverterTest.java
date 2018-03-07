@@ -25,10 +25,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.FileHolderImpl;
+import org.apache.carbondata.core.datastore.impl.FileReaderImpl;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
@@ -229,13 +229,13 @@ public class DataFileFooterConverterTest {
       }
 
       @SuppressWarnings("unused") @Mock
-      public FileHolder getFileHolder(FileFactory.FileType fileType) {
-        return new FileHolderImpl();
+      public FileReader getFileHolder(FileFactory.FileType fileType) {
+        return new FileReaderImpl();
       }
 
     };
 
-    new MockUp<FileHolderImpl>() {
+    new MockUp<FileReaderImpl>() {
       @SuppressWarnings("unused") @Mock public long readLong(String filePath, long offset) {
         return 1;
       }
@@ -249,7 +249,6 @@ public class DataFileFooterConverterTest {
     SegmentInfo segmentInfo = new SegmentInfo();
     int[] arr = { 1, 2, 3 };
     segmentInfo.setColumnCardinality(arr);
-    segmentInfo.setNumberOfColumns(segmentInfo1.getNum_cols());
     dataFileFooter.setNumberOfRows(3);
     dataFileFooter.setSegmentInfo(segmentInfo);
     TableBlockInfo info = new TableBlockInfo("/file.carbondata", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);

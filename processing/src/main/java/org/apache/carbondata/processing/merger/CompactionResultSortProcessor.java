@@ -371,7 +371,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     return SortParameters
         .createSortParameters(carbonTable, carbonLoadModel.getDatabaseName(), tableName,
             dimensionColumnCount, segmentProperties.getComplexDimensions().size(), measureCount,
-            noDictionaryCount, carbonLoadModel.getPartitionId(), segmentId,
+            noDictionaryCount, segmentId,
             carbonLoadModel.getTaskNo(), noDictionaryColMapping, true);
   }
 
@@ -389,7 +389,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
           noDictionarySortColumnMapping, 0, noDictionarySortColumnMapping.length);
     }
     sortParameters.setNoDictionarySortColumn(noDictionarySortColumnMapping);
-
     String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
@@ -407,14 +406,13 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
               + carbonLoadModel.getFactTimeStamp() + ".tmp";
     } else {
       carbonStoreLocation = CarbonDataProcessorUtil
-          .createCarbonStoreLocation(carbonTable.getTablePath(), carbonLoadModel.getDatabaseName(),
-              tableName, carbonLoadModel.getPartitionId(), carbonLoadModel.getSegmentId());
+          .createCarbonStoreLocation(carbonLoadModel.getDatabaseName(), tableName,
+              carbonLoadModel.getSegmentId());
     }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
             tempStoreLocation, carbonStoreLocation);
-    setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonTable,
-        carbonFactDataHandlerModel);
+    setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonFactDataHandlerModel);
     dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel,
         CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
     try {
@@ -430,7 +428,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void initTempStoreLocation() {
     tempStoreLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(carbonTable, tableName, carbonLoadModel.getTaskNo(),
-            carbonLoadModel.getPartitionId(), segmentId, true, false);
+        .getLocalDataFolderLocation(carbonTable, carbonLoadModel.getTaskNo(),
+           segmentId, true, false);
   }
 }

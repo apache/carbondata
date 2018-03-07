@@ -46,17 +46,13 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   protected boolean isIncludeFilter;
   private DimColumnResolvedFilterInfo dimColResolvedFilterInfo;
   private MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo;
-  private AbsoluteTableIdentifier tableIdentifier;
-  private boolean isMeasure;
 
   public ConditionalFilterResolverImpl(Expression exp, boolean isExpressionResolve,
-      boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier, boolean isMeasure) {
+      boolean isIncludeFilter, boolean isMeasure) {
     this.exp = exp;
     this.isExpressionResolve = isExpressionResolve;
     this.isIncludeFilter = isIncludeFilter;
-    this.tableIdentifier = tableIdentifier;
-    this.isMeasure = isMeasure;
-    if (isMeasure == false) {
+    if (!isMeasure) {
       this.dimColResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     } else {
       this.msrColResolvedFilterInfo = new MeasureColumnResolvedFilterInfo();
@@ -230,10 +226,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     return msrColResolvedFilterInfo;
   }
 
-  public AbsoluteTableIdentifier getTableIdentifier() {
-    return tableIdentifier;
-  }
-
   /**
    * method will calculates the start key based on the filter surrogates
    */
@@ -245,12 +237,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
           setOfStartKeyByteArray);
     }
-// else {
-//      FilterUtil.getStartKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-//          segmentProperties, startKey, startKeyList);
-//      FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
-//          setOfStartKeyByteArray);
-//    }
   }
 
   /**

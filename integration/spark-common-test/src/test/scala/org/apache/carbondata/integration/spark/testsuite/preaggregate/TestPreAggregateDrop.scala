@@ -20,7 +20,7 @@ package org.apache.carbondata.integration.spark.testsuite.preaggregate
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.spark.exception.NoSuchDataMapException
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
 
 class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 

@@ -37,7 +37,4 @@ public class QueryStatisticsModel {
     return statisticsTypeAndObjMap;
   }
 
-  public void setStatisticsTypeAndObjMap(Map<String, QueryStatistic> statisticsTypeAndObjMap) {
-    this.statisticsTypeAndObjMap = statisticsTypeAndObjMap;
-  }
 }

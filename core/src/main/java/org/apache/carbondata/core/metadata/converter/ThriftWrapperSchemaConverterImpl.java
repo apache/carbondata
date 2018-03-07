@@ -293,7 +293,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
     }
     return new org.apache.carbondata.format.BucketingInfo(thriftColumnSchema,
-        bucketingInfo.getNumberOfBuckets());
+        bucketingInfo.getNumOfRanges());
   }
 
   /* (non-Javadoc)
@@ -346,7 +346,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         thriftChildSchema.setChildTableIdentifier(relationIdentifier);
       }
       thriftChildSchema.setProperties(wrapperChildSchema.getProperties());
-      thriftChildSchema.setClassName(wrapperChildSchema.getClassName());
+      thriftChildSchema.setClassName(wrapperChildSchema.getProviderName());
       thriftChildSchema.setDataMapName(wrapperChildSchema.getDataMapName());
       if (wrapperChildSchema.getChildSchema() != null) {
         thriftChildSchema.setChildTableSchema(

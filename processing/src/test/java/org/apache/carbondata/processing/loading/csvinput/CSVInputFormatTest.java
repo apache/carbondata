@@ -148,6 +148,7 @@ public class CSVInputFormatTest extends TestCase {
     FileOutputFormat.setOutputPath(job, new Path(output.getCanonicalPath()));
 
     Assert.assertTrue(job.waitForCompletion(true));
+    deleteOutput(output);
   }
 
   /**

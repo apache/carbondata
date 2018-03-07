@@ -20,7 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -66,7 +66,7 @@ public class CompressedMsrChunkFileBasedPageLevelReaderV3
    * @param blockletColumnIndex blocklet index of the column in carbon data file
    * @return measure raw chunk
    */
-  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader,
+  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader,
       int blockletColumnIndex) throws IOException {
     int dataLength = 0;
     // to calculate the length of the data to be read
@@ -110,7 +110,7 @@ public class CompressedMsrChunkFileBasedPageLevelReaderV3
    * @param endColumnBlockletIndex   blocklet index of the last measure column
    * @return MeasureRawColumnChunk array
    */
-  protected MeasureRawColumnChunk[] readRawMeasureChunksInGroup(FileHolder fileReader,
+  protected MeasureRawColumnChunk[] readRawMeasureChunksInGroup(FileReader fileReader,
       int startColumnBlockletIndex, int endColumnBlockletIndex) throws IOException {
     // create raw chunk for each measure column
     MeasureRawColumnChunk[] measureDataChunk =
@@ -130,7 +130,7 @@ public class CompressedMsrChunkFileBasedPageLevelReaderV3
    * @param pageNumber            number
    * @return DimensionColumnDataChunk
    */
-  @Override public ColumnPage convertToColumnPage(
+  @Override public ColumnPage decodeColumnPage(
       MeasureRawColumnChunk rawColumnPage, int pageNumber)
       throws IOException, MemoryException {
     // data chunk of blocklet column

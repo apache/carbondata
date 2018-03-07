@@ -20,6 +20,9 @@ package org.apache.carbondata.spark.testsuite.dataload
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
+
 class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterAll{
   override def beforeAll {
     sql("DROP TABLE IF EXISTS t3")
@@ -32,7 +35,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
   }
 
   test("test load data both file and ddl without file header exception") {
-    val e = intercept[Exception] {
+    val e = intercept[CarbonDataLoadingException] {
       sql(
         s"""LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3""")
     }
@@ -41,7 +44,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
   }
 
   test("test load data ddl provided wrong file header exception") {
-    val e = intercept[Exception] {
+    val e = intercept[CarbonDataLoadingException] {
       sql(
         s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3
@@ -52,7 +55,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
   }
 
   test("test load data with wrong header , but without fileheader") {
-    val e = intercept[Exception] {
+    val e = intercept[InvalidLoadOptionException] {
       sql(
         s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/source.csv' into table t3
@@ -63,7 +66,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
   }
 
   test("test load data with wrong header and fileheader") {
-    val e = intercept[Exception] {
+    val e = intercept[InvalidLoadOptionException] {
       sql(
         s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3
