@@ -261,16 +261,20 @@ public class LoadOption {
                 + "the same. Input file : " + CarbonUtil.removeAKSK(csvFile));
       }
     }
-    // In case of static partition columns  if it is not exist in header, add it in the end.
+    // In case of static partition columns,
+    //  if it is not exist in header, add it in the end. if exist rename it.
 
     if (staticPartitionCols.size() > 0) {
       List<String> csvColumnList = new ArrayList<>(Arrays.asList(csvColumns));
-      for (String staticPartitionCol: staticPartitionCols) {
-        if (!csvColumnList.contains(staticPartitionCol)) {
-          csvColumnList.add(staticPartitionCol);
+      for (String staticPartitionCol : staticPartitionCols) {
+        if (csvColumnList.contains(staticPartitionCol)) {
+          csvColumnList.set(csvColumnList.indexOf(staticPartitionCol), staticPartitionCol + "1");
         }
       }
-      String []csvResult = new String[csvColumnList.size()];
+      for (String staticPartitionCol : staticPartitionCols) {
+        csvColumnList.add(staticPartitionCol);
+      }
+      String[] csvResult = new String[csvColumnList.size()];
       return csvColumnList.toArray(csvResult);
     }
     return csvColumns;
