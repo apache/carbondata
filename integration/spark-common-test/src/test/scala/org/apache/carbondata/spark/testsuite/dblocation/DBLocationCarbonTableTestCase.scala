@@ -42,6 +42,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop database if exists carbon cascade")
+
   }
 
   //TODO fix this test case
@@ -62,19 +63,20 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists carbon2 cascade")
   }
 
-  test("create and drop database test") {
-    sql(s"create database carbon location '$dblocation'")
-    sql("drop database if exists carbon cascade")
-  }
 
   test("create two databases at same table") {
+    sql("drop database if exists carbon1 cascade")
+    sql("drop database if exists carbon cascade")
+
+
     sql(s"create database carbon location '$dblocation'")
-    try {
-      sql(s"create database carbon1 location '$dblocation'")
-    } catch {
-      case e: AnalysisException =>
-        assert(true)
-    }
+    sql(s"create database carbon1 location '$dblocation' ")
+    assert(sqlContext.sparkSession.catalog.listDatabases().collect().exists(dbName=>dbName.name.equals("carbon") ))
+    assert(sqlContext.sparkSession.catalog.listDatabases().collect().exists(dbName=>dbName.name.equals("carbon1") ))
+
+
+    sql("drop database if exists carbon1 cascade")
+    sql("drop database if exists carbon cascade")
   }
 
   test("create table and load data") {
@@ -108,7 +110,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("Update operation on carbon table") {
+  test("Update And Delete operation on carbon table") {
     sql("drop database if exists carbon cascade")
     sql(s"create database carbon location '$dblocation'")
     sql("use carbon")
@@ -125,23 +127,11 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from automerge"),
       Seq(Row(6))
     )
-    //    sql("drop table carbontable")
-  }
-
-  test("Delete operation on carbon table") {
-    sql("drop database if exists carbon cascade")
-    sql(s"create database carbon location '$dblocation'")
-    sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
-    sql("insert into carbontable select 'a',1,'aa','aaa'")
-    sql("insert into carbontable select 'b',1,'bb','bbb'")
-    // delete operation
-    sql("""delete from carbontable where c3 = 'aa'""").show
+    sql("""delete from carbon.automerge where age =35""").show
     checkAnswer(
-      sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
-      Seq(Row("b",1,"bb","bbb"))
+      sql("select count(*) from automerge"),
+      Seq(Row(4))
     )
-    sql("drop table carbontable")
   }
 
   test("Alter table add column test") {
