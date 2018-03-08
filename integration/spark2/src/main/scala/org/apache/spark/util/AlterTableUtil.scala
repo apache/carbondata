@@ -37,6 +37,7 @@ import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverte
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -112,8 +113,7 @@ object AlterTableUtil {
       tablePath: String): Unit = {
     val lockLocation = tablePath
     locks.zip(locksAcquired).foreach { case (carbonLock, lockType) =>
-      val lockFilePath = lockLocation + CarbonCommonConstants.FILE_SEPARATOR +
-                         lockType
+      val lockFilePath = CarbonTablePath.getLockFilePath(lockLocation, lockType)
       if (carbonLock.releaseLockManually(lockFilePath)) {
         LOGGER.info(s"Alter table lock released successfully: ${ lockType }")
       } else {

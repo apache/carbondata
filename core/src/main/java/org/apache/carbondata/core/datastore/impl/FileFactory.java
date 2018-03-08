@@ -177,14 +177,22 @@ public final class FileFactory {
   }
 
   /**
-   * This method checks the given path exists or not and also is it file or
-   * not if the performFileCheck is true
+   * This method checks the given path exists or not.
    *
    * @param filePath - Path
    * @param fileType - FileType Local/HDFS
    */
   public static boolean isFileExist(String filePath, FileType fileType) throws IOException {
     return getCarbonFile(filePath).isFileExist(filePath, fileType);
+  }
+
+  /**
+   * This method checks the given path exists or not.
+   *
+   * @param filePath - Path
+   */
+  public static boolean isFileExist(String filePath) throws IOException {
+    return isFileExist(filePath, getFileType(filePath));
   }
 
   public static boolean createNewFile(String filePath, FileType fileType) throws IOException {
