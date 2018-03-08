@@ -1570,6 +1570,17 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SHOW_DATAMAPS_DEFAULT = "true";
 
+  /**
+   * Currently the segment lock files are not deleted immediately when unlock,
+   * this value indicates the number of hours the segment lock files will be preserved.
+   */
+  @CarbonProperty
+  public static final String CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS =
+      "carbon.segment.lock.files.preserve.hours";
+
+  // default value is 2 days
+  public static final String CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT = "48";
+
   private CarbonCommonConstants() {
   }
 }

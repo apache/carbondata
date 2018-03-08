@@ -437,6 +437,8 @@ object DataLoadingUtil {
         }
       }
     }
+    // delete the expired segment lock files
+    CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable)
   }
 
   private def isUpdationRequired(isForceDeletion: Boolean,

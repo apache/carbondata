@@ -22,6 +22,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
@@ -44,6 +45,7 @@ public class CarbonTablePath extends Path {
   private static final String PARTITION_PREFIX = "Part";
   private static final String DATA_PART_PREFIX = "part-";
   private static final String BATCH_PREFIX = "_batchno";
+  private static final String LOCK_DIR = "LockFiles";
 
   public static final String CARBON_DATA_EXT = ".carbondata";
   public static final String INDEX_FILE_EXT = ".carbonindex";
@@ -763,4 +765,32 @@ public class CarbonTablePath extends Path {
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments";
   }
 
+  /**
+   * Get the lock files directory
+   */
+  public static String getLockFilesDirPath(String tablePath) {
+    return tablePath + CarbonCommonConstants.FILE_SEPARATOR + LOCK_DIR;
+  }
+
+  /**
+   * Get the lock file
+   */
+  public static String getLockFilePath(String tablePath, String lockType) {
+    return getLockFilesDirPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + lockType;
+  }
+
+  /**
+   * Get the segment lock file according to table path and segment load name
+   */
+  public static String getSegmentLockFilePath(String tablePath, String loadName) {
+    return getLockFilesDirPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
+        addSegmentPrefix(loadName) + LockUsage.LOCK;
+  }
+
+  /**
+   * return true if this lock file is a segment lock file otherwise false.
+   */
+  public static boolean isSegmentLockFilePath(String lockFileName) {
+    return lockFileName.startsWith(SEGMENT_PREFIX) && lockFileName.endsWith(LockUsage.LOCK);
+  }
 }
