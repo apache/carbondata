@@ -26,7 +26,7 @@ import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.partition.spliter.RowResultProcessor
@@ -64,6 +64,8 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
       val partitionId = partitionInfo.getPartitionId(split.index)
       carbonLoadModel.setTaskNo(String.valueOf(partitionId))
       carbonLoadModel.setSegmentId(segmentId)
+      CarbonMetadata.getInstance().addCarbonTable(
+        carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable)
       CommonUtil.setTempStoreLocation(split.index, carbonLoadModel, false, true)
       val tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(carbonLoadModel.getDatabaseName,
