@@ -19,8 +19,13 @@ package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * This class contains all carbon lock utilities
@@ -107,4 +112,32 @@ public class CarbonLockUtil {
     }
   }
 
+  /**
+   * Currently the segment lock files are not deleted immediately when unlock,
+   * so it needs to delete expired lock files before delete loads.
+   */
+  public static void deleteExpiredSegmentLockFiles(CarbonTable carbonTable) {
+    long currTime = System.currentTimeMillis();
+    long segmentLockFilesPreservTime =
+        CarbonProperties.getInstance().getSegmentLockFilesPreserveHours();
+    AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+    String lockFilesDir = CarbonTablePath
+        .getLockFilesDirPath(absoluteTableIdentifier.getTablePath());
+    CarbonFile[] files = FileFactory.getCarbonFile(lockFilesDir)
+        .listFiles(new CarbonFileFilter() {
+
+      @Override public boolean accept(CarbonFile pathName) {
+        if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
+          if ((currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime) {
+            return true;
+          }
+        }
+        return false;
+      }
+    });
+
+    for (CarbonFile file : files) {
+      file.delete();
+    }
+  }
 }

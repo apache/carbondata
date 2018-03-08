@@ -26,10 +26,10 @@ import java.nio.file.StandardOpenOption;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * This class handles the file locking in the local file system.
@@ -37,9 +37,14 @@ import org.apache.carbondata.core.util.CarbonUtil;
  */
 public class LocalFileLock extends AbstractCarbonLock {
   /**
-   * location is the location of the lock file.
+   * lockFilePath is the location of the lock file.
    */
-  private String location;
+  private String lockFilePath;
+
+  /**
+   * lockFileDir is the directory of the lock file.
+   */
+  private String lockFileDir;
 
   /**
    * channel is the FileChannel of the lock file.
@@ -52,27 +57,18 @@ public class LocalFileLock extends AbstractCarbonLock {
   private FileLock fileLock;
 
   /**
-   * lock file
-   */
-  private String lockFile;
-
-  private  String lockFilePath;
-
-  /**
    * LOGGER for  logging the messages.
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LocalFileLock.class.getName());
-
-
 
   /**
    * @param lockFileLocation
    * @param lockFile
    */
   public LocalFileLock(String lockFileLocation, String lockFile) {
-    this.location = lockFileLocation;
-    this.lockFile = lockFile;
+    this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
+    this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFile);
     initRetry();
   }
 
@@ -92,13 +88,11 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
-        FileFactory.mkdirs(location, FileFactory.getFileType(location));
+      if (!FileFactory.isFileExist(lockFileDir)) {
+        FileFactory.mkdirs(lockFileDir, FileFactory.getFileType(lockFileDir));
       }
-      lockFilePath = location + CarbonCommonConstants.FILE_SEPARATOR +
-          lockFile;
-      if (!FileFactory.isFileExist(lockFilePath, FileFactory.getFileType(location))) {
-        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(location));
+      if (!FileFactory.isFileExist(lockFilePath)) {
+        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(lockFilePath));
       }
 
       channel = FileChannel.open(Paths.get(lockFilePath), StandardOpenOption.WRITE,
