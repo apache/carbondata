@@ -35,6 +35,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataC
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -264,7 +265,7 @@ public class CarbonUtilTest {
     assertTrue(!file2.exists());
   }
 
-  @Test public void testToGetNextLesserValue() {
+  @Test public void testToGetNextLesserValue() throws MemoryException {
     byte[] dataChunks = { 5, 6, 7, 8, 9 };
     byte[] compareValues = { 7 };
     FixedLengthDimensionDataChunk fixedLengthDataChunk =
@@ -273,7 +274,7 @@ public class CarbonUtilTest {
     assertEquals(result, 1);
   }
 
-  @Test public void testToGetNextLesserValueToTarget() {
+  @Test public void testToGetNextLesserValueToTarget() throws MemoryException {
     byte[] dataChunks = { 7, 7, 7, 8, 9 };
     byte[] compareValues = { 7 };
     FixedLengthDimensionDataChunk fixedLengthDataChunk =
@@ -282,7 +283,7 @@ public class CarbonUtilTest {
     assertEquals(result, -1);
   }
 
-  @Test public void testToGetnextGreaterValue() {
+  @Test public void testToGetnextGreaterValue() throws MemoryException {
     byte[] dataChunks = { 5, 6, 7, 8, 9 };
     byte[] compareValues = { 7 };
     FixedLengthDimensionDataChunk fixedLengthDataChunk =
@@ -299,7 +300,7 @@ public class CarbonUtilTest {
     }
   }
 
-  @Test public void testToGetnextGreaterValueToTarget() {
+  @Test public void testToGetnextGreaterValueToTarget() throws MemoryException {
     byte[] dataChunks = { 5, 6, 7, 7, 7 };
     byte[] compareValues = { 7 };
     FixedLengthDimensionDataChunk fixedLengthDataChunk =
@@ -803,7 +804,7 @@ public class CarbonUtilTest {
     assertThat(result, is(equalTo(new boolean[] { true, true, false })));
   }
 
-  @Test public void testToGetFirstIndexUsingBinarySearchWithCompareTo1() {
+  @Test public void testToGetFirstIndexUsingBinarySearchWithCompareTo1() throws MemoryException {
     byte[] dataChunks = { 10, 20, 30, 40, 50, 60 };
     byte[] compareValue = { 5 };
     FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
@@ -813,7 +814,8 @@ public class CarbonUtilTest {
     assertEquals(-2, result);
   }
 
-  @Test public void testToGetFirstIndexUsingBinarySearchWithCompareToLessThan0() {
+  @Test public void testToGetFirstIndexUsingBinarySearchWithCompareToLessThan0()
+      throws MemoryException {
     byte[] dataChunks = { 10, 20, 30, 40, 50, 60 };
     byte[] compareValue = { 30 };
     FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
@@ -823,7 +825,7 @@ public class CarbonUtilTest {
     assertEquals(2, result);
   }
 
-  @Test public void testToGetFirstIndexUsingBinarySearchWithCompareTo0() {
+  @Test public void testToGetFirstIndexUsingBinarySearchWithCompareTo0() throws MemoryException {
     byte[] dataChunks = { 10, 10, 10, 40, 50, 60 };
     byte[] compareValue = { 10 };
     FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
@@ -833,7 +835,8 @@ public class CarbonUtilTest {
     assertEquals(0, result);
   }
 
-  @Test public void testToGetFirstIndexUsingBinarySearchWithMatchUpLimitTrue() {
+  @Test public void testToGetFirstIndexUsingBinarySearchWithMatchUpLimitTrue()
+      throws MemoryException {
     byte[] dataChunks = { 10, 10, 10, 40, 50, 60 };
     byte[] compareValue = { 10 };
     FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
@@ -844,7 +847,7 @@ public class CarbonUtilTest {
   }
   
   @Test
-  public void testBinaryRangeSearch() {
+  public void testBinaryRangeSearch() throws MemoryException {
 
     byte[] dataChunk = new byte[10];
     FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
@@ -941,7 +944,7 @@ public class CarbonUtilTest {
   }
 
   @Test
-  public void IndexUsingBinarySearchLengthTwo() {
+  public void IndexUsingBinarySearchLengthTwo() throws MemoryException {
 
     byte[] dataChunk = new byte[10];
     FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
@@ -983,7 +986,7 @@ public class CarbonUtilTest {
   }
 
   @Test
-  public void IndexUsingBinarySearchLengthThree() {
+  public void IndexUsingBinarySearchLengthThree() throws MemoryException {
 
     byte[] dataChunk = new byte[10];
     FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;

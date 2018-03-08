@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
@@ -45,7 +46,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
   private long dataPointersOffsets;
 
   public UnsafeVariableLengthDimesionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows) {
+      int numberOfRows) throws MemoryException {
     super(totalSize, isInvertedIdex, numberOfRows);
     this.numberOfRows = numberOfRows;
   }

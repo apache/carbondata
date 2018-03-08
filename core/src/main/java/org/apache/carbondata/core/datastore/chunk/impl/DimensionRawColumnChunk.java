@@ -49,7 +49,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * Convert all raw data with all pages to processed DimensionColumnDataChunk's
    * @return
    */
-  public DimensionColumnDataChunk[] convertToDimColDataChunks() {
+  public DimensionColumnDataChunk[] convertToDimColDataChunks()
+      throws IOException, MemoryException, RuntimeException {
     if (dataChunks == null) {
       dataChunks = new DimensionColumnDataChunk[pagesCount];
     }
@@ -58,8 +59,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
         if (dataChunks[i] == null) {
           dataChunks[i] = chunkReader.convertToDimensionChunk(this, i);
         }
-      } catch (IOException | MemoryException e) {
-        throw new RuntimeException(e);
+      } catch (IOException | MemoryException | RuntimeException e) {
+        throw e;
       }
     }
     return dataChunks;

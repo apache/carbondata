@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 
 import org.junit.Assert;
@@ -33,7 +34,7 @@ public class FixedLengthDimensionDataChunkTest {
   static FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
   static byte[] data;
 
-  @BeforeClass public static void setup() {
+  @BeforeClass public static void setup() throws MemoryException {
     data = "dummy string".getBytes();
 
     int invertedIndex[] = { 1, 3, 5, 7, 8 };

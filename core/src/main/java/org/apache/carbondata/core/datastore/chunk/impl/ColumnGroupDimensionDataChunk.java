@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.chunk.impl;
 
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
@@ -33,7 +34,8 @@ public class ColumnGroupDimensionDataChunk extends AbstractDimensionDataChunk {
    * @param columnValueSize chunk attributes
    * @param numberOfRows
    */
-  public ColumnGroupDimensionDataChunk(byte[] dataChunk, int columnValueSize, int numberOfRows) {
+  public ColumnGroupDimensionDataChunk(byte[] dataChunk, int columnValueSize, int numberOfRows)
+      throws MemoryException {
     this.dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(columnValueSize, false, numberOfRows, dataChunk.length,
         DimensionStoreType.FIXEDLENGTH);

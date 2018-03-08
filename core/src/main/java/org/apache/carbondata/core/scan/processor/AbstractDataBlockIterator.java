@@ -29,6 +29,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.collector.ResultCollectorFactory;
 import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -139,27 +140,33 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   private AbstractScannedResult getNextScannedResult() throws Exception {
     AbstractScannedResult result = null;
-    if (blockExecutionInfo.isPrefetchBlocklet()) {
-      if (dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get()) {
-        if (future == null) {
-          future = execute();
+    try {
+      if (blockExecutionInfo.isPrefetchBlocklet()) {
+        if (dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get()) {
+          if (future == null) {
+            future = execute();
+          }
+          result = future.get();
+          nextBlock.set(false);
+          if (dataBlockIterator.hasNext() || nextRead.get()) {
+            nextBlock.set(true);
+            future = execute();
+          }
         }
-        result = future.get();
-        nextBlock.set(false);
-        if (dataBlockIterator.hasNext() || nextRead.get()) {
-          nextBlock.set(true);
-          future = execute();
+      } else {
+        if (dataBlockIterator.hasNext()) {
+          BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
+          if (blocksChunkHolder != null) {
+            result = blockletScanner.scanBlocklet(blocksChunkHolder);
+          }
         }
       }
-    } else {
-      if (dataBlockIterator.hasNext()) {
-        BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
-        if (blocksChunkHolder != null) {
-          result = blockletScanner.scanBlocklet(blocksChunkHolder);
-        }
-      }
+
+      return result;
+    } catch (InterruptedException | ExecutionException | MemoryException e) {
+      LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return result;
   }
 
   private BlocksChunkHolder getBlocksChunkHolder() throws IOException {
@@ -187,20 +194,25 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   private Future<AbstractScannedResult> execute() {
     return executorService.submit(new Callable<AbstractScannedResult>() {
       @Override public AbstractScannedResult call() throws Exception {
-        if (futureIo == null) {
-          futureIo = executeRead();
-        }
-        BlocksChunkHolder blocksChunkHolder = futureIo.get();
-        futureIo = null;
-        nextRead.set(false);
-        if (blocksChunkHolder != null) {
-          if (dataBlockIterator.hasNext()) {
-            nextRead.set(true);
+        try {
+          if (futureIo == null) {
             futureIo = executeRead();
           }
-          return blockletScanner.scanBlocklet(blocksChunkHolder);
+          BlocksChunkHolder blocksChunkHolder = futureIo.get();
+          futureIo = null;
+          nextRead.set(false);
+          if (blocksChunkHolder != null) {
+            if (dataBlockIterator.hasNext()) {
+              nextRead.set(true);
+              futureIo = executeRead();
+            }
+            return blockletScanner.scanBlocklet(blocksChunkHolder);
+          }
+          return null;
+        } catch (IOException | InterruptedException | ExecutionException | MemoryException e) {
+          LOGGER.error(e, "Failed in Scanned the result");
+          throw e;
         }
-        return null;
       }
     });
   }

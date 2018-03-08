@@ -22,6 +22,7 @@ import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeFixedLengt
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeFixedLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableLengthDimesionDataChunkStore;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -60,7 +61,8 @@ public class DimensionChunkStoreFactory {
    * @return dimension store type
    */
   public DimensionDataChunkStore getDimensionChunkStore(int columnValueSize,
-      boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType) {
+      boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType)
+      throws MemoryException {
 
     if (isUnsafe) {
       if (storeType == DimensionStoreType.FIXEDLENGTH) {

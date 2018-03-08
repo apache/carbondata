@@ -167,6 +167,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       }
       isCompactionSuccess = true;
     } catch (Exception e) {
+      try {
+        intermediateFileMerger.finish();
+        sortDataRows.close();
+      } catch (CarbonSortKeyAndGroupByException ex) {
+        LOGGER.error(ex, "Compaction failed: " + e.getMessage());
+      }
       LOGGER.error(e, "Compaction failed: " + e.getMessage());
     } finally {
       if (partitionSpec != null) {
@@ -176,6 +182,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
                   partitionSpec.getLocation().toString(), carbonLoadModel.getFactTimeStamp() + "",
                   partitionSpec.getPartitions());
         } catch (IOException e) {
+
           LOGGER.error(e, "Compaction failed: " + e.getMessage());
           isCompactionSuccess = false;
         }

@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataC
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReader;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -99,7 +100,8 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
   }
 
   @Override public DimensionColumnDataChunk convertToDimensionChunk(
-      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) throws IOException {
+      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) throws IOException,
+      MemoryException {
     int blockIndex = dimensionRawColumnChunk.getColumnIndex();
     byte[] dataPage = null;
     int[] invertedIndexes = null;
