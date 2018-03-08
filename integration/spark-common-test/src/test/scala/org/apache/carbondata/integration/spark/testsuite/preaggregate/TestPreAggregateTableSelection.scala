@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.util.QueryTest
 import java.io.File
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -23,6 +25,7 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
 import org.scalatest.BeforeAndAfterAll
+import org.apache.carbondata.integration.spark.testsuite.preaggregate.PreaggregateValidator._
 
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
 import org.apache.carbondata.spark.util.SparkQueryTest
@@ -212,35 +215,16 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
     preAggTableValidator(df.queryExecution.analyzed, "maintable")
   }
 
-  def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit ={
-    var isValidPlan = false
-    plan.transform {
-      // first check if any preaTable1 scala function is applied it is present is in plan
-      // then call is from create preaTable1regate table class so no need to transform the query plan
-      case ca:CarbonRelation =>
-        if (ca.isInstanceOf[CarbonDatasourceHadoopRelation]) {
-          val relation = ca.asInstanceOf[CarbonDatasourceHadoopRelation]
-          if(relation.carbonTable.getTableName.equalsIgnoreCase(actualTableName)) {
-            isValidPlan = true
-          }
-        }
-        ca
-      case logicalRelation:LogicalRelation =>
-        if(logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) {
-          val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-          if(relation.carbonTable.getTableName.equalsIgnoreCase(actualTableName)) {
-            isValidPlan = true
-          }
-        }
-        logicalRelation
-    }
-    if(!isValidPlan) {
-      assert(false)
-    } else {
-      assert(true)
-    }
+  test("test if pre-agg table is hit with filter condition") {
+    sql("drop table if exists filtertable")
+    sql("CREATE TABLE filtertable(id int, name string, city string, age string) STORED BY" +
+        " 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='name,age')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table filtertable")
+    sql("create datamap agg9 on table filtertable using 'preaggregate' as select name, age, sum(age) from filtertable group by name, age")
+    val df = sql("select name, sum(age) from filtertable where age = '29' group by name, age")
+    preAggTableValidator(df.queryExecution.analyzed, "filtertable_agg9")
+    checkAnswer(df, Row("vishal", 29))
   }
-
 
   test("test PreAggregate table selection 29") {
     val df = sql("select sum(id) from mainTable group by name")
@@ -360,7 +344,8 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
       "create datamap agg0 on table maintabletime using 'preaggregate' as select name,sum(salary) from " +
       "maintabletime group by name")
 
-    sql("select var_samp(name) from maintabletime  where name='Mikka' ")
+    val df = sql("select var_samp(name) from maintabletime  where name='Mikka' ")
+    preAggTableValidator(df.queryExecution.analyzed, "maintabletime")
   }
 
   test("test PreAggregate table selection 38: for sum and avg in aggregate table with bigint") {
