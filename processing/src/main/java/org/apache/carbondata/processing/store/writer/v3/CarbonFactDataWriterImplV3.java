@@ -18,7 +18,6 @@ package org.apache.carbondata.processing.store.writer.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,11 +79,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     blockletDataHolder = new BlockletDataHolder();
   }
 
-  @Override protected void writeBlockletInfoToFile(FileChannel channel, String filePath)
+  @Override protected void writeBlockletInfoToFile()
       throws CarbonDataWriterException {
     try {
       // get the current file position
-      long currentPosition = channel.size();
+      long currentPosition = currentOffsetInFile;
       // get thrift file footer instance
       FileFooter3 convertFileMeta = CarbonMetadataUtil
           .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
@@ -98,7 +97,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       buffer.put(byteArray);
       buffer.putLong(currentPosition);
       buffer.flip();
-      channel.write(buffer);
+      currentOffsetInFile += fileChannel.write(buffer);
     } catch (IOException e) {
       LOGGER.error(e, "Problem while writing the carbon file");
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
@@ -178,11 +177,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
 
     // write data to file
     try {
-      if (fileChannel.size() == 0) {
+      if (currentOffsetInFile == 0) {
         // write the header if file is empty
-        writeHeaderToFile(fileChannel);
+        writeHeaderToFile();
       }
-      writeBlockletToFile(fileChannel, dataChunkBytes);
+      writeBlockletToFile(dataChunkBytes);
       if (listener != null) {
         listener.onBlockletEnd(blockletId++);
       }
@@ -227,12 +226,12 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
   /**
    * write file header
    */
-  private void writeHeaderToFile(FileChannel channel) throws IOException {
+  private void writeHeaderToFile() throws IOException {
     byte[] fileHeader = CarbonUtil.getByteArray(
         CarbonMetadataUtil.getFileHeader(
             true, thriftColumnSchemaList, model.getSchemaUpdatedTimeStamp()));
     ByteBuffer buffer = ByteBuffer.wrap(fileHeader);
-    channel.write(buffer);
+    currentOffsetInFile += fileChannel.write(buffer);
   }
 
   /**
@@ -243,9 +242,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    * <Column3 Data ChunkV3><Column3<Page1><Page2><Page3><Page4>>
    * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
    */
-  private void writeBlockletToFile(FileChannel channel, byte[][] dataChunkBytes)
+  private void writeBlockletToFile(byte[][] dataChunkBytes)
       throws IOException {
-    long offset = channel.size();
+    long offset = currentOffsetInFile;
     // to maintain the offset of each data chunk in blocklet
     List<Long> currentDataChunksOffset = new ArrayList<>();
     // to maintain the length of each data chunk in blocklet
@@ -265,13 +264,13 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       currentDataChunksOffset.add(offset);
       currentDataChunksLength.add(dataChunkBytes[i].length);
       buffer = ByteBuffer.wrap(dataChunkBytes[i]);
-      channel.write(buffer);
+      currentOffsetInFile += fileChannel.write(buffer);
       offset += dataChunkBytes[i].length;
       for (EncodedTablePage encodedTablePage : encodedTablePages) {
         EncodedColumnPage dimension = encodedTablePage.getDimension(i);
         buffer = dimension.getEncodedData();
         int bufferSize = buffer.limit();
-        channel.write(buffer);
+        currentOffsetInFile += fileChannel.write(buffer);
         offset += bufferSize;
       }
     }
@@ -281,14 +280,14 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       currentDataChunksOffset.add(offset);
       currentDataChunksLength.add(dataChunkBytes[dataChunkStartIndex].length);
       buffer = ByteBuffer.wrap(dataChunkBytes[dataChunkStartIndex]);
-      channel.write(buffer);
+      currentOffsetInFile += fileChannel.write(buffer);
       offset += dataChunkBytes[dataChunkStartIndex].length;
       dataChunkStartIndex++;
       for (EncodedTablePage encodedTablePage : encodedTablePages) {
         EncodedColumnPage measure = encodedTablePage.getMeasure(i);
         buffer = measure.getEncodedData();
         int bufferSize = buffer.limit();
-        channel.write(buffer);
+        currentOffsetInFile += fileChannel.write(buffer);
         offset += bufferSize;
       }
     }
@@ -360,7 +359,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
 
   @Override public void writeFooterToFile() throws CarbonDataWriterException {
     if (this.blockletMetadata.size() > 0) {
-      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
+      writeBlockletInfoToFile();
     }
   }
 }

@@ -309,21 +309,30 @@ public class LocalCarbonFile implements CarbonFile {
     return new DataInputStream(new BufferedInputStream(fis));
   }
 
-  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
       throws IOException {
     path = path.replace("\\", "/");
     path = FileFactory.getUpdatedFilePath(path, FileFactory.FileType.LOCAL);
     return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
   }
 
-  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
       int bufferSize, long blockSize) throws IOException {
+    return getDataOutputStream(path, fileType, bufferSize, blockSize, (short) 1);
+  }
+
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, long blockSize, short replication) throws IOException {
     path = path.replace("\\", "/");
     path = FileFactory.getUpdatedFilePath(path, fileType);
     return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path), bufferSize));
   }
 
-  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
       int bufferSize, String compressor) throws IOException {
     path = path.replace("\\", "/");
     path = FileFactory.getUpdatedFilePath(path, fileType);
@@ -425,5 +434,16 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override public String[] getLocations() throws IOException {
     return new String[]{"localhost"};
+  }
+
+  @Override
+  public boolean setReplication(String filePath, short replication) throws IOException {
+    // local carbon file does not need replication
+    return true;
+  }
+
+  @Override
+  public short getDefaultReplication(String filePath) throws IOException {
+    return 1;
   }
 }

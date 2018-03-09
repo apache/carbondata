@@ -63,6 +63,7 @@ import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 import static org.apache.carbondata.core.enums.EscapeSequences.*;
 
 import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 
 public final class CarbonLoaderUtil {
 
@@ -957,9 +958,13 @@ public final class CarbonLoaderUtil {
             infos.add(block);
             nodeCapacity++;
             if (LOGGER.isDebugEnabled()) {
-              LOGGER.debug(
-                  "First Assignment iteration: " + ((TableBlockInfo) block).getFilePath() + '-'
-                      + ((TableBlockInfo) block).getBlockLength() + "-->" + activeExecutor);
+              try {
+                LOGGER.debug("First Assignment iteration: block("
+                    + StringUtils.join(block.getLocations(), ", ")
+                    + ")-->" + activeExecutor);
+              } catch (IOException e) {
+                LOGGER.error(e);
+              }
             }
             remainingBlocks.remove(block);
           } else {

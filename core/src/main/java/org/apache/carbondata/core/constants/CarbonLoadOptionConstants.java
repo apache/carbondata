@@ -134,4 +134,9 @@ public final class CarbonLoadOptionConstants {
    * row delimiter for each sort column bounds
    */
   public static final String SORT_COLUMN_BOUNDS_ROW_DELIMITER = ";";
+
+  @CarbonProperty
+  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS
+      = "carbon.load.directWriteHdfs.enabled";
+  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS_DEFAULT = "false";
 }

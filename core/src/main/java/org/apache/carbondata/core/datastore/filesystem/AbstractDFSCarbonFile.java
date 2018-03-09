@@ -357,7 +357,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     }
   }
 
-  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
       throws IOException {
     path = path.replace("\\", "/");
     Path pt = new Path(path);
@@ -365,15 +366,26 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return fs.create(pt, true);
   }
 
-  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
       int bufferSize, long blockSize) throws IOException {
     path = path.replace("\\", "/");
     Path pt = new Path(path);
-    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
-    return fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
+    short replication = pt.getFileSystem(FileFactory.getConfiguration()).getDefaultReplication(pt);
+    return getDataOutputStream(path, fileType, bufferSize, blockSize, replication);
   }
 
-  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, long blockSize, short replication) throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    return fs.create(pt, true, bufferSize, replication, blockSize);
+  }
+
+  @Override
+  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
       int bufferSize, String compressor) throws IOException {
     path = path.replace("\\", "/");
     Path pt = new Path(path);
@@ -518,7 +530,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
    */
   protected abstract CarbonFile[] getFiles(FileStatus[] listStatus);
 
-  @Override public String[] getLocations() throws IOException {
+  @Override
+  public String[] getLocations() throws IOException {
     BlockLocation[] blkLocations;
     if (fileStatus instanceof LocatedFileStatus) {
       blkLocations = ((LocatedFileStatus)fileStatus).getBlockLocations();
@@ -528,5 +541,21 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     }
 
     return blkLocations[0].getHosts();
+  }
+
+  @Override
+  public boolean setReplication(String filePath, short replication) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.setReplication(path, replication);
+  }
+
+  @Override
+  public short getDefaultReplication(String filePath) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.getDefaultReplication(path);
   }
 }
