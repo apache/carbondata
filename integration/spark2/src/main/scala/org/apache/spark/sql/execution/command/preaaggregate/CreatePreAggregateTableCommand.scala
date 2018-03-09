@@ -179,17 +179,22 @@ case class CreatePreAggregateTableCommand(
     // This will be used to check if the parent table has any segments or not. If not then no
     // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT
     // table.
-    DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false,
+    DataLoadingUtil.deleteLoadsAndUpdateMetadata(
+      isForceDeletion = false,
       parentTable,
-      CarbonFilters.getCurrentPartitions(sparkSession,
-      TableIdentifier(parentTable.getTableName,
-        Some(parentTable.getDatabaseName))).map(_.asJava).orNull)
-    val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetaDataFilepath)
-    if (loadAvailable.exists(load => load.getSegmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
-      load.getSegmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS)) {
+      CarbonFilters.getCurrentPartitions(
+        sparkSession,
+        TableIdentifier(parentTable.getTableName,
+        Some(parentTable.getDatabaseName))
+      ).map(_.asJava).orNull
+    )
+
+    if (SegmentStatusManager.isLoadInProgressInTable(parentTable)) {
       throw new UnsupportedOperationException(
-        "Cannot create pre-aggregate table when insert is in progress on main table")
-    } else if (loadAvailable.nonEmpty) {
+      "Cannot create pre-aggregate table when insert is in progress on main table")
+    }
+    val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetaDataFilepath)
+    if (loadAvailable.nonEmpty) {
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.
       loadCommand.dataFrame = Some(PreAggregateUtil
