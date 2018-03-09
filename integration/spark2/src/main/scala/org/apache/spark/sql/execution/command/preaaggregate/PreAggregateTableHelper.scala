@@ -166,8 +166,9 @@ case class PreAggregateTableHelper(
     // table.
     SegmentStatusManager.deleteLoadsAndUpdateMetadata(parentTable, false)
     val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath)
-    if (loadAvailable.exists(load => load.getSegmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
-      load.getSegmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS)) {
+    if (loadAvailable.exists(load => load.getVisibility().equalsIgnoreCase("true") &&
+      (load.getSegmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
+      load.getSegmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS))) {
       throw new UnsupportedOperationException(
         "Cannot create pre-aggregate table when insert is in progress on main table")
     } else if (loadAvailable.nonEmpty) {
