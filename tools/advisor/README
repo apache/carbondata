@@ -1,0 +1,64 @@
+The sub-project implements a tool to recommend MVs.  Given a set of query logs, the tool reads 
+all the queries in the logs, converts them into the logical plans, de-dups them, and converts 
+them into the modular plans.  The tool then extracts all the SPJG subplans as candidates to 
+construct MVs.  The tool uses a set of rules to construct MVs.  The rules currently 
+implemented are UnifyAttributeReferenceID, EliminateNonStarNCanonicalizeSPJGs, 
+FindPromisingTrivialCandidates, CreateCandidateCSEs.  The tool currently is based on 
+Spark 2.2 and using CBO of Spark.  
+
+To use this package, you need to custom the class MVToolBase and call its method:
+
+      adviseMVs(spark: SparkSession, 
+                qbPreprocessor: QueryBatchPreprocessor, 
+                csemanager: CommonSubexpressionManager, 
+                queryLogFilePathPattern: String, 
+                queryLogEntryPattern: String)
+
+for recommending MVs.  Note that, unlike query rewrite, the spark session created for recommendation should 
+not have any cache, although SQLConf can be the same.  You can find examples to do this in the unit test cases.  
+Specifically, you need to create instances of QueryBatchPreprocessor and CommonSubexpressionManager respectively 
+and pass to this method.  Examples in creating such instances are in TestHelper.scala of the unit test.  
+Configurations of SQLConf are needed in creating an instance of CommonSubexpressionManager.  Such configurations 
+are important for the rules of CommonSubexpressionManager.  More specifically,  you need to provide a json string 
+as the value of the key "spark.mv.tableCluster".  The json string tells the rules which tables are fact tables and 
+which dimension ones.  The json string can be obtained by calling the micro-service framework provided with the 
+sub-project micro-service.  An example of code fragment to get the json string from a web service is as follows:
+
+      def getTableCluster(): TableCluster = {
+          val client = ClientBuilder.newClient().register(classOf[JacksonJsonProvider])   
+          val stringUrl = statsURI + "/table_cluster?dbname="+dbname
+          //client.setConnectTimeout(1800000)
+          val webTarget = client.target(stringUrl)
+          webTarget.request(MediaType.APPLICATION_JSON_TYPE).get(classOf[TableCluster])
+          ...
+ 
+The unit tests are mainly based on TPC-DS queries and data.  To run the test cases, you need to do the following:
+
+
+install c/c++ for tpc-ds:
+
+sudo apt-get install gcc g++
+sudo apt-get install byacc
+
+generate benchmark data (http://www.innovation-brigade.com/index.php?module=Content&type=user&func=display&tid=1&pid=3):
+
+cd tools
+sudo make clean
+sudo make
+
+generate 1GB:
+
+./dsdgen
+
+and copy all the data files (postfixed with .dat) into the directory ./src/test/resources/data/files/.
+
+In addition, you need to gunzip files that are already in the directory ./src/test/resources/data/files/.
+
+Since, currently, the CBO of Spark 2.2 is far from mature.  Cost estimation is very rough.  To 
+materialize MVs recommended with the tool require a script to detect if disk space used by an MV in 
+the materialization process exceeds a threshold specified.  If it is, the process needs to be aborted.  
+
+
+
+
+  
