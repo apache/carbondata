@@ -20,18 +20,14 @@ package org.apache.carbondata.examples
 import java.io.{File, PrintWriter}
 import java.net.ServerSocket
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.CarbonSparkStreamingFactory
-import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.CarbonSparkStreamingListener
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
@@ -77,7 +73,6 @@ object CarbonStreamSparkStreamingExample {
            | 'dictionary_include'='city')
            | """.stripMargin)
       val carbonTable = CarbonEnv.getCarbonTable(Some("default"), streamTableName)(spark)
-      val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
       // batch load
       val path = s"$rootPath/examples/spark2/src/main/resources/streamSample.csv"
       spark.sql(
@@ -91,7 +86,7 @@ object CarbonStreamSparkStreamingExample {
       val serverSocket = new ServerSocket(7071)
       val thread1 = writeSocket(serverSocket)
       val thread2 = showTableCount(spark, streamTableName)
-      val ssc = startStreaming(spark, streamTableName, tablePath, checkpointPath)
+      val ssc = startStreaming(spark, streamTableName, checkpointPath)
       // add a Spark Streaming Listener to remove all lock for stream tables when stop app
       ssc.sparkContext.addSparkListener(new CarbonSparkStreamingListener())
       // wait for stop signal to stop Spark Streaming App
@@ -156,7 +151,7 @@ object CarbonStreamSparkStreamingExample {
   }
 
   def startStreaming(spark: SparkSession, tableName: String,
-      tablePath: CarbonTablePath, checkpointPath: String): StreamingContext = {
+      checkpointPath: String): StreamingContext = {
     var ssc: StreamingContext = null
     try {
       // recommend: the batch interval must set larger, such as 30s, 1min.

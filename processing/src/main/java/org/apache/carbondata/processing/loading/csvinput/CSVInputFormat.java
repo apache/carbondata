@@ -29,6 +29,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -271,8 +272,11 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         filePosition = fileIn;
         inputStream = boundedInputStream;
       }
-      reader = new InputStreamReader(inputStream,
+
+      //Wrap input stream with BOMInputStream to skip UTF-8 BOM characters
+      reader = new InputStreamReader(new BOMInputStream(inputStream),
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+
       CsvParserSettings settings = extractCsvParserSettings(job);
       if (start == 0) {
         settings.setHeaderExtractionEnabled(job.getBoolean(HEADER_PRESENT,

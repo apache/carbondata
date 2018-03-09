@@ -36,10 +36,10 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 /**
  * TODO remove the duplicate code and add the common methods to common class.
@@ -52,16 +52,19 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       // Initialize the Keywords.
       initLexical
       phrase(start)(new lexical.Scanner(input)) match {
-        case Success(plan, _) => plan match {
-          case x: CarbonLoadDataCommand =>
-            x.inputSqlString = input
-            x
-          case x: CarbonAlterTableCompactionCommand =>
-            x.alterTableModel.alterSql = input
-            x
-          case logicalPlan => logicalPlan
+        case Success(plan, _) =>
+          CarbonScalaUtil.cleanParserThreadLocals()
+          plan match {
+            case x: CarbonLoadDataCommand =>
+              x.inputSqlString = input
+              x
+            case x: CarbonAlterTableCompactionCommand =>
+              x.alterTableModel.alterSql = input
+              x
+            case logicalPlan => logicalPlan
         }
         case failureOrError =>
+          CarbonScalaUtil.cleanParserThreadLocals()
           CarbonException.analysisException(failureOrError.toString)
       }
     }

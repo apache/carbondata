@@ -43,6 +43,7 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.TablePage;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 
+
 /**
  * Below class will be used to write the data in V3 format
  * <Column1 Data ChunkV3><Column1<Page1><Page2><Page3><Page4>>
@@ -109,7 +110,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    * @param tablePage
    */
   @Override public void writeTablePage(TablePage tablePage)
-      throws CarbonDataWriterException {
+      throws CarbonDataWriterException,IOException {
     // condition for writting all the pages
     if (!tablePage.isLastPage()) {
       boolean isAdded = false;
@@ -147,7 +148,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     }
   }
 
-  private void addPageData(TablePage tablePage) {
+  private void addPageData(TablePage tablePage) throws IOException {
     blockletDataHolder.addPage(tablePage);
     if (listener != null) {
       if (pageId == 0) {
@@ -156,6 +157,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       listener.onPageAdded(blockletId, pageId++, tablePage);
     }
   }
+
+
 
   /**
    * Write the collect blocklet data (blockletDataHolder) to file

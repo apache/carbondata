@@ -26,6 +26,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -118,6 +119,7 @@ public class SortParameters implements Serializable {
   private int numberOfCores;
 
   private int batchSortSizeinMb;
+  private int rangeId = 0;
 
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
@@ -146,6 +148,7 @@ public class SortParameters implements Serializable {
     parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
     parameters.numberOfCores = numberOfCores;
     parameters.batchSortSizeinMb = batchSortSizeinMb;
+    parameters.rangeId = rangeId;
     return parameters;
   }
 
@@ -356,7 +359,7 @@ public class SortParameters implements Serializable {
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(tableIdentifier.getDatabaseName());
     parameters.setTableName(tableIdentifier.getTableName());
-    parameters.setPartitionID(configuration.getPartitionId());
+    parameters.setPartitionID("0");
     parameters.setSegmentId(configuration.getSegmentId());
     parameters.setTaskNo(configuration.getTaskNo());
     parameters.setMeasureColCount(configuration.getMeasureCount());
@@ -392,10 +395,9 @@ public class SortParameters implements Serializable {
 
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
-    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
-            tableIdentifier.getTableName(), configuration.getTaskNo(),
-            configuration.getPartitionId(), configuration.getSegmentId(), false, false);
+    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil.getLocalDataFolderLocation(
+        tableIdentifier.getDatabaseName(), tableIdentifier.getTableName(),
+        configuration.getTaskNo(), configuration.getSegmentId(), false, false);
     String[] sortTempDirs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath,
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
 
@@ -429,6 +431,14 @@ public class SortParameters implements Serializable {
     return parameters;
   }
 
+  public int getRangeId() {
+    return rangeId;
+  }
+
+  public void setRangeId(int rangeId) {
+    this.rangeId = rangeId;
+  }
+
   /**
    * this method will set the boolean mapping for no dictionary sort columns
    *
@@ -448,13 +458,13 @@ public class SortParameters implements Serializable {
 
   public static SortParameters createSortParameters(CarbonTable carbonTable, String databaseName,
       String tableName, int dimColCount, int complexDimColCount, int measureColCount,
-      int noDictionaryCount, String partitionID, String segmentId, String taskNo,
+      int noDictionaryCount, String segmentId, String taskNo,
       boolean[] noDictionaryColMaping, boolean isCompactionFlow) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(databaseName);
     parameters.setTableName(tableName);
-    parameters.setPartitionID(partitionID);
+    parameters.setPartitionID(CarbonTablePath.DEPRECATED_PATITION_ID);
     parameters.setSegmentId(segmentId);
     parameters.setTaskNo(taskNo);
     parameters.setMeasureColCount(measureColCount);
@@ -486,7 +496,7 @@ public class SortParameters implements Serializable {
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId,
+        .getLocalDataFolderLocation(databaseName, tableName, taskNo, segmentId,
             isCompactionFlow, false);
     String[] sortTempDirs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath,
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);

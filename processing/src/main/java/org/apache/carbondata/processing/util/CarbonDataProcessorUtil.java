@@ -34,7 +34,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -44,7 +43,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -124,17 +122,15 @@ public final class CarbonDataProcessorUtil {
    *
    * @param carbonTable
    * @param taskId
-   * @param partitionId
    * @param segmentId
    * @param isCompactionFlow
    * @param isAltPartitionFlow
    * @return
    */
-  public static String[] getLocalDataFolderLocation(CarbonTable carbonTable, String tableName,
-      String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
-      boolean isAltPartitionFlow) {
+  public static String[] getLocalDataFolderLocation(CarbonTable carbonTable,
+      String taskId, String segmentId, boolean isCompactionFlow, boolean isAltPartitionFlow) {
     String tempLocationKey =
-        getTempStoreLocationKey(carbonTable.getDatabaseName(), tableName,
+        getTempStoreLocationKey(carbonTable.getDatabaseName(), carbonTable.getTableName(),
             segmentId, taskId, isCompactionFlow, isAltPartitionFlow);
     String baseTempStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey);
@@ -150,10 +146,7 @@ public final class CarbonDataProcessorUtil {
 
     for (int i = 0 ; i < baseTmpStorePathArray.length; i++) {
       String tmpStore = baseTmpStorePathArray[i];
-      CarbonTablePath carbonTablePath =
-          CarbonStorePath.getCarbonTablePath(tmpStore, carbonTable.getCarbonTableIdentifier());
-      String carbonDataDirectoryPath =
-          carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
+      String carbonDataDirectoryPath = CarbonTablePath.getSegmentPath(tmpStore, segmentId);
 
       localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
     }
@@ -166,17 +159,16 @@ public final class CarbonDataProcessorUtil {
    * @param databaseName
    * @param tableName
    * @param taskId
-   * @param partitionId
    * @param segmentId
    * @param isCompactionFlow
    * @param isAltPartitionFlow
    * @return
    */
   public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
-      String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
+      String taskId, String segmentId, boolean isCompactionFlow,
       boolean isAltPartitionFlow) {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    return getLocalDataFolderLocation(carbonTable, tableName, taskId, partitionId,
+    return getLocalDataFolderLocation(carbonTable, taskId,
         segmentId, isCompactionFlow, isAltPartitionFlow);
   }
 
@@ -400,16 +392,12 @@ public final class CarbonDataProcessorUtil {
    *
    * @return data directory path
    */
-  public static String createCarbonStoreLocation(String factStoreLocation,
-      String databaseName, String tableName, String partitionId, String segmentId) {
+  public static String createCarbonStoreLocation(String databaseName, String tableName,
+      String segmentId) {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
-    String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
-    return carbonDataDirectoryPath;
+    return CarbonTablePath.getSegmentPath(carbonTable.getTablePath(), segmentId);
   }
+
 
   /**
    * initialise data type for measures for their storage format

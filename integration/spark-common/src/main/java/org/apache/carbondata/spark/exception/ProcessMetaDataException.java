@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.exception;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
+
 // This exception will be thrown when processMetaData failed in
 // Carbon's RunnableCommand
 public class ProcessMetaDataException extends MalformedCarbonCommandException {

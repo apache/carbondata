@@ -176,9 +176,7 @@ class InMemoryBTreeIndex implements Index {
         filterredBlocks = filterExpressionProcessor.getFilterredBlocks(
             abstractIndex.getDataRefNode(),
             resolver,
-            abstractIndex,
-            identifier
-        );
+            abstractIndex);
       }
       resultFilterredBlocks.addAll(filterredBlocks);
     }

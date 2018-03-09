@@ -43,16 +43,10 @@ public class BTreeBuilderInfo {
     this.footerList = footerList;
   }
 
-  /**
-   * @return the eachDimensionBlockSize
-   */
   public int[] getDimensionColumnValueSize() {
     return dimensionColumnValueSize;
   }
 
-  /**
-   * @return the footerList
-   */
   public List<DataFileFooter> getFooterList() {
     return footerList;
   }

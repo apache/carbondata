@@ -34,8 +34,8 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -75,12 +75,10 @@ import org.xerial.snappy.Snappy;
 /**
  * Datamap implementation for blocklet.
  */
-public class BlockletDataMap implements DataMap, Cacheable {
+public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDataMap.class.getName());
-
-  public static final String NAME = "clustered.btree.blocklet";
 
   private static int KEY_INDEX = 0;
 
@@ -614,9 +612,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
         FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
     for (int i = 0; i < unsafeMemorySummaryDMStore.getRowCount(); i++) {
       DataMapRow unsafeRow = unsafeMemorySummaryDMStore.getUnsafeRow(i);
-      boolean isScanRequired = FilterExpressionProcessor
-          .isScanRequired(filterExecuter, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
-              getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX));
+      boolean isScanRequired = FilterExpressionProcessor.isScanRequired(
+          filterExecuter, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
+          getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX));
       if (isScanRequired) {
         return true;
       }
@@ -624,8 +622,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return false;
   }
 
-  @Override
-  public List<Blocklet> prune(FilterResolverIntf filterExp) {
+  private List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties) {
     if (unsafeMemoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }
@@ -657,12 +654,12 @@ public class BlockletDataMap implements DataMap, Cacheable {
         startIndex++;
       }
     }
-
     return blocklets;
   }
 
   @Override
-  public List<Blocklet> prune(FilterResolverIntf filterExp, List<PartitionSpec> partitions) {
+  public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
+      List<PartitionSpec> partitions) {
     if (unsafeMemoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }
@@ -685,7 +682,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
       }
     }
     // Prune with filters if the partitions are existed in this datamap
-    return prune(filterExp);
+    return prune(filterExp, segmentProperties);
   }
 
   private boolean isCorrectUUID(String[] fileDetails, PartitionSpec spec) {
@@ -965,6 +962,10 @@ public class BlockletDataMap implements DataMap, Cacheable {
       memoryUsed += unsafeMemorySummaryDMStore.getMemoryUsed();
     }
     return memoryUsed;
+  }
+
+  public SegmentProperties getSegmentProperties() {
+    return segmentProperties;
   }
 
 }

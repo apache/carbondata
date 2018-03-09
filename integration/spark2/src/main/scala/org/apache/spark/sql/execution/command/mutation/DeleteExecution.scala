@@ -41,7 +41,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
 import org.apache.carbondata.core.mutate.data.RowCountDetailsVO
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.processing.exception.MultipleMatchingException
@@ -68,12 +68,11 @@ object DeleteExecution {
     val database = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
     val isPartitionTable = carbonTable.isHivePartitionTable
     val factPath = if (isPartitionTable) {
-      carbonTablePath.getPath
+      absoluteTableIdentifier.getTablePath
     } else {
-      carbonTablePath.getFactDir
+      CarbonTablePath.getFactDir(absoluteTableIdentifier.getTablePath)
     }
     var segmentsTobeDeleted = Seq.empty[Segment]
 

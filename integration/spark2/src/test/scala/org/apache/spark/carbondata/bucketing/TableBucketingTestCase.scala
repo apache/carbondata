@@ -21,11 +21,11 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -173,6 +173,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       case s: ShuffleExchange => shuffleExists = true
     }
     assert(!shuffleExists, "shuffle should not exist on bucket tables")
+    sql("DROP TABLE bucketed_parquet_table")
   }
 
   test("test create table with bucket join of carbon table and non bucket parquet table") {
@@ -197,6 +198,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       case s: ShuffleExchange => shuffleExists = true
     }
     assert(shuffleExists, "shuffle should exist on non bucket tables")
+    sql("DROP TABLE parquet_table")
   }
 
   test("test scalar subquery with equal") {

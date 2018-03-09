@@ -27,9 +27,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTable
 import org.apache.carbondata.core.metadata.schema
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-
 
 /**
  * Interface for Carbonmetastore
@@ -69,7 +67,8 @@ trait CarbonMetaStore {
    * @param carbonStorePath
    * @param sparkSession
    */
-  def updateTableSchemaForAlter(newTableIdentifier: CarbonTableIdentifier,
+  def updateTableSchemaForAlter(
+      newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
@@ -128,7 +127,8 @@ trait CarbonMetaStore {
   def removeTableFromMetadata(dbName: String, tableName: String): Unit
 
   def updateMetadataByThriftTable(schemaFilePath: String,
-      tableInfo: TableInfo, dbName: String, tableName: String, tablePath: String): Unit
+      tableInfo: org.apache.carbondata.format.TableInfo,
+      dbName: String, tableName: String, tablePath: String): Unit
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean
 
@@ -143,7 +143,9 @@ trait CarbonMetaStore {
 
   def listAllTables(sparkSession: SparkSession): Seq[CarbonTable]
 
-  def getThriftTableInfo(tablePath: CarbonTablePath)(sparkSession: SparkSession): TableInfo
+  def getThriftTableInfo(
+      carbonTable: CarbonTable
+  ): org.apache.carbondata.format.TableInfo
 
   def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable]
 

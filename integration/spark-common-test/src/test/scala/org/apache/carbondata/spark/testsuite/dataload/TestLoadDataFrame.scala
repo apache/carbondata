@@ -91,16 +91,16 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     buildTestData
   }
 
-test("test the boolean data type"){
-  booldf.write
-    .format("carbondata")
-    .option("tableName", "carbon10")
-    .mode(SaveMode.Overwrite)
-    .save()
-  checkAnswer(
-    sql("SELECT * FROM CARBON10"),
-    Seq(Row("anubhav", true), Row("prince", false)))
-}
+  test("test the boolean data type"){
+    booldf.write
+      .format("carbondata")
+      .option("tableName", "carbon0")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("SELECT * FROM CARBON0"),
+      Seq(Row("anubhav", true), Row("prince", false)))
+  }
 
   test("test load dataframe") {
     // save dataframe to carbon file

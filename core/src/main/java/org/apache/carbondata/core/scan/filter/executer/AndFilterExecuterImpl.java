@@ -21,7 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilterExecutor {
@@ -35,18 +35,18 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
   }
 
   @Override
-  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
-      throws FilterUnsupportedException, IOException {
-    BitSetGroup leftFilters = leftExecuter.applyFilter(blockChunkHolder, useBitsetPipeLine);
+  public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
+      boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
+    BitSetGroup leftFilters = leftExecuter.applyFilter(rawBlockletColumnChunks, useBitsetPipeLine);
     if (leftFilters.isEmpty()) {
       return leftFilters;
     }
-    BitSetGroup rightFilter = rightExecuter.applyFilter(blockChunkHolder, useBitsetPipeLine);
+    BitSetGroup rightFilter = rightExecuter.applyFilter(rawBlockletColumnChunks, useBitsetPipeLine);
     if (rightFilter.isEmpty()) {
       return rightFilter;
     }
     leftFilters.and(rightFilter);
-    blockChunkHolder.setBitSetGroup(leftFilters);
+    rawBlockletColumnChunks.setBitSetGroup(leftFilters);
     return leftFilters;
   }
 
@@ -69,9 +69,10 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     return leftFilters;
   }
 
-  @Override public void readBlocks(BlocksChunkHolder blocksChunkHolder) throws IOException {
-    leftExecuter.readBlocks(blocksChunkHolder);
-    rightExecuter.readBlocks(blocksChunkHolder);
+  @Override
+  public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
+    leftExecuter.readColumnChunks(rawBlockletColumnChunks);
+    rightExecuter.readColumnChunks(rawBlockletColumnChunks);
   }
 
   @Override
@@ -93,8 +94,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
       rightFilter = ((ImplicitColumnFilterExecutor) rightExecuter)
           .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
     } else {
-      rightFilter = rightExecuter
-          .isScanRequired(maxValue, minValue);
+      rightFilter = rightExecuter.isScanRequired(maxValue, minValue);
     }
     if (rightFilter.isEmpty()) {
       return rightFilter;

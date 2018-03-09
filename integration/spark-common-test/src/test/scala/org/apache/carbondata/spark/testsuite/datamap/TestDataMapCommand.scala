@@ -23,11 +23,12 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.MetadataProcessException
+import org.apache.carbondata.common.exceptions.sql.{MalformedDataMapCommandException, NoSuchDataMapException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.spark.exception.MalformedDataMapCommandException
 
 class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
@@ -42,52 +43,34 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
   val newClass = "org.apache.spark.sql.CarbonSource"
 
-  test("test datamap create: don't support using class, only support short name") {
-    intercept[MalformedDataMapCommandException] {
+  test("test datamap create: don't support using non-exist class") {
+    intercept[MetadataProcessException] {
       sql(s"CREATE DATAMAP datamap1 ON TABLE datamaptest USING '$newClass'")
-      val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
-      assert(table != null)
-      val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
-      assert(dataMapSchemaList.size() == 1)
-      assert(dataMapSchemaList.get(0).getDataMapName.equals("datamap1"))
-      assert(dataMapSchemaList.get(0).getClassName.equals(newClass))
     }
   }
 
-  test("test datamap create with dmproperties: don't support using class") {
-    intercept[MalformedDataMapCommandException] {
+  test("test datamap create with dmproperties: don't support using non-exist class") {
+    intercept[MetadataProcessException] {
       sql(s"CREATE DATAMAP datamap2 ON TABLE datamaptest USING '$newClass' DMPROPERTIES('key'='value')")
-      val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
-      assert(table != null)
-      val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
-      assert(dataMapSchemaList.size() == 2)
-      assert(dataMapSchemaList.get(1).getDataMapName.equals("datamap2"))
-      assert(dataMapSchemaList.get(1).getClassName.equals(newClass))
-      assert(dataMapSchemaList.get(1).getProperties.get("key").equals("value"))
     }
   }
 
-  test("test datamap create with existing name: don't support using class") {
-    intercept[MalformedDataMapCommandException] {
+  test("test datamap create with existing name: don't support using non-exist class") {
+    intercept[MetadataProcessException] {
       sql(
         s"CREATE DATAMAP datamap2 ON TABLE datamaptest USING '$newClass' DMPROPERTIES('key'='value')")
-      val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
-      assert(table != null)
-      val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
-      assert(dataMapSchemaList.size() == 2)
     }
   }
 
   test("test datamap create with preagg") {
     sql("drop datamap if exists datamap3 on table datamaptest")
     sql(
-      "create datamap datamap3 on table datamaptest using 'preaggregate' dmproperties('key'='value') as select count(a) from datamaptest")
+      "create datamap datamap3 on table datamaptest using 'preaggregate' as select count(a) from datamaptest")
     val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 1)
     assert(dataMapSchemaList.get(0).getDataMapName.equals("datamap3"))
-    assert(dataMapSchemaList.get(0).getProperties.get("key").equals("value"))
     assert(dataMapSchemaList.get(0).getChildSchema.getTableName.equals("datamaptest_datamap3"))
   }
 
@@ -100,14 +83,13 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       sql("create table hiveMetaStoreTable (a string, b string, c string) stored by 'carbondata'")
 
       sql(
-        "create datamap datamap_hiveMetaStoreTable on table hiveMetaStoreTable using 'preaggregate' dmproperties('key'='value') as select count(a) from hiveMetaStoreTable")
+        "create datamap datamap_hiveMetaStoreTable on table hiveMetaStoreTable using 'preaggregate' as select count(a) from hiveMetaStoreTable")
       checkExistence(sql("show datamap on table hiveMetaStoreTable"), true, "datamap_hiveMetaStoreTable")
 
       sql("drop datamap datamap_hiveMetaStoreTable on table hiveMetaStoreTable")
       checkExistence(sql("show datamap on table hiveMetaStoreTable"), false, "datamap_hiveMetaStoreTable")
 
-    }
-    finally {
+    } finally {
       sql("drop table hiveMetaStoreTable")
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
@@ -124,7 +106,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       sql("create table hiveMetaStoreTable_1 (a string, b string, c string) stored by 'carbondata'")
 
       sql(
-        "create datamap datamap_hiveMetaStoreTable_1 on table hiveMetaStoreTable_1 using 'preaggregate' dmproperties('key'='value') as select count(a) from hiveMetaStoreTable_1")
+        "create datamap datamap_hiveMetaStoreTable_1 on table hiveMetaStoreTable_1 using 'preaggregate' as select count(a) from hiveMetaStoreTable_1")
 
       checkExistence(sql("show datamap on table hiveMetaStoreTable_1"),
         true,
@@ -136,6 +118,8 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
         "datamap_hiveMetaStoreTable_1")
       assert(sql("show datamap on table hiveMetaStoreTable_1").collect().length == 0)
       sql("drop table hiveMetaStoreTable_1")
+
+      checkExistence(sql("show tables"), false, "datamap_hiveMetaStoreTable_1")
     }
     finally {
       CarbonProperties.getInstance()
@@ -145,55 +129,52 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test datamap create with preagg with duplicate name") {
-    intercept[Exception] {
-      sql(
-        s"""
-           | CREATE DATAMAP datamap2 ON TABLE datamaptest
-           | USING 'preaggregate'
-           | DMPROPERTIES('key'='value')
-           | AS SELECT COUNT(a) FROM datamaptest
+    sql(
+      s"""
+         | CREATE DATAMAP datamap10 ON TABLE datamaptest
+         | USING 'preaggregate'
+         | AS SELECT COUNT(a) FROM datamaptest
          """.stripMargin)
-      sql(
-        s"""
-           | CREATE DATAMAP datamap2 ON TABLE datamaptest
-           | USING 'preaggregate'
-           | DMPROPERTIES('key'='value')
-           | AS SELECT COUNT(a) FROM datamaptest
-         """.stripMargin)
-    }
-    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
-    assert(table != null)
-    val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
-    assert(dataMapSchemaList.size() == 2)
-  }
-
-  test("test datamap drop with preagg") {
-    intercept[Exception] {
-      sql("drop table datamap3")
-
-    }
-    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
-    assert(table != null)
-    val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
-    assert(dataMapSchemaList.size() == 2)
-  }
-
-  test("test show datamap without preaggregate: don't support using class") {
     intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP datamap10 ON TABLE datamaptest
+           | USING 'preaggregate'
+           | AS SELECT COUNT(a) FROM datamaptest
+         """.stripMargin)
+    }
+    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
+    assert(table != null)
+    val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
+    assert(dataMapSchemaList.size() == 2)
+  }
+
+  test("test drop non-exist datamap") {
+    intercept[NoSuchDataMapException] {
+      sql("drop datamap nonexist on table datamaptest")
+    }
+    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
+    assert(table != null)
+    val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
+    assert(dataMapSchemaList.size() == 2)
+  }
+
+  test("test show datamap without preaggregate: don't support using non-exist class") {
+    intercept[MetadataProcessException] {
       sql("drop table if exists datamapshowtest")
       sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
-      sql(s"CREATE DATAMAP datamap1 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
-      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
+      sql(s"CREATE DATAMAP datamap1 ON TABLE datamapshowtest USING '$newClass' ")
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' ")
       checkExistence(sql("SHOW DATAMAP ON TABLE datamapshowtest"), true, "datamap1", "datamap2", "(NA)", newClass)
     }
   }
 
-  test("test show datamap with preaggregate: don't support using class") {
-    intercept[MalformedDataMapCommandException] {
+  test("test show datamap with preaggregate: don't support using non-exist class") {
+    intercept[MetadataProcessException] {
       sql("drop table if exists datamapshowtest")
       sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
       sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
-      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' ")
       val frame = sql("show datamap on table datamapshowtest")
       assert(frame.collect().length == 2)
       checkExistence(frame, true, "datamap1", "datamap2", "(NA)", newClass, "default.datamapshowtest_datamap1")
@@ -206,12 +187,12 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     assert(sql("show datamap on table datamapshowtest").collect().length == 0)
   }
 
-  test("test show datamap after dropping datamap: don't support using class") {
-    intercept[MalformedDataMapCommandException] {
+  test("test show datamap after dropping datamap: don't support using non-exist class") {
+    intercept[MetadataProcessException] {
       sql("drop table if exists datamapshowtest")
       sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
       sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
-      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' DMPROPERTIES('key'='value')")
+      sql(s"CREATE DATAMAP datamap2 ON TABLE datamapshowtest USING '$newClass' ")
       sql("drop datamap datamap1 on table datamapshowtest")
       val frame = sql("show datamap on table datamapshowtest")
       assert(frame.collect().length == 1)
@@ -220,19 +201,27 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test if preaggregate load is successfull for hivemetastore") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE, "true")
-    sql("DROP TABLE IF EXISTS maintable")
-    sql(
-      """
-        | CREATE TABLE maintable(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-    sql(
-      s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id,sum(age) from maintable group by id"""
-        .stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
-    checkAnswer(sql(s"select * from maintable_preagg_sum"),
-      Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
+    try {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE, "true")
+      sql("DROP TABLE IF EXISTS maintable")
+      sql(
+        """
+          | CREATE TABLE maintable(id int, name string, city string, age int)
+          | STORED BY 'org.apache.carbondata.format'
+        """.stripMargin)
+      sql(
+        s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id,sum(age) from maintable group by id"""
+
+          .stripMargin)
+      sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+      checkAnswer(sql(s"select * from maintable_preagg_sum"),
+        Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
+    } finally {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
+          CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
+    }
   }
 
   test("test preaggregate load for decimal column for hivemetastore") {

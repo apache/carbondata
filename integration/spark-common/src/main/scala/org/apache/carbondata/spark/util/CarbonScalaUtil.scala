@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.util
 
 import java.{lang, util}
+import java.lang.ref.Reference
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -30,6 +31,7 @@ import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.command.{DataTypeInfo, UpdateTableModel}
 import org.apache.spark.sql.types._
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogService
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
@@ -45,7 +47,6 @@ import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -584,5 +585,46 @@ object CarbonScalaUtil {
     String.valueOf(Math.pow(10, 2).toInt + segmentId.toInt) +
     String.valueOf(Math.pow(10, 5).toInt + taskId) +
     String.valueOf(partitionNumber + Math.pow(10, 5).toInt)
+  }
+
+  /**
+   * Use reflection to clean the parser objects which are set in thread local to avoid memory issue
+   */
+  def cleanParserThreadLocals(): Unit = {
+    try {
+      // Get a reference to the thread locals table of the current thread
+      val thread = Thread.currentThread
+      val threadLocalsField = classOf[Thread].getDeclaredField("inheritableThreadLocals")
+      threadLocalsField.setAccessible(true)
+      val threadLocalTable = threadLocalsField.get(thread)
+      // Get a reference to the array holding the thread local variables inside the
+      // ThreadLocalMap of the current thread
+      val threadLocalMapClass = Class.forName("java.lang.ThreadLocal$ThreadLocalMap")
+      val tableField = threadLocalMapClass.getDeclaredField("table")
+      tableField.setAccessible(true)
+      val table = tableField.get(threadLocalTable)
+      // The key to the ThreadLocalMap is a WeakReference object. The referent field of this object
+      // is a reference to the actual ThreadLocal variable
+      val referentField = classOf[Reference[Thread]].getDeclaredField("referent")
+      referentField.setAccessible(true)
+      var i = 0
+      while (i < lang.reflect.Array.getLength(table)) {
+        // Each entry in the table array of ThreadLocalMap is an Entry object
+        val entry = lang.reflect.Array.get(table, i)
+        if (entry != null) {
+          // Get a reference to the thread local object and remove it from the table
+          val threadLocal = referentField.get(entry).asInstanceOf[ThreadLocal[_]]
+          if (threadLocal != null &&
+              threadLocal.getClass.getName.startsWith("scala.util.DynamicVariable")) {
+            threadLocal.remove()
+          }
+        }
+        i += 1
+      }
+      table
+    } catch {
+      case e: Exception =>
+        // ignore it
+    }
   }
 }

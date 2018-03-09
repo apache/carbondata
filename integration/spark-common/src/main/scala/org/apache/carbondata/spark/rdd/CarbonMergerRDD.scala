@@ -39,7 +39,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block._
 import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.UpdateVO
@@ -64,7 +64,7 @@ class CarbonMergerRDD[K, V](
     carbonLoadModel: CarbonLoadModel,
     carbonMergerMapping: CarbonMergerMapping,
     confExecutorsTemp: String)
-  extends CarbonRDD[(K, V)](sc, Nil) {
+  extends CarbonRDD[(K, V)](sc, Nil, sc.hadoopConfiguration) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
   sc.setLocalProperty("spark.job.interruptOnCancel", "true")
@@ -83,6 +83,7 @@ class CarbonMergerRDD[K, V](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      CarbonMetadata.getInstance().addCarbonTable(carbonTable)
       val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
       if (carbonTable.isPartitionTable) {
         carbonLoadModel.setTaskNo(String.valueOf(carbonSparkPartition.partitionId))
@@ -171,7 +172,8 @@ class CarbonMergerRDD[K, V](
         LOGGER.info(s"Restructured block exists: $restructuredBlockExists")
         DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
         exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
-          carbonTable, dataFileMetadataSegMapping, restructuredBlockExists)
+          carbonTable, dataFileMetadataSegMapping, restructuredBlockExists,
+          new SparkDataTypeConverterImpl)
 
         // fire a query and get the results.
         var result2: java.util.List[RawResultIterator] = null
@@ -189,16 +191,9 @@ class CarbonMergerRDD[K, V](
             }
         }
 
-        val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(databaseName,
-          factTableName,
-          carbonLoadModel.getTaskNo,
-          "0",
-          mergeNumber,
-          true,
-          false
-        )
+        val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(
+          databaseName, factTableName, carbonLoadModel.getTaskNo, mergeNumber, true, false)
 
-        carbonLoadModel.setPartitionId("0")
         var processor: AbstractResultProcessor = null
         if (restructuredBlockExists) {
           LOGGER.info("CompactionResultSortProcessor flow is selected")
@@ -305,11 +300,11 @@ class CarbonMergerRDD[K, V](
       val splits = format.getSplits(job)
 
       // keep on assigning till last one is reached.
-      if (null != splits && splits.size > 0) splitsOfLastSegment =
-        splits.asScala
+      if (null != splits && splits.size > 0) {
+        splitsOfLastSegment = splits.asScala
           .map(_.asInstanceOf[CarbonInputSplit])
           .filter { split => FileFormat.COLUMNAR_V3.equals(split.getFileFormat) }.toList.asJava
-
+      }
       carbonInputSplits ++:= splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter{ entry =>
         val blockInfo = new TableBlockInfo(entry.getPath.toString,
           entry.getStart, entry.getSegmentId,

@@ -17,17 +17,20 @@
 
 package org.apache.carbondata.core.locks;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * This class handles the file locking in the local file system.
@@ -38,11 +41,6 @@ public class LocalFileLock extends AbstractCarbonLock {
    * location is the location of the lock file.
    */
   private String location;
-
-  /**
-   * fileOutputStream of the local lock file
-   */
-  private FileOutputStream fileOutputStream;
 
   /**
    * channel is the FileChannel of the lock file.
@@ -104,8 +102,8 @@ public class LocalFileLock extends AbstractCarbonLock {
         FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(location));
       }
 
-      fileOutputStream = new FileOutputStream(lockFilePath);
-      channel = fileOutputStream.getChannel();
+      channel = FileChannel.open(Paths.get(lockFilePath), StandardOpenOption.WRITE,
+          StandardOpenOption.APPEND);
       try {
         fileLock = channel.tryLock();
       } catch (OverlappingFileLockException e) {
@@ -137,11 +135,17 @@ public class LocalFileLock extends AbstractCarbonLock {
     } catch (IOException e) {
       status = false;
     } finally {
-      if (null != fileOutputStream) {
-        try {
-          fileOutputStream.close();
-        } catch (IOException e) {
-          LOGGER.error(e.getMessage());
+      CarbonUtil.closeStreams(channel);
+
+      // deleting the lock file after releasing the lock.
+      if (null != lockFilePath) {
+        CarbonFile lockFile = FileFactory.getCarbonFile(lockFilePath,
+            FileFactory.getFileType(lockFilePath));
+        if (!lockFile.exists() || lockFile.delete()) {
+          LOGGER.info("Successfully deleted the lock file " + lockFilePath);
+        } else {
+          LOGGER.error("Not able to delete the lock file " + lockFilePath);
+          status = false;
         }
       }
     }

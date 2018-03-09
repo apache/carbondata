@@ -51,7 +51,7 @@ case class CarbonDataMapShowCommand(
         if (relationIdentifier != null) {
           table = relationIdentifier.getDatabaseName + "." + relationIdentifier.getTableName
         }
-        Row(s.getDataMapName, s.getClassName, table)
+        Row(s.getDataMapName, s.getProviderName, table)
       }
     } else {
       Seq.empty

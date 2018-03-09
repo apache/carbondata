@@ -418,6 +418,17 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     ```
     NOTE: Date formats are specified by date pattern strings. The date pattern letters in CarbonData are same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
 
+  - **SORT COLUMN BOUNDS:** Range bounds for sort columns.
+
+    ```
+    OPTIONS('SORT_COLUMN_BOUNDS'='v11,v21,v31;v12,v22,v32;v13,v23,v33')
+    ```
+    NOTE:
+    * SORT_COLUMN_BOUNDS will be used only when the SORT_SCOPE is 'local_sort'.
+    * Each bound is separated by ';' and each field value in bound is separated by ','.
+    * Carbondata will use these bounds as ranges to process data concurrently.
+    * Since the actual order and literal order of the dictionary column are not necessarily the same, we do not recommend you to use this feature if the first sort column is 'dictionary_include'.
+
   - **SINGLE_PASS:** Single Pass Loading enables single job to finish data loading with dictionary generation on the fly. It enhances performance in the scenarios where the subsequent data loading after initial load involves fewer incremental updates on the dictionary.
 
   This option specifies whether to use single pass for loading data or not. By default this option is set to FALSE.

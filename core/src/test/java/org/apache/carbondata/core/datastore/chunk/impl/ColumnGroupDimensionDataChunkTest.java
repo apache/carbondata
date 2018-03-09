@@ -37,7 +37,7 @@ import org.junit.Test;
 
 public class ColumnGroupDimensionDataChunkTest {
 
-  static ColumnGroupDimensionDataChunk columnGroupDimensionDataChunk;
+  static ColumnGroupDimensionColumnPage columnGroupDimensionDataChunk;
   static KeyGenerator keyGenerator;
 
   @BeforeClass public static void setup() {
@@ -56,7 +56,7 @@ public class ColumnGroupDimensionDataChunkTest {
       position += keyGenerator.getKeySizeInBytes();
     }
     columnGroupDimensionDataChunk =
-        new ColumnGroupDimensionDataChunk(data, keyGenerator.getKeySizeInBytes(), 3);
+        new ColumnGroupDimensionColumnPage(data, keyGenerator.getKeySizeInBytes(), 3);
   }
 
   @Test public void fillChunkDataTest() {
@@ -64,7 +64,7 @@ public class ColumnGroupDimensionDataChunkTest {
     ordinals.add(1);
     KeyStructureInfo keyStructureInfo = getKeyStructureInfo(ordinals, keyGenerator);
     byte[] buffer = new byte[1];
-    columnGroupDimensionDataChunk.fillChunkData(buffer, 0, 1, keyStructureInfo);
+    columnGroupDimensionDataChunk.fillRawData(1, 0, buffer, keyStructureInfo);
     assertEquals(buffer[0], 2);
   }
 
@@ -81,7 +81,7 @@ public class ColumnGroupDimensionDataChunkTest {
     ordinals.add(2);
     KeyStructureInfo keyStructureInfo = getKeyStructureInfo(ordinals, keyGenerator);
     keyStructureInfo.setMdkeyQueryDimensionOrdinal(new int[] { 2 });
-    int res = columnGroupDimensionDataChunk.fillConvertedChunkData(2, 2, row, keyStructureInfo);
+    int res = columnGroupDimensionDataChunk.fillSurrogateKey(2, 2, row, keyStructureInfo);
     Assert.assertTrue(Arrays.equals(row, expected));
   }
 

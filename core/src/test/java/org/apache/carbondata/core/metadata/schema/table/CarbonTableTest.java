@@ -68,7 +68,7 @@ public class CarbonTableTest extends TestCase {
     assertTrue(carbonTable.getDimensionByName("carbonTestTable", "IMEI").equals(dimension));
   }
 
-  private ColumnSchema getColumnarDimensionColumn() {
+  static ColumnSchema getColumnarDimensionColumn() {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
@@ -83,7 +83,7 @@ public class CarbonTableTest extends TestCase {
     return dimColumn;
   }
 
-  private ColumnSchema getColumnarMeasureColumn() {
+  static ColumnSchema getColumnarMeasureColumn() {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
@@ -91,23 +91,23 @@ public class CarbonTableTest extends TestCase {
     return dimColumn;
   }
 
-  private TableSchema getTableSchema() {
+  static TableSchema getTableSchema(String tableName) {
     TableSchema tableSchema = new TableSchema();
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     columnSchemaList.add(getColumnarDimensionColumn());
     columnSchemaList.add(getColumnarMeasureColumn());
     tableSchema.setListOfColumns(columnSchemaList);
     tableSchema.setTableId(UUID.randomUUID().toString());
-    tableSchema.setTableName("carbonTestTable");
+    tableSchema.setTableName(tableName);
     return tableSchema;
   }
 
-  private TableInfo getTableInfo(long timeStamp) {
+  static private TableInfo getTableInfo(long timeStamp) {
     TableInfo info = new TableInfo();
     info.setDatabaseName("carbonTestDatabase");
     info.setLastUpdatedTime(timeStamp);
     info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
-    info.setFactTable(getTableSchema());
+    info.setFactTable(getTableSchema("carbonTestTable"));
     info.setTablePath("testore");
     return info;
   }

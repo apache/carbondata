@@ -63,30 +63,6 @@ public class BlockIndexStoreTest extends TestCase {
 
   }
 
-//  public void testLoadAndGetTaskIdToSegmentsMapForSingleSegment()
-//      throws IOException {
-//    File file = getPartFile();
-//    TableBlockInfo info =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V1, null);
-//    CarbonTableIdentifier carbonTableIdentifier =
-//            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
-//    AbsoluteTableIdentifier absoluteTableIdentifier =
-//        new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
-//    try {
-//
-//      List<TableBlockUniqueIdentifier> tableBlockInfoList =
-//          getTableBlockUniqueIdentifierList(Arrays.asList(new TableBlockInfo[] { info }), absoluteTableIdentifier);
-//      List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockInfoList);
-//      assertTrue(loadAndGetBlocks.size() == 1);
-//    } catch (Exception e) {
-//      assertTrue(false);
-//    }
-//    List<String> segmentIds = new ArrayList<>();
-//      segmentIds.add(info.getSegment());
-//    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
-//  }
-//
   private List<TableBlockUniqueIdentifier> getTableBlockUniqueIdentifierList(List<TableBlockInfo> tableBlockInfos,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
     List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers = new ArrayList<>();
@@ -95,138 +71,6 @@ public class BlockIndexStoreTest extends TestCase {
     }
     return tableBlockUniqueIdentifiers;
   }
-//
-//  public void testloadAndGetTaskIdToSegmentsMapForSameBlockLoadedConcurrently()
-//      throws IOException {
-//    String canonicalPath =
-//        new File(this.getClass().getResource("/").getPath() + "/../../").getCanonicalPath();
-//    File file = getPartFile();
-//    TableBlockInfo info =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V1, null);
-//    TableBlockInfo info1 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V1, null);
-//
-//    TableBlockInfo info2 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V1, null);
-//    TableBlockInfo info3 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V1, null);
-//    TableBlockInfo info4 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V1, null);
-//
-//    CarbonTableIdentifier carbonTableIdentifier =
-//            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
-//    AbsoluteTableIdentifier absoluteTableIdentifier =
-//        new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
-//    ExecutorService executor = Executors.newFixedThreadPool(3);
-//    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info, info1 }),
-//        absoluteTableIdentifier));
-//    executor.submit(
-//        new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info2, info3, info4 }),
-//            absoluteTableIdentifier));
-//    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info, info1 }),
-//        absoluteTableIdentifier));
-//    executor.submit(
-//        new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info2, info3, info4 }),
-//            absoluteTableIdentifier));
-//    executor.shutdown();
-//    try {
-//      executor.awaitTermination(1, TimeUnit.DAYS);
-//    } catch (InterruptedException e) {
-//      e.printStackTrace();
-//    }
-//    List<TableBlockInfo> tableBlockInfos =
-//        Arrays.asList(new TableBlockInfo[] { info, info1, info2, info3, info4 });
-//    try {
-//      List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
-//          getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
-//      List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockUniqueIdentifiers);
-//      assertTrue(loadAndGetBlocks.size() == 5);
-//    } catch (Exception e) {
-//      assertTrue(false);
-//    }
-//    List<String> segmentIds = new ArrayList<>();
-//    for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
-//      segmentIds.add(tableBlockInfo.getSegment());
-//    }
-//    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
-//  }
-//
-//  public void testloadAndGetTaskIdToSegmentsMapForDifferentSegmentLoadedConcurrently()
-//      throws IOException {
-//    String canonicalPath =
-//        new File(this.getClass().getResource("/").getPath() + "/../../").getCanonicalPath();
-//    File file = getPartFile();
-//    TableBlockInfo info =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V3, null);
-//    TableBlockInfo info1 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V3, null);
-//
-//    TableBlockInfo info2 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V3, null);
-//    TableBlockInfo info3 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V3, null);
-//    TableBlockInfo info4 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V3, null);
-//
-//    TableBlockInfo info5 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "2", new String[] { "loclhost" },
-//            file.length(),ColumnarFormatVersion.V3, null);
-//    TableBlockInfo info6 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "2", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V3, null);
-//
-//    TableBlockInfo info7 =
-//        new TableBlockInfo(file.getAbsolutePath(), 0, "3", new String[] { "loclhost" },
-//            file.length(), ColumnarFormatVersion.V3, null);
-//
-//    CarbonTableIdentifier carbonTableIdentifier =
-//            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
-//    AbsoluteTableIdentifier absoluteTableIdentifier =
-//        new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
-//    ExecutorService executor = Executors.newFixedThreadPool(3);
-//    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info, info1 }),
-//        absoluteTableIdentifier));
-//    executor.submit(
-//        new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info2, info3, info4 }),
-//            absoluteTableIdentifier));
-//    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info5, info6 }),
-//        absoluteTableIdentifier));
-//    executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info7 }),
-//        absoluteTableIdentifier));
-//
-//    executor.shutdown();
-//    try {
-//      executor.awaitTermination(1, TimeUnit.DAYS);
-//    } catch (InterruptedException e) {
-//      // TODO Auto-generated catch block
-//      e.printStackTrace();
-//    }
-//    List<TableBlockInfo> tableBlockInfos = Arrays
-//        .asList(new TableBlockInfo[] { info, info1, info2, info3, info4, info5, info6, info7 });
-//    try {
-//      List<TableBlockUniqueIdentifier> blockUniqueIdentifierList =
-//          getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
-//      List<AbstractIndex> loadAndGetBlocks = cache.getAll(blockUniqueIdentifierList);
-//      assertTrue(loadAndGetBlocks.size() == 8);
-//    } catch (Exception e) {
-//      assertTrue(false);
-//    }
-//    List<String> segmentIds = new ArrayList<>();
-//    for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
-//      segmentIds.add(tableBlockInfo.getSegment());
-//    }
-//    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
-//  }
 
   private class BlockLoaderThread implements Callable<Void> {
     private List<TableBlockInfo> tableBlockInfoList;
@@ -248,7 +92,7 @@ public class BlockIndexStoreTest extends TestCase {
   }
 
   private static File getPartFile() {
-    String path = StoreCreator.getAbsoluteTableIdentifier().getTablePath()
+    String path = StoreCreator.getIdentifier().getTablePath()
         + "/Fact/Part0/Segment_0";
     File file = new File(path);
     File[] files = file.listFiles();

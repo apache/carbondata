@@ -24,7 +24,11 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -271,7 +275,7 @@ public class TableInfo implements Serializable, Writable {
         DataMapSchema childSchema = new DataMapSchema();
         childSchema.readFields(in);
         DataMapSchema dataMapSchema = DataMapSchemaFactory.INSTANCE
-            .getDataMapSchema(childSchema.getDataMapName(), childSchema.getClassName());
+            .getDataMapSchema(childSchema.getDataMapName(), childSchema.getProviderName());
         dataMapSchema.setChildSchema(childSchema.getChildSchema());
         dataMapSchema.setRelationIdentifier(childSchema.getRelationIdentifier());
         dataMapSchema.setProperties(childSchema.getProperties());

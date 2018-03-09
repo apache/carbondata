@@ -40,14 +40,11 @@ public class NewRowComparator implements Comparator<Object[]> {
    */
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
-
     int index = 0;
 
     for (boolean isNoDictionary : noDictionarySortColumnMaping) {
-
       if (isNoDictionary) {
         byte[] byteArr1 = (byte[]) rowA[index];
-
         byte[] byteArr2 = (byte[]) rowB[index];
 
         int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
@@ -57,6 +54,7 @@ public class NewRowComparator implements Comparator<Object[]> {
       } else {
         int dimFieldA = (int) rowA[index];
         int dimFieldB = (int) rowB[index];
+
         diff = dimFieldA - dimFieldB;
         if (diff != 0) {
           return diff;
@@ -65,7 +63,6 @@ public class NewRowComparator implements Comparator<Object[]> {
 
       index++;
     }
-
     return diff;
   }
 }

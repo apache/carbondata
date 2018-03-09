@@ -28,7 +28,7 @@ import java.nio.channels.FileChannel;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 
 import org.apache.commons.io.FileUtils;
@@ -62,7 +62,7 @@ public final class FileFactory {
     return configuration;
   }
 
-  public static FileHolder getFileHolder(FileType fileType) {
+  public static FileReader getFileHolder(FileType fileType) {
     return fileFileTypeInerface.getFileHolder(fileType);
   }
 
@@ -246,7 +246,15 @@ public final class FileFactory {
    */
   public static DataOutputStream getDataOutputStreamUsingAppend(String path, FileType fileType)
       throws IOException {
-    return getCarbonFile(path).getDataOutputStreamUsingAppend(path, fileType);
+    if (FileType.S3 == fileType) {
+      CarbonFile carbonFile = getCarbonFile(path);
+      if (carbonFile.exists()) {
+        carbonFile.delete();
+      }
+      return carbonFile.getDataOutputStream(path,fileType);
+    } else {
+      return getCarbonFile(path).getDataOutputStreamUsingAppend(path, fileType);
+    }
   }
 
   /**
@@ -423,6 +431,7 @@ public final class FileFactory {
       throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(directoryPath);
     switch (fileType) {
+      case S3:
       case HDFS:
       case VIEWFS:
         try {

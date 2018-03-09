@@ -29,6 +29,7 @@ import sun.nio.ch.FileChannelImpl;
 import java.io.*;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Objects;
+import java.util.UUID;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -44,8 +45,8 @@ public class LocalCarbonFileTest {
 
     @BeforeClass
     static public void setUp() {
-        file = new File("Test.carbondata");
-        dir = new File("Testdir.carbondata");
+        file = new File("TestLocalCarbonFile");
+        dir = new File("TestLocalCarbonDir");
         if (!file.exists())
             try {
                 file.createNewFile();
@@ -60,6 +61,7 @@ public class LocalCarbonFileTest {
             byte[] bytes = "core java api".getBytes();
 
             oFile.write(bytes);
+            oFile.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             localCarbonFile = new LocalCarbonFile(file);
@@ -121,8 +123,9 @@ public class LocalCarbonFileTest {
     @Test
     public void testRenameForce() {
         localCarbonFile = new LocalCarbonFile(file);
-        assertTrue(localCarbonFile.renameForce("Testdb.carbon"));
-        File file1 = new File("Testdb.carbon");
+        String destFile = "TestRename" + UUID.randomUUID().toString();
+        assertTrue(localCarbonFile.renameForce(destFile));
+        File file1 = new File(destFile);
         if (file1.exists()) {
             file1.delete();
         }
@@ -131,7 +134,12 @@ public class LocalCarbonFileTest {
     @Test
     public void testRenameTo() {
         localCarbonFile = new LocalCarbonFile(file);
-        assertTrue(!localCarbonFile.renameTo("Testdb.carbon"));
+        String destFile = "TestRename" + UUID.randomUUID().toString();
+        assertTrue(!localCarbonFile.renameTo(destFile));
+        File file1 = new File(destFile);
+        if (file1.exists()) {
+            file1.delete();
+        }
     }
 
     @Test
@@ -463,6 +471,6 @@ public class LocalCarbonFileTest {
 
         localCarbonFile = new LocalCarbonFile("demo.txt");
 
-        assertEquals(localCarbonFile.renameForce("Test.carbondata"), true);
+        assertEquals(localCarbonFile.renameForce("renameToFile"), true);
     }
 }

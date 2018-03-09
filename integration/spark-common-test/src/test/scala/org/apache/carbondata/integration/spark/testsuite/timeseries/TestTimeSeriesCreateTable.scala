@@ -20,8 +20,8 @@ import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
-import org.apache.carbondata.spark.exception.{MalformedDataMapCommandException, MalformedCarbonCommandException}
 
 class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
 
@@ -201,7 +201,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | GROUP BY dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.equals("Unknown datamap provider/class abc"))
+    assert(e.getMessage.equals("DataMap 'abc' not found"))
   }
 
   test("test timeseries create table 12: USING and catch MalformedCarbonCommandException") {
@@ -216,7 +216,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | GROUP BY dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.equals("Unknown datamap provider/class abc"))
+    assert(e.getMessage.equals("DataMap 'abc' not found"))
   }
 
   test("test timeseries create table 13: Only one granularity level can be defined 1") {
@@ -237,6 +237,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | GROUP BY dataTime
        """.stripMargin)
     }
+    e.printStackTrace()
     assert(e.getMessage.equals("Only one granularity level can be defined"))
   }
 

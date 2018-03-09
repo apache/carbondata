@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -137,9 +136,9 @@ public class BlockletDataMapIndexStore
   @Override
   public List<BlockletDataMap> getAll(
       List<TableBlockIndexUniqueIdentifier> tableSegmentUniqueIdentifiers) throws IOException {
-    List<BlockletDataMap> blockletDataMaps = new ArrayList<>(tableSegmentUniqueIdentifiers.size());
+    List<BlockletDataMap> blockletDataMaps =
+        new ArrayList<>(tableSegmentUniqueIdentifiers.size());
     List<TableBlockIndexUniqueIdentifier> missedIdentifiers = new ArrayList<>();
-    ExecutorService service = null;
     // Get the datamaps for each indexfile from cache.
     try {
       for (TableBlockIndexUniqueIdentifier identifier : tableSegmentUniqueIdentifiers) {
@@ -165,10 +164,6 @@ public class BlockletDataMapIndexStore
         dataMap.clear();
       }
       throw new IOException("Problem in loading segment blocks.", e);
-    } finally {
-      if (service != null) {
-        service.shutdownNow();
-      }
     }
     return blockletDataMaps;
   }
@@ -254,9 +249,9 @@ public class BlockletDataMapIndexStore
   @Override
   public void clearAccessCount(
       List<TableBlockIndexUniqueIdentifier> tableSegmentUniqueIdentifiers) {
-    for (TableBlockIndexUniqueIdentifier segmentUniqueIdentifier : tableSegmentUniqueIdentifiers) {
+    for (TableBlockIndexUniqueIdentifier identifier : tableSegmentUniqueIdentifiers) {
       BlockletDataMap cacheable =
-          (BlockletDataMap) lruCache.get(segmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
+          (BlockletDataMap) lruCache.get(identifier.getUniqueTableSegmentIdentifier());
       cacheable.clear();
     }
   }

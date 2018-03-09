@@ -54,7 +54,7 @@ public class CarbondataRecordCursor implements RecordCursor {
   private CarbondataSplit split;
   private CarbonDictionaryDecodeReadSupport readSupport;
   private Tuple3<DataType, Dictionary, Int>[] dictionary;
-  CarbonVectorizedRecordReader vectorizedRecordReader;
+  PrestoCarbonVectorizedRecordReader vectorizedRecordReader;
 
   private long totalBytes;
   private long nanoStart;
@@ -63,7 +63,7 @@ public class CarbondataRecordCursor implements RecordCursor {
 
 
   public CarbondataRecordCursor(CarbonDictionaryDecodeReadSupport readSupport,
-       CarbonVectorizedRecordReader vectorizedRecordReader,
+       PrestoCarbonVectorizedRecordReader vectorizedRecordReader,
       List<CarbondataColumnHandle> columnHandles,
       CarbondataSplit split) {
     this.vectorizedRecordReader = vectorizedRecordReader;
@@ -194,7 +194,7 @@ public class CarbondataRecordCursor implements RecordCursor {
     //todo  delete cache from readSupport
   }
 
-  public CarbonVectorizedRecordReader getVectorizedRecordReader() {
+  public PrestoCarbonVectorizedRecordReader getVectorizedRecordReader() {
     return vectorizedRecordReader;
   }
 

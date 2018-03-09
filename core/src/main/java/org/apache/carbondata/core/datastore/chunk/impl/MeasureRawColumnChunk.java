@@ -19,7 +19,7 @@ package org.apache.carbondata.core.datastore.chunk.impl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -28,7 +28,7 @@ import org.apache.carbondata.core.memory.MemoryException;
 /**
  * Contains raw measure data
  * 1. The read uncompressed raw data of column chunk with all pages is stored in this instance.
- * 2. The raw data can be converted to processed chunk using convertToColumnPage method
+ * 2. The raw data can be converted to processed chunk using decodeColumnPage method
  *  by specifying page number.
  */
 public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
@@ -37,7 +37,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
   private MeasureColumnChunkReader chunkReader;
 
-  private FileHolder fileReader;
+  private FileReader fileReader;
 
   public MeasureRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length,
       MeasureColumnChunkReader chunkReader) {
@@ -48,14 +48,14 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
   /**
    * Convert all raw data with all pages to processed ColumnPage
    */
-  public ColumnPage[] convertToColumnPage() {
+  public ColumnPage[] decodeAllColumnPages() {
     if (columnPages == null) {
       columnPages = new ColumnPage[pagesCount];
     }
     for (int i = 0; i < pagesCount; i++) {
       try {
         if (columnPages[i] == null) {
-          columnPages[i] = chunkReader.convertToColumnPage(this, i);
+          columnPages[i] = chunkReader.decodeColumnPage(this, i);
         }
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -68,21 +68,21 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
   /**
    * Convert raw data with specified `columnIndex` processed to ColumnPage
    */
-  public ColumnPage convertToColumnPage(int columnIndex) {
-    assert columnIndex < pagesCount;
+  public ColumnPage decodeColumnPage(int pageNumber) {
+    assert pageNumber < pagesCount;
     if (columnPages == null) {
       columnPages = new ColumnPage[pagesCount];
     }
 
     try {
-      if (columnPages[columnIndex] == null) {
-        columnPages[columnIndex] = chunkReader.convertToColumnPage(this, columnIndex);
+      if (columnPages[pageNumber] == null) {
+        columnPages[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber);
       }
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }
 
-    return columnPages[columnIndex];
+    return columnPages[pageNumber];
   }
 
   /**
@@ -95,7 +95,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     assert index < pagesCount;
 
     try {
-      return chunkReader.convertToColumnPage(this, index);
+      return chunkReader.decodeColumnPage(this, index);
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }
@@ -111,11 +111,11 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     }
   }
 
-  public void setFileReader(FileHolder fileReader) {
+  public void setFileReader(FileReader fileReader) {
     this.fileReader = fileReader;
   }
 
-  public FileHolder getFileReader() {
+  public FileReader getFileReader() {
     return fileReader;
   }
 }
