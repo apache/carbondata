@@ -2448,6 +2448,33 @@ public final class CarbonUtil {
   }
 
   /**
+   * This method will complete the remaining hdfs replications
+   *
+   * @param fileName hdfs file name
+   * @param fileType filetype
+   * @throws CarbonDataWriterException if error occurs
+   */
+  public static void completeRemainingHdfsReplicas(String fileName, FileFactory.FileType fileType)
+    throws CarbonDataWriterException {
+    try {
+      long startTime = System.currentTimeMillis();
+      short replication = FileFactory.getDefaultReplication(fileName, fileType);
+      if (1 == replication) {
+        return;
+      }
+      boolean replicateFlag = FileFactory.setReplication(fileName, fileType, replication);
+      if (!replicateFlag) {
+        LOGGER.error("Failed to set replication for " + fileName + " with factor " + replication);
+      }
+      LOGGER.info(
+          "Total copy time (ms) to copy file " + fileName + " is " + (System.currentTimeMillis()
+              - startTime));
+    } catch (IOException e) {
+      throw new CarbonDataWriterException("Problem while completing remaining HDFS backups", e);
+    }
+  }
+
+  /**
    * This method will read the local carbon data file and write to carbon data file in HDFS
    *
    * @param carbonStoreFilePath

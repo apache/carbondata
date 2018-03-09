@@ -106,6 +106,18 @@ public interface CarbonFile {
 
   /**
    * get data output stream
+   * @param path file path
+   * @param fileType file type
+   * @param bufferSize write buffer size
+   * @param blockSize block size
+   * @param replication replication for this file
+   * @return data output stream
+   * @throws IOException if error occurs
+   */
+  DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType, int bufferSize,
+      long blockSize, short replication) throws IOException;
+  /**
+   * get data output stream
    * @param path
    * @param fileType
    * @param bufferSize
@@ -141,4 +153,21 @@ public interface CarbonFile {
    */
   String[] getLocations() throws IOException;
 
+  /**
+   * set the replication factor for this file
+   *
+   * @param filePath file path
+   * @param replication replication
+   * @return true, if success; false, if failed
+   * @throws IOException if error occurs
+   */
+  boolean setReplication(String filePath, short replication) throws IOException;
+
+  /**
+   * get the default replication for this file
+   * @param filePath file path
+   * @return replication factor
+   * @throws IOException if error occurs
+   */
+  short getDefaultReplication(String filePath) throws IOException;
 }
