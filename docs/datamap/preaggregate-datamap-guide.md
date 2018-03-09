@@ -181,7 +181,7 @@ SELECT country, sex, sum(quantity), avg(price) from sales GROUP BY country, sex
 
 SELECT sex, sum(quantity) from sales GROUP BY sex
 
-SELECT sum(price), country from sales GROUP BY country
+SELECT avg(price), country from sales GROUP BY country
 ``` 
 
 will be transformed by CarbonData's query planner to query against pre-aggregate table 
@@ -211,7 +211,7 @@ tables are loaded successfully, if one of these loads fails, new data are not vi
 as if the load operation is not happened.   
 
 ## Querying data
-As a technique for query acceleration, Pre-aggregate tables cannot be queries directly. 
+As a technique for query acceleration, Pre-aggregate tables cannot be queried directly. 
 Queries are to be made on main table. While doing query planning, internally CarbonData will check 
 associated pre-aggregate tables with the main table, and do query plan transformation accordingly. 
 
