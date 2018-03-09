@@ -129,14 +129,7 @@ public class UnsafeSortDataRows {
    * This method will be used to initialize
    */
   public void initialize() throws MemoryException {
-    MemoryBlock baseBlock =
-        UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-    boolean isMemoryAvailable =
-        UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
-    if (isMemoryAvailable) {
-      UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
-    }
-    this.rowPage = new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
+    this.rowPage = createUnsafeRowPage();
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 
@@ -146,6 +139,17 @@ public class UnsafeSortDataRows {
         .newFixedThreadPool(parameters.getNumberOfCores(),
             new CarbonThreadFactory("UnsafeSortDataRowPool:" + parameters.getTableName()));
     semaphore = new Semaphore(parameters.getNumberOfCores());
+  }
+
+  private UnsafeCarbonRowPage createUnsafeRowPage() throws MemoryException {
+    MemoryBlock baseBlock =
+        UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
+    boolean isMemoryAvailable =
+        UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
+    if (isMemoryAvailable) {
+      UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
+    }
+    return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
   }
 
   public boolean canAdd() {
@@ -192,14 +196,7 @@ public class UnsafeSortDataRows {
           unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
           semaphore.acquire();
           dataSorterAndWriterExecutorService.execute(new DataSorterAndWriter(rowPage));
-          MemoryBlock memoryBlock =
-              UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-          boolean saveToDisk =
-              UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(memoryBlock.size());
-          if (!saveToDisk) {
-            UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
-          }
-          rowPage = new UnsafeCarbonRowPage(tableFieldStat, memoryBlock, saveToDisk, taskId);
+          rowPage = createUnsafeRowPage();
           bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
         } catch (Exception e) {
           LOGGER.error(
@@ -227,13 +224,7 @@ public class UnsafeSortDataRows {
         unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
         semaphore.acquire();
         dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
-        MemoryBlock memoryBlock =
-            UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-        boolean saveToDisk = UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(memoryBlock.size());
-        if (!saveToDisk) {
-          UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
-        }
-        rowPage = new UnsafeCarbonRowPage(tableFieldStat, memoryBlock, saveToDisk, taskId);
+        rowPage = createUnsafeRowPage();
         rowPage.addRow(row, rowBuffer.get());
       } catch (Exception e) {
         LOGGER.error(
