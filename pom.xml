@@ -481,6 +481,7 @@
         <module>integration/presto</module>
         <module>streaming</module>
         <module>examples/spark2</module>
+        <module>datamap/lucene</module>
       </modules>
       <build>
         <plugins>
