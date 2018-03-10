@@ -33,8 +33,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
   public UnsafeRowComparator(UnsafeCarbonRowPage rowPage) {
     this.baseObject = rowPage.getDataBlock().getBaseObject();
     this.tableFieldStat = rowPage.getTableFieldStat();
-    this.dictSizeInMemory = (tableFieldStat.getDictSortDimCnt()
-        + tableFieldStat.getDictNoSortDimCnt()) * 4;
+    this.dictSizeInMemory = tableFieldStat.getDictSortDimCnt() * 4;
   }
 
   /**
