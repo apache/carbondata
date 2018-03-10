@@ -27,7 +27,6 @@ import java.nio.file.StandardOpenOption;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -136,18 +135,6 @@ public class LocalFileLock extends AbstractCarbonLock {
       status = false;
     } finally {
       CarbonUtil.closeStreams(channel);
-
-      // deleting the lock file after releasing the lock.
-      if (null != lockFilePath) {
-        CarbonFile lockFile = FileFactory.getCarbonFile(lockFilePath,
-            FileFactory.getFileType(lockFilePath));
-        if (!lockFile.exists() || lockFile.delete()) {
-          LOGGER.info("Successfully deleted the lock file " + lockFilePath);
-        } else {
-          LOGGER.error("Not able to delete the lock file " + lockFilePath);
-          status = false;
-        }
-      }
     }
     return status;
   }
