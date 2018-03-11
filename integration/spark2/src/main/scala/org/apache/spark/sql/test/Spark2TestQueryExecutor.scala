@@ -25,6 +25,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.datamap.preaggregate.PreaggregateMVDataMapRules
 
 /**
  * This class is a sql executor of unit test case for spark version 2.x.
@@ -69,6 +70,7 @@ object Spark2TestQueryExecutor {
     .enableHiveSupport()
     .config("spark.sql.warehouse.dir", warehouse)
     .config("spark.sql.crossJoin.enabled", "true")
+    .enableMVDataMap(new PreaggregateMVDataMapRules)
     .getOrCreateCarbonSession(null, TestQueryExecutor.metastoredb)
   if (warehouse.startsWith("hdfs://")) {
     System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, warehouse)

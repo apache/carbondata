@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap;
+package org.apache.carbondata.datamap.timeseries;
 
 import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.datamap.preaggregate.PreAggregateDataMapProvider;
 
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateTableHelper;
