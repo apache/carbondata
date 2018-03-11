@@ -25,7 +25,7 @@
 * [What is Carbon Lock Type?](#what-is-carbon-lock-type)
 * [How to resolve Abstract Method Error?](#how-to-resolve-abstract-method-error)
 * [How Carbon will behave when execute insert operation in abnormal scenarios?](#how-carbon-will-behave-when-execute-insert-operation-in-abnormal-scenarios)
-* [Why aggregate query is not fetching data from aggregate table?] (#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
+* [Why aggregate query is not fetching data from aggregate table?](#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
 
 ## What are Bad Records?
 Records that fail to get loaded into the CarbonData due to data type incompatibility or are empty or have incompatible format are classified as Bad Records.
@@ -143,38 +143,38 @@ INSERT INTO TABLE carbon_table SELECT id, city FROM source_table;
 When the column type in carbon table is different from the column specified in select statement. The insert operation will still success, but you may get NULL in result, because NULL will be substitute value when conversion type failed.
 
 ## Why aggregate query is not fetching data from aggregate table?
-Following are the aggregate queries that won’t fetch data from aggregate table:
+Following are the aggregate queries that won't fetch data from aggregate table:
 
 - **Scenario 1** :
 When SubQuery predicate is present in the query.
 
-Example 
+Example:
 
 ```
-create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondata'
-create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp group by ctry;
-select ctry from pop1 where ctry in (select cntry from gdp21 group by cntry)
+create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondata';
+create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
+select ctry from pop1 where ctry in (select cntry from gdp21 group by cntry);
 ```
 
 - **Scenario 2** : 
-When aggregate function along with ‘in’ filter. 
+When aggregate function along with 'in' filter.
 
-Example.
+Example:
 
 ```
-create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondata'
-create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp group by ctry;
+create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondata';
+create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
 select cntry, sum(gdp) from gdp21 where cntry in (select ctry from pop1) group by cntry;
 ```
 
 - **Scenario 3** : 
-When aggregate function having ‘join’ with Equal filter.
+When aggregate function having 'join' with equal filter.
 
-Example.
+Example:
 
 ```
-create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondata'
-create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp group by ctry;
+create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondata';
+create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
 select cntry,sum(gdp) from gdp21,pop1 where cntry=ctry group by cntry;
 ```
 
