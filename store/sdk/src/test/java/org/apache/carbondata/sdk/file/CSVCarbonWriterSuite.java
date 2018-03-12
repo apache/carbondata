@@ -67,14 +67,22 @@ public class CSVCarbonWriterSuite {
   }
 
   private void writeFilesAndVerify(Schema schema, String path) {
+    writeFilesAndVerify(schema, path, null);
+  }
+
+  private void writeFilesAndVerify(Schema schema, String path, String[] sortColumns) {
     try {
-      CarbonWriter writer = CarbonWriter.builder()
+      CarbonWriterBuilder builder = CarbonWriter.builder()
           .withSchema(schema)
-          .outputPath(path)
-          .buildWriterForCSVInput();
+          .outputPath(path);
+      if (sortColumns != null) {
+        builder = builder.sortBy(sortColumns);
+      }
+
+      CarbonWriter writer = builder.buildWriterForCSVInput();
 
       for (int i = 0; i < 100; i++) {
-        writer.write(new String[]{"robot" + i, String.valueOf(i), String.valueOf((double) i / 2)});
+        writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), String.valueOf((double) i / 2)});
       }
       writer.close();
     } catch (Exception e) {
@@ -110,8 +118,19 @@ public class CSVCarbonWriterSuite {
   }
 
   @Test
-  public void testSortColumns() {
-    // TODO: test sort column
+  public void testSortColumns() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    writeFilesAndVerify(new Schema(fields), path, new String[]{"name"});
+
+    // TODO: implement reader and verify the data is sorted
+
+    FileUtils.deleteDirectory(new File(path));
   }
 
   @Test

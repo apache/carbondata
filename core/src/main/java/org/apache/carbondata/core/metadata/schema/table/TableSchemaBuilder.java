@@ -71,6 +71,7 @@ public class TableSchemaBuilder {
 
     if (isSortColumn) {
       sortColumns.add(newColumn);
+      newColumn.setSortColumn(true);
     } else {
       otherColumns.add(newColumn);
     }
