@@ -43,9 +43,6 @@
       </resource>
       <resource>
         <directory>.</directory>
-        <includes>
-          <include>CARBON_SPARK_INTERFACELogResource.properties</include>
-        </includes>
       </resource>
     </resources>
     <plugins>
@@ -144,7 +141,7 @@
         <configuration>
           <shadedArtifactAttached>false</shadedArtifactAttached>
           <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
-          <outputFile>carbondata-sdk.jar</outputFile>
+          <outputFile>target/carbondata-sdk.jar</outputFile>
           <artifactSet>
             <includes>
               <include>*:*</include>
