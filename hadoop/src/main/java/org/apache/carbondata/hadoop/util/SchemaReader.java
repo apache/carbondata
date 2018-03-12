@@ -29,8 +29,6 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
-
-
 /**
  * TODO: It should be removed after store manager implementation.
  */

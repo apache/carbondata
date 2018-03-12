@@ -66,7 +66,6 @@ class CarbonFileLevelFormat extends FileFormat
       files: Seq[FileStatus]): Option[StructType] = {
     val filePaths = CarbonUtil.getFilePathExternalFilePath(
       options.get("path").get)
-    // + "/Fact/Part0/Segment_null")
     if (filePaths.size() == 0) {
       throw new SparkException("CarbonData file is not present in the location mentioned in DDL")
     }
@@ -75,7 +74,6 @@ class CarbonFileLevelFormat extends FileFormat
     val table_columns: java.util.List[org.apache.carbondata.format.ColumnSchema] = fileHeader
       .getColumn_schema
     var colArray = ArrayBuffer[StructField]()
-    // CatalystSqlParser.parseDataType(schema).asInstanceOf[StructType]
     for (i <- 0 to table_columns.size() - 1) {
       val col = CarbonUtil.thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i))
       colArray += (new StructField(col.getColumnName,
@@ -181,7 +179,6 @@ class CarbonFileLevelFormat extends FileFormat
 
     CarbonFileInputFormat.setTableName(job.getConfiguration, "dummyexternal")
     CarbonFileInputFormat.setDatabaseName(job.getConfiguration, "default")
-    // CarbonFileInputFormat.setColumnProjection(conf, columnProjection)
     val dataMapJob: DataMapJob = CarbonFileInputFormat.getDataMapJob(job.getConfiguration)
     val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]
 
@@ -241,11 +238,9 @@ class CarbonFileLevelFormat extends FileFormat
         split.setDetailInfo(detailInfo)
 
         val carbonReader = if (readVector) {
-          // val batchSupport = supportBatch(sparkSession, dataSchema)
           val vectorizedReader = createVectorizedCarbonRecordReader(model,
             null,
             supportBatchValue.toString)
-          // val vectorizedReader = VectorizedCarbonRecordReader()
           vectorizedReader.initialize(split, attemptContext)
           logDebug(s"Appending $partitionSchema ${ file.partitionValues }")
           vectorizedReader
@@ -263,8 +258,6 @@ class CarbonFileLevelFormat extends FileFormat
       }
       else {
         Iterator.empty
-        // to do : input PartitionedFile itself should have only .carbondata file.
-        // because don't know the side effects of returning Iterator.empty here
       }
     }
   }

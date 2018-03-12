@@ -119,7 +119,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
       "mapreduce.input.carboninputformat.partitions.to.prune";
 
   // a cache for carbon table, it will be used in task side
-  public static CarbonTable carbonTable;
+  private CarbonTable carbonTable;
 
   /**
    * Set the `tableInfo` in `configuration`
@@ -551,10 +551,6 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
       }
     }
     return queryModel;
-  }
-
-  public static CarbonTable getCarbonTable(Configuration configuration) throws IOException {
-    return carbonTable;
   }
 
   private CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
