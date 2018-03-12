@@ -431,30 +431,6 @@ public class StoreCreator {
 
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<LoadMetadataDetails>());
-
-    String segLocation =
-        storeLocation + "/" + databaseName + "/" + tableName + "/Fact/Part0/Segment_0";
-    File file = new File(segLocation);
-    File factFile = null;
-    File[] folderList = file.listFiles();
-    File folder = null;
-    for (int i = 0; i < folderList.length; i++) {
-      if (folderList[i].isDirectory()) {
-        folder = folderList[i];
-      }
-    }
-    if (folder.isDirectory()) {
-      File[] files = folder.listFiles();
-      for (int i = 0; i < files.length; i++) {
-        if (!files[i].isDirectory() && files[i].getName().startsWith("part")) {
-          factFile = files[i];
-          break;
-        }
-      }
-      //      Files.copy(factFile.toPath(), file.toPath(), REPLACE_EXISTING);
-      factFile.renameTo(new File(segLocation + "/" + factFile.getName()));
-      CarbonUtil.deleteFoldersAndFiles(folder);
-    }
   }
 
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
