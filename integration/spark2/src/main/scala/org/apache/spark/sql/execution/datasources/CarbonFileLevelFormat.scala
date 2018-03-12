@@ -39,7 +39,7 @@ import org.apache.spark.sql.types.{AtomicType, StructField, StructType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapChooser, Segment}
+import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, Segment}
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
@@ -229,6 +229,7 @@ class CarbonFileLevelFormat extends FileFormat
         }
 
         val tab = model.getTable
+        DataMapStoreManager.getInstance().clearDataMaps(identifier)
         val dataMapExprWrapper = DataMapChooser.get
           .choose(tab, model.getFilterExpressionResolverTree)
 
