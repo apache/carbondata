@@ -18,7 +18,6 @@
 package org.apache.spark.sql
 
 import java.net.URI
-import java.util
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -40,7 +39,7 @@ import org.apache.spark.sql.types.{AtomicType, StructField, StructType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment, TableDataMap}
+import org.apache.carbondata.core.datamap.{DataMapChooser, Segment}
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
@@ -50,10 +49,10 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader, InputMetricsStats}
+import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader,
+InputMetricsStats}
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, DataMapJob}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
-
 
 class CarbonFileLevelFormat extends FileFormat
   with DataSourceRegister
@@ -101,7 +100,7 @@ class CarbonFileLevelFormat extends FileFormat
       }
 
       override def getFileExtension(context: TaskAttemptContext): String = {
-        ".txt" + CodecStreams.getCompressionExtension(context)
+        CarbonTablePath.CARBON_DATA_EXT
       }
     }
   }
@@ -184,7 +183,7 @@ class CarbonFileLevelFormat extends FileFormat
     CarbonFileInputFormat.setDatabaseName(job.getConfiguration, "default")
     // CarbonFileInputFormat.setColumnProjection(conf, columnProjection)
     val dataMapJob: DataMapJob = CarbonFileInputFormat.getDataMapJob(job.getConfiguration)
-    val format = new CarbonFileInputFormat[Object]
+    val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]
 
     (file: PartitionedFile) => {
       assert(file.partitionValues.numFields == partitionSchema.size)
@@ -201,8 +200,7 @@ class CarbonFileLevelFormat extends FileFormat
           "default",
           "externaldummy")
         val split = CarbonInputSplit.from("null", "0", fileSplit, ColumnarFormatVersion.V3, null)
-        val blockletMap: TableDataMap = DataMapStoreManager.getInstance
-          .chooseDataMap(identifier)
+
 
         val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
         val conf1 = new Configuration()
@@ -218,22 +216,24 @@ class CarbonFileLevelFormat extends FileFormat
 
         val model = format.createQueryModel(split, attemptContext)
 
-        var segments= new java.util.ArrayList[Segment]()
+        var segments = new java.util.ArrayList[Segment]()
         val seg = new Segment("null", null)
         segments.add(seg)
         var partition : java.util.List[PartitionSpec] = new java.util.ArrayList[PartitionSpec]()
-//      TODO : handle the partition for CarbonFileLevelFormat
-//      partition = getPartitionsToPrune
 
-        // clean the blocklet
-        blockletMap.clear()
+
         val segmentPath = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null")
         val indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(segmentPath)
         if (indexFiles.size() == 0) {
           throw new SparkException("Index file not present to read the carbondata file")
         }
-        val prunedBlocklets = blockletMap
-          .prune(segments, model.getFilterExpressionResolverTree, null)
+
+        val tab = model.getTable
+        val dataMapExprWrapper = DataMapChooser.get
+          .choose(tab, model.getFilterExpressionResolverTree)
+
+        // TODO : handle the partition for CarbonFileLevelFormat
+        val prunedBlocklets = dataMapExprWrapper.prune(segments, null)
 
         val detailInfo = prunedBlocklets.get(0).getDetailInfo
         detailInfo.readColumnSchema(detailInfo.getColumnSchemaBinary)

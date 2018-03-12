@@ -91,10 +91,10 @@ class CarbonScanRDD(
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)
     val fileLevelExternal = tableInfo.getFactTable().getTableProperties().get("_filelevelexternal")
-    val format = if (fileLevelExternal != null && fileLevelExternal.equalsIgnoreCase("true")){
-        prepareFileInputFormatForDriver(job.getConfiguration)
+    val format = if (fileLevelExternal != null && fileLevelExternal.equalsIgnoreCase("true")) {
+      prepareFileInputFormatForDriver(job.getConfiguration)
     } else {
-       prepareInputFormatForDriver(job.getConfiguration)
+      prepareInputFormatForDriver(job.getConfiguration)
     }
     // initialise query_id for job
     job.getConfiguration.set("query.id", queryId)
@@ -121,7 +121,7 @@ class CarbonScanRDD(
     }
     val batchPartitions = distributeColumnarSplits(columnarSplits)
     // check and remove InExpression from filterExpression
-    checkAndRemoveInExpressinFromFilterExpression(format, batchPartitions)
+    checkAndRemoveInExpressinFromFilterExpression(batchPartitions)
     if (streamSplits.isEmpty) {
       batchPartitions.toArray
     } else {
@@ -531,7 +531,6 @@ class CarbonScanRDD(
    * @param identifiedPartitions
    */
   private def checkAndRemoveInExpressinFromFilterExpression(
-      format: CarbonTableInputFormat[Object],
       identifiedPartitions: mutable.Buffer[Partition]) = {
     if (null != filterExpression) {
       if (identifiedPartitions.nonEmpty &&

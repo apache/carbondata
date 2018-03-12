@@ -33,6 +33,7 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.util.SchemaReader
@@ -142,22 +143,24 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       .getOrElse(Map.empty)
   }
 
-  def createCarbonTable(tableHeader: CreateTableHeaderContext,
-      skewSpecContext: SkewSpecContext,
-      bucketSpecContext: BucketSpecContext,
-      partitionColumns: ColTypeListContext,
-      columns: ColTypeListContext,
-      tablePropertyList: TablePropertyListContext,
-      locationSpecContext: SqlBaseParser.LocationSpecContext,
-      tableComment: Option[String],
-      ctx: CreateHiveTableContext,
-      provider: String): LogicalPlan = {
+  def createCarbonTable(createTableTuple: (CreateTableHeaderContext, SkewSpecContext,
+    BucketSpecContext, ColTypeListContext, ColTypeListContext, TablePropertyListContext,
+    LocationSpecContext, Option[String], TerminalNode, QueryContext, String)): LogicalPlan = {
     // val parser = new CarbonSpark2SqlParser
+
+    val (tableHeader, skewSpecContext,
+      bucketSpecContext,
+      partitionColumns,
+      columns,
+      tablePropertyList,
+      locationSpecContext,
+      tableComment,
+      ctas,
+      query,
+      provider) = createTableTuple
 
     val (tableIdentifier, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
 
-    val query = ctx.query()
-    val ctas = ctx.AS()
     // TODO: implement temporary tables
     if (temp) {
       throw new ParseException(
