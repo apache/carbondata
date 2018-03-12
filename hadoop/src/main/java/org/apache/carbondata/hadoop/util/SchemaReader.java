@@ -28,7 +28,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
+
+
 
 /**
  * TODO: It should be removed after store manager implementation.
@@ -59,6 +60,7 @@ public class SchemaReader {
       throw new IOException("File does not exist: " + schemaFilePath);
     }
   }
+
   /**
    * the method returns the Wrapper TableInfo
    *
@@ -78,5 +80,20 @@ public class SchemaReader {
         carbonTableIdentifier.getDatabaseName(),
         carbonTableIdentifier.getTableName(),
         identifier.getTablePath());
+  }
+
+
+  public static TableInfo inferSchemaForExternalTable(AbsoluteTableIdentifier identifier)
+      throws IOException {
+    // This routine is going to infer schema from the carbondata file footer
+    // Convert the ColumnSchema -> TableSchema -> TableInfo.
+    // Return the TableInfo.
+    org.apache.carbondata.format.TableInfo tableInfo =
+        CarbonUtil.inferSchemaFileExternalTable(identifier.getTablePath(), identifier, false);
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    TableInfo wrapperTableInfo = schemaConverter
+        .fromExternalToWrapperTableInfo(tableInfo, identifier.getDatabaseName(),
+            identifier.getTableName(), identifier.getTablePath());
+    return wrapperTableInfo;
   }
 }

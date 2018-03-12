@@ -68,13 +68,12 @@ public class CSVCarbonWriterSuite {
 
   private void writeFilesAndVerify(Schema schema, String path) {
     try {
-      CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(schema)
-          .outputPath(path)
-          .buildWriterForCSVInput();
+      CarbonWriter writer =
+          CarbonWriter.builder().withSchema(schema).outputPath(path).buildWriterForCSVInput();
 
       for (int i = 0; i < 100; i++) {
-        writer.write(new String[]{"robot" + i, String.valueOf(i), String.valueOf((double) i / 2)});
+        writer
+            .write(new String[] { "robot" + i, String.valueOf(i), String.valueOf((double) i / 2) });
       }
       writer.close();
     } catch (Exception e) {
