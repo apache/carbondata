@@ -42,15 +42,14 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, Segment}
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, ColumnarFormatVersion}
 import org.apache.carbondata.core.reader.CarbonHeaderReader
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader,
-InputMetricsStats}
+import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader, InputMetricsStats}
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, DataMapJob}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -177,8 +176,9 @@ class CarbonFileLevelFormat extends FileFormat
       supportBatchValue = supportBatch(sparkSession, dataSchema)
     }
 
-    CarbonFileInputFormat.setTableName(job.getConfiguration, "dummyexternal")
+    CarbonFileInputFormat.setTableName(job.getConfiguration, "externaldummy")
     CarbonFileInputFormat.setDatabaseName(job.getConfiguration, "default")
+    CarbonMetadata.getInstance.removeTable("default_externaldummy")
     val dataMapJob: DataMapJob = CarbonFileInputFormat.getDataMapJob(job.getConfiguration)
     val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]
 
