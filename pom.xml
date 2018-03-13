@@ -579,12 +579,6 @@
       <id>include-all</id>
     </profile>
     <profile>
-      <id>store-sdk</id>
-      <modules>
-        <module>store/sdk</module>
-      </modules>
-    </profile>
-    <profile>
       <id>sdvtest</id>
       <modules>
         <module>integration/spark-common-cluster-test</module>
