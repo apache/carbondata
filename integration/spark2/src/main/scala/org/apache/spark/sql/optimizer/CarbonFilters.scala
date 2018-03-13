@@ -270,9 +270,23 @@ object CarbonFilters {
         case s@StartsWith(a: Attribute, Literal(v, t)) =>
           Some(sources.StringStartsWith(a.name, v.toString))
         case c@EndsWith(a: Attribute, Literal(v, t)) =>
-          Some(CarbonEndsWith(c))
+          // avoid OR expression with like query ends with push down to carbon. This is done to
+          // improve the query performance as spark will return the results faster to compared to
+          // carbon push down
+          if (or) {
+            None
+          } else {
+            Some(CarbonEndsWith(c))
+          }
         case c@Contains(a: Attribute, Literal(v, t)) =>
-          Some(CarbonContainsWith(c))
+          // avoid OR expression with like query contains with push down to carbon. This is done to
+          // improve the query performance as spark will return the results faster to compared to
+          // carbon push down
+          if (or) {
+            None
+          } else {
+            Some(CarbonContainsWith(c))
+          }
         case c@Cast(a: Attribute, _) =>
           Some(CastExpr(c))
         case c@Literal(v, t) if v == null =>
