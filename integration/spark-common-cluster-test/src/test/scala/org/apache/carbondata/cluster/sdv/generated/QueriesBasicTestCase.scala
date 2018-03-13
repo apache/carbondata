@@ -4275,8 +4275,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //PushUP_FILTER_uniqdata_TC079
   test("PushUP_FILTER_uniqdata_TC079", Include) {
 
-    checkAnswer(s"""select histogram_numeric(1,2) from uniqdata where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL """,
-      s"""select histogram_numeric(1,2) from uniqdata_hive where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL """, "QueriesBasicTestCase_PushUP_FILTER_uniqdata_TC079")
+    checkAnswer(s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1,2) as hist_table from uniqdata where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL) t lateral view explode(hist_table) exploded_table as hist) group by x""",
+      s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1,2) as hist_table from uniqdata_hive where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL) t lateral view explode(hist_table) exploded_table as hist) group by x""", "QueriesBasicTestCase_PushUP_FILTER_uniqdata_TC079")
 
   }
 
@@ -4284,8 +4284,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //PushUP_FILTER_uniqdata_TC080
   test("PushUP_FILTER_uniqdata_TC080", Include) {
 
-    checkAnswer(s"""select histogram_numeric(1,2) from uniqdata where upper(CUST_NAME)=15 or upper(CUST_NAME) is NULL or upper(CUST_NAME) is NOT NULL""",
-      s"""select histogram_numeric(1,2) from uniqdata_hive where upper(CUST_NAME)=15 or upper(CUST_NAME) is NULL or upper(CUST_NAME) is NOT NULL""", "QueriesBasicTestCase_PushUP_FILTER_uniqdata_TC080")
+    checkAnswer(s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1,2) as hist_table from uniqdata where upper(CUST_NAME)=15 or upper(CUST_NAME) is NULL or upper(CUST_NAME) is NOT NULL) t lateral view explode(hist_table) exploded_table as hist) group by x""",
+      s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1,2) as hist_table from uniqdata_hive where upper(CUST_NAME)=15 or upper(CUST_NAME) is NULL or upper(CUST_NAME) is NOT NULL) t lateral view explode(hist_table) exploded_table as hist) group by x""", "QueriesBasicTestCase_PushUP_FILTER_uniqdata_TC080")
 
   }
 
@@ -9411,8 +9411,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //TC_487
   test("TC_487", Include) {
 
-    checkAnswer(s"""select histogram_numeric(1, 5000)from carbon_automation""",
-      s"""select histogram_numeric(1, 5000)from carbon_automation_hive""", "QueriesBasicTestCase_TC_487")
+    checkAnswer(s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1, 5000) as A_hist from carbon_automation) t lateral view explode(A_hist) exploded_table as hist) group by x""",
+     s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1, 5000)as A_hist from carbon_automation_hive) t lateral view explode(A_hist) exploded_table as hist) group by x""","QueriesBasicTestCase_TC_487")
 
   }
 
@@ -9420,8 +9420,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //TC_488
   test("TC_488", Include) {
 
-    checkAnswer(s"""select histogram_numeric(1, 1000)from carbon_automation""",
-      s"""select histogram_numeric(1, 1000)from carbon_automation_hive""", "QueriesBasicTestCase_TC_488")
+    checkAnswer(s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1, 1000) as A_hist from carbon_automation) t lateral view explode(A_hist) exploded_table as hist) group by x""",
+      s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1, 1000)as A_hist from carbon_automation_hive) t lateral view explode(A_hist) exploded_table as hist) group by x""","QueriesBasicTestCase_TC_488")
 
   }
 
@@ -9429,8 +9429,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //TC_489
   test("TC_489", Include) {
 
-    checkAnswer(s"""select histogram_numeric(1, 500)from carbon_automation""",
-      s"""select histogram_numeric(1, 500)from carbon_automation_hive""", "QueriesBasicTestCase_TC_489")
+    checkAnswer(s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1, 500) as A_hist from carbon_automation) t lateral view explode(A_hist) exploded_table as hist) group by x""",
+      s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1, 500)as A_hist from carbon_automation_hive) t lateral view explode(A_hist) exploded_table as hist) group by x""","QueriesBasicTestCase_TC_489")
 
   }
 
@@ -9438,8 +9438,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //TC_490
   test("TC_490", Include) {
 
-    checkAnswer(s"""select histogram_numeric(1, 500)from carbon_automation""",
-      s"""select histogram_numeric(1, 500)from carbon_automation_hive""", "QueriesBasicTestCase_TC_490")
+    checkAnswer(s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1, 100) as A_hist from carbon_automation) t lateral view explode(A_hist) exploded_table as hist) group by x""",
+      s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(1, 100)as A_hist from carbon_automation_hive) t lateral view explode(A_hist) exploded_table as hist) group by x""","QueriesBasicTestCase_TC_490")
 
   }
 

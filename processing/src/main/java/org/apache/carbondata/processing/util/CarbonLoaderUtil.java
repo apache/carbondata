@@ -282,6 +282,7 @@ public final class CarbonLoaderUtil {
           if (!found) {
             LOGGER.error("Entry not found to update " + newMetaEntry + " From list :: "
                 + listOfLoadFolderDetails);
+            throw new IOException("Entry not found to update in the table status file");
           }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
         }
