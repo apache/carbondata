@@ -48,7 +48,7 @@ public class TableSchemaBuilder {
   private int blockSize;
 
   public TableSchemaBuilder blockSize(int blockSize) {
-    if (blockSize == 0) {
+    if (blockSize <= 0) {
       throw new IllegalArgumentException("blockSize should be greater than 0");
     }
     this.blockSize = blockSize;

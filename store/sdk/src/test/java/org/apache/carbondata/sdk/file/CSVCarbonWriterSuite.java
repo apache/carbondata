@@ -78,6 +78,16 @@ public class CSVCarbonWriterSuite {
     writeFilesAndVerify(100, schema, path, null, persistSchema, -1, -1);
   }
 
+  /**
+   * Invoke CarbonWriter API to write carbon files and assert the file is rewritten
+   * @param rows number of rows to write
+   * @param schema schema of the file
+   * @param path local write path
+   * @param sortColumns sort columns
+   * @param persistSchema true if want to persist schema file
+   * @param blockletSize blockletSize in the file, -1 for default size
+   * @param blockSize blockSize in the file, -1 for default size
+   */
   private void writeFilesAndVerify(int rows, Schema schema, String path, String[] sortColumns,
       boolean persistSchema, int blockletSize, int blockSize) {
     try {
