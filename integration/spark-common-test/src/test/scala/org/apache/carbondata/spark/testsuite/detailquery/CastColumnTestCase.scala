@@ -137,8 +137,6 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Dictionary INT OR to explicit double") {
-    sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_1 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0").show(2000, false)
-    sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_1 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ").show(2000, false)
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_1 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_1 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ")
@@ -570,8 +568,6 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("NO Dictionary INT OR to explicit double") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_2 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0").show(2000, false)
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_2 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ").show(2000, false)
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_2 where cast(workgroupcategory as double)= 1.0 or cast(workgroupcategory as double) = 2.0"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_2 where cast(workgroupcategory as double) = 1.0 or  cast(workgroupcategory as double) = 2.0 ")

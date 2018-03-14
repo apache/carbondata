@@ -41,7 +41,9 @@ object CarbonSessionExample {
          | dateField DATE,
          | charField CHAR(5),
          | floatField FLOAT,
-         | complexData ARRAY<STRING>
+         | arrayData ARRAY<STRING>,
+         | structData STRUCT<imei:STRING,
+         |                   imsi:STRING>
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES('SORT_COLUMNS'='', 'DICTIONARY_INCLUDE'='dateField, charField')

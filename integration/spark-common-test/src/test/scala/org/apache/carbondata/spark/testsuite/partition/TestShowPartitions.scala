@@ -187,9 +187,9 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   test("show partition table: hive partition table") {
     // EqualTo
     checkAnswer(sql("show partitions hiveTable"), Seq(Row("city=Hangzhou")))
-    sql("use hiveDB").show()
+    sql("use hiveDB")
     checkAnswer(sql("show partitions hiveTable"), Seq(Row("city=Shanghai")))
-    sql("use default").show()
+    sql("use default")
   }
 
   override def afterAll = {
