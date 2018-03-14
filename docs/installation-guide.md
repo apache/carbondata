@@ -73,7 +73,7 @@ followed by :
 
 **NOTE**: Make sure you have permissions for CarbonData JARs and files through which driver and executor will start.
 
-To get started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Operations on CarbonData](ddl-operation-on-carbondata.md)
+To get started with CarbonData : [Quick Start](quick-start-guide.md), [Data Management on CarbonData](data-management-on-carbondata.md)
 
 ## Installing and Configuring CarbonData on Spark on YARN Cluster
 
@@ -129,7 +129,7 @@ mv carbondata.tar.gz carbonlib/
 ```
   **NOTE**: Make sure you have permissions for CarbonData JARs and files through which driver and executor will start.
 
-  Getting started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Operations on CarbonData](ddl-operation-on-carbondata.md)
+  Getting started with CarbonData : [Quick Start](quick-start-guide.md), [Data Management on CarbonData](data-management-on-carbondata.md)
 
 ## Query Execution Using CarbonData Thrift Server
 
