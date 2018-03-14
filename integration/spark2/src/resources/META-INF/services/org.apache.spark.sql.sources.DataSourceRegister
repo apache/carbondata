@@ -15,4 +15,4 @@
 ## limitations under the License.
 ## ------------------------------------------------------------------------
 org.apache.spark.sql.CarbonSource
-org.apache.spark.sql.CarbonFileLevelFormat
+org.apache.spark.sql.SparkCarbonFileFormat

@@ -28,6 +28,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapChooser;
 import org.apache.carbondata.core.datamap.DataMapLevel;
@@ -92,6 +94,8 @@ import org.apache.hadoop.mapreduce.security.TokenCache;
  *
  * @param <T>
  */
+@InterfaceAudience.User
+@InterfaceStability.Evolving
 public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implements Serializable {
 
   public static final String READ_SUPPORT_CLASS = "carbon.read.support.class";
@@ -567,7 +571,7 @@ public class CarbonFileInputFormat<T> extends FileInputFormat<Void, T> implement
             .getSchemaFilePath(getAbsoluteTableIdentifier(configuration).getTablePath());
         if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
           TableInfo tableInfoInfer =
-              SchemaReader.inferSchemaForExternalTable(getAbsoluteTableIdentifier(configuration));
+              SchemaReader.inferSchema(getAbsoluteTableIdentifier(configuration));
           localCarbonTable = CarbonTable.buildFromTableInfo(tableInfoInfer);
         } else {
           localCarbonTable =

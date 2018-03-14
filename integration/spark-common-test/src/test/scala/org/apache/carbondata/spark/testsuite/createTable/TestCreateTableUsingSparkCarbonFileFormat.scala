@@ -19,86 +19,106 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io.File
 
-import org.apache.spark.sql.{AnalysisException, CarbonEnv}
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
-class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAndAfterAll {
+class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAndAfterAll {
 
-  var writerOutputFilePath1: String = _
-  var writerOutputFilePath2: String = _
-  var writerOutputFilePath3: String = _
-  var writerOutputFilePath4: String = _
-  var writerOutputFilePath5: String = _
 
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
-    // create carbon table and insert data
-    writerOutputFilePath1 = new File(this.getClass.getResource("/").getPath
-                                    +
-                                    "../." +
-                                    "./src/test/resources/carbonFileLevelFormat/WriterOutput1/Fact" +
-                                    "/Part0/Segment_null/").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath1 = writerOutputFilePath1.replace("\\", "/");
-
-
-    writerOutputFilePath2 = new File(this.getClass.getResource("/").getPath
-                                     +
-                                     "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput2/Fact" +
-                                     "/Part0/Segment_null/").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath2 = writerOutputFilePath2.replace("\\", "/");
-
-    writerOutputFilePath3 = new File(this.getClass.getResource("/").getPath
-                                     +
-                                     "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput3/Fact" +
-                                     "/Part0/Segment_null/").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath3 = writerOutputFilePath3.replace("\\", "/");
-
-    writerOutputFilePath4 = new File(this.getClass.getResource("/").getPath
-                                     +
-                                     "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput4/Fact" +
-                                     "/Part0/Segment_null/").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath4 = writerOutputFilePath4.replace("\\", "/");
-
-
-    writerOutputFilePath5 = new File(this.getClass.getResource("/").getPath
-                                     +
-                                     "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput5/Fact" +
-                                     "/Part0/Segment_null/").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath5 = writerOutputFilePath5.replace("\\", "/");
-
-
   }
 
   override def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
+  var writerPath = new File(this.getClass.getResource("/").getPath
+                            +
+                            "../." +
+                            "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
+    .getCanonicalPath
+  //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+  writerPath = writerPath.replace("\\", "/");
+
+  val filePath = writerPath + "/Fact/Part0/Segment_null/"
+
+  def buildTestData(persistSchema:Boolean) = {
+
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val schema = new StringBuilder()
+      .append("[ \n")
+      .append("   {\"name\":\"string\"},\n")
+      .append("   {\"age\":\"int\"},\n")
+      .append("   {\"height\":\"double\"}\n")
+      .append("]")
+      .toString()
+
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        if (persistSchema) {
+          builder.persistSchemaFile(true)
+          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+        } else {
+          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+        }
+
+      var i = 0
+      while (i < 100) {
+        writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+        i += 1
+      }
+      writer.close()
+    } catch {
+      case ex: Exception => None
+      case _ => None
+    }
+  }
+
+  def cleanTestData() = {
+    FileUtils.deleteDirectory(new File(writerPath))
+  }
+
+  def deleteIndexFile(path: String, extension: String) : Unit = {
+    val file: CarbonFile = FileFactory
+      .getCarbonFile(path, FileFactory.getFileType(path))
+
+    for (eachDir <- file.listFiles) {
+      if (!eachDir.isDirectory) {
+        if (eachDir.getName.endsWith(extension)) {
+          CarbonUtil.deleteFoldersAndFilesSilent(eachDir)
+        }
+      } else {
+        deleteIndexFile(eachDir.getPath, extension)
+      }
+    }
+  }
 
   //TO DO, need to remove segment dependency and tableIdentifier Dependency
-  test("read multiple carbondata files (sdk Writer Output) using the CarbonFileLevelFormat ") {
-    assert(new File(writerOutputFilePath1).exists())
+  test("read carbondata files (sdk Writer Output) using the SparkCarbonFileFormat ") {
+    buildTestData(false)
+    assert(new File(filePath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath1') """)
+      sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
     } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
       //data source file format
       sql(
-        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-           |'$writerOutputFilePath1' """.stripMargin)
+        s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+           |'$filePath' """.stripMargin)
     } else{
       // TO DO
     }
@@ -129,23 +149,25 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(writerOutputFilePath1).exists())
+    assert(new File(filePath).exists())
+    cleanTestData()
   }
 
 
   test("should not allow to alter datasource carbontable ") {
-    assert(new File(writerOutputFilePath1).exists())
+    buildTestData(false)
+    assert(new File(filePath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
 
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath1') """)
+      sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
     } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
       //data source file format
       sql(
-        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-           |'$writerOutputFilePath1' """.stripMargin)
+        s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+           |'$filePath' """.stripMargin)
     } else{
       // TO DO
     }
@@ -158,23 +180,26 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(writerOutputFilePath1).exists())
+    assert(new File(filePath).exists())
+    cleanTestData()
   }
 
   test("Read sdk writer output file without Carbondata file should fail") {
-    assert(new File(writerOutputFilePath3).exists())
+    buildTestData(false)
+    deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
+    assert(new File(filePath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     val exception = intercept[org.apache.spark.SparkException] {
       //    data source file format
       if (sqlContext.sparkContext.version.startsWith("2.1")) {
         //data source file format
-        sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath3') """)
+        sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
       } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
         //data source file format
         sql(
-          s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-             |'$writerOutputFilePath3' """.stripMargin)
+          s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+             |'$filePath' """.stripMargin)
       } else{
         // TO DO
       }
@@ -183,24 +208,28 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
       .contains("CarbonData file is not present in the location mentioned in DDL"))
 
     // drop table should not delete the files
-    assert(new File(writerOutputFilePath3).exists())
+    assert(new File(filePath).exists())
+    cleanTestData()
   }
 
 
   test("Read sdk writer output file without any file should fail") {
-    assert(new File(writerOutputFilePath4).exists())
+    buildTestData(false)
+    deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+    deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
+    assert(new File(filePath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     val exception = intercept[org.apache.spark.SparkException] {
       //data source file format
       if (sqlContext.sparkContext.version.startsWith("2.1")) {
         //data source file format
-        sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath4') """)
+        sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
       } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
         //data source file format
         sql(
-          s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-             |'$writerOutputFilePath4' """.stripMargin)
+          s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+             |'$filePath' """.stripMargin)
       } else{
         // TO DO
       }
@@ -211,11 +240,13 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
       .contains("CarbonData file is not present in the location mentioned in DDL"))
 
     // drop table should not delete the files
-    assert(new File(writerOutputFilePath4).exists())
+    assert(new File(filePath).exists())
+    cleanTestData()
   }
 
   test("Read sdk writer output file withSchema") {
-    assert(new File(writerOutputFilePath5).exists())
+    buildTestData(true)
+    assert(new File(filePath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
@@ -223,12 +254,12 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
 
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath5') """)
+      sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
     } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
       //data source file format
       sql(
-        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-           |'$writerOutputFilePath5' """.stripMargin)
+        s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+           |'$filePath' """.stripMargin)
     } else{
       // TO DO
     }
@@ -260,21 +291,24 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
     sql("DROP TABLE sdkOutputTable")
 
     // drop table should not delete the files
-    assert(new File(writerOutputFilePath5).exists())
+    assert(new File(filePath).exists())
+    cleanTestData()
   }
 
   test("Read sdk writer output file without index file should fail") {
-    assert(new File(writerOutputFilePath2).exists())
+    buildTestData(false)
+    deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+    assert(new File(filePath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat OPTIONS (PATH '$writerOutputFilePath2') """)
+      sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
     } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
       //data source file format
       sql(
-        s"""CREATE TABLE sdkOutputTable USING CarbonDataFileFormat LOCATION
-           |'$writerOutputFilePath2' """.stripMargin)
+        s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+           |'$filePath' """.stripMargin)
     } else{
       // TO DO
     }
@@ -287,6 +321,7 @@ class TestCreateTableUsingCarbonFileLevelFormat extends QueryTest with BeforeAnd
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(writerOutputFilePath2).exists())
+    assert(new File(filePath).exists())
+    cleanTestData()
   }
 }

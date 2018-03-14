@@ -37,6 +37,7 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.sources.{DataSourceRegister, Filter}
 import org.apache.spark.sql.types.{AtomicType, StructField, StructType}
 
+import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceStability}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, Segment}
@@ -53,7 +54,9 @@ import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonR
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, DataMapJob}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
-class CarbonFileLevelFormat extends FileFormat
+@InterfaceAudience.User
+@InterfaceStability.Evolving
+class SparkCarbonFileFormat extends FileFormat
   with DataSourceRegister
   with Logging
   with Serializable {
@@ -102,13 +105,13 @@ class CarbonFileLevelFormat extends FileFormat
     }
   }
 
-  override def shortName(): String = "CarbonDataFileFormat"
+  override def shortName(): String = "Carbonfile"
 
-  override def toString: String = "CarbonDataFileFormat"
+  override def toString: String = "Carbonfile"
 
   override def hashCode(): Int = getClass.hashCode()
 
-  override def equals(other: Any): Boolean = other.isInstanceOf[CarbonFileLevelFormat]
+  override def equals(other: Any): Boolean = other.isInstanceOf[SparkCarbonFileFormat]
 
   def supportVector(sparkSession: SparkSession, schema: StructType): Boolean = {
     val vectorizedReader = {

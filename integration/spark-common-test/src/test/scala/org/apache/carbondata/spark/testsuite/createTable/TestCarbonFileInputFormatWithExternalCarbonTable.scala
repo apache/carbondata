@@ -19,210 +19,101 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io.File
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
+
 
 class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
-  var writerOutputFilePath1: String = _
-  var writerOutputFilePath2: String = _
-  var writerOutputFilePath3: String = _
-  var writerOutputFilePath4: String = _
-  var writerOutputFilePath5: String = _
-  var writerOutputFilePath6: String = _
+  var writerPath = new File(this.getClass.getResource("/").getPath
+                            +
+                            "../." +
+                            "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
+    .getCanonicalPath
+  //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+  writerPath = writerPath.replace("\\", "/");
+
+
+  def buildTestData(persistSchema:Boolean) = {
+
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val schema = new StringBuilder()
+      .append("[ \n")
+      .append("   {\"name\":\"string\"},\n")
+      .append("   {\"age\":\"int\"},\n")
+      .append("   {\"height\":\"double\"}\n")
+      .append("]")
+      .toString()
+
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+      if (persistSchema) {
+        builder.persistSchemaFile(true)
+        builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+      } else {
+        builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+      }
+
+      var i = 0
+      while (i < 100) {
+        writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+        i += 1
+      }
+      writer.close()
+    } catch {
+      case ex: Exception => None
+      case _ => None
+    }
+  }
+
+  def cleanTestData() = {
+    FileUtils.deleteDirectory(new File(writerPath))
+  }
+
+  def deleteIndexFile(path: String, extension: String) : Unit = {
+    val file: CarbonFile = FileFactory
+      .getCarbonFile(path, FileFactory.getFileType(path))
+
+    for (eachDir <- file.listFiles) {
+      if (!eachDir.isDirectory) {
+        if (eachDir.getName.endsWith(extension)) {
+          CarbonUtil.deleteFoldersAndFilesSilent(eachDir)
+        }
+      } else {
+        deleteIndexFile(eachDir.getPath, extension)
+      }
+    }
+  }
 
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     // create carbon table and insert data
-    writerOutputFilePath1 = new File(this.getClass.getResource("/").getPath
-                                    +
-                                    "../." +
-                                    "./src/test/resources/carbonFileLevelFormat/WriterOutput1").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath1 = writerOutputFilePath1.replace("\\", "/");
-
-
-    writerOutputFilePath2 = new File(this.getClass.getResource("/").getPath
-                                     +
-                                     "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput2").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath2 = writerOutputFilePath2.replace("\\", "/");
-
-    writerOutputFilePath3 = new File(this.getClass.getResource("/").getPath
-                                     +
-                                     "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput3").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath3 = writerOutputFilePath3.replace("\\", "/");
-
-    writerOutputFilePath4 = new File(this.getClass.getResource("/").getPath
-                                     +
-                                     "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput4").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath4 = writerOutputFilePath4.replace("\\", "/");
-
-
-    writerOutputFilePath5 = new File(this.getClass.getResource("/").getPath
-                                     +
-                                     "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput5").getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath5 = writerOutputFilePath5.replace("\\", "/");
-
-    writerOutputFilePath6 = new File(this.getClass.getResource("/").getPath
-                                     +
-                                     "../." +
-                                     "./src/test/resources/carbonFileLevelFormat/WriterOutput6")
-      .getCanonicalPath
-    //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-    writerOutputFilePath6 = writerOutputFilePath6.replace("\\", "/");
-
-
   }
 
   override def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
-
   //TO DO, need to remove segment dependency and tableIdentifier Dependency
-  test("read multiple carbondata files (sdk Writer Output) using the CarbonFileLevelFormat ") {
-    assert(new File(writerOutputFilePath6).exists())
+  test("read carbondata files (sdk Writer Output) using the Carbonfile ") {
+    buildTestData(false)
+    assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //new provider carbondatafileformat
+    //new provider Carbonfile
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
-         |'$writerOutputFilePath6' """.stripMargin)
-
-    sql("Describe formatted sdkOutputTable").show(false)
-
-    sql("select * from sdkOutputTable").show(false)
-
-    sql("select * from sdkOutputTable limit 3").show(false)
-
-    sql("select name from sdkOutputTable").show(false)
-
-    sql("select age from sdkOutputTable").show(false)
-
-    sql("select * from sdkOutputTable where age > 2 and age < 8").show(200,false)
-
-    sql("select * from sdkOutputTable where name = 'robot3'").show(200,false)
-
-    sql("select * from sdkOutputTable where name like 'robo%' limit 5").show(200,false)
-
-    sql("select * from sdkOutputTable where name like '%obot%' limit 2").show(200,false)
-
-    sql("select sum(age) from sdkOutputTable where name like 'robot1%' ").show(200,false)
-
-    sql("select count(*) from sdkOutputTable where name like 'robot%' ").show(200,false)
-
-    sql("select count(*) from sdkOutputTable").show(200,false)
-
-    sql("DROP TABLE sdkOutputTable")
-    // drop table should not delete the files
-    assert(new File(writerOutputFilePath6).exists())
-  }
-
-
-
-  test("should not allow to alter datasource carbontable ") {
-    assert(new File(writerOutputFilePath1).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
-
-    //data source file format
-    sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
-         |'$writerOutputFilePath1' """.stripMargin)
-
-    val exception = intercept[MalformedCarbonCommandException]
-    {
-      sql("Alter table sdkOutputTable change age age BIGINT")
-    }
-    assert(exception.getMessage()
-      .contains("Unsupported alter operation on Carbon external fileformat table"))
-
-    sql("DROP TABLE sdkOutputTable")
-    // drop table should not delete the files
-    assert(new File(writerOutputFilePath1).exists())
-  }
-
-
-  test("Read sdk writer output file without index file should fail") {
-    assert(new File(writerOutputFilePath2).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
-
-    //data source file format
-    sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
-         |'$writerOutputFilePath2' """.stripMargin)
-
-    //org.apache.spark.SparkException: Index file not present to read the carbondata file
-    val exception = intercept[java.lang.RuntimeException]
-    {
-      sql("select * from sdkOutputTable").show(false)
-    }
-    assert(exception.getMessage().contains("Index file not present to read the carbondata file"))
-
-    sql("DROP TABLE sdkOutputTable")
-    // drop table should not delete the files
-    assert(new File(writerOutputFilePath2).exists())
-  }
-
-
-  test("Read sdk writer output file without Carbondata file should fail") {
-    assert(new File(writerOutputFilePath3).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
-
-    val exception = intercept[Exception] {
-      //    data source file format
-    sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
-         |'$writerOutputFilePath3' """.stripMargin)
-    }
-    assert(exception.getMessage()
-      .contains("Operation not allowed: Invalid table path provided:"))
-
-
-    // drop table should not delete the files
-    assert(new File(writerOutputFilePath3).exists())
-  }
-
-
-  test("Read sdk writer output file without any file should fail") {
-    assert(new File(writerOutputFilePath4).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
-
-    val exception = intercept[Exception] {
-      //data source file format
-      sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
-         |'$writerOutputFilePath4' """.stripMargin)
-
-      sql("select * from sdkOutputTable").show(false)
-    }
-    assert(exception.getMessage()
-        .contains("Operation not allowed: Invalid table path provided:"))
-
-    // drop table should not delete the files
-    assert(new File(writerOutputFilePath4).exists())
-  }
-
-
-  test("Read sdk writer output file withSchema") {
-    assert(new File(writerOutputFilePath5).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
-
-    //data source file format
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
-
-    //data source file format
-    sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondatafileformat' LOCATION
-         |'$writerOutputFilePath5' """.stripMargin)
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+         |'$writerPath' """.stripMargin)
 
     sql("Describe formatted sdkOutputTable").show(false)
 
@@ -249,9 +140,101 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     sql("select count(*) from sdkOutputTable").show(200, false)
 
     sql("DROP TABLE sdkOutputTable")
-
     // drop table should not delete the files
-    assert(new File(writerOutputFilePath5).exists())
+    assert(new File(writerPath).exists())
+    cleanTestData()
   }
 
+  test("should not allow to alter datasource carbontable ") {
+    buildTestData(false)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    //data source file format
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    val exception = intercept[MalformedCarbonCommandException]
+    {
+      sql("Alter table sdkOutputTable change age age BIGINT")
+    }
+    assert(exception.getMessage()
+      .contains("Unsupported alter operation on Carbon external fileformat table"))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+  test("Read sdk writer output file without index file should fail") {
+    buildTestData(false)
+    deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    //data source file format
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    //org.apache.spark.SparkException: Index file not present to read the carbondata file
+    val exception = intercept[java.lang.RuntimeException]
+    {
+      sql("select * from sdkOutputTable").show(false)
+    }
+    assert(exception.getMessage().contains("Index file not present to read the carbondata file"))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+
+  test("Read sdk writer output file without Carbondata file should fail") {
+    buildTestData(false)
+    deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    val exception = intercept[Exception] {
+      //    data source file format
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+         |'$writerPath' """.stripMargin)
+    }
+    assert(exception.getMessage()
+      .contains("Operation not allowed: Invalid table path provided:"))
+
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+
+  test("Read sdk writer output file without any file should fail") {
+    buildTestData(false)
+    deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
+    deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    val exception = intercept[Exception] {
+      //data source file format
+      sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+         |'$writerPath' """.stripMargin)
+
+      sql("select * from sdkOutputTable").show(false)
+    }
+    assert(exception.getMessage()
+        .contains("Operation not allowed: Invalid table path provided:"))
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
 }

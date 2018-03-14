@@ -81,7 +81,7 @@ public class SchemaReader {
   }
 
 
-  public static TableInfo inferSchemaForExternalTable(AbsoluteTableIdentifier identifier)
+  public static TableInfo inferSchema(AbsoluteTableIdentifier identifier)
       throws IOException {
     // This routine is going to infer schema from the carbondata file footer
     // Convert the ColumnSchema -> TableSchema -> TableInfo.
