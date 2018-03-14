@@ -32,7 +32,7 @@ import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
 
 case class DStreamData(id: Int, name: String, city: String, salary: Float)
 
-object CarbonBatchSparkStreamingExample {
+object StreamingUsingBatchLoadExample {
 
   def main(args: Array[String]): Unit = {
 

@@ -38,7 +38,7 @@ import org.apache.carbondata.streaming.parser.CarbonStreamParser
  * NOTE: Current integration with Spark Streaming is an alpha feature.
  */
 // scalastyle:off println
-object CarbonStreamSparkStreamingExample {
+object SparkStreamingExample {
 
   def main(args: Array[String]): Unit = {
 
