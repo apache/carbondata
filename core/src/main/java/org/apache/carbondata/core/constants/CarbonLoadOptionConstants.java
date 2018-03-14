@@ -139,4 +139,16 @@ public final class CarbonLoadOptionConstants {
   public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS
       = "carbon.load.directWriteHdfs.enabled";
   public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS_DEFAULT = "false";
+
+  /**
+   * If the sort memory is insufficient, spill inmemory pages to disk.
+   * The total amount of pages is at most the specified percentage of total sort memory. Default
+   * value 0 means that no pages will be spilled and the newly incoming pages will be spilled,
+   * whereas value 1 means that all pages will be spilled and newly incoming pages will be loaded
+   * into sort memory.
+   */
+  @CarbonProperty
+  public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE
+      = "carbon.load.sortMemory.spill.percentage";
+  public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
 }

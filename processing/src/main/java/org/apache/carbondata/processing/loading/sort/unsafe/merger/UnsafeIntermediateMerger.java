@@ -18,6 +18,7 @@ package org.apache.carbondata.processing.loading.sort.unsafe.merger;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
@@ -29,6 +30,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
@@ -60,6 +64,10 @@ public class UnsafeIntermediateMerger {
   private List<File> procFiles;
 
   private List<Future<Void>> mergerTask;
+  /**
+   * size to be spilled in sort memory
+   */
+  private long spillSizeInSortMemory;
 
   public UnsafeIntermediateMerger(SortParameters parameters) {
     this.parameters = parameters;
@@ -70,6 +78,20 @@ public class UnsafeIntermediateMerger {
         new CarbonThreadFactory("UnsafeIntermediatePool:" + parameters.getTableName()));
     this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     this.mergerTask = new ArrayList<>();
+
+    Integer spillPercentage;
+    try {
+      String spillPercentageStr = CarbonProperties.getInstance().getProperty(
+          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+      spillPercentage = Integer.valueOf(spillPercentageStr);
+    } catch (NumberFormatException e) {
+      spillPercentage = Integer.valueOf(
+          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+    }
+
+    this.spillSizeInSortMemory =
+        UnsafeSortMemoryManager.INSTANCE.getUsableMemory() * spillPercentage / 100;
   }
 
   public void addDataChunkToMerge(UnsafeCarbonRowPage rowPage) {
@@ -120,37 +142,52 @@ public class UnsafeIntermediateMerger {
     mergerTask.add(executorService.submit(merger));
   }
 
-  public void startInmemoryMergingIfPossible() throws CarbonSortKeyAndGroupByException {
-    UnsafeCarbonRowPage[] localRowPages;
-    if (rowPages.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
-      int totalRows = 0;
-      synchronized (lockObject) {
-        totalRows = getTotalNumberOfRows(rowPages);
-        if (totalRows <= 0) {
-          return;
+  public void tryTriggerInmemoryMerging(boolean spillDisk)
+      throws CarbonSortKeyAndGroupByException {
+    List<UnsafeCarbonRowPage> pages2Merge = new ArrayList<>();
+    int totalRows2Merge = 0;
+    synchronized (lockObject) {
+      long sizeAdded = 0;
+      for (Iterator<UnsafeCarbonRowPage> iter = rowPages.iterator(); iter.hasNext(); ) {
+        UnsafeCarbonRowPage page = iter.next();
+        if (!spillDisk || sizeAdded + page.getDataBlock().size() < this.spillSizeInSortMemory) {
+          pages2Merge.add(page);
+          totalRows2Merge += page.getBuffer().getActualSize();
+          iter.remove();
+        } else {
+          break;
         }
-        localRowPages = rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]);
-        this.rowPages = new ArrayList<>();
       }
+    }
+    if (pages2Merge.size() > 1) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Sumitting request for intermediate merging of in-memory pages : "
-            + localRowPages.length);
+            + pages2Merge.size());
       }
-      startIntermediateMerging(localRowPages, totalRows);
+      startIntermediateMerging(pages2Merge.toArray(new UnsafeCarbonRowPage[pages2Merge.size()]),
+          totalRows2Merge, spillDisk);
+    }
+  }
+
+  public void startInmemoryMergingIfPossible() throws CarbonSortKeyAndGroupByException {
+    if (rowPages.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
+      tryTriggerInmemoryMerging(false);
     }
   }
 
   /**
-   * Below method will be used to start the intermediate file merging
+   * Below method will be used to start the intermediate inmemory merging
    *
-   * @param rowPages
+   * @param rowPages pages to be merged
+   * @param totalRows total rows in all pages
+   * @param spillDisk whether to spill the merged result to disk
    */
-  private void startIntermediateMerging(UnsafeCarbonRowPage[] rowPages, int totalRows)
-      throws CarbonSortKeyAndGroupByException {
+  private void startIntermediateMerging(UnsafeCarbonRowPage[] rowPages, int totalRows,
+      boolean spillDisk) throws CarbonSortKeyAndGroupByException {
     UnsafeInMemoryIntermediateDataMerger merger =
-        new UnsafeInMemoryIntermediateDataMerger(rowPages, totalRows);
+        new UnsafeInMemoryIntermediateDataMerger(rowPages, totalRows, parameters, spillDisk);
     mergedPages.add(merger);
-    executorService.execute(merger);
+    mergerTask.add(executorService.submit(merger));
   }
 
   private int getTotalNumberOfRows(List<UnsafeCarbonRowPage> unsafeCarbonRowPages) {
