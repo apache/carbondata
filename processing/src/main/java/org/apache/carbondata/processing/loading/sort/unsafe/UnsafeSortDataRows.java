@@ -128,7 +128,7 @@ public class UnsafeSortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize() throws MemoryException {
+  public void initialize() throws MemoryException, CarbonSortKeyAndGroupByException {
     this.rowPage = createUnsafeRowPage();
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
@@ -141,13 +141,18 @@ public class UnsafeSortDataRows {
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
-  private UnsafeCarbonRowPage createUnsafeRowPage() throws MemoryException {
+  private UnsafeCarbonRowPage createUnsafeRowPage()
+      throws MemoryException, CarbonSortKeyAndGroupByException {
     MemoryBlock baseBlock =
         UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
     boolean isMemoryAvailable =
         UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
     if (isMemoryAvailable) {
       UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
+    } else {
+      LOGGER.info("trigger in-memory merge and spill for table " + parameters.getTableName());
+      // merge and spill in-memory pages to disk if memory is not enough
+      unsafeInMemoryIntermediateFileMerger.triggerInmemoryMerging(true);
     }
     return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
   }

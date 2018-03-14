@@ -120,37 +120,43 @@ public class UnsafeIntermediateMerger {
     mergerTask.add(executorService.submit(merger));
   }
 
-  public void startInmemoryMergingIfPossible() throws CarbonSortKeyAndGroupByException {
+  public void triggerInmemoryMerging(boolean spillDisk) throws CarbonSortKeyAndGroupByException {
     UnsafeCarbonRowPage[] localRowPages;
+    int totalRows = 0;
+    synchronized (lockObject) {
+      totalRows = getTotalNumberOfRows(rowPages);
+      if (totalRows <= 0) {
+        return;
+      }
+      localRowPages = rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]);
+      this.rowPages = new ArrayList<>();
+    }
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Sumitting request for intermediate merging of in-memory pages : "
+          + localRowPages.length);
+    }
+    startIntermediateMerging(localRowPages, totalRows, spillDisk);
+  }
+
+  public void startInmemoryMergingIfPossible() throws CarbonSortKeyAndGroupByException {
     if (rowPages.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
-      int totalRows = 0;
-      synchronized (lockObject) {
-        totalRows = getTotalNumberOfRows(rowPages);
-        if (totalRows <= 0) {
-          return;
-        }
-        localRowPages = rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]);
-        this.rowPages = new ArrayList<>();
-      }
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Sumitting request for intermediate merging of in-memory pages : "
-            + localRowPages.length);
-      }
-      startIntermediateMerging(localRowPages, totalRows);
+      triggerInmemoryMerging(false);
     }
   }
 
   /**
-   * Below method will be used to start the intermediate file merging
+   * Below method will be used to start the intermediate inmemory merging
    *
-   * @param rowPages
+   * @param rowPages pages to be merged
+   * @param totalRows total rows in all pages
+   * @param spillDisk whether to spill the merged result to disk
    */
-  private void startIntermediateMerging(UnsafeCarbonRowPage[] rowPages, int totalRows)
-      throws CarbonSortKeyAndGroupByException {
+  private void startIntermediateMerging(UnsafeCarbonRowPage[] rowPages, int totalRows,
+      boolean spillDisk) throws CarbonSortKeyAndGroupByException {
     UnsafeInMemoryIntermediateDataMerger merger =
-        new UnsafeInMemoryIntermediateDataMerger(rowPages, totalRows);
+        new UnsafeInMemoryIntermediateDataMerger(rowPages, totalRows, parameters, spillDisk);
     mergedPages.add(merger);
-    executorService.execute(merger);
+    mergerTask.add(executorService.submit(merger));
   }
 
   private int getTotalNumberOfRows(List<UnsafeCarbonRowPage> unsafeCarbonRowPages) {
