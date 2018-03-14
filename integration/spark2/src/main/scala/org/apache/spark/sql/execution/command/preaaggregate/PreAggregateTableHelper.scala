@@ -165,13 +165,12 @@ case class PreAggregateTableHelper(
     // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT
     // table.
     SegmentStatusManager.deleteLoadsAndUpdateMetadata(parentTable, false)
-    val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath)
-    if (loadAvailable.exists(load => load.getVisibility().equalsIgnoreCase("true") &&
-      (load.getSegmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
-      load.getSegmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS))) {
+    if (SegmentStatusManager.isLoadInProgressInTable(parentTable)) {
       throw new UnsupportedOperationException(
         "Cannot create pre-aggregate table when insert is in progress on main table")
-    } else if (loadAvailable.nonEmpty) {
+    }
+    val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath)
+    if (loadAvailable.nonEmpty) {
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.
       loadCommand.dataFrame = Some(PreAggregateUtil
