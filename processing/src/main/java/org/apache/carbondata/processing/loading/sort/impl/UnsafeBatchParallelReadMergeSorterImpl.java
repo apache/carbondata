@@ -328,7 +328,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
             .recordDictionaryValuesTotalTime(parameters.getPartitionID(),
                 System.currentTimeMillis());
         return false;
-      } catch (InterruptedException e) {
+      } catch (Exception e) {
         throw new CarbonDataLoadingException(e);
       }
     }
