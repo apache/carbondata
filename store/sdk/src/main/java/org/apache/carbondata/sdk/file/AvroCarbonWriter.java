@@ -86,6 +86,9 @@ class AvroCarbonWriter extends CarbonWriter {
       case DOUBLE:
       case STRING:
         out.append(fieldValue.toString());
+        break;
+      default:
+        throw new UnsupportedOperationException();
       // TODO: convert complex type
     }
     return out.toString();
