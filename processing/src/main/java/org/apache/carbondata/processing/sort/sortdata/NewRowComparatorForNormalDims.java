@@ -16,13 +16,16 @@
  */
 package org.apache.carbondata.processing.sort.sortdata;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
  * This class is used as comparator for comparing dims which are non high cardinality dims.
  * Here the dims will be in form of int[] (surrogates) so directly comparing the integers.
  */
-public class NewRowComparatorForNormalDims implements Comparator<Object[]> {
+public class NewRowComparatorForNormalDims implements Comparator<Object[]>, Serializable {
+  private static final long serialVersionUID = -1749874611112709432L;
+
   /**
    * dimension count
    */
