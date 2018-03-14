@@ -18,11 +18,14 @@
 package org.apache.carbondata.core.metadata.schema.table;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
@@ -42,6 +45,16 @@ public class TableSchemaBuilder {
 
   private List<ColumnSchema> otherColumns = new LinkedList<>();
 
+  private int blockSize;
+
+  public TableSchemaBuilder blockSize(int blockSize) {
+    if (blockSize <= 0) {
+      throw new IllegalArgumentException("blockSize should be greater than 0");
+    }
+    this.blockSize = blockSize;
+    return this;
+  }
+
   public TableSchema build() {
     TableSchema schema = new TableSchema();
     schema.setTableId(UUID.randomUUID().toString());
@@ -53,6 +66,12 @@ public class TableSchemaBuilder {
     List<ColumnSchema> allColumns = new LinkedList<>(sortColumns);
     allColumns.addAll(otherColumns);
     schema.setListOfColumns(allColumns);
+
+    if (blockSize > 0) {
+      Map<String, String> property = new HashMap<>();
+      property.put(CarbonCommonConstants.TABLE_BLOCKSIZE, String.valueOf(blockSize));
+      schema.setTableProperties(property);
+    }
     return schema;
   }
 
@@ -62,15 +81,22 @@ public class TableSchemaBuilder {
     ColumnSchema newColumn = new ColumnSchema();
     newColumn.setColumnName(field.getFieldName());
     newColumn.setDataType(field.getDataType());
-    newColumn.setDimensionColumn(isSortColumn || field.getDataType() == DataTypes.STRING);
+    if (isSortColumn ||
+        field.getDataType() == DataTypes.STRING ||
+        field.getDataType() == DataTypes.DATE ||
+        field.getDataType() == DataTypes.TIMESTAMP) {
+      newColumn.setDimensionColumn(true);
+    } else {
+      newColumn.setDimensionColumn(false);
+    }
     newColumn.setSchemaOrdinal(ordinal++);
     newColumn.setColumnar(true);
     newColumn.setColumnUniqueId(UUID.randomUUID().toString());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
     newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn));
-
     if (isSortColumn) {
       sortColumns.add(newColumn);
+      newColumn.setSortColumn(true);
     } else {
       otherColumns.add(newColumn);
     }
@@ -97,6 +123,7 @@ public class TableSchemaBuilder {
     List<Encoding> encodings = new LinkedList<>();
     if (dataType == DataTypes.TIMESTAMP || dataType == DataTypes.DATE) {
       encodings.add(Encoding.DIRECT_DICTIONARY);
+      encodings.add(Encoding.DICTIONARY);
     }
     if (isSortColumn) {
       encodings.add(Encoding.INVERTED_INDEX);

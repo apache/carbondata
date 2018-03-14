@@ -62,7 +62,7 @@ public class CarbonLoadModelBuilder {
   public CarbonLoadModel build(
       Map<String, String> options) throws InvalidLoadOptionException, IOException {
     Map<String, String> optionsFinal = LoadOption.fillOptionWithDefaultValue(options);
-    optionsFinal.put("sort_scope", "no_sort");
+
     if (!options.containsKey("fileheader")) {
       List<CarbonColumn> csvHeader = table.getCreateOrderColumn(table.getTableName());
       String[] columns = new String[csvHeader.size()];

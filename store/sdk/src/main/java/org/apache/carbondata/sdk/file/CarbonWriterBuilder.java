@@ -53,6 +53,8 @@ public class CarbonWriterBuilder {
   private String path;
   private String[] sortColumns;
   private boolean persistSchemaFile;
+  private int blockletSize;
+  private int blockSize;
 
   public CarbonWriterBuilder withSchema(Schema schema) {
     Objects.requireNonNull(schema, "schema should not be null");
@@ -84,14 +86,16 @@ public class CarbonWriterBuilder {
     if (blockSize <= 0) {
       throw new IllegalArgumentException("blockSize should be greater than zero");
     }
-    throw new UnsupportedOperationException();
+    this.blockSize = blockSize;
+    return this;
   }
 
   public CarbonWriterBuilder withBlockletSize(int blockletSize) {
     if (blockletSize <= 0) {
       throw new IllegalArgumentException("blockletSize should be greater than zero");
     }
-    throw new UnsupportedOperationException();
+    this.blockletSize = blockletSize;
+    return this;
   }
 
   /**
@@ -128,6 +132,10 @@ public class CarbonWriterBuilder {
    */
   private CarbonTable buildCarbonTable() {
     TableSchemaBuilder tableSchemaBuilder = TableSchema.builder();
+    if (blockletSize > 0) {
+      tableSchemaBuilder = tableSchemaBuilder.blockSize(blockSize);
+    }
+
     List<String> sortColumnsList;
     if (sortColumns != null) {
       sortColumnsList = Arrays.asList(sortColumns);
