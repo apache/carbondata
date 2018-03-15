@@ -50,7 +50,7 @@ object SparkStreamingExample {
       System.currentTimeMillis().toString()
     val streamTableName = s"dstream_stream_table"
 
-    val spark = ExampleUtils.createCarbonSession("CarbonStreamSparkStreamingExample", 4)
+    val spark = ExampleUtils.createCarbonSession("SparkStreamingExample", 4)
 
     val requireCreateTable = true
 

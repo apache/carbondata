@@ -44,7 +44,7 @@ object StreamingUsingBatchLoadExample {
       System.currentTimeMillis().toString()
     val streamTableName = s"dstream_batch_table"
 
-    val spark = ExampleUtils.createCarbonSession("CarbonBatchSparkStreamingExample", 4)
+    val spark = ExampleUtils.createCarbonSession("StreamingUsingBatchLoadExample", 4)
 
     val requireCreateTable = true
 

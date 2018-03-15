@@ -37,7 +37,7 @@ object StreamingWithRowParserExample {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
 
-    val spark = ExampleUtils.createCarbonSession("CarbonStructuredStreamingWithRowParser", 4)
+    val spark = ExampleUtils.createCarbonSession("StreamingWithRowParserExample", 4)
     val streamTableName = s"stream_table_with_row_parser"
 
     val requireCreateTable = true
