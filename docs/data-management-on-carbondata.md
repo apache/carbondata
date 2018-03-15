@@ -1,4 +1,5 @@
 <!--
+<!--
     Licensed to the Apache Software Foundation (ASF) under one or more 
     contributor license agreements.  See the NOTICE file distributed with
     this work for additional information regarding copyright ownership. 
@@ -701,9 +702,14 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   This command drops the specified Hive partition only.
   ```
-  ALTER TABLE table_name DROP [IF EXISTS] (PARTITION part_spec, ...)
+  ALTER TABLE table_name DROP [IF EXISTS] PARTITION (part_spec, ...)
   ```
-
+  
+  Example:
+  ```
+  ALTER TABLE locationTable DROP PARTITION (country = 'US');
+  ```
+  
 #### Insert OVERWRITE
   
   This command allows you to insert or load overwrite on a specific partition.
