@@ -27,15 +27,14 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.CharEncoding;
 import org.junit.Assert;
 import org.junit.Test;
 
-import tech.allegro.schema.json2avro.converter.AvroConversionException;
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
-import org.apache.avro.generic.GenericData;
 import org.apache.avro.Schema;
 
-public class AvroCarbonWriterSuite {
+public class AvroCarbonWriterTest {
   private String path = "./AvroCarbonWriterSuiteWriteFiles";
 
   @Test
@@ -57,7 +56,7 @@ public class AvroCarbonWriterSuite {
     // conversion to GenericData.Record
     JsonAvroConverter converter = new JsonAvroConverter();
     GenericData.Record record = converter.convertToGenericDataRecord(
-        json.getBytes(), new Schema.Parser().parse(avroSchema));
+        json.getBytes(CharEncoding.UTF_8), new Schema.Parser().parse(avroSchema));
 
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);

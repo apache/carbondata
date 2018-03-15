@@ -32,7 +32,7 @@ import org.junit.Test;
 /**
  * Test suite for {@link CSVCarbonWriter}
  */
-public class CSVCarbonWriterSuite {
+public class CSVCarbonWriterTest {
 
   @Test
   public void testWriteFiles() throws IOException {
