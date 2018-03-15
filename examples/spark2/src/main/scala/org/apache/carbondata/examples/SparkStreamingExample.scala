@@ -21,18 +21,24 @@ import java.io.{File, PrintWriter}
 import java.net.ServerSocket
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonEnv, SaveMode, SparkSession}
+import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.CarbonSparkStreamingFactory
+import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
 
+import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.streaming.CarbonSparkStreamingListener
+import org.apache.carbondata.streaming.parser.CarbonStreamParser
+
 /**
- * This example introduces how to use CarbonData batch load to integrate
- * with Spark Streaming(it's DStream, not Spark Structured Streaming)
+ * This example introduces how to use Spark Streaming to write data
+ * to CarbonData stream table.
+ *
+ * NOTE: Current integration with Spark Streaming is an alpha feature.
  */
 // scalastyle:off println
-
-case class DStreamData(id: Int, name: String, city: String, salary: Float)
-
-object CarbonBatchSparkStreamingExample {
+object SparkStreamingExample {
 
   def main(args: Array[String]): Unit = {
 
@@ -42,9 +48,9 @@ object CarbonBatchSparkStreamingExample {
     val checkpointPath =
       s"$rootPath/examples/spark2/target/spark_streaming_cp_" +
       System.currentTimeMillis().toString()
-    val streamTableName = s"dstream_batch_table"
+    val streamTableName = s"dstream_stream_table"
 
-    val spark = ExampleUtils.createCarbonSession("CarbonBatchSparkStreamingExample", 4)
+    val spark = ExampleUtils.createCarbonSession("SparkStreamingExample", 4)
 
     val requireCreateTable = true
 
@@ -52,7 +58,6 @@ object CarbonBatchSparkStreamingExample {
       // drop table if exists previously
       spark.sql(s"DROP TABLE IF EXISTS ${ streamTableName }")
       // Create target carbon table and populate with initial data
-      // set AUTO_LOAD_MERGE to true to compact segment automatically
       spark.sql(
         s"""
            | CREATE TABLE ${ streamTableName }(
@@ -63,12 +68,10 @@ object CarbonBatchSparkStreamingExample {
            | )
            | STORED BY 'carbondata'
            | TBLPROPERTIES(
+           | 'streaming'='true',
            | 'sort_columns'='name',
-           | 'dictionary_include'='city',
-           | 'AUTO_LOAD_MERGE'='true',
-           | 'COMPACTION_LEVEL_THRESHOLD'='4,10')
+           | 'dictionary_include'='city')
            | """.stripMargin)
-
       val carbonTable = CarbonEnv.getCarbonTable(Some("default"), streamTableName)(spark)
       // batch load
       val path = s"$rootPath/examples/spark2/src/main/resources/streamSample.csv"
@@ -84,6 +87,8 @@ object CarbonBatchSparkStreamingExample {
       val thread1 = writeSocket(serverSocket)
       val thread2 = showTableCount(spark, streamTableName)
       val ssc = startStreaming(spark, streamTableName, checkpointPath)
+      // add a Spark Streaming Listener to remove all lock for stream tables when stop app
+      ssc.sparkContext.addSparkListener(new CarbonSparkStreamingListener())
       // wait for stop signal to stop Spark Streaming App
       waitForStopSignal(ssc)
       // it need to start Spark Streaming App in main thread
@@ -97,7 +102,7 @@ object CarbonBatchSparkStreamingExample {
 
     spark.sql(s"select count(*) from ${ streamTableName }").show(100, truncate = false)
 
-    spark.sql(s"select * from ${ streamTableName }").show(100, truncate = false)
+    spark.sql(s"select * from ${ streamTableName } order by id desc").show(100, truncate = false)
 
     // record(id = 100000001) comes from batch segment_0
     // record(id = 1) comes from stream segment_1
@@ -113,9 +118,6 @@ object CarbonBatchSparkStreamingExample {
     // show segments
     spark.sql(s"SHOW SEGMENTS FOR TABLE ${streamTableName}").show(false)
 
-    // drop table
-    spark.sql(s"DROP TABLE IF EXISTS ${ streamTableName }")
-
     spark.stop()
     System.out.println("streaming finished")
   }
@@ -124,6 +126,7 @@ object CarbonBatchSparkStreamingExample {
     val thread = new Thread() {
       override def run(): Unit = {
         for (_ <- 0 to 1000) {
+          println(System.currentTimeMillis())
           spark.sql(s"select count(*) from $tableName").show(truncate = false)
           spark.sql(s"SHOW SEGMENTS FOR TABLE ${tableName}").show(false)
           Thread.sleep(1000 * 5)
@@ -152,7 +155,7 @@ object CarbonBatchSparkStreamingExample {
     var ssc: StreamingContext = null
     try {
       // recommend: the batch interval must set larger, such as 30s, 1min.
-      ssc = new StreamingContext(spark.sparkContext, Seconds(15))
+      ssc = new StreamingContext(spark.sparkContext, Seconds(30))
       ssc.checkpoint(checkpointPath)
 
       val readSocketDF = ssc.socketTextStream("localhost", 7071)
@@ -161,14 +164,17 @@ object CarbonBatchSparkStreamingExample {
         .map(_.split(","))
         .map(fields => DStreamData(fields(0).toInt, fields(1), fields(2), fields(3).toFloat))
 
+      println("init carbon table info")
       batchData.foreachRDD { (rdd: RDD[DStreamData], time: Time) => {
-        val df = spark.createDataFrame(rdd).toDF("id", "name", "city", "salary")
-        println("at time: " + time.toString() + " the count of received data: " + df.count())
-        df.write
-          .format("carbondata")
-          .option("tableName", tableName)
+        val df = spark.createDataFrame(rdd).toDF()
+        println(System.currentTimeMillis().toString() +
+          " at batch time: " + time.toString() +
+          " the count of received data: " + df.count())
+        CarbonSparkStreamingFactory.getStreamSparkStreamingWriter(spark, "default", tableName)
+          .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+            CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
           .mode(SaveMode.Append)
-          .save()
+          .writeStreamData(df, time)
       }}
     } catch {
       case ex: Exception =>
@@ -187,14 +193,14 @@ object CarbonBatchSparkStreamingExample {
         var index = 0
         for (_ <- 1 to 1000) {
           // write 5 records per iteration
-          for (_ <- 0 to 1000) {
+          for (_ <- 0 to 100) {
             index = index + 1
             socketWriter.println(index.toString + ",name_" + index
                                  + ",city_" + index + "," + (index * 10000.00).toString +
                                  ",school_" + index + ":school_" + index + index + "$" + index)
           }
           socketWriter.flush()
-          Thread.sleep(1000)
+          Thread.sleep(2000)
         }
         socketWriter.close()
         System.out.println("Socket closed")
