@@ -17,11 +17,13 @@
 
 package org.apache.carbondata.processing.sort.sortdata;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 
-public class NewRowComparator implements Comparator<Object[]> {
+public class NewRowComparator implements Comparator<Object[]>, Serializable {
+  private static final long serialVersionUID = -1739874611112709436L;
 
   /**
    * mapping of dictionary dimensions and no dictionary of sort_column.

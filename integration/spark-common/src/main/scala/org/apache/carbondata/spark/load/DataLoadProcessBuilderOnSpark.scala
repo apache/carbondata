@@ -80,15 +80,14 @@ object DataLoadProcessBuilderOnSpark {
     // 3. Sort
     val configuration = DataLoadProcessBuilder.createConfiguration(model)
     val sortParameters = SortParameters.createSortParameters(configuration)
+    val rowComparator: Comparator[Array[AnyRef]] =
+      if (sortParameters.getNoDictionaryCount > 0) {
+        new NewRowComparator(sortParameters.getNoDictionaryDimnesionColumn)
+      } else {
+        new NewRowComparatorForNormalDims(sortParameters.getDimColCount)
+      }
     object RowOrdering extends Ordering[Array[AnyRef]] {
       def compare(rowA: Array[AnyRef], rowB: Array[AnyRef]): Int = {
-        val rowComparator: Comparator[Array[AnyRef]] =
-          if (sortParameters.getNoDictionaryCount > 0) {
-            new NewRowComparator(sortParameters.getNoDictionaryDimnesionColumn)
-          } else {
-            new NewRowComparatorForNormalDims(sortParameters.getDimColCount)
-          }
-
         rowComparator.compare(rowA, rowB)
       }
     }
