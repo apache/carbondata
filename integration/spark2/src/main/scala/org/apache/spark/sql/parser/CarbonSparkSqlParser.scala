@@ -36,7 +36,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.hadoop.util.SchemaReader
 import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 /**
  * Concrete parser for Spark SQL stateENABLE_INMEMORY_MERGE_SORT_DEFAULTments and carbon specific
@@ -52,9 +52,12 @@ class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends Ab
   override def parsePlan(sqlText: String): LogicalPlan = {
     CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
     try {
-      super.parsePlan(sqlText)
+      val parsedPlan = super.parsePlan(sqlText)
+      CarbonScalaUtil.cleanParserThreadLocals
+      parsedPlan
     } catch {
       case ce: MalformedCarbonCommandException =>
+        CarbonScalaUtil.cleanParserThreadLocals
         throw ce
       case ex =>
         try {
