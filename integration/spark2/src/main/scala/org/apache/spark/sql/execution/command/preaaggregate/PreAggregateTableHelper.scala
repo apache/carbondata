@@ -26,12 +26,14 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
+import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.spark.util.DataLoadingUtil
 
 /**
  * Below helper class will be used to create pre-aggregate table
@@ -164,7 +166,15 @@ case class PreAggregateTableHelper(
     // This will be used to check if the parent table has any segments or not. If not then no
     // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT
     // table.
-    SegmentStatusManager.deleteLoadsAndUpdateMetadata(parentTable, false)
+    SegmentStatusManager.deleteLoadsAndUpdateMetadata(
+      parentTable,
+      false,
+      CarbonFilters.getCurrentPartitions(
+        sparkSession,
+        TableIdentifier(parentTable.getTableName,
+          Some(parentTable.getDatabaseName))
+      ).map(_.asJava).orNull)
+
     if (SegmentStatusManager.isLoadInProgressInTable(parentTable)) {
       throw new UnsupportedOperationException(
         "Cannot create pre-aggregate table when insert is in progress on main table")
