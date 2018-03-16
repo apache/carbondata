@@ -112,7 +112,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (isCarbonTable) {
           val carbonTable = CarbonEnv.getCarbonTable(alterTableChangeDataTypeModel.databaseName,
             alterTableChangeDataTypeModel.tableName)(sparkSession)
-          if (carbonTable != null && carbonTable.isFileLevelExternalTable) {
+          if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
           } else {
@@ -128,7 +128,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (isCarbonTable) {
           val carbonTable = CarbonEnv.getCarbonTable(alterTableAddColumnsModel.databaseName,
             alterTableAddColumnsModel.tableName)(sparkSession)
-          if (carbonTable != null && carbonTable.isFileLevelExternalTable) {
+          if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
           } else {
@@ -144,7 +144,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (isCarbonTable) {
           val carbonTable = CarbonEnv.getCarbonTable(alterTableDropColumnModel.databaseName,
             alterTableDropColumnModel.tableName)(sparkSession)
-          if (carbonTable != null && carbonTable.isFileLevelExternalTable) {
+          if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
           } else {

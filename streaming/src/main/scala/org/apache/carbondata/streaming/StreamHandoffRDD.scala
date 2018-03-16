@@ -41,7 +41,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection}
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -145,16 +145,16 @@ class StreamHandoffRDD[K, V](
     val inputSplit = split.asInstanceOf[HandoffPartition].split.value
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
     val hadoopConf = new Configuration()
-    CarbonTableInputFormat.setDatabaseName(hadoopConf, carbonTable.getDatabaseName)
-    CarbonTableInputFormat.setTableName(hadoopConf, carbonTable.getTableName)
-    CarbonTableInputFormat.setTablePath(hadoopConf, carbonTable.getTablePath)
+    CarbonInputFormat.setDatabaseName(hadoopConf, carbonTable.getDatabaseName)
+    CarbonInputFormat.setTableName(hadoopConf, carbonTable.getTableName)
+    CarbonInputFormat.setTablePath(hadoopConf, carbonTable.getTablePath)
     val projection = new CarbonProjection
     val dataFields = carbonTable.getStreamStorageOrderColumn(carbonTable.getTableName)
     (0 until dataFields.size()).foreach { index =>
       projection.addColumn(dataFields.get(index).getColName)
     }
-    CarbonTableInputFormat.setColumnProjection(hadoopConf, projection)
-    CarbonTableInputFormat.setTableInfo(hadoopConf, carbonTable.getTableInfo)
+    CarbonInputFormat.setColumnProjection(hadoopConf, projection)
+    CarbonInputFormat.setTableInfo(hadoopConf, carbonTable.getTableInfo)
     val attemptContext = new TaskAttemptContextImpl(hadoopConf, attemptId)
     val format = new CarbonTableInputFormat[Array[Object]]()
     val model = format.createQueryModel(inputSplit, attemptContext)
