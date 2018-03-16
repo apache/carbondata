@@ -104,16 +104,7 @@ public class CarbonWriterBuilder {
   public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
-
-    // build CarbonTable using schema
-    CarbonTable table = buildCarbonTable();
-    if (persistSchemaFile) {
-      // we are still using the traditional carbon table folder structure
-      persistSchemaFile(table, CarbonTablePath.getSchemaFilePath(path));
-    }
-
-    // build LoadModel
-    CarbonLoadModel loadModel = buildLoadModel(table);
+    CarbonLoadModel loadModel = createLoadModel();
     return new CSVCarbonWriter(loadModel);
   }
 
@@ -122,9 +113,23 @@ public class CarbonWriterBuilder {
    * @return
    * @throws IOException
    */
-  public CarbonWriter buildWriterForAvroInput() throws IOException {
-    // TODO
-    throw new UnsupportedOperationException();
+  public CarbonWriter buildWriterForAvroInput() throws IOException, InvalidLoadOptionException {
+    Objects.requireNonNull(schema, "schema should not be null");
+    Objects.requireNonNull(path, "path should not be null");
+    CarbonLoadModel loadModel = createLoadModel();
+    return new AvroCarbonWriter(loadModel);
+  }
+
+  private CarbonLoadModel createLoadModel() throws IOException, InvalidLoadOptionException {
+    // build CarbonTable using schema
+    CarbonTable table = buildCarbonTable();
+    if (persistSchemaFile) {
+      // we are still using the traditional carbon table folder structure
+      persistSchemaFile(table, CarbonTablePath.getSchemaFilePath(path));
+    }
+
+    // build LoadModel
+    return buildLoadModel(table);
   }
 
   /**
