@@ -100,7 +100,6 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     df.write
       .format("carbondata")
       .option("tableName", "carbon1")
-      .option("tempCSV", "false")
       .option("sort_columns","c1")
       .mode(SaveMode.Overwrite)
       .save()
@@ -133,7 +132,6 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     df.write
       .format("carbondata")
       .option("tableName", "carbon2")
-      .option("tempCSV", "false")
       .option("sort_columns","c1")
       .option("SORT_SCOPE","GLOBAL_SORT")
       .mode(SaveMode.Overwrite)

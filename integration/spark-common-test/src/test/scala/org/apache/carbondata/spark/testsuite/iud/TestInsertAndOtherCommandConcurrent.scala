@@ -79,7 +79,6 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     df.write
       .format("carbondata")
       .option("tableName", tableName)
-      .option("tempCSV", "false")
       .mode(SaveMode.Overwrite)
       .save()
   }

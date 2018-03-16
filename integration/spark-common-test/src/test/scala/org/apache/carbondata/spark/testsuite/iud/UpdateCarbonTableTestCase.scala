@@ -436,8 +436,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     df.write
       .format("carbondata")
       .option("tableName", "carbon1")
-      .option("tempCSV", "true")
-      .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
 
@@ -470,8 +468,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     df.write
       .format("carbondata")
       .option("tableName", "study_carbondata")
-      .option("compress", "true")  // just valid when tempCSV is true
-      .option("tempCSV", "false")
       .option("single_pass", "true")
       .option("sort_scope", "LOCAL_SORT")
       .mode(SaveMode.Append)

@@ -55,8 +55,6 @@ object CarbonDataFrameExample {
     df.write
       .format("carbondata")
       .option("tableName", "carbon_df_table")
-      .option("compress", "true")
-      .option("tempCSV", "false")
       .mode(SaveMode.Overwrite)
       .save()
 

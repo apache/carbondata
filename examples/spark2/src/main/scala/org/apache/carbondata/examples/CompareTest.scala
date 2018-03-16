@@ -275,7 +275,6 @@ object CompareTest {
       input.write
           .format("carbondata")
           .option("tableName", tableName)
-          .option("tempCSV", "false")
           .option("single_pass", "true")
           .option("dictionary_exclude", "id") // id is high cardinality column
           .option("table_blocksize", "32")
