@@ -32,8 +32,7 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.spark.util.DataLoadingUtil
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 
 /**
  * Below helper class will be used to create pre-aggregate table
