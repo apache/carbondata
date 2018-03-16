@@ -105,14 +105,14 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
   }
 
   //TO DO, need to remove segment dependency and tableIdentifier Dependency
-  test("read carbondata files (sdk Writer Output) using the Carbonfile ") {
+  test("read carbondata files (sdk Writer Output) using the carbonfile ") {
     buildTestData(false)
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    //new provider Carbonfile
+    //new provider carbonfile
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
          |'$writerPath' """.stripMargin)
 
     sql("Describe formatted sdkOutputTable").show(false)
@@ -152,7 +152,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
     //data source file format
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
          |'$writerPath' """.stripMargin)
 
     val exception = intercept[MalformedCarbonCommandException]
@@ -176,7 +176,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
     //data source file format
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
          |'$writerPath' """.stripMargin)
 
     //org.apache.spark.SparkException: Index file not present to read the carbondata file
@@ -192,7 +192,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     cleanTestData()
   }
 
-
+  // TODO: Make the sparkCarbonFileFormat to work without index file
   test("Read sdk writer output file without Carbondata file should fail") {
     buildTestData(false)
     deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
@@ -202,7 +202,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     val exception = intercept[Exception] {
       //    data source file format
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
          |'$writerPath' """.stripMargin)
     }
     assert(exception.getMessage()
@@ -225,7 +225,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     val exception = intercept[Exception] {
       //data source file format
       sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'Carbonfile' LOCATION
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbonfile' LOCATION
          |'$writerPath' """.stripMargin)
 
       sql("select * from sdkOutputTable").show(false)

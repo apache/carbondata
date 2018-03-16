@@ -265,7 +265,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       val table = try {
         val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
         if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath)) &&
-            provider.equalsIgnoreCase("'Carbonfile'")) {
+            provider.equalsIgnoreCase("'carbonfile'")) {
           SchemaReader.inferSchema(identifier)
         }
         else {
@@ -277,12 +277,12 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
           operationNotAllowed(s"Invalid table path provided: ${tablePath.get} ", tableHeader)
       }
       // set "_external" property, so that DROP TABLE will not delete the data
-      if (provider.equalsIgnoreCase("'Carbonfile'")) {
-        table.getFactTable.getTableProperties.put("_filelevelexternal", "true")
+      if (provider.equalsIgnoreCase("'carbonfile'")) {
+        table.getFactTable.getTableProperties.put("_filelevelformat", "true")
         table.getFactTable.getTableProperties.put("_external", "false")
       } else {
         table.getFactTable.getTableProperties.put("_external", "true")
-        table.getFactTable.getTableProperties.put("_filelevelexternal", "false")
+        table.getFactTable.getTableProperties.put("_filelevelformat", "false")
       }
       table
     } else {

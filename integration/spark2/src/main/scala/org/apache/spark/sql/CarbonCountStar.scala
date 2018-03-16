@@ -34,7 +34,7 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 
 case class CarbonCountStar(
     attributesRaw: Seq[Attribute],
@@ -45,7 +45,7 @@ case class CarbonCountStar(
   override def doExecute(): RDD[InternalRow] = {
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val (job, tableInputFormat) = createCarbonInputFormat(absoluteTableIdentifier)
-    CarbonTableInputFormat.setQuerySegment(job.getConfiguration, absoluteTableIdentifier)
+    CarbonInputFormat.setQuerySegment(job.getConfiguration, absoluteTableIdentifier)
 
     // get row count
     val rowCount = CarbonUpdateUtil.getRowCount(

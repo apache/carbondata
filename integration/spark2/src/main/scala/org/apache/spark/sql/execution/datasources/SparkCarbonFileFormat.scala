@@ -51,7 +51,7 @@ import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader, InputMetricsStats}
-import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, DataMapJob}
+import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat, DataMapJob}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 @InterfaceAudience.User
@@ -105,9 +105,9 @@ class SparkCarbonFileFormat extends FileFormat
     }
   }
 
-  override def shortName(): String = "Carbonfile"
+  override def shortName(): String = "carbonfile"
 
-  override def toString: String = "Carbonfile"
+  override def toString: String = "carbonfile"
 
   override def hashCode(): Int = getClass.hashCode()
 
@@ -179,10 +179,9 @@ class SparkCarbonFileFormat extends FileFormat
       supportBatchValue = supportBatch(sparkSession, dataSchema)
     }
 
-    CarbonFileInputFormat.setTableName(job.getConfiguration, "externaldummy")
-    CarbonFileInputFormat.setDatabaseName(job.getConfiguration, "default")
+    CarbonInputFormat.setTableName(job.getConfiguration, "externaldummy")
+    CarbonInputFormat.setDatabaseName(job.getConfiguration, "default")
     CarbonMetadata.getInstance.removeTable("default_externaldummy")
-    val dataMapJob: DataMapJob = CarbonFileInputFormat.getDataMapJob(job.getConfiguration)
     val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]
 
     (file: PartitionedFile) => {
@@ -207,9 +206,9 @@ class SparkCarbonFileFormat extends FileFormat
         conf1.set("mapreduce.input.carboninputformat.tableName", "externaldummy")
         conf1.set("mapreduce.input.carboninputformat.databaseName", "default")
         conf1.set("mapreduce.input.fileinputformat.inputdir", tablePath)
-        CarbonFileInputFormat.setColumnProjection(conf1, carbonProjection)
+        CarbonInputFormat.setColumnProjection(conf1, carbonProjection)
         filter match {
-          case Some(c) => CarbonFileInputFormat.setFilterPredicates(conf1, c)
+          case Some(c) => CarbonInputFormat.setFilterPredicates(conf1, c)
           case None => None
         }
         val attemptContext = new TaskAttemptContextImpl(conf1, attemptId)

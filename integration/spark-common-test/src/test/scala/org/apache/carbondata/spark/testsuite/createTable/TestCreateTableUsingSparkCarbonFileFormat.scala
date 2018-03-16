@@ -113,11 +113,11 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     //data source file format
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
+      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
     } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
       //data source file format
       sql(
-        s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
            |'$filePath' """.stripMargin)
     } else{
       // TO DO
@@ -162,11 +162,11 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
 
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
+      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
     } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
       //data source file format
       sql(
-        s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
            |'$filePath' """.stripMargin)
     } else{
       // TO DO
@@ -184,6 +184,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     cleanTestData()
   }
 
+  // TODO: Make the sparkCarbonFileFormat to work without index file
   test("Read sdk writer output file without Carbondata file should fail") {
     buildTestData(false)
     deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
@@ -194,11 +195,11 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       //    data source file format
       if (sqlContext.sparkContext.version.startsWith("2.1")) {
         //data source file format
-        sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
+        sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
       } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
         //data source file format
         sql(
-          s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+          s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
              |'$filePath' """.stripMargin)
       } else{
         // TO DO
@@ -224,11 +225,11 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       //data source file format
       if (sqlContext.sparkContext.version.startsWith("2.1")) {
         //data source file format
-        sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
+        sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
       } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
         //data source file format
         sql(
-          s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+          s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
              |'$filePath' """.stripMargin)
       } else{
         // TO DO
@@ -254,11 +255,11 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
 
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
+      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
     } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
       //data source file format
       sql(
-        s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
            |'$filePath' """.stripMargin)
     } else{
       // TO DO
@@ -303,11 +304,11 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
 
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING Carbonfile OPTIONS (PATH '$filePath') """)
+      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
     } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
       //data source file format
       sql(
-        s"""CREATE TABLE sdkOutputTable USING Carbonfile LOCATION
+        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
            |'$filePath' """.stripMargin)
     } else{
       // TO DO

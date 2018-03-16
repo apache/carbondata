@@ -2214,7 +2214,7 @@ public final class CarbonUtil {
    * @param schemaFilePath
    * @return
    */
-  public static org.apache.carbondata.format.TableInfo inferSchemaFileExternalTable(
+  public static org.apache.carbondata.format.TableInfo inferSchema(
       String carbonDataFilePath, AbsoluteTableIdentifier absoluteTableIdentifier,
       boolean schemaExists) throws IOException {
     TBaseCreator createTBase = new ThriftReader.TBaseCreator() {

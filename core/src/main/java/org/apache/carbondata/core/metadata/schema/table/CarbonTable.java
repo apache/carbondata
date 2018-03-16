@@ -826,8 +826,8 @@ public class CarbonTable implements Serializable {
     return external != null && external.equalsIgnoreCase("true");
   }
 
-  public boolean isFileLevelExternalTable() {
-    String external = tableInfo.getFactTable().getTableProperties().get("_filelevelexternal");
+  public boolean isFileLevelFormat() {
+    String external = tableInfo.getFactTable().getTableProperties().get("_filelevelformat");
     return external != null && external.equalsIgnoreCase("true");
   }
 
