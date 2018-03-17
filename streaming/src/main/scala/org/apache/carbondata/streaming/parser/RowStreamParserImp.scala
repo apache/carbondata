@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.streaming.parser
 
+import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 
 import org.apache.hadoop.conf.Configuration
@@ -27,7 +28,6 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
-import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * SparkSQL Row Stream Parser.
@@ -61,12 +61,13 @@ class RowStreamParserImp extends CarbonStreamParser {
 
   override def parserRow(value: InternalRow): Array[Object] = {
     this.encoder.fromRow(value).toSeq.map { x => {
-      CarbonScalaUtil.getString(x,
-        serializationNullFormat, complexDelimiterLevel1, complexDelimiterLevel2,
+      FieldConverter.objectToString(
+        x, serializationNullFormat, complexDelimiterLevel1, complexDelimiterLevel2,
         timeStampFormat, dateFormat)
     } }.toArray
   }
 
   override def close(): Unit = {
   }
+
 }

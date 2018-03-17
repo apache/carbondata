@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hadoop.streaming;
+package org.apache.carbondata.streaming;
 
 import java.io.IOException;
 import java.nio.charset.Charset;

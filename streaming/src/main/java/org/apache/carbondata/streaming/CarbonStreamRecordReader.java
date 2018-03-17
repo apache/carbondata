@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hadoop.streaming;
+package org.apache.carbondata.streaming;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -60,7 +60,6 @@ import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.InputMetricsStats;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
-import org.apache.carbondata.hadoop.util.CarbonTypeUtil;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.hadoop.conf.Configuration;
@@ -79,6 +78,7 @@ import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
 import org.apache.spark.sql.types.CalendarIntervalType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.types.DecimalType;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.unsafe.types.CalendarInterval;
 import org.apache.spark.unsafe.types.UTF8String;
@@ -293,7 +293,8 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     cache = cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
     queryTypes = CarbonStreamInputFormat.getComplexDimensions(carbonTable, storageColumns, cache);
 
-    outputSchema = new StructType(CarbonTypeUtil.convertCarbonSchemaToSparkSchema(projection));
+    outputSchema = new StructType((StructField[])
+        DataTypeUtil.getDataTypeConverter().convertCarbonSchemaToSparkSchema(projection));
   }
 
   @Override public boolean nextKeyValue() throws IOException, InterruptedException {
@@ -621,7 +622,8 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
               filterValues[filterMap[colCount]] = v;
             }
             if (isProjectionRequired[colCount]) {
-              outputValues[projectionMap[colCount]] = Decimal.apply(v);
+              outputValues[projectionMap[colCount]] =
+                  DataTypeUtil.getDataTypeConverter().convertFromBigDecimalToDecimal(v);
             }
           } else {
             input.skipBytes(len);

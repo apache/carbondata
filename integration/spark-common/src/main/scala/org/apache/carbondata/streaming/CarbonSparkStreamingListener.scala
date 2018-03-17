@@ -17,8 +17,7 @@
 
 package org.apache.carbondata.streaming
 
-import org.apache.spark.scheduler.SparkListener
-import org.apache.spark.scheduler.SparkListenerApplicationEnd
+import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 
 class CarbonSparkStreamingListener extends SparkListener {
 

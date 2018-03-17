@@ -40,10 +40,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql_${scala.binary.version}</artifactId>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
@@ -55,9 +51,6 @@
     <resources>
       <resource>
         <directory>.</directory>
-        <includes>
-          <include>CARBON_HADOOPLogResource.properties</include>
-        </includes>
       </resource>
     </resources>
     <plugins>
