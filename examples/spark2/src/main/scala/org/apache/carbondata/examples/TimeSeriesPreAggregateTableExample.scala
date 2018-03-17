@@ -19,10 +19,11 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.ExampleUtils
 
 /**
  * This example is for time series pre-aggregate tables.
@@ -31,28 +32,28 @@ import org.apache.carbondata.core.util.CarbonProperties
 object TimeSeriesPreAggregateTableExample {
 
   def main(args: Array[String]) {
-
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
-    val testData = s"$rootPath/integration/spark-common-test/src/test/resources/timeseriestest.csv"
     val spark = ExampleUtils.createCarbonSession("TimeSeriesPreAggregateTableExample")
+    exampleBody(spark)
+    spark.close()
+  }
 
-    spark.sparkContext.setLogLevel("ERROR")
-
+  def exampleBody(spark : SparkSession): Unit = {
+    val rootPath = new File(this.getClass.getResource("/").getPath + "../../../..").getCanonicalPath
+    val testData = s"$rootPath/integration/spark-common-test/src/test/resources/timeseriestest.csv"
     import spark.implicits._
 
     import scala.util.Random
     val r = new Random()
     val df = spark.sparkContext.parallelize(1 to 10 * 1000 )
       .map(x => ("" + 20 + "%02d".format(r.nextInt(20)) + "-" + "%02d".format(r.nextInt(11) + 1) +
-        "-" + "%02d".format(r.nextInt(27) + 1) + " " + "%02d".format(r.nextInt(12)) + ":" +
-        "%02d".format(r.nextInt(59)) + ":" + "%02d".format(r.nextInt(59)), "name" + x % 8,
+                 "-" + "%02d".format(r.nextInt(27) + 1) + " " + "%02d".format(r.nextInt(12)) + ":" +
+                 "%02d".format(r.nextInt(59)) + ":" + "%02d".format(r.nextInt(59)), "name" + x % 8,
         r.nextInt(60))).toDF("mytime", "name", "age")
 
     // 1. usage for time series Pre-aggregate tables creation and query
     spark.sql("drop table if exists timeSeriesTable")
     spark.sql("CREATE TABLE timeSeriesTable(mytime timestamp," +
-      " name string, age int) STORED BY 'org.apache.carbondata.format'")
+              " name string, age int) STORED BY 'org.apache.carbondata.format'")
     spark.sql(
       s"""
          | CREATE DATAMAP agg0_hour ON TABLE timeSeriesTable
@@ -95,9 +96,13 @@ object TimeSeriesPreAggregateTableExample {
          'year')
       """.stripMargin).show()
 
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_DATE_FORMAT,
+      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+
     spark.sql("DROP TABLE IF EXISTS timeSeriesTable")
-
-    spark.close()
-
   }
 }

@@ -223,7 +223,7 @@ object ConcurrencyTest {
       val sqlText = query.sqlText.replace("$table", tableName)
 
       val executorService = Executors.newFixedThreadPool(ThreadNum)
-      val tasks = new util.ArrayList[Callable[Results]]()
+      val tasks = new java.util.ArrayList[Callable[Results]]()
 
       for (num <- 1 to TaskNum) {
         tasks.add(new QueryTask(spark, sqlText))
@@ -240,7 +240,7 @@ object ConcurrencyTest {
     }
   }
 
-  def printResult(results: util.List[Future[Results]], sql: String = "") {
+  def printResult(results: java.util.List[Future[Results]], sql: String = "") {
     val timeArray = new Array[Double](results.size())
     val sqlResult = results.get(0).get().sqlResult
     for (i <- 0 until results.size()) {

@@ -19,37 +19,33 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
+
+
 
 object CarbonPartitionExample {
 
   def main(args: Array[String]) {
+    val spark = ExampleUtils.createCarbonSession("CarbonPartitionExample")
+    exampleBody(spark)
+    spark.close()
+  }
+
+  def exampleBody(spark : SparkSession): Unit = {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/examples/spark2/target/store"
-    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val testData = s"$rootPath/integration/spark-common-test/src/test/resources/partition_data.csv"
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    import org.apache.spark.sql.CarbonSession._
-
-    val spark = SparkSession
-      .builder()
-      .master("local")
-      .appName("CarbonPartitionExample")
-      .config("spark.sql.warehouse.dir", warehouse)
-      .getOrCreateCarbonSession(storeLocation)
-
-    spark.sparkContext.setLogLevel("WARN")
 
     // range partition with bucket defined
     spark.sql("DROP TABLE IF EXISTS t0")
@@ -66,9 +62,7 @@ object CarbonPartitionExample {
                 | PARTITIONED BY (logdate Timestamp)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-                | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01',
-                | 'BUCKETNUMBER'='3',
-                | 'BUCKETCOLUMNS'='vin')
+                | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01')
               """.stripMargin)
 
     // none partition table
@@ -119,25 +113,25 @@ object CarbonPartitionExample {
                 | PARTITIONED BY (vin String)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
-                """.stripMargin)
+              """.stripMargin)
 
     // list partition
     spark.sql("DROP TABLE IF EXISTS t5")
     spark.sql("""
-       | CREATE TABLE IF NOT EXISTS t5
-       | (
-       | id Int,
-       | vin String,
-       | logdate Timestamp,
-       | phonenumber Long,
-       | area String,
-       | salary Int
-       |)
-       | PARTITIONED BY (country String)
-       | STORED BY 'carbondata'
-       | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-       | 'LIST_INFO'='(China, US),UK ,Japan,(Canada,Russia, Good, NotGood), Korea ')
-       """.stripMargin)
+                | CREATE TABLE IF NOT EXISTS t5
+                | (
+                | id Int,
+                | vin String,
+                | logdate Timestamp,
+                | phonenumber Long,
+                | area String,
+                | salary Int
+                |)
+                | PARTITIONED BY (country String)
+                | STORED BY 'carbondata'
+                | TBLPROPERTIES('PARTITION_TYPE'='LIST',
+                | 'LIST_INFO'='(China, US),UK ,Japan,(Canada,Russia, Good, NotGood), Korea ')
+              """.stripMargin)
 
     // load data into partition table
     spark.sql(s"""
@@ -163,9 +157,9 @@ object CarbonPartitionExample {
     // hive partition table
     spark.sql("DROP TABLE IF EXISTS t7")
     spark.sql("""
-       | create table t7(id int, name string) partitioned by (city string)
-       | row format delimited fields terminated by ','
-       """.stripMargin)
+                | create table t7(id int, name string) partitioned by (city string)
+                | row format delimited fields terminated by ','
+              """.stripMargin)
     spark.sql("alter table t7 add partition (city = 'Hangzhou')")
 
     // not default db partition table
@@ -177,16 +171,16 @@ object CarbonPartitionExample {
     spark.sql(s"DROP DATABASE IF EXISTS partitionDB")
     spark.sql(s"CREATE DATABASE partitionDB")
     spark.sql(s"""
-                | CREATE TABLE IF NOT EXISTS partitionDB.t9(
-                | id Int,
-                | logdate Timestamp,
-                | phonenumber Int,
-                | country String,
-                | area String
-                | )
-                | PARTITIONED BY (vin String)
-                | STORED BY 'carbondata'
-                | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
+                 | CREATE TABLE IF NOT EXISTS partitionDB.t9(
+                 | id Int,
+                 | logdate Timestamp,
+                 | phonenumber Int,
+                 | country String,
+                 | area String
+                 | )
+                 | PARTITIONED BY (vin String)
+                 | STORED BY 'carbondata'
+                 | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
                 """.stripMargin)
 
     // show tables
@@ -204,17 +198,18 @@ object CarbonPartitionExample {
     spark.sql("""SHOW PARTITIONS t7""").show(100, false)
     spark.sql("""SHOW PARTITIONS partitionDB.t9""").show(100, false)
 
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_DATE_FORMAT,
+      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+
     // drop table
     spark.sql("DROP TABLE IF EXISTS t0")
     spark.sql("DROP TABLE IF EXISTS t1")
+    spark.sql("DROP TABLE IF EXISTS t2")
     spark.sql("DROP TABLE IF EXISTS t3")
     spark.sql("DROP TABLE IF EXISTS t5")
     spark.sql("DROP TABLE IF EXISTS t7")
     spark.sql("DROP TABLE IF EXISTS partitionDB.t9")
     spark.sql(s"DROP DATABASE IF EXISTS partitionDB")
-
-    spark.close()
-
   }
-
 }

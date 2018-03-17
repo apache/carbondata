@@ -17,34 +17,19 @@
 
 package org.apache.carbondata.examples
 
-import java.io.File
-
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.ExampleUtils
 
 object CarbonDataFrameExample {
 
   def main(args: Array[String]) {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
-    val storeLocation = s"$rootPath/examples/spark2/target/store"
-    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
+    val spark = ExampleUtils.createCarbonSession("CarbonDataFrameExample")
+    exampleBody(spark)
+    spark.close()
+  }
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
-    import org.apache.spark.sql.CarbonSession._
-    val spark = SparkSession
-      .builder()
-      .master("local")
-      .appName("CarbonDataFrameExample")
-      .config("spark.sql.warehouse.dir", warehouse)
-      .getOrCreateCarbonSession(storeLocation)
-
-    spark.sparkContext.setLogLevel("ERROR")
-
+  def exampleBody(spark : SparkSession): Unit = {
     // Writes Dataframe to CarbonData file:
     import spark.implicits._
     val df = spark.sparkContext.parallelize(1 to 100)
@@ -83,7 +68,5 @@ object CarbonDataFrameExample {
     carbondf.filter($"number" > 31).show()
 
     spark.sql("DROP TABLE IF EXISTS carbon_df_table")
-
-    spark.stop()
   }
 }
