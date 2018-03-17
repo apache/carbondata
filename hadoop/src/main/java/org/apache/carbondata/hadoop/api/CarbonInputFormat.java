@@ -61,7 +61,6 @@ import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 
 import org.apache.commons.logging.Log;
@@ -411,12 +410,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
     // getAllMeasures returns list of visible and invisible columns
     boolean[] isFilterMeasures = new boolean[carbonTable.getAllMeasures().size()];
-    CarbonInputFormatUtil
-        .processFilterExpression(filter, carbonTable, isFilterDimensions, isFilterMeasures);
+    carbonTable.processFilterExpression(filter, isFilterDimensions, isFilterMeasures);
     queryModel.setIsFilterDimensions(isFilterDimensions);
     queryModel.setIsFilterMeasures(isFilterMeasures);
-    FilterResolverIntf filterIntf = CarbonInputFormatUtil
-        .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
+    FilterResolverIntf filterIntf = carbonTable.resolveFilter(filter, tableProvider);
     queryModel.setFilterExpressionResolverTree(filterIntf);
 
     // update the file level index store if there are invalid segment

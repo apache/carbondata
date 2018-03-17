@@ -265,11 +265,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       AbstractIndex abstractIndex = queryProperties.dataBlocks.get(i);
       BlockletDataRefNode dataRefNode =
           (BlockletDataRefNode) abstractIndex.getDataRefNode();
-      blockExecutionInfoList.add(getBlockExecutionInfoForBlock(queryModel, abstractIndex,
-          dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
-          dataRefNode.numberOfNodes(), dataRefNode.getBlockInfos().get(0).getFilePath(),
-          dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
-          dataRefNode.getBlockInfos().get(0).getSegmentId()));
+      blockExecutionInfoList.add(
+          getBlockExecutionInfoForBlock(
+              queryModel,
+              abstractIndex,
+              dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
+              dataRefNode.numberOfNodes(),
+              dataRefNode.getBlockInfos().get(0).getFilePath(),
+              dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
+              dataRefNode.getBlockInfos().get(0).getSegmentId()));
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();

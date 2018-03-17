@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -43,8 +44,6 @@ import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
-import org.apache.carbondata.hadoop.util.SchemaReader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -119,10 +118,9 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // this will be null in case of corrupt schema file.
       PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
-      CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
+      carbonTable.processFilterExpression(filter, null, null);
 
-      FilterResolverIntf filterInterface = CarbonInputFormatUtil
-          .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
+      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter, tableProvider);
 
       String segmentDir = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null");
       FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
