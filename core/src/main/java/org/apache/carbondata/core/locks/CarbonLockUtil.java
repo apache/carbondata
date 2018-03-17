@@ -126,15 +126,16 @@ public class CarbonLockUtil {
     CarbonFile[] files = FileFactory.getCarbonFile(lockFilesDir)
         .listFiles(new CarbonFileFilter() {
 
-      @Override public boolean accept(CarbonFile pathName) {
-        if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
-          if ((currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime) {
-            return true;
-          }
+            @Override public boolean accept(CarbonFile pathName) {
+              if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
+                if ((currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime) {
+                  return true;
+                }
+              }
+              return false;
+            }
         }
-        return false;
-      }
-    });
+    );
 
     for (CarbonFile file : files) {
       file.delete();
