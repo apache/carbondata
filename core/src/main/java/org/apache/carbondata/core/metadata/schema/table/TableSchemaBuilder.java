@@ -47,6 +47,8 @@ public class TableSchemaBuilder {
 
   private int blockSize;
 
+  private String tableName;
+
   public TableSchemaBuilder blockSize(int blockSize) {
     if (blockSize <= 0) {
       throw new IllegalArgumentException("blockSize should be greater than 0");
@@ -55,8 +57,15 @@ public class TableSchemaBuilder {
     return this;
   }
 
+  public TableSchemaBuilder tableName(String tableName) {
+    Objects.requireNonNull(tableName);
+    this.tableName = tableName;
+    return this;
+  }
+
   public TableSchema build() {
     TableSchema schema = new TableSchema();
+    schema.setTableName(tableName);
     schema.setTableId(UUID.randomUUID().toString());
     schema.setPartitionInfo(null);
     schema.setBucketingInfo(null);

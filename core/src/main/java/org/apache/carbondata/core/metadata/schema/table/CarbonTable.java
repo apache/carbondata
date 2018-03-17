@@ -30,21 +30,32 @@ import java.util.Map;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.reader.CarbonHeaderReader;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
+import org.apache.carbondata.core.scan.filter.TableProvider;
+import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
+import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryProjection;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.format.FileHeader;
 
 /**
  * Mapping class for Carbon actual table
@@ -190,6 +201,34 @@ public class CarbonTable implements Serializable {
                 columnSchema.getScale()));
       }
     }
+  }
+
+  public static CarbonTable buildFromDataFile(
+      String tableName, String tablePath, String filePath) throws IOException {
+    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(filePath);
+    FileHeader fileHeader = carbonHeaderReader.readHeader();
+    TableSchemaBuilder builder = TableSchema.builder();
+    ThriftWrapperSchemaConverterImpl schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    for (org.apache.carbondata.format.ColumnSchema column : fileHeader.getColumn_schema()) {
+      ColumnSchema columnSchema = schemaConverter.fromExternalToWrapperColumnSchema(column);
+      builder.addColumn(
+          new StructField(columnSchema.getColumnName(), columnSchema.getDataType()), false);
+    }
+
+    TableSchema tableSchema = builder.tableName(tableName).build();
+    TableInfo tableInfo = new TableInfo();
+    tableInfo.setFactTable(tableSchema);
+    tableInfo.setTablePath(tablePath);
+    tableInfo.setDatabaseName("default");
+    tableInfo.setTableUniqueName(
+        CarbonTable.buildUniqueName("default", tableSchema.getTableName()));
+    return buildFromTableInfo(tableInfo);
+  }
+
+  public static CarbonTable buildFromTablePath(
+      String tableName, String tablePath) throws IOException {
+    return SchemaReader.readCarbonTableFromStore(
+        AbsoluteTableIdentifier.from(tablePath, tableName, "default"));
   }
 
   /**
@@ -489,6 +528,20 @@ public class CarbonTable implements Serializable {
    */
   public List<CarbonMeasure> getMeasureByTableName(String tableName) {
     return tableMeasuresMap.get(tableName);
+  }
+
+  /**
+   * Return all dimensions of the table
+   */
+  public List<CarbonDimension> getDimensions() {
+    return tableDimensionsMap.get(getTableName());
+  }
+
+  /**
+   * Return all measure of the table
+   */
+  public List<CarbonMeasure> getMeasures() {
+    return tableMeasuresMap.get(getTableName());
   }
 
   /**
@@ -877,7 +930,7 @@ public class CarbonTable implements Serializable {
     return queryModel;
   }
 
-  private QueryProjection createProjection(String[] projectionColumnNames) {
+  public QueryProjection createProjection(String[] projectionColumnNames) {
     String factTableName = getTableName();
     QueryProjection projection = new QueryProjection();
     // fill dimensions
@@ -902,6 +955,33 @@ public class CarbonTable implements Serializable {
     }
 
     return projection;
+  }
+
+  public void processFilterExpression(Expression filterExpression,
+      boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
+    QueryModel.processFilterExpression(this, filterExpression, isFilterDimensions,
+        isFilterMeasures);
+
+    if (null != filterExpression) {
+      // Optimize Filter Expression and fit RANGE filters is conditions apply.
+      FilterOptimizer rangeFilterOptimizer =
+          new RangeFilterOptmizer(filterExpression);
+      rangeFilterOptimizer.optimizeFilter();
+    }
+  }
+
+  /**
+   * Resolve the filter expression.
+   */
+  public FilterResolverIntf resolveFilter(Expression filterExpression,
+      TableProvider tableProvider) {
+    try {
+      FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
+      return filterExpressionProcessor.getFilterResolver(
+          filterExpression, getAbsoluteTableIdentifier(), tableProvider);
+    } catch (Exception e) {
+      throw new RuntimeException("Error while resolving filter expression", e);
+    }
   }
 
   /**
