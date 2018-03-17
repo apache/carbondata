@@ -19,14 +19,21 @@ package org.apache.carbondata.spark.thriftserver
 
 import java.io.File
 
+import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
+import org.slf4j.{Logger, LoggerFactory}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
+/**
+ * CarbonThriftServer support different modes:
+ * 1. read/write data from/to HDFS or local,it only needs configurate storePath
+ * 2. read/write data from/to S3, it needs provide access-key, secret-key, s3-endpoint
+ */
 object CarbonThriftServer {
 
   def main(args: Array[String]): Unit = {
@@ -34,6 +41,13 @@ object CarbonThriftServer {
     import org.apache.spark.sql.CarbonSession._
 
     val sparkConf = new SparkConf(loadDefaults = true)
+
+    val logger: Logger = LoggerFactory.getLogger(this.getClass)
+    if (args.length != 0 && args.length != 1 && args.length != 4) {
+      logger.error("parameters: storePath [access-key] [secret-key] [s3-endpoint]")
+      System.exit(0)
+    }
+
     val builder = SparkSession
       .builder()
       .config(sparkConf)
@@ -55,7 +69,16 @@ object CarbonThriftServer {
 
     val storePath = if (args.length > 0) args.head else null
 
-    val spark = builder.getOrCreateCarbonSession(storePath)
+    val spark = if (args.length <= 1) {
+      builder.getOrCreateCarbonSession(storePath)
+    } else {
+      val (accessKey, secretKey, endpoint) = getKeyOnPrefix(args(0))
+      builder.config(accessKey, args(1))
+        .config(secretKey, args(2))
+        .config(endpoint, getS3EndPoint(args))
+        .getOrCreateCarbonSession(storePath)
+    }
+
     val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000")
     try {
       Thread.sleep(Integer.parseInt(warmUpTime))
@@ -68,6 +91,26 @@ object CarbonThriftServer {
     }
 
     HiveThriftServer2.startWithContext(spark.sqlContext)
+  }
+
+  def getKeyOnPrefix(path: String): (String, String, String) = {
+    val endPoint = "spark.hadoop." + ENDPOINT
+    if (path.startsWith(CarbonCommonConstants.S3A_PREFIX)) {
+      ("spark.hadoop." + ACCESS_KEY, "spark.hadoop." + SECRET_KEY, endPoint)
+    } else if (path.startsWith(CarbonCommonConstants.S3N_PREFIX)) {
+      ("spark.hadoop." + CarbonCommonConstants.S3N_ACCESS_KEY,
+        "spark.hadoop." + CarbonCommonConstants.S3N_SECRET_KEY, endPoint)
+    } else if (path.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      ("spark.hadoop." + CarbonCommonConstants.S3_ACCESS_KEY,
+        "spark.hadoop." + CarbonCommonConstants.S3_SECRET_KEY, endPoint)
+    } else {
+      throw new Exception("Incorrect Store Path")
+    }
+  }
+
+  def getS3EndPoint(args: Array[String]): String = {
+    if (args.length >= 4 && args(3).contains(".com")) args(3)
+    else ""
   }
 
 }
