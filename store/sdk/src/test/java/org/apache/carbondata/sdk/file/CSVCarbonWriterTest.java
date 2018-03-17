@@ -19,11 +19,14 @@ package org.apache.carbondata.sdk.file;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 
+import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.io.FileUtils;
@@ -132,6 +135,37 @@ public class CSVCarbonWriterTest {
     });
     Assert.assertNotNull(dataFiles);
     Assert.assertTrue(dataFiles.length > 0);
+  }
+
+  @Test
+  public void testWriteAndReadFiles() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    writeFilesAndVerify(new Schema(fields), path, true);
+
+    File[] files = new File(path + "/Fact/Part0/Segment_null/").listFiles(new FilenameFilter() {
+      @Override public boolean accept(File dir, String name) {
+        return name.endsWith("carbondata");
+      }
+    });
+
+    CarbonReader reader = CarbonReader.builder(path, files[0].getPath())
+        .projection(new String[]{"name", "age"}).build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[])reader.readNextRow();
+      Assert.assertEquals("robot" + (i % 10), row[0]);
+      Assert.assertEquals(i, row[1]);
+      i++;
+    }
+
+    FileUtils.deleteDirectory(new File(path));
   }
 
   @Test
