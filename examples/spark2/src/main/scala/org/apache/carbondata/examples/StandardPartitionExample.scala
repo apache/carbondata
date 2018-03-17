@@ -23,6 +23,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.ExampleUtils
 
 /**
  * This example is for standard partition, same as hive and spark partition
@@ -31,18 +32,18 @@ import org.apache.carbondata.core.util.CarbonProperties
 object StandardPartitionExample {
 
   def main(args: Array[String]) {
+    val spark = ExampleUtils.createCarbonSession("StandardPartitionExample")
+    exampleBody(spark)
+    spark.close()
+  }
 
+  def exampleBody(spark : SparkSession): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
     val testData = s"$rootPath/integration/spark-common-test/src/test/resources/" +
                    s"partition_data_example.csv"
-    val spark = ExampleUtils.createCarbonSession("StandardPartitionExample")
-
-    spark.sparkContext.setLogLevel("ERROR")
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-
     /**
      * 1. Partition basic usages
      */
@@ -186,12 +187,13 @@ object StandardPartitionExample {
     println("----time of with partition----:" + time_with_partition.toString)
     // scalastyle:on
 
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_DATE_FORMAT,
+      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+
     spark.sql("DROP TABLE IF EXISTS partitiontable0")
     spark.sql("DROP TABLE IF EXISTS withoutpartition")
     spark.sql("DROP TABLE IF EXISTS withpartition")
     spark.sql("DROP TABLE IF EXISTS origintable")
-
-    spark.close()
-
   }
 }

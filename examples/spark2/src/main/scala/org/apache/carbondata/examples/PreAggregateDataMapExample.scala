@@ -19,7 +19,9 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
+import org.apache.carbondata.examples.util.ExampleUtils
 
 /**
  * This example is for pre-aggregate tables.
@@ -28,13 +30,15 @@ import org.apache.spark.sql.SaveMode
 object PreAggregateDataMapExample {
 
   def main(args: Array[String]) {
+    val spark = ExampleUtils.createCarbonSession("PreAggregateTableExample")
+    exampleBody(spark)
+    spark.close()
+  }
 
+  def exampleBody(spark : SparkSession): Unit = {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
     val testData = s"$rootPath/integration/spark-common-test/src/test/resources/sample.csv"
-    val spark = ExampleUtils.createCarbonSession("PreAggregateTableExample")
-
-    spark.sparkContext.setLogLevel("ERROR")
 
     // 1. simple usage for Pre-aggregate tables creation and query
     spark.sql("DROP TABLE IF EXISTS mainTable")
@@ -59,6 +63,10 @@ object PreAggregateDataMapExample {
 
     spark.sql(s"""
        LOAD DATA LOCAL INPATH '$testData' into table mainTable
+       """)
+
+    spark.sql("""
+       select * from mainTable
        """)
 
     spark.sql(s"""
@@ -101,7 +109,7 @@ object PreAggregateDataMapExample {
     spark.sql("show datamap on table mainTable").show(false)
 
     // drop datamap
-    spark.sql("drop datamap preagg_count on table mainTable").show()
+    spark.sql("drop datamap preagg_count_age on table mainTable").show()
     spark.sql("show datamap on table mainTable").show(false)
 
     spark.sql(
@@ -114,7 +122,7 @@ object PreAggregateDataMapExample {
       s"""create datamap preagg_count on table maintable using 'preaggregate' as
          | select name, count(*) from maintable group by name""".stripMargin)
 
-    spark.sql("show datamap on table maintable").show
+    spark.sql("show datamap on table maintable").show(false)
 
     spark.sql(
       s"""
@@ -139,7 +147,7 @@ object PreAggregateDataMapExample {
       s"""
          | select t1.name,t1.city from mainTable_other t1 join
          | (select name as newnewname,sum(age) as sum
-         | from mainTable group by name )t2 on t1.name=t2.newnewname
+         | from mainTable group by name) t2 on t1.name=t2.newnewname
       """.stripMargin).show()
 
     // 2.compare the performance : with pre-aggregate VS main table
@@ -218,17 +226,14 @@ object PreAggregateDataMapExample {
     }
     // scalastyle:off
     println("time for query with function sum on table with pre-aggregate table:" +
-      time_with_aggTable_sum.toString)
+            time_with_aggTable_sum.toString)
     println("time for query with function sum on table without pre-aggregate table:" +
-      time_without_aggTable_sum.toString)
+            time_without_aggTable_sum.toString)
     // scalastyle:on
 
     spark.sql("DROP TABLE IF EXISTS mainTable")
     spark.sql("DROP TABLE IF EXISTS mainTable_other")
     spark.sql("DROP TABLE IF EXISTS personTable")
     spark.sql("DROP TABLE IF EXISTS personTableWithoutAgg")
-
-    spark.close()
-
   }
 }

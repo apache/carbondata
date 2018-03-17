@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
+import org.apache.carbondata.examples.util.ExampleUtils
 
 case class StructElement(school: Array[String], age: Int)
 case class ComplexTypeData(id: Int, name: String, city: String, salary: Float, file: StructElement)
@@ -28,6 +30,11 @@ object DataFrameComplexTypeExample {
   def main(args: Array[String]) {
 
     val spark = ExampleUtils.createCarbonSession("DataFrameComplexTypeExample", 4)
+    exampleBody(spark)
+    spark.close()
+  }
+
+  def exampleBody(spark : SparkSession): Unit = {
     val complexTableName = s"complex_type_table"
 
     import spark.implicits._
@@ -52,13 +59,13 @@ object DataFrameComplexTypeExample {
     val sc = spark.sparkContext
     // generate data
     val df = sc.parallelize(Seq(
-        ComplexTypeData(1, "index_1", "city_1", 10000.0f,
-            StructElement(Array("struct_11", "struct_12"), 10)),
-        ComplexTypeData(2, "index_2", "city_2", 20000.0f,
-            StructElement(Array("struct_21", "struct_22"), 20)),
-        ComplexTypeData(3, "index_3", "city_3", 30000.0f,
-            StructElement(Array("struct_31", "struct_32"), 30))
-      )).toDF
+      ComplexTypeData(1, "index_1", "city_1", 10000.0f,
+        StructElement(Array("struct_11", "struct_12"), 10)),
+      ComplexTypeData(2, "index_2", "city_2", 20000.0f,
+        StructElement(Array("struct_21", "struct_22"), 20)),
+      ComplexTypeData(3, "index_3", "city_3", 30000.0f,
+        StructElement(Array("struct_31", "struct_32"), 30))
+    )).toDF
     df.printSchema()
     df.write
       .format("carbondata")
@@ -83,8 +90,6 @@ object DataFrameComplexTypeExample {
 
     // drop table
     spark.sql(s"DROP TABLE IF EXISTS ${ complexTableName }")
-
-    spark.stop()
   }
 }
 // scalastyle:on println
