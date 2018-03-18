@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.streaming.parser
 
+import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 
 import org.apache.hadoop.conf.Configuration
@@ -60,12 +61,13 @@ class RowStreamParserImp extends CarbonStreamParser {
 
   override def parserRow(value: InternalRow): Array[Object] = {
     this.encoder.fromRow(value).toSeq.map { x => {
-      CarbonScalaUtil.getString(x,
-        serializationNullFormat, complexDelimiterLevel1, complexDelimiterLevel2,
+      FieldConverter.objectToString(
+        x, serializationNullFormat, complexDelimiterLevel1, complexDelimiterLevel2,
         timeStampFormat, dateFormat)
     } }.toArray
   }
 
   override def close(): Unit = {
   }
+
 }

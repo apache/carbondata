@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.streaming
+package org.apache.carbondata.streaming
 
 import java.util
 import java.util.UUID
 
-import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, StreamExecution}
 import org.apache.spark.sql.streaming.StreamingQueryListener
 
 import org.apache.carbondata.common.logging.LogServiceFactory

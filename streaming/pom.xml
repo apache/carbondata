@@ -20,11 +20,6 @@
   </properties>
 
   <dependencies>
-    <!--<dependency>
-      <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark-common</artifactId>
-      <version>${project.version}</version>
-    </dependency>-->
     <dependency>
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-hadoop</artifactId>
