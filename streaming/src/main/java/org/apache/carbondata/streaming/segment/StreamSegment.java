@@ -42,7 +42,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletIndex;
-import org.apache.carbondata.hadoop.streaming.CarbonStreamRecordWriter;
+import org.apache.carbondata.streaming.CarbonStreamRecordWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.hadoop.mapreduce.TaskAttemptContext;

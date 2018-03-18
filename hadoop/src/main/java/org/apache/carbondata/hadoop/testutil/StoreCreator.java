@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.test.util;
+package org.apache.carbondata.hadoop.testutil;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

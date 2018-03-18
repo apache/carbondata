@@ -27,7 +27,6 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
-import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * SparkSQL Row Stream Parser.
