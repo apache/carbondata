@@ -20,11 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * class for handling restructure scenarios for filling result
@@ -86,6 +88,9 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
             if (dictionaryEncodingArray[i] || directDictionaryEncodingArray[i]) {
               row[order[i]] = dimensionInfo.getDefaultValues()[i];
               dictionaryColumnIndex++;
+            } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
+              row[order[i]] = DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8String(
+                  (byte[])dimensionInfo.getDefaultValues()[i]);
             } else {
               row[order[i]] = dimensionInfo.getDefaultValues()[i];
             }
@@ -119,8 +124,11 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
             scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex]),
             scannedResult.getCurrentRowId(), queryMeasure.getMeasure());
         measureExistIndex++;
-      } else {
+      } else if (DataTypes.isDecimal(measureInfo.getMeasureDataTypes()[i])) {
         // if not then get the default value
+        msrValues[i + offset] = DataTypeUtil.getDataTypeConverter()
+            .convertFromBigDecimalToDecimal(measureDefaultValues[i]);
+      } else {
         msrValues[i + offset] = measureDefaultValues[i];
       }
     }

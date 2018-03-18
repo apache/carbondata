@@ -18,10 +18,29 @@
 package org.apache.carbondata.presto;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+
+import org.apache.spark.sql.types.ArrayType;
+import org.apache.spark.sql.types.BooleanType;
+import org.apache.spark.sql.types.DateType;
+import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.sql.types.DecimalType;
+import org.apache.spark.sql.types.DoubleType;
+import org.apache.spark.sql.types.FloatType;
+import org.apache.spark.sql.types.IntegerType;
+import org.apache.spark.sql.types.LongType;
+import org.apache.spark.sql.types.NullType;
+import org.apache.spark.sql.types.ShortType;
+import org.apache.spark.sql.types.StringType;
+import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.types.TimestampType;
 
 public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
@@ -217,5 +236,50 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
     this.filteredRowsExist = filteredRowsExist;
+  }
+
+  // TODO: this is copied from carbondata-spark-common module, use presto type instead of this
+  private org.apache.carbondata.core.metadata.datatype.DataType
+  convertSparkToCarbonDataType(org.apache.spark.sql.types.DataType dataType) {
+    if (dataType instanceof StringType) {
+      return DataTypes.STRING;
+    } else if (dataType instanceof ShortType) {
+      return DataTypes.SHORT;
+    } else if (dataType instanceof IntegerType) {
+      return DataTypes.INT;
+    } else if (dataType instanceof LongType) {
+      return DataTypes.LONG;
+    } else if (dataType instanceof DoubleType) {
+      return DataTypes.DOUBLE;
+    } else if (dataType instanceof FloatType) {
+      return DataTypes.FLOAT;
+    } else if (dataType instanceof DateType) {
+      return DataTypes.DATE;
+    } else if (dataType instanceof BooleanType) {
+      return DataTypes.BOOLEAN;
+    } else if (dataType instanceof TimestampType) {
+      return DataTypes.TIMESTAMP;
+    } else if (dataType instanceof NullType) {
+      return DataTypes.NULL;
+    } else if (dataType instanceof DecimalType) {
+      DecimalType decimal = (DecimalType) dataType;
+      return DataTypes.createDecimalType(decimal.precision(), decimal.scale());
+    } else if (dataType instanceof ArrayType) {
+      org.apache.spark.sql.types.DataType elementType = ((ArrayType) dataType).elementType();
+      return DataTypes.createArrayType(convertSparkToCarbonDataType(elementType));
+    } else if (dataType instanceof StructType) {
+      StructType structType = (StructType) dataType;
+      org.apache.spark.sql.types.StructField[] fields = structType.fields();
+      List<StructField> carbonFields = new ArrayList<>();
+      for (org.apache.spark.sql.types.StructField field : fields) {
+        carbonFields.add(
+            new StructField(
+                field.name(),
+                convertSparkToCarbonDataType(field.dataType())));
+      }
+      return DataTypes.createStructType(carbonFields);
+    } else {
+      throw new UnsupportedOperationException("getting " + dataType + " from presto");
+    }
   }
 }

@@ -32,7 +32,6 @@ import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.spark.sql.types.Decimal;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -210,7 +209,7 @@ public class GreaterThanEqualToExpressionUnitTest {
     left.setColIndex(1);
     greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
     RowImpl value = new RowImpl();
-    Decimal[] row = new Decimal[] { Decimal.apply(12345.0) };
+    BigDecimal[] row = new BigDecimal[] { new BigDecimal(12345.0) };
     Object objectRow[] = { row, row };
     value.setValues(objectRow);
 

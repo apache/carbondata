@@ -18,9 +18,12 @@
 package org.apache.carbondata.spark.util;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 import org.apache.carbondata.core.util.DataTypeConverter;
 
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.catalyst.util.GenericArrayData;
 import org.apache.spark.unsafe.types.UTF8String;
 
 /**
@@ -30,14 +33,26 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
 
   private static final long serialVersionUID = -4379212832935070583L;
 
-  public Object convertToDecimal(Object data) {
-    if (null == data) {
-      return null;
-    }
+  @Override
+  public Object convertFromStringToDecimal(Object data) {
     java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
     return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
   }
 
+  @Override
+  public Object convertFromBigDecimalToDecimal(Object data) {
+    if (null == data) {
+      return null;
+    }
+    return org.apache.spark.sql.types.Decimal.apply((BigDecimal)data);
+  }
+
+  @Override
+  public Object convertFromDecimalToBigDecimal(Object data) {
+    return ((org.apache.spark.sql.types.Decimal) data).toJavaBigDecimal();
+  }
+
+  @Override
   public byte[] convertFromStringToByte(Object data) {
     if (null == data) {
       return null;
@@ -45,17 +60,34 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
     return UTF8String.fromString((String) data).getBytes();
   }
 
-  public Object convertFromByteToUTF8String(Object data) {
+  @Override
+  public Object convertFromByteToUTF8String(byte[] data) {
     if (null == data) {
       return null;
     }
-    return UTF8String.fromBytes((byte[]) data);
+    return UTF8String.fromBytes(data);
   }
 
+  @Override
+  public byte[] convertFromByteToUTF8Bytes(byte[] data) {
+    return UTF8String.fromBytes(data).getBytes();
+  }
+
+  @Override
   public Object convertFromStringToUTF8String(Object data) {
     if (null == data) {
       return null;
     }
     return UTF8String.fromString((String) data);
+  }
+
+  @Override
+  public Object wrapWithGenericArrayData(Object data) {
+    return new GenericArrayData(data);
+  }
+
+  @Override
+  public Object wrapWithGenericRow(Object[] fields) {
+    return new GenericInternalRow(fields);
   }
 }
