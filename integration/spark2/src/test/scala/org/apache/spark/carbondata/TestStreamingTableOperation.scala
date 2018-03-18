@@ -994,6 +994,36 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from streaming.stream_table_handoff"),
       Seq(Row(2 * 100))
     )
+    try{
+      sql("set carbon.input.segments.streaming.stream_table_handoff = 1")
+      checkAnswer(
+        sql("select count(*) from streaming.stream_table_handoff"),
+        Seq(Row(100))
+      )
+      sql("set carbon.input.segments.streaming.stream_table_handoff = *")
+      checkAnswer(
+        sql("select count(*) from streaming.stream_table_handoff"),
+        Seq(Row(2 * 100))
+      )
+      sql("set carbon.input.segments.streaming.stream_table_handoff = 2")
+      checkAnswer(
+        sql("select count(*) from streaming.stream_table_handoff"),
+        Seq(Row(1 * 100))
+      )
+      sql("set carbon.input.segments.streaming.stream_table_handoff = 1,2")
+      checkAnswer(
+        sql("select count(*) from streaming.stream_table_handoff"),
+        Seq(Row(2 * 100))
+      )
+      sql("set carbon.input.segments.streaming.stream_table_handoff = 3")
+      checkAnswer(
+        sql("select count(*) from streaming.stream_table_handoff"),
+        Seq(Row(0))
+      )
+    }
+    finally {
+      sql("set carbon.input.segments.streaming.stream_table_handoff = *")
+    }
 
     try {
       sql("ALTER TABLE stream_table_handoff SET TBLPROPERTIES('streaming'='false')")
