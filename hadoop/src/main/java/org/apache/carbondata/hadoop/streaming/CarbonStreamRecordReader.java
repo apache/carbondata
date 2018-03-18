@@ -293,7 +293,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     cache = cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
     queryTypes = CarbonStreamInputFormat.getComplexDimensions(carbonTable, storageColumns, cache);
 
-    outputSchema = new StructType(CarbonTypeUtil.convertCarbonSchemaToSparkSchema(projection));
+    outputSchema = new StructType(DataTypeUtil.getDataTypeConverter().convertCarbonSchemaToSparkSchema(projection));
   }
 
   @Override public boolean nextKeyValue() throws IOException, InterruptedException {
