@@ -358,6 +358,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
       List<Segment> validSegments = segments.getValidSegments();
       streamSegments = segments.getStreamSegments();
+      streamSegments = getFilteredSegment(job,streamSegments);
       if (validSegments.size() == 0) {
         return getSplitsOfStreaming(job, identifier, streamSegments);
       }
@@ -366,7 +367,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
       List<Segment> filteredSegmentToAccess = getFilteredSegment(job, segments.getValidSegments());
       if (filteredSegmentToAccess.size() == 0) {
-        return new ArrayList<>(0);
+        return getSplitsOfStreaming(job, identifier, streamSegments);
       } else {
         setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
       }
