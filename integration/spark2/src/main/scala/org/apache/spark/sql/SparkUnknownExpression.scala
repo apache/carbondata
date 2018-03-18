@@ -22,7 +22,7 @@ import java.util.{ArrayList, List}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericInternalRow}
+import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, Expression => SparkExpression}
 
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.scan.expression.{ColumnExpression, Expression, ExpressionResult, UnknownExpression}
