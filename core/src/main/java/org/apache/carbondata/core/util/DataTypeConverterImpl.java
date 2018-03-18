@@ -26,7 +26,8 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
 
   private static final long serialVersionUID = -1718154403432354200L;
 
-  public Object convertToDecimal(Object data) {
+  @Override
+  public Object convertFromStringToDecimal(Object data) {
     if (null == data) {
       return null;
     }
@@ -36,13 +37,35 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
     return new BigDecimal(data.toString());
   }
 
-  public Object convertFromByteToUTF8String(Object data) {
+  @Override
+  public Object convertFromBigDecimalToDecimal(Object data) {
     if (null == data) {
       return null;
     }
-    return new String((byte[]) data, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+    if (data instanceof BigDecimal) {
+      return data;
+    }
+    return new BigDecimal(data.toString());
   }
 
+  @Override public Object convertFromDecimalToBigDecimal(Object data) {
+    return convertFromBigDecimalToDecimal(data);
+  }
+
+  @Override
+  public Object convertFromByteToUTF8String(byte[] data) {
+    if (null == data) {
+      return null;
+    }
+    return new String(data, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+  }
+
+  @Override
+  public byte[] convertFromByteToUTF8Bytes(byte[] data) {
+    return data;
+  }
+
+  @Override
   public byte[] convertFromStringToByte(Object data) {
     if (null == data) {
       return null;
@@ -50,10 +73,22 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
     return data.toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
   }
 
+  @Override
   public Object convertFromStringToUTF8String(Object data) {
     if (null == data) {
       return null;
     }
     return data.toString();
   }
+
+  @Override
+  public Object wrapWithGenericArrayData(Object data) {
+    return data;
+  }
+
+  @Override
+  public Object wrapWithGenericRow(Object[] fields) {
+    return fields;
+  }
+
 }

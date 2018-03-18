@@ -36,14 +36,11 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private boolean filteredRowsExist;
 
-  private DataType dataType;
-
   private DataType blockDataType;
 
   ColumnarVectorWrapper(ColumnVector columnVector, boolean[] filteredRows) {
     this.columnVector = columnVector;
     this.filteredRows = filteredRows;
-    this.dataType = CarbonScalaUtil.convertSparkToCarbonDataType(columnVector.dataType());
   }
 
   @Override public void putBoolean(int rowId, boolean value) {
@@ -117,16 +114,16 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
     if (!filteredRows[rowId]) {
-      Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(value);
+      Decimal toDecimal = Decimal.apply(value);
       columnVector.putDecimal(counter++, toDecimal, precision);
     }
   }
 
   @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
+    Decimal decimal = Decimal.apply(value);
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(value);
-        columnVector.putDecimal(counter++, toDecimal, precision);
+        columnVector.putDecimal(counter++, decimal, precision);
       }
       rowId++;
     }
@@ -210,7 +207,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public DataType getType() {
-    return dataType;
+    return CarbonScalaUtil.convertSparkToCarbonDataType(columnVector.dataType());
   }
 
   @Override

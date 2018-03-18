@@ -75,7 +75,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         Object defaultValue = measureInfo.getDefaultValues()[i];
         if (null != defaultValue && DataTypes.isDecimal(measureInfo.getMeasureDataTypes()[i])) {
           // convert data type as per the computing engine
-          defaultValue = DataTypeUtil.getDataTypeConverter().convertToDecimal(defaultValue);
+          defaultValue =
+              DataTypeUtil.getDataTypeConverter().convertFromBigDecimalToDecimal(defaultValue);
         }
         msrValues[i + offset] = defaultValue;
       }
@@ -100,7 +101,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
               bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         }
         // convert data type as per the computing engine
-        return DataTypeUtil.getDataTypeConverter().convertToDecimal(bigDecimalMsrValue);
+        return DataTypeUtil.getDataTypeConverter().convertFromBigDecimalToDecimal(
+            bigDecimalMsrValue);
       } else {
         return dataChunk.getDouble(index);
       }

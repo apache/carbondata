@@ -95,6 +95,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
+import scala.StringContext;
 
 public final class CarbonUtil {
 
@@ -656,7 +657,7 @@ public final class CarbonUtil {
    * @return
    */
   public static String unescapeChar(String parseStr) {
-    return scala.StringContext.treatEscapes(parseStr);
+    return StringContext.treatEscapes(parseStr);
   }
 
   /**

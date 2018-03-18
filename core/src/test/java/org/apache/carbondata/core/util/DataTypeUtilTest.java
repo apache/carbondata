@@ -71,7 +71,7 @@ public class DataTypeUtilTest {
     java.math.BigDecimal javaDecVal = new java.math.BigDecimal(1);
     scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
     assertEquals(getDataBasedOnDataType("1", DataTypes.createDefaultDecimalType()),
-        DataTypeUtil.getDataTypeConverter().convertToDecimal(scalaDecVal));
+        DataTypeUtil.getDataTypeConverter().convertFromBigDecimalToDecimal(scalaDecVal));
     assertEquals(getDataBasedOnDataType("default", DataTypes.NULL),
         DataTypeUtil.getDataTypeConverter().convertFromStringToUTF8String("default"));
     assertEquals(getDataBasedOnDataType((String) null, DataTypes.NULL), null);

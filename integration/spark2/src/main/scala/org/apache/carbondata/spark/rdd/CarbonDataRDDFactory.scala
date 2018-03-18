@@ -1079,5 +1079,4 @@ object CarbonDataRDDFactory {
       hadoopConf
     ).collect()
   }
-
 }

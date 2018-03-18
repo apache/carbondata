@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.scan.collector.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -30,9 +31,6 @@ import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
-
-import org.apache.spark.sql.types.Decimal;
-import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -206,8 +204,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
         vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size, (long) defaultValue);
       } else {
-        vector.putBytes(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-            ((UTF8String) defaultValue).getBytes());
+        vector.putBytes(columnVectorInfo.vectorOffset, columnVectorInfo.size, (byte[])defaultValue);
       }
     } else {
       vector.putNulls(columnVectorInfo.vectorOffset, columnVectorInfo.size);
@@ -240,7 +237,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
                 (long) defaultValue);
           } else if (DataTypes.isDecimal(dataType)) {
             vector.putDecimals(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-                ((Decimal) defaultValue).toJavaBigDecimal(), measure.getPrecision());
+                (BigDecimal) defaultValue, measure.getPrecision());
           } else if (dataType == DataTypes.BOOLEAN) {
             vector.putBoolean(columnVectorInfo.vectorOffset, (Boolean) defaultValue);
           } else {

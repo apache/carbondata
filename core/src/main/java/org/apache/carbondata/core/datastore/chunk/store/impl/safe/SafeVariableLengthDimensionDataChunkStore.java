@@ -153,8 +153,8 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
       } else if (dt == DataTypes.INT) {
         vector.putInt(vectorRow, ByteUtil.toInt(data, currentDataOffset, length));
       } else if (dt == DataTypes.LONG) {
-        vector.putLong(vectorRow, DataTypeUtil
-            .getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(),
+        vector.putLong(vectorRow,
+            DataTypeUtil.getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(),
                 currentDataOffset, length));
       } else if (dt  == DataTypes.TIMESTAMP) {
         vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length) * 1000L);

@@ -103,7 +103,7 @@ public final class DataTypeUtil {
           new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
       BigDecimal decimal = normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
       if (useConverter) {
-        return converter.convertToDecimal(decimal);
+        return converter.convertFromBigDecimalToDecimal(decimal);
       } else {
         return decimal;
       }
@@ -309,7 +309,7 @@ public final class DataTypeUtil {
         if (data.isEmpty()) {
           return null;
         }
-        return converter.convertToDecimal(data);
+        return converter.convertFromStringToDecimal(data);
       } else {
         return converter.convertFromStringToUTF8String(data);
       }
@@ -544,7 +544,7 @@ public final class DataTypeUtil {
         if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
           javaDecVal = javaDecVal.setScale(dimension.getColumnSchema().getScale());
         }
-        return getDataTypeConverter().convertToDecimal(javaDecVal);
+        return getDataTypeConverter().convertFromBigDecimalToDecimal(javaDecVal);
       } else {
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       }

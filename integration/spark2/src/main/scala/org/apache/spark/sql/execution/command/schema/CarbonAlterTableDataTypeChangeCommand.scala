@@ -20,16 +20,17 @@ package org.apache.spark.sql.execution.command.schema
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, MetadataCommand}
+import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, DataTypeInfo, MetadataCommand}
 import org.apache.spark.sql.hive.CarbonSessionCatalog
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.events.{AlterTableDataTypeChangePostEvent, AlterTableDataTypeChangePreEvent, OperationContext, OperationListenerBus}
-import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
+import org.apache.carbondata.format.SchemaEvolutionEntry
+import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
 private[sql] case class CarbonAlterTableDataTypeChangeCommand(
     alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)
@@ -65,8 +66,7 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       }
       val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(columnName))
       if (carbonColumn.size == 1) {
-        CarbonScalaUtil
-          .validateColumnDataType(alterTableDataTypeChangeModel.dataTypeInfo, carbonColumn.head)
+        validateColumnDataType(alterTableDataTypeChangeModel.dataTypeInfo, carbonColumn.head)
       } else {
         LOGGER.audit(s"Alter table change data type request has failed. " +
                      s"Column $columnName is invalid")
@@ -118,5 +118,52 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       AlterTableUtil.releaseLocks(locks)
     }
     Seq.empty
+  }
+
+  /**
+   * This method will validate a column for its data type and check whether the column data type
+   * can be modified and update if conditions are met.
+   */
+  private def validateColumnDataType(
+      dataTypeInfo: DataTypeInfo,
+      carbonColumn: CarbonColumn): Unit = {
+    carbonColumn.getDataType.getName match {
+      case "INT" =>
+        if (!dataTypeInfo.dataType.equals("bigint") && !dataTypeInfo.dataType.equals("long")) {
+          sys.error(s"Given column ${ carbonColumn.getColName } with data type " +
+                    s"${carbonColumn.getDataType.getName} cannot be modified. " +
+                    s"Int can only be changed to bigInt or long")
+        }
+      case "DECIMAL" =>
+        if (!dataTypeInfo.dataType.equals("decimal")) {
+          sys.error(s"Given column ${ carbonColumn.getColName } with data type" +
+                    s" ${ carbonColumn.getDataType.getName} cannot be modified." +
+                    s" Decimal can be only be changed to Decimal of higher precision")
+        }
+        if (dataTypeInfo.precision <= carbonColumn.getColumnSchema.getPrecision) {
+          sys.error(s"Given column ${carbonColumn.getColName} cannot be modified. " +
+                    s"Specified precision value ${dataTypeInfo.precision} should be " +
+                    s"greater than current precision value " +
+                    s"${carbonColumn.getColumnSchema.getPrecision}")
+        } else if (dataTypeInfo.scale < carbonColumn.getColumnSchema.getScale) {
+          sys.error(s"Given column ${carbonColumn.getColName} cannot be modified. " +
+                    s"Specified scale value ${dataTypeInfo.scale} should be greater or " +
+                    s"equal to current scale value ${carbonColumn.getColumnSchema.getScale}")
+        } else {
+          // difference of precision and scale specified by user should not be less than the
+          // difference of already existing precision and scale else it will result in data loss
+          val carbonColumnPrecisionScaleDiff = carbonColumn.getColumnSchema.getPrecision -
+                                               carbonColumn.getColumnSchema.getScale
+          val dataInfoPrecisionScaleDiff = dataTypeInfo.precision - dataTypeInfo.scale
+          if (dataInfoPrecisionScaleDiff < carbonColumnPrecisionScaleDiff) {
+            sys.error(s"Given column ${carbonColumn.getColName} cannot be modified. " +
+                      s"Specified precision and scale values will lead to data loss")
+          }
+        }
+      case _ =>
+        sys.error(s"Given column ${carbonColumn.getColName} with data type " +
+                  s"${carbonColumn.getDataType.getName} cannot be modified. " +
+                  s"Only Int and Decimal data types are allowed for modification")
+    }
   }
 }

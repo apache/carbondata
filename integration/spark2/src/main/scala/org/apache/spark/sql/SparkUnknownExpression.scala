@@ -45,8 +45,8 @@ class SparkUnknownExpression(
 
     val values = carbonRowInstance.getValues.toSeq.map {
       case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
-      case d: java.math.BigDecimal =>
-        org.apache.spark.sql.types.Decimal.apply(d)
+      case d: java.math.BigDecimal => org.apache.spark.sql.types.Decimal.apply(d)
+      case b: Array[Byte] => org.apache.spark.unsafe.types.UTF8String.fromBytes(b)
       case value => value
     }
     try {

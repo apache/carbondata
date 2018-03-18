@@ -51,7 +51,7 @@ import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat.CarbonRecordWrit
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLoadModelBuilder, LoadOption}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, Util}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, SparkDataTypeConverterImpl, Util}
 
 class CarbonFileFormat
   extends FileFormat
