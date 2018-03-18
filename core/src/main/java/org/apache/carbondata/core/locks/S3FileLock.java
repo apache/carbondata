@@ -22,10 +22,9 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * This class is used to handle the S3 File locking.
@@ -36,9 +35,14 @@ public class S3FileLock extends AbstractCarbonLock {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(S3FileLock.class.getName());
   /**
-   * location s3 file location
+   * lockFilePath is the location of the lock file.
    */
-  private String location;
+  private String lockFilePath;
+
+  /**
+   * lockFileDir is the directory of the lock file.
+   */
+  private String lockFileDir;
 
   private DataOutputStream dataOutputStream;
 
@@ -55,8 +59,9 @@ public class S3FileLock extends AbstractCarbonLock {
    * @param lockFile
    */
   public S3FileLock(String lockFileLocation, String lockFile) {
-    this.location = lockFileLocation + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
-    LOGGER.info("S3 lock path:" + this.location);
+    this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
+    this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFile);
+    LOGGER.info("S3 lock path:" + this.lockFilePath);
     initRetry();
   }
 
@@ -71,21 +76,6 @@ public class S3FileLock extends AbstractCarbonLock {
         status = true;
       } catch (IOException e) {
         status = false;
-      } finally {
-        CarbonFile carbonFile =
-            FileFactory.getCarbonFile(location, FileFactory.getFileType(location));
-        if (carbonFile.exists()) {
-          if (carbonFile.delete()) {
-            LOGGER.info("Deleted the lock file " + location);
-          } else {
-            LOGGER.error("Not able to delete the lock file " + location);
-            status = false;
-          }
-        } else {
-          LOGGER.error(
-              "Not able to delete the lock file because it is not existed in location " + location);
-          status = false;
-        }
       }
     }
     return status;
@@ -96,11 +86,15 @@ public class S3FileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
-        FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
+      if (!FileFactory.isFileExist(lockFileDir)) {
+        FileFactory.mkdirs(lockFileDir, FileFactory.getFileType(lockFileDir));
+      }
+      if (!FileFactory.isFileExist(lockFilePath)) {
+        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(lockFilePath));
       }
       dataOutputStream =
-          FileFactory.getDataOutputStreamUsingAppend(location, FileFactory.getFileType(location));
+          FileFactory.getDataOutputStreamUsingAppend(lockFilePath,
+              FileFactory.getFileType(lockFilePath));
       return true;
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());

@@ -909,6 +909,8 @@ public class SegmentStatusManager {
         }
       }
     }
+    // delete the expired segment lock files
+    CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
   }
 
 }
