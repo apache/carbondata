@@ -50,8 +50,8 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 * [Useful Tips](https://github.com/apache/carbondata/blob/master/docs/useful-tips-on-carbondata.md)
 
 ## Other Technical Material
-[Apache CarbonData meetup material](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=66850609)
-[Use Case Articles](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+Articles)
+* [Apache CarbonData meetup material](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=66850609)
+* [Use Case Articles](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+Articles)
 
 ## Fork and Contribute
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 

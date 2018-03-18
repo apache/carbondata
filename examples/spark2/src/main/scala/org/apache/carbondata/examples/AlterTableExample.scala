@@ -26,7 +26,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * For alter table relative syntax, you can refer to DDL operation
- * document (ddl-operation-on-carbondata.md)
+ * document (data-management-on-carbondata.md)
  */
 object AlterTableExample {
 
