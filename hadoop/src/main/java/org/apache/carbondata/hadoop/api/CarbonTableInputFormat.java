@@ -74,7 +74,8 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 /**
- * Input format of CarbonData file.
+ *
+ * This is for reading a carbon table's carbondata file.
  *
  * @param <T>
  */
