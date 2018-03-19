@@ -79,7 +79,10 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.security.TokenCache;
 
 /**
- * Input format of CarbonData file.
+ * Base class for carbondata input format, there are two input format implementations:
+ * 1. CarbonFileInputFormat: This is for reading a carbondata file from a file path
+ *                           by inferring schema.
+ * 2. CarbonTableInputFormat: This is for reading a carbon table's carbondata file.
  *
  * @param <T>
  */

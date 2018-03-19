@@ -51,7 +51,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 
 /**
- * Input format of CarbonData file.
+ * This is for reading a carbondata file from a file path
+ *                           by inferring schema.
  *
  * @param <T>
  */
