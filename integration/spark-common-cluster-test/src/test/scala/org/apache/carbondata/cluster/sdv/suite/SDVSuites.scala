@@ -57,7 +57,7 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                               new TimestamptypesTestCase ::
                               new V3offheapvectorTestCase ::
                               new Vector1TestCase ::
-                              new Vector2TestCase ::Nil
+                              new Vector2TestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -139,7 +139,8 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new DataLoadingV3TestCase ::
                     new QueriesIncludeDictionaryTestCase ::
                     new TestRegisterCarbonTable ::
-                    new TableCommentAlterTableTestCase :: Nil
+                    new TableCommentAlterTableTestCase ::
+                    new StandardPartitionTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -155,7 +156,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
  */
 class SDVSuites4 extends Suites with BeforeAndAfterAll {
 
-  val suites =     new CarbonV1toV3CompatabilityTestCase  :: Nil
+  val suites =     new CarbonV1toV3CompatabilityTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
