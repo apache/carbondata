@@ -22,7 +22,6 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.{Include, QueryTest}
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.Matchers._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -54,42 +53,14 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
         "select country,max(salary) as max from PreAggMain group by country")
   }
 
-  //test to check the table and datamap creation
+  //test to check existence of datamap
   test("PreAggregateTestCase_TC001", Include) {
-    checkExistence(sql("Describe formatted PreAggMain"), true)
     Assert.assertEquals(sql("show datamap on table PreAggMain").count(), 5)
-  }
-
-  //test to check preaggregate table with dictionary
-  test("PreAggregateTestCase_TC002", Include) {
     checkExistence(sql("Describe formatted PreAggMain_PreAggSum"), true, "DICTIONARY")
   }
 
-  //test for exception in datamap having wrong column in group by
-  test("PreAggregateTestCase_TC003", Include) {
-    intercept[Exception] {
-      sql("create datamap testDatamap on table PreAggMain using 'preaggregate' as " +
-          "select name,sum(salary) as sum from PreAggMain group by country")
-    }
-  }
-  // test for the exception in datamap having nested aggregate
-  test("PreAggregateTestCase_TC004", Include) {
-    intercept[Exception] {
-      sql("create testDatamap PreAggSum on table PreAggMain using 'preaggregate' as " +
-          "select country,sum(distinct(salary)) as sum from PreAggMain group by country")
-    }
-  }
-
-  // test for the exception in datamap having nested aggregate
-  test("PreAggregateTestCase_TC005", Include) {
-    intercept[Exception] {
-      sql("create testDatamap PreAggSum on table PreAggMain using 'preaggregate' as " +
-          "select country,count(sum(salary)) as sum from PreAggMain group by country")
-    }
-  }
-
   //check for load data should reflects in all preaggregate tables
-  test("PreAggregateTestCase_TC006", Include) {
+  test("PreAggregateTestCase_TC002", Include) {
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain ").collect
     sql(s"LOAD DATA INPATH '$csvPath' into table AggMain ").collect
 
@@ -110,7 +81,7 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   //test for incremental load
-  test("PreAggregateTestCase_TC007", Include) {
+  test("PreAggregateTestCase_TC003", Include) {
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
     sql(s"LOAD DATA INPATH '$csvPath' into table AggMain").collect
@@ -133,7 +104,7 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   //test for creating datamap having data from all segment after incremental load
-  test("PreAggregateTestCase_TC008", Include) {
+  test("PreAggregateTestCase_TC004", Include) {
     sql("insert into PreAggMain values(1,'2015/7/23','country1','phone197','ASD69643',15000)")
     sql("insert into PreAggMain values(2,'2015/8/23','country2','phone197','ASD69643',10000)")
     sql("insert into PreAggMain values(3,'2005/7/28','country1','phone197','ASD69643',5000)")
@@ -143,17 +114,8 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
       Seq(Row("country1", 20000), Row("country2", 10000)))
   }
 
-  //test for the exception for direct loading in preaggregate table
-  test("PreAggregateTestCase_TC009", Include) {
-    sql("create datamap testDataMap on table PreAggMain using 'preaggregate' as " +
-        "select country,sum(salary) as sum from PreAggMain group by country")
-    intercept[Exception] {
-      sql("insert into PreAggMain_testDataMap values(1,'2015/7/23','country1','phone197','ASD69643',15000)")
-    }
-  }
-
   //test for insert overwrite in main table
-  test("PreAggregateTestCase_TC010", Include) {
+  test("PreAggregateTestCase_TC005", Include) {
     sql("insert into PreAggMain values(1,'2015/7/23','country1','phone197','ASD696',15000)")
     sql("insert into PreAggMain values(2,'2003/8/13','country2','phone197','AD6943',10000)")
     sql("insert overwrite table PreAggMain values(3,'2005/7/28','country3','phone197','ASD69643',5000)")
@@ -162,66 +124,8 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("select * from PreAggMain_testDataMap"), Seq(Row("country3", 5000)))
   }
 
-  //test for minor compaction in preaggregrate
-  test("PreAggregateTestCase_TC011", Include) {
-    for (counter <- 1 to 4) {
-      sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
-      sql(s"LOAD DATA INPATH '$csvPath' into table AggMain").collect
-    }
-    sql("alter table PreAggMain compact 'minor'")
-    val segmentNamesSum = sql("show segments for table PreAggMain_PreAggSum").collect()
-      .map(_.get(0).toString)
-    segmentNamesSum should equal(Array("3", "2", "1", "0.1", "0"))
-    val segmentNamesCount = sql("show segments for table PreAggMain_PreAggCount").collect()
-      .map(_.get(0).toString)
-    segmentNamesCount should equal(Array("3", "2", "1", "0.1", "0"))
-    val expectedSum = sql("select country,sum(salary) as sum from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggSum"), expectedSum)
-
-    val expectedAvg = sql("select country,sum(salary),count(salary) from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggAvg"), expectedAvg)
-
-    val expectedCount = sql("select country,count(salary) as count from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggCount"), expectedCount)
-
-    val expectedMin = sql("select country,min(salary) as min from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggMin"), expectedMin)
-
-    val expectedMax = sql("select country,max(salary) as max from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggMax"), expectedMax)
-  }
-
-  //test for major compaction in preaggregrate
-  test("PreAggregateTestCase_TC012", Include) {
-    for (counter <- 1 to 4) {
-      sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
-      sql(s"LOAD DATA INPATH '$csvPath' into table AggMain").collect
-    }
-    sql("alter table PreAggMain compact 'major'")
-    val segmentNamesSum = sql("show segments for table PreAggMain_PreAggSum").collect()
-      .map(_.get(0).toString)
-    segmentNamesSum should equal(Array("3", "2", "1", "0.1", "0"))
-    val segmentNamesCount = sql("show segments for table PreAggMain_PreAggCount").collect()
-      .map(_.get(0).toString)
-    segmentNamesCount should equal(Array("3", "2", "1", "0.1", "0"))
-    val expectedSum = sql("select country,sum(salary) as sum from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggSum"), expectedSum)
-
-    val expectedAvg = sql("select country,sum(salary),count(salary) from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggAvg"), expectedAvg)
-
-    val expectedCount = sql("select country,count(salary) as count from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggCount"), expectedCount)
-
-    val expectedMin = sql("select country,min(salary) as min from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggMin"), expectedMin)
-
-    val expectedMax = sql("select country,max(salary) as max from AggMain group by country")
-    checkAnswer(sql("select * from PreAggMain_PreAggMax"), expectedMax)
-  }
-
   // test output for join query with preaggregate and without preaggregate
-  test("PreAggregateTestCase_TC013", Include) {
+  test("PreAggregateTestCase_TC006", Include) {
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
     sql(s"LOAD DATA INPATH '$csvPath' into table AggMain").collect
     val actual = sql("select t1.country,sum(id) from PreAggMain t1 join " +
@@ -234,7 +138,7 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
     checkAnswer(actual, expected)
   }
 
-  test("PreAggregateTestCase_TC014", Include) {
+  test("PreAggregateTestCase_TC007", Include) {
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
     sql(s"LOAD DATA INPATH '$csvPath' into table AggMain").collect
     val actual = sql("select t1.country,count(t1.country) from PreAggMain t1 join " +
@@ -248,7 +152,7 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   //test to verify correct data in preaggregate table
-  test("PreAggregateTestCase_TC015", Include) {
+  test("PreAggregateTestCase_TC008", Include) {
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
     sql(s"LOAD DATA INPATH '$csvPath' into table AggMain").collect
     sql("create datamap testDatamap on table PreAggMain using 'preaggregate' as " +
@@ -262,7 +166,7 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   //test for select using in clause in preaggregate table
-  test("PreAggregateTestCase_TC016", Include) {
+  test("PreAggregateTestCase_TC009", Include) {
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
     sql(s"LOAD DATA INPATH '$csvPath' into table AggMain").collect
     sql("create datamap testDatamap on table PreAggMain using 'preaggregate' as " +
@@ -276,7 +180,7 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   //test to check data using preaggregate and without preaggregate
-  test("PreAggregateTestCase_TC017", Include) {
+  test("PreAggregateTestCase_TC010", Include) {
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
     sql(s"LOAD DATA INPATH '$csvPath' into table AggMain").collect
 
@@ -290,7 +194,7 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   //test to check data using preaggregate and without preaggregate with in clause
-  test("PreAggregateTestCase_TC018", Include) {
+  test("PreAggregateTestCase_TC011", Include) {
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
     sql(s"LOAD DATA INPATH '$csvPath' into table AggMain").collect
     sql("create datamap testDatamap on table PreAggMain using 'preaggregate' as " +
