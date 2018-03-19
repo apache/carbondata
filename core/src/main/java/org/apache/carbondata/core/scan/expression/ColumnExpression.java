@@ -98,18 +98,26 @@ public class ColumnExpression extends LeafExpression {
     return dataType;
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) {
+  @Override
+  public ExpressionResult evaluate(RowIntf value) {
     return new ExpressionResult(dataType, (null == value ? null : value.getVal(colIndex)));
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     // TODO Auto-generated method stub
     return null;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     // TODO Auto-generated method stub
     return "ColumnExpression(" + columnName + ')';
+  }
+
+  @Override
+  public String getStatement() {
+    return columnName;
   }
 
   public CarbonColumn getCarbonColumn() {
@@ -120,7 +128,8 @@ public class ColumnExpression extends LeafExpression {
     this.carbonColumn = carbonColumn;
   }
 
-  @Override public void findAndSetChild(Expression oldExpr, Expression newExpr) {
+  @Override
+  public void findAndSetChild(Expression oldExpr, Expression newExpr) {
   }
 
 

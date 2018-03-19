@@ -226,6 +226,7 @@ public final class CarbonProperties {
     validateSortMemorySizeInMB();
     validateWorkingMemory();
     validateSortStorageMemory();
+    validateEnableQueryStatistics();
   }
 
   /**
@@ -1363,6 +1364,27 @@ public final class CarbonProperties {
     }
     carbonProperties.setProperty(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB,
         unsafeSortStorageMemory + "");
+  }
+
+  private void validateEnableQueryStatistics() {
+    String enableQueryStatistics = carbonProperties.getProperty(
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+    boolean isValidBooleanValue = CarbonUtil.validateBoolean(enableQueryStatistics);
+    if (!isValidBooleanValue) {
+      LOGGER.warn("The enable query statistics value \"" + enableQueryStatistics
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+      carbonProperties.setProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+          CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+    }
+  }
+
+  public boolean isEnableQueryStatistics() {
+    String enableQueryStatistics = carbonProperties.getProperty(
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+    return enableQueryStatistics.equalsIgnoreCase("true");
   }
 
   /**

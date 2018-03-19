@@ -1428,6 +1428,107 @@ public final class CarbonUtil {
   }
 
   /**
+   * append a string with left pad to the string builder
+   */
+  public static void leftPad(StringBuilder builder, String a, int length, char pad) {
+    if (builder == null || a == null) {
+      return;
+    }
+    int padLength = length - a.length();
+    if (padLength > 0) {
+      for (int i = 0; i < padLength; i++) {
+        builder.append(pad);
+      }
+    }
+    if (a.length() > 0) {
+      builder.append(a);
+    }
+  }
+
+  /**
+   * append a string with right pad to the string builder
+   */
+  public static void rightPad(StringBuilder builder, String a, int length, char pad) {
+    if (builder == null || a == null) {
+      return;
+    }
+    int padLength = length - a.length();
+    if (a.length() > 0) {
+      builder.append(a);
+    }
+    if (padLength > 0) {
+      for (int i = 0; i < padLength; i++) {
+        builder.append(pad);
+      }
+    }
+  }
+
+  /**
+   * log information as table
+   */
+  public static void logTable(StringBuilder builder, String[] header, String[][] rows,
+      String indent) {
+    int numOfRows = rows.length;
+    int numOfColumns = header.length;
+
+    // calculate max length of each column
+    int[] maxLengths = new int[numOfColumns];
+    for (int columnIndex = 0; columnIndex < numOfColumns; columnIndex++) {
+      maxLengths[columnIndex] = header[columnIndex].length();
+    }
+    for (int rowIndex = 0; rowIndex < numOfRows; rowIndex++) {
+      for (int columnIndex = 0; columnIndex < numOfColumns; columnIndex++) {
+        maxLengths[columnIndex] =
+            Math.max(maxLengths[columnIndex], rows[rowIndex][columnIndex].length());
+      }
+    }
+
+    // build line
+    StringBuilder line = new StringBuilder("+");
+    for (int columnIndex = 0; columnIndex < numOfColumns; columnIndex++) {
+      CarbonUtil.leftPad(line, "", maxLengths[columnIndex], '-');
+      line.append("+");
+    }
+
+    // append head
+    builder.append(indent).append(line).append("\n").append(indent).append("|");
+    for (int columnIndex = 0; columnIndex < numOfColumns; columnIndex++) {
+      CarbonUtil.rightPad(builder, header[columnIndex], maxLengths[columnIndex], ' ');
+      builder.append("|");
+    }
+    builder.append("\n").append(indent).append(line);
+
+    // append rows
+    for (int rowIndex = 0; rowIndex < numOfRows; rowIndex++) {
+      builder.append("\n").append(indent).append("|");
+      for (int columnIndex = 0; columnIndex < numOfColumns; columnIndex++) {
+        CarbonUtil.leftPad(builder, rows[rowIndex][columnIndex], maxLengths[columnIndex], ' ');
+        builder.append("|");
+      }
+      builder.append("\n").append(indent).append(line);
+    }
+  }
+
+  public static void logTable(StringBuilder builder, String context, String indent) {
+    String[] rows = context.split("\n");
+    int maxLength = 0;
+    for (String row: rows) {
+      maxLength = Math.max(maxLength, row.length());
+    }
+    StringBuilder line = new StringBuilder("+");
+    CarbonUtil.rightPad(line, "", maxLength, '-');
+    line.append("+");
+
+    builder.append(indent).append(line);
+    for (String row: rows) {
+      builder.append("\n").append(indent).append("|");
+      CarbonUtil.rightPad(builder, row, maxLength, ' ');
+      builder.append("|");
+    }
+    builder.append("\n").append(indent).append(line);
+  }
+
+  /**
    * Below method will be used to get the list of values in
    * comma separated string format
    *

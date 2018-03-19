@@ -88,7 +88,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
     this.length = length;
   }
 
-  private void calculateLength() {
+  public void calculateLength() {
     long total = 0;
     if (splitList.size() > 0 && splitList.get(0).getDetailInfo() != null) {
       Map<String, Long> blockSizes = new HashMap<>();
