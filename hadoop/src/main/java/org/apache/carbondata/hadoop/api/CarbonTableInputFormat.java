@@ -143,20 +143,32 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
         segmentStatusManager.getValidAndInvalidSegments(loadMetadataDetails);
-
+    // to check whether only streaming segments access is enabled or not,
+    // if access streaming segment is true then data will be read from streaming segments
+    boolean accessStreamingSegments = getAccessStreamingSegments(job.getConfiguration());
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
-      List<Segment> validSegments = segments.getValidSegments();
-      streamSegments = segments.getStreamSegments();
-      streamSegments = getFilteredSegment(job,streamSegments, true);
-      if (validSegments.size() == 0) {
-        return getSplitsOfStreaming(job, identifier, streamSegments);
-      }
-      List<Segment> filteredSegmentToAccess = getFilteredSegment(job, segments.getValidSegments(),
-          true);
-      if (filteredSegmentToAccess.size() == 0) {
-        return getSplitsOfStreaming(job, identifier, streamSegments);
+      if (!accessStreamingSegments) {
+        List<Segment> validSegments = segments.getValidSegments();
+        streamSegments = segments.getStreamSegments();
+        streamSegments = getFilteredSegment(job, streamSegments, true);
+        if (validSegments.size() == 0) {
+          return getSplitsOfStreaming(job, identifier, streamSegments);
+        }
+        List<Segment> filteredSegmentToAccess =
+            getFilteredSegment(job, segments.getValidSegments(), true);
+        if (filteredSegmentToAccess.size() == 0) {
+          return getSplitsOfStreaming(job, identifier, streamSegments);
+        } else {
+          setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
+        }
       } else {
-        setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
+        List<Segment> filteredNormalSegments =
+            getFilteredNormalSegments(job, segments.getValidSegments(), getSegmentsToAccess(job));
+        streamSegments = segments.getStreamSegments();
+        if (filteredNormalSegments.size() == 0) {
+          return getSplitsOfStreaming(job, identifier, streamSegments);
+        }
+        setSegmentsToAccess(job.getConfiguration(),filteredNormalSegments);
       }
       // remove entry in the segment index if there are invalid segments
       invalidSegments.addAll(segments.getInvalidSegments());
@@ -169,7 +181,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
             .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()), invalidSegments);
       }
     }
-    ArrayList<Segment> validAndInProgressSegments = new ArrayList<>(segments.getValidSegments());
+    List<Segment> validAndInProgressSegments = new ArrayList<>(segments.getValidSegments());
     // Add in progress segments also to filter it as in case of aggregate table load it loads
     // data from in progress table.
     validAndInProgressSegments.addAll(segments.getListOfInProgressSegments());
@@ -241,6 +253,29 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       splits.addAll(splitsOfStreaming);
     }
     return splits;
+  }
+
+  /**
+   * Below method will be used to get the filter segments when query is fired on pre Aggregate
+   * and main table in case of streaming.
+   * For Pre Aggregate rules it will set all the valid segments for both streaming and
+   * and normal for fact table, so if any handoff happened in between it will
+   * select only new hand off segments segments for fact.
+   * @param job
+   * @param validSegments
+   * @param segmentsToAccess
+   * @return
+   */
+  private List<Segment> getFilteredNormalSegments(JobContext job, List<Segment> validSegments,
+      Segment[] segmentsToAccess) {
+    List<Segment> segmentToAccessSet = Arrays.asList(segmentsToAccess);
+    List<Segment> filteredSegment = new ArrayList<>();
+    for (Segment seg : validSegments) {
+      if (!segmentToAccessSet.contains(seg)) {
+        filteredSegment.add(seg);
+      }
+    }
+    return filteredSegment;
   }
 
   /**

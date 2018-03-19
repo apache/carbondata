@@ -26,6 +26,7 @@ import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapChooser;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
@@ -233,6 +234,16 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     if (!segmentNumbersFromProperty.trim().equals("*")) {
       CarbonInputFormat
           .setSegmentsToAccess(conf, Segment.toSegmentList(segmentNumbersFromProperty.split(",")));
+    }
+  }
+
+  /**
+   * Set `CARBON_INPUT_SEGMENTS` from property to configuration
+   */
+  public static void setQuerySegment(Configuration conf, String segmentList) {
+    if (!segmentList.trim().equals("*")) {
+      CarbonInputFormat
+          .setSegmentsToAccess(conf, Segment.toSegmentList(segmentList.split(",")));
     }
   }
 
@@ -544,5 +555,24 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       throw new InvalidConfigurationException("Table name is not set");
     }
     return tableName;
+  }
+
+  public static void setAccessStreamingSegments(Configuration configuration, Boolean validate)
+      throws InvalidConfigurationException {
+    configuration.set(
+        CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING + "." + getDatabaseName(
+            configuration) + "." + getTableName(configuration), validate.toString());
+  }
+
+  public static boolean getAccessStreamingSegments(Configuration configuration) {
+    try {
+      return configuration.get(
+          CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING + "." + getDatabaseName(
+              configuration) + "." + getTableName(
+                  configuration), "false").equalsIgnoreCase("true");
+
+    } catch (InvalidConfigurationException e) {
+      return false;
+    }
   }
 }
