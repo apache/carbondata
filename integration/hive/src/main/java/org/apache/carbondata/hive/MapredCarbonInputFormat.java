@@ -146,9 +146,8 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
         projectionColumns, new DataTypeConverterImpl());
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
-    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
-    FilterResolverIntf filterIntf =
-        CarbonInputFormatUtil.resolveFilter(filter, identifier, tableProvider);
+    carbonTable.processFilterExpression(filter, null, null);
+    FilterResolverIntf filterIntf = carbonTable.resolveFilter(filter, tableProvider);
     queryModel.setFilterExpressionResolverTree(filterIntf);
 
     return queryModel;
