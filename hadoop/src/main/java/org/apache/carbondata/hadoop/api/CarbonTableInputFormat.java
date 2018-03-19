@@ -37,6 +37,7 @@ import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -59,7 +60,6 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
-import org.apache.carbondata.hadoop.util.SchemaReader;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -205,7 +205,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     TableProvider tableProvider = new SingleTableProvider(carbonTable);
     // this will be null in case of corrupt schema file.
     PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
-    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
+    carbonTable.processFilterExpression(filter, null, null);
 
     // prune partitions for filter query on partition table
     BitSet matchedPartitions = null;
@@ -220,8 +220,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       }
     }
 
-    FilterResolverIntf filterInterface = CarbonInputFormatUtil
-        .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
+    FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter, tableProvider);
 
     // do block filtering and get split
     List<InputSplit> splits =
@@ -384,7 +383,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         throw new IOException("Missing/Corrupt schema file for table.");
       }
 
-      CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
+      carbonTable.processFilterExpression(filter, null, null);
 
       TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // prune partitions for filter query on partition table
@@ -403,8 +402,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         }
       }
 
-      FilterResolverIntf filterInterface =
-          CarbonInputFormatUtil.resolveFilter(filter, identifier, tableProvider);
+      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter, tableProvider);
       // do block filtering and get split
       List<InputSplit> splits = getSplits(job, filterInterface, segmentList, matchedPartitions,
           partitionInfo, oldPartitionIdList, new SegmentUpdateStatusManager(identifier));
