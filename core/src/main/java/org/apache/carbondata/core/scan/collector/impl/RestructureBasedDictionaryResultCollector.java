@@ -124,10 +124,12 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
             scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex]),
             scannedResult.getCurrentRowId(), queryMeasure.getMeasure());
         measureExistIndex++;
-      } else {
+      } else if (DataTypes.isDecimal(measureInfo.getMeasureDataTypes()[i])) {
         // if not then get the default value
         msrValues[i + offset] = DataTypeUtil.getDataTypeConverter()
             .convertFromBigDecimalToDecimal(measureDefaultValues[i]);
+      } else {
+        msrValues[i + offset] = measureDefaultValues[i];
       }
     }
   }
