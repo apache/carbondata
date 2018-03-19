@@ -112,4 +112,7 @@ public class NotInExpression extends BinaryConditionalExpression {
     return "NOT IN(" + left.getString() + ',' + right.getString() + ')';
   }
 
+  @Override public String getStatement() {
+    return left.getStatement() + " not in " + right.getStatement();
+  }
 }

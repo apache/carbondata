@@ -40,14 +40,16 @@ public class DriverQueryStatisticsRecorderDummy implements QueryStatisticsRecord
 
   }
 
-  public void logStatisticsAsTableExecutor() {
+  public TaskStatistics statisticsForTask(long taskId, long startTime) {
+    return null;
+  }
+
+  public void logStatisticsForTask(TaskStatistics task) {
 
   }
 
   /**
    * Below method will be used to add the statistics
-   *
-   * @param statistic
    */
   public synchronized void recordStatisticsForDriver(QueryStatistic statistic, String queryId) {
 

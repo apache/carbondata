@@ -19,11 +19,27 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
+import org.apache.log4j.PropertyConfigurator
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 object CarbonSessionExample {
 
   def main(args: Array[String]) {
+
+    val rootPath = new File(this.getClass.getResource("/").getPath
+                            + "../../../..").getCanonicalPath
+    System.setProperty("path.target", s"$rootPath/examples/spark2/target")
+    // print monitor log to a separated file: target/monitor.log
+    PropertyConfigurator.configure(
+      s"$rootPath/examples/spark2/src/main/resources/log4j.properties")
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
+
     val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
-    spark.sparkContext.setLogLevel("WARN")
+    spark.sparkContext.setLogLevel("INFO")
 
     spark.sql("DROP TABLE IF EXISTS carbon_table")
 
@@ -40,15 +56,12 @@ object CarbonSessionExample {
          | decimalField DECIMAL(18,2),
          | dateField DATE,
          | charField CHAR(5),
-         | floatField FLOAT,
-         | complexData ARRAY<STRING>
+         | floatField FLOAT
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMNS'='', 'DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
 
     // scalastyle:off

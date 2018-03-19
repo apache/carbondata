@@ -62,6 +62,17 @@ public class ListExpression extends Expression {
     return  value.toString();
   }
 
+  @Override public String getStatement() {
+    StringBuffer value = new StringBuffer();
+    value.append("(");
+    for (Expression expr : children) {
+      value.append(expr.getString()).append(";");
+    }
+    value.append(')');
+
+    return value.toString();
+  }
+
   @Override public void findAndSetChild(Expression oldExpr, Expression newExpr) {
   }
 }

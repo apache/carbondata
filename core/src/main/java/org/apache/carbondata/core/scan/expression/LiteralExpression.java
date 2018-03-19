@@ -54,6 +54,10 @@ public class LiteralExpression extends LeafExpression {
     return "LiteralExpression(" + value + ')';
   }
 
+  @Override public String getStatement() {
+    return value == null ? null : value.toString();
+  }
+
   /**
    * getLiteralExpDataType.
    *

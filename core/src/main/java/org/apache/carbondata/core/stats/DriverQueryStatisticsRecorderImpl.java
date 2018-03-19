@@ -67,7 +67,11 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
 
   }
 
-  public void logStatisticsAsTableExecutor() {
+  public TaskStatistics statisticsForTask(long taskId, long startTime) {
+    return null;
+  }
+
+  public void logStatisticsForTask(TaskStatistics task) {
 
   }
 

@@ -94,4 +94,8 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
   @Override public String getString() {
     return "NotEquals(" + left.getString() + ',' + right.getString() + ')';
   }
+
+  @Override public String getStatement() {
+    return left.getStatement() + " <> " + right.getStatement();
+  }
 }

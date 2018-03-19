@@ -101,4 +101,7 @@ public class InExpression extends BinaryConditionalExpression {
     return "IN(" + left.getString() + ',' + right.getString() + ')';
   }
 
+  @Override public String getStatement() {
+    return left.getStatement() + " in " + right.getStatement();
+  }
 }

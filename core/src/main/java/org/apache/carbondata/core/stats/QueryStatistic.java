@@ -109,4 +109,8 @@ public class QueryStatistic implements Serializable {
     return this.count;
   }
 
+  public long getStartTime() {
+    return this.startTime;
+  }
+
 }

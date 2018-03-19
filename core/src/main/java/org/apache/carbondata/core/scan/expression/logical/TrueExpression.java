@@ -63,4 +63,8 @@ public class TrueExpression extends BinaryConditionalExpression {
   @Override public String getString() {
     return null;
   }
+
+  @Override public String getStatement() {
+    return "true";
+  }
 }

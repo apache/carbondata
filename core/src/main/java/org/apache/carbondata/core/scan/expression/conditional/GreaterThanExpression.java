@@ -84,4 +84,7 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
     return "GreaterThan(" + left.getString() + ',' + right.getString() + ')';
   }
 
+  @Override public String getStatement() {
+    return left.getStatement() + " > " + right.getStatement();
+  }
 }

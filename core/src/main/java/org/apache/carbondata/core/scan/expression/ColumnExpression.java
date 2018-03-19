@@ -112,6 +112,10 @@ public class ColumnExpression extends LeafExpression {
     return "ColumnExpression(" + columnName + ')';
   }
 
+  @Override public String getStatement() {
+    return columnName;
+  }
+
   public CarbonColumn getCarbonColumn() {
     return carbonColumn;
   }

@@ -86,4 +86,7 @@ public class LessThanExpression extends BinaryConditionalExpression {
     return "LessThan(" + left.getString() + ',' + right.getString() + ')';
   }
 
+  @Override public String getStatement() {
+    return left.getStatement() + " < " + right.getStatement();
+  }
 }

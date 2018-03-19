@@ -99,4 +99,11 @@ public class EqualToExpression extends BinaryConditionalExpression {
     return "EqualTo(" + left.getString() + ',' + right.getString() + ')';
   }
 
+  @Override public String getStatement() {
+    if (isNull) {
+      return  left.getStatement() + " is " + right.getStatement();
+    } else {
+      return  left.getStatement() + " = " + right.getStatement();
+    }
+  }
 }

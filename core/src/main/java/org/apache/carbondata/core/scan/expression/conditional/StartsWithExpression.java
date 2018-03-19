@@ -69,4 +69,7 @@ public class StartsWithExpression extends BinaryConditionalExpression {
     return "StartsWith(" + left.getString() + ',' + right.getString() + ')';
   }
 
+  @Override public String getStatement() {
+    return left.getStatement() + " like '" + right.getStatement() + "%'";
+  }
 }

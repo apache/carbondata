@@ -28,8 +28,8 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.RunnableCommand
-import org.apache.spark.sql.execution.command.mutation.CarbonProjectForUpdateCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.monitor.{MonitorEndPoint, Optimizer}
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -58,6 +58,15 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         System.currentTimeMillis)
       recorder.recordStatistics(queryStatistic)
       recorder.logStatistics()
+      MonitorEndPoint.scope {
+        MonitorEndPoint.send(
+          Optimizer(
+            CarbonSession.threadStatementId.get(),
+            queryStatistic.getStartTime,
+            queryStatistic.getTimeTaken
+          )
+        )
+      }
       result
     } else {
       LOGGER.info("Skip CarbonOptimizer")

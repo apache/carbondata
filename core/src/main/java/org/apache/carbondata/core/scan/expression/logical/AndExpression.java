@@ -56,4 +56,7 @@ public class AndExpression extends BinaryLogicalExpression {
     return "And(" + left.getString() + ',' + right.getString() + ')';
   }
 
+  @Override public String getStatement() {
+    return "(" + left.getStatement() + " and " + right.getStatement() + ")";
+  }
 }

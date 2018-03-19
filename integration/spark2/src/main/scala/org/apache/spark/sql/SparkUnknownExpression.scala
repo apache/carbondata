@@ -73,6 +73,10 @@ class SparkUnknownExpression(
     sparkExp.toString()
   }
 
+  override def getStatement: String = {
+    sparkExp.toString()
+  }
+
   def setEvaluateExpression(evaluateExpression: (InternalRow) => Any): Unit = {
     this.evaluateExpression = evaluateExpression
     isExecutor = true
