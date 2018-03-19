@@ -88,7 +88,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
             if (dictionaryEncodingArray[i] || directDictionaryEncodingArray[i]) {
               row[order[i]] = dimensionInfo.getDefaultValues()[i];
               dictionaryColumnIndex++;
-            } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.STRING){
+            } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
               row[order[i]] = DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8String(
                   (byte[])dimensionInfo.getDefaultValues()[i]);
             } else {
