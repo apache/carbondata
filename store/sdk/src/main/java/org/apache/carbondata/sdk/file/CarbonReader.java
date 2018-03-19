@@ -58,7 +58,7 @@ public class CarbonReader<T> {
     return currentReader.getCurrentValue();
   }
 
-  public static CarbonReaderBuilder builder(String tablePath, String filePath) {
-    return new CarbonReaderBuilder(tablePath, filePath);
+  public static CarbonReaderBuilder builder(String tablePath) {
+    return new CarbonReaderBuilder(tablePath);
   }
 }

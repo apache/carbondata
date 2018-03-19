@@ -28,7 +28,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
-import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -44,14 +43,11 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 public class CarbonReaderBuilder {
 
   private String tablePath;
-  private String filePath;
   private String[] projectionColumns;
   private Expression filterExpression;
-  private CarbonReadSupport readSupport;
 
-  public CarbonReaderBuilder(String tablePath, String filePath) {
+  CarbonReaderBuilder(String tablePath) {
     this.tablePath = tablePath;
-    this.filePath = filePath;
   }
 
   public CarbonReaderBuilder projection(String[] projectionColumnNames) {
@@ -64,10 +60,6 @@ public class CarbonReaderBuilder {
     Objects.requireNonNull(fileterExpression);
     this.filterExpression = fileterExpression;
     return this;
-  }
-
-  public <T> void setReadSupport(CarbonReadSupport<T> readSupport) {
-    this.readSupport = readSupport;
   }
 
   public <T> CarbonReader<T> build() throws IOException, InterruptedException {
