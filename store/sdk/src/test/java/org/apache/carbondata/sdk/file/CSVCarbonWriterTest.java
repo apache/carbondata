@@ -154,7 +154,7 @@ public class CSVCarbonWriterTest {
       }
     });
 
-    CarbonReader reader = CarbonReader.builder(path, files[0].getPath())
+    CarbonReader reader = CarbonReader.builder(path)
         .projection(new String[]{"name", "age"}).build();
 
     int i = 0;
