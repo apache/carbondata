@@ -27,7 +27,7 @@ ON TABLE sales
 USING "timeseries"
 DMPROPERTIES (
   'event_time'='order_time',
-  'year_granualrity'='1',
+  'year_granularity'='1',
 ) AS
 SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
  avg(price) FROM sales GROUP BY order_time, country, sex
@@ -37,7 +37,7 @@ ON TABLE sales
 USING "timeseries"
 DMPROPERTIES (
   'event_time'='order_time',
-  'month_granualrity'='1',
+  'month_granularity'='1',
 ) AS
 SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
  avg(price) FROM sales GROUP BY order_time, country, sex
@@ -47,7 +47,7 @@ ON TABLE sales
 USING "timeseries"
 DMPROPERTIES (
   'event_time'='order_time',
-  'day_granualrity'='1',
+  'day_granularity'='1',
 ) AS
 SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
  avg(price) FROM sales GROUP BY order_time, country, sex
@@ -57,7 +57,7 @@ ON TABLE sales
 USING "timeseries"
 DMPROPERTIES (
   'event_time'='order_time',
-  'hour_granualrity'='1',
+  'hour_granularity'='1',
 ) AS
 SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
  avg(price) FROM sales GROUP BY order_time, country, sex
@@ -67,7 +67,7 @@ ON TABLE sales
 USING "timeseries"
 DMPROPERTIES (
   'event_time'='order_time',
-  'minute_granualrity'='1',
+  'minute_granularity'='1',
 ) AS
 SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
  avg(price) FROM sales GROUP BY order_time, country, sex
@@ -77,7 +77,7 @@ ON TABLE sales
 USING "timeseries"
 DMPROPERTIES (
   'event_time'='order_time',
-  'minute_granualrity'='1',
+  'minute_granularity'='1',
 ) AS
 SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
  avg(price) FROM sales GROUP BY order_time, country, sex
@@ -105,7 +105,7 @@ level and hour level pre-aggregate
   USING "timeseries"
   DMPROPERTIES (
     'event_time'='order_time',
-    'day_granualrity'='1',
+    'day_granularity'='1',
   ) AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
@@ -115,7 +115,7 @@ level and hour level pre-aggregate
   USING "timeseries"
   DMPROPERTIES (
     'event_time'='order_time',
-    'hour_granualrity'='1',
+    'hour_granularity'='1',
   ) AS
   SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
    avg(price) FROM sales GROUP BY order_time, country, sex
