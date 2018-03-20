@@ -79,7 +79,15 @@ case class CarbonAlterTableCompactionCommand(
     }
     if (CarbonUtil.hasAggregationDataMap(table) ||
         (table.isChildDataMap && null == operationContext.getProperty(table.getTableName))) {
-      val loadMetadataEvent = new LoadMetadataEvent(table, true)
+      // If the compaction request is of 'streaming' type then we need to generate loadCommands
+      // for all the child datamaps in the LoadMetadataEvent. Therefore setting isCompaction=false.
+      // If set to true then only loadCommands for compaction will be created.
+      val loadMetadataEvent =
+        if (alterTableModel.compactionType.equalsIgnoreCase(CompactionType.STREAMING.name())) {
+          new LoadMetadataEvent(table, false)
+        } else {
+          new LoadMetadataEvent(table, true)
+        }
       OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
     }
     Seq.empty
@@ -176,6 +184,7 @@ case class CarbonAlterTableCompactionCommand(
     if (compactionType == CompactionType.STREAMING) {
       StreamHandoffRDD.startStreamingHandoffThread(
         carbonLoadModel,
+        operationContext,
         sqlContext.sparkSession, true)
       return
     }
@@ -183,6 +192,7 @@ case class CarbonAlterTableCompactionCommand(
     if (compactionType == CompactionType.CLOSE_STREAMING) {
       closeStreamingTable(
         carbonLoadModel,
+        operationContext,
         sqlContext.sparkSession)
       return
     }
@@ -263,6 +273,7 @@ case class CarbonAlterTableCompactionCommand(
 
   def closeStreamingTable(
       carbonLoadModel: CarbonLoadModel,
+      operationContext: OperationContext,
       sparkSession: SparkSession
   ): Unit = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
@@ -276,7 +287,7 @@ case class CarbonAlterTableCompactionCommand(
         // 2. convert segment status from "streaming" to "streaming finish"
         StreamSegment.finishStreaming(carbonTable)
         // 3. iterate to handoff all streaming segment to batch segment
-        StreamHandoffRDD.iterateStreamingHandoff(carbonLoadModel, sparkSession)
+        StreamHandoffRDD.iterateStreamingHandoff(carbonLoadModel, operationContext, sparkSession)
         val tableIdentifier =
           new TableIdentifier(carbonTable.getTableName, Option(carbonTable.getDatabaseName))
         // 4. modify table to normal table

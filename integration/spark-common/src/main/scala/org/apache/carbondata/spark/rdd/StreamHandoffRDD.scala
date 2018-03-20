@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import java.text.SimpleDateFormat
 import java.util
-import java.util.Date
+import java.util.{Date, UUID}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
@@ -218,8 +218,8 @@ object StreamHandoffRDD {
 
   def iterateStreamingHandoff(
       carbonLoadModel: CarbonLoadModel,
-      sparkSession: SparkSession
-  ): Unit = {
+      operationContext: OperationContext,
+      sparkSession: SparkSession): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val identifier = carbonTable.getAbsoluteTableIdentifier
     var continueHandoff = false
@@ -253,9 +253,11 @@ object StreamHandoffRDD {
             if (continueHandoff) {
               // handoff a streaming segment
               val loadMetadataDetail = streamSegments(0)
+              carbonLoadModel.setSegmentId(loadMetadataDetail.getLoadName)
               executeStreamingHandoff(
                 carbonLoadModel,
                 sparkSession,
+                operationContext,
                 loadMetadataDetail.getLoadName
               )
             }
@@ -276,16 +278,17 @@ object StreamHandoffRDD {
    */
   def startStreamingHandoffThread(
       carbonLoadModel: CarbonLoadModel,
+      operationContext: OperationContext,
       sparkSession: SparkSession,
       isDDL: Boolean
   ): Unit = {
     if (isDDL) {
-      iterateStreamingHandoff(carbonLoadModel, sparkSession)
+      iterateStreamingHandoff(carbonLoadModel, operationContext, sparkSession)
     } else {
       // start a new thread to execute streaming segment handoff
       val handoffThread = new Thread() {
         override def run(): Unit = {
-          iterateStreamingHandoff(carbonLoadModel, sparkSession)
+          iterateStreamingHandoff(carbonLoadModel, operationContext, sparkSession)
         }
       }
       handoffThread.start()
@@ -298,8 +301,8 @@ object StreamHandoffRDD {
   def executeStreamingHandoff(
       carbonLoadModel: CarbonLoadModel,
       sparkSession: SparkSession,
-      handoffSegmenId: String
-  ): Unit = {
+      operationContext: OperationContext,
+      handoffSegmenId: String): Unit = {
     var loadStatus = SegmentStatus.SUCCESS
     var errorMessage: String = "Handoff failure"
     try {
@@ -344,15 +347,13 @@ object StreamHandoffRDD {
     }
 
     if (loadStatus == SegmentStatus.SUCCESS) {
-      val operationContext = new OperationContext()
+      operationContext.setProperty("uuid", UUID.randomUUID().toString)
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
         new LoadTablePreStatusUpdateEvent(
           carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCarbonTableIdentifier,
           carbonLoadModel)
       OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
-
       val done = updateLoadMetadata(handoffSegmenId, carbonLoadModel)
-
       val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =
         new LoadTablePostStatusUpdateEvent(carbonLoadModel)
       OperationListenerBus.getInstance()
