@@ -37,7 +37,7 @@ import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusMan
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 
 /**
  * below class will be used to create load command for compaction
@@ -199,43 +199,49 @@ object LoadPostAggregateListener extends OperationEventListener {
    * @param event
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val loadEvent = event.asInstanceOf[LoadTablePreStatusUpdateEvent]
+    val carbonLoadModelOption =
+      event match {
+        case e: LoadTablePreStatusUpdateEvent => Some(e.getCarbonLoadModel)
+        case e: LoadTablePostExecutionEvent => Some(e.getCarbonLoadModel)
+        case _ => None
+      }
     val sparkSession = SparkSession.getActiveSession.get
-    val carbonLoadModel = loadEvent.getCarbonLoadModel
-    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    if (CarbonUtil.hasAggregationDataMap(table)) {
-      // getting all the aggergate datamap schema
-      val aggregationDataMapList = table.getTableInfo.getDataMapSchemaList.asScala
-        .filter(_.isInstanceOf[AggregationDataMapSchema])
-        .asInstanceOf[mutable.ArrayBuffer[AggregationDataMapSchema]]
-      // sorting the datamap for timeseries rollup
-      val sortedList = aggregationDataMapList.sortBy(_.getOrdinal)
-      for (dataMapSchema: AggregationDataMapSchema <- sortedList) {
-        val childLoadCommand = operationContext
-          .getProperty(dataMapSchema.getChildSchema.getTableName)
-          .asInstanceOf[CarbonLoadDataCommand]
-        childLoadCommand.dataFrame = Some(PreAggregateUtil
-          .getDataFrame(sparkSession, childLoadCommand.logicalPlan.get))
-        val isOverwrite =
-          operationContext.getProperty("isOverwrite").asInstanceOf[Boolean]
-        childLoadCommand.operationContext = operationContext
-        val timeseriesParent = childLoadCommand.internalOptions.get("timeseriesParent")
-        val (parentTableIdentifier, segmentToLoad) =
-          if (timeseriesParent.isDefined && timeseriesParent.get.nonEmpty) {
-            val (parentTableDatabase, parentTableName) =
-              (timeseriesParent.get.split('.')(0), timeseriesParent.get.split('.')(1))
-            (TableIdentifier(parentTableName, Some(parentTableDatabase)),
-            operationContext.getProperty(
-              s"${parentTableDatabase}_${parentTableName}_Segment").toString)
-        } else {
-            val currentSegmentFile = operationContext.getProperty("current.segmentfile")
-            val segment = if (currentSegmentFile != null) {
-              new Segment(carbonLoadModel.getSegmentId, currentSegmentFile.toString)
+    if (carbonLoadModelOption.isDefined) {
+      val carbonLoadModel = carbonLoadModelOption.get
+      val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      if (CarbonUtil.hasAggregationDataMap(table)) {
+        // getting all the aggergate datamap schema
+        val aggregationDataMapList = table.getTableInfo.getDataMapSchemaList.asScala
+          .filter(_.isInstanceOf[AggregationDataMapSchema])
+          .asInstanceOf[mutable.ArrayBuffer[AggregationDataMapSchema]]
+        // sorting the datamap for timeseries rollup
+        val sortedList = aggregationDataMapList.sortBy(_.getOrdinal)
+        for (dataMapSchema: AggregationDataMapSchema <- sortedList) {
+          val childLoadCommand = operationContext
+            .getProperty(dataMapSchema.getChildSchema.getTableName)
+            .asInstanceOf[CarbonLoadDataCommand]
+          childLoadCommand.dataFrame = Some(PreAggregateUtil
+            .getDataFrame(sparkSession, childLoadCommand.logicalPlan.get))
+          val isOverwrite =
+            operationContext.getProperty("isOverwrite").asInstanceOf[Boolean]
+          childLoadCommand.operationContext = operationContext
+          val timeseriesParent = childLoadCommand.internalOptions.get("timeseriesParent")
+          val (parentTableIdentifier, segmentToLoad) =
+            if (timeseriesParent.isDefined && timeseriesParent.get.nonEmpty) {
+              val (parentTableDatabase, parentTableName) =
+                (timeseriesParent.get.split('.')(0), timeseriesParent.get.split('.')(1))
+              (TableIdentifier(parentTableName, Some(parentTableDatabase)),
+                operationContext.getProperty(
+                  s"${ parentTableDatabase }_${ parentTableName }_Segment").toString)
             } else {
-              Segment.toSegment(carbonLoadModel.getSegmentId)
+              val currentSegmentFile = operationContext.getProperty("current.segmentfile")
+              val segment = if (currentSegmentFile != null) {
+                new Segment(carbonLoadModel.getSegmentId, currentSegmentFile.toString)
+              } else {
+                Segment.toSegment(carbonLoadModel.getSegmentId)
+              }
+              (TableIdentifier(table.getTableName, Some(table.getDatabaseName)), segment.toString)
             }
-            (TableIdentifier(table.getTableName, Some(table.getDatabaseName)), segment.toString)
-        }
 
         PreAggregateUtil.startDataLoadForDataMap(
         parentTableIdentifier,
@@ -247,6 +253,7 @@ object LoadPostAggregateListener extends OperationEventListener {
         }
       }
     }
+  }
 }
 
 /**
