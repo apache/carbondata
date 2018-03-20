@@ -78,7 +78,7 @@ object SparkSessionExample {
          | dateField DATE,
          | charField CHAR(5)
          | )
-         | USING org.apache.spark.sql.CarbonSource
+         | USING carbondata
          | OPTIONS('DICTIONARY_INCLUDE'='dateField, charField',
          | 'dbName'='default', 'tableName'='sparksession_table')
        """.stripMargin)
