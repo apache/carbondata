@@ -333,7 +333,6 @@ object CarbonSource {
     properties.foreach(e => map.put(e._1, e._2))
     map.put("tablepath", identifier.getTablePath)
     map.put("dbname", identifier.getDatabaseName)
-    val t=map.get("tableName")
     if (map.get("tableName") == null) {
       map.put("tablename", identifier.getTableName)
     }
