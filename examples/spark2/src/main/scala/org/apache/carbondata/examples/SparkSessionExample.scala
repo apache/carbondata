@@ -63,123 +63,126 @@ object SparkSessionExample {
 
     sparksession.sparkContext.setLogLevel("ERROR")
 
-    // Create table
-    sparksession.sql("DROP TABLE IF EXISTS sparksession_table")
-    sparksession.sql(
-      s"""
-         | CREATE TABLE sparksession_table(
-         | shortField SHORT,
-         | intField INT,
-         | bigintField LONG,
-         | doubleField DOUBLE,
-         | stringField STRING,
-         | timestampField TIMESTAMP,
-         | decimalField DECIMAL(18,2),
-         | dateField DATE,
-         | charField CHAR(5)
-         | )
-         | USING org.apache.spark.sql.CarbonSource
-         | OPTIONS('DICTIONARY_INCLUDE'='dateField, charField',
-         | 'dbName'='default', 'tableName'='sparksession_table')
+    for (keyWord <- Array("org.apache.spark.sql.CarbonSource", "carbondata")) {
+      // Create table
+      sparksession.sql("DROP TABLE IF EXISTS sparksession_table")
+      sparksession.sql(
+        s"""
+           | CREATE TABLE sparksession_table(
+           | shortField SHORT,
+           | intField INT,
+           | bigintField LONG,
+           | doubleField DOUBLE,
+           | stringField STRING,
+           | timestampField TIMESTAMP,
+           | decimalField DECIMAL(18,2),
+           | dateField DATE,
+           | charField CHAR(5)
+           | )
+           | USING $keyWord
+           | OPTIONS('DICTIONARY_INCLUDE'='dateField, charField',
+           | 'dbName'='default', 'tableName'='sparksession_table')
        """.stripMargin)
 
-    val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
+      val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
 
-    sparksession.sql("DROP TABLE IF EXISTS csv_table")
-    sparksession.sql(
-      s"""
-         | CREATE TABLE csv_table(
-         | shortField SHORT,
-         | intField INT,
-         | bigintField LONG,
-         | doubleField DOUBLE,
-         | stringField STRING,
-         | timestampField STRING,
-         | decimalField DECIMAL(18,2),
-         | dateField STRING,
-         | charField CHAR(5))
-         | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+      sparksession.sql("DROP TABLE IF EXISTS csv_table")
+      sparksession.sql(
+        s"""
+           | CREATE TABLE csv_table(
+           | shortField SHORT,
+           | intField INT,
+           | bigintField LONG,
+           | doubleField DOUBLE,
+           | stringField STRING,
+           | timestampField STRING,
+           | decimalField DECIMAL(18,2),
+           | dateField STRING,
+           | charField CHAR(5))
+           | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
        """.stripMargin)
 
-    sparksession.sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$path'
-         | INTO TABLE csv_table
+      sparksession.sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '$path'
+           | INTO TABLE csv_table
        """.stripMargin)
 
-    sparksession.sql("SELECT * FROM csv_table").show()
+      sparksession.sql("SELECT * FROM csv_table").show()
 
-    sparksession.sql(
-      s"""
-         | INSERT INTO TABLE sparksession_table
-         | SELECT shortField, intField, bigintField, doubleField, stringField,
-         | from_unixtime(unix_timestamp(timestampField,'yyyy/MM/dd HH:mm:ss')) timestampField,
-         | decimalField,from_unixtime(unix_timestamp(dateField,'yyyy/MM/dd')), charField
-         | FROM csv_table
+      sparksession.sql(
+        s"""
+           | INSERT INTO TABLE sparksession_table
+           | SELECT shortField, intField, bigintField, doubleField, stringField,
+           | from_unixtime(unix_timestamp(timestampField,'yyyy/MM/dd HH:mm:ss')) timestampField,
+           | decimalField,from_unixtime(unix_timestamp(dateField,'yyyy/MM/dd')), charField
+           | FROM csv_table
        """.stripMargin)
 
-    sparksession.sql("SELECT * FROM sparksession_table").show()
+      sparksession.sql("SELECT * FROM sparksession_table").show()
 
-    sparksession.sql(
-      s"""
-         | SELECT *
-         | FROM sparksession_table
-         | WHERE stringfield = 'spark' AND decimalField > 40
+      sparksession.sql(
+        s"""
+           | SELECT *
+           | FROM sparksession_table
+           | WHERE stringfield = 'spark' AND decimalField > 40
       """.stripMargin).show()
 
-    // Shows with raw data's timestamp format
-    sparksession.sql(
-      s"""
-         | SELECT
-         | stringField, date_format(timestampField, "yyyy/MM/dd HH:mm:ss") AS
-         | timestampField
-         | FROM sparksession_table WHERE length(stringField) = 5
+      // Shows with raw data's timestamp format
+      sparksession.sql(
+        s"""
+           | SELECT
+           | stringField, date_format(timestampField, "yyyy/MM/dd HH:mm:ss") AS
+           | timestampField
+           | FROM sparksession_table WHERE length(stringField) = 5
        """.stripMargin).show()
 
-    sparksession.sql(
-      s"""
-         | SELECT *
-         | FROM sparksession_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
+      sparksession.sql(
+        s"""
+           | SELECT *
+           | FROM sparksession_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
        """.stripMargin).show()
 
-    sparksession.sql("SELECT count(stringField) FROM sparksession_table").show()
+      sparksession.sql("SELECT count(stringField) FROM sparksession_table").show()
 
-    sparksession.sql(
-      s"""
-         | SELECT sum(intField), stringField
-         | FROM sparksession_table
-         | GROUP BY stringField
+      sparksession.sql(
+        s"""
+           | SELECT sum(intField), stringField
+           | FROM sparksession_table
+           | GROUP BY stringField
        """.stripMargin).show()
 
-    sparksession.sql(
-      s"""
-         | SELECT t1.*, t2.*
-         | FROM sparksession_table t1, sparksession_table t2
-         | WHERE t1.stringField = t2.stringField
+      sparksession.sql(
+        s"""
+           | SELECT t1.*, t2.*
+           | FROM sparksession_table t1, sparksession_table t2
+           | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
 
-    sparksession.sql(
-      s"""
-         | WITH t1 AS (
-         | SELECT * FROM sparksession_table
-         | UNION ALL
-         | SELECT * FROM sparksession_table
-         | )
-         | SELECT t1.*, t2.*
-         | FROM t1, sparksession_table t2
-         | WHERE t1.stringField = t2.stringField
+      sparksession.sql(
+        s"""
+           | WITH t1 AS (
+           | SELECT * FROM sparksession_table
+           | UNION ALL
+           | SELECT * FROM sparksession_table
+           | )
+           | SELECT t1.*, t2.*
+           | FROM t1, sparksession_table t2
+           | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
 
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
 
-    // Drop table
-    sparksession.sql("DROP TABLE IF EXISTS sparksession_table")
-    sparksession.sql("DROP TABLE IF EXISTS csv_table")
+      // Drop table
+      sparksession.sql("DROP TABLE IF EXISTS sparksession_table")
+      sparksession.sql("DROP TABLE IF EXISTS csv_table")
+      sparksession.sql("show tables").show()
+    }
 
     sparksession.stop()
   }

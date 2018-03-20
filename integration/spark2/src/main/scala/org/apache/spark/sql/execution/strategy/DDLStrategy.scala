@@ -207,7 +207,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(CarbonResetCommand()) :: Nil
       case org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, None)
         if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
-           && tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource") =>
+          && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
+          || tableDesc.provider.get.equalsIgnoreCase("CARBONDATA")) =>
         val updatedCatalog =
           CarbonSource.updateCatalogTableWithCarbonSchema(tableDesc, sparkSession)
         val cmd =
@@ -215,7 +216,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(cmd) :: Nil
       case CreateDataSourceTableCommand(table, ignoreIfExists)
         if table.provider.get != DDLUtils.HIVE_PROVIDER
-           && table.provider.get.equals("org.apache.spark.sql.CarbonSource") =>
+          && (table.provider.get.equals("org.apache.spark.sql.CarbonSource")
+          || table.provider.get.equalsIgnoreCase("CARBONDATA")) =>
         val updatedCatalog = CarbonSource.updateCatalogTableWithCarbonSchema(table, sparkSession)
         val cmd = CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists)
         ExecutedCommandExec(cmd) :: Nil

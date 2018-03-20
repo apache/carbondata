@@ -33,8 +33,9 @@ class CarbonHiveMetastoreListener(conf: Configuration) extends MetaStorePreEvent
       case CREATE_TABLE =>
         val table = preEventContext.asInstanceOf[PreCreateTableEvent].getTable
         val tableProps = table.getParameters
-        if (tableProps != null &&
-            tableProps.get("spark.sql.sources.provider") == "org.apache.spark.sql.CarbonSource") {
+        if (tableProps != null
+          && (tableProps.get("spark.sql.sources.provider") == "org.apache.spark.sql.CarbonSource"
+          || tableProps.get("spark.sql.sources.provider").equalsIgnoreCase("CARBONDATA"))) {
           val numSchemaParts = tableProps.get("spark.sql.sources.schema.numParts")
           if (numSchemaParts != null && !numSchemaParts.isEmpty) {
             val parts = (0 until numSchemaParts.toInt).map { index =>
@@ -61,8 +62,9 @@ class CarbonHiveMetastoreListener(conf: Configuration) extends MetaStorePreEvent
       case ALTER_TABLE =>
         val table = preEventContext.asInstanceOf[PreAlterTableEvent].getNewTable
         val tableProps = table.getParameters
-        if (tableProps != null &&
-            tableProps.get("spark.sql.sources.provider") == "org.apache.spark.sql.CarbonSource") {
+        if (tableProps != null
+          && (tableProps.get("spark.sql.sources.provider") == "org.apache.spark.sql.CarbonSource"
+          || tableProps.get("spark.sql.sources.provider").equalsIgnoreCase("CARBONDATA"))) {
           val numSchemaParts = tableProps.get("spark.sql.sources.schema.numParts")
           if (numSchemaParts != null && !numSchemaParts.isEmpty) {
             val schemaParts = (0 until numSchemaParts.toInt).map { index =>
