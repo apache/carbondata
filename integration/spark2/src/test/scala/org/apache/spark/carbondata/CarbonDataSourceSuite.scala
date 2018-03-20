@@ -202,6 +202,37 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table create_source")
   }
 
+  test("test create table with complex datatype without tablename in options") {
+    sql("DROP TABLE IF EXISTS create_source")
+    sql(
+      s"""
+         | CREATE TABLE create_source(
+         | intField INT,
+         | stringField STRING,
+         | complexField ARRAY<STRING>)
+         | USING org.apache.spark.sql.CarbonSource
+       """.stripMargin)
+    sql("DROP TABLE create_source")
+  }
+
+  test("test create table with different tableName in options") {
+    sql("DROP TABLE IF EXISTS create_source_test")
+    sql("DROP TABLE IF EXISTS create_source_test2")
+    sql(
+      s"""
+         | CREATE TABLE create_source_test(
+         | intField INT,
+         | stringField STRING,
+         | complexField ARRAY<STRING>)
+         | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS('tableName'='create_source_test2')
+       """.stripMargin)
+    checkExistence(sql("show tables"), true, "create_source_test")
+    checkExistence(sql("show tables"), false, "create_source_test2")
+    sql("DROP TABLE IF EXISTS create_source_test")
+    sql("DROP TABLE IF EXISTS create_source_test2")
+  }
+
   test("test to create bucket columns with int field") {
     sql("drop table if exists create_source")
     intercept[Exception] {
@@ -225,40 +256,19 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists create_source")
   }
 
-  test("test create table without tableName in options") {
+  test("test create table without tableName in options, should support") {
     sql("drop table if exists carbon_test")
-    val exception = intercept[AnalysisException] {
-      sql(
-        s"""
-           | CREATE TABLE carbon_test(
-           |    stringField string,
-           |    intField int)
-           | USING org.apache.spark.sql.CarbonSource
-           | OPTIONS('DICTIONARY_EXCLUDE'='stringField')
+    sql(
+      s"""
+         | CREATE TABLE carbon_test(
+         |    stringField string,
+         |    intField int)
+         | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS('DICTIONARY_EXCLUDE'='stringField')
       """.
-          stripMargin
-      )
-    }.getMessage
+        stripMargin
+    )
     sql("drop table if exists carbon_test")
-    assert(exception.contains("Table creation failed. Table name is not specified"))
-  }
-
-  test("test create table with space in tableName") {
-    sql("drop table if exists carbon_test")
-    val exception = intercept[AnalysisException] {
-      sql(
-        s"""
-           | CREATE TABLE carbon_test(
-           |    stringField string,
-           |    intField int)
-           | USING org.apache.spark.sql.CarbonSource
-           | OPTIONS('DICTIONARY_EXCLUDE'='stringField', 'tableName'='carbon test')
-      """.
-          stripMargin
-      )
-    }.getMessage
-    sql("drop table if exists carbon_test")
-    assert(exception.contains("Table creation failed. Table name cannot contain blank space"))
   }
 
   test("test create table: using") {
