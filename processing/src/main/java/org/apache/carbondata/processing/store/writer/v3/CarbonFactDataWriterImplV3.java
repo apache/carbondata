@@ -187,9 +187,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     } catch (IOException e) {
       LOGGER.error(e, "Problem while writing file");
       throw new CarbonDataWriterException("Problem while writing file", e);
+    } finally {
+      // clear the data holder
+      blockletDataHolder.clear();
     }
-    // clear the data holder
-    blockletDataHolder.clear();
 
   }
 

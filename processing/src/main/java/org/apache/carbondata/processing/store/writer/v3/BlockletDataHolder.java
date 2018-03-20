@@ -24,24 +24,20 @@ import org.apache.carbondata.processing.store.TablePage;
 
 public class BlockletDataHolder {
   private List<EncodedTablePage> encodedTablePage;
-  private List<TablePage> rawTablePages;
   private long currentSize;
 
   public BlockletDataHolder() {
     this.encodedTablePage = new ArrayList<>();
-    this.rawTablePages = new ArrayList<>();
   }
 
   public void clear() {
     encodedTablePage.clear();
-    rawTablePages.clear();
     currentSize = 0;
   }
 
   public void addPage(TablePage rawTablePage) {
     EncodedTablePage encodedTablePage = rawTablePage.getEncodedTablePage();
     this.encodedTablePage.add(encodedTablePage);
-    this.rawTablePages.add(rawTablePage);
     currentSize += encodedTablePage.getEncodedSize();
   }
 
@@ -66,7 +62,4 @@ public class BlockletDataHolder {
     return encodedTablePage;
   }
 
-  public List<TablePage> getRawTablePages() {
-    return rawTablePages;
-  }
 }
