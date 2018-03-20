@@ -98,3 +98,10 @@ select * from hive_carbon order by id;
 ```
 
 
+## Create Table in Hive
+```sql
+create table test_carbon(int id) STORED AS CARBONDATA;
+```
+
+
+
