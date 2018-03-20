@@ -36,7 +36,6 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
@@ -334,6 +333,10 @@ object CarbonSource {
     properties.foreach(e => map.put(e._1, e._2))
     map.put("tablepath", identifier.getTablePath)
     map.put("dbname", identifier.getDatabaseName)
+    val t=map.get("tableName")
+    if (map.get("tableName") == null) {
+      map.put("tablename", identifier.getTableName)
+    }
     map.asScala.toMap
   }
 }
