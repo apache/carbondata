@@ -182,6 +182,14 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
     return mergeStatus;
   }
 
+  @Override
+  public void close() {
+    // close data handler
+    if (null != dataHandler) {
+      dataHandler.closeHandler();
+    }
+  }
+
   /**
    * Below method will be used to add sorted row
    *

@@ -41,6 +41,12 @@ public abstract class AbstractResultProcessor {
    */
   public abstract boolean execute(List<RawResultIterator> resultIteratorList);
 
+  /**
+   * This method will be sued to clean up the resources and close all the spawned threads to avoid
+   * any kind of memory or thread leak
+   */
+  public abstract void close();
+
   protected void setDataFileAttributesInModel(CarbonLoadModel loadModel,
       CompactionType compactionType, CarbonTable carbonTable,
       CarbonFactDataHandlerModel carbonFactDataHandlerModel) {

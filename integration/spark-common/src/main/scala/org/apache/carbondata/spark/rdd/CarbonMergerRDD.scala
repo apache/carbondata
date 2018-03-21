@@ -98,6 +98,7 @@ class CarbonMergerRDD[K, V](
       var mergeStatus = false
       var mergeNumber = ""
       var exec: CarbonCompactionExecutor = null
+      var processor: AbstractResultProcessor = null
       try {
 
 
@@ -173,6 +174,10 @@ class CarbonMergerRDD[K, V](
         exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
           carbonTable, dataFileMetadataSegMapping, restructuredBlockExists)
 
+        // add task completion listener to clean up the resources
+        context.addTaskCompletionListener { _ =>
+          close()
+        }
         // fire a query and get the results.
         var result2: java.util.List[RawResultIterator] = null
         try {
@@ -199,7 +204,6 @@ class CarbonMergerRDD[K, V](
         )
 
         carbonLoadModel.setPartitionId("0")
-        var processor: AbstractResultProcessor = null
         if (restructuredBlockExists) {
           LOGGER.info("CompactionResultSortProcessor flow is selected")
           processor = new CompactionResultSortProcessor(
@@ -228,18 +232,31 @@ class CarbonMergerRDD[K, V](
         case e: Exception =>
           LOGGER.error(e)
           throw e
-      } finally {
-        // delete temp location data
+      }
+
+      private def close(): Unit = {
+        deleteLocalDataFolders()
+        // close all the query executor service and clean up memory acquired during query processing
+        if (null != exec) {
+          LOGGER.info("Cleaning up query resources acquired during compaction")
+          exec.finish()
+        }
+        // clean up the resources for processor
+        if (null != processor) {
+          LOGGER.info("Closing compaction processor instance to clean up loading resources")
+          processor.close()
+        }
+      }
+
+      private def deleteLocalDataFolders(): Unit = {
         try {
+          LOGGER.info("Deleting local folder store location")
           val isCompactionFlow = true
           TableProcessingOperations
             .deleteLocalDataLoadFolderLocation(carbonLoadModel, isCompactionFlow, false)
         } catch {
           case e: Exception =>
             LOGGER.error(e)
-        }
-        if (null != exec) {
-          exec.finish()
         }
       }
 
