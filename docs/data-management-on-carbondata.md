@@ -699,7 +699,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   LOAD DATA [LOCAL] INPATH 'folder_path' 
   INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
   OPTIONS(property_name=property_value, ...)    
-  INSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATMENT>
+  INSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATEMENT>
   ```
   
   Example:
