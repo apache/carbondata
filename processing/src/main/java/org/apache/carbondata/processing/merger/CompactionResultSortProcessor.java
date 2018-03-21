@@ -186,6 +186,22 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     return isCompactionSuccess;
   }
 
+  @Override
+  public void close() {
+    // close the sorter executor service
+    if (null != sortDataRows) {
+      sortDataRows.close();
+    }
+    // close the final merger
+    if (null != finalMerger) {
+      finalMerger.close();
+    }
+    // close data handler
+    if (null != dataHandler) {
+      dataHandler.closeHandler();
+    }
+  }
+
   /**
    * This method will clean up the local folders and files created during compaction process
    */
