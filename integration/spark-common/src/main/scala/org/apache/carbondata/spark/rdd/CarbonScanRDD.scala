@@ -130,6 +130,10 @@ class CarbonScanRDD(
       if (batchPartitions.isEmpty) {
         streamPartitions.toArray
       } else {
+        logInfo(
+          s"""
+             | Identified no.of Streaming Blocks: ${streamPartitions.size},
+          """.stripMargin)
         // should keep the order by index of partition
         batchPartitions.appendAll(streamPartitions)
         batchPartitions.toArray
