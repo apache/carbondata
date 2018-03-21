@@ -19,6 +19,8 @@ package org.apache.spark.sql
 
 import java.util.concurrent.ConcurrentHashMap
 
+import scala.util.Try
+
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.preaaggregate._
@@ -171,8 +173,8 @@ object CarbonEnv {
   }
 
   def registerCommonListener(sparkSession: SparkSession): Unit = {
-    val clsName = sparkSession.sparkContext.conf
-      .get(CarbonCommonConstants.CARBON_COMMON_LISTENER_REGISTER_CLASSNAME)
+    val clsName = Try(sparkSession.sparkContext.conf
+      .get(CarbonCommonConstants.CARBON_COMMON_LISTENER_REGISTER_CLASSNAME)).toOption.getOrElse("")
     if (null != clsName && !clsName.isEmpty) {
       CarbonReflectionUtils.createObject(clsName)
     }
