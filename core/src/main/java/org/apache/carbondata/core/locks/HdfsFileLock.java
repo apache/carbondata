@@ -22,6 +22,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -108,6 +109,24 @@ public class HdfsFileLock extends AbstractCarbonLock {
         status = true;
       } catch (IOException e) {
         status = false;
+      } finally {
+        if (isLockAcquired) {
+          CarbonFile carbonFile =
+              FileFactory.getCarbonFile(lockFilePath, FileFactory.getFileType(lockFilePath));
+          if (carbonFile.exists()) {
+            if (carbonFile.delete()) {
+              LOGGER.info("Deleted the lock file " + lockFilePath);
+            } else {
+              LOGGER.error("Not able to delete the lock file " + lockFilePath);
+              status = false;
+            }
+          } else {
+            LOGGER.error(
+                "Not able to delete the lock file because " + "it is not existed in location "
+                    + lockFilePath);
+            status = false;
+          }
+        }
       }
     }
     return status;
