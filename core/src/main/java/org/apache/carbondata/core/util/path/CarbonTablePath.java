@@ -45,6 +45,7 @@ public class CarbonTablePath {
   private static final String LOCK_DIR = "LockFiles";
 
   public static final String TABLE_STATUS_FILE = "tablestatus";
+  public static final String TABLE_STATUS_HISTORY_FILE = "tablestatus.history";
   public static final String CARBON_DATA_EXT = ".carbondata";
   public static final String INDEX_FILE_EXT = ".carbonindex";
   public static final String MERGE_INDEX_FILE_EXT = ".carbonindexmerge";
@@ -662,5 +663,13 @@ public class CarbonTablePath {
    */
   public static boolean isSegmentLockFilePath(String lockFileName) {
     return lockFileName.startsWith(SEGMENT_PREFIX) && lockFileName.endsWith(LockUsage.LOCK);
+  }
+
+  /**
+   * Return table status history file path based on `tablePath`
+   */
+  public static String getTableStatusHistoryFilePath(String tablePath) {
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
+        + TABLE_STATUS_HISTORY_FILE;
   }
 }

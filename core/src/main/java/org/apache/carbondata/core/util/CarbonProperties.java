@@ -1399,7 +1399,7 @@ public final class CarbonProperties {
     } catch (NumberFormatException exc) {
       LOGGER.error(
           "The heap memory pooling threshold bytes is invalid. Using the default value "
-              + CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
+          + CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
       thresholdSize = Integer.parseInt(
           CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
     }
@@ -1419,11 +1419,32 @@ public final class CarbonProperties {
       preserveSeconds = preserveHours * 3600 * 1000L;
     } catch (NumberFormatException exc) {
       LOGGER.error(
-          "The segment lock files preserv hours is invalid. Using the default value "
-              + CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT);
+          "The value of '" + CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS
+          + "' is invalid. Using the default value "
+          + CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT);
       preserveSeconds = Integer.parseInt(
           CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT) * 3600 * 1000L;
     }
     return preserveSeconds;
+  }
+
+  /**
+   * Get the number of invisible segment info which will be preserved in tablestatus file.
+   */
+  public int getInvisibleSegmentPreserveCount() {
+    int preserveCnt;
+    try {
+      preserveCnt = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT,
+              CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT));
+    } catch (NumberFormatException exc) {
+      LOGGER.error(
+          "The value of '" + CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT
+          + "' is invalid. Using the default value "
+          + CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT);
+      preserveCnt = Integer.parseInt(
+          CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT);
+    }
+    return preserveCnt;
   }
 }

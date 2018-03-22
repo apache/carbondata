@@ -71,36 +71,6 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
   }
 
   /**
-    * Test whether major compaction is not included in minor compaction.
-    */
-  test("delete merged folder and check segments") {
-    // delete merged segments
-    sql("clean files for table ignoremajor")
-
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "ignoremajor"
-    )
-    val absoluteTableIdentifier = carbonTable
-      .getAbsoluteTableIdentifier
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-      absoluteTableIdentifier)
-
-    // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentNo).toList
-    assert(segments.contains("0.1"))
-    assert(segments.contains("2.1"))
-    assert(!segments.contains("2"))
-    assert(!segments.contains("3"))
-    val cacheClient = new CacheClient()
-    val segmentIdentifier = new TableSegmentUniqueIdentifier(absoluteTableIdentifier, "2")
-    val wrapper: SegmentTaskIndexWrapper = cacheClient.getSegmentAccessClient.
-      getIfPresent(segmentIdentifier)
-    assert(null == wrapper)
-
-  }
-
-  /**
     * Delete should not work on compacted segment.
     */
   test("delete compacted segment and check status") {
@@ -139,6 +109,35 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     assertResult(SegmentStatus.COMPACTED)(segs(3).getSegmentStatus)
     // for segment 0.1 . should get deleted
     assertResult(SegmentStatus.MARKED_FOR_DELETE)(segs(2).getSegmentStatus)
+  }
+
+  /**
+    * Test whether major compaction is not included in minor compaction.
+    */
+  test("delete merged folder and check segments") {
+    // delete merged segments
+    sql("clean files for table ignoremajor")
+
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "ignoremajor"
+    )
+    val absoluteTableIdentifier = carbonTable
+      .getAbsoluteTableIdentifier
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
+      absoluteTableIdentifier)
+
+    // merged segment should not be there
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentNo).toList
+    assert(segments.contains("0.1"))
+    assert(segments.contains("2.1"))
+    assert(!segments.contains("2"))
+    assert(!segments.contains("3"))
+    val cacheClient = new CacheClient()
+    val segmentIdentifier = new TableSegmentUniqueIdentifier(absoluteTableIdentifier, "2")
+    val wrapper: SegmentTaskIndexWrapper = cacheClient.getSegmentAccessClient.
+      getIfPresent(segmentIdentifier)
+    assert(null == wrapper)
   }
 
   /**
