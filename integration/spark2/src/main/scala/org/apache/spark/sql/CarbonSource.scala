@@ -336,7 +336,7 @@ object CarbonSource {
     map.put("dbname", identifier.getDatabaseName)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     if (map.containsKey("tableName")) {
-      LOGGER.audit("tableName is useless in option when using syntax")
+      LOGGER.warn("tableName is useless in option when create table")
     }
     map.put("tableName", identifier.getTableName)
     map.asScala.toMap
