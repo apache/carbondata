@@ -40,6 +40,9 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
   val csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
 
   override def beforeAll {
+  }
+
+  def createTableAndLoadData(): Unit = {
     CarbonProperties.getInstance().addProperty("carbon.compaction.level.threshold", "2,2")
     sql("drop table if exists  ignoremajor")
     CarbonProperties.getInstance()
@@ -67,13 +70,56 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     )
     sql("alter table ignoremajor compact 'minor'"
     )
+  }
 
+  /**
+    * Delete should not work on compacted segment.
+    */
+  test("delete compacted segment and check status") {
+    createTableAndLoadData()
+    intercept[Throwable] {
+      sql("delete from table ignoremajor where segment.id in (2)")
+    }
+
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "ignoremajor"
+    )
+
+    val carbonTablePath = carbonTable.getMetadataPath
+    val segs = SegmentStatusManager.readLoadMetadata(carbonTablePath)
+
+    // status should remain as compacted.
+    assertResult(SegmentStatus.COMPACTED)(segs(3).getSegmentStatus)
+  }
+
+  /**
+    * Delete should not work on compacted segment.
+    */
+  test("delete compacted segment by date and check status") {
+    createTableAndLoadData()
+    sql(
+      "delete from table ignoremajor where segment.starttime before " +
+        " '2222-01-01 19:35:01'"
+    )
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "ignoremajor"
+    )
+    val carbontablePath = carbonTable.getMetadataPath
+    val segs = SegmentStatusManager.readLoadMetadata(carbontablePath)
+
+    // status should remain as compacted for segment 2.
+    assertResult(SegmentStatus.COMPACTED)(segs(3).getSegmentStatus)
+    // for segment 0.1 . should get deleted
+    assertResult(SegmentStatus.MARKED_FOR_DELETE)(segs(2).getSegmentStatus)
   }
 
   /**
     * Test whether major compaction is not included in minor compaction.
     */
   test("delete merged folder and check segments") {
+    createTableAndLoadData()
     // delete merged segments
     sql("clean files for table ignoremajor")
 
@@ -97,48 +143,6 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     val wrapper: SegmentTaskIndexWrapper = cacheClient.getSegmentAccessClient.
       getIfPresent(segmentIdentifier)
     assert(null == wrapper)
-
-  }
-
-  /**
-    * Delete should not work on compacted segment.
-    */
-  test("delete compacted segment and check status") {
-    intercept[Throwable] {
-      sql("delete from table ignoremajor where segment.id in (2)")
-    }
-
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "ignoremajor"
-    )
-
-    val carbonTablePath = carbonTable.getMetadataPath
-    val segs = SegmentStatusManager.readLoadMetadata(carbonTablePath)
-
-    // status should remain as compacted.
-    assertResult(SegmentStatus.COMPACTED)(segs(3).getSegmentStatus)
-  }
-
-  /**
-    * Delete should not work on compacted segment.
-    */
-  test("delete compacted segment by date and check status") {
-    sql(
-      "delete from table ignoremajor where segment.starttime before " +
-        " '2222-01-01 19:35:01'"
-    )
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "ignoremajor"
-    )
-    val carbontablePath = carbonTable.getMetadataPath
-    val segs = SegmentStatusManager.readLoadMetadata(carbontablePath)
-
-    // status should remain as compacted for segment 2.
-    assertResult(SegmentStatus.COMPACTED)(segs(3).getSegmentStatus)
-    // for segment 0.1 . should get deleted
-    assertResult(SegmentStatus.MARKED_FOR_DELETE)(segs(2).getSegmentStatus)
   }
 
   /**

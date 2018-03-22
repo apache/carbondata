@@ -28,6 +28,8 @@ import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
@@ -163,6 +165,29 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     }.getMessage.contains("Delete segment operation is not supported on pre-aggregate tables")
     dropTable("preaggMain")
     dropTable("preagg1")
+  }
+
+  test("separate visible and invisible segments info into two files") {
+    val tableName = "test_tablestatus_history"
+    sql(s"drop table if exists ${tableName}")
+    sql(s"create table ${tableName} (name String, age int) stored by 'carbondata' "
+      + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
+    sql(s"insert into ${tableName} select 'abc1',1")
+    sql(s"insert into ${tableName} select 'abc2',2")
+    sql(s"insert into ${tableName} select 'abc3',3")
+    assert(sql(s"show segments for table ${tableName}").collect().length == 4)
+    var detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    var historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)
+    assert(detail.length == 4)
+    assert(historyDetail.length == 0)
+    sql(s"clean files for table ${tableName}")
+    assert(sql(s"show segments for table ${tableName}").collect().length == 2)
+    detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)
+    assert(detail.length == 3)
+    assert(historyDetail.length == 1)
+    dropTable(tableName)
   }
 
   protected def dropTable(tableName: String): Unit ={
