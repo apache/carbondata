@@ -30,6 +30,8 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
 
   private int retryTimeout;
 
+  protected boolean isLockAcquired;
+
   public abstract boolean lock();
 
   /**
@@ -39,6 +41,7 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
     try {
       for (int i = 0; i < retryCount; i++) {
         if (lock()) {
+          isLockAcquired = true;
           return true;
         } else {
           Thread.sleep(retryTimeout * 1000L);
