@@ -998,31 +998,55 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       Seq(Row(2 * 100))
     )
     try{
-      sql("set carbon.input.segments.streaming.stream_table_handoff = 1")
-      checkAnswer(
-        sql("select count(*) from streaming.stream_table_handoff"),
-        Seq(Row(100))
-      )
-      sql("set carbon.input.segments.streaming.stream_table_handoff = *")
-      checkAnswer(
-        sql("select count(*) from streaming.stream_table_handoff"),
-        Seq(Row(2 * 100))
-      )
-      sql("set carbon.input.segments.streaming.stream_table_handoff = 2")
-      checkAnswer(
-        sql("select count(*) from streaming.stream_table_handoff"),
-        Seq(Row(1 * 100))
-      )
-      sql("set carbon.input.segments.streaming.stream_table_handoff = 1,2")
-      checkAnswer(
-        sql("select count(*) from streaming.stream_table_handoff"),
-        Seq(Row(2 * 100))
-      )
-      sql("set carbon.input.segments.streaming.stream_table_handoff = 3")
-      checkAnswer(
-        sql("select count(*) from streaming.stream_table_handoff"),
-        Seq(Row(0))
-      )
+      if (newSegments1.length == 3 ) {
+        sql("set carbon.input.segments.streaming.stream_table_handoff = 1")
+        val segment1 = sql("select * from streaming.stream_table_handoff").count()
+        sql("set carbon.input.segments.streaming.stream_table_handoff = 2")
+        val segment2 = sql("select * from streaming.stream_table_handoff").count()
+        assertResult(2 * 100) (segment1 + segment2)
+
+        sql("set carbon.input.segments.streaming.stream_table_handoff = *")
+        checkAnswer(
+          sql("select count(*) from streaming.stream_table_handoff"),
+          Seq(Row(2 * 100))
+        )
+
+        sql("set carbon.input.segments.streaming.stream_table_handoff = 1,2")
+        checkAnswer(
+          sql("select count(*) from streaming.stream_table_handoff"),
+          Seq(Row(2 * 100))
+        )
+        sql("set carbon.input.segments.streaming.stream_table_handoff = 0,3")
+        checkAnswer(
+          sql("select count(*) from streaming.stream_table_handoff"),
+          Seq(Row(0))
+        )
+      } else if (newSegments1.length == 5) {
+        sql("set carbon.input.segments.streaming.stream_table_handoff = 2")
+        val segment2 = sql("select * from streaming.stream_table_handoff").count()
+
+        sql("set carbon.input.segments.streaming.stream_table_handoff = 3,4")
+        val segment34 = sql("select * from streaming.stream_table_handoff").count()
+        assertResult(2 * 100) (segment2 + segment34)
+
+        sql("set carbon.input.segments.streaming.stream_table_handoff = *")
+        checkAnswer(
+          sql("select count(*) from streaming.stream_table_handoff"),
+          Seq(Row(2 * 100))
+        )
+
+        sql("set carbon.input.segments.streaming.stream_table_handoff = 2,3,4")
+        checkAnswer(
+          sql("select count(*) from streaming.stream_table_handoff"),
+          Seq(Row(2 * 100))
+        )
+
+        sql("set carbon.input.segments.streaming.stream_table_handoff = 0,1,5")
+        checkAnswer(
+          sql("select count(*) from streaming.stream_table_handoff"),
+          Seq(Row(0))
+        )
+      }
     }
     finally {
       sql("set carbon.input.segments.streaming.stream_table_handoff = *")
