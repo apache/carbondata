@@ -235,3 +235,4 @@ source.csv
 Data/v1_version/metastore_db.zip
 Data/v1_version/store.zip
 Data/timeseriestest.csv
+Data/partition/list_partition_table.csv
