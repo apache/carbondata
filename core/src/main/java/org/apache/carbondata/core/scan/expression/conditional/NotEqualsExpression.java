@@ -39,7 +39,8 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult elRes = left.evaluate(value);
     ExpressionResult erRes = right.evaluate(value);
@@ -87,15 +88,18 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
     return val1;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.NOT_EQUALS;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "NotEquals(" + left.getString() + ',' + right.getString() + ')';
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return left.getStatement() + " <> " + right.getStatement();
   }
 }

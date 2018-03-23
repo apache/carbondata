@@ -36,7 +36,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.SQLExecution
-import org.apache.spark.sql.monitor.{GetPartition, MonitorEndPoint, QueryTaskEnd}
+import org.apache.spark.sql.profiler.{GetPartition, Profiler, QueryTaskEnd}
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -170,10 +170,10 @@ class CarbonScanRDD(
       }
       partitions
     } finally {
-      MonitorEndPoint.scope {
+      Profiler.invokeIfEnable {
         val endTime = System.currentTimeMillis()
         val executionId = spark.sparkContext.getLocalProperty(SQLExecution.EXECUTION_ID_KEY).toLong
-        MonitorEndPoint.send(
+        Profiler.send(
           GetPartition(
             executionId,
             tableInfo.getDatabaseName + "." + tableInfo.getFactTable.getTableName,
@@ -582,14 +582,14 @@ class CarbonScanRDD(
       // print executor query statistics for each task_id
       val statistics = recorder.statisticsForTask(taskId, queryStartTime)
       if (statistics != null) {
-        MonitorEndPoint.scope {
+        Profiler.invokeIfEnable {
           val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
           inputSplit.calculateLength()
           val size = inputSplit.getLength
           val files = inputSplit.getAllSplits.asScala.map { s =>
             s.getSegmentId + "/" + s.getPath.getName
           }.toArray[String]
-          MonitorEndPoint.send(
+          Profiler.send(
             QueryTaskEnd(
               executionId.toLong,
               queryId,

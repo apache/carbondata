@@ -33,7 +33,8 @@ public class AndExpression extends BinaryLogicalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult resultLeft = left.evaluate(value);
     ExpressionResult resultRight = right.evaluate(value);
@@ -46,17 +47,20 @@ public class AndExpression extends BinaryLogicalExpression {
     return resultLeft;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     // TODO Auto-generated method stub
     return ExpressionType.AND;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     // TODO Auto-generated method stub
     return "And(" + left.getString() + ',' + right.getString() + ')';
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return "(" + left.getStatement() + " and " + right.getStatement() + ")";
   }
 }

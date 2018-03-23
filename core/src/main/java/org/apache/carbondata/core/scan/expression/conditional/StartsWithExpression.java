@@ -33,7 +33,8 @@ public class StartsWithExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult exprLeftRes = left.evaluate(value);
     ExpressionResult exprRightRes = right.evaluate(value);
@@ -61,15 +62,18 @@ public class StartsWithExpression extends BinaryConditionalExpression {
     return val1;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.STARTSWITH;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "StartsWith(" + left.getString() + ',' + right.getString() + ')';
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return left.getStatement() + " like '" + right.getStatement() + "%'";
   }
 }

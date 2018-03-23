@@ -74,15 +74,18 @@ public class GreaterThanEqualToExpression extends BinaryConditionalExpression {
     return exprResVal1;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.GREATERTHAN_EQUALTO;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "GreaterThanEqualTo(" + left.getString() + ',' + right.getString() + ')';
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return left.getStatement() + " >= " + right.getStatement();
   }
 }

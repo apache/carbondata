@@ -78,15 +78,18 @@ public class LessThanExpression extends BinaryConditionalExpression {
     return val1;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.LESSTHAN;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "LessThan(" + left.getString() + ',' + right.getString() + ')';
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return left.getStatement() + " < " + right.getStatement();
   }
 }

@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{Command, LocalRelation, Unio
 import org.apache.spark.sql.execution.streaming.CarbonStreamingQueryListener
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
-import org.apache.spark.sql.monitor.{MonitorEndPoint, MonitorListener, SQLStart}
+import org.apache.spark.sql.profiler.{Profiler, SQLStart}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -100,12 +100,12 @@ class CarbonSession(@transient val sc: SparkContext,
 
       new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
     } finally {
-      MonitorEndPoint.scope {
+      Profiler.invokeIfEnable {
         if (sse.isCommand) {
           sse.endTime = System.currentTimeMillis()
-          MonitorEndPoint.send(sse)
+          Profiler.send(sse)
         } else {
-          MonitorEndPoint.addStatementMessage(sse.statementId, sse)
+          Profiler.addStatementMessage(sse.statementId, sse)
         }
       }
     }
@@ -217,7 +217,7 @@ object CarbonSession {
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
         // Setup monitor end point and register CarbonMonitorListener
-        MonitorEndPoint.initialize(sparkContext)
+        Profiler.initialize(sparkContext)
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
         // exception in the construction of the instance.

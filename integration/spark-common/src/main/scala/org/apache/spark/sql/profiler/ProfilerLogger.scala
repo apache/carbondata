@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.monitor
+package org.apache.spark.sql.profiler
 
 import java.lang.{StringBuilder => JavaStringBuilder}
 import java.sql.Timestamp
@@ -30,9 +30,9 @@ import org.apache.carbondata.core.stats.TaskStatistics
 import org.apache.carbondata.core.util.CarbonUtil
 
 /**
- * the util of monitor logger
+ * the util of profiler logger
  */
-private[monitor] object MonitorLogger {
+private[profiler] object ProfilerLogger {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -48,11 +48,11 @@ private[monitor] object MonitorLogger {
     }
   }
 
-  def logStatementSummary(statementId: Long, messages: ArrayBuffer[MonitorMessage]): Unit = {
+  def logStatementSummary(statementId: Long, messages: ArrayBuffer[ProfilerMessage]): Unit = {
     LOGGER.info(new StatementSummary(statementId, messages).toString)
   }
 
-  def logExecutionSummary(executionId: Long, messages: ArrayBuffer[MonitorMessage]): Unit = {
+  def logExecutionSummary(executionId: Long, messages: ArrayBuffer[ProfilerMessage]): Unit = {
     LOGGER.info(new ExecutionSummary(executionId, messages).toString)
   }
 }
@@ -60,7 +60,10 @@ private[monitor] object MonitorLogger {
 /**
  * summarize the statement information
  */
-private[monitor] class StatementSummary(statementId: Long, messages: ArrayBuffer[MonitorMessage]) {
+private[profiler] class StatementSummary(
+    statementId: Long,
+    messages: ArrayBuffer[ProfilerMessage]
+) {
 
   private var sqlText: String = ""
 
@@ -145,7 +148,7 @@ private[monitor] class StatementSummary(statementId: Long, messages: ArrayBuffer
     builder.append(s"\n[statement id]: ${ statementId }")
     builder.append(s"\n[sql text]:\n")
     CarbonUtil.logTable(builder, sqlText, "")
-    builder.append(s"\n[start time]: ${ MonitorLogger.format(startTime) }\n")
+    builder.append(s"\n[start time]: ${ ProfilerLogger.format(startTime) }\n")
     builder.append(s"[driver side total taken]: $totalTaken ms\n")
     builder.append(s"  |__ 1.parser taken: $parserTaken ms\n")
     builder.append(s"  |__ 2.analyzer taken: $analyzerTaken ms\n")
@@ -175,13 +178,13 @@ private[monitor] class StatementSummary(statementId: Long, messages: ArrayBuffer
     builder.append(s"\n[statement id]: ${ statementId }")
     builder.append(s"\n[sql text]:\n")
     CarbonUtil.logTable(builder, sqlText, "")
-    builder.append(s"\n[start time]: ${ MonitorLogger.format(startTime) }\n")
+    builder.append(s"\n[start time]: ${ ProfilerLogger.format(startTime) }\n")
     builder.append(s"[driver side total taken]: ${ parserToOptimizer }ms\n")
     builder.append(s"  |__ 1.parser taken: $parserTaken ms\n")
     builder.append(s"  |__ 2.analyzer taken: $analyzerTaken ms\n")
     builder.append(s"  |__ 3.(${ optimizerStart - analyzerEnd }ms)\n")
     builder.append(s"  |__ 4.carbon optimizer taken: $optimizerTaken ms\n")
-    builder.append(s"        end time: ${ MonitorLogger.format(optimizerEnd) }")
+    builder.append(s"        end time: ${ ProfilerLogger.format(optimizerEnd) }")
     builder.toString
   }
 }
@@ -189,7 +192,10 @@ private[monitor] class StatementSummary(statementId: Long, messages: ArrayBuffer
 /**
  * summarize the execution information
  */
-private[monitor] class ExecutionSummary(executionId: Long, messages: ArrayBuffer[MonitorMessage]) {
+private[profiler] class ExecutionSummary(
+    executionId: Long,
+    messages: ArrayBuffer[ProfilerMessage]
+) {
 
   private var sqlPlan: String = ""
 
@@ -242,7 +248,7 @@ private[monitor] class ExecutionSummary(executionId: Long, messages: ArrayBuffer
       content.append("query_id: ").append(partition.queryId).append("\n")
         .append("table_name: ").append(partition.tableName).append("\n")
         .append("table_path: ").append(partition.tablePath).append("\n")
-        .append("start_time: ").append(MonitorLogger.format(partition.startTime)).append("\n")
+        .append("start_time: ").append(ProfilerLogger.format(partition.startTime)).append("\n")
       // total time
       content.append("total_time: ").append(partition.endTime - partition.startTime).append("ms")
       content.append(" [")
@@ -347,7 +353,7 @@ private[monitor] class ExecutionSummary(executionId: Long, messages: ArrayBuffer
   override def toString: String = {
     val builder = new JavaStringBuilder(1000)
     builder.append(s"\n[execution id]: ${ executionId }\n")
-    builder.append(s"[start time]: ${ MonitorLogger.format(startTime) }\n")
+    builder.append(s"[start time]: ${ ProfilerLogger.format(startTime) }\n")
     builder.append(s"[executor side total taken]: $totalTaken ms")
     builder.append(s"\n  |_1.getPartition\n")
     printGetPartitionTable(builder, "    ")

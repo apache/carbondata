@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.monitor
+package org.apache.spark.sql.profiler
 
 import java.util
 
@@ -29,45 +29,45 @@ import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceSta
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
- * monitor end point util object
+ * profiler end point util object
  */
-@InterfaceAudience.Developer(Array("monitor"))
+@InterfaceAudience.Developer(Array("profiler"))
 @InterfaceStability.Evolving
-object MonitorEndPoint {
+object Profiler {
   // whether it is enable or not
   private var isEnable = CarbonProperties.getInstance().isEnableQueryStatistics
 
   private var notInitialized = true
 
-  // map statementId -> MonitorMessage[]
-  private lazy val statementMap = new util.HashMap[Long, ArrayBuffer[MonitorMessage]]()
+  // map statementId -> ProfilerMessage[]
+  private lazy val statementMap = new util.HashMap[Long, ArrayBuffer[ProfilerMessage]]()
 
-  // map executionId -> MonitorMessage[]
-  private lazy val executionMap = new util.HashMap[Long, ArrayBuffer[MonitorMessage]]()
+  // map executionId -> ProfilerMessage[]
+  private lazy val executionMap = new util.HashMap[Long, ArrayBuffer[ProfilerMessage]]()
 
-  private val endpointName = "CarbonMonitor"
+  private val endpointName = "CarbonProfiler"
 
   // setup EndpointRef to driver
   private lazy val setupEndpointRef =
     RpcUtils.makeDriverRef(endpointName, SparkEnv.get.conf, SparkEnv.get.rpcEnv)
 
   /**
-   * setup monitor end point and register CarbonMonitorListener
+   * setup profiler end point and register CarbonProfilerListener
    */
   def initialize(sparkContext: SparkContext): Unit = this.synchronized {
-    scope {
+    invokeIfEnable {
       if (notInitialized) {
         notInitialized = false
-        SparkEnv.get.rpcEnv.setupEndpoint(endpointName, new MonitorEndPoint())
-        sparkContext.addSparkListener(new MonitorListener)
+        SparkEnv.get.rpcEnv.setupEndpoint(endpointName, new ProfilerEndPoint())
+        sparkContext.addSparkListener(new ProfilerListener)
       }
     }
   }
 
   /**
-   * run body if MonitorEndPoint is enabled
+   * run body if ProfilerEndPoint is enabled
    */
-  def scope(body: => Unit): Unit = {
+  def invokeIfEnable(body: => Unit): Unit = {
     if (isEnable) {
       body
     }
@@ -76,93 +76,93 @@ object MonitorEndPoint {
   /**
    * send message to driver
    */
-  def send(message: MonitorMessage): Unit = {
-    MonitorEndPoint.setupEndpointRef.send(message)
+  def send(message: ProfilerMessage): Unit = {
+    Profiler.setupEndpointRef.send(message)
   }
 
   /**
    * add message to statementMap
    */
-  def addStatementMessage(statementId: Long, message: MonitorMessage): Unit = this.synchronized {
-    val monitorMessages = statementMap.get(statementId)
-    if (monitorMessages == null) {
-      statementMap.put(statementId, ArrayBuffer[MonitorMessage](message))
+  def addStatementMessage(statementId: Long, message: ProfilerMessage): Unit = this.synchronized {
+    val profilerMessages = statementMap.get(statementId)
+    if (profilerMessages == null) {
+      statementMap.put(statementId, ArrayBuffer[ProfilerMessage](message))
     } else {
-      monitorMessages += message
+      profilerMessages += message
     }
   }
 
   /**
    * remove all messages of a statement by id
    */
-  def removeStatementMessage(statementId: Long): ArrayBuffer[MonitorMessage] = {
+  def removeStatementMessage(statementId: Long): ArrayBuffer[ProfilerMessage] = {
     statementMap.remove(statementId)
   }
 
   /**
    * add message to executionMap
    */
-  def addExecutionMessage(executionId: Long, message: MonitorMessage): Unit = this.synchronized {
-    val monitorMessages = executionMap.get(executionId)
-    if (monitorMessages == null) {
-      executionMap.put(executionId, ArrayBuffer[MonitorMessage](message))
+  def addExecutionMessage(executionId: Long, message: ProfilerMessage): Unit = this.synchronized {
+    val profilerMessages = executionMap.get(executionId)
+    if (profilerMessages == null) {
+      executionMap.put(executionId, ArrayBuffer[ProfilerMessage](message))
     } else {
-      monitorMessages += message
+      profilerMessages += message
     }
   }
 
   /**
    * remove all messages of a execution by id
    */
-  def removeExecutionMessage(executionId: Long): ArrayBuffer[MonitorMessage] = {
+  def removeExecutionMessage(executionId: Long): ArrayBuffer[ProfilerMessage] = {
     executionMap.remove(executionId)
   }
 
   def setIsEnable(isEnable: Boolean): Unit = {
-    MonitorEndPoint.isEnable = isEnable
+    Profiler.isEnable = isEnable
   }
 }
 
-class MonitorEndPoint extends RpcEndpoint {
+class ProfilerEndPoint extends RpcEndpoint {
   override val rpcEnv = SparkEnv.get.rpcEnv
 
-  def processSQLStart(statementId: Long, messages: ArrayBuffer[MonitorMessage]): Unit = {
-    MonitorLogger.logStatementSummary(statementId, messages)
+  def processSQLStart(statementId: Long, messages: ArrayBuffer[ProfilerMessage]): Unit = {
+    ProfilerLogger.logStatementSummary(statementId, messages)
   }
 
-  def processExecutionEnd(executionId: Long, messages: ArrayBuffer[MonitorMessage]): Unit = {
-    MonitorLogger.logExecutionSummary(executionId, messages)
+  def processExecutionEnd(executionId: Long, messages: ArrayBuffer[ProfilerMessage]): Unit = {
+    ProfilerLogger.logExecutionSummary(executionId, messages)
   }
 
   override def receive: PartialFunction[Any, Unit] = {
     case sqlStart: SQLStart =>
       if (sqlStart.isCommand) {
         // for the command sql, print summary to log file
-        var messages = MonitorEndPoint.removeStatementMessage(sqlStart.statementId)
+        var messages = Profiler.removeStatementMessage(sqlStart.statementId)
         if (messages != null) {
           messages += sqlStart
         } else {
-          messages = ArrayBuffer[MonitorMessage](sqlStart)
+          messages = ArrayBuffer[ProfilerMessage](sqlStart)
         }
         processSQLStart(sqlStart.statementId, messages)
       }
     case optimizer: Optimizer =>
-      val messages = MonitorEndPoint.removeStatementMessage(optimizer.statementId)
+      val messages = Profiler.removeStatementMessage(optimizer.statementId)
       if (messages == null) {
         // the statement is a command, just add it to statementMap
-        MonitorEndPoint.addStatementMessage(optimizer.statementId, optimizer)
+        Profiler.addStatementMessage(optimizer.statementId, optimizer)
       } else {
         // this statement is a select query, print summary to log file
         messages += optimizer
         processSQLStart(optimizer.statementId, messages)
       }
     case getPartition: GetPartition =>
-      MonitorEndPoint.addExecutionMessage(getPartition.executionId, getPartition)
+      Profiler.addExecutionMessage(getPartition.executionId, getPartition)
     case task: QueryTaskEnd =>
-      MonitorEndPoint.addExecutionMessage(task.executionId, task)
+      Profiler.addExecutionMessage(task.executionId, task)
     case executionEnd: ExecutionEnd =>
       // print execution summary to log file
-      val messages = MonitorEndPoint.removeExecutionMessage(executionEnd.executionId)
+      val messages = Profiler.removeExecutionMessage(executionEnd.executionId)
       if (messages != null) {
         messages += executionEnd
         processExecutionEnd(executionEnd.executionId, messages)
@@ -171,9 +171,9 @@ class MonitorEndPoint extends RpcEndpoint {
 }
 
 /**
- * the trait of monitor messages
+ * the trait of profiler messages
  */
-trait MonitorMessage
+trait ProfilerMessage
 
 case class SQLStart(
     sqlText: String,
@@ -183,24 +183,24 @@ case class SQLStart(
     var analyzerEnd: Long = -1,
     var endTime: Long = -1,
     var isCommand: Boolean = false
-) extends MonitorMessage
+) extends ProfilerMessage
 
 case class Optimizer(
     statementId: Long,
     startTime: Long,
     timeTaken: Long
-) extends MonitorMessage
+) extends ProfilerMessage
 
 case class ExecutionStart(
     executionId: Long,
     startTime: Long,
     plan: String
-) extends MonitorMessage
+) extends ProfilerMessage
 
 case class ExecutionEnd(
     executionId: Long,
     endTime: Long
-) extends MonitorMessage
+) extends ProfilerMessage
 
 case class GetPartition(
     executionId: Long,
@@ -219,7 +219,7 @@ case class GetPartition(
     distributeEnd: Long,
     filter: String,
     projection: String
-) extends MonitorMessage with Comparable[GetPartition] {
+) extends ProfilerMessage with Comparable[GetPartition] {
   override def compareTo(other: GetPartition): Int = {
     queryId.compareTo(other.queryId)
   }
@@ -231,7 +231,7 @@ case class QueryTaskEnd(
     values: Array[Long],
     size: Long,
     files: Array[String]
-) extends MonitorMessage with Comparable[QueryTaskEnd] {
+) extends ProfilerMessage with Comparable[QueryTaskEnd] {
   override def compareTo(other: QueryTaskEnd): Int = {
     val result = this.queryId.compareTo(other.queryId)
     if (result != 0) {

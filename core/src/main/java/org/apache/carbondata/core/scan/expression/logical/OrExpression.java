@@ -33,7 +33,8 @@ public class OrExpression extends BinaryLogicalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterIllegalMemberException, FilterUnsupportedException {
     ExpressionResult resultLeft = left.evaluate(value);
     ExpressionResult resultRight = right.evaluate(value);
@@ -46,15 +47,18 @@ public class OrExpression extends BinaryLogicalExpression {
     return resultLeft;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.OR;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "Or(" + left.getString() + ',' + right.getString() + ')';
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return "(" + left.getString() + " or " + right.getString() + ")";
   }
 }

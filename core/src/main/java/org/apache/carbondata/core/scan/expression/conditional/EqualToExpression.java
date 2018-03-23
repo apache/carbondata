@@ -40,7 +40,8 @@ public class EqualToExpression extends BinaryConditionalExpression {
     this.isNull = isNull;
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult elRes = left.evaluate(value);
     ExpressionResult erRes = right.evaluate(value);
@@ -91,15 +92,18 @@ public class EqualToExpression extends BinaryConditionalExpression {
     return val1;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.EQUALS;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "EqualTo(" + left.getString() + ',' + right.getString() + ')';
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     if (isNull) {
       return  left.getStatement() + " is " + right.getStatement();
     } else {

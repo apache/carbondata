@@ -48,7 +48,8 @@ public class TrueExpression extends BinaryConditionalExpression {
    * @throws FilterUnsupportedException
    * @throws FilterIllegalMemberException
    */
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
     return new ExpressionResult(DataTypes.BOOLEAN,true);
   }
@@ -57,14 +58,17 @@ public class TrueExpression extends BinaryConditionalExpression {
    * This method will return the expression types
    * @return
    */
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.TRUE;
   }
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return null;
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return "true";
   }
 }

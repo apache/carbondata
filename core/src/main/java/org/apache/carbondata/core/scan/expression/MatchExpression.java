@@ -55,7 +55,8 @@ public class MatchExpression extends Expression {
     return queryString;
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return queryString;
   }
 }

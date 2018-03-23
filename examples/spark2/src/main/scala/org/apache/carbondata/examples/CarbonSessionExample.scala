@@ -31,7 +31,7 @@ object CarbonSessionExample {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
     System.setProperty("path.target", s"$rootPath/examples/spark2/target")
-    // print monitor log to a separated file: target/monitor.log
+    // print profiler log to a separated file: target/profiler.log
     PropertyConfigurator.configure(
       s"$rootPath/examples/spark2/src/main/resources/log4j.properties")
 

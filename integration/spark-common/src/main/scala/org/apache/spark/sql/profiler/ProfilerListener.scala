@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.monitor
+package org.apache.spark.sql.profiler
 
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent, SparkListenerTaskEnd, SparkListenerTaskGettingResult, SparkListenerTaskStart}
 import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd, SparkListenerSQLExecutionStart}
@@ -23,12 +23,12 @@ import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd, SparkLis
 /**
  * listen sql execution
  */
-private[monitor] class MonitorListener extends SparkListener {
+private[profiler] class ProfilerListener extends SparkListener {
   override def onOtherEvent(event: SparkListenerEvent): Unit = {
-    MonitorEndPoint.scope {
+    Profiler.invokeIfEnable {
       event match {
         case executionStart: SparkListenerSQLExecutionStart =>
-          MonitorEndPoint.addExecutionMessage(
+          Profiler.addExecutionMessage(
             executionStart.executionId,
             ExecutionStart(
               executionStart.executionId,
@@ -36,7 +36,7 @@ private[monitor] class MonitorListener extends SparkListener {
               executionStart.physicalPlanDescription
             ))
         case executionEnd: SparkListenerSQLExecutionEnd =>
-          MonitorEndPoint.send(
+          Profiler.send(
             ExecutionEnd(
               executionEnd.executionId,
               executionEnd.time

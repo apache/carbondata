@@ -40,7 +40,8 @@ public class RangeExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult resultLeft = left.evaluate(value);
     ExpressionResult resultRight = right.evaluate(value);
@@ -53,19 +54,23 @@ public class RangeExpression extends BinaryConditionalExpression {
     return resultLeft;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.RANGE;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return null;
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return left.getStatement() + " between " + right.getStatement();
   }
 
-  @Override public List<ExpressionResult> getLiterals() {
+  @Override
+  public List<ExpressionResult> getLiterals() {
     List<ExpressionResult> listOfExp =
         new ArrayList<ExpressionResult>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     getLiteralsResult(this, listOfExp);

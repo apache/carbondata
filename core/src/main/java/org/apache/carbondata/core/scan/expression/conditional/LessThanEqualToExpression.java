@@ -74,16 +74,19 @@ public class LessThanEqualToExpression extends BinaryConditionalExpression {
     return exprResValue1;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     // TODO Auto-generated method stub
     return ExpressionType.LESSTHAN_EQUALTO;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "LessThanEqualTo(" + left.getString() + ',' + right.getString() + ')';
   }
 
-  @Override public String getStatement() {
+  @Override
+  public String getStatement() {
     return left.getStatement() + " <= " + right.getStatement();
   }
 }

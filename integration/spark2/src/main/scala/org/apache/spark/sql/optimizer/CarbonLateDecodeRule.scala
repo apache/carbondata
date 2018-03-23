@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.monitor.{MonitorEndPoint, Optimizer}
+import org.apache.spark.sql.profiler.{Optimizer, Profiler}
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -58,8 +58,8 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         System.currentTimeMillis)
       recorder.recordStatistics(queryStatistic)
       recorder.logStatistics()
-      MonitorEndPoint.scope {
-        MonitorEndPoint.send(
+      Profiler.invokeIfEnable {
+        Profiler.send(
           Optimizer(
             CarbonSession.threadStatementId.get(),
             queryStatistic.getStartTime,

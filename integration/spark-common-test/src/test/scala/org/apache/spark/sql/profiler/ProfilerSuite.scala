@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.monitor
+package org.apache.spark.sql.profiler
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -27,30 +27,30 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class MonitorSuite extends QueryTest with BeforeAndAfterAll {
+class ProfilerSuite extends QueryTest with BeforeAndAfterAll {
   var setupEndpointRef: RpcEndpointRef = _
-  var statementMessages: ArrayBuffer[MonitorMessage] = _
-  var executionMessages: ArrayBuffer[MonitorMessage] = _
-  val monitorEndPoint = new MonitorEndPoint
-  val listener = new MonitorListener
+  var statementMessages: ArrayBuffer[ProfilerMessage] = _
+  var executionMessages: ArrayBuffer[ProfilerMessage] = _
+  val profilerEndPoint = new ProfilerEndPoint
+  val listener = new ProfilerListener
 
   override def beforeAll(): Unit = {
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
       "true"
     )
-    MonitorEndPoint.setIsEnable(true)
+    Profiler.setIsEnable(true)
     setupEndpointRef = SparkEnv.get.rpcEnv.setupEndpoint(
-      "CarbonMonitor",
-      new MonitorEndPoint() {
+      "CarbonProfiler",
+      new ProfilerEndPoint() {
         // override method for testing
         override def processSQLStart(statementId: Long,
-            messages: ArrayBuffer[MonitorMessage]): Unit = {
+            messages: ArrayBuffer[ProfilerMessage]): Unit = {
           statementMessages = messages
         }
         // override method for testing
         override def processExecutionEnd(executionId: Long,
-            messages: ArrayBuffer[MonitorMessage]): Unit = {
+            messages: ArrayBuffer[ProfilerMessage]): Unit = {
           executionMessages = messages
         }
       })
@@ -63,9 +63,9 @@ class MonitorSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   def processSQLStart(statementId: Long,
-      messages: ArrayBuffer[MonitorMessage]): Unit = {
+      messages: ArrayBuffer[ProfilerMessage]): Unit = {
     try {
-      monitorEndPoint.processSQLStart(statementId, messages)
+      profilerEndPoint.processSQLStart(statementId, messages)
     } catch {
       case _ =>
         assert(false, "Failed to log StatementSummary")
@@ -73,9 +73,9 @@ class MonitorSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   def processExecutionEnd(executionId: Long,
-      messages: ArrayBuffer[MonitorMessage]): Unit = {
+      messages: ArrayBuffer[ProfilerMessage]): Unit = {
     try {
-      monitorEndPoint.processExecutionEnd(executionId, messages)
+      profilerEndPoint.processExecutionEnd(executionId, messages)
     } catch {
       case _ =>
         assert(false, "Failed to log ExecutionSummary")
@@ -141,7 +141,7 @@ class MonitorSuite extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
       CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT
     )
-    MonitorEndPoint.setIsEnable(false)
+    Profiler.setIsEnable(false)
     sql("DROP TABLE IF EXISTS mobile")
     sql("DROP TABLE IF EXISTS emp")
   }
