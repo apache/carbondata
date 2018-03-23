@@ -1113,7 +1113,9 @@ public final class CarbonLoaderUtil {
     String uniqueId = "";
     if (segmentIndexFIleMergeStatus != null) {
       uniqueId = System.currentTimeMillis() + "";
-      String newSegmentFileName = segmentId + "_" + uniqueId + CarbonTablePath.SEGMENT_EXT;
+      String newSegmentFileName =
+          SegmentFileStore.genSegmentFileName(segmentId, String.valueOf(uniqueId))
+          + CarbonTablePath.SEGMENT_EXT;
       String path =
           CarbonTablePath.getSegmentFilesLocation(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
               + newSegmentFileName;

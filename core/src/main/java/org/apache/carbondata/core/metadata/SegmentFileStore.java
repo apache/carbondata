@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -104,7 +105,6 @@ public class SegmentFileStore {
           isRelative = true;
         }
         SegmentFile segmentFile = new SegmentFile();
-        Map<String, FolderDetails> locationMap = new HashMap<>();
         FolderDetails folderDetails = new FolderDetails();
         folderDetails.setRelative(isRelative);
         folderDetails.setPartitions(partionNames);
@@ -112,13 +112,62 @@ public class SegmentFileStore {
         for (CarbonFile file : carbonFiles) {
           folderDetails.getFiles().add(file.getName());
         }
-        locationMap.put(location, folderDetails);
-        segmentFile.setLocationMap(locationMap);
+        segmentFile.addPath(location, folderDetails);
         String path = writePath + "/" + taskNo + CarbonTablePath.SEGMENT_EXT;
         // write segment info to new file.
         writeSegmentFile(segmentFile, path);
       }
     }
+  }
+
+  /**
+   * Generate Segment file name
+   * @param segmentId segment id
+   * @param UUID unique string, typically caller can use the loading start
+   *             timestamp in CarbonLoadModel
+   * @return
+   */
+  public static String genSegmentFileName(String segmentId, String UUID) {
+    return segmentId + "_" + UUID;
+  }
+
+  /**
+   * Write segment file to the metadata folder of the table
+   * @param tablePath table path
+   * @param segmentId segment id
+   * @param UUID a UUID string used to construct the segment file name
+   * @return segment file name
+   */
+  public static String writeSegmentFile(String tablePath, String segmentId, String UUID)
+      throws IOException {
+    String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
+    CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
+    CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT);
+      }
+    });
+    if (indexFiles != null && indexFiles.length > 0) {
+      SegmentFile segmentFile = new SegmentFile();
+      FolderDetails folderDetails = new FolderDetails();
+      folderDetails.setRelative(true);
+      folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
+      for (CarbonFile file : indexFiles) {
+        folderDetails.getFiles().add(file.getName());
+      }
+      String segmentRelativePath = segmentPath.substring(tablePath.length(), segmentPath.length());
+      segmentFile.addPath(segmentRelativePath, folderDetails);
+      String segmentFileFolder =  CarbonTablePath.getSegmentFilesLocation(tablePath);
+      CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
+      if (!carbonFile.exists()) {
+        carbonFile.mkdirs(segmentFileFolder, FileFactory.getFileType(segmentFileFolder));
+      }
+      String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
+      // write segment info to new file.
+      writeSegmentFile(segmentFile, segmentFileFolder + File.separator + segmentFileName);
+      return segmentFileName;
+    }
+    return null;
   }
 
   /**
@@ -213,7 +262,6 @@ public class SegmentFileStore {
           isRelative = true;
         }
         SegmentFile localSegmentFile = new SegmentFile();
-        Map<String, FolderDetails> locationMap = new HashMap<>();
         FolderDetails folderDetails = new FolderDetails();
         folderDetails.setRelative(isRelative);
         folderDetails.setPartitions(spec.getPartitions());
@@ -228,8 +276,7 @@ public class SegmentFileStore {
             folderDetails.getFiles().add(file.getName());
           }
         }
-        locationMap.put(location, folderDetails);
-        localSegmentFile.setLocationMap(locationMap);
+        localSegmentFile.addPath(location, folderDetails);
         if (segmentFile == null) {
           segmentFile = localSegmentFile;
         } else {
@@ -440,7 +487,8 @@ public class SegmentFileStore {
     if (updateSegment) {
       String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath);
       writePath =
-          writePath + CarbonCommonConstants.FILE_SEPARATOR + segment.getSegmentNo() + "_" + uniqueId
+          writePath + CarbonCommonConstants.FILE_SEPARATOR +
+              SegmentFileStore.genSegmentFileName(segment.getSegmentNo(),  String.valueOf(uniqueId))
               + CarbonTablePath.SEGMENT_EXT;
       writeSegmentFile(segmentFile, writePath);
     }
@@ -698,9 +746,16 @@ public class SegmentFileStore {
 
     private static final long serialVersionUID = 3582245668420401089L;
 
+    /**
+     * mapping of index file parent folder to the index file folder info
+     */
     private Map<String, FolderDetails> locationMap;
 
-    public SegmentFile merge(SegmentFile mapper) {
+    SegmentFile() {
+      locationMap = new HashMap<>();
+    }
+
+    SegmentFile merge(SegmentFile mapper) {
       if (this == mapper) {
         return this;
       }
@@ -724,9 +779,13 @@ public class SegmentFileStore {
       return locationMap;
     }
 
-    public void setLocationMap(Map<String, FolderDetails> locationMap) {
-      this.locationMap = locationMap;
+    /**
+     * Add index file parent folder and the index file folder info
+     */
+    void addPath(String path, FolderDetails details) {
+      locationMap.put(path, details);
     }
+
   }
 
   /**
@@ -736,14 +795,32 @@ public class SegmentFileStore {
 
     private static final long serialVersionUID = 501021868886928553L;
 
+    /**
+     * Based on isRelative variable:
+     * 1. if it is relative, it is relative path to the table path, for all index files
+     * 2. if it is not relative, it is the full path of all index files
+     */
     private Set<String> files = new HashSet<>();
 
+    /**
+     * all partition names
+     */
     private List<String> partitions = new ArrayList<>();
 
+    /**
+     * status for the partition, success or mark for delete
+     */
     private String status;
 
+    /**
+     * file name for merge index file in this folder
+     */
     private String mergeFileName;
 
+    /**
+     * true if it is relative path, for example, if user give partition location when
+     * adding the partition, it will be false
+     */
     private boolean isRelative;
 
     public FolderDetails merge(FolderDetails folderDetails) {
