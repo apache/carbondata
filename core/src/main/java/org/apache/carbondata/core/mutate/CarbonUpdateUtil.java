@@ -117,8 +117,7 @@ public class CarbonUpdateUtil {
   public static boolean updateSegmentStatus(List<SegmentUpdateDetails> updateDetailsList,
       CarbonTable table, String updateStatusFileIdentifier, boolean isCompaction) {
     boolean status = false;
-    SegmentUpdateStatusManager segmentUpdateStatusManager =
-            new SegmentUpdateStatusManager(table.getAbsoluteTableIdentifier());
+    SegmentUpdateStatusManager segmentUpdateStatusManager = new SegmentUpdateStatusManager(table);
     ICarbonLock updateLock = segmentUpdateStatusManager.getTableUpdateStatusLock();
     boolean lockStatus = false;
 
@@ -453,8 +452,7 @@ public class CarbonUpdateUtil {
         CarbonFile[] allSegmentFiles = segDir.listFiles();
 
         // scan through the segment and find the carbondatafiles and index files.
-        SegmentUpdateStatusManager updateStatusManager =
-                new SegmentUpdateStatusManager(table.getAbsoluteTableIdentifier());
+        SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(table);
 
         // deleting of the aborted file scenario.
         deleteStaleCarbonDataFiles(segment, allSegmentFiles, updateStatusManager);
@@ -719,9 +717,9 @@ public class CarbonUpdateUtil {
    */
   public static long getRowCount(
       BlockMappingVO blockMappingVO,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      CarbonTable carbonTable) {
     SegmentUpdateStatusManager updateStatusManager =
-        new SegmentUpdateStatusManager(absoluteTableIdentifier);
+        new SegmentUpdateStatusManager(carbonTable);
     long rowCount = 0;
     Map<String, Long> blockRowCountMap = blockMappingVO.getBlockRowCountMapping();
     for (Map.Entry<String, Long> blockRowEntry : blockRowCountMap.entrySet()) {

@@ -171,7 +171,7 @@ public final class CarbonDataMergerUtil {
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
 
     SegmentUpdateStatusManager segmentUpdateStatusManager =
-        new SegmentUpdateStatusManager(identifier);
+        new SegmentUpdateStatusManager(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable());
 
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
 
@@ -1142,11 +1142,11 @@ public final class CarbonDataMergerUtil {
    * @throws IOException
    */
   public static List<CarbonDataMergerUtilResult> compactBlockDeleteDeltaFiles(String seg,
-      String blockName, AbsoluteTableIdentifier absoluteTableIdentifier,
+      String blockName, CarbonTable table,
       SegmentUpdateDetails[] segmentUpdateDetails, Long timestamp) throws IOException {
 
     SegmentUpdateStatusManager segmentUpdateStatusManager =
-        new SegmentUpdateStatusManager(absoluteTableIdentifier);
+        new SegmentUpdateStatusManager(table);
 
     List<CarbonDataMergerUtilResult> resultList = new ArrayList<CarbonDataMergerUtilResult>(1);
 
