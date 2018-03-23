@@ -117,7 +117,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         + CarbonCommonConstants.FILE_SEPARATOR
         + loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp() + ".tmp";
     // Merge all partition files into a single file.
-    String segmentFileName = loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp();
+    String segmentFileName = SegmentFileStore.genSegmentFileName(
+        loadModel.getSegmentId(), String.valueOf(loadModel.getFactTimeStamp()));
     SegmentFileStore.SegmentFile segmentFile = SegmentFileStore
         .mergeSegmentFiles(readPath, segmentFileName,
             CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath()));

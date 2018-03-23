@@ -141,7 +141,7 @@ public final class CarbonDataMergerUtil {
    */
   public static boolean updateLoadMetadataIUDUpdateDeltaMergeStatus(
       List<LoadMetadataDetails> loadsToMerge, String metaDataFilepath,
-      CarbonLoadModel carbonLoadModel) {
+      CarbonLoadModel carbonLoadModel, List<Segment> segmentFilesToBeUpdated) {
 
     boolean status = false;
     boolean updateLockStatus = false;
@@ -171,7 +171,7 @@ public final class CarbonDataMergerUtil {
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
 
     SegmentUpdateStatusManager segmentUpdateStatusManager =
-        new SegmentUpdateStatusManager(identifier);
+        new SegmentUpdateStatusManager(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable());
 
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
 
@@ -229,6 +229,13 @@ public final class CarbonDataMergerUtil {
               if (loadDetail.getLoadName().equalsIgnoreCase("0")) {
                 loadDetail
                     .setUpdateStatusFileName(CarbonUpdateUtil.getUpdateStatusFileName(timestamp));
+              }
+              // Update segement file name to status file
+              int segmentFileIndex =
+                  segmentFilesToBeUpdated.indexOf(Segment.toSegment(loadDetail.getLoadName()));
+              if (segmentFileIndex > -1) {
+                loadDetail.setSegmentFile(
+                    segmentFilesToBeUpdated.get(segmentFileIndex).getSegmentFileName());
               }
             }
           }
@@ -1135,18 +1142,17 @@ public final class CarbonDataMergerUtil {
    *
    * @param seg
    * @param blockName
-   * @param absoluteTableIdentifier
    * @param segmentUpdateDetails
    * @param timestamp
    * @return
    * @throws IOException
    */
   public static List<CarbonDataMergerUtilResult> compactBlockDeleteDeltaFiles(String seg,
-      String blockName, AbsoluteTableIdentifier absoluteTableIdentifier,
+      String blockName, CarbonTable table,
       SegmentUpdateDetails[] segmentUpdateDetails, Long timestamp) throws IOException {
 
     SegmentUpdateStatusManager segmentUpdateStatusManager =
-        new SegmentUpdateStatusManager(absoluteTableIdentifier);
+        new SegmentUpdateStatusManager(table);
 
     List<CarbonDataMergerUtilResult> resultList = new ArrayList<CarbonDataMergerUtilResult>(1);
 

@@ -87,8 +87,9 @@ public class DataMapChooser {
       }
     }
     // Return the default datamap if no other datamap exists.
-    return new DataMapExprWrapperImpl(DataMapStoreManager.getInstance()
-        .getDefaultDataMap(carbonTable.getAbsoluteTableIdentifier()), resolverIntf);
+    return new DataMapExprWrapperImpl(
+        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable),
+        resolverIntf);
   }
 
   private ExpressionTuple selectDataMap(Expression expression, List<TableDataMap> allDataMap) {

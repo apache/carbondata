@@ -96,7 +96,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   private def driverSideCountStar(logicalRelation: LogicalRelation): Boolean = {
     val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     val segmentUpdateStatusManager = new SegmentUpdateStatusManager(
-      relation.carbonRelation.metaData.carbonTable.getAbsoluteTableIdentifier)
+      relation.carbonRelation.metaData.carbonTable)
     val updateDeltaMetadata = segmentUpdateStatusManager.readLoadMetadata()
     if (updateDeltaMetadata != null && updateDeltaMetadata.nonEmpty) {
       false

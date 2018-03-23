@@ -73,7 +73,7 @@ object HorizontalCompaction {
     // SegmentUpdateStatusManager reads the Table Status File and Table Update Status
     // file and save the content in segmentDetails and updateDetails respectively.
     val segmentUpdateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
-      absTableIdentifier)
+      carbonTable)
 
     if (isUpdateOperation) {
 
@@ -199,7 +199,7 @@ object HorizontalCompaction {
               .substring(segmentAndBlocks.lastIndexOf("/") + 1, segmentAndBlocks.length)
 
             val result = CarbonDataMergerUtil.compactBlockDeleteDeltaFiles(segment, blockName,
-              absTableIdentifier,
+              carbonTable,
               updateStatusDetails,
               timestamp)
 

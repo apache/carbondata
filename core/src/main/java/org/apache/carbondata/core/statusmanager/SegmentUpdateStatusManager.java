@@ -44,6 +44,7 @@ import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.TupleIdEnum;
@@ -70,31 +71,24 @@ public class SegmentUpdateStatusManager {
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
   private boolean isPartitionTable;
 
-  public SegmentUpdateStatusManager(AbsoluteTableIdentifier absoluteTableIdentifier,
+  public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails) {
-    this.identifier = absoluteTableIdentifier;
+    this.identifier = table.getAbsoluteTableIdentifier();
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     this.segmentDetails = segmentDetails;
-    if (segmentDetails.length > 0) {
-      isPartitionTable = segmentDetails[0].getSegmentFile() != null;
-    }
+    isPartitionTable = table.isHivePartitionTable();
     updateDetails = readLoadMetadata();
     populateMap();
   }
 
-  /**
-   * @param identifier
-   */
-  public SegmentUpdateStatusManager(AbsoluteTableIdentifier identifier) {
-    this.identifier = identifier;
+  public SegmentUpdateStatusManager(CarbonTable table) {
+    this.identifier = table.getAbsoluteTableIdentifier();
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     segmentDetails = SegmentStatusManager.readLoadMetadata(
         CarbonTablePath.getMetadataPath(identifier.getTablePath()));
-    if (segmentDetails.length > 0) {
-      isPartitionTable = segmentDetails[0].getSegmentFile() != null;
-    }
+    isPartitionTable = table.isHivePartitionTable();
     updateDetails = readLoadMetadata();
     populateMap();
   }
@@ -261,36 +255,30 @@ public class SegmentUpdateStatusManager {
    * Returns all delta file paths of specified block
    */
   private List<String> getDeltaFiles(String tupleId, String extension) throws Exception {
-    try {
-      String segment = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID);
-      String completeBlockName = CarbonTablePath.addDataPartPrefix(
-          CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.BLOCK_ID)
-              + CarbonCommonConstants.FACT_FILE_EXT);
-      String blockPath;
-      if (isPartitionTable) {
-        blockPath = identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR
-            + CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.PART_ID)
-            .replace("#", "/") + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
-      } else {
-        String carbonDataDirectoryPath = CarbonTablePath.getSegmentPath(
-            identifier.getTablePath(), segment);
-        blockPath =
-            carbonDataDirectoryPath + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
-      }
-      CarbonFile file = FileFactory.getCarbonFile(blockPath, FileFactory.getFileType(blockPath));
-      if (!file.exists()) {
-        throw new Exception("Invalid tuple id " + tupleId);
-      }
-      String blockNameWithoutExtn = completeBlockName.substring(0, completeBlockName.indexOf('.'));
-      //blockName without timestamp
-      final String blockNameFromTuple =
-          blockNameWithoutExtn.substring(0, blockNameWithoutExtn.lastIndexOf("-"));
-      return getDeltaFiles(file, blockNameFromTuple, extension, segment);
-    } catch (Exception ex) {
-      String errorMsg = "Invalid tuple id " + tupleId;
-      LOG.error(errorMsg);
-      throw new Exception(errorMsg);
+    String segment = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID);
+    String completeBlockName = CarbonTablePath.addDataPartPrefix(
+        CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.BLOCK_ID)
+            + CarbonCommonConstants.FACT_FILE_EXT);
+    String blockPath;
+    if (isPartitionTable) {
+      blockPath = identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.PART_ID)
+          .replace("#", "/") + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
+    } else {
+      String carbonDataDirectoryPath = CarbonTablePath.getSegmentPath(
+          identifier.getTablePath(), segment);
+      blockPath =
+          carbonDataDirectoryPath + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
     }
+    CarbonFile file = FileFactory.getCarbonFile(blockPath, FileFactory.getFileType(blockPath));
+    if (!file.exists()) {
+      throw new Exception("Invalid tuple id " + tupleId);
+    }
+    String blockNameWithoutExtn = completeBlockName.substring(0, completeBlockName.indexOf('.'));
+    //blockName without timestamp
+    final String blockNameFromTuple =
+        blockNameWithoutExtn.substring(0, blockNameWithoutExtn.lastIndexOf("-"));
+    return getDeltaFiles(file, blockNameFromTuple, extension, segment);
   }
 
   /**

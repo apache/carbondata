@@ -35,7 +35,6 @@ import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.MergeResultImpl
-import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * This class is used to perform compaction on carbon table.
@@ -201,6 +200,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
 
     if (finalMergeStatus) {
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
+      var segmentFilesForIUDCompact = new util.ArrayList[Segment]()
       var segmentFileName: String = null
       if (carbonTable.isHivePartitionTable) {
         val readPath =
@@ -220,6 +220,23 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
               carbonLoadModel.getTablePath)
         }
         segmentFileName = segmentFileName + CarbonTablePath.SEGMENT_EXT
+      } else {
+        // Get the segment files each updated segment in case of IUD compaction
+        if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
+          val segmentFilesList = loadsToMerge.asScala.map{seg =>
+            val file = SegmentFileStore.writeSegmentFile(
+              carbonTable.getTablePath,
+              seg.getLoadName,
+              carbonLoadModel.getFactTimeStamp.toString)
+            new Segment(seg.getLoadName, file)
+          }.filter(_.getSegmentFileName != null).asJava
+          segmentFilesForIUDCompact = new util.ArrayList[Segment](segmentFilesList)
+        } else {
+          segmentFileName = SegmentFileStore.writeSegmentFile(
+            carbonTable.getTablePath,
+            mergedLoadNumber,
+            carbonLoadModel.getFactTimeStamp.toString)
+        }
       }
       // trigger event for compaction
       val alterTableCompactionPreStatusUpdateEvent =
@@ -238,11 +255,12 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
          CarbonDataMergerUtil
            .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
              carbonTable.getMetadataPath,
-             carbonLoadModel)) ||
+             carbonLoadModel,
+             segmentFilesForIUDCompact)) ||
         CarbonDataMergerUtil.updateLoadMetadataWithMergeStatus(
           loadsToMerge,
-            carbonTable.getMetadataPath,
-            mergedLoadNumber,
+          carbonTable.getMetadataPath,
+          mergedLoadNumber,
           carbonLoadModel,
           compactionType,
           segmentFileName)

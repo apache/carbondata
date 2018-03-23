@@ -274,8 +274,9 @@ class CarbonMergerRDD[K, V](
     val absoluteTableIdentifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
       tablePath, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val updateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
-      absoluteTableIdentifier)
+      carbonTable)
     val jobConf: JobConf = new JobConf(new Configuration)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job: Job = new Job(jobConf)
@@ -383,7 +384,6 @@ class CarbonMergerRDD[K, V](
           dataFileFooter.getSegmentInfo.getColumnCardinality)
     }
     val updatedMaxSegmentColumnList = new util.ArrayList[ColumnSchema]()
-    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     // update cardinality and column schema list according to master schema
     val cardinality = CarbonCompactionUtil
       .updateColumnSchemaAndGetCardinality(columnToCardinalityMap,

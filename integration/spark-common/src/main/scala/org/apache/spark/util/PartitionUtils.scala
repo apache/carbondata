@@ -28,11 +28,13 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.sql.execution.command.AlterPartitionModel
 
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.{SegmentProperties, TableBlockInfo}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
@@ -203,5 +205,22 @@ object PartitionUtils {
       files.add(file)
     }
     CarbonUtil.deleteFiles(files.asScala.toArray)
+    if (!files.isEmpty) {
+      val carbonTable = alterPartitionModel.carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      val file = SegmentFileStore.writeSegmentFile(
+        identifier.getTablePath,
+        alterPartitionModel.segmentId,
+        alterPartitionModel.carbonLoadModel.getFactTimeStamp.toString)
+      val segmentFiles = Seq(new Segment(alterPartitionModel.segmentId, file)).asJava
+      if (!CarbonUpdateUtil.updateTableMetadataStatus(
+        new util.HashSet[Segment](Seq(new Segment(alterPartitionModel.segmentId, null)).asJava),
+        carbonTable,
+        alterPartitionModel.carbonLoadModel.getFactTimeStamp.toString,
+        true,
+        new util.ArrayList[Segment](0),
+        new util.ArrayList[Segment](segmentFiles))) {
+        throw new IOException("Data update failed due to failure in table status updation.")
+      }
+    }
   }
 }
