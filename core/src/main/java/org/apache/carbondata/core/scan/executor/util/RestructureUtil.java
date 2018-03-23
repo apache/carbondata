@@ -41,8 +41,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.spark.sql.types.Decimal;
-import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * Utility class for restructuring
@@ -231,7 +229,8 @@ public class RestructureUtil {
         long timestampValue = ByteUtil.toLong(defaultValue, 0, defaultValue.length);
         noDictionaryDefaultValue = timestampValue * 1000L;
       } else {
-        noDictionaryDefaultValue = UTF8String.fromBytes(defaultValue);
+        noDictionaryDefaultValue =
+            DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8Bytes(defaultValue);
       }
     }
     return noDictionaryDefaultValue;
@@ -318,7 +317,7 @@ public class RestructureUtil {
         if (columnSchema.getScale() > decimal.scale()) {
           decimal = decimal.setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
         }
-        measureDefaultValue = Decimal.apply(decimal);
+        measureDefaultValue = decimal;
       } else {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         Double parsedValue = Double.valueOf(value);

@@ -33,7 +33,6 @@ import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.spark.sql.types.Decimal;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -209,8 +208,8 @@ public class InExpressionUnitTest {
     right.setColIndex(1);
     inExpression = new InExpression(left, right);
     RowImpl value = new RowImpl();
-    Decimal row = Decimal.apply(123452154.0);
-    Decimal row1 = Decimal.apply(123452154.0);
+    BigDecimal row = new BigDecimal(123452154.0);
+    BigDecimal row1 = new BigDecimal(123452154.0);
     Object objectRow[] = { row, row1 };
     value.setValues(objectRow);
 

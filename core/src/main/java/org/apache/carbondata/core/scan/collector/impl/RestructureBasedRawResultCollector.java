@@ -34,9 +34,9 @@ import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -239,10 +239,11 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
           byte[] newColumnDefaultValue = null;
           Object defaultValue = dimensionInfo.getDefaultValues()[i];
           if (null != defaultValue) {
-            newColumnDefaultValue = ((UTF8String) defaultValue).getBytes();
+            newColumnDefaultValue = (byte[]) defaultValue;
           } else if (actualQueryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
             newColumnDefaultValue =
-                UTF8String.fromString(CarbonCommonConstants.MEMBER_DEFAULT_VAL).getBytes();
+                DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8Bytes(
+                    CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
           } else {
             newColumnDefaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
           }

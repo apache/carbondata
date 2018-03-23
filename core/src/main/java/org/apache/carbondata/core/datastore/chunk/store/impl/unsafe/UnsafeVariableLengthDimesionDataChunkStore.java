@@ -177,8 +177,8 @@ public class UnsafeVariableLengthDimesionDataChunkStore
       } else if (dt == DataTypes.INT) {
         vector.putInt(vectorRow, ByteUtil.toInt(value, 0, value.length));
       } else if (dt == DataTypes.LONG) {
-        vector.putLong(vectorRow, DataTypeUtil
-            .getDataBasedOnRestructuredDataType(value, vector.getBlockDataType(), 0,
+        vector.putLong(vectorRow,
+            DataTypeUtil.getDataBasedOnRestructuredDataType(value, vector.getBlockDataType(), 0,
                 value.length));
       } else if (dt == DataTypes.TIMESTAMP) {
         vector.putLong(vectorRow, ByteUtil.toLong(value, 0, value.length) * 1000L);

@@ -24,8 +24,6 @@ import java.nio.ByteBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 
-import org.apache.spark.sql.types.DataType;
-
 public interface GenericQueryType {
 
   String getName();
@@ -42,8 +40,6 @@ public interface GenericQueryType {
 
   void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
       int rowNumber, int pageNumber, DataOutputStream dataOutputStream) throws IOException;
-
-  DataType getSchemaType();
 
   void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder) throws IOException;
 
