@@ -38,7 +38,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, Sort}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataLoadTableFileMapping, UpdateTableModel}
-import org.apache.spark.sql.execution.datasources.{CarbonFileFormat, CatalogFileIndex, FindDataSourceTable, HadoopFsRelation, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FindDataSourceTable, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types._
@@ -1020,7 +1020,7 @@ case class CarbonLoadDataCommand(
       partitionSchema = partitionSchema,
       dataSchema = dataSchema,
       bucketSpec = catalogTable.bucketSpec,
-      fileFormat = new CarbonFileFormat,
+      fileFormat = new SparkCarbonTableFormat,
       options = options.toMap)(sparkSession = sparkSession)
 
     CarbonReflectionUtils.getLogicalRelation(hdfsRelation,

@@ -25,14 +25,6 @@ import java.util.Locale;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
-import org.apache.carbondata.core.scan.filter.TableProvider;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
-import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
@@ -69,38 +61,6 @@ public class CarbonInputFormatUtil {
         job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
     return carbonTableInputFormat;
-  }
-
-  public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable,
-      boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
-    QueryModel.processFilterExpression(carbonTable, filterExpression, isFilterDimensions,
-        isFilterMeasures);
-
-    if (null != filterExpression) {
-      // Optimize Filter Expression and fit RANGE filters is conditions apply.
-      FilterOptimizer rangeFilterOptimizer =
-          new RangeFilterOptmizer(filterExpression);
-      rangeFilterOptimizer.optimizeFilter();
-    }
-  }
-
-  /**
-   * Resolve the filter expression.
-   *
-   * @param filterExpression
-   * @param absoluteTableIdentifier
-   * @return
-   */
-  public static FilterResolverIntf resolveFilter(Expression filterExpression,
-      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider) {
-    try {
-      FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
-      //get resolved filter
-      return filterExpressionProcessor
-          .getFilterResolver(filterExpression, absoluteTableIdentifier, tableProvider);
-    } catch (Exception e) {
-      throw new RuntimeException("Error while resolving filter expression", e);
-    }
   }
 
   public static String createJobTrackerID(java.util.Date date) {

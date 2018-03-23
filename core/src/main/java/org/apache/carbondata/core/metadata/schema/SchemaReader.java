@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.util;
+package org.apache.carbondata.core.metadata.schema;
 
 import java.io.IOException;
 
@@ -27,7 +27,6 @@ import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverte
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -59,6 +58,7 @@ public class SchemaReader {
       throw new IOException("File does not exist: " + schemaFilePath);
     }
   }
+
   /**
    * the method returns the Wrapper TableInfo
    *
@@ -78,5 +78,20 @@ public class SchemaReader {
         carbonTableIdentifier.getDatabaseName(),
         carbonTableIdentifier.getTableName(),
         identifier.getTablePath());
+  }
+
+
+  public static TableInfo inferSchema(AbsoluteTableIdentifier identifier)
+      throws IOException {
+    // This routine is going to infer schema from the carbondata file footer
+    // Convert the ColumnSchema -> TableSchema -> TableInfo.
+    // Return the TableInfo.
+    org.apache.carbondata.format.TableInfo tableInfo =
+        CarbonUtil.inferSchema(identifier.getTablePath(), identifier, false);
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+        tableInfo, identifier.getDatabaseName(), identifier.getTableName(),
+        identifier.getTablePath());
+    return wrapperTableInfo;
   }
 }

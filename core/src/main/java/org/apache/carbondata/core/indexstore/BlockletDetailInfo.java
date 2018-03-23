@@ -209,7 +209,10 @@ public class BlockletDetailInfo implements Serializable, Writable {
     this.blockFooterOffset = blockFooterOffset;
   }
 
-  public List<ColumnSchema> getColumnSchemas() {
+  public List<ColumnSchema> getColumnSchemas() throws IOException {
+    if (columnSchemas == null && columnSchemaBinary != null) {
+      readColumnSchema(columnSchemaBinary);
+    }
     return columnSchemas;
   }
 
