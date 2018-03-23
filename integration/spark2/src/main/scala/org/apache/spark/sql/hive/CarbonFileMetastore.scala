@@ -441,8 +441,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
       checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
 
       removeTableFromMetadata(dbName, tableName)
-      updateSchemasUpdatedTime(touchSchemaFileSystemTime())
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
+      updateSchemasUpdatedTime(touchSchemaFileSystemTime())
       // discard cached table info in cachedDataSourceTables
       val tableIdentifier = TableIdentifier(tableName, Option(dbName))
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
