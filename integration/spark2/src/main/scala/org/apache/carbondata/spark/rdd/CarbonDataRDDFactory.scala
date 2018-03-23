@@ -51,7 +51,7 @@ import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion}
+import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -291,7 +291,6 @@ object CarbonDataRDDFactory {
       dataFrame: Option[DataFrame] = None,
       updateModel: Option[UpdateTableModel] = None,
       operationContext: OperationContext): Unit = {
-    val storePath: String = carbonLoadModel.getTablePath
     LOGGER.audit(s"Data load request has been received for table" +
                  s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     // Check if any load need to be deleted before loading new data
@@ -499,6 +498,11 @@ object CarbonDataRDDFactory {
       }
 
       writeDictionary(carbonLoadModel, result, writeAll = false)
+
+      val segmentFileName =
+        SegmentFileStore.writeSegmentFile(carbonTable.getTablePath, carbonLoadModel.getSegmentId,
+          String.valueOf(carbonLoadModel.getFactTimeStamp))
+
       operationContext.setProperty(carbonTable.getTableUniqueName + "_Segment",
         carbonLoadModel.getSegmentId)
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
@@ -513,6 +517,7 @@ object CarbonDataRDDFactory {
           loadStatus,
           newEntryLoadStatus,
           overwriteTable,
+          segmentFileName,
           uniqueTableStatusId)
       val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =
         new LoadTablePostStatusUpdateEvent(carbonLoadModel)
@@ -788,6 +793,7 @@ object CarbonDataRDDFactory {
       loadStatus: SegmentStatus,
       newEntryLoadStatus: SegmentStatus,
       overwriteTable: Boolean,
+      segmentFileName: String,
       uuid: String = ""): Boolean = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val metadataDetails = if (status != null && status.size > 0 && status(0) != null) {
@@ -795,11 +801,12 @@ object CarbonDataRDDFactory {
     } else {
       new LoadMetadataDetails
     }
+    metadataDetails.setSegmentFile(segmentFileName)
     CarbonLoaderUtil.populateNewLoadMetaEntry(
-      metadataDetails,
-      newEntryLoadStatus,
-      carbonLoadModel.getFactTimeStamp,
-      true)
+        metadataDetails,
+        newEntryLoadStatus,
+        carbonLoadModel.getFactTimeStamp,
+    true)
     CarbonLoaderUtil
       .addDataIndexSizeIntoMetaEntry(metadataDetails, carbonLoadModel.getSegmentId, carbonTable)
     val done = CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
