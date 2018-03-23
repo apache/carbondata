@@ -40,6 +40,9 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
   val csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
 
   override def beforeAll {
+  }
+
+  def createTableAndLoadData(): Unit = {
     CarbonProperties.getInstance().addProperty("carbon.compaction.level.threshold", "2,2")
     sql("drop table if exists  ignoremajor")
     CarbonProperties.getInstance()
@@ -67,13 +70,13 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     )
     sql("alter table ignoremajor compact 'minor'"
     )
-
   }
 
   /**
     * Delete should not work on compacted segment.
     */
   test("delete compacted segment and check status") {
+    createTableAndLoadData()
     intercept[Throwable] {
       sql("delete from table ignoremajor where segment.id in (2)")
     }
@@ -94,6 +97,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     * Delete should not work on compacted segment.
     */
   test("delete compacted segment by date and check status") {
+    createTableAndLoadData()
     sql(
       "delete from table ignoremajor where segment.starttime before " +
         " '2222-01-01 19:35:01'"
@@ -115,6 +119,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     * Test whether major compaction is not included in minor compaction.
     */
   test("delete merged folder and check segments") {
+    createTableAndLoadData()
     // delete merged segments
     sql("clean files for table ignoremajor")
 

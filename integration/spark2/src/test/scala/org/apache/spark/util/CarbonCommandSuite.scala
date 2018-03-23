@@ -182,7 +182,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     assert(detail.length == 4)
     assert(historyDetail.length == 0)
     sql(s"clean files for table ${tableName}")
-    assert(sql(s"show segments for table ${tableName}").collect().length == 3)
+    assert(sql(s"show segments for table ${tableName}").collect().length == 2)
     detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
     historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)
     assert(detail.length == 3)
