@@ -21,6 +21,9 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.Matchers._
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 class TestPreAggregateCompaction extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
 
   val testData = s"$resourcesPath/sample.csv"
@@ -176,7 +179,19 @@ class TestPreAggregateCompaction extends QueryTest with BeforeAndAfterEach with 
     segmentNamesSum.sorted should equal (Array("0", "0.1", "0.2", "1", "2", "3", "4", "5", "6", "7"))
   }
 
+  test("test auto compaction on aggregate table") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    val segmentNamesSum = sql("show segments for table maintable_preagg_sum").collect().map(_.get(0).toString)
+    segmentNamesSum.sorted should equal  (Array("0", "0.1", "1", "2", "3"))
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+  }
+
   override def afterAll(): Unit = {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
     sql("drop database if exists compaction cascade")
     sql("use default")
   }

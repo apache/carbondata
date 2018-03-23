@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -47,7 +48,13 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
   override def executeCompaction(): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val loadMetaDataDetails = identifySegmentsToBeMerged()
-    val segments = loadMetaDataDetails.asScala.map(_.getLoadName)
+    // If segmentFile name is specified in load details then segment is for partition table
+    // therefore the segment file name should be loadName#segmentFileName.segment
+    val segments = loadMetaDataDetails.asScala.map {
+      loadDetail =>
+        new Segment(loadDetail.getLoadName, loadDetail.getSegmentFile).toString
+    }
+
     if (segments.nonEmpty) {
       val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadMetaDataDetails).split("_")(1)
       CarbonSession.threadSet(
@@ -59,7 +66,6 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
         carbonLoadModel.getDatabaseName + "." +
         carbonLoadModel.getTableName, "false")
-      CarbonSession.updateSessionInfoToCurrentThread(sqlContext.sparkSession)
       val loadCommand = operationContext.getProperty(carbonTable.getTableName + "_Compaction")
         .asInstanceOf[CarbonLoadDataCommand]
       val uuid = Option(loadCommand.operationContext.getProperty("uuid")).getOrElse("").toString
@@ -121,6 +127,10 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         CarbonSession.threadUnset(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
                                   carbonLoadModel.getDatabaseName + "." +
                                   carbonLoadModel.getTableName)
+        LOGGER
+          .info(s"Compaction request for datamap ${ carbonTable.getTableUniqueName } is successful")
+        LOGGER
+          .audit(s"Compaction request for datamap ${carbonTable.getTableUniqueName} is successful")
       }
     }
   }
