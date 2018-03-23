@@ -89,7 +89,7 @@ public final class DataMapStoreManager {
     if (dataMapSchemaList != null) {
       for (DataMapSchema dataMapSchema : dataMapSchemaList) {
         if (dataMapSchema.isIndexDataMap()) {
-          dataMaps.add(getDataMap(carbonTable.getAbsoluteTableIdentifier(), dataMapSchema));
+          dataMaps.add(getDataMap(carbonTable, dataMapSchema));
         }
       }
     }
@@ -99,32 +99,33 @@ public final class DataMapStoreManager {
   /**
    * It gives the default datamap of the table. Default datamap of any table is BlockletDataMap
    *
-   * @param identifier
+   * @param table
    * @return
    */
-  public TableDataMap getDefaultDataMap(AbsoluteTableIdentifier identifier) {
-    return getDataMap(identifier, BlockletDataMapFactory.DATA_MAP_SCHEMA);
+  public TableDataMap getDefaultDataMap(CarbonTable table) {
+    return getDataMap(table, BlockletDataMapFactory.DATA_MAP_SCHEMA);
   }
 
   /**
    * Get the datamap for reading data.
    */
-  public TableDataMap getDataMap(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema) {
-    String table = identifier.getCarbonTableIdentifier().getTableUniqueName();
-    List<TableDataMap> tableIndices = allDataMaps.get(table);
+  public TableDataMap getDataMap(CarbonTable table, DataMapSchema dataMapSchema) {
+    String tableUniqueName =
+        table.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableUniqueName();
+    List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
     TableDataMap dataMap = null;
     if (tableIndices != null) {
       dataMap = getTableDataMap(dataMapSchema.getDataMapName(), tableIndices);
     }
     if (dataMap == null) {
-      synchronized (table.intern()) {
-        tableIndices = allDataMaps.get(table);
+      synchronized (tableUniqueName.intern()) {
+        tableIndices = allDataMaps.get(tableUniqueName);
         if (tableIndices != null) {
           dataMap = getTableDataMap(dataMapSchema.getDataMapName(), tableIndices);
         }
         if (dataMap == null) {
           try {
-            dataMap = createAndRegisterDataMap(identifier, dataMapSchema);
+            dataMap = createAndRegisterDataMap(table, dataMapSchema);
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
@@ -143,7 +144,7 @@ public final class DataMapStoreManager {
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
   // TODO: make it private
-  public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
+  public TableDataMap createAndRegisterDataMap(CarbonTable table,
       DataMapSchema dataMapSchema) throws MalformedDataMapCommandException, IOException {
     DataMapFactory dataMapFactory;
     try {
@@ -158,34 +159,34 @@ public final class DataMapStoreManager {
       throw new MetadataProcessException(
           "failed to create DataMap '" + dataMapSchema.getProviderName() + "'", e);
     }
-    return registerDataMap(identifier, dataMapSchema, dataMapFactory);
+    return registerDataMap(table, dataMapSchema, dataMapFactory);
   }
 
-  public TableDataMap registerDataMap(AbsoluteTableIdentifier identifier,
+  public TableDataMap registerDataMap(CarbonTable table,
       DataMapSchema dataMapSchema,  DataMapFactory dataMapFactory)
       throws IOException, MalformedDataMapCommandException {
-    String table = identifier.getCarbonTableIdentifier().getTableUniqueName();
+    String tableUniqueName = table.getCarbonTableIdentifier().getTableUniqueName();
     // Just update the segmentRefreshMap with the table if not added.
-    getTableSegmentRefresher(identifier);
-    List<TableDataMap> tableIndices = allDataMaps.get(table);
+    getTableSegmentRefresher(table);
+    List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
     if (tableIndices == null) {
       tableIndices = new ArrayList<>();
     }
 
-    dataMapFactory.init(identifier, dataMapSchema);
+    dataMapFactory.init(table.getAbsoluteTableIdentifier(), dataMapSchema);
     BlockletDetailsFetcher blockletDetailsFetcher;
     SegmentPropertiesFetcher segmentPropertiesFetcher = null;
     if (dataMapFactory instanceof BlockletDetailsFetcher) {
       blockletDetailsFetcher = (BlockletDetailsFetcher) dataMapFactory;
     } else {
-      blockletDetailsFetcher = getBlockletDetailsFetcher(identifier);
+      blockletDetailsFetcher = getBlockletDetailsFetcher(table);
     }
     segmentPropertiesFetcher = (SegmentPropertiesFetcher) blockletDetailsFetcher;
-    TableDataMap dataMap = new TableDataMap(identifier, dataMapSchema, dataMapFactory,
-        blockletDetailsFetcher, segmentPropertiesFetcher);
+    TableDataMap dataMap = new TableDataMap(table.getAbsoluteTableIdentifier(),
+        dataMapSchema, dataMapFactory, blockletDetailsFetcher, segmentPropertiesFetcher);
 
     tableIndices.add(dataMap);
-    allDataMaps.put(table, tableIndices);
+    allDataMaps.put(tableUniqueName, tableIndices);
     return dataMap;
   }
 
@@ -206,7 +207,7 @@ public final class DataMapStoreManager {
    * @param segments
    */
   public void clearInvalidSegments(CarbonTable carbonTable, List<Segment> segments) {
-    getDefaultDataMap(carbonTable.getAbsoluteTableIdentifier()).clear(segments);
+    getDefaultDataMap(carbonTable).clear(segments);
     List<TableDataMap> allDataMap = getAllDataMap(carbonTable);
     for (TableDataMap dataMap: allDataMap) {
       dataMap.clear(segments);
@@ -259,11 +260,11 @@ public final class DataMapStoreManager {
   /**
    * Get the blocklet datamap factory to get the detail information of blocklets
    *
-   * @param identifier
+   * @param table
    * @return
    */
-  private BlockletDetailsFetcher getBlockletDetailsFetcher(AbsoluteTableIdentifier identifier) {
-    TableDataMap blockletMap = getDataMap(identifier, BlockletDataMapFactory.DATA_MAP_SCHEMA);
+  private BlockletDetailsFetcher getBlockletDetailsFetcher(CarbonTable table) {
+    TableDataMap blockletMap = getDataMap(table, BlockletDataMapFactory.DATA_MAP_SCHEMA);
     return (BlockletDetailsFetcher) blockletMap.getDataMapFactory();
   }
 
@@ -279,10 +280,10 @@ public final class DataMapStoreManager {
   /**
    * Get the TableSegmentRefresher for the table. If not existed then add one and return.
    */
-  public TableSegmentRefresher getTableSegmentRefresher(AbsoluteTableIdentifier identifier) {
-    String uniqueName = identifier.uniqueName();
+  public TableSegmentRefresher getTableSegmentRefresher(CarbonTable table) {
+    String uniqueName = table.getAbsoluteTableIdentifier().uniqueName();
     if (segmentRefreshMap.get(uniqueName) == null) {
-      segmentRefreshMap.put(uniqueName, new TableSegmentRefresher(identifier));
+      segmentRefreshMap.put(uniqueName, new TableSegmentRefresher(table));
     }
     return segmentRefreshMap.get(uniqueName);
   }
@@ -300,8 +301,8 @@ public final class DataMapStoreManager {
     // altering.
     private Map<String, Boolean> manualSegmentRefresh = new HashMap<>();
 
-    public TableSegmentRefresher(AbsoluteTableIdentifier identifier) {
-      SegmentUpdateStatusManager statusManager = new SegmentUpdateStatusManager(identifier);
+    TableSegmentRefresher(CarbonTable table) {
+      SegmentUpdateStatusManager statusManager = new SegmentUpdateStatusManager(table);
       SegmentUpdateDetails[] updateStatusDetails = statusManager.getUpdateStatusDetails();
       for (SegmentUpdateDetails updateDetails : updateStatusDetails) {
         UpdateVO updateVO = statusManager.getInvalidTimestampRange(updateDetails.getSegmentName());

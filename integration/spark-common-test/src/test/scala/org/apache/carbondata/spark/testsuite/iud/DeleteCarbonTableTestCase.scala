@@ -16,11 +16,14 @@
  */
 package org.apache.carbondata.spark.testsuite.iud
 
+import java.io.File
+
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 
 class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
@@ -178,6 +181,8 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("clean files for table select_after_clean")
     sql("delete from select_after_clean where name='def'")
     sql("clean files for table select_after_clean")
+    assertResult(false)(new File(
+      CarbonTablePath.getSegmentPath(s"$storeLocation/iud_db.db/select_after_clean", "0")).exists())
     checkAnswer(sql("""select * from select_after_clean"""),
       Seq(Row(1, "abc"), Row(3, "uhj"), Row(4, "frg")))
   }

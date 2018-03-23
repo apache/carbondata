@@ -319,7 +319,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * get data blocks of given segment
    */
   protected List<CarbonInputSplit> getDataBlocksOfSegment(JobContext job,
-      AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
+      CarbonTable carbonTable, FilterResolverIntf resolver,
       BitSet matchedPartitions, List<Segment> segmentIds, PartitionInfo partitionInfo,
       List<Integer> oldPartitionIdList) throws IOException {
 
@@ -328,7 +328,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     // get tokens for all the required FileSystem for table path
     TokenCache.obtainTokensForNamenodes(job.getCredentials(),
-        new Path[] { new Path(absoluteTableIdentifier.getTablePath()) }, job.getConfiguration());
+        new Path[] { new Path(carbonTable.getTablePath()) }, job.getConfiguration());
     boolean distributedCG = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
             CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
@@ -339,7 +339,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     List<ExtendedBlocklet> prunedBlocklets;
     if (distributedCG || dataMapExprWrapper.getDataMapType() == DataMapLevel.FG) {
       DistributableDataMapFormat datamapDstr =
-          new DistributableDataMapFormat(absoluteTableIdentifier, dataMapExprWrapper, segmentIds,
+          new DistributableDataMapFormat(carbonTable, dataMapExprWrapper, segmentIds,
               partitionsToPrune, BlockletDataMapFactory.class.getName());
       prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
       // Apply expression on the blocklets.

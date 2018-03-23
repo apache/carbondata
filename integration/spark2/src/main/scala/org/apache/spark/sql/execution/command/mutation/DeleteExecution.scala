@@ -105,12 +105,12 @@ object DeleteExecution {
     val blockMappingVO =
       carbonInputFormat.getBlockRowCount(
         job,
-        absoluteTableIdentifier,
+        carbonTable,
         CarbonFilters.getPartitions(
           Seq.empty,
           sparkSession,
           TableIdentifier(tableName, databaseNameOp)).map(_.asJava).orNull)
-    val segmentUpdateStatusMngr = new SegmentUpdateStatusManager(absoluteTableIdentifier)
+    val segmentUpdateStatusMngr = new SegmentUpdateStatusManager(carbonTable)
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)
 

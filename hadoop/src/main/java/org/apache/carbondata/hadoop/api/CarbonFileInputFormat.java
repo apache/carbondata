@@ -163,16 +163,13 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     UpdateVO invalidBlockVOForSegmentId = null;
     Boolean isIUDTable = false;
 
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        getOrCreateCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
-    SegmentUpdateStatusManager updateStatusManager =
-        new SegmentUpdateStatusManager(absoluteTableIdentifier);
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(carbonTable);
 
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, absoluteTableIdentifier, filterResolver, matchedPartitions,
+        getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
             validSegments, partitionInfo, oldPartitionIdList);
     numBlocks = dataBlocksOfSegment.size();
     for (CarbonInputSplit inputSplit : dataBlocksOfSegment) {
