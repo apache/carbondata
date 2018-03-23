@@ -276,10 +276,14 @@ private class CarbonOutputWriter(path: String,
     }
   }
   var (updatedPartitions, partitionData) = if (partitions.nonEmpty) {
+    val linkedMap = mutable.LinkedHashMap[String, String]()
     val updatedPartitions = partitions.map(splitPartition)
-    (updatedPartitions, updatePartitions(updatedPartitions.map(_._2)))
+    updatedPartitions.foreach {
+      case (k, v) => linkedMap.put(k, v)
+    }
+    (linkedMap, updatePartitions(updatedPartitions.map(_._2)))
   } else {
-    (Map.empty[String, String].toArray, Array.empty)
+    (mutable.LinkedHashMap.empty[String, String], Array.empty)
   }
 
   private def splitPartition(p: String) = {
@@ -305,8 +309,10 @@ private class CarbonOutputWriter(path: String,
       val index = currPartitions.indexOf(writeSpec)
       if (index > -1) {
         val spec = currPartitions.get(index)
-        updatedPartitions = spec.getPartitions.asScala.map(splitPartition).toArray
-        partitionData = updatePartitions(updatedPartitions.map(_._2))
+        spec.getPartitions.asScala.map(splitPartition).foreach {
+          case (k, v) => updatedPartitions.put(k, v)
+        }
+        partitionData = updatePartitions(updatedPartitions.map(_._2).toSeq)
       }
     }
     updatedPath
@@ -393,7 +399,7 @@ private class CarbonOutputWriter(path: String,
     val formattedPartitions =
     // All dynamic partitions need to be converted to proper format
       CarbonScalaUtil.updatePartitions(
-        updatedPartitions.toMap,
+        updatedPartitions.asInstanceOf[mutable.LinkedHashMap[String, String]],
         model.getCarbonDataLoadSchema.getCarbonTable)
     formattedPartitions.foreach(p => partitonList.add(p._1 + "=" + p._2))
     SegmentFileStore.writeSegmentFile(
@@ -411,7 +417,7 @@ private class CarbonOutputWriter(path: String,
       val formattedPartitions =
       // All dynamic partitions need to be converted to proper format
         CarbonScalaUtil.updatePartitions(
-          updatedPartitions.toMap,
+          updatedPartitions.asInstanceOf[mutable.LinkedHashMap[String, String]],
           model.getCarbonDataLoadSchema.getCarbonTable)
       val partitionstr = formattedPartitions.map{p =>
         ExternalCatalogUtils.escapePathName(p._1) + "=" + ExternalCatalogUtils.escapePathName(p._2)
