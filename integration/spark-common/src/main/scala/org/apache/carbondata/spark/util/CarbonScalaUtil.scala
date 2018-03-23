@@ -23,6 +23,8 @@ import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import scala.collection.mutable
+
 import com.univocity.parsers.common.TextParsingException
 import org.apache.spark.SparkException
 import org.apache.spark.sql._
@@ -337,13 +339,12 @@ object CarbonScalaUtil {
    * Update partition values as per the right date and time format
    * @return updated partition spec
    */
-  def updatePartitions(
-      partitionSpec: Map[String, String],
-  table: CarbonTable): Map[String, String] = {
+  def updatePartitions(partitionSpec: mutable.LinkedHashMap[String, String],
+      table: CarbonTable): mutable.LinkedHashMap[String, String] = {
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
       cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
-    partitionSpec.map{ case (col, pvalue) =>
+    partitionSpec.map { case (col, pvalue) =>
       // replace special string with empty value.
       val value = if (pvalue == null) {
         hivedefaultpartition
@@ -383,11 +384,14 @@ object CarbonScalaUtil {
   def updatePartitions(
       parts: Seq[CatalogTablePartition],
       table: CarbonTable): Seq[CatalogTablePartition] = {
-    parts.map{ f =>
+    parts.map { f =>
+      val specLinkedMap: mutable.LinkedHashMap[String, String] = mutable.LinkedHashMap
+        .empty[String, String]
+      f.spec.foreach(fSpec => specLinkedMap.put(fSpec._1, fSpec._2))
       val changedSpec =
         updatePartitions(
-          f.spec,
-          table)
+          specLinkedMap,
+          table).toMap
       f.copy(spec = changedSpec)
     }.groupBy(p => p.spec).map(f => f._2.head).toSeq // Avoid duplicates by do groupby
   }
