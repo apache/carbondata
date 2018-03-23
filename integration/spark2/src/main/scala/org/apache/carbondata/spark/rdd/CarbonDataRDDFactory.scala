@@ -449,7 +449,7 @@ object CarbonDataRDDFactory {
           updateModel.get.updatedTimeStamp + "",
           true,
           new util.ArrayList[Segment](0),
-          new util.ArrayList[Segment](segmentFiles))) {
+          new util.ArrayList[Segment](segmentFiles), "")) {
           LOGGER.audit("Data update is successful for " +
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         } else {

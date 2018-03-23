@@ -18,8 +18,10 @@
 package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel, CarbonMergerMapping}
 
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -67,6 +69,14 @@ trait DropTableEventInfo {
 trait AlterTableDropColumnEventInfo {
   val carbonTable: CarbonTable
   val alterTableDropColumnModel: AlterTableDropColumnModel
+}
+
+trait AlterTableDropPartitionEventInfo {
+  val parentCarbonTable: CarbonTable
+  val specs: Seq[TablePartitionSpec]
+  val ifExists: Boolean
+  val purge: Boolean
+  val retainData: Boolean
 }
 
 trait AlterTableDataTypeChangeEventInfo {

@@ -218,7 +218,7 @@ object PartitionUtils {
         alterPartitionModel.carbonLoadModel.getFactTimeStamp.toString,
         true,
         new util.ArrayList[Segment](0),
-        new util.ArrayList[Segment](segmentFiles))) {
+        new util.ArrayList[Segment](segmentFiles), "")) {
         throw new IOException("Data update failed due to failure in table status updation.")
       }
     }

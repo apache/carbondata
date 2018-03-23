@@ -41,6 +41,7 @@ import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -52,7 +53,7 @@ import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstant
 import org.apache.carbondata.core.statusmanager.FileFormat
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.hadoop._
-import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat, CarbonTableInputFormat}
+import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
@@ -534,10 +535,29 @@ class CarbonScanRDD(
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (carbonSessionInfo != null) {
-      CarbonInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getSessionParams
-        .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-                     identifier.getCarbonTableIdentifier.getDatabaseName + "." +
-                     identifier.getCarbonTableIdentifier.getTableName, "true").toBoolean)
+      val tableUniqueKey = identifier.getDatabaseName + "." + identifier.getTableName
+      val validateInputSegmentsKey = CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+                                     tableUniqueKey
+      CarbonInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getThreadParams
+        .getProperty(validateInputSegmentsKey, "true").toBoolean)
+      val queryOnPreAggStreamingKey = CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING +
+                                      tableUniqueKey
+      val queryOnPreAggStreaming = carbonSessionInfo.getThreadParams
+        .getProperty(queryOnPreAggStreamingKey, "false").toBoolean
+      val inputSegmentsKey = CarbonCommonConstants.CARBON_INPUT_SEGMENTS + tableUniqueKey
+      CarbonInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getThreadParams
+        .getProperty(validateInputSegmentsKey, "true").toBoolean)
+      CarbonInputFormat
+        .setQuerySegment(conf,
+          carbonSessionInfo.getThreadParams
+            .getProperty(inputSegmentsKey,
+              CarbonProperties.getInstance().getProperty(inputSegmentsKey, "*")))
+      if (queryOnPreAggStreaming) {
+        CarbonInputFormat.setAccessStreamingSegments(conf, queryOnPreAggStreaming)
+        carbonSessionInfo.getThreadParams.removeProperty(queryOnPreAggStreamingKey)
+        carbonSessionInfo.getThreadParams.removeProperty(inputSegmentsKey)
+        carbonSessionInfo.getThreadParams.removeProperty(validateInputSegmentsKey)
+      }
     }
     format
   }
@@ -562,20 +582,22 @@ class CarbonScanRDD(
       val tableUniqueKey = identifier.getDatabaseName + "." + identifier.getTableName
       val validateInputSegmentsKey = CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
                                      tableUniqueKey
-      CarbonInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getSessionParams
-                                       .getProperty(validateInputSegmentsKey, "true").toBoolean)
+      CarbonInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getThreadParams
+        .getProperty(validateInputSegmentsKey, "true").toBoolean)
       val queryOnPreAggStreamingKey = CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING +
-                                  tableUniqueKey
+                                      tableUniqueKey
       val queryOnPreAggStreaming = carbonSessionInfo.getThreadParams
         .getProperty(queryOnPreAggStreamingKey, "false").toBoolean
-      CarbonInputFormat.setAccessStreamingSegments(conf, queryOnPreAggStreaming)
       val inputSegmentsKey = CarbonCommonConstants.CARBON_INPUT_SEGMENTS + tableUniqueKey
       CarbonInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getThreadParams
         .getProperty(validateInputSegmentsKey, "true").toBoolean)
       CarbonInputFormat
         .setQuerySegment(conf,
-          carbonSessionInfo.getThreadParams.getProperty(inputSegmentsKey, "*"))
-      if(queryOnPreAggStreaming) {
+          carbonSessionInfo.getThreadParams
+            .getProperty(inputSegmentsKey,
+              CarbonProperties.getInstance().getProperty(inputSegmentsKey, "*")))
+      if (queryOnPreAggStreaming) {
+        CarbonInputFormat.setAccessStreamingSegments(conf, queryOnPreAggStreaming)
         carbonSessionInfo.getThreadParams.removeProperty(queryOnPreAggStreamingKey)
         carbonSessionInfo.getThreadParams.removeProperty(inputSegmentsKey)
         carbonSessionInfo.getThreadParams.removeProperty(validateInputSegmentsKey)

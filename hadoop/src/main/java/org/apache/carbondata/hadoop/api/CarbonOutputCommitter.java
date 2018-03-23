@@ -130,6 +130,12 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           loadModel.getTablePath());
       newMetaEntry.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
     }
+    OperationContext operationContext = (OperationContext) getOperationContext();
+    String uuid = "";
+    if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() &&
+        operationContext != null) {
+      uuid = operationContext.getProperty("uuid").toString();
+    }
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newMetaEntry, SegmentStatus.SUCCESS, loadModel.getFactTimeStamp(),
             true);
@@ -137,15 +143,14 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     long segmentSize = CarbonLoaderUtil
         .addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
     if (segmentSize > 0 || overwriteSet) {
-      Object operationContext = getOperationContext();
-      if (operationContext != null) {
-        ((OperationContext) operationContext)
+      if (operationContext != null && carbonTable.hasAggregationDataMap()) {
+        operationContext
             .setProperty("current.segmentfile", newMetaEntry.getSegmentFile());
         LoadEvents.LoadTablePreStatusUpdateEvent event =
             new LoadEvents.LoadTablePreStatusUpdateEvent(carbonTable.getCarbonTableIdentifier(),
                 loadModel);
         try {
-          OperationListenerBus.getInstance().fireEvent(event, (OperationContext) operationContext);
+          OperationListenerBus.getInstance().fireEvent(event, operationContext);
         } catch (Exception e) {
           throw new IOException(e);
         }
@@ -155,9 +160,9 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         if (segmentSize == 0) {
           newMetaEntry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
         }
-        uniqueId = overwritePartitions(loadModel, newMetaEntry);
+        uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
       } else {
-        CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false);
+        CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
       }
       DataMapStatusManager.disableDataMapsOfTable(carbonTable);
       if (operationContext != null) {
@@ -165,7 +170,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
             new LoadEvents.LoadTablePostStatusUpdateEvent(loadModel);
         try {
           OperationListenerBus.getInstance()
-              .fireEvent(postStatusUpdateEvent, (OperationContext) operationContext);
+              .fireEvent(postStatusUpdateEvent, operationContext);
         } catch (Exception e) {
           throw new IOException(e);
         }
@@ -201,8 +206,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
    * @return
    * @throws IOException
    */
-  private String overwritePartitions(CarbonLoadModel loadModel, LoadMetadataDetails newMetaEntry)
-      throws IOException {
+  private String overwritePartitions(CarbonLoadModel loadModel, LoadMetadataDetails newMetaEntry,
+      String uuid) throws IOException {
     CarbonTable table = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     SegmentFileStore fileStore = new SegmentFileStore(loadModel.getTablePath(),
         loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp()
@@ -224,7 +229,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
       newMetaEntry.setUpdateStatusFileName(uniqueId);
       // Commit the removed partitions in carbon store.
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, "",
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid,
           Segment.toSegmentList(tobeDeletedSegs), Segment.toSegmentList(tobeUpdatedSegs));
       return uniqueId;
     }

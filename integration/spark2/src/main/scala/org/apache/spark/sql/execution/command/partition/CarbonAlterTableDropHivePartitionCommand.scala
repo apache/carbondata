@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command.partition
 
 import java.util
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -35,7 +36,7 @@ import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
+import org.apache.carbondata.events._
 import org.apache.carbondata.spark.rdd.CarbonDropPartitionRDD
 
 /**
@@ -57,18 +58,16 @@ case class CarbonAlterTableDropHivePartitionCommand(
     specs: Seq[TablePartitionSpec],
     ifExists: Boolean,
     purge: Boolean,
-    retainData: Boolean)
+    retainData: Boolean,
+    operationContext: OperationContext = new OperationContext)
   extends AtomicRunnableCommand {
 
   var carbonPartitionsTobeDropped : util.List[PartitionSpec] = _
   var table: CarbonTable = _
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
-    if (CarbonUtil.hasAggregationDataMap(table)) {
-      throw new AnalysisException(
-        "Partition can not be dropped as it is mapped to Pre Aggregate table")
-    }
     if (table.isHivePartitionTable) {
       var locks = List.empty[ICarbonLock]
       try {
@@ -90,12 +89,14 @@ case class CarbonAlterTableDropHivePartitionCommand(
             partition.location)
         }
         carbonPartitionsTobeDropped = new util.ArrayList[PartitionSpec](carbonPartitions.asJava)
-        val operationContext = new OperationContext
         val preAlterTableHivePartitionCommandEvent = PreAlterTableHivePartitionCommandEvent(
           sparkSession,
           table)
         OperationListenerBus.getInstance()
           .fireEvent(preAlterTableHivePartitionCommandEvent, operationContext)
+        val metaEvent = AlterTableDropPartitionMetaEvent(table, specs, ifExists, purge, retainData)
+        OperationListenerBus.getInstance()
+          .fireEvent(metaEvent, operationContext)
         // Drop the partitions from hive.
         AlterTableDropPartitionCommand(
           tableName,
@@ -120,6 +121,10 @@ case class CarbonAlterTableDropHivePartitionCommand(
         AlterTableUtil.releaseLocks(locks)
       }
 
+    } else {
+      throwMetadataException(tableName.database.getOrElse(sparkSession.catalog.currentDatabase),
+        tableName.table,
+        "Not a partitioned table")
     }
     Seq.empty[Row]
   }
@@ -129,7 +134,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
     AlterTableAddPartitionCommand(tableName, specs.map((_, None)), true)
     val msg = s"Got exception $exception when processing data of drop partition." +
               "Adding back partitions to the metadata"
-    LogServiceFactory.getLogService(this.getClass.getCanonicalName).error(msg)
+    LOGGER.error(msg)
     Seq.empty[Row]
   }
 
@@ -147,9 +152,24 @@ case class CarbonAlterTableDropHivePartitionCommand(
         table.getDatabaseName,
         table.getTableName,
         locksToBeAcquired)(sparkSession)
-      val partitionNames = specs.flatMap { f =>
-        f.map(k => k._1 + "=" + k._2)
-      }.toSet
+      // If flow is for child table then get the uuid from operation context.
+      // If flow is for parent table then generate uuid for child flows and set the uuid to ""
+      // for parent table
+      // If normal table then set uuid to "".
+      val uuid = if (table.isChildDataMap) {
+        val uuid = operationContext.getProperty("uuid")
+        if (uuid != null) {
+          uuid.toString
+        } else {
+          LOGGER.warn(s"UUID not set for table ${table.getTableUniqueName} in operation context.")
+          ""
+        }
+      } else if (table.hasAggregationDataMap) {
+        operationContext.setProperty("uuid", UUID.randomUUID().toString)
+        ""
+      } else {
+        ""
+      }
       val segments = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
         .getValidAndInvalidSegments.getValidSegments
       // First drop the partitions from partition mapper files of each segment
@@ -168,7 +188,14 @@ case class CarbonAlterTableDropHivePartitionCommand(
           tobeDeletedSegs.add(tobeDeleted.split(",")(0))
         }
       }
-      SegmentFileStore.commitDropPartitions(table, uniqueId, tobeUpdatedSegs, tobeDeletedSegs)
+      val preStatusEvent = AlterTableDropPartitionPreStatusEvent(table)
+      OperationListenerBus.getInstance().fireEvent(preStatusEvent, operationContext)
+
+      SegmentFileStore.commitDropPartitions(table, uniqueId, tobeUpdatedSegs, tobeDeletedSegs, uuid)
+
+      val postStatusEvent = AlterTableDropPartitionPostStatusEvent(table)
+      OperationListenerBus.getInstance().fireEvent(postStatusEvent, operationContext)
+
       DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
     } finally {
       AlterTableUtil.releaseLocks(locks)

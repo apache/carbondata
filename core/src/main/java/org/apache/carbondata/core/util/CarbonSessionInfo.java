@@ -21,8 +21,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.carbondata.core.exception.InvalidConfigurationException;
-
 /**
  * This class maintains carbon session information details
  */
@@ -60,20 +58,8 @@ public class CarbonSessionInfo implements Serializable, Cloneable {
   public CarbonSessionInfo clone() throws CloneNotSupportedException {
     super.clone();
     CarbonSessionInfo newObj = new CarbonSessionInfo();
-    for (Map.Entry<String, String> entry : sessionParams.getAll().entrySet()) {
-      try {
-        newObj.getSessionParams().addProperty(entry.getKey(), entry.getValue(), false);
-      } catch (InvalidConfigurationException ex) {
-        ex.printStackTrace();
-      }
-    }
-    for (Map.Entry<String, String> entry : threadParams.getAll().entrySet()) {
-      try {
-        newObj.getThreadParams().addProperty(entry.getKey(), entry.getValue(), false);
-      } catch (InvalidConfigurationException ex) {
-        ex.printStackTrace();
-      }
-    }
+    newObj.setSessionParams(sessionParams.clone());
+    newObj.setThreadParams(threadParams.clone());
     Map<String, Object> nonSerializableExtraInfo = getNonSerializableExtraInfo();
     for (Map.Entry<String, Object> entry : nonSerializableExtraInfo.entrySet()) {
       nonSerializableExtraInfo.put(entry.getKey(), entry.getValue());

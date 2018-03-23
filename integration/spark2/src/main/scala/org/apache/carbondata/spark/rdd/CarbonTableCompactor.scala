@@ -238,6 +238,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
             carbonLoadModel.getFactTimeStamp.toString)
         }
       }
+      // Used to inform the commit listener that the commit is fired from compaction flow.
+      operationContext.setProperty("isCompaction", "true")
       // trigger event for compaction
       val alterTableCompactionPreStatusUpdateEvent =
       AlterTableCompactionPreStatusUpdateEvent(sc.sparkSession,
@@ -270,8 +272,6 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         carbonMergerMapping,
         carbonLoadModel,
         mergedLoadName)
-      // Used to inform the commit listener that the commit is fired from compaction flow.
-      operationContext.setProperty("isCompaction", "true")
       val commitComplete = try {
         // Once main table compaction is done and 0.1, 4.1, 8.1 is created commit will happen for
         // all the tables. The commit listener will compact the child tables until no more segments

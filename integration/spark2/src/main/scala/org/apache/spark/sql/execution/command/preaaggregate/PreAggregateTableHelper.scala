@@ -32,6 +32,8 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 
@@ -62,8 +64,25 @@ case class PreAggregateTableHelper(
     val df = sparkSession.sql(updatedQuery)
     val fieldRelationMap = PreAggregateUtil.validateActualSelectPlanAndGetAttributes(
       df.logicalPlan, queryString)
+    val partitionInfo = parentTable.getPartitionInfo
     val fields = fieldRelationMap.keySet.toSeq
     val tableProperties = mutable.Map[String, String]()
+    val parentPartitionColumns = if (parentTable.isHivePartitionTable) {
+      partitionInfo.getColumnSchemaList.asScala.map(_.getColumnName)
+    } else {
+      Seq()
+    }
+    // Generate child table partition columns in the same order as the parent table.
+    val partitionerFields = fieldRelationMap.collect {
+      case (field, dataMapField) if parentPartitionColumns
+        .exists(parentCol =>
+          parentCol.equals(dataMapField.columnTableRelationList.get.head.parentColumnName) &&
+          dataMapField.aggregateFunction.isEmpty) =>
+        (PartitionerField(field.name.get,
+          field.dataType,
+          field.columnComment), parentPartitionColumns
+          .indexOf(dataMapField.columnTableRelationList.get.head.parentColumnName))
+    }.toSeq.sortBy(_._2).map(_._1)
     dmProperties.foreach(t => tableProperties.put(t._1, t._2))
 
     val selectTable = PreAggregateUtil.getParentCarbonTable(df.logicalPlan)
@@ -77,8 +96,7 @@ case class PreAggregateTableHelper(
       fields.filter(col => fieldRelationMap(col).aggregateFunction.isEmpty &&
                            parentcol.equals(fieldRelationMap(col).
                              columnTableRelationList.get(0).parentColumnName))
-        .map(cols => neworder :+= cols.column)
-    )
+        .map(cols => neworder :+= cols.column))
     tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, neworder.mkString(","))
     tableProperties.put("sort_scope", parentTable.getTableInfo.getFactTable.
       getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
@@ -94,7 +112,7 @@ case class PreAggregateTableHelper(
       new CarbonSpark2SqlParser().convertDbNameToLowerCase(tableIdentifier.database),
       tableIdentifier.table.toLowerCase,
       fields,
-      Seq(),
+      partitionerFields,
       tableProperties,
       None,
       isAlterFlow = false,
@@ -185,8 +203,8 @@ case class PreAggregateTableHelper(
     val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath)
       .collect {
         case segment if segment.getSegmentStatus == SegmentStatus.SUCCESS ||
-          segment.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS =>
-          segment.getLoadName
+                        segment.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS =>
+          new Segment(segment.getLoadName, segment.getSegmentFile).toString
       }
     if (loadAvailable.nonEmpty) {
       // Passing segmentToLoad as * because we want to load all the segments into the

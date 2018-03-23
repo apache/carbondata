@@ -184,7 +184,7 @@ public class CarbonUpdateUtil {
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdationRequired,
       List<Segment> segmentsToBeDeleted) {
     return updateTableMetadataStatus(updatedSegmentsList, table, updatedTimeStamp,
-        isTimestampUpdationRequired, segmentsToBeDeleted, new ArrayList<Segment>());
+        isTimestampUpdationRequired, segmentsToBeDeleted, new ArrayList<Segment>(), "");
   }
 
   /**
@@ -198,12 +198,13 @@ public class CarbonUpdateUtil {
    */
   public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdationRequired,
-      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated) {
+      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated, String uuid) {
 
     boolean status = false;
     String metaDataFilepath = table.getMetadataPath();
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
-    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
+    String tableStatusPath =
+        CarbonTablePath.getTableStatusFilePathWithUUID(identifier.getTablePath(), uuid);
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
 
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
@@ -570,7 +571,7 @@ public class CarbonUpdateUtil {
           UUID,
           false,
           new ArrayList<Segment>(),
-          segmentFilesToBeUpdatedLatest);
+          segmentFilesToBeUpdatedLatest, "");
     }
 
     // delete the update table status files which are old.

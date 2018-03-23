@@ -55,6 +55,9 @@ case class CarbonAlterTableAddHivePartitionCommand(
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
     if (table.isHivePartitionTable) {
+      if (table.isChildDataMap) {
+        throw new UnsupportedOperationException("Cannot add partition directly on aggregate tables")
+      }
       val partitionWithLoc = partitionSpecsAndLocs.filter(_._2.isDefined)
       if (partitionWithLoc.nonEmpty) {
         val partitionSpecs = partitionWithLoc.map{ case (part, location) =>
@@ -70,7 +73,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
         }.asJava)
       }
       val operationContext = new OperationContext
-      val preAlterTableHivePartitionCommandEvent = new PreAlterTableHivePartitionCommandEvent(
+      val preAlterTableHivePartitionCommandEvent = PreAlterTableHivePartitionCommandEvent(
         sparkSession,
         table)
       OperationListenerBus.getInstance()
@@ -81,6 +84,9 @@ case class CarbonAlterTableAddHivePartitionCommand(
         table)
       OperationListenerBus.getInstance()
         .fireEvent(postAlterTableHivePartitionCommandEvent, operationContext)
+    } else {
+      throw new UnsupportedOperationException(
+        "Cannot add partition directly on non partitioned table")
     }
     Seq.empty[Row]
   }
