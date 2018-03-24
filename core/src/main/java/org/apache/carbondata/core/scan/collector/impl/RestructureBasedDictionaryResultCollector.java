@@ -92,8 +92,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
               row[order[i]] = DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8String(
                   (byte[])dimensionInfo.getDefaultValues()[i]);
             } else {
-              row[order[i]] = DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8String(
-                  (byte[])dimensionInfo.getDefaultValues()[i]);
+              row[order[i]] = dimensionInfo.getDefaultValues()[i];
             }
             continue;
           }
