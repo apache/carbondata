@@ -87,7 +87,7 @@ public class SchemaReader {
     // Convert the ColumnSchema -> TableSchema -> TableInfo.
     // Return the TableInfo.
     org.apache.carbondata.format.TableInfo tableInfo =
-        CarbonUtil.inferSchema(identifier.getTablePath(), identifier, false);
+        CarbonUtil.inferSchema(identifier.getTablePath(), identifier.getTableName(), false);
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
         tableInfo, identifier.getDatabaseName(), identifier.getTableName(),
