@@ -334,9 +334,9 @@ object CarbonSource {
     properties.foreach(e => map.put(e._1, e._2))
     map.put("tablepath", identifier.getTablePath)
     map.put("dbname", identifier.getDatabaseName)
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     if (map.containsKey("tableName")) {
-      LOGGER.warn("tableName is useless in option when create table")
+      val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+      LOGGER.warn("tableName is not required in options, ignoring it")
     }
     map.put("tableName", identifier.getTableName)
     map.asScala.toMap
