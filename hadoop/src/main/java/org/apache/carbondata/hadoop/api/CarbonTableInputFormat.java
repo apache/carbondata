@@ -361,12 +361,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * @param targetSegment
    * @param oldPartitionIdList  get old partitionId before partitionInfo was changed
    * @return
-   * @throws IOException
    */
   public List<InputSplit> getSplitsOfOneSegment(JobContext job, String targetSegment,
-      List<Integer> oldPartitionIdList, PartitionInfo partitionInfo)
-      throws IOException {
-    AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
+      List<Integer> oldPartitionIdList, PartitionInfo partitionInfo) {
     List<Segment> invalidSegments = new ArrayList<>();
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
 
@@ -374,7 +371,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     segmentList.add(new Segment(targetSegment, null));
     setSegmentsToAccess(job.getConfiguration(), segmentList);
     try {
-
       // process and resolve the expression
       Expression filter = getFilterPredicates(job.getConfiguration());
       CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
@@ -463,9 +459,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     List<InputSplit> result = new LinkedList<InputSplit>();
     UpdateVO invalidBlockVOForSegmentId = null;
     Boolean isIUDTable = false;
-
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        getOrCreateCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
 
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
