@@ -17,6 +17,7 @@
 package org.apache.spark.sql
 
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
 
@@ -24,9 +25,12 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.catalyst.plans.logical.{Command, LocalRelation, Union}
 import org.apache.spark.sql.execution.streaming.CarbonStreamingQueryListener
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
+import org.apache.spark.sql.profiler.{Profiler, SQLStart}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -39,7 +43,8 @@ import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
  * User needs to use {CarbonSession.getOrCreateCarbon} to create Carbon session.
  */
 class CarbonSession(@transient val sc: SparkContext,
-    @transient private val existingSharedState: Option[SharedState]) extends SparkSession(sc) {
+    @transient private val existingSharedState: Option[SharedState]
+) extends SparkSession(sc) { self =>
 
   def this(sc: SparkContext) {
     this(sc, None)
@@ -72,9 +77,46 @@ class CarbonSession(@transient val sc: SparkContext,
     new CarbonSession(sparkContext, Some(sharedState))
   }
 
+  override def sql(sqlText: String): DataFrame = {
+    val sse = SQLStart(sqlText, CarbonSession.statementId.getAndIncrement())
+    CarbonSession.threadStatementId.set(sse.statementId)
+    sse.startTime = System.currentTimeMillis()
+
+    try {
+      val logicalPlan = sessionState.sqlParser.parsePlan(sqlText)
+      sse.parseEnd = System.currentTimeMillis()
+
+      val qe = sessionState.executePlan(logicalPlan)
+      qe.assertAnalyzed()
+      sse.isCommand = qe.analyzed match {
+        case c: Command =>
+          true
+        case u @ Union(children) if children.forall(_.isInstanceOf[Command]) =>
+          true
+        case _ =>
+          false
+      }
+      sse.analyzerEnd = System.currentTimeMillis()
+
+      new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
+    } finally {
+      Profiler.invokeIfEnable {
+        if (sse.isCommand) {
+          sse.endTime = System.currentTimeMillis()
+          Profiler.send(sse)
+        } else {
+          Profiler.addStatementMessage(sse.statementId, sse)
+        }
+      }
+    }
+  }
 }
 
 object CarbonSession {
+
+  private val statementId = new AtomicLong(0)
+
+  private[sql] val threadStatementId = new ThreadLocal[Long]()
 
   implicit class CarbonBuilder(builder: Builder) {
 
@@ -174,6 +216,8 @@ object CarbonSession {
         }
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
+        // Setup monitor end point and register CarbonMonitorListener
+        Profiler.initialize(sparkContext)
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
         // exception in the construction of the instance.

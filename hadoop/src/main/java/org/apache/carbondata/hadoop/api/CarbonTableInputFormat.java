@@ -284,7 +284,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       List<Segment> streamSegments) throws IOException {
     List<InputSplit> splits = new ArrayList<InputSplit>();
     if (streamSegments != null && !streamSegments.isEmpty()) {
-
+      numStreamSegments = streamSegments.size();
       long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
       long maxSize = getMaxSplitSize(job);
       for (Segment segment : streamSegments) {
@@ -459,6 +459,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       List<Integer> oldPartitionIdList, SegmentUpdateStatusManager updateStatusManager)
       throws IOException {
 
+    numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
     UpdateVO invalidBlockVOForSegmentId = null;
     Boolean isIUDTable = false;
@@ -472,6 +473,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     List<org.apache.carbondata.hadoop.CarbonInputSplit> dataBlocksOfSegment =
         getDataBlocksOfSegment(job, absoluteTableIdentifier, filterResolver, matchedPartitions,
             validSegments, partitionInfo, oldPartitionIdList);
+    numBlocks = dataBlocksOfSegment.size();
     for (org.apache.carbondata.hadoop.CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 
       // Get the UpdateVO for those tables on which IUD operations being performed.

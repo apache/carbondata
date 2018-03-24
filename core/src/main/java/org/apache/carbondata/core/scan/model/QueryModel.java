@@ -227,6 +227,10 @@ public class QueryModel {
     return queryId;
   }
 
+  public void setQueryId(String queryId) {
+    this.queryId = queryId;
+  }
+
   /**
    * @return the tableBlockInfos
    */

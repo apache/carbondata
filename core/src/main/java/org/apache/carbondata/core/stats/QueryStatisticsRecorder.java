@@ -25,7 +25,9 @@ public interface QueryStatisticsRecorder {
 
   void logStatistics();
 
-  void logStatisticsAsTableExecutor();
+  TaskStatistics statisticsForTask(long taskId, long startTime);
+
+  void logStatisticsForTask(TaskStatistics task);
 
   void recordStatisticsForDriver(QueryStatistic statistic, String queryId);
 

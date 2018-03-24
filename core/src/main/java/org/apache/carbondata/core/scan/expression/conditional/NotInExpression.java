@@ -38,7 +38,8 @@ public class NotInExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
 
     // Both left and right result need to be checked for null because NotInExpression is basically
@@ -104,12 +105,18 @@ public class NotInExpression extends BinaryConditionalExpression {
     return leftRsult;
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.NOT_IN;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return "NOT IN(" + left.getString() + ',' + right.getString() + ')';
   }
 
+  @Override
+  public String getStatement() {
+    return left.getStatement() + " not in " + right.getStatement();
+  }
 }

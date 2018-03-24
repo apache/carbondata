@@ -48,10 +48,11 @@ public class QueryStatisticsRecorderDummy implements QueryStatisticsRecorder,Ser
 
   }
 
-  /**
-   * Below method will be used to show statistic log as table
-   */
-  public void logStatisticsAsTableExecutor() {
+  public TaskStatistics statisticsForTask(long taskId, long startTime) {
+    return null;
+  }
+
+  public void logStatisticsForTask(TaskStatistics task) {
 
   }
 

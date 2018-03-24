@@ -50,7 +50,8 @@ public class FalseExpression  extends BinaryConditionalExpression {
    * @throws FilterUnsupportedException
    * @throws FilterIllegalMemberException
    */
-  @Override public ExpressionResult evaluate(RowIntf value)
+  @Override
+  public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
     return new ExpressionResult(DataTypes.BOOLEAN,false);
   }
@@ -59,10 +60,17 @@ public class FalseExpression  extends BinaryConditionalExpression {
    * This method will return the expression types
    * @return
    */
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.FALSE;
   }
-  @Override public String getString() {
+  @Override
+  public String getString() {
     return null;
+  }
+
+  @Override
+  public String getStatement() {
+    return "false";
   }
 }

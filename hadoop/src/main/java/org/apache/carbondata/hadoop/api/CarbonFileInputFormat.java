@@ -158,6 +158,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
       List<Integer> oldPartitionIdList) throws IOException {
 
+    numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
     UpdateVO invalidBlockVOForSegmentId = null;
     Boolean isIUDTable = false;
@@ -173,6 +174,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     List<CarbonInputSplit> dataBlocksOfSegment =
         getDataBlocksOfSegment(job, absoluteTableIdentifier, filterResolver, matchedPartitions,
             validSegments, partitionInfo, oldPartitionIdList);
+    numBlocks = dataBlocksOfSegment.size();
     for (CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 
       // Get the UpdateVO for those tables on which IUD operations being performed.

@@ -98,11 +98,10 @@ public class QueryStasticsRecorderImplTest {
         .addStatistics(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, 5L);
     queryStasticsRecorderImpl.logStatistics();
     queryStasticsRecorderImpl.recordStatistics(queryStatisticWithVALID_SCAN_BLOCKLET_NUM);
-    queryStasticsRecorderImpl.logStatisticsAsTableExecutor();
   }
 
   @Test public void testcollectExecutorStatistics() {
-    assertNotNull(queryStasticsRecorderImpl.collectExecutorStatistics());
+    assertNotNull(queryStasticsRecorderImpl.statisticsForTask(1, 1));
   }
 
 }

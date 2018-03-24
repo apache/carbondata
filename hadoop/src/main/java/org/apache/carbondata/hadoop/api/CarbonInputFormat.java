@@ -107,6 +107,23 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String PARTITIONS_TO_PRUNE =
       "mapreduce.input.carboninputformat.partitions.to.prune";
 
+  // record segment number and hit blocks
+  protected int numSegments = 0;
+  protected int numStreamSegments = 0;
+  protected int numBlocks = 0;
+
+  public int getNumSegments() {
+    return numSegments;
+  }
+
+  public int getNumStreamSegments() {
+    return numStreamSegments;
+  }
+
+  public int getNumBlocks() {
+    return numBlocks;
+  }
+
   /**
    * Set the `tableInfo` in `configuration`
    */
