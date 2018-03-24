@@ -927,7 +927,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     assert(exMessage.getMessage.contains("day is not a valid partition column in table default.partitionnocolumn"))
   }
 
-  test("data loading with default partition in static partition table with batchsort") {
+  ignore("data loading with default partition in static partition table with batchsort") {
     sql("DROP TABLE IF EXISTS partitiondefaultbatchsort")
     sql(
       """
