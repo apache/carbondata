@@ -1602,8 +1602,22 @@ public final class CarbonCommonConstants {
   // default value is 2 days
   public static final String CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT = "48";
 
+  /**
+   * The number of invisible segment info which will be preserved in tablestatus file,
+   * if it exceeds this value, they will be removed and write to tablestatus.history file.
+   */
+  @CarbonProperty
+  public static final String CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT =
+      "carbon.invisible.segments.preserve.count";
+
+  /**
+   * default value is 200, it means that it will preserve 200 invisible segment info
+   * in tablestatus file.
+   * The size of one segment info is about 500 bytes, so the size of tablestatus file
+   * will remain at 100KB.
+   */
+  public static final String CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT = "200";
+
   private CarbonCommonConstants() {
   }
 }
-
-
