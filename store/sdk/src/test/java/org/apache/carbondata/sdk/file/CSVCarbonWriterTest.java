@@ -47,7 +47,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    writeFilesAndVerify(new Schema(fields), path);
+    TestUtil.writeFilesAndVerify(new Schema(fields), path);
 
     FileUtils.deleteDirectory(new File(path));
   }
@@ -65,105 +65,7 @@ public class CSVCarbonWriterTest {
         .append("]")
         .toString();
 
-    writeFilesAndVerify(Schema.parseJson(schema), path);
-
-    FileUtils.deleteDirectory(new File(path));
-  }
-
-  private void writeFilesAndVerify(Schema schema, String path) {
-    writeFilesAndVerify(schema, path, null);
-  }
-
-  private void writeFilesAndVerify(Schema schema, String path, String[] sortColumns) {
-    writeFilesAndVerify(100, schema, path, sortColumns, false, -1, -1);
-  }
-
-  private void writeFilesAndVerify(Schema schema, String path, boolean persistSchema) {
-    writeFilesAndVerify(100, schema, path, null, persistSchema, -1, -1);
-  }
-
-  /**
-   * Invoke CarbonWriter API to write carbon files and assert the file is rewritten
-   * @param rows number of rows to write
-   * @param schema schema of the file
-   * @param path local write path
-   * @param sortColumns sort columns
-   * @param persistSchema true if want to persist schema file
-   * @param blockletSize blockletSize in the file, -1 for default size
-   * @param blockSize blockSize in the file, -1 for default size
-   */
-  private void writeFilesAndVerify(int rows, Schema schema, String path, String[] sortColumns,
-      boolean persistSchema, int blockletSize, int blockSize) {
-    try {
-      CarbonWriterBuilder builder = CarbonWriter.builder()
-          .withSchema(schema)
-          .outputPath(path);
-      if (sortColumns != null) {
-        builder = builder.sortBy(sortColumns);
-      }
-      if (persistSchema) {
-        builder = builder.persistSchemaFile(true);
-      }
-      if (blockletSize != -1) {
-        builder = builder.withBlockletSize(blockletSize);
-      }
-      if (blockSize != -1) {
-        builder = builder.withBlockSize(blockSize);
-      }
-
-      CarbonWriter writer = builder.buildWriterForCSVInput();
-
-      for (int i = 0; i < rows; i++) {
-        writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), String.valueOf((double) i / 2)});
-      }
-      writer.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-      Assert.fail(e.getMessage());
-    } catch (InvalidLoadOptionException l) {
-      l.printStackTrace();
-      Assert.fail(l.getMessage());
-    }
-
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
-        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
-      }
-    });
-    Assert.assertNotNull(dataFiles);
-    Assert.assertTrue(dataFiles.length > 0);
-  }
-
-  @Test
-  public void testWriteAndReadFiles() throws IOException, InterruptedException {
-    String path = "./testWriteFiles";
-    FileUtils.deleteDirectory(new File(path));
-
-    Field[] fields = new Field[2];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.INT);
-
-    writeFilesAndVerify(new Schema(fields), path, true);
-
-    File[] files = new File(path + "/Fact/Part0/Segment_null/").listFiles(new FilenameFilter() {
-      @Override public boolean accept(File dir, String name) {
-        return name.endsWith("carbondata");
-      }
-    });
-
-    CarbonReader reader = CarbonReader.builder(path)
-        .projection(new String[]{"name", "age"}).build();
-
-    int i = 0;
-    while (reader.hasNext()) {
-      Object[] row = (Object[])reader.readNextRow();
-      Assert.assertEquals("robot" + (i % 10), row[0]);
-      Assert.assertEquals(i, row[1]);
-      i++;
-    }
+    TestUtil.writeFilesAndVerify(Schema.parseJson(schema), path);
 
     FileUtils.deleteDirectory(new File(path));
   }
@@ -234,7 +136,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 1, 100);
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 1, 100);
 
     // TODO: implement reader to verify the number of blocklet in the file
 
@@ -250,7 +152,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 2, 2);
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 2, 2);
 
     File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
     File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
@@ -273,7 +175,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    writeFilesAndVerify(new Schema(fields), path, new String[]{"name"});
+    TestUtil.writeFilesAndVerify(new Schema(fields), path, new String[]{"name"});
 
     // TODO: implement reader and verify the data is sorted
 
@@ -294,7 +196,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
 
     String schemaFile = CarbonTablePath.getSchemaFilePath(path);
     Assert.assertTrue(new File(schemaFile).exists());
