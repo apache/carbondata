@@ -21,7 +21,6 @@ import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -61,9 +60,7 @@ import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
@@ -102,13 +99,8 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  */
 public class StoreCreator {
 
-<<<<<<< HEAD
   private static LogService LOG =
       LogServiceFactory.getLogService(StoreCreator.class.getCanonicalName());
-=======
-  private static LogService LOG = LogServiceFactory.getLogService(
-      StoreCreator.class.getCanonicalName());
->>>>>>> 5deb2053f... fix findbugs
   private static AbsoluteTableIdentifier absoluteTableIdentifier;
   private static String storePath = null;
 
@@ -381,13 +373,9 @@ public class StoreCreator {
    */
   public static void loadData(CarbonLoadModel loadModel, String storeLocation)
       throws Exception {
-<<<<<<< HEAD
     if (new File(storeLocation).mkdirs()) {
       LOG.warn("mkdir is failed");
     }
-=======
-    boolean result = new File(storeLocation).mkdirs();
->>>>>>> 5deb2053f... fix findbugs
     String outPutLoc = storeLocation + "/etl";
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
