@@ -88,8 +88,9 @@ public class SegmentTaskIndexStore
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
     try {
       segmentTaskIndexWrapper =
-          loadAndGetTaskIdToSegmentsMap(tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos(),
-              null,
+          loadAndGetTaskIdToSegmentsMap(
+              tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos(),
+              CarbonTable.buildFromTablePath("name", "path"),
               tableSegmentUniqueIdentifier);
     } catch (IndexBuilderException e) {
       throw new IOException(e.getMessage(), e);
