@@ -1017,7 +1017,7 @@ public class SegmentStatusManager {
   }
 
   /**
-   * Append new invisible segment info to old list.
+   * Return an array containing all invisible segment entries in appendList and historyList.
    */
   public static LoadMetadataDetails[] appendLoadHistoryList(
       LoadMetadataDetails[] historyList,

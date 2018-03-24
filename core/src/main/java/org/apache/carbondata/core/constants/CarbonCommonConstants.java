@@ -1611,8 +1611,10 @@ public final class CarbonCommonConstants {
       "carbon.invisible.segments.preserve.count";
 
   /**
-   * default value is 20, it means that it will preserve 20 invisible segment info
+   * default value is 200, it means that it will preserve 200 invisible segment info
    * in tablestatus file.
+   * The size of one segment info is about 500 bytes, so the size of tablestatus file
+   * will remain at 100KB.
    */
   public static final String CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT = "200";
 
