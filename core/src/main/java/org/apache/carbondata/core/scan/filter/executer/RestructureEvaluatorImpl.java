@@ -21,15 +21,17 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
@@ -74,7 +76,17 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
       // 3 cases: is NUll, is Not Null and filter on default value of newly added column
       int defaultSurrogateValueToCompare = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
       if (null != defaultValue) {
-        defaultSurrogateValueToCompare++;
+        if (dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+              .getDirectDictionaryGenerator(dimension.getDataType());
+          if (directDictionaryGenerator != null) {
+            String value =
+                new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+            defaultSurrogateValueToCompare = Integer.parseInt(value);
+          }
+        } else {
+          defaultSurrogateValueToCompare++;
+        }
       }
       List<Integer> filterList = null;
       if (filterValues.isIncludeFilter() && !filterValues.isOptimized()) {
@@ -109,8 +121,8 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     Object defaultValue = null;
     if (null != measure.getDefaultValue()) {
       // default value for case where user gives is Null condition
-      defaultValue = DataTypeUtil
-          .getMeasureObjectFromDataType(measure.getDefaultValue(), measure.getDataType());
+      defaultValue = RestructureUtil
+          .getMeasureDefaultValue(measure.getColumnSchema(), measure.getDefaultValue());
     }
     List<Object> measureFilterValuesList = filterValues.getMeasuresFilterValuesList();
     for (Object filterValue : measureFilterValuesList) {

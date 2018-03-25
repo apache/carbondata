@@ -42,6 +42,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists allKeyCol")
     sql("drop table if exists testalterwithboolean")
     sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
+    sql("drop table if exists test")
 
 
     // clean data folder
@@ -353,6 +354,10 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       "alter table default.restructure add columns(designation int) TBLPROPERTIES" +
       "('DEFAULT.VALUE.designation'='67890')")
     checkAnswer(sql("select distinct(designation) from restructure"), Row(67890))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+
   }
 
   test("test change datatype of int and decimal column") {
@@ -584,6 +589,108 @@ test("test alter command for boolean data type with correct default measure valu
       "alter table testalterwithbooleanwithoutdefaultvalue add columns(booleanfield boolean)")
     checkAnswer(sql("select * from testalterwithbooleanwithoutdefaultvalue"),Seq(Row(1,"anubhav",null)))
   }
+  test("test alter command for filter on default values on date datatype") {
+    sql("drop table if exists test")
+    sql(
+      "create table test(id int,vin string,phonenumber long,area string,salary int,country " +
+      "string,longdate date) stored by 'carbondata'")
+    sql("insert into test select 1,'String1',12345,'area',20,'country','2017-02-12'")
+    sql("alter table test add columns (c3 date) TBLPROPERTIES('DEFAULT.VALUE.c3' = '1993-01-01')")
+    sql("alter table test add columns (c4 date)")
+    sql("insert into test select 2,'String1',12345,'area',20,'country','2017-02-12','1994-01-01','1994-01-01'")
+    sql("insert into test select 3,'String1',12345,'area',20,'country','2017-02-12','1995-01-01','1995-01-01'")
+    sql("insert into test select 4,'String1',12345,'area',20,'country','2017-02-12','1996-01-01','1996-01-01'")
+    checkAnswer(sql("select id from test where c3='1993-01-01'"), Seq(Row(1)))
+    checkAnswer(sql("select id from test where c3!='1993-01-01'"), Seq(Row(2),Row(3),Row(4)))
+    checkAnswer(sql("select id from test where c3<'1995-01-01'"), Seq(Row(1), Row(2)))
+    checkAnswer(sql("select id from test where c3>'1994-01-01'"), Seq(Row(3), Row(4)))
+    checkAnswer(sql("select id from test where c3>='1995-01-01'"), Seq(Row(3), Row(4)))
+    checkAnswer(sql("select id from test where c3<='1994-01-01'"), Seq(Row(1), Row(2)))
+    checkAnswer(sql("select id from test where c4 IS NULL"), Seq(Row(1)))
+    checkAnswer(sql("select id from test where c4 IS NOT NULL"), Seq(Row(2),Row(3),Row(4)))
+  }
+
+  test("test alter command for filter on default values on timestamp datatype") {
+    def testFilterWithDefaultValue(flag: Boolean) = {
+      try {
+        CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            "yyyy/MM/dd HH:mm:ss")
+        sql("drop table if exists test")
+        sql(
+          "create table test(id int,vin string,phonenumber long,area string,salary int,country " +
+          "string,longdate date) stored by 'carbondata'")
+        sql("insert into test select 1,'String1',12345,'area',20,'country','2017-02-12'")
+        if (flag) {
+          sql(
+            "alter table test add columns (c3 timestamp) TBLPROPERTIES('DEFAULT.VALUE.c3' = " +
+            "'1996/01/01 11:11:11', 'DICTIONARY_INCLUDE' = 'c3')")
+        } else {
+          sql(
+            "alter table test add columns (c3 timestamp) TBLPROPERTIES('DEFAULT.VALUE.c3' = " +
+            "'1996/01/01 11:11:11')")
+        }
+        sql("alter table test add columns (c4 timestamp)")
+        sql(
+          "insert into test select 2,'String1',12345,'area',20,'country','2017-02-12','1994/01/01 10:10:10','1994/01/01 10:10:10'")
+        sql(
+          "insert into test select 3,'String1',12345,'area',20,'country','2017-02-12','1995/01/01 11:11:11','1995/01/01 11:11:11'")
+        sql(
+          "insert into test select 4,'String1',12345,'area',20,'country','2017-02-12','1996/01/01 10:10:10','1996/01/01 10:10:10'")
+        checkAnswer(sql("select id from test where c3='1996-01-01 11:11:11'"), Seq(Row(1)))
+        checkAnswer(sql("select id from test where c3!='1996-01-01 11:11:11'"), Seq(Row(2),Row(3),Row(4)))
+        checkAnswer(sql("select id from test where c3<'1995-01-01 11:11:11'"), Seq(Row(2)))
+        checkAnswer(sql("select id from test where c3>'1994-01-02 11:11:11'"),
+          Seq(Row(3), Row(4), Row(1)))
+        checkAnswer(sql("select id from test where c3>='1995-01-01 11:11:11'"),
+          Seq(Row(3), Row(4), Row(1)))
+        checkAnswer(sql("select id from test where c3<='1995-01-02 11:11:11'"), Seq(Row(2), Row(3)))
+        checkAnswer(sql("select id from test where c4 IS NULL"), Seq(Row(1)))
+        checkAnswer(sql("select id from test where c4 IS NOT NULL"), Seq(Row(2),Row(3),Row(4)))
+      }
+      finally {
+        CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      }
+    }
+
+    testFilterWithDefaultValue(false)
+    testFilterWithDefaultValue(true)
+
+  }
+
+  test("test alter command for filter on default values on int") {
+    def testFilterWithDefaultValue(flag: Boolean) = {
+      sql("drop table if exists test")
+      sql(
+        "create table test(id int,vin string,phonenumber long,area string,salary int,country " +
+        "string,longdate date) stored by 'carbondata'")
+      sql("insert into test select 1,'String1',12345,'area',5000,'country','2017/02/12'")
+      if (flag) {
+        sql(s"alter table test add columns (c3 int) TBLPROPERTIES('DEFAULT.VALUE.c3' = '23', " +
+            s"'DICTIONARY_INCLUDE'='c3')")
+      } else {
+        sql(s"alter table test add columns (c3 int) TBLPROPERTIES('DEFAULT.VALUE.c3' = '23')")
+      }
+      sql(s"alter table test add columns (c4 int)")
+      sql("insert into test select 2,'String1',12345,'area',5000,'country','2017/02/12',25,25")
+      sql("insert into test select 3,'String1',12345,'area',5000,'country','2017/02/12',35,35")
+      sql("insert into test select 4,'String1',12345,'area',5000,'country','2017/02/12',45,45")
+      checkAnswer(sql("select id from test where c3=23"), Seq(Row(1)))
+      checkAnswer(sql("select id from test where c3!=23"), Seq(Row(2), Row(3), Row(4)))
+      checkAnswer(sql("select id from test where c3<34"), Seq(Row(1), Row(2)))
+      checkAnswer(sql("select id from test where c3>24"), Seq(Row(2), Row(3), Row(4)))
+      checkAnswer(sql("select id from test where c3>=35"), Seq(Row(3), Row(4)))
+      checkAnswer(sql("select id from test where c3<=35"), Seq(Row(1), Row(2), Row(3)))
+      checkAnswer(sql("select id from test where c4 IS NULL"), Seq(Row(1)))
+      checkAnswer(sql("select id from test where c4 IS NOT NULL"), Seq(Row(2),Row(3),Row(4)))
+    }
+
+    testFilterWithDefaultValue(true)
+    testFilterWithDefaultValue(false)
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("drop table if exists table1")
@@ -599,6 +706,6 @@ test("test alter command for boolean data type with correct default measure valu
     sql("drop table if exists allKeyCol")
     sql("drop table if exists testalterwithboolean")
     sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
-
+    sql("drop table if exists test")
   }
 }
