@@ -198,7 +198,7 @@ public class RestructureUtil {
    * @param defaultValue
    * @return
    */
-  private static Object getDirectDictionaryDefaultValue(DataType dataType, byte[] defaultValue) {
+  public static Object getDirectDictionaryDefaultValue(DataType dataType, byte[] defaultValue) {
     Object directDictionaryDefaultValue = null;
     if (!isDefaultValueNull(defaultValue)) {
       DirectDictionaryGenerator directDictionaryGenerator =

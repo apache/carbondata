@@ -52,6 +52,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -88,7 +89,7 @@ import org.apache.carbondata.core.scan.filter.executer.RangeValueFilterExecuterI
 import org.apache.carbondata.core.scan.filter.executer.RestructureExcludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.RestructureIncludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.RowLevelFilterExecuterImpl;
-import org.apache.carbondata.core.scan.filter.executer.RowLevelRangeTypeExecuterFacory;
+import org.apache.carbondata.core.scan.filter.executer.RowLevelRangeTypeExecuterFactory;
 import org.apache.carbondata.core.scan.filter.executer.TrueFilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
@@ -167,7 +168,7 @@ public final class FilterUtil {
         case ROWLEVEL_LESSTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN:
-          return RowLevelRangeTypeExecuterFacory
+          return RowLevelRangeTypeExecuterFactory
               .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree,
                   segmentProperties);
         case RANGE:
@@ -856,27 +857,9 @@ public final class FilterUtil {
     return columnFilterInfo;
   }
 
-  /**
-   * Below method will be used to covert the filter surrogate keys
-   * to mdkey
-   *
-   * @param columnFilterInfo
-   * @param carbonDimension
-   * @param segmentProperties
-   * @return
-   */
-  public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
-      CarbonDimension carbonDimension, SegmentProperties segmentProperties,  boolean isExclude) {
-    if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
-      return columnFilterInfo.getNoDictionaryFilterValuesList()
-          .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
-    }
-    KeyGenerator blockLevelKeyGenerator = segmentProperties.getDimensionKeyGenerator();
-    int[] dimColumnsCardinality = segmentProperties.getDimColumnsCardinality();
-    int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
-    List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
-    Arrays.fill(keys, 0);
-    int keyOrdinalOfDimensionFromCurrentBlock = carbonDimension.getKeyOrdinal();
+  private static byte[][] getFilterValuesInBytes(ColumnFilterInfo columnFilterInfo,
+      boolean isExclude, KeyGenerator blockLevelKeyGenerator, int[] dimColumnsCardinality,
+      int[] keys, List<byte[]> filterValuesList, int keyOrdinalOfDimensionFromCurrentBlock) {
     if (null != columnFilterInfo) {
       int[] rangesForMaskedByte =
           getRangesForMaskedByte(keyOrdinalOfDimensionFromCurrentBlock, blockLevelKeyGenerator);
@@ -903,7 +886,53 @@ public final class FilterUtil {
       }
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
+  }
 
+  /**
+   * This method will be used to get the Filter key array list for blocks which do not contain
+   * filter column and the column Encoding is Direct Dictionary
+   *
+   * @param columnFilterInfo
+   * @param isExclude
+   * @return
+   */
+  public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo, boolean isExclude) {
+    int[] dimColumnsCardinality = new int[] { Integer.MAX_VALUE };
+    int[] dimensionBitLength =
+        CarbonUtil.getDimensionBitLength(dimColumnsCardinality, new int[] { 1 });
+    KeyGenerator blockLevelKeyGenerator = new MultiDimKeyVarLengthGenerator(dimensionBitLength);
+    int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
+    Arrays.fill(keys, 0);
+    int keyOrdinalOfDimensionFromCurrentBlock = 0;
+    List<byte[]> filterValuesList =
+        new ArrayList<byte[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    return getFilterValuesInBytes(columnFilterInfo, isExclude, blockLevelKeyGenerator,
+        dimColumnsCardinality, keys, filterValuesList, keyOrdinalOfDimensionFromCurrentBlock);
+  }
+
+  /**
+   * Below method will be used to covert the filter surrogate keys
+   * to mdkey
+   *
+   * @param columnFilterInfo
+   * @param carbonDimension
+   * @param segmentProperties
+   * @return
+   */
+  public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
+      CarbonDimension carbonDimension, SegmentProperties segmentProperties,  boolean isExclude) {
+    if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
+      return columnFilterInfo.getNoDictionaryFilterValuesList()
+          .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
+    }
+    KeyGenerator blockLevelKeyGenerator = segmentProperties.getDimensionKeyGenerator();
+    int[] dimColumnsCardinality = segmentProperties.getDimColumnsCardinality();
+    int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
+    List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
+    Arrays.fill(keys, 0);
+    int keyOrdinalOfDimensionFromCurrentBlock = carbonDimension.getKeyOrdinal();
+    return getFilterValuesInBytes(columnFilterInfo, isExclude, blockLevelKeyGenerator,
+        dimColumnsCardinality, keys, filterValuesList, keyOrdinalOfDimensionFromCurrentBlock);
   }
 
   /**

@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -68,7 +69,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     lastDimensionColOrdinal = segmentProperties.getLastDimensionColOrdinal();
     this.filterRangeValues = filterRangeValues;
     this.msrFilterRangeValues = msrFilterRangeValues;
-    if (isMeasurePresentInCurrentBlock[0]) {
+    if (!msrColEvalutorInfoList.isEmpty()) {
       CarbonMeasure measure = this.msrColEvalutorInfoList.get(0).getMeasure();
       comparator = Comparator.getComparatorByDataTypeForMeasure(measure.getDataType());
     }
@@ -102,7 +103,9 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       if (null != defaultValue) {
         for (int k = 0; k < msrFilterRangeValues.length; k++) {
           int maxCompare = comparator.compare(msrFilterRangeValues[k],
-              DataTypeUtil.getMeasureObjectFromDataType(defaultValue, measure.getDataType()));
+              RestructureUtil.getMeasureDefaultValue(measure.getColumnSchema(),
+                  measure.getDefaultValue()));
+
           if (maxCompare >= 0) {
             isDefaultValuePresentInFilter = true;
             break;
