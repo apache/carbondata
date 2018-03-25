@@ -17,21 +17,24 @@
 
 package org.apache.spark.sql.execution.command.datamap
 
+import java.util
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
 
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+
 /**
  * Show the datamaps on the table
- * @param databaseNameOp
- * @param tableName
+ * @param tableIdentifier
  */
-case class CarbonDataMapShowCommand(
-    databaseNameOp: Option[String],
-    tableName: String)
+case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
   extends DataCommand {
 
   override def output: Seq[Attribute] = {
@@ -41,9 +44,23 @@ case class CarbonDataMapShowCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-    val schemaList = carbonTable.getTableInfo.getDataMapSchemaList
+    tableIdentifier match {
+      case Some(table) =>
+        Checker.validateTableExists(table.database, table.table, sparkSession)
+        val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)
+        if (carbonTable.hasDataMapSchema) {
+          val schemaList = carbonTable.getTableInfo.getDataMapSchemaList
+          convertToRow(schemaList)
+        } else {
+          convertToRow(DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable))
+        }
+      case _ =>
+        convertToRow(DataMapStoreManager.getInstance().getAllDataMapSchemas)
+    }
+
+  }
+
+  private def convertToRow(schemaList: util.List[DataMapSchema]) = {
     if (schemaList != null && schemaList.size() > 0) {
       schemaList.asScala.map { s =>
         var table = "(NA)"

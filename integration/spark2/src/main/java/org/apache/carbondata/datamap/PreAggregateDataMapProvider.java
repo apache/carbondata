@@ -19,6 +19,8 @@ package org.apache.carbondata.datamap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.core.datamap.DataMapCatalog;
+import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
@@ -31,10 +33,15 @@ import scala.Some;
 public class PreAggregateDataMapProvider implements DataMapProvider {
   protected PreAggregateTableHelper helper;
   protected CarbonDropTableCommand dropTableCommand;
+  protected SparkSession sparkSession;
+
+  public PreAggregateDataMapProvider(SparkSession sparkSession) {
+    this.sparkSession = sparkSession;
+  }
 
   @Override
-  public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement,
-      SparkSession sparkSession) throws MalformedDataMapCommandException {
+  public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement)
+      throws MalformedDataMapCommandException {
     validateDmProperty(dataMapSchema);
     helper = new PreAggregateTableHelper(
         mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getProviderName(),
@@ -54,13 +61,12 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
   }
 
   @Override
-  public void initData(CarbonTable mainTable, SparkSession sparkSession) {
+  public void initData(CarbonTable mainTable) {
     // Nothing is needed to do by default
   }
 
   @Override
-  public void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema,
-      SparkSession sparkSession) {
+  public void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) {
     dropTableCommand = new CarbonDropTableCommand(
         true,
         new Some<>(dataMapSchema.getRelationIdentifier().getDatabaseName()),
@@ -70,23 +76,26 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
   }
 
   @Override
-  public void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema,
-      SparkSession sparkSession) {
+  public void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema) {
     if (dropTableCommand != null) {
       dropTableCommand.processData(sparkSession);
     }
   }
 
   @Override
-  public void rebuild(CarbonTable mainTable, SparkSession sparkSession) {
+  public void rebuild(CarbonTable mainTable) {
     if (helper != null) {
       helper.initData(sparkSession);
     }
   }
 
   @Override
-  public void incrementalBuild(CarbonTable mainTable, String[] segmentIds,
-      SparkSession sparkSession) {
+  public void incrementalBuild(CarbonTable mainTable, String[] segmentIds) {
     throw new UnsupportedOperationException();
+  }
+
+  @Override public DataMapCatalog createDataMapCatalog() {
+    // TODO manage pre-agg also with catalog.
+    return null;
   }
 }

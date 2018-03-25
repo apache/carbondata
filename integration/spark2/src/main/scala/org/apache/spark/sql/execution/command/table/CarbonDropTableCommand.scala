@@ -24,9 +24,11 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
+import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
@@ -44,6 +46,7 @@ case class CarbonDropTableCommand(
 
   var carbonTable: CarbonTable = _
   var childDropCommands : Seq[CarbonDropTableCommand] = Seq.empty
+  var childDropDataMapCommands : Seq[CarbonDropDataMapCommand] = Seq.empty
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -107,7 +110,19 @@ case class CarbonDropTableCommand(
             dropCommand
           }
         childDropCommands.foreach(_.processMetadata(sparkSession))
+      } else {
+        val schemas = DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable)
+        childDropDataMapCommands = schemas.asScala.map{ schema =>
+          val command = CarbonDropDataMapCommand(schema.getDataMapName,
+            ifExistsSet,
+            Some(TableIdentifier(tableName, Some(dbName))),
+            forceDrop = true)
+          command.dataMapSchema = schema
+          command.mainTable = carbonTable
+          command
         }
+        childDropDataMapCommands.foreach(_.processMetadata(sparkSession))
+      }
 
       // fires the event after dropping main table
       val dropTablePostEvent: DropTablePostEvent =
@@ -158,6 +173,7 @@ case class CarbonDropTableCommand(
         // drop all child tables
         childDropCommands.foreach(_.processData(sparkSession))
       }
+      childDropDataMapCommands.foreach(_.processData(sparkSession))
     }
     Seq.empty
   }

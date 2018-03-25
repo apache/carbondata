@@ -1447,4 +1447,17 @@ public final class CarbonProperties {
     }
     return preserveCnt;
   }
+  /**
+   * Get the configured system folder location.
+   * @return
+   */
+  public String getSystemFolderLocation() {
+    String systemLocation = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION);
+    if (systemLocation == null) {
+      systemLocation = getStorePath();
+    }
+    return systemLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system";
+  }
+
 }

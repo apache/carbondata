@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider.TIMESERIES
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
 import org.apache.carbondata.core.util.CarbonProperties
 
 class TimeSeriesPreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
