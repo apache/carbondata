@@ -91,6 +91,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       if (null != dimensionFromCurrentBlock) {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
             dimensionFromCurrentBlock, segmentProperties, false);
+      } else {
+        return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(), false);
       }
     }
     return null;

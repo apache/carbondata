@@ -21,9 +21,9 @@ import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolverImpl;
 
-public class RowLevelRangeTypeExecuterFacory {
+public class RowLevelRangeTypeExecuterFactory {
 
-  private RowLevelRangeTypeExecuterFacory() {
+  private RowLevelRangeTypeExecuterFactory() {
 
   }
 
@@ -41,7 +41,7 @@ public class RowLevelRangeTypeExecuterFacory {
     switch (filterExecuterType) {
 
       case ROWLEVEL_LESSTHAN:
-        return new RowLevelRangeLessThanFiterExecuterImpl(
+        return new RowLevelRangeLessThanFilterExecuterImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)

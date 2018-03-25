@@ -729,6 +729,7 @@ public final class DataTypeUtil {
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         } else {
           try {
+            timeStampformatter.remove();
             Date dateToStr = timeStampformatter.get().parse(data);
             return ByteUtil.toBytes(dateToStr.getTime());
           } catch (ParseException e) {
