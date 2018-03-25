@@ -15,29 +15,37 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.common.exceptions.sql;
+package org.apache.carbondata.core.datamap;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
- * This exception will be thrown if datamap is not found when executing datamap
- * related SQL statement
+ * This is the interface for inmemory catalog registry for datamap.
+ * @since 1.4.0
  */
-@InterfaceAudience.User
-@InterfaceStability.Stable
-public class NoSuchDataMapException extends MalformedCarbonCommandException {
+public interface DataMapCatalog<T> {
 
   /**
-   * default serial version ID.
+   * Register schema to the catalog.
+   * @param dataMapSchema
    */
-  private static final long serialVersionUID = 1L;
+  void registerSchema(DataMapSchema dataMapSchema);
 
-  public NoSuchDataMapException(String dataMapName, String tableName) {
-    super("Datamap with name " + dataMapName + " does not exist under table " + tableName);
-  }
+  /**
+   * Unregister schema from catalog.
+   * @param dataMapName
+   */
+  void unregisterSchema(String dataMapName);
 
-  public NoSuchDataMapException(String dataMapName) {
-    super("Datamap with name " + dataMapName + " does not exist");
-  }
+  /**
+   * List all registered schema catalogs
+   * @return
+   */
+  T[] listAllSchema();
+
+  /**
+   * It reloads/removes all registered schema catalogs
+   */
+  void refresh();
+
 }

@@ -35,9 +35,13 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactor
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
+import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * It maintains all the DataMaps in it.
@@ -51,6 +55,11 @@ public final class DataMapStoreManager {
    * Contains the list of datamaps for each table.
    */
   private Map<String, List<TableDataMap>> allDataMaps = new ConcurrentHashMap<>();
+
+  /**
+   * Contains the datamap catalog for each datamap provider.
+   */
+  private Map<String, DataMapCatalog> dataMapCatalogs = new ConcurrentHashMap<>();
 
   private Map<String, TableSegmentRefresher> segmentRefreshMap = new ConcurrentHashMap<>();
 
@@ -84,16 +93,95 @@ public final class DataMapStoreManager {
    * @return
    */
   public List<TableDataMap> getAllDataMap(CarbonTable carbonTable) {
-    List<DataMapSchema> dataMapSchemaList = carbonTable.getTableInfo().getDataMapSchemaList();
+    // TODO cache all schemas and update only when datamap status file updates
+    List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();
     List<TableDataMap> dataMaps = new ArrayList<>();
-    if (dataMapSchemaList != null) {
-      for (DataMapSchema dataMapSchema : dataMapSchemaList) {
-        if (dataMapSchema.isIndexDataMap()) {
+    if (dataMapSchemas != null) {
+      for (DataMapSchema dataMapSchema : dataMapSchemas) {
+        RelationIdentifier identifier = dataMapSchema.getParentTables().get(0);
+        if (dataMapSchema.isIndexDataMap() && identifier.getTableName()
+            .equals(carbonTable.getTableName()) && identifier.getDatabaseName()
+            .equals(carbonTable.getDatabaseName())) {
           dataMaps.add(getDataMap(carbonTable.getAbsoluteTableIdentifier(), dataMapSchema));
         }
       }
     }
     return dataMaps;
+  }
+
+  /**
+   * It gives all datamap schemas.
+   *
+   * @return
+   */
+  public List<DataMapSchema> getAllDataMapSchemas(CarbonTable carbonTable) {
+    // TODO cache all schemas and update only when datamap status file updates
+    List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();
+    List<DataMapSchema> dataMaps = new ArrayList<>();
+    if (dataMapSchemas != null) {
+      for (DataMapSchema dataMapSchema : dataMapSchemas) {
+        RelationIdentifier identifier = dataMapSchema.getParentTables().get(0);
+        if (dataMapSchema.isIndexDataMap() && identifier.getTableName()
+            .equals(carbonTable.getTableName()) && identifier.getDatabaseName()
+            .equals(carbonTable.getDatabaseName())) {
+          dataMaps.add(dataMapSchema);
+        }
+      }
+    }
+    return dataMaps;
+  }
+
+  public List<DataMapSchema> getAllDataMapSchemas() {
+    DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
+        CarbonProperties.getInstance().getSystemFolderLocation());
+    List<DataMapSchema> dataMapSchemas;
+    try {
+      dataMapSchemas = provider.retrieveAllSchemas();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return dataMapSchemas;
+  }
+
+  /**
+   * Register datamap catalog for the datamap provider
+   * @param dataMapProvider
+   * @param dataMapSchema
+   */
+  public synchronized void registerDataMapCatalog(DataMapProvider dataMapProvider,
+      DataMapSchema dataMapSchema) {
+    String name = dataMapSchema.getProviderName();
+    DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
+    if (dataMapCatalog == null) {
+      dataMapCatalog = dataMapProvider.createDataMapCatalog();
+      if (dataMapCatalog != null) {
+        dataMapCatalogs.put(name, dataMapCatalog);
+        dataMapCatalog.registerSchema(dataMapSchema);
+      }
+    } else {
+      dataMapCatalog.registerSchema(dataMapSchema);
+    }
+  }
+
+  /**
+   * Unregister datamap catalog.
+   * @param dataMapSchema
+   */
+  public synchronized void unRegisterDataMapCatalog(DataMapSchema dataMapSchema) {
+    String name = dataMapSchema.getProviderName();
+    DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
+    if (dataMapCatalog != null) {
+      dataMapCatalog.unregisterSchema(dataMapSchema.getDataMapName());
+    }
+  }
+
+  /**
+   * Get the datamap catalog for provider.
+   * @param providerName
+   * @return
+   */
+  public DataMapCatalog getDataMapCatalog(String providerName) {
+    return dataMapCatalogs.get(providerName);
   }
 
   /**

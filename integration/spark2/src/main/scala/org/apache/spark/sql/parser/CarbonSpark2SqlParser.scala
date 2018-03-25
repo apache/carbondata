@@ -150,13 +150,19 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    */
   protected lazy val createDataMap: Parser[LogicalPlan] =
     CREATE ~> DATAMAP ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
-    (ON ~ TABLE) ~  (ident <~ ".").? ~ ident ~
+    opt(ontable) ~
     (USING ~> stringLit) ~ (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
     (AS ~> restInput).? <~ opt(";") ^^ {
-      case ifnotexists ~ dmname ~ ontable ~ dbName ~ tableName ~ className ~ dmprops ~ query =>
+      case ifnotexists ~ dmname ~ tableIdent ~ className ~ dmprops ~ query =>
+
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
-        CarbonCreateDataMapCommand(
-          dmname, TableIdentifier(tableName, dbName), className, map, query, ifnotexists.isDefined)
+        CarbonCreateDataMapCommand(dmname, tableIdent, className, map, query, ifnotexists.isDefined)
+    }
+
+  protected lazy val ontable: Parser[TableIdentifier] =
+    ON ~> TABLE ~>  (ident <~ ".").? ~ ident ^^ {
+      case dbName ~ tableName =>
+        TableIdentifier(tableName, dbName)
     }
 
   /**
@@ -164,10 +170,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    * DROP DATAMAP IF EXISTS datamapName ON TABLE tablename
    */
   protected lazy val dropDataMap: Parser[LogicalPlan] =
-    DROP ~> DATAMAP ~> opt(IF ~> EXISTS) ~ ident ~ (ON ~ TABLE) ~
-    (ident <~ ".").? ~ ident <~ opt(";")  ^^ {
-      case ifexists ~ dmname ~ ontable ~ dbName ~ tableName =>
-        CarbonDropDataMapCommand(dmname, ifexists.isDefined, dbName, tableName)
+    DROP ~> DATAMAP ~> opt(IF ~> EXISTS) ~ ident ~ opt(ontable) <~ opt(";")  ^^ {
+      case ifexists ~ dmname ~ tableIdent =>
+        CarbonDropDataMapCommand(dmname, ifexists.isDefined, tableIdent)
     }
 
   /**
@@ -175,9 +180,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    * SHOW DATAMAP ON TABLE tableName
    */
   protected lazy val showDataMap: Parser[LogicalPlan] =
-    SHOW ~> DATAMAP ~> ON ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case databaseName ~ tableName =>
-        CarbonDataMapShowCommand(convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
+    SHOW ~> DATAMAP ~> opt(ontable) <~ opt(";") ^^ {
+      case tableIdent =>
+        CarbonDataMapShowCommand(tableIdent)
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =

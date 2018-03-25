@@ -24,8 +24,9 @@ import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datamap.DataMapProvider
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
-import org.apache.carbondata.datamap.{DataMapManager, DataMapProvider}
+import org.apache.carbondata.datamap.DataMapManager
 
 /**
  * Below command class will be used to create datamap on table
@@ -33,7 +34,7 @@ import org.apache.carbondata.datamap.{DataMapManager, DataMapProvider}
  */
 case class CarbonCreateDataMapCommand(
     dataMapName: String,
-    tableIdentifier: TableIdentifier,
+    tableIdentifier: Option[TableIdentifier],
     dmClassName: String,
     dmProperties: Map[String, String],
     queryString: Option[String],
@@ -48,12 +49,16 @@ case class CarbonCreateDataMapCommand(
     // since streaming segment does not support building index and pre-aggregate yet,
     // so streaming table does not support create datamap
     mainTable =
-      CarbonEnv.getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
-    if (mainTable.isStreamingTable) {
+      tableIdentifier match {
+        case Some(table) =>
+          CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession)
+        case _ => null
+      }
+    if (mainTable != null && mainTable.isStreamingTable) {
       throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
     }
 
-    if (mainTable.getDataMapSchema(dataMapName) != null) {
+    if (mainTable != null && mainTable.getDataMapSchema(dataMapName) != null) {
       if (!ifNotExistsSet) {
         throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")
       } else {
@@ -64,19 +69,19 @@ case class CarbonCreateDataMapCommand(
     dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
     dataMapSchema.setProperties(new java.util.HashMap[String, String](
       dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
-    dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema)
-    dataMapProvider.initMeta(mainTable, dataMapSchema, queryString.orNull, sparkSession)
+    dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema, sparkSession)
+    dataMapProvider.initMeta(mainTable, dataMapSchema, queryString.orNull)
 
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${tableIdentifier.table}")
+    LOGGER.audit(s"DataMap $dataMapName successfully added")
     Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (dataMapProvider != null) {
-      dataMapProvider.initData(mainTable, sparkSession)
-      if (mainTable.isAutoRefreshDataMap) {
-        dataMapProvider.rebuild(mainTable, sparkSession)
+      dataMapProvider.initData(mainTable)
+      if (mainTable != null && mainTable.isAutoRefreshDataMap) {
+        dataMapProvider.rebuild(mainTable)
       }
     }
     Seq.empty
@@ -84,7 +89,7 @@ case class CarbonCreateDataMapCommand(
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
     if (dataMapProvider != null) {
-      dataMapProvider.freeMeta(mainTable, dataMapSchema, sparkSession)
+      dataMapProvider.freeMeta(mainTable, dataMapSchema)
     }
     Seq.empty
   }

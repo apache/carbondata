@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap;
+package org.apache.carbondata.core.datamap;
 
 import java.io.IOException;
 
@@ -23,9 +23,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.processing.exception.DataLoadingException;
-
-import org.apache.spark.sql.SparkSession;
 
 /**
  * DataMap is a accelerator for certain type of query. Developer can add new DataMap
@@ -63,29 +60,29 @@ public interface DataMapProvider {
    * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
    * Implementation should initialize metadata for datamap, like creating table
    */
-  void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement,
-      SparkSession sparkSession) throws MalformedDataMapCommandException, IOException;
+  void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement)
+      throws MalformedDataMapCommandException, IOException;
 
   /**
    * Initialize a datamap's data.
    * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
    * Implementation should initialize data for datamap, like creating data folders
    */
-  void initData(CarbonTable mainTable, SparkSession sparkSession);
+  void initData(CarbonTable mainTable);
 
   /**
-   * Opposite operation of {@link #initMeta(CarbonTable, DataMapSchema, String, SparkSession)}.
+   * Opposite operation of {@link #initMeta(CarbonTable, DataMapSchema, String)}.
    * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
    * Implementation should clean all meta for the datamap
    */
-  void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, SparkSession sparkSession);
+  void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException;
 
   /**
-   * Opposite operation of {@link #initData(CarbonTable, SparkSession)}.
+   * Opposite operation of {@link #initData(CarbonTable)}.
    * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
    * Implementation should clean all data for the datamap
    */
-  void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema, SparkSession sparkSession);
+  void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema);
 
   /**
    * Rebuild the datamap by loading all existing data from mainTable
@@ -93,13 +90,19 @@ public interface DataMapProvider {
    * 1. after datamap creation and if `autoRefreshDataMap` is set to true
    * 2. user manually trigger refresh datamap command
    */
-  void rebuild(CarbonTable mainTable, SparkSession sparkSession) throws DataLoadingException;
+  void rebuild(CarbonTable mainTable) throws IOException;
 
   /**
    * Build the datamap incrementally by loading specified segment data
    * This is called when user manually trigger refresh datamap
    */
-  void incrementalBuild(CarbonTable mainTable, String[] segmentIds, SparkSession sparkSession)
-    throws DataLoadingException;
+  void incrementalBuild(CarbonTable mainTable, String[] segmentIds)
+    throws IOException;
+
+  /**
+   * Provide the datamap catalog instance or null if this datamap not required to rewrite
+   * the query.
+   */
+  DataMapCatalog createDataMapCatalog();
 
 }

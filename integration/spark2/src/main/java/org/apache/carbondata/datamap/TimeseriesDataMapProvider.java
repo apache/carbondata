@@ -32,9 +32,13 @@ import scala.Tuple2;
 @InterfaceAudience.Internal
 public class TimeseriesDataMapProvider extends PreAggregateDataMapProvider {
 
+  public TimeseriesDataMapProvider(SparkSession sparkSession) {
+    super(sparkSession);
+  }
+
   @Override
-  public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement,
-      SparkSession sparkSession) {
+  public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema,
+      String ctasSqlStatement) {
     Map<String, String> dmProperties = dataMapSchema.getProperties();
     String dmProviderName = dataMapSchema.getProviderName();
     TimeSeriesUtil.validateTimeSeriesGranularity(dmProperties, dmProviderName);
