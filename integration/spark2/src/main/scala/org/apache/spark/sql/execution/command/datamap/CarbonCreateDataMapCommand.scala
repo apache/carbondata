@@ -25,6 +25,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.DataMapProvider
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.datamap.DataMapManager
 
@@ -71,7 +72,7 @@ case class CarbonCreateDataMapCommand(
       dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
     dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema, sparkSession)
     dataMapProvider.initMeta(mainTable, dataMapSchema, queryString.orNull)
-
+    DataMapStatusManager.disableDataMap(dataMapName)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     LOGGER.audit(s"DataMap $dataMapName successfully added")
     Seq.empty
@@ -81,7 +82,7 @@ case class CarbonCreateDataMapCommand(
     if (dataMapProvider != null) {
       dataMapProvider.initData(mainTable)
       if (mainTable != null && mainTable.isAutoRefreshDataMap) {
-        dataMapProvider.rebuild(mainTable)
+        dataMapProvider.rebuild(mainTable, dataMapSchema)
       }
     }
     Seq.empty
