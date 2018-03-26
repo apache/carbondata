@@ -132,9 +132,7 @@ case class CarbonDropDataMapCommand(
           }
         } else if (mainTable != null &&
                    mainTable.getTableInfo.getDataMapSchemaList.size() == 0) {
-          if (!ifExistsSet) {
-            throw new NoSuchDataMapException(dataMapName, tableName)
-          }
+          dropDataMapFromSystemFolder(sparkSession, tableName)
         }
       } catch {
         case e: NoSuchDataMapException =>
@@ -153,25 +151,33 @@ case class CarbonDropDataMapCommand(
         }
       }
     } else {
-      if (dataMapSchema == null) {
-        val schema = DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala.find{dm =>
-          dm.getDataMapName.equalsIgnoreCase(dataMapName)
-        }
-        dataMapSchema = schema match {
-          case Some(dmSchema) => dmSchema
-          case _ => null
-        }
-      }
-      if (dataMapSchema != null) {
-        // TODO do a check for existance before dropping
-        dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema, sparkSession)
-        dataMapProvider.freeMeta(mainTable, dataMapSchema)
-      } else if (!ifExistsSet) {
-        new MalformedCarbonCommandException(s"DataMap $dataMapName does not exist")
-      }
+      dropDataMapFromSystemFolder(sparkSession)
     }
 
       Seq.empty
+  }
+
+  private def dropDataMapFromSystemFolder(sparkSession: SparkSession, tableName: String = null) = {
+    if (dataMapSchema == null) {
+      val schema = DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala.find { dm =>
+        dm.getDataMapName.equalsIgnoreCase(dataMapName)
+      }
+      dataMapSchema = schema match {
+        case Some(dmSchema) => dmSchema
+        case _ => null
+      }
+    }
+    if (dataMapSchema != null) {
+      // TODO do a check for existance before dropping
+      dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema, sparkSession)
+      dataMapProvider.freeMeta(mainTable, dataMapSchema)
+    } else if (!ifExistsSet) {
+      if (tableName != null) {
+        throw new NoSuchDataMapException(dataMapName, tableName)
+      } else {
+        throw new NoSuchDataMapException(dataMapName)
+      }
+    }
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {

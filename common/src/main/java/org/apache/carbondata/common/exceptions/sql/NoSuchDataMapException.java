@@ -36,4 +36,8 @@ public class NoSuchDataMapException extends MalformedCarbonCommandException {
   public NoSuchDataMapException(String dataMapName, String tableName) {
     super("Datamap with name " + dataMapName + " does not exist under table " + tableName);
   }
+
+  public NoSuchDataMapException(String dataMapName) {
+    super("Datamap with name " + dataMapName + " does not exist");
+  }
 }
