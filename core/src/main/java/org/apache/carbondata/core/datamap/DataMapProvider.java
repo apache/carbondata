@@ -90,13 +90,13 @@ public interface DataMapProvider {
    * 1. after datamap creation and if `autoRefreshDataMap` is set to true
    * 2. user manually trigger refresh datamap command
    */
-  void rebuild(CarbonTable mainTable) throws IOException;
+  void rebuild(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException;
 
   /**
    * Build the datamap incrementally by loading specified segment data
    * This is called when user manually trigger refresh datamap
    */
-  void incrementalBuild(CarbonTable mainTable, String[] segmentIds)
+  void incrementalBuild(CarbonTable mainTable, DataMapSchema dataMapSchema, String[] segmentIds)
     throws IOException;
 
   /**

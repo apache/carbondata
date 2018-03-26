@@ -48,6 +48,7 @@ import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
@@ -811,9 +812,8 @@ object CarbonDataRDDFactory {
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       LOGGER.error("Dataload failed due to failure in table status updation.")
       throw new Exception(errorMessage)
-    } else if (!carbonLoadModel.isRetentionRequest) {
-      // TODO : Handle it
-      LOGGER.info("********Database updated**********")
+    } else {
+      DataMapStatusManager.disableDataMapsOfTable(carbonTable)
     }
     done
   }

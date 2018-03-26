@@ -26,10 +26,10 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 
-import org.apache.carbondata.common.exceptions.MetadataProcessException
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, NoSuchDataMapException}
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -78,11 +78,7 @@ case class CarbonDropDataMapCommand(
         }
       }
       if (forceDrop && mainTable != null && dataMapSchema != null) {
-        if (dataMapSchema != null) {
-          dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema, sparkSession)
-        }
-        // TODO do a check for existance before dropping
-        dataMapProvider.freeMeta(mainTable, dataMapSchema)
+        dropDataMapFromSystemFolder(sparkSession, tableName)
         return Seq.empty
       }
       val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
@@ -170,6 +166,7 @@ case class CarbonDropDataMapCommand(
     if (dataMapSchema != null) {
       // TODO do a check for existance before dropping
       dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema, sparkSession)
+      DataMapStatusManager.dropDataMap(dataMapSchema.getDataMapName)
       dataMapProvider.freeMeta(mainTable, dataMapSchema)
     } else if (!ifExistsSet) {
       if (tableName != null) {

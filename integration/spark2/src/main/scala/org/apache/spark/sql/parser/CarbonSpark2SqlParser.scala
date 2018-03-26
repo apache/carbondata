@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
+import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRefreshCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableDropPartitionCommand, CarbonAlterTableSplitPartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
@@ -87,7 +87,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     alterAddPartition | alterSplitPartition | alterDropPartition
 
   protected lazy val datamapManagement: Parser[LogicalPlan] =
-    createDataMap | dropDataMap | showDataMap
+    createDataMap | dropDataMap | showDataMap | refreshDataMap
 
   protected lazy val alterAddPartition: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
@@ -183,6 +183,16 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     SHOW ~> DATAMAP ~> opt(ontable) <~ opt(";") ^^ {
       case tableIdent =>
         CarbonDataMapShowCommand(tableIdent)
+    }
+
+  /**
+   * The syntax of show datamap is used to show datamaps on the table
+   * REFRESH DATAMAP datamapname ON TABLE tableName
+   */
+  protected lazy val refreshDataMap: Parser[LogicalPlan] =
+    REFRESH ~> DATAMAP ~> ident ~ opt(ontable) <~ opt(";") ^^ {
+      case datamap ~ tableIdent =>
+        CarbonDataMapRefreshCommand(datamap, tableIdent)
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =

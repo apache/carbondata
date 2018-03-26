@@ -69,12 +69,12 @@ public class IndexDataMapProvider implements DataMapProvider {
   }
 
   @Override
-  public void rebuild(CarbonTable mainTable) {
+  public void rebuild(CarbonTable mainTable, DataMapSchema dataMapSchema) {
     // Nothing is needed to do by default
   }
 
-  @Override
-  public void incrementalBuild(CarbonTable mainTable, String[] segmentIds) {
+  @Override public void incrementalBuild(CarbonTable mainTable, DataMapSchema dataMapSchema,
+      String[] segmentIds) {
     throw new UnsupportedOperationException();
   }
 

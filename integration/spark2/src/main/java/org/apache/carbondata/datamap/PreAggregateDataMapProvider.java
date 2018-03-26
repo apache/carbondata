@@ -83,14 +83,14 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
   }
 
   @Override
-  public void rebuild(CarbonTable mainTable) {
+  public void rebuild(CarbonTable mainTable, DataMapSchema dataMapSchema) {
     if (helper != null) {
       helper.initData(sparkSession);
     }
   }
 
-  @Override
-  public void incrementalBuild(CarbonTable mainTable, String[] segmentIds) {
+  @Override public void incrementalBuild(CarbonTable mainTable, DataMapSchema dataMapSchema,
+      String[] segmentIds) {
     throw new UnsupportedOperationException();
   }
 
