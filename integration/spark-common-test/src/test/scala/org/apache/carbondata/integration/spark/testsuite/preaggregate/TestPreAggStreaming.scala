@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
 import org.apache.spark.sql.CarbonDatasourceHadoopRelation
@@ -7,44 +23,46 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 
-@Ignore
 class TestPreAggStreaming extends QueryTest with BeforeAndAfterAll {
+
+
   override def beforeAll: Unit = {
     sql("drop table if exists mainTable")
-    sql("CREATE TABLE mainTable(id int, name string, city string, age string) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE mainTable(id int, name string, city string, age string) STORED BY 'org.apache.carbondata.format' tblproperties('streaming'='true')")
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select name from mainTable group by name")
     sql("create datamap agg1 on table mainTable using 'preaggregate' as select name,sum(age) from mainTable group by name")
     sql("create datamap agg2 on table mainTable using 'preaggregate' as select name,avg(age) from mainTable group by name")
     sql("create datamap agg3 on table mainTable using 'preaggregate' as select name,sum(CASE WHEN age=35 THEN id ELSE 0 END) from mainTable group by name")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table mainTable")
   }
 
-  test("Test Streaming table plan with only projection column") {
+  test("Test Pre Agg Streaming with project column and group by") {
     val df = sql("select name from maintable group by name")
+    df.collect()
     assert(validateStreamingTablePlan(df.queryExecution.analyzed))
   }
 
-  test("Test Streaming table plan with only projection column and order by") {
-    val df = sql("select name from maintable group by name")
+  test("Test Pre Agg Streaming table Agg Sum Aggregation") {
+    val df = sql("select name, sum(age) from maintable group by name")
+    df.collect()
     assert(validateStreamingTablePlan(df.queryExecution.analyzed))
   }
 
-  test("Test Streaming table plan with sum aggregator") {
+  test("Test Pre Agg Streaming table With Sum Aggregation And Order by") {
     val df = sql("select name, sum(age) from maintable group by name order by name")
+    df.collect()
     assert(validateStreamingTablePlan(df.queryExecution.analyzed))
   }
 
-  test("Test Streaming table plan with sum aggregator and order by") {
-    val df = sql("select name, sum(age) from maintable group by name order by name")
+  test("Test Pre Agg Streaming table With Avg Aggregation") {
+    val df = sql("select name, avg(age) from maintable group by name order by name")
+    df.collect()
     assert(validateStreamingTablePlan(df.queryExecution.analyzed))
   }
 
-  test("Test Streaming table plan with avg aggregator") {
-    val df = sql("select name, avg(age) from maintable group by name")
-    assert(validateStreamingTablePlan(df.queryExecution.analyzed))
-  }
-
-  test("Test Streaming table plan with expression ") {
+  test("Test Pre Agg Streaming table With Expression Aggregation") {
     val df = sql("select name, sum(CASE WHEN age=35 THEN id ELSE 0 END) from maintable group by name order by name")
+    df.collect()
     assert(validateStreamingTablePlan(df.queryExecution.analyzed))
   }
 
@@ -66,7 +84,7 @@ class TestPreAggStreaming extends QueryTest with BeforeAndAfterAll {
           logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
           logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
             .isChildDataMap =>
-            isChildTableExists = false
+            isChildTableExists = true
         }
         union
     }

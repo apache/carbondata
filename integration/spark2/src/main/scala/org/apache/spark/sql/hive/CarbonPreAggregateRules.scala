@@ -34,7 +34,7 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.types._
 import org.apache.spark.util.CarbonReflectionUtils
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.preagg.{AggregateQueryPlan, AggregateTableSelector, QueryColumn}
@@ -328,6 +328,21 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * 5. timeseries function
    *    5.1 validate parent table has timeseries datamap
    *    5.2 timeseries function is valid function or not
+   * 6. Streaming
+   * Rules for updating plan in case of streaming table:
+   * In case of streaming data will be fetched from both fact and aggregate as aggregate table
+   * will be updated only after each hand-off, so current streamed data won't be available on
+   * aggregate table.
+   * 6.1 Add one union node to add both fact and aggregate table plan to
+   *     get the data from both table
+   * 6.2 On top of Union Node add one Aggregate node to aggregate both table results
+   * 6.3 In case of average(avg(column)) special handling is required for streaming
+   *     7.3.1 Fact Plan will updated to return sum(column) and count(column) to do rollup
+   *     7.3.2 Aggregate Plan will updated to return sum(column) and count(column) to do rollup
+   * 6.4 In newly added Aggregate node all the aggregate expression must have same expression id as
+   *     fact and fact plan will updated with new expression id. As query like order by this can be
+   *     referred. In example1 sum(totalSalary) as totalSalary will have same expression id
+   *     as in fact and fact plan sum(salary) will be updated with new expression id
    *
    * @param logicalPlan parent logical plan
    * @return transformed plan
@@ -336,9 +351,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     var isPlanUpdated = false
     val updatedPlan = logicalPlan.transform {
       case agg@Aggregate(
-      grExp,
-      aggExp,
-      CarbonSubqueryAlias(alias1, child@CarbonSubqueryAlias(alias2, l: LogicalRelation)))
+        grExp,
+        aggExp,
+        CarbonSubqueryAlias(alias1, child@CarbonSubqueryAlias(alias2, l: LogicalRelation)))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema && !isPlanUpdated =>
@@ -370,33 +385,26 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   carbonTable,
                   agg)
               isPlanUpdated = true
-              val updateAggPlan = Aggregate(updatedGroupExp,
-                updatedAggExp,
-                CarbonReflectionUtils
-                  .getSubqueryAlias(sparkSession,
-                    Some(alias1),
-                    CarbonReflectionUtils
-                      .getSubqueryAlias(sparkSession, Some(alias2), newChild, None),
-                    None))
-              if(carbonTable.isStreamingTable) {
-                setSegmentsForStreaming(carbonTable, aggDataMapSchema)
-                // get new fact expression
-                val factExp = updateFactTablePlanForStreaming(agg)
-                // get new Aggregate node expression
-                val streamingNodeExp = getExpressionsForStreaming(aggExp)
-                // clear the expression as in case of streaming it is not required
-                updatedExpression.clear
-                // Add Aggregate node to aggregate data from fact and aggregate
+              val updateAggPlan =
                 Aggregate(
-                  grExp,
-                  streamingNodeExp.asInstanceOf[Seq[NamedExpression]],
-                  // add union node to get the result from both
-                  Union(
-                    factExp,
-                    updateAggPlan))
-              } else {
-                updateAggPlan
-              }
+                updatedGroupExp,
+                updatedAggExp,
+                CarbonReflectionUtils.getSubqueryAlias(
+                  sparkSession,
+                  Some(alias1),
+                  CarbonReflectionUtils.getSubqueryAlias(
+                    sparkSession,
+                    Some(alias2),
+                    newChild,
+                    None),
+                  None))
+              getAggregateQueryPlan(
+                updateAggPlan,
+                grExp,
+                aggExp,
+                carbonTable,
+                aggDataMapSchema,
+                agg)
             } else {
               agg
             }
@@ -442,29 +450,22 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   carbonTable,
                   agg)
               isPlanUpdated = true
-              val updateAggPlan = Aggregate(updatedGroupExp,
-                updatedAggExp,
-                CarbonReflectionUtils
-                  .getSubqueryAlias(sparkSession, Some(alias), newChild, None))
-              if(carbonTable.isStreamingTable) {
-                setSegmentsForStreaming(carbonTable, aggDataMapSchema)
-                // get new fact expression
-                val factExp = updateFactTablePlanForStreaming(agg)
-                // get new Aggregate node expression
-                val streamingNodeExp = getExpressionsForStreaming(aggExp)
-                // clear the expression as in case of streaming it is not required
-                updatedExpression.clear
-                // Add Aggregate node to aggregate data from fact and aggregate
+              val updateAggPlan =
                 Aggregate(
-                  grExp,
-                  streamingNodeExp.asInstanceOf[Seq[NamedExpression]],
-                  // add union node to get the result from both
-                  Union(
-                    factExp,
-                    updateAggPlan))
-              } else {
-                updateAggPlan
-              }
+                updatedGroupExp,
+                updatedAggExp,
+                CarbonReflectionUtils.getSubqueryAlias(
+                  sparkSession,
+                  Some(alias),
+                  newChild,
+                  None))
+              getAggregateQueryPlan(
+                updateAggPlan,
+                grExp,
+                aggExp,
+                carbonTable,
+                aggDataMapSchema,
+                agg)
             } else {
               agg
             }
@@ -517,30 +518,24 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   carbonTable,
                   agg)
               isPlanUpdated = true
-              val updateAggPlan = Aggregate(updatedGroupExp,
-                updatedAggExp,
-                Filter(updatedFilterExpression.get,
-                  CarbonReflectionUtils
-                    .getSubqueryAlias(sparkSession, Some(alias), newChild, None)))
-              if(carbonTable.isStreamingTable) {
-                setSegmentsForStreaming(carbonTable, aggDataMapSchema)
-                // get new fact expression
-                val factExp = updateFactTablePlanForStreaming(agg)
-                // get new Aggregate node expression
-                val streamingNodeExp = getExpressionsForStreaming(aggExp)
-                // clear the expression as in case of streaming it is not required
-                updatedExpression.clear
-                // Add Aggregate node to aggregate data from fact and aggregate
+              val updateAggPlan =
                 Aggregate(
-                  grExp,
-                  streamingNodeExp.asInstanceOf[Seq[NamedExpression]],
-                  // add union node to get the result from both
-                  Union(
-                    factExp,
-                    updateAggPlan))
-              } else {
-                updateAggPlan
-              }
+                updatedGroupExp,
+                updatedAggExp,
+                Filter(
+                  updatedFilterExpression.get,
+                  CarbonReflectionUtils.getSubqueryAlias(
+                    sparkSession,
+                    Some(alias),
+                    newChild,
+                    None)))
+              getAggregateQueryPlan(
+                updateAggPlan,
+                grExp,
+                aggExp,
+                carbonTable,
+                aggDataMapSchema,
+                agg)
             } else {
               agg
             }
@@ -594,34 +589,28 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   carbonTable,
                   agg)
               isPlanUpdated = true
-              val updateAggPlan = Aggregate(updatedGroupExp,
-                updatedAggExp,
-                Filter(updatedFilterExpression.get,
-                  CarbonReflectionUtils
-                    .getSubqueryAlias(sparkSession,
-                      Some(alias1),
-                      CarbonReflectionUtils
-                        .getSubqueryAlias(sparkSession, Some(alias2), newChild, None),
-                      None)))
-              if(carbonTable.isStreamingTable) {
-                setSegmentsForStreaming(carbonTable, aggDataMapSchema)
-                // get new fact expression
-                val factExp = updateFactTablePlanForStreaming(agg)
-                // get new Aggregate node expression
-                val streamingNodeExp = getExpressionsForStreaming(aggExp)
-                // clear the expression as in case of streaming it is not required
-                updatedExpression.clear
-                // Add Aggregate node to aggregate data from fact and aggregate
+              val updateAggPlan =
                 Aggregate(
-                  grExp,
-                  streamingNodeExp.asInstanceOf[Seq[NamedExpression]],
-                  // add union node to get the result from both
-                  Union(
-                    factExp,
-                    updateAggPlan))
-              } else {
-                updateAggPlan
-              }
+                  updatedGroupExp,
+                  updatedAggExp,
+                  Filter(
+                    updatedFilterExpression.get,
+                    CarbonReflectionUtils.getSubqueryAlias(
+                      sparkSession,
+                      Some(alias1),
+                      CarbonReflectionUtils.getSubqueryAlias(
+                        sparkSession,
+                        Some(alias2),
+                        newChild,
+                        None),
+                      None)))
+              getAggregateQueryPlan(
+                updateAggPlan,
+                grExp,
+                aggExp,
+                carbonTable,
+                aggDataMapSchema,
+                agg)
             } else {
               agg
             }
@@ -641,6 +630,50 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
   }
 
   /**
+   * Method to get the aggregate query plan
+   * @param aggPlan
+   * aggregate table query plan
+   * @param grExp
+   * fact group by expression
+   * @param aggExp
+   * fact aggregate expression
+   * @param carbonTable
+   * fact table
+   * @param aggregationDataMapSchema
+   * selected aggregation data map
+   * @param factAggPlan
+   * fact aggregate query plan
+   * @return updated plan
+   */
+  def getAggregateQueryPlan(aggPlan: LogicalPlan,
+      grExp: Seq[Expression],
+      aggExp: Seq[NamedExpression],
+      carbonTable: CarbonTable,
+      aggregationDataMapSchema: DataMapSchema,
+      factAggPlan: LogicalPlan): LogicalPlan = {
+    // to handle streaming table with pre aggregate
+    if (carbonTable.isStreamingTable) {
+      setSegmentsForStreaming(carbonTable, aggregationDataMapSchema)
+      // get new fact expression
+      val factExp = updateFactTablePlanForStreaming(factAggPlan)
+      // get new Aggregate node expression
+      val streamingNodeExp = getExpressionsForStreaming(aggExp)
+      // clear the expression as in case of streaming it is not required
+      updatedExpression.clear
+      // Add Aggregate node to aggregate data from fact and aggregate
+      Aggregate(
+        grExp,
+        streamingNodeExp.asInstanceOf[Seq[NamedExpression]],
+        // add union node to get the result from both
+        Union(
+          factExp,
+          aggPlan))
+    } else {
+      aggPlan
+    }
+  }
+
+  /**
    * Method to set the segments when query is fired on streaming table with pre aggregate
    * Adding a property streaming_seg so while removing from session params we can differentiate
    * it was set from CarbonPreAggregateRules
@@ -650,6 +683,16 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * child datamap schema
    */
   def setSegmentsForStreaming(parentTable: CarbonTable, dataMapSchema: DataMapSchema): Unit = {
+    val mainTableKey = parentTable.getDatabaseName + '.' + parentTable.getTableName
+    val factManager = new SegmentStatusManager(parentTable.getAbsoluteTableIdentifier)
+    CarbonSession
+      .threadSet(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING + mainTableKey, "true")
+    CarbonSession
+      .threadSet(
+        CarbonCommonConstants.CARBON_INPUT_SEGMENTS + mainTableKey,
+        factManager.getValidAndInvalidSegments.getValidSegments.asScala.mkString(","))
+    CarbonSession
+      .threadSet(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS + mainTableKey, "true")
     // below code is for aggregate table
     val identifier = TableIdentifier(
       dataMapSchema.getChildSchema.getTableName,
@@ -661,17 +704,14 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       .getAbsoluteTableIdentifier)
     val validSegments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala
       .mkString(",")
-    CarbonSession.threadSet(
-      CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-      carbonRelation.carbonTable.getDatabaseName + "." +
-      carbonRelation.carbonTable.getTableName,
-      validSegments)
-    CarbonSession.threadSet(
-      CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-      carbonRelation.carbonTable.getDatabaseName + "." +
-      carbonRelation.carbonTable.getTableName,
-      "false")
-    CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
+    val childTableKey = carbonRelation.carbonTable.getDatabaseName + '.' +
+                   carbonRelation.carbonTable.getTableName
+    CarbonSession
+      .threadSet(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING + childTableKey, "true")
+    CarbonSession
+      .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + childTableKey, validSegments)
+    CarbonSession
+      .threadSet(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS + childTableKey, "false")
   }
 
   /**
@@ -780,17 +820,17 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * @return seq of expression as in case of average we need to return two sum and count
    *
    */
-  def getAggFunctionForFactStreaming(aggExp: AggregateExpression): Seq[AggregateExpression] = {
+  def getAggFunctionForFactStreaming(aggExp: AggregateExpression): Seq[Expression] = {
     aggExp.aggregateFunction match {
       case Average(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
         val newExp = Seq(AggregateExpression(Sum(Cast(exp, changeDataType)),
           aggExp.mode,
           isDistinct = false),
-          AggregateExpression(Count(Cast(exp, changeDataType)), aggExp.mode, false))
+          Cast(AggregateExpression(Count(exp), aggExp.mode, false), DoubleType))
         newExp
       case Average(exp: Expression) =>
         val newExp = Seq(AggregateExpression(Sum(exp), aggExp.mode, false),
-          AggregateExpression(Count(exp), aggExp.mode, false))
+          Cast(AggregateExpression(Count(exp), aggExp.mode, false), DoubleType))
         newExp
       case _ =>
         val newExp = Seq(aggExp)
@@ -1392,7 +1432,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             DoubleType)),
             aggExp.mode,
             false),
-            AggregateExpression(Count(Cast(
+            AggregateExpression(Sum(Cast(
               attrs.last,
               DoubleType)),
               aggExp.mode,
@@ -1421,7 +1461,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             DoubleType)),
             aggExp.mode,
             false),
-            AggregateExpression(Count(Cast(
+            AggregateExpression(Sum(Cast(
               attrs.last,
               DoubleType)),
               aggExp.mode,
