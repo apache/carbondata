@@ -28,6 +28,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
 
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.streaming.CarbonSparkStreamingListener
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 

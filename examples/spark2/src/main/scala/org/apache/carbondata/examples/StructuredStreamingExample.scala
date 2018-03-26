@@ -25,6 +25,7 @@ import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.examples.util.ExampleUtils
 
 // scalastyle:off println
 object StructuredStreamingExample {

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.examples
+package org.apache.carbondata.examples.util
 
 import java.io.File
 
@@ -23,6 +23,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+
 
 // scalastyle:off println
 
@@ -56,8 +57,11 @@ object ExampleUtils {
       .master(masterUrl)
       .appName(appName)
       .config("spark.sql.warehouse.dir", warehouse)
+      .config("spark.driver.host", "localhost")
+      .config("spark.sql.crossJoin.enabled", "true")
       .getOrCreateCarbonSession(storeLocation, metastoredb)
-    spark.sparkContext.setLogLevel("WARN")
+
+    spark.sparkContext.setLogLevel("ERROR")
     spark
   }
 

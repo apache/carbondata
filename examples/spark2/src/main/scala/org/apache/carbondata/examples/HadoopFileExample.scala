@@ -17,8 +17,12 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.hadoop.conf.Configuration
+import java.io.File
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
+import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.CarbonProjection
 
@@ -27,19 +31,37 @@ object HadoopFileExample {
 
   def main(args: Array[String]): Unit = {
     val spark = ExampleUtils.createCarbonSession("HadoopFileExample")
-    ExampleUtils.writeSampleCarbonFile(spark, "carbon1")
+    val rootPath = new File(this.getClass.getResource("/").getPath
+                            + "../../../..").getCanonicalPath
+    val storeLocation: String = rootPath + "/examples/spark2/target/store/default"
+    exampleBody(spark, storeLocation)
+    spark.close()
+  }
+
+  def exampleBody(spark : SparkSession, storeLocation : String): Unit = {
+
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 1000)
+      .map(x => ("a", "b", x))
+      .toDF("c1", "c2", "c3")
+
+    df.write.format("carbondata")
+      .option("tableName", "Hadoopfile_table")
+      .option("compress", "true")
+      .mode(SaveMode.Overwrite).save()
 
     // read two columns
     val projection = new CarbonProjection
     projection.addColumn("c1")  // column c1
     projection.addColumn("c3")  // column c3
     val conf = new Configuration()
+
     CarbonInputFormat.setColumnProjection(conf, projection)
     CarbonInputFormat.setDatabaseName(conf, "default")
-    CarbonInputFormat.setTableName(conf, "carbon1")
+    CarbonInputFormat.setTableName(conf, "Hadoopfile_table")
 
-    val sc = spark.sparkContext
-    val input = sc.newAPIHadoopFile(s"${ExampleUtils.storeLocation}/default/carbon1",
+
+    val input = spark.sparkContext.newAPIHadoopFile(s"${storeLocation}/Hadoopfile_table",
       classOf[CarbonTableInputFormat[Array[Object]]],
       classOf[Void],
       classOf[Array[Object]],
@@ -48,7 +70,7 @@ object HadoopFileExample {
     result.foreach(x => println(x.mkString(", ")))
 
     // delete carbondata file
-    ExampleUtils.cleanSampleCarbonFile(spark, "carbon1")
+    ExampleUtils.cleanSampleCarbonFile(spark, "Hadoopfile_table")
   }
 }
 // scalastyle:on println
