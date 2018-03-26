@@ -118,7 +118,7 @@ object CarbonEnv {
 
   def getInstance(sparkSession: SparkSession): CarbonEnv = {
     if (sparkSession.isInstanceOf[CarbonSession]) {
-      sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].carbonEnv
+      sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].getCarbonEnv()
     } else {
       var carbonEnv: CarbonEnv = carbonEnvMap.get(sparkSession)
       if (carbonEnv == null) {
@@ -198,7 +198,11 @@ object CarbonEnv {
   def refreshRelationFromCache(identifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     var isRefreshed = false
     val carbonEnv = getInstance(sparkSession)
-    if (carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTable(identifier)) {
+    val table = carbonEnv.carbonMetastore.getTableFromMetadataCache(
+      identifier.database.getOrElse("default"), identifier.table)
+    if (table.isEmpty ||
+        (table.isDefined && carbonEnv.carbonMetastore
+          .checkSchemasModifiedTimeAndReloadTable(identifier))) {
       sparkSession.sessionState.catalog.refreshTable(identifier)
       DataMapStoreManager.getInstance().
         clearDataMaps(AbsoluteTableIdentifier.from(CarbonProperties.getStorePath,
