@@ -25,7 +25,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonEnv, CarbonSession, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, ICarbonSessionCatalog}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -131,7 +131,7 @@ object AlterTableUtil {
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      thriftTable: TableInfo)(sparkSession: SparkSession, catalog: CarbonSessionCatalog): Unit = {
+      thriftTable: TableInfo)(sparkSession: SparkSession, catalog: ICarbonSessionCatalog): Unit = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -310,7 +310,7 @@ object AlterTableUtil {
    */
   def modifyTableProperties(tableIdentifier: TableIdentifier, properties: Map[String, String],
       propKeys: Seq[String], set: Boolean)
-    (sparkSession: SparkSession, catalog: CarbonSessionCatalog): Unit = {
+    (sparkSession: SparkSession, catalog: ICarbonSessionCatalog): Unit = {
     val tableName = tableIdentifier.table
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     LOGGER.audit(s"Alter table properties request has been received for $dbName.$tableName")

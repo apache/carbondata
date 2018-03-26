@@ -147,12 +147,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
       List<Segment> validSegments = segments.getValidSegments();
       streamSegments = segments.getStreamSegments();
-      streamSegments = getFilteredSegment(job,streamSegments);
+      streamSegments = getFilteredSegment(job,streamSegments, true);
       if (validSegments.size() == 0) {
         return getSplitsOfStreaming(job, identifier, streamSegments);
       }
 
-      List<Segment> filteredSegmentToAccess = getFilteredSegment(job, segments.getValidSegments());
+      List<Segment> filteredSegmentToAccess = getFilteredSegment(job, segments.getValidSegments(),
+          true);
       if (filteredSegmentToAccess.size() == 0) {
         return getSplitsOfStreaming(job, identifier, streamSegments);
       } else {
@@ -175,7 +176,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     validAndInProgressSegments.addAll(segments.getListOfInProgressSegments());
     // get updated filtered list
     List<Segment> filteredSegmentToAccess =
-        getFilteredSegment(job, new ArrayList<>(validAndInProgressSegments));
+        getFilteredSegment(job, new ArrayList<>(validAndInProgressSegments), false);
     // Clean the updated segments from memory if the update happens on segments
     List<Segment> toBeCleanedSegments = new ArrayList<>();
     for (SegmentUpdateDetails segmentUpdateDetail : updateStatusManager
@@ -247,7 +248,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * Return segment list after filtering out valid segments and segments set by user by
    * `INPUT_SEGMENT_NUMBERS` in job configuration
    */
-  private List<Segment> getFilteredSegment(JobContext job, List<Segment> validSegments) {
+  private List<Segment> getFilteredSegment(JobContext job, List<Segment> validSegments,
+      boolean validationRequired) {
     Segment[] segmentsToAccess = getSegmentsToAccess(job);
     List<Segment> segmentToAccessSet =
         new ArrayList<>(new HashSet<>(Arrays.asList(segmentsToAccess)));
@@ -264,6 +266,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
             filteredSegmentToAccess.add(segmentToAccessSet.get(index));
           } else {
             filteredSegmentToAccess.add(validSegment);
+          }
+        }
+      }
+      if (filteredSegmentToAccess.size() != segmentToAccessSet.size() && !validationRequired) {
+        for (Segment segment : segmentToAccessSet) {
+          if (!filteredSegmentToAccess.contains(segment)) {
+            filteredSegmentToAccess.add(segment);
           }
         }
       }
@@ -536,7 +545,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();
 
     // TODO: currently only batch segment is supported, add support for streaming table
-    List<Segment> filteredSegment = getFilteredSegment(job, allSegments.getValidSegments());
+    List<Segment> filteredSegment = getFilteredSegment(job, allSegments.getValidSegments(), false);
 
     List<ExtendedBlocklet> blocklets = blockletMap.prune(filteredSegment, null, partitions);
     for (ExtendedBlocklet blocklet : blocklets) {

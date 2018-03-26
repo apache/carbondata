@@ -168,7 +168,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     val dbName = newTableIdentifier.getDatabaseName
     val tableName = newTableIdentifier.getTableName
     val schemaParts = CarbonUtil.convertToMultiGsonStrings(wrapperTableInfo, "=", "'", "")
-    val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
+    val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[ICarbonSessionCatalog]
       .getClient()
     hiveClient.runSqlHive(s"ALTER TABLE $dbName.$tableName SET SERDEPROPERTIES($schemaParts)")
 

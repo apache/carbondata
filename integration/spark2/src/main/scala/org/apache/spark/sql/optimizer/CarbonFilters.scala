@@ -29,7 +29,7 @@ import org.apache.spark.sql.CarbonContainsWith
 import org.apache.spark.sql.CarbonEndsWith
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.hive.CarbonSessionCatalog
+import org.apache.spark.sql.hive.ICarbonSessionCatalog
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
@@ -472,7 +472,7 @@ object CarbonFilters {
         } else {
           // Read partitions alternatively by firts get all partitions then filter them
           sparkSession.sessionState.catalog.
-            asInstanceOf[CarbonSessionCatalog].getPartitionsAlternate(
+            asInstanceOf[ICarbonSessionCatalog].getPartitionsAlternate(
             partitionFilters,
             sparkSession,
             identifier)
@@ -481,7 +481,7 @@ object CarbonFilters {
         case e: Exception =>
           // Get partition information alternatively.
           sparkSession.sessionState.catalog.
-            asInstanceOf[CarbonSessionCatalog].getPartitionsAlternate(
+            asInstanceOf[ICarbonSessionCatalog].getPartitionsAlternate(
             partitionFilters,
             sparkSession,
             identifier)

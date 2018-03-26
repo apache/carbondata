@@ -183,8 +183,10 @@ object CarbonReflectionUtils {
       sqlParser: Object,
       sparkSession: SparkSession): AstBuilder = {
     if (SPARK_VERSION.startsWith("2.1") || SPARK_VERSION.startsWith("2.2")) {
-      createObject(
-        "org.apache.spark.sql.hive.CarbonSqlAstBuilder",
+      val className = sparkSession.sparkContext.conf.get(
+        CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME,
+        "org.apache.spark.sql.hive.CarbonSqlAstBuilder")
+      createObject(className,
         conf,
         sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]
     } else {
