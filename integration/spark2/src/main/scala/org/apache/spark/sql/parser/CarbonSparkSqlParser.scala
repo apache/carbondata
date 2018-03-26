@@ -91,8 +91,11 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
   def getFileStorage(createFileFormat: CreateFileFormatContext): String = {
     Option(createFileFormat) match {
       case Some(value) =>
-        if (value.children.get(1).getText.equalsIgnoreCase("by")) {
+        val result = value.children.get(1).getText
+        if (result.equalsIgnoreCase("by")) {
           value.storageHandler().STRING().getSymbol.getText
+        } else if (result.equalsIgnoreCase("as") && value.children.size() > 1) {
+          value.children.get(2).getText
         } else {
           // The case of "STORED AS PARQUET/ORC"
           ""
