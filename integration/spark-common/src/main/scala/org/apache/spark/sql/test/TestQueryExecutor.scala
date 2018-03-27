@@ -124,7 +124,9 @@ object TestQueryExecutor {
     TestQueryExecutor.projectPath + "/processing/target",
     TestQueryExecutor.projectPath + "/integration/spark-common/target",
     TestQueryExecutor.projectPath + "/integration/spark2/target",
-    TestQueryExecutor.projectPath + "/integration/spark-common/target/jars")
+    TestQueryExecutor.projectPath + "/integration/spark-common/target/jars",
+    TestQueryExecutor.projectPath + "/streaming/target")
+
   lazy val jars = {
     val jarsLocal = new ArrayBuffer[String]()
     modules.foreach { path =>

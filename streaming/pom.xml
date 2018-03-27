@@ -22,8 +22,13 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark-common</artifactId>
+      <artifactId>carbondata-hadoop</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-sql_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
@@ -44,7 +49,7 @@
   </dependencies>
 
   <build>
-    <testSourceDirectory>src/test/scala</testSourceDirectory>
+    <testSourceDirectory>src/test/java</testSourceDirectory>
     <resources>
       <resource>
         <directory>src/resources</directory>

@@ -22,11 +22,8 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.execution.streaming.CarbonAppendableStreamSink
-import org.apache.spark.sql.execution.streaming.Sink
-import org.apache.spark.sql.SaveMode
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
 import org.apache.spark.streaming.Time
 
 import org.apache.carbondata.common.logging.LogServiceFactory

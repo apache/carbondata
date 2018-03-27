@@ -47,6 +47,7 @@ import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
+import org.apache.carbondata.streaming.parser.FieldConverter
 
 object CarbonScalaUtil {
 
@@ -121,55 +122,8 @@ object CarbonScalaUtil {
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
       level: Int = 1): String = {
-    if (value == null) {
-      serializationNullFormat
-    } else {
-      value match {
-        case s: String => if (s.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-          throw new Exception("Dataload failed, String length cannot exceed " +
-                              CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
-        } else {
-          s
-        }
-        case d: java.math.BigDecimal => d.toPlainString
-        case i: java.lang.Integer => i.toString
-        case d: java.lang.Double => d.toString
-        case t: java.sql.Timestamp => timeStampFormat format t
-        case d: java.sql.Date => dateFormat format d
-        case b: java.lang.Boolean => b.toString
-        case s: java.lang.Short => s.toString
-        case f: java.lang.Float => f.toString
-        case bs: Array[Byte] => new String(bs,
-          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))
-        case s: scala.collection.Seq[Any] =>
-          val delimiter = if (level == 1) {
-            delimiterLevel1
-          } else {
-            delimiterLevel2
-          }
-          val builder = new StringBuilder()
-          s.foreach { x =>
-            builder.append(getString(x, serializationNullFormat, delimiterLevel1,
-                delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
-          }
-          builder.substring(0, builder.length - delimiter.length())
-        case m: scala.collection.Map[Any, Any] =>
-          throw new Exception("Unsupported data type: Map")
-        case r: org.apache.spark.sql.Row =>
-          val delimiter = if (level == 1) {
-            delimiterLevel1
-          } else {
-            delimiterLevel2
-          }
-          val builder = new StringBuilder()
-          for (i <- 0 until r.length) {
-            builder.append(getString(r(i), serializationNullFormat, delimiterLevel1,
-                delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
-          }
-          builder.substring(0, builder.length - delimiter.length())
-        case other => other.toString
-      }
-    }
+    FieldConverter.objectToString(value, serializationNullFormat, delimiterLevel1,
+      delimiterLevel2, timeStampFormat, dateFormat, level)
   }
 
   /**

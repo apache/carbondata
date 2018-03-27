@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.util;
 
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+
 public interface DataTypeConverter {
 
   Object convertFromStringToDecimal(Object data);
@@ -31,4 +33,5 @@ public interface DataTypeConverter {
   Object wrapWithGenericArrayData(Object data);
   Object wrapWithGenericRow(Object[] fields);
 
+  Object[] convertCarbonSchemaToSparkSchema(CarbonColumn[] carbonColumns);
 }

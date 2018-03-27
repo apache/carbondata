@@ -43,12 +43,12 @@ import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
-import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.streaming.{CarbonStreamException, StreamHandoffRDD}
+import org.apache.carbondata.spark.rdd.StreamHandoffRDD
+import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamOutputFormat}
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 import org.apache.carbondata.streaming.segment.StreamSegment
 

@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
 public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
 
@@ -91,4 +92,8 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
     return fields;
   }
 
+  @Override
+  public Object[] convertCarbonSchemaToSparkSchema(CarbonColumn[] carbonColumns) {
+    throw new UnsupportedOperationException();
+  }
 }
