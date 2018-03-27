@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
 import org.apache.carbondata.spark.rdd.CarbonDropPartitionRDD
 
 /**
@@ -89,6 +90,12 @@ case class CarbonAlterTableDropHivePartitionCommand(
             partition.location)
         }
         carbonPartitionsTobeDropped = new util.ArrayList[PartitionSpec](carbonPartitions.asJava)
+        val operationContext = new OperationContext
+        val preAlterTableHivePartitionCommandEvent = PreAlterTableHivePartitionCommandEvent(
+          sparkSession,
+          table)
+        OperationListenerBus.getInstance()
+          .fireEvent(preAlterTableHivePartitionCommandEvent, operationContext)
         // Drop the partitions from hive.
         AlterTableDropPartitionCommand(
           tableName,
@@ -96,6 +103,11 @@ case class CarbonAlterTableDropHivePartitionCommand(
           ifExists,
           purge,
           retainData).run(sparkSession)
+        val postAlterTableHivePartitionCommandEvent = PostAlterTableHivePartitionCommandEvent(
+          sparkSession,
+          table)
+        OperationListenerBus.getInstance()
+          .fireEvent(postAlterTableHivePartitionCommandEvent, operationContext)
       } catch {
         case e: Exception =>
           if (!ifExists) {
