@@ -215,3 +215,19 @@ case class AlterTableCompactionAbortEvent(sparkSession: SparkSession,
 case class AlterTableCompactionExceptionEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     alterTableModel: AlterTableModel) extends Event with AlterTableCompactionEventInfo
+
+/**
+ * pre event for standard hive partition
+ * @param sparkSession
+ * @param carbonTable
+ */
+case class PreAlterTableHivePartitionCommandEvent(sparkSession: SparkSession,
+    carbonTable: CarbonTable) extends Event with AlterTableHivePartitionInfo
+
+/**
+ * post event for standard hive partition
+ * @param sparkSession
+ * @param carbonTable
+ */
+case class PostAlterTableHivePartitionCommandEvent(sparkSession: SparkSession,
+    carbonTable: CarbonTable) extends Event with AlterTableHivePartitionInfo
