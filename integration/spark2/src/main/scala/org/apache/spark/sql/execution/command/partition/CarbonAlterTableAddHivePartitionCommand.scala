@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
@@ -68,7 +69,18 @@ case class CarbonAlterTableAddHivePartitionCommand(
           currParts.exists(p => part.equals(p))
         }.asJava)
       }
+      val operationContext = new OperationContext
+      val preAlterTableHivePartitionCommandEvent = new PreAlterTableHivePartitionCommandEvent(
+        sparkSession,
+        table)
+      OperationListenerBus.getInstance()
+        .fireEvent(preAlterTableHivePartitionCommandEvent, operationContext)
       AlterTableAddPartitionCommand(tableName, partitionSpecsAndLocs, ifNotExists).run(sparkSession)
+      val postAlterTableHivePartitionCommandEvent = PostAlterTableHivePartitionCommandEvent(
+        sparkSession,
+        table)
+      OperationListenerBus.getInstance()
+        .fireEvent(postAlterTableHivePartitionCommandEvent, operationContext)
     }
     Seq.empty[Row]
   }
@@ -113,7 +125,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
           loadModel.getSegmentId + "_" + loadModel.getFactTimeStamp + CarbonTablePath.SEGMENT_EXT
         newMetaEntry.setSegmentFile(segmentFileName)
         val segmentsLoc = CarbonTablePath.getSegmentFilesLocation(table.getTablePath)
-        CarbonUtil.checkAndCreateFolder(segmentsLoc)
+        CarbonUtil.checkAndCreateFolderWithPermission(segmentsLoc)
         val segmentPath = segmentsLoc + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName
         SegmentFileStore.writeSegmentFile(segmentFile, segmentPath)
         CarbonLoaderUtil.populateNewLoadMetaEntry(

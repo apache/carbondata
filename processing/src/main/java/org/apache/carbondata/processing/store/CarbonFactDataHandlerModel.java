@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -307,7 +308,7 @@ public class CarbonFactDataHandlerModel {
       measureDataTypes[i++] = msr.getDataType();
     }
     carbonFactDataHandlerModel.setMeasureDataType(measureDataTypes);
-    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
+    CarbonUtil.checkAndCreateFolderWithPermission(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
     boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
@@ -332,9 +333,32 @@ public class CarbonFactDataHandlerModel {
    * @return data directory path
    */
   private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration) {
+    // configuration.getDataWritePath will not be null only in case of partition
     if (configuration.getDataWritePath() != null) {
-      CarbonUtil.checkAndCreateFolder(configuration.getDataWritePath());
-      return configuration.getDataWritePath();
+      String paths = configuration.getDataWritePath();
+      AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
+      String partPath = absoluteTableIdentifier.getTablePath();
+      String[] dirs = paths.split(partPath);
+      /* it will create folder one by one and apply the permissions
+       else creation of folder in one go will set the permission for last directory only
+       e.g. paths="/home/rahul/Documents/store/carbonTable1/emp_name=rahul/loc=india/dept=rd"
+            So, dirs={"","/emp_name=rahul/loc=india/dept=rd"}
+            if (dirs.length > 1) then partDirs ={"","emp_name=rahul","loc=india","dept=rd"}
+            forEach partDirs partpath(say "/home/rahul/Documents/store/carbonTable1") will
+            be keep appending with "emp_name=rahul","loc=india","dept=rd" sequentially
+      */
+      if (dirs.length > 1) {
+        String[] partDirs = dirs[1].split(CarbonCommonConstants.FILE_SEPARATOR);
+        for (String partDir : partDirs) {
+          if (!partDir.isEmpty()) {
+            partPath = partPath.concat(CarbonCommonConstants.FILE_SEPARATOR + partDir);
+            CarbonUtil.checkAndCreateFolderWithPermission(partPath);
+          }
+        }
+      } else {
+        CarbonUtil.checkAndCreateFolderWithPermission(paths);
+      }
+      return paths;
     }
     AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);

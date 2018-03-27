@@ -19,11 +19,11 @@ package org.apache.spark.sql.execution.command.partition
 
 import java.text.SimpleDateFormat
 import java.util
-import java.util.concurrent.{Executors, ExecutorService, Future}
+import java.util.concurrent.{ExecutorService, Executors, Future}
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.{CarbonEnv, Row, SQLContext, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.hive.CarbonRelation
@@ -42,6 +42,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.spark.partition.SplitPartitionCallable
@@ -153,12 +154,23 @@ case class CarbonAlterTableSplitPartitionCommand(
       carbonLoadModel.setTablePath(tablePath)
       val loadStartTime = CarbonUpdateUtil.readCurrentTime
       carbonLoadModel.setFactTimeStamp(loadStartTime)
+      val operationContext = new OperationContext
+      val preAlterTableHivePartitionCommandEvent = PreAlterTableHivePartitionCommandEvent(
+        sparkSession,
+        table)
+      OperationListenerBus.getInstance()
+        .fireEvent(preAlterTableHivePartitionCommandEvent, operationContext)
       alterTableSplitPartition(
         sparkSession.sqlContext,
         splitPartitionModel.partitionId.toInt.toString,
         carbonLoadModel,
         oldPartitionIds.asScala.toList
       )
+      val postAlterTableHivePartitionCommandEvent = PostAlterTableHivePartitionCommandEvent(
+        sparkSession,
+        table)
+      OperationListenerBus.getInstance()
+        .fireEvent(postAlterTableHivePartitionCommandEvent, operationContext)
       success = true
     } catch {
       case e: Exception =>

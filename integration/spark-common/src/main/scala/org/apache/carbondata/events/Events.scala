@@ -100,9 +100,17 @@ trait AlterTableCompactionStatusUpdateEventInfo {
 }
 
 /**
- * event for alter_table_compaction
+ * event info for alter_table_compaction
  */
 trait AlterTableCompactionEventInfo {
+  val sparkSession: SparkSession
+  val carbonTable: CarbonTable
+}
+
+/**
+ * event for alter table standard hive partition
+ */
+trait AlterTableHivePartitionInfo {
   val sparkSession: SparkSession
   val carbonTable: CarbonTable
 }
