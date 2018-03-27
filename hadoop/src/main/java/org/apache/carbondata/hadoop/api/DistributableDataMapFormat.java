@@ -29,7 +29,7 @@ import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 
@@ -48,7 +48,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private static final String FILTER_EXP = "mapreduce.input.distributed.datamap.filter";
 
-  private AbsoluteTableIdentifier identifier;
+  private CarbonTable table;
 
   private DataMapExprWrapper dataMapExprWrapper;
 
@@ -58,10 +58,10 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private List<PartitionSpec> partitions;
 
-  DistributableDataMapFormat(AbsoluteTableIdentifier identifier,
+  DistributableDataMapFormat(CarbonTable table,
       DataMapExprWrapper dataMapExprWrapper, List<Segment> validSegments,
       List<PartitionSpec> partitions, String className) {
-    this.identifier = identifier;
+    this.table = table;
     this.dataMapExprWrapper = dataMapExprWrapper;
     this.validSegments = validSegments;
     this.className = className;
@@ -106,7 +106,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
           throws IOException, InterruptedException {
         DataMapDistributableWrapper distributable = (DataMapDistributableWrapper) inputSplit;
         TableDataMap dataMap = DataMapStoreManager.getInstance()
-            .getDataMap(identifier, distributable.getDistributable().getDataMapSchema());
+            .getDataMap(table, distributable.getDistributable().getDataMapSchema());
         List<ExtendedBlocklet> blocklets = dataMap.prune(
             distributable.getDistributable(),
             dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);

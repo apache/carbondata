@@ -210,9 +210,7 @@ case class CarbonAlterTableDropPartitionCommand(
       for (thread <- threadArray) {
         thread.join()
       }
-      val identifier = AbsoluteTableIdentifier.from(carbonLoadModel.getTablePath,
-        carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-      val refresher = DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
+      val refresher = DataMapStoreManager.getInstance().getTableSegmentRefresher(carbonTable)
       refresher.refreshSegments(validSegments.map(_.getSegmentNo).asJava)
     } catch {
       case e: Exception =>

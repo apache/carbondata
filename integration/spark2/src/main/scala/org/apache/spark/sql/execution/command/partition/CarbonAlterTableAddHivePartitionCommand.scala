@@ -110,7 +110,9 @@ case class CarbonAlterTableAddHivePartitionCommand(
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, false)
         val newMetaEntry = loadModel.getCurrentLoadMetadataDetail
         val segmentFileName =
-          loadModel.getSegmentId + "_" + loadModel.getFactTimeStamp + CarbonTablePath.SEGMENT_EXT
+          SegmentFileStore.genSegmentFileName(
+            loadModel.getSegmentId, String.valueOf(loadModel.getFactTimeStamp)) +
+          CarbonTablePath.SEGMENT_EXT
         newMetaEntry.setSegmentFile(segmentFileName)
         val segmentsLoc = CarbonTablePath.getSegmentFilesLocation(table.getTablePath)
         CarbonUtil.checkAndCreateFolder(segmentsLoc)

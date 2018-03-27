@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -32,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -42,6 +45,8 @@ import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.locks.CarbonLockUtil;
+import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -60,6 +65,9 @@ import org.apache.hadoop.fs.Path;
  * Provide read and write support for segment file associated with each segment
  */
 public class SegmentFileStore {
+
+  private static LogService LOGGER = LogServiceFactory.getLogService(
+      SegmentFileStore.class.getCanonicalName());
 
   private SegmentFile segmentFile;
 
@@ -104,7 +112,6 @@ public class SegmentFileStore {
           isRelative = true;
         }
         SegmentFile segmentFile = new SegmentFile();
-        Map<String, FolderDetails> locationMap = new HashMap<>();
         FolderDetails folderDetails = new FolderDetails();
         folderDetails.setRelative(isRelative);
         folderDetails.setPartitions(partionNames);
@@ -112,13 +119,62 @@ public class SegmentFileStore {
         for (CarbonFile file : carbonFiles) {
           folderDetails.getFiles().add(file.getName());
         }
-        locationMap.put(location, folderDetails);
-        segmentFile.setLocationMap(locationMap);
+        segmentFile.addPath(location, folderDetails);
         String path = writePath + "/" + taskNo + CarbonTablePath.SEGMENT_EXT;
         // write segment info to new file.
         writeSegmentFile(segmentFile, path);
       }
     }
+  }
+
+  /**
+   * Generate Segment file name
+   * @param segmentId segment id
+   * @param UUID unique string, typically caller can use the loading start
+   *             timestamp in CarbonLoadModel
+   * @return
+   */
+  public static String genSegmentFileName(String segmentId, String UUID) {
+    return segmentId + "_" + UUID;
+  }
+
+  /**
+   * Write segment file to the metadata folder of the table
+   * @param tablePath table path
+   * @param segmentId segment id
+   * @param UUID a UUID string used to construct the segment file name
+   * @return segment file name
+   */
+  public static String writeSegmentFile(String tablePath, String segmentId, String UUID)
+      throws IOException {
+    String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
+    CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
+    CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT);
+      }
+    });
+    if (indexFiles != null && indexFiles.length > 0) {
+      SegmentFile segmentFile = new SegmentFile();
+      FolderDetails folderDetails = new FolderDetails();
+      folderDetails.setRelative(true);
+      folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
+      for (CarbonFile file : indexFiles) {
+        folderDetails.getFiles().add(file.getName());
+      }
+      String segmentRelativePath = segmentPath.substring(tablePath.length(), segmentPath.length());
+      segmentFile.addPath(segmentRelativePath, folderDetails);
+      String segmentFileFolder =  CarbonTablePath.getSegmentFilesLocation(tablePath);
+      CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
+      if (!carbonFile.exists()) {
+        carbonFile.mkdirs(segmentFileFolder, FileFactory.getFileType(segmentFileFolder));
+      }
+      String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
+      // write segment info to new file.
+      writeSegmentFile(segmentFile, segmentFileFolder + File.separator + segmentFileName);
+      return segmentFileName;
+    }
+    return null;
   }
 
   /**
@@ -177,6 +233,60 @@ public class SegmentFileStore {
     return null;
   }
 
+  /**
+   * This API will update the segmentFile of a passed segment.
+   *
+   * @return boolean which determines whether status update is done or not.
+   * @throws IOException
+   */
+  public static boolean updateSegmentFile(String tablePath, String segmentId, String segmentFile)
+      throws IOException {
+    boolean status = false;
+    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
+    String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        AbsoluteTableIdentifier.from(tablePath, null, null);
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
+    int retryCount = CarbonLockUtil
+        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
+            CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
+    int maxTimeout = CarbonLockUtil
+        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+            CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
+    try {
+      if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
+        LOGGER.info("Acquired lock for tablepath" + tablePath + " for table status updation");
+        LoadMetadataDetails[] listOfLoadFolderDetailsArray =
+            SegmentStatusManager.readLoadMetadata(metadataPath);
+
+        for (LoadMetadataDetails detail : listOfLoadFolderDetailsArray) {
+          // if the segments is in the list of marked for delete then update the status.
+          if (segmentId.equals(detail.getLoadName())) {
+            detail.setSegmentFile(segmentFile);
+            break;
+          }
+        }
+
+        SegmentStatusManager
+            .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
+        status = true;
+      } else {
+        LOGGER.error(
+            "Not able to acquire the lock for Table status updation for table path " + tablePath);
+      }
+      ;
+    } finally {
+      if (carbonLock.unlock()) {
+        LOGGER.info("Table unlocked successfully after table status updation" + tablePath);
+      } else {
+        LOGGER.error(
+            "Unable to unlock Table lock for table" + tablePath + " during table status updation");
+      }
+    }
+    return status;
+  }
+
   private static CarbonFile[] getSegmentFiles(String segmentPath) {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     if (carbonFile.exists()) {
@@ -213,7 +323,6 @@ public class SegmentFileStore {
           isRelative = true;
         }
         SegmentFile localSegmentFile = new SegmentFile();
-        Map<String, FolderDetails> locationMap = new HashMap<>();
         FolderDetails folderDetails = new FolderDetails();
         folderDetails.setRelative(isRelative);
         folderDetails.setPartitions(spec.getPartitions());
@@ -228,8 +337,7 @@ public class SegmentFileStore {
             folderDetails.getFiles().add(file.getName());
           }
         }
-        locationMap.put(location, folderDetails);
-        localSegmentFile.setLocationMap(locationMap);
+        localSegmentFile.addPath(location, folderDetails);
         if (segmentFile == null) {
           segmentFile = localSegmentFile;
         } else {
@@ -440,7 +548,8 @@ public class SegmentFileStore {
     if (updateSegment) {
       String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath);
       writePath =
-          writePath + CarbonCommonConstants.FILE_SEPARATOR + segment.getSegmentNo() + "_" + uniqueId
+          writePath + CarbonCommonConstants.FILE_SEPARATOR +
+              SegmentFileStore.genSegmentFileName(segment.getSegmentNo(),  String.valueOf(uniqueId))
               + CarbonTablePath.SEGMENT_EXT;
       writeSegmentFile(segmentFile, writePath);
     }
@@ -564,9 +673,17 @@ public class SegmentFileStore {
       Map<String, List<String>> locationMap) {
     for (Map.Entry<String, List<String>> entry : locationMap.entrySet()) {
       Path location = new Path(entry.getKey()).getParent();
-      boolean exists = pathExistsInPartitionSpec(partitionSpecs, location);
-      if (!exists) {
-        FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location.toString()));
+      if (partitionSpecs != null) {
+        boolean exists = pathExistsInPartitionSpec(partitionSpecs, location);
+        if (!exists) {
+          FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location.toString()));
+        }
+      } else {
+        // delete the segment folder if it is empty
+        CarbonFile file = FileFactory.getCarbonFile(location.toString());
+        if (file.listFiles().length == 0) {
+          file.delete();
+        }
       }
     }
   }
@@ -698,9 +815,16 @@ public class SegmentFileStore {
 
     private static final long serialVersionUID = 3582245668420401089L;
 
+    /**
+     * mapping of index file parent folder to the index file folder info
+     */
     private Map<String, FolderDetails> locationMap;
 
-    public SegmentFile merge(SegmentFile mapper) {
+    SegmentFile() {
+      locationMap = new HashMap<>();
+    }
+
+    SegmentFile merge(SegmentFile mapper) {
       if (this == mapper) {
         return this;
       }
@@ -724,9 +848,13 @@ public class SegmentFileStore {
       return locationMap;
     }
 
-    public void setLocationMap(Map<String, FolderDetails> locationMap) {
-      this.locationMap = locationMap;
+    /**
+     * Add index file parent folder and the index file folder info
+     */
+    void addPath(String path, FolderDetails details) {
+      locationMap.put(path, details);
     }
+
   }
 
   /**
@@ -736,14 +864,32 @@ public class SegmentFileStore {
 
     private static final long serialVersionUID = 501021868886928553L;
 
+    /**
+     * Based on isRelative variable:
+     * 1. if it is relative, it is relative path to the table path, for all index files
+     * 2. if it is not relative, it is the full path of all index files
+     */
     private Set<String> files = new HashSet<>();
 
+    /**
+     * all partition names
+     */
     private List<String> partitions = new ArrayList<>();
 
+    /**
+     * status for the partition, success or mark for delete
+     */
     private String status;
 
+    /**
+     * file name for merge index file in this folder
+     */
     private String mergeFileName;
 
+    /**
+     * true if it is relative path, for example, if user give partition location when
+     * adding the partition, it will be false
+     */
     private boolean isRelative;
 
     public FolderDetails merge(FolderDetails folderDetails) {

@@ -51,14 +51,14 @@ case class CarbonCountStar(
     val rowCount = CarbonUpdateUtil.getRowCount(
       tableInputFormat.getBlockRowCount(
         job,
-        absoluteTableIdentifier,
+        carbonTable,
         CarbonFilters.getPartitions(
           Seq.empty,
           sparkSession,
           TableIdentifier(
             carbonTable.getTableName,
             Some(carbonTable.getDatabaseName))).map(_.asJava).orNull),
-      absoluteTableIdentifier)
+      carbonTable)
     val value = new GenericInternalRow(Seq(Long.box(rowCount)).toArray.asInstanceOf[Array[Any]])
     val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
     val row = if (outUnsafeRows) unsafeProjection(value) else value
