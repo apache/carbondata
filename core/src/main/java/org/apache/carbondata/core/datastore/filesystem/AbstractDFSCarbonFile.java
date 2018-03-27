@@ -489,6 +489,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
       fs.create(path, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL), false,
           fs.getConf().getInt("io.file.buffer.size", 4096), fs.getDefaultReplication(path),
           fs.getDefaultBlockSize(path), null).close();
+      // haddop masks the permission accoding to configured permission, so need to set permission
+      // forcefully
+      fs.setPermission(path, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
       return true;
     }
   }

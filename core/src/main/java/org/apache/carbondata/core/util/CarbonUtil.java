@@ -99,6 +99,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsAction;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.thrift.TBase;
@@ -844,6 +846,28 @@ public final class CarbonUtil {
     }
     return created;
   }
+
+  /**
+   *
+   * This method will check and create the given path with 777 permission
+   */
+  public static boolean checkAndCreateFolderWithPermission(String path) {
+    boolean created = false;
+    try {
+      FileFactory.FileType fileType = FileFactory.getFileType(path);
+      if (FileFactory.isFileExist(path, fileType)) {
+        created = true;
+      } else {
+        FileFactory.createDirectoryAndSetPermission(path,
+            new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
+        created = true;
+      }
+    } catch (IOException e) {
+      LOGGER.error(e);
+    }
+    return created;
+  }
+
 
   /**
    * This method will return the size of a given file
