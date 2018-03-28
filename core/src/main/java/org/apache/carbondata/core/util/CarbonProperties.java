@@ -874,7 +874,7 @@ public final class CarbonProperties {
               CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER));
       // checking min and max . 0  , 100 is min & max.
       if (numberOfSegmentsToBePreserved < 0 || numberOfSegmentsToBePreserved > 100) {
-        LOGGER.error("The specified value for property "
+        LOGGER.warn("The specified value for property "
             + CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER + " is incorrect."
             + " Correct value should be in range of 0 -100. Taking the default value.");
         numberOfSegmentsToBePreserved =
@@ -930,7 +930,7 @@ public final class CarbonProperties {
         }
         compactionSize[i++] = size;
       } catch (NumberFormatException e) {
-        LOGGER.error(
+        LOGGER.warn(
             "Given value for property" + CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD
                 + " is not proper. Taking the default value "
                 + CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
@@ -953,7 +953,7 @@ public final class CarbonProperties {
               CarbonCommonConstants.NUM_CORES_LOADING,
               CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
     } catch (NumberFormatException exc) {
-      LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
+      LOGGER.warn("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
           + " is wrong. Falling back to the default value "
           + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
@@ -974,18 +974,18 @@ public final class CarbonProperties {
     } catch (Exception e) {
       inMemoryChunkSizeInMB =
           Integer.parseInt(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT);
-      LOGGER.error("Problem in parsing the sort memory chunk size, setting with default value"
+      LOGGER.warn("Problem in parsing the sort memory chunk size, setting with default value"
           + inMemoryChunkSizeInMB);
     }
     if (inMemoryChunkSizeInMB > 1024) {
       inMemoryChunkSizeInMB = 1024;
-      LOGGER.error(
+      LOGGER.warn(
           "It is not recommended to increase the sort memory chunk size more than 1024MB, "
               + "so setting the value to "
               + inMemoryChunkSizeInMB);
     } else if (inMemoryChunkSizeInMB < 1) {
       inMemoryChunkSizeInMB = 1;
-      LOGGER.error(
+      LOGGER.warn(
           "It is not recommended to decrease the sort memory chunk size less than 1MB, "
               + "so setting the value to "
               + inMemoryChunkSizeInMB);
@@ -1071,7 +1071,7 @@ public final class CarbonProperties {
               CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION));
 
       if (numberOfDeltaFilesThreshold < 0 || numberOfDeltaFilesThreshold > 10000) {
-        LOGGER.error("The specified value for property "
+        LOGGER.warn("The specified value for property "
             + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
             + "is incorrect."
             + " Correct value should be in range of 0 -10000. Taking the default value.");
@@ -1079,7 +1079,7 @@ public final class CarbonProperties {
             CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
       }
     } catch (NumberFormatException e) {
-      LOGGER.error("The specified value for property "
+      LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION + "is incorrect."
           + " Correct value should be in range of 0 -10000. Taking the default value.");
       numberOfDeltaFilesThreshold = Integer
@@ -1101,7 +1101,7 @@ public final class CarbonProperties {
               CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION));
 
       if (numberOfDeltaFilesThreshold < 0 || numberOfDeltaFilesThreshold > 10000) {
-        LOGGER.error("The specified value for property "
+        LOGGER.warn("The specified value for property "
             + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
             + "is incorrect."
             + " Correct value should be in range of 0 -10000. Taking the default value.");
@@ -1109,7 +1109,7 @@ public final class CarbonProperties {
             CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
       }
     } catch (NumberFormatException e) {
-      LOGGER.error("The specified value for property "
+      LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION + "is incorrect."
           + " Correct value should be in range of 0 -10000. Taking the default value.");
       numberOfDeltaFilesThreshold = Integer
@@ -1127,7 +1127,7 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_USE_MULTI_TEMP_DIR_DEFAULT);
     boolean validateBoolean = CarbonUtil.validateBoolean(usingMultiDirStr);
     if (!validateBoolean) {
-      LOGGER.error("The carbon.use.multiple.temp.dir configuration value is invalid."
+      LOGGER.warn("The carbon.use.multiple.temp.dir configuration value is invalid."
           + "Configured value: \"" + usingMultiDirStr + "\"."
           + "Data Load will not use multiple temp directories.");
       usingMultiDirStr = CarbonCommonConstants.CARBON_USE_MULTI_TEMP_DIR_DEFAULT;
@@ -1144,7 +1144,7 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL_DEFAULT);
     boolean validateStorageLevel = CarbonUtil.isValidStorageLevel(storageLevel);
     if (!validateStorageLevel) {
-      LOGGER.error("The " + CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL
+      LOGGER.warn("The " + CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL
           + " configuration value is invalid. It will use default storage level("
           + CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL_DEFAULT
           + ") to persist rdd.");
@@ -1173,7 +1173,7 @@ public final class CarbonProperties {
     }
 
     if (isInvalidValue) {
-      LOGGER.error("The specified value for property "
+      LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM
           + " is incorrect. Correct value should be in range of 0 - 1000."
           + " Taking the default value: "
@@ -1194,7 +1194,7 @@ public final class CarbonProperties {
             CarbonCommonConstants.defaultValueIsPersistEnabled);
     boolean validatePersistEnabled = CarbonUtil.validateBoolean(isPersistEnabled);
     if (!validatePersistEnabled) {
-      LOGGER.error("The " + CarbonCommonConstants.isPersistEnabled
+      LOGGER.warn("The " + CarbonCommonConstants.isPersistEnabled
           + " configuration value is invalid. It will use default value("
           + CarbonCommonConstants.defaultValueIsPersistEnabled
           + ").");
@@ -1212,7 +1212,7 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL_DEFAULT);
     boolean validateStorageLevel = CarbonUtil.isValidStorageLevel(storageLevel);
     if (!validateStorageLevel) {
-      LOGGER.error("The " + CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL
+      LOGGER.warn("The " + CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL
           + " configuration value is invalid. It will use default storage level("
           + CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL_DEFAULT
           + ") to persist dataset.");
@@ -1232,7 +1232,7 @@ public final class CarbonProperties {
         || "BZIP2".equals(compressor) || "LZ4".equals(compressor)) {
       return compressor;
     } else {
-      LOGGER.error("The ".concat(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR)
+      LOGGER.warn("The ".concat(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR)
           .concat(" configuration value is invalid. Only snappy,gzip,bip2,lz4 and")
           .concat(" empty are allowed. It will not compress the sort temp files by default"));
       return CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT;
@@ -1279,14 +1279,14 @@ public final class CarbonProperties {
       sortMemorySizeInMB = Integer.parseInt(
           carbonProperties.getProperty(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB));
     } catch (NumberFormatException e) {
-      LOGGER.error(
+      LOGGER.warn(
           "The specified value for property " + CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB
               + "is Invalid." + " Taking the default value."
               + CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
       sortMemorySizeInMB = sortMemorySizeInMBDefault;
     }
     if (sortMemorySizeInMB < sortMemorySizeInMBDefault) {
-      LOGGER.error(
+      LOGGER.warn(
           "The specified value for property " + CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB
               + "is less than default value." + ". Taking the default value."
               + CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
@@ -1324,14 +1324,14 @@ public final class CarbonProperties {
       unsafeWorkingMemory = Integer.parseInt(
           carbonProperties.getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB));
     } catch (NumberFormatException e) {
-      LOGGER.error("The specified value for property "
+      LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT + "is invalid."
           + " Taking the default value."
           + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
       unsafeWorkingMemory = unsafeWorkingMemoryDefault;
     }
     if (unsafeWorkingMemory < unsafeWorkingMemoryDefault) {
-      LOGGER.error("The specified value for property "
+      LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT
           + "is less than the default value." + ". Taking the default value."
           + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
@@ -1349,14 +1349,14 @@ public final class CarbonProperties {
       unsafeSortStorageMemory = Integer.parseInt(carbonProperties
           .getProperty(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB));
     } catch (NumberFormatException e) {
-      LOGGER.error("The specified value for property "
+      LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB + "is invalid."
           + " Taking the default value."
           + CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB_DEFAULT);
       unsafeSortStorageMemory = unsafeSortStorageMemoryDefault;
     }
     if (unsafeSortStorageMemory < unsafeSortStorageMemoryDefault) {
-      LOGGER.error("The specified value for property "
+      LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB
           + "is less than the default value." + " Taking the default value."
           + CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB_DEFAULT);
@@ -1397,7 +1397,7 @@ public final class CarbonProperties {
           .getProperty(CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES,
               CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT));
     } catch (NumberFormatException exc) {
-      LOGGER.error(
+      LOGGER.warn(
           "The heap memory pooling threshold bytes is invalid. Using the default value "
           + CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
       thresholdSize = Integer.parseInt(
@@ -1418,7 +1418,7 @@ public final class CarbonProperties {
               CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT));
       preserveSeconds = preserveHours * 3600 * 1000L;
     } catch (NumberFormatException exc) {
-      LOGGER.error(
+      LOGGER.warn(
           "The value of '" + CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS
           + "' is invalid. Using the default value "
           + CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT);
@@ -1438,7 +1438,7 @@ public final class CarbonProperties {
           .getProperty(CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT,
               CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT));
     } catch (NumberFormatException exc) {
-      LOGGER.error(
+      LOGGER.warn(
           "The value of '" + CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT
           + "' is invalid. Using the default value "
           + CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT);

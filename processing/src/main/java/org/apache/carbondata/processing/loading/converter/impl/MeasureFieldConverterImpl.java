@@ -95,8 +95,9 @@ public class MeasureFieldConverterImpl implements FieldConverter {
         }
         row.update(output, index);
       } catch (NumberFormatException e) {
-        LOGGER.warn(
-            "Cant not convert value to Numeric type value. Value considered as null.");
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Can not convert value to Numeric type value. Value considered as null.");
+        }
         logHolder.setReason(
             CarbonDataProcessorUtil.prepareFailureReason(measure.getColName(), dataType));
         output = null;
