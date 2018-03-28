@@ -178,6 +178,17 @@ class CarbonIndexFileMergeTestCase
     checkAnswer(sql("""Select count(*) from nonindexmerge"""), rows)
   }
 
+  test("Query should not fail after iud operation on a table having merge indexes") {
+    sql("drop table if exists mitable")
+    sql("create table mitable(id int, issue date) stored by 'carbondata'")
+    sql("insert into table mitable select '1','2000-02-01'")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default", "mitable")
+    new CarbonIndexFileMergeWriter()
+      .mergeCarbonIndexFilesOfSegment("0", table.getTablePath, false)
+    sql("update mitable set(id)=(2) where issue = '2000-02-01'").show()
+    sql("clean files for table mitable")
+    sql("select * from mitable").show()
+  }
   private def getIndexFileCount(tableName: String, segment: String): Int = {
     val table = CarbonMetadata.getInstance().getCarbonTable(tableName)
     val path = CarbonTablePath
