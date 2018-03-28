@@ -135,6 +135,26 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
   }
 
+  test("data loading for partition table for five partition column") {
+    sql(
+      """
+        | CREATE TABLE partitionfive (empno int, doj Timestamp,
+        |  workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int)
+        | PARTITIONED BY (utilization int,salary int,workgroupcategory int, empname String,
+        | designation String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionfive OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    validateDataFiles("default_partitionfive", "0", 10)
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionfive order by empno"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionfive where empno>15 order by empno "),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where empno>15 order by empno"))
+  }
 
   test("multiple data loading for partition table for three partition column") {
     sql(
@@ -519,6 +539,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists partitionone")
     sql("drop table if exists partitiontwo")
     sql("drop table if exists partitionthree")
+    sql("drop table if exists partitionfive")
     sql("drop table if exists partitionmultiplethree")
     sql("drop table if exists insertpartitionthree")
     sql("drop table if exists staticpartitionone")
