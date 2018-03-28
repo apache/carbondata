@@ -29,121 +29,161 @@ import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, NoSuchDataMapException}
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
-import org.apache.carbondata.datamap.{DataMapManager, DataMapProvider}
+import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.events._
 
 /**
  * Drops the datamap and any related tables associated with the datamap
  * @param dataMapName
  * @param ifExistsSet
- * @param databaseNameOp
- * @param tableName
+ * @param table
  */
 case class CarbonDropDataMapCommand(
     dataMapName: String,
     ifExistsSet: Boolean,
-    databaseNameOp: Option[String],
-    tableName: String,
+    table: Option[TableIdentifier],
     forceDrop: Boolean = false)
   extends AtomicRunnableCommand {
 
   private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   private var dataMapProvider: DataMapProvider = _
-  private var mainTable: CarbonTable = _
-  private var dataMapSchema: DataMapSchema = _
+  var mainTable: CarbonTable = _
+  var dataMapSchema: DataMapSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
-    val locksToBeAcquired = List(LockUsage.METADATA_LOCK)
-    val carbonEnv = CarbonEnv.getInstance(sparkSession)
-    val catalog = carbonEnv.carbonMetastore
-    val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName)(sparkSession)
-    val tableIdentifier =
-      AbsoluteTableIdentifier.from(tablePath, dbName.toLowerCase, tableName.toLowerCase)
-    catalog.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
-    val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
-    try {
-      locksToBeAcquired foreach {
-        lock => carbonLocks += CarbonLockUtil.getLockObject(tableIdentifier, lock)
+    if (table.isDefined) {
+      val databaseNameOp = table.get.database
+      val tableName = table.get.table
+      val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
+      val locksToBeAcquired = List(LockUsage.METADATA_LOCK)
+      val carbonEnv = CarbonEnv.getInstance(sparkSession)
+      val catalog = carbonEnv.carbonMetastore
+      val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName)(sparkSession)
+      val tableIdentifier =
+        AbsoluteTableIdentifier.from(tablePath, dbName.toLowerCase, tableName.toLowerCase)
+      catalog.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
+      if (mainTable == null) {
+        mainTable = try {
+          CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+        } catch {
+          case ex: NoSuchTableException =>
+            throwMetadataException(dbName, tableName,
+              s"Dropping datamap $dataMapName failed: ${ ex.getMessage }")
+            null
+        }
       }
-      LOGGER.audit(s"Deleting datamap [$dataMapName] under table [$tableName]")
-      val carbonTable: Option[CarbonTable] = try {
-        Some(CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession))
-      } catch {
-        case ex: NoSuchTableException =>
-          throw new MetadataProcessException(s"Dropping datamap $dataMapName failed", ex)
+      if (forceDrop && mainTable != null && dataMapSchema != null) {
+        if (dataMapSchema != null) {
+          dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema, sparkSession)
+        }
+        // TODO do a check for existance before dropping
+        dataMapProvider.freeMeta(mainTable, dataMapSchema)
+        return Seq.empty
       }
-      // If datamap to be dropped in parent table then drop the datamap from metastore and remove
-      // entry from parent table.
-      // If force drop is true then remove the datamap from hivemetastore. No need to remove from
-      // parent as the first condition would have taken care of it.
-      if (carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList.size() > 0) {
-        mainTable = carbonTable.get
-        val dataMapSchemaOp = mainTable.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
-          find(_._1.getDataMapName.equalsIgnoreCase(dataMapName))
-        if (dataMapSchemaOp.isDefined) {
-          dataMapSchema = dataMapSchemaOp.get._1
-          val operationContext = new OperationContext
-          val dropDataMapPreEvent =
-            DropDataMapPreEvent(
-              Some(dataMapSchema),
-              ifExistsSet,
-              sparkSession)
-          OperationListenerBus.getInstance.fireEvent(dropDataMapPreEvent, operationContext)
-          mainTable.getTableInfo.getDataMapSchemaList.remove(dataMapSchemaOp.get._2)
-          val schemaConverter = new ThriftWrapperSchemaConverterImpl
-          PreAggregateUtil.updateSchemaInfo(
-            mainTable,
-            schemaConverter.fromWrapperToExternalTableInfo(
-              mainTable.getTableInfo,
-              dbName,
-              tableName))(sparkSession)
-          dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema)
-          dataMapProvider.freeMeta(mainTable, dataMapSchema, sparkSession)
+      val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
+      try {
+        locksToBeAcquired foreach {
+          lock => carbonLocks += CarbonLockUtil.getLockObject(tableIdentifier, lock)
+        }
+        LOGGER.audit(s"Deleting datamap [$dataMapName] under table [$tableName]")
+        // If datamap to be dropped in parent table then drop the datamap from metastore and remove
+        // entry from parent table.
+        // If force drop is true then remove the datamap from hivemetastore. No need to remove from
+        // parent as the first condition would have taken care of it.
+        if (mainTable != null && mainTable.getTableInfo.getDataMapSchemaList.size() > 0) {
+          val dataMapSchemaOp = mainTable.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
+            find(_._1.getDataMapName.equalsIgnoreCase(dataMapName))
+          if (dataMapSchemaOp.isDefined) {
+            dataMapSchema = dataMapSchemaOp.get._1
+            val operationContext = new OperationContext
+            val dropDataMapPreEvent =
+              DropDataMapPreEvent(
+                Some(dataMapSchema),
+                ifExistsSet,
+                sparkSession)
+            OperationListenerBus.getInstance.fireEvent(dropDataMapPreEvent, operationContext)
+            mainTable.getTableInfo.getDataMapSchemaList.remove(dataMapSchemaOp.get._2)
+            val schemaConverter = new ThriftWrapperSchemaConverterImpl
+            PreAggregateUtil.updateSchemaInfo(
+              mainTable,
+              schemaConverter.fromWrapperToExternalTableInfo(
+                mainTable.getTableInfo,
+                dbName,
+                tableName))(sparkSession)
+            if (dataMapProvider == null) {
+              dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema, sparkSession)
+            }
+            dataMapProvider.freeMeta(mainTable, dataMapSchema)
 
-          // fires the event after dropping datamap from main table schema
-          val dropDataMapPostEvent =
-            DropDataMapPostEvent(
-              Some(dataMapSchema),
-              ifExistsSet,
-              sparkSession)
-          OperationListenerBus.getInstance.fireEvent(dropDataMapPostEvent, operationContext)
-        } else if (!ifExistsSet) {
-          throw new NoSuchDataMapException(dataMapName, tableName)
+            // fires the event after dropping datamap from main table schema
+            val dropDataMapPostEvent =
+              DropDataMapPostEvent(
+                Some(dataMapSchema),
+                ifExistsSet,
+                sparkSession)
+            OperationListenerBus.getInstance.fireEvent(dropDataMapPostEvent, operationContext)
+          } else if (!ifExistsSet) {
+            throw new NoSuchDataMapException(dataMapName, tableName)
+          }
+        } else if (mainTable != null &&
+                   mainTable.getTableInfo.getDataMapSchemaList.size() == 0) {
+          dropDataMapFromSystemFolder(sparkSession, tableName)
         }
-      } else if (carbonTable.isDefined &&
-                 carbonTable.get.getTableInfo.getDataMapSchemaList.size() == 0) {
-        if (!ifExistsSet) {
-          throw new NoSuchDataMapException(dataMapName, tableName)
+      } catch {
+        case e: NoSuchDataMapException =>
+          throw e
+        case ex: Exception =>
+          LOGGER.error(ex, s"Dropping datamap $dataMapName failed")
+          throwMetadataException(dbName, tableName,
+            s"Dropping datamap $dataMapName failed: ${ ex.getMessage }")
+      }
+      finally {
+        if (carbonLocks.nonEmpty) {
+          val unlocked = carbonLocks.forall(_.unlock())
+          if (unlocked) {
+            LOGGER.info("Table MetaData Unlocked Successfully")
+          }
         }
       }
-    } catch {
-      case e: NoSuchDataMapException =>
-        throw e
-      case ex: Exception =>
-        LOGGER.error(ex, s"Dropping datamap $dataMapName failed")
-        throwMetadataException(dbName, tableName,
-          s"Dropping datamap $dataMapName failed: ${ex.getMessage}")
+    } else {
+      dropDataMapFromSystemFolder(sparkSession)
     }
-    finally {
-      if (carbonLocks.nonEmpty) {
-        val unlocked = carbonLocks.forall(_.unlock())
-        if (unlocked) {
-          LOGGER.info("Table MetaData Unlocked Successfully")
-        }
+
+      Seq.empty
+  }
+
+  private def dropDataMapFromSystemFolder(sparkSession: SparkSession, tableName: String = null) = {
+    if (dataMapSchema == null) {
+      val schema = DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala.find { dm =>
+        dm.getDataMapName.equalsIgnoreCase(dataMapName)
+      }
+      dataMapSchema = schema match {
+        case Some(dmSchema) => dmSchema
+        case _ => null
       }
     }
-    Seq.empty
+    if (dataMapSchema != null) {
+      // TODO do a check for existance before dropping
+      dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema, sparkSession)
+      dataMapProvider.freeMeta(mainTable, dataMapSchema)
+    } else if (!ifExistsSet) {
+      if (tableName != null) {
+        throw new NoSuchDataMapException(dataMapName, tableName)
+      } else {
+        throw new NoSuchDataMapException(dataMapName)
+      }
+    }
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     // delete the table folder
     if (dataMapProvider != null) {
-      dataMapProvider.freeData(mainTable, dataMapSchema, sparkSession)
+      dataMapProvider.freeData(mainTable, dataMapSchema)
     }
     Seq.empty
   }

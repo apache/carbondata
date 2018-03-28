@@ -42,7 +42,7 @@ import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
-import org.apache.carbondata.core.util.ByteUtil
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
@@ -375,9 +375,71 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select * from normal_test where name='n502670' and city='c2670'"))
   }
 
+  test("test datamap storage in system folder") {
+    sql("DROP TABLE IF EXISTS datamap_store_test")
+    sql(
+      """
+        | CREATE TABLE datamap_store_test(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+
+    sql(s"create datamap test_cg_datamap on table datamap_store_test using '${classOf[CGDataMapFactory].getName}' as select  id, name from datamap_store_test")
+
+    val loc = CarbonProperties.getInstance().getSystemFolderLocation + "/test_cg_datamap.dmschema"
+
+    assert(FileFactory.isFileExist(loc))
+  }
+
+  test("test datamap storage and drop in system folder") {
+    sql("DROP TABLE IF EXISTS datamap_store_test1")
+    sql(
+      """
+        | CREATE TABLE datamap_store_test1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+
+    sql(s"create datamap test_cg_datamap1 on table datamap_store_test1 using '${classOf[CGDataMapFactory].getName}' as select  id, name from datamap_store_test")
+
+    val loc = CarbonProperties.getInstance().getSystemFolderLocation + "/test_cg_datamap1.dmschema"
+
+    assert(FileFactory.isFileExist(loc))
+
+    sql(s"drop datamap test_cg_datamap1 on table datamap_store_test1")
+
+    assert(!FileFactory.isFileExist(loc))
+  }
+
+  test("test show datamap storage") {
+    sql("DROP TABLE IF EXISTS datamap_store_test2")
+    sql(
+      """
+        | CREATE TABLE datamap_store_test2(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+
+    sql(s"create datamap test_cg_datamap2 on table datamap_store_test2 using '${classOf[CGDataMapFactory].getName}' as select  id, name from datamap_store_test")
+
+    val loc = CarbonProperties.getInstance().getSystemFolderLocation + "/test_cg_datamap2.dmschema"
+
+    assert(FileFactory.isFileExist(loc))
+
+    checkExistence(sql("show datamap"), true, "test_cg_datamap2")
+
+    sql(s"drop datamap test_cg_datamap2 on table datamap_store_test2")
+
+    assert(!FileFactory.isFileExist(loc))
+  }
+
   override protected def afterAll(): Unit = {
     CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
+    sql("DROP TABLE IF EXISTS datamap_test")
     sql("DROP TABLE IF EXISTS datamap_test_cg")
+    sql("DROP TABLE IF EXISTS datamap_store_test")
+    sql("DROP TABLE IF EXISTS datamap_store_test1")
+    sql("DROP TABLE IF EXISTS datamap_store_test2")
   }
 }

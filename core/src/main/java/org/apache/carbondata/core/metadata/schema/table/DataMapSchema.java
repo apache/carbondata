@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.metadata.schema.table;
 
 import java.io.DataInput;
@@ -21,35 +22,38 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+
+import com.google.gson.Gson;
 
 /**
- * Child schema class to maintain the child table details inside parent table
+ * It is the new schama of datamap and it has less fields compare to {{@link DataMapSchema}}
  */
 public class DataMapSchema implements Serializable, Writable {
 
-  private static final long serialVersionUID = 6577149126264181553L;
+  private static final long serialVersionUID = -8394577999061329687L;
 
   protected String dataMapName;
 
   /**
    * There are two kind of DataMaps:
    * 1. Index DataMap: provider name is class name of implementation class of DataMapFactory
-   * 2. OLAP DataMap: provider name is one of the {@link DataMapProvider#shortName}
+   * 2. OLAP DataMap: provider name is one of the {@link DataMapClassProvider#shortName}
    */
-  private String providerName;
+  protected String providerName;
 
   /**
-   * identifier of the parent table
+   * identifiers of the mapped table
    */
-  private RelationIdentifier relationIdentifier;
+  protected RelationIdentifier relationIdentifier;
 
   /**
-   * child table schema
+   * Query which is used to create a datamap. This is optional in case of index datamap.
    */
-  protected TableSchema childSchema;
+  protected String ctasQuery;
 
   /**
    * relation properties
@@ -57,46 +61,84 @@ public class DataMapSchema implements Serializable, Writable {
   protected Map<String, String> properties;
 
   /**
-   * WARN: This constructor should be used by deserialization only
+   * Identifiers of parent tables
    */
-  public DataMapSchema() {
-  }
+  protected List<RelationIdentifier> parentTables;
+
+  /**
+   * child table schema
+   */
+  protected TableSchema childSchema;
+
 
   public DataMapSchema(String dataMapName, String providerName) {
     this.dataMapName = dataMapName;
     this.providerName = providerName;
   }
 
-  public String getProviderName() {
-    return providerName;
-  }
-
-  public TableSchema getChildSchema() {
-    return childSchema;
-  }
-
-  public RelationIdentifier getRelationIdentifier() {
-    return relationIdentifier;
-  }
-
-  public Map<String, String> getProperties() {
-    return properties;
+  public DataMapSchema() {
   }
 
   public String getDataMapName() {
     return dataMapName;
   }
 
+  public void setDataMapName(String dataMapName) {
+    this.dataMapName = dataMapName;
+  }
+
+  public String getProviderName() {
+    return providerName;
+  }
+
+  public void setProviderName(String providerName) {
+    this.providerName = providerName;
+  }
+
+  public RelationIdentifier getRelationIdentifier() {
+    return relationIdentifier;
+  }
+
   public void setRelationIdentifier(RelationIdentifier relationIdentifier) {
     this.relationIdentifier = relationIdentifier;
   }
 
-  public void setChildSchema(TableSchema childSchema) {
-    this.childSchema = childSchema;
+  public String getCtasQuery() {
+    return ctasQuery;
+  }
+
+  public void setCtasQuery(String ctasQuery) {
+    this.ctasQuery = ctasQuery;
+  }
+
+  public Map<String, String> getProperties() {
+    return properties;
   }
 
   public void setProperties(Map<String, String> properties) {
     this.properties = properties;
+  }
+
+  public void setPropertiesJson(Gson gson, String propertiesJson) {
+    if (propertiesJson != null) {
+      this.properties = gson.fromJson(propertiesJson, Map.class);
+    }
+  }
+
+  public void setParentTables(List<RelationIdentifier> parentTables) {
+    this.parentTables = parentTables;
+  }
+
+  public List<RelationIdentifier> getParentTables() {
+    return parentTables;
+  }
+
+  public TableSchema getChildSchema() {
+    return childSchema;
+  }
+
+  public void setChildSchema(TableSchema childSchema) {
+    this.childSchema = childSchema;
   }
 
   /**
@@ -104,8 +146,8 @@ public class DataMapSchema implements Serializable, Writable {
    * @return
    */
   public boolean isIndexDataMap() {
-    if (providerName.equalsIgnoreCase(DataMapProvider.PREAGGREGATE.getShortName()) ||
-        providerName.equalsIgnoreCase(DataMapProvider.TIMESERIES.getShortName())) {
+    if (providerName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.getShortName()) ||
+        providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getShortName())) {
       return false;
     } else {
       return true;
@@ -158,4 +200,5 @@ public class DataMapSchema implements Serializable, Writable {
       this.properties.put(key, value);
     }
   }
+
 }

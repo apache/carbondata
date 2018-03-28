@@ -1618,6 +1618,11 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT = "200";
 
+  /**
+   * System older location to store system level data like datamap schema and status files.
+   */
+  public static final String CARBON_SYSTEM_FOLDER_LOCATION = "carbon.system.folder.location";
+
   private CarbonCommonConstants() {
   }
 }

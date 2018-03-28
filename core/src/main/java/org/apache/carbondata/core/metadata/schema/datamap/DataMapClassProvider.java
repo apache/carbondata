@@ -20,13 +20,13 @@ package org.apache.carbondata.core.metadata.schema.datamap;
 /**
  * type for create datamap
  * The syntax of datamap creation is as follows.
- * CREATE DATAMAP IF NOT EXISTS dataMapName ON TABLE tableName USING 'DataMapProvider'
+ * CREATE DATAMAP IF NOT EXISTS dataMapName ON TABLE tableName USING 'DataMapClassProvider'
  * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
  *
  * Please refer {{org.apache.spark.sql.parser.CarbonSpark2SqlParser}}
  */
 
-public enum DataMapProvider {
+public enum DataMapClassProvider {
   PREAGGREGATE("org.apache.carbondata.core.datamap.AggregateDataMap", "preaggregate"),
   TIMESERIES("org.apache.carbondata.core.datamap.TimeSeriesDataMap", "timeseries");
 
@@ -40,7 +40,7 @@ public enum DataMapProvider {
    */
   private String shortName;
 
-  DataMapProvider(String className, String shortName) {
+  DataMapClassProvider(String className, String shortName) {
     this.className = className;
     this.shortName = shortName;
   }
@@ -59,7 +59,7 @@ public enum DataMapProvider {
         dataMapClass.equalsIgnoreCase(shortName)));
   }
 
-  public static DataMapProvider getDataMapProvider(String dataMapClass) {
+  public static DataMapClassProvider getDataMapProvider(String dataMapClass) {
     if (TIMESERIES.isEqual(dataMapClass)) {
       return TIMESERIES;
     } else if (PREAGGREGATE.isEqual(dataMapClass)) {

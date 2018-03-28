@@ -30,6 +30,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.command.{DataTypeInfo, UpdateTableModel}
 import org.apache.spark.sql.types._
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogService
@@ -40,7 +41,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.metadata.ColumnIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchemaStorageProvider}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
@@ -295,7 +296,7 @@ object CarbonScalaUtil {
    */
   def updatePartitions(
       partitionSpec: Map[String, String],
-  table: CarbonTable): Map[String, String] = {
+      table: CarbonTable): Map[String, String] = {
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
       cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
@@ -582,5 +583,16 @@ object CarbonScalaUtil {
       case e: Exception =>
         // ignore it
     }
+  }
+
+  /**
+   * Create datamap provider using class name
+   */
+  def createDataMapProvider(className: String, sparkSession: SparkSession,
+      storageProvider: DataMapSchemaStorageProvider): Object = {
+    CarbonReflectionUtils.createObject(
+      className,
+      sparkSession,
+      storageProvider)._1.asInstanceOf[Object]
   }
 }
