@@ -17,12 +17,14 @@
 
 package org.apache.carbondata.core.datamap;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
  * This is the interface for inmemory catalog registry for datamap.
  * @since 1.4.0
  */
+@InterfaceAudience.Internal
 public interface DataMapCatalog<T> {
 
   /**

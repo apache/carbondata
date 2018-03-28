@@ -145,7 +145,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * The syntax of datamap creation is as follows.
-   * CREATE DATAMAP IF NOT EXISTS datamapName ON TABLE tableName USING 'DataMapClassName'
+   * CREATE DATAMAP IF NOT EXISTS datamapName [ON TABLE tableName] USING 'DataMapClassName'
    * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
    */
   protected lazy val createDataMap: Parser[LogicalPlan] =
@@ -167,7 +167,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * The below syntax is used to drop the datamap.
-   * DROP DATAMAP IF EXISTS datamapName ON TABLE tablename
+   * DROP DATAMAP IF EXISTS datamapName [ON TABLE tablename]
    */
   protected lazy val dropDataMap: Parser[LogicalPlan] =
     DROP ~> DATAMAP ~> opt(IF ~> EXISTS) ~ ident ~ opt(ontable) <~ opt(";")  ^^ {
@@ -177,7 +177,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * The syntax of show datamap is used to show datamaps on the table
-   * SHOW DATAMAP ON TABLE tableName
+   * SHOW DATAMAP [ON TABLE tableName]
    */
   protected lazy val showDataMap: Parser[LogicalPlan] =
     SHOW ~> DATAMAP ~> opt(ontable) <~ opt(";") ^^ {

@@ -342,7 +342,7 @@ object CarbonScalaUtil {
    */
   def updatePartitions(
       partitionSpec: Map[String, String],
-  table: CarbonTable): Map[String, String] = {
+      table: CarbonTable): Map[String, String] = {
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
       cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)

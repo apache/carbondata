@@ -119,7 +119,8 @@ public class IndexDataMapProvider implements DataMapProvider {
     return dataMapFactory;
   }
 
-  @Override public DataMapCatalog createDataMapCatalog() {
+  @Override
+  public DataMapCatalog createDataMapCatalog() {
     // TODO create abstract class and move the default implementation there.
     return null;
   }
