@@ -63,7 +63,7 @@ case class AggExpToColumnMappingModel(
  * 1. Check plan is valid plan for updating the parent table plan with child table
  * 2. Updated the plan based on child schema
  *
- * Rules for Upadating the plan
+ * Rules for Updating the plan
  * 1. Grouping expression rules
  *    1.1 Change the parent attribute reference for of group expression
  * to child attribute reference
