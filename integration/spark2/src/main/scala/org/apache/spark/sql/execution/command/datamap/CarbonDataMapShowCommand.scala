@@ -28,10 +28,12 @@ import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 
 /**
  * Show the datamaps on the table
+ *
  * @param tableIdentifier
  */
 case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
@@ -44,20 +46,22 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val dataMapSchemaList: util.List[DataMapSchema] = new util.ArrayList[DataMapSchema]()
     tableIdentifier match {
       case Some(table) =>
         Checker.validateTableExists(table.database, table.table, sparkSession)
         val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)
         if (carbonTable.hasDataMapSchema) {
-          val schemaList = carbonTable.getTableInfo.getDataMapSchemaList
-          convertToRow(schemaList)
-        } else {
-          convertToRow(DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable))
+          dataMapSchemaList.addAll(carbonTable.getTableInfo.getDataMapSchemaList)
         }
+        val indexSchemas = DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable)
+        if (!indexSchemas.isEmpty) {
+          dataMapSchemaList.addAll(indexSchemas)
+        }
+        convertToRow(dataMapSchemaList)
       case _ =>
         convertToRow(DataMapStoreManager.getInstance().getAllDataMapSchemas)
     }
-
   }
 
   private def convertToRow(schemaList: util.List[DataMapSchema]) = {
@@ -65,9 +69,7 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
       schemaList.asScala.map { s =>
         var table = "(NA)"
         val relationIdentifier = s.getRelationIdentifier
-        if (relationIdentifier != null) {
           table = relationIdentifier.getDatabaseName + "." + relationIdentifier.getTableName
-        }
         Row(s.getDataMapName, s.getProviderName, table)
       }
     } else {

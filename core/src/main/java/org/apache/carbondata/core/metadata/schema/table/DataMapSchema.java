@@ -70,7 +70,6 @@ public class DataMapSchema implements Serializable, Writable {
    */
   protected TableSchema childSchema;
 
-
   public DataMapSchema(String dataMapName, String providerName) {
     this.dataMapName = dataMapName;
     this.providerName = providerName;

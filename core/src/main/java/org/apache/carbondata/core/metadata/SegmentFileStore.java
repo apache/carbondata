@@ -672,7 +672,7 @@ public class SegmentFileStore {
   }
 
   private static void deletePhysicalPartition(List<PartitionSpec> partitionSpecs,
-      Map<String, List<String>> locationMap) {
+      Map<String, List<String>> locationMap) throws IOException {
     for (Map.Entry<String, List<String>> entry : locationMap.entrySet()) {
       Path location = new Path(entry.getKey()).getParent();
       if (partitionSpecs != null) {
@@ -681,10 +681,10 @@ public class SegmentFileStore {
           FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location.toString()));
         }
       } else {
-        // delete the segment folder if it is empty
-        CarbonFile file = FileFactory.getCarbonFile(location.toString());
-        if (file.listFiles().length == 0) {
-          file.delete();
+        // delete the segment folder
+        CarbonFile segmentPath = FileFactory.getCarbonFile(location.toString());
+        if (null != segmentPath) {
+          FileFactory.deleteAllCarbonFilesOfDir(segmentPath);
         }
       }
     }

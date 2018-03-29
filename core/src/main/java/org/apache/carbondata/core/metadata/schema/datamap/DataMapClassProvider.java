@@ -28,7 +28,8 @@ package org.apache.carbondata.core.metadata.schema.datamap;
 
 public enum DataMapClassProvider {
   PREAGGREGATE("org.apache.carbondata.core.datamap.AggregateDataMap", "preaggregate"),
-  TIMESERIES("org.apache.carbondata.core.datamap.TimeSeriesDataMap", "timeseries");
+  TIMESERIES("org.apache.carbondata.core.datamap.TimeSeriesDataMap", "timeseries"),
+  LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory","lucene");
 
   /**
    * Fully qualified class name of datamap
@@ -64,8 +65,22 @@ public enum DataMapClassProvider {
       return TIMESERIES;
     } else if (PREAGGREGATE.isEqual(dataMapClass)) {
       return PREAGGREGATE;
+    } else if (LUCENE.isEqual(dataMapClass)) {
+      return LUCENE;
     } else {
       throw new UnsupportedOperationException("Unknown datamap provider/class " + dataMapClass);
+    }
+  }
+
+  public static DataMapClassProvider getDataMapProviderOnName(String dataMapShortname) {
+    if (TIMESERIES.isEqual(dataMapShortname)) {
+      return TIMESERIES;
+    } else if (PREAGGREGATE.isEqual(dataMapShortname)) {
+      return PREAGGREGATE;
+    } else if (LUCENE.isEqual(dataMapShortname)) {
+      return LUCENE;
+    } else {
+      throw new UnsupportedOperationException("Unknown datamap provider" + dataMapShortname);
     }
   }
 }

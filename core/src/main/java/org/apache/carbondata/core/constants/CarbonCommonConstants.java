@@ -1653,6 +1653,19 @@ public final class CarbonCommonConstants {
       "carbon.compaction.prefetch.enable";
   public static final String CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT = "false";
 
+  /**
+   * compression mode used by lucene for index writing, this conf will be passed to lucene writer
+   * while writing index files.
+   */
+  public static final String CARBON_LUCENE_COMPRESSION_MODE = "carbon.lucene.compression.mode";
+
+  /**
+   * default lucene index compression mode, in this mode writing speed will be less and speed is
+   * given priority, another mode is compression mode, where the index size is given importance to
+   * make it less and not the index writing speed.
+   */
+  public static final String CARBON_LUCENE_COMPRESSION_MODE_DEFAULT = "speed";
+
   private CarbonCommonConstants() {
   }
 }

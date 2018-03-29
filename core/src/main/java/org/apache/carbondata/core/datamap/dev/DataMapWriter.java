@@ -54,7 +54,7 @@ public abstract class DataMapWriter {
    *
    * @param blockId file name of the carbondata file
    */
-  public abstract void onBlockStart(String blockId) throws IOException;
+  public abstract void onBlockStart(String blockId, long taskId) throws IOException;
 
   /**
    * End of block notification

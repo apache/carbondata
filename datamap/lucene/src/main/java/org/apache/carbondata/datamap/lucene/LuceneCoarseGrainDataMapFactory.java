@@ -75,4 +75,8 @@ public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<Co
     return DataMapLevel.CG;
   }
 
+  @Override public void deleteDatamapData() {
+
+  }
+
 }

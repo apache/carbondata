@@ -21,10 +21,13 @@ import java.io.{File, PrintWriter}
 
 import scala.util.Random
 
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
@@ -34,6 +37,11 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     //n should be about 5000000 of reset if size is default 1024
     val n = 15000
     LuceneFineGrainDataMapSuite.createFile(file2)
+    sql("create database if not exists lucene")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
+        CarbonEnv.getDatabaseLocation("lucene", sqlContext.sparkSession))
+    sql("use lucene")
     sql("DROP TABLE IF EXISTS normal_test")
     sql(
       """
@@ -57,7 +65,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     var exception = intercept[MalformedDataMapCommandException](sql(
       s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'lucene'
       """.stripMargin))
 
     assertResult("Lucene DataMap require proper TEXT_COLUMNS property.")(exception.getMessage)
@@ -66,7 +74,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     exception = intercept[MalformedDataMapCommandException](sql(
       s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'lucene'
          | DMProperties('text_COLUMNS'='name, ')
       """.stripMargin))
 
@@ -76,7 +84,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     exception = intercept[MalformedDataMapCommandException](sql(
       s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'lucene'
          | DMProperties('text_COLUMNS'='city,school')
     """.stripMargin))
 
@@ -86,7 +94,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     exception = intercept[MalformedDataMapCommandException](sql(
       s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'lucene'
          | DMProperties('text_COLUMNS'='name,city,name')
       """.stripMargin))
 
@@ -96,7 +104,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     exception = intercept[MalformedDataMapCommandException](sql(
     s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'lucene'
          | DMProperties('text_COLUMNS'='city,id')
       """.stripMargin))
 
@@ -107,7 +115,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'lucene'
          | DMProperties('TEXT_COLUMNS'='Name , cIty')
       """.stripMargin)
 
@@ -127,6 +135,11 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     LuceneFineGrainDataMapSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
     sql("DROP TABLE IF EXISTS datamap_test")
+    sql("use default")
+    sql("drop database if exists lucene cascade")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
+        CarbonProperties.getStorePath)
   }
 }
 

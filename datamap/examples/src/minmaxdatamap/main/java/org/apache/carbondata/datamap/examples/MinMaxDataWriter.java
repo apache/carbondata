@@ -90,7 +90,7 @@ public class MinMaxDataWriter extends DataMapWriter {
     }
   }
 
-  @Override public void onBlockStart(String blockId) {
+  @Override public void onBlockStart(String blockId, long taskId) {
     blockMinMaxMap = new HashMap<Integer, BlockletMinMax>();
   }
 

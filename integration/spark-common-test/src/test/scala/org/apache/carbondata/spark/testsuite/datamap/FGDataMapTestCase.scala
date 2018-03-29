@@ -38,7 +38,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.expression.Expression
@@ -57,8 +57,8 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
   /**
    * Initialization of Datamap factory with the identifier and datamap name
    */
-  override def init(identifier: AbsoluteTableIdentifier, dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = identifier
+  override def init(carbonTable: CarbonTable, dataMapSchema: DataMapSchema): Unit = {
+    this.identifier = carbonTable.getAbsoluteTableIdentifier
     this.dataMapSchema = dataMapSchema
   }
 
@@ -140,6 +140,13 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
   override def getMeta: DataMapMeta = {
     new DataMapMeta(dataMapSchema.getProperties.get("indexcolumns").split(",").toList.asJava,
       List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
+  }
+
+  /**
+   * delete datamap data if any
+   */
+  override def deleteDatamapData(): Unit = {
+    ???
   }
 }
 
@@ -271,7 +278,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockId file name of the carbondata file
    */
-  override def onBlockStart(blockId: String): Unit = {
+  override def onBlockStart(blockId: String, taskId: Long): Unit = {
     currentBlockId = blockId
   }
 
