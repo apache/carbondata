@@ -43,6 +43,7 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -72,8 +73,8 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   private Cache<TableBlockIndexUniqueIdentifier, CoarseGrainDataMap> cache;
 
   @Override
-  public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema) {
-    this.identifier = identifier;
+  public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+    this.identifier = carbonTable.getAbsoluteTableIdentifier();
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
   }
@@ -260,6 +261,10 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public DataMapMeta getMeta() {
     // TODO: pass SORT_COLUMNS into this class
     return null;
+  }
+
+  @Override public void deleteDatamapData() {
+
   }
 
   @Override public SegmentProperties getSegmentProperties(Segment segment,

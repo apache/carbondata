@@ -197,6 +197,13 @@ public final class TableDataMap extends OperationEventListener {
     dataMapFactory.clear();
   }
 
+  /**
+   * delete datamap data if any
+   */
+  public void deleteDatamapData() {
+    dataMapFactory.deleteDatamapData();
+  }
+
   public DataMapSchema getDataMapSchema() {
     return dataMapSchema;
   }

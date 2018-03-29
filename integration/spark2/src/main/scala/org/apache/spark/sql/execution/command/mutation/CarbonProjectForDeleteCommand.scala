@@ -20,7 +20,6 @@ package org.apache.spark.sql.execution.command.mutation
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory

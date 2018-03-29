@@ -58,16 +58,10 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
 
   // this is an example for datamap, we can choose the columns and operations that
   // will be supported by this datamap. Furthermore, we can add cache-support for this datamap.
-  @Override public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema)
+  @Override public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws IOException, MalformedDataMapCommandException {
-    this.identifier = identifier;
+    this.identifier = carbonTable.getAbsoluteTableIdentifier();
     this.dataMapName = dataMapSchema.getDataMapName();
-
-    String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName);
-    if (null == carbonTable) {
-      throw new IOException("Failed to get carbon table with name " + tableUniqueName);
-    }
 
     // columns that will be indexed
     List<CarbonColumn> allColumns = carbonTable.getCreateOrderColumn(identifier.getTableName());
@@ -162,5 +156,9 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
 
   @Override public DataMapMeta getMeta() {
     return this.dataMapMeta;
+  }
+
+  @Override public void deleteDatamapData() {
+
   }
 }

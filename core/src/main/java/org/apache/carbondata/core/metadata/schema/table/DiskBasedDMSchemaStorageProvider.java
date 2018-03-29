@@ -51,9 +51,8 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
-    String schemaPath =
-        storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapSchema.getDataMapName()
-            + ".dmschema";
+    String schemaPath = getSchemaPath(storePath, dataMapSchema.getDataMapName(),
+        dataMapSchema.relationIdentifier.getTableName(), dataMapSchema.getProviderName());
     FileFactory.FileType fileType = FileFactory.getFileType(schemaPath);
     if (FileFactory.isFileExist(schemaPath, fileType)) {
       throw new IOException(
@@ -129,9 +128,9 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     return dataMapSchemas;
   }
 
-  @Override public void dropSchema(String dataMapName) throws IOException {
-    String schemaPath =
-        storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapName + ".dmschema";
+  @Override public void dropSchema(String dataMapName, String tableName, String dataMapProviderName)
+      throws IOException {
+    String schemaPath = getSchemaPath(storePath, dataMapName, tableName, dataMapProviderName);
     if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
       throw new IOException("DataMap with name " + dataMapName + " does not exists in storage");
     }
@@ -139,5 +138,21 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     if (!FileFactory.deleteFile(schemaPath, FileFactory.getFileType(schemaPath))) {
       throw new IOException("DataMap with name " + dataMapName + " cannot be deleted");
     }
+  }
+
+  /**
+   * it returns the schema path for the datamap
+   * @param storePath
+   * @param dataMapName
+   * @param tableName
+   * @param dataMapProviderName
+   * @return
+   */
+  public static String getSchemaPath(String storePath, String dataMapName, String tableName,
+      String dataMapProviderName) {
+    String schemaPath = storePath + CarbonCommonConstants.FILE_SEPARATOR + tableName
+        + CarbonCommonConstants.UNDERSCORE + dataMapName + CarbonCommonConstants.UNDERSCORE
+        + dataMapProviderName + ".dmschema";
+    return schemaPath;
   }
 }

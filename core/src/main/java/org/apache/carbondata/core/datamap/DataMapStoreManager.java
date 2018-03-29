@@ -252,8 +252,9 @@ public final class DataMapStoreManager {
           (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getProviderName());
       dataMapFactory = factoryClass.newInstance();
     } catch (ClassNotFoundException e) {
-      throw new MalformedDataMapCommandException(
-          "DataMap '" + dataMapSchema.getProviderName() + "' not found");
+      // try to create DataMapClassProvider instance by taking providerName as short name
+      dataMapFactory =
+          IndexDataMapProvider.getDataMapFactoryByShortName(dataMapSchema.getProviderName());
     } catch (Throwable e) {
       throw new MetadataProcessException(
           "failed to create DataMap '" + dataMapSchema.getProviderName() + "'", e);
@@ -272,7 +273,7 @@ public final class DataMapStoreManager {
       tableIndices = new ArrayList<>();
     }
 
-    dataMapFactory.init(table.getAbsoluteTableIdentifier(), dataMapSchema);
+    dataMapFactory.init(table, dataMapSchema);
     BlockletDetailsFetcher blockletDetailsFetcher;
     SegmentPropertiesFetcher segmentPropertiesFetcher = null;
     if (dataMapFactory instanceof BlockletDetailsFetcher) {
@@ -348,6 +349,7 @@ public final class DataMapStoreManager {
         if (tableDataMap != null && dataMapName
             .equalsIgnoreCase(tableDataMap.getDataMapSchema().getDataMapName())) {
           tableDataMap.clear();
+          tableDataMap.deleteDatamapData();
           tableIndices.remove(i);
           break;
         }
