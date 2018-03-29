@@ -58,42 +58,7 @@ class TestPreAggregateIUDSuite extends SparkQueryTest with BeforeAndAfterAll wit
     sql("DROP TABLE IF EXISTS segmaintable")
   }
 
-
-  test("test pre-aggregate IUD function 1: support insert after create pre aggregate table") {
-    sql("reset")
-    sql("DROP TABLE IF EXISTS main_table")
-    sql(
-      """
-        | CREATE TABLE main_table(
-        |     id INT,
-        |     name STRING,
-        |     city STRING,
-        |     age INT)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-
-    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
-
-    sql(
-      s"""
-         | CREATE DATAMAP preagg_sum
-         | ON TABLE main_table
-         | USING 'preaggregate'
-         | AS SELECT id, SUM(age)
-         | FROM main_table
-         | GROUP BY id
-       """.stripMargin)
-
-    sql(s"INSERT INTO main_table VALUES(1, 'xyz', 'bengaluru', 26)")
-
-    // check the value after insert
-    val df = sql(s"SELECT id, SUM(age) FROM main_table GROUP BY id")
-    checkAnswer(df, Seq(Row(1, 52)))
-
-    checkPreAggTable(df, true, "main_table_preagg_sum")
-  }
-
-  test("test pre-aggregate IUD function 2: don't support delete after create pre aggregate table") {
+  test("test pre-aggregate IUD function 2: don't support update after create pre aggregate table") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     sql("reset")
