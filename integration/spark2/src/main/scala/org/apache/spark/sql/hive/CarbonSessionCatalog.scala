@@ -33,7 +33,7 @@ import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceSta
  */
 @InterfaceAudience.Internal
 @InterfaceStability.Stable
-trait ICarbonSessionCatalog {
+trait CarbonSessionCatalog {
   /**
    * implementation to be provided by each CarbonSessionCatalog based on on used ExternalCatalog
    *

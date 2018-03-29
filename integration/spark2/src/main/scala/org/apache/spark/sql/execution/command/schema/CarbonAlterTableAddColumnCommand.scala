@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableColumnSchemaGenerator, MetadataCommand}
-import org.apache.spark.sql.hive.ICarbonSessionCatalog
+import org.apache.spark.sql.hive.CarbonSessionCatalog
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -89,7 +89,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
         .updateSchemaInfo(carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           thriftTable)(sparkSession,
-          sparkSession.sessionState.catalog.asInstanceOf[ICarbonSessionCatalog])
+          sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
       val alterTablePostExecutionEvent: AlterTableAddColumnPostEvent =
         new AlterTableAddColumnPostEvent(sparkSession,
           carbonTable, alterTableAddColumnsModel)

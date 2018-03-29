@@ -22,7 +22,7 @@ import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
-import org.apache.spark.sql.hive.{CarbonRelation, ICarbonSessionCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -120,7 +120,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
       var newTablePath = CarbonTablePath.getNewTablePath(
         oldTableIdentifier.getTablePath, newTableIdentifier.getTableName)
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
-      val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[ICarbonSessionCatalog]
+      val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
         .getClient()
       var partitions: Seq[CatalogTablePartition] = Seq.empty
       if (carbonTable.isHivePartitionTable) {
@@ -159,7 +159,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
       // Update the storage location with new path
       sparkSession.sessionState.catalog.alterTable(
         catalogTable.copy(storage = sparkSession.sessionState.catalog.
-          asInstanceOf[ICarbonSessionCatalog].updateStorageLocation(
+          asInstanceOf[CarbonSessionCatalog].updateStorageLocation(
           new Path(newTablePath),
           catalogTable.storage)))
       if (updatedParts.nonEmpty) {
@@ -231,7 +231,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
         if (path.toString.contains(oldTablePath)) {
           val newPath = new Path(path.toString.replace(oldTablePath, newTablePath))
           part.copy(storage = sparkSession.sessionState.catalog.
-            asInstanceOf[ICarbonSessionCatalog].updateStorageLocation(newPath, part.storage))
+            asInstanceOf[CarbonSessionCatalog].updateStorageLocation(newPath, part.storage))
         } else {
           part
         }

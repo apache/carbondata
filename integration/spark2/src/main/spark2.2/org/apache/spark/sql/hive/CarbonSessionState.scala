@@ -59,7 +59,7 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * @param conf
  * @param hadoopConf
  */
-class CarbonSessionCatalog(
+class CarbonHiveSessionCatalog(
     externalCatalog: HiveExternalCatalog,
     globalTempViewManager: GlobalTempViewManager,
     functionRegistry: FunctionRegistry,
@@ -77,7 +77,7 @@ class CarbonSessionCatalog(
     hadoopConf,
     parser,
     functionResourceLoader
-  ) with ICarbonSessionCatalog {
+  ) with CarbonSessionCatalog {
 
   lazy val carbonEnv = {
     val env = new CarbonEnv
@@ -196,8 +196,8 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
   /**
    * Create a [[CarbonSessionCatalogBuild]].
    */
-  override protected lazy val catalog: CarbonSessionCatalog = {
-    val catalog = new CarbonSessionCatalog(
+  override protected lazy val catalog: CarbonHiveSessionCatalog = {
+    val catalog = new CarbonHiveSessionCatalog(
       externalCatalog,
       session.sharedState.globalTempViewManager,
       functionRegistry,

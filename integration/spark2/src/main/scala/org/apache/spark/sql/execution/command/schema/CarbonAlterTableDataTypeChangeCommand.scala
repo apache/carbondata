@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, DataTypeInfo, MetadataCommand}
-import org.apache.spark.sql.hive.ICarbonSessionCatalog
+import org.apache.spark.sql.hive.CarbonSessionCatalog
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -98,7 +98,7 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
         .setTime_stamp(System.currentTimeMillis)
       AlterTableUtil.updateSchemaInfo(
         carbonTable, schemaEvolutionEntry, tableInfo)(sparkSession,
-          sparkSession.sessionState.catalog.asInstanceOf[ICarbonSessionCatalog])
+          sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
       val alterTablePostExecutionEvent: AlterTableDataTypeChangePostEvent =
         new AlterTableDataTypeChangePostEvent(sparkSession, carbonTable,
           alterTableDataTypeChangeModel)
