@@ -73,10 +73,14 @@ Please follow the below steps to query carbondata in presto
   ```
   connector.name=carbondata
   carbondata-store={schema-store-path}
+  carbon.unsafe.working.memory.in.mb={value}
   ```
   Replace the schema-store-path with the absolute path of the parent directory of the schema.
   For example, if you have a schema named 'default' stored in hdfs://namenode:9000/test/carbondata/,
   Then set carbondata-store=hdfs://namenode:9000/test/carbondata
+  
+  carbon.unsafe.working.memory.in.mb property defines the limit for Unsafe Memory usage in Mega Bytes. Replace the value for it 
+  as per your need, if your tables are big you can increase the unsafe memory. The default value is 512 MB.
 
   If you updated the jar balls or configuration files, make sure you have dispatched them
    to all the presto nodes and restarted the presto servers on the nodes. The updates will not take effect before restarting.
