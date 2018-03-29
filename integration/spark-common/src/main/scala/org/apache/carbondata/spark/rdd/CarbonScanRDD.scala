@@ -205,7 +205,7 @@ class CarbonScanRDD(
 
     var statistic = new QueryStatistic()
     val statisticRecorder = CarbonTimeStatisticsFactory.createDriverRecorder()
-    val parallelism = sparkContext.defaultParallelism
+    var parallelism = sparkContext.defaultParallelism
     val result = new ArrayList[Partition](parallelism)
     var noOfBlocks = 0
     var noOfNodes = 0
@@ -240,7 +240,14 @@ class CarbonScanRDD(
             CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
             "false").toBoolean ||
           carbonDistribution.equalsIgnoreCase(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_CUSTOM)
-        if (useCustomDistribution) {
+        val enableSearchMode = CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE,
+          CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE_DEFAULT).toBoolean
+        if (useCustomDistribution || enableSearchMode) {
+          if (enableSearchMode) {
+            // force to assign only one task contains multiple splits each node
+            parallelism = 0
+          }
           // create a list of block based on split
           val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
 

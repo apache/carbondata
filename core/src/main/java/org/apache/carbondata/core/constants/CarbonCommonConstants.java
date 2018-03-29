@@ -1629,6 +1629,11 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_SYSTEM_FOLDER_LOCATION = "carbon.system.folder.location";
 
+  @CarbonProperty
+  public static final String CARBON_SEARCH_MODE_ENABLE = "carbon.search.mode.enable";
+
+  public static final String CARBON_SEARCH_MODE_ENABLE_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }
