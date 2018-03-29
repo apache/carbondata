@@ -22,6 +22,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -203,7 +204,9 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val files = FileFactory.getCarbonFile(metaPath)
     val result = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.getClass
     if(result.getCanonicalName.contains("CarbonFileMetastore")) {
-      assert(files.listFiles().length == 2)
+      assert(files.listFiles(new CarbonFileFilter {
+        override def accept(file: CarbonFile): Boolean = !file.isDirectory
+      }).length == 2)
     }
     else
       assert(files.listFiles().length == 1)

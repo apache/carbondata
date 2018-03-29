@@ -427,6 +427,13 @@ object CarbonDataRDDFactory {
             segmentDetails.add(new Segment(resultOfBlock._2._1.getLoadName, null))
           }
         }
+        val segmentFiles = segmentDetails.asScala.map{seg =>
+          val file = SegmentFileStore.writeSegmentFile(
+            carbonTable.getTablePath,
+            seg.getSegmentNo,
+            updateModel.get.updatedTimeStamp.toString)
+          new Segment(seg.getSegmentNo, file)
+        }.filter(_.getSegmentFileName != null).asJava
 
         // this means that the update doesnt have any records to update so no need to do table
         // status file updation.
@@ -440,7 +447,8 @@ object CarbonDataRDDFactory {
           carbonTable,
           updateModel.get.updatedTimeStamp + "",
           true,
-          new util.ArrayList[Segment](0))) {
+          new util.ArrayList[Segment](0),
+          new util.ArrayList[Segment](segmentFiles))) {
           LOGGER.audit("Data update is successful for " +
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         } else {

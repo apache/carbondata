@@ -47,8 +47,7 @@ public class IndexDataMapProvider implements DataMapProvider {
         new RelationIdentifier(mainTable.getDatabaseName(), mainTable.getTableName(),
             mainTable.getTableInfo().getFactTable().getTableId()));
     DataMapFactory dataMapFactory = createIndexDataMapFactory(dataMapSchema);
-    DataMapStoreManager.getInstance().registerDataMap(
-        mainTable.getAbsoluteTableIdentifier(), dataMapSchema, dataMapFactory);
+    DataMapStoreManager.getInstance().registerDataMap(mainTable, dataMapSchema, dataMapFactory);
     storageProvider.saveSchema(dataMapSchema);
   }
 

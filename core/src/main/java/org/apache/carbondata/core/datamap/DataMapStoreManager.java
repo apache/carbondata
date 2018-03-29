@@ -102,7 +102,7 @@ public final class DataMapStoreManager {
         if (dataMapSchema.isIndexDataMap() && identifier.getTableName()
             .equals(carbonTable.getTableName()) && identifier.getDatabaseName()
             .equals(carbonTable.getDatabaseName())) {
-          dataMaps.add(getDataMap(carbonTable.getAbsoluteTableIdentifier(), dataMapSchema));
+          dataMaps.add(getDataMap(carbonTable, dataMapSchema));
         }
       }
     }
