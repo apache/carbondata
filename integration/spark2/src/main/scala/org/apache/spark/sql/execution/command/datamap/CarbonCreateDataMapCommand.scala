@@ -24,7 +24,7 @@ import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DataMapProvider
+import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -69,11 +69,33 @@ case class CarbonCreateDataMapCommand(
     }
 
     dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
-    if (mainTable != null &&
-        mainTable.isStreamingTable &&
-        !(dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
-          || dataMapSchema.getProviderName
-            .equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
+    if (dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.LUCENEFG.toString) ||
+        dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.LUCENECG.toString)) {
+      val datamaps = DataMapStoreManager.getInstance().getAllDataMap(mainTable).asScala
+      if (datamaps.nonEmpty) {
+        datamaps.foreach(datamap => {
+          val dmColumns = datamap.getDataMapSchema.getProperties.get("text_columns")
+          val existingColumns = dmProperties("text_columns")
+
+          def getAllSubString(columns: String): Set[String] = {
+            columns.inits.flatMap(_.tails).toSet
+          }
+
+          val existingClmSets = getAllSubString(existingColumns)
+          val dmColumnsSets = getAllSubString(dmColumns)
+          val duplicateDMColumn = existingClmSets.intersect(dmColumnsSets).maxBy(_.length)
+          if (!duplicateDMColumn.isEmpty) {
+            throw new MalformedDataMapCommandException(
+              s"Create lucene datamap $dataMapName failed, datamap already exists on column(s) " +
+              s"$duplicateDMColumn")
+          }
+        })
+      }
+    }
+    if (mainTable != null && mainTable.isStreamingTable &&
+        (dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.LUCENEFG.toString) ||
+         dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.LUCENECG.toString))
+    ) {
       throw new MalformedCarbonCommandException(s"Streaming table does not support creating ${
         dataMapSchema.getProviderName
       } datamap")

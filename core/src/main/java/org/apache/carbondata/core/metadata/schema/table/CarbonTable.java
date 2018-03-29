@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
@@ -36,6 +37,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -849,6 +851,25 @@ public class CarbonTable implements Serializable {
     if (dataMapSchemaList != null && !dataMapSchemaList.isEmpty()) {
       for (DataMapSchema dataMapSchema : dataMapSchemaList) {
         if (dataMapSchema instanceof AggregationDataMapSchema) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * whether this table has Lucene DataMap or not
+   */
+  public boolean hasLuceneDataMap() {
+    List<DataMapSchema> dataMapSchemaList =
+        DataMapStoreManager.getInstance().getAllDataMapSchemas();
+    if (dataMapSchemaList != null && !dataMapSchemaList.isEmpty()) {
+      for (DataMapSchema dataMapSchema : dataMapSchemaList) {
+        if (dataMapSchema.providerName
+            .equalsIgnoreCase(DataMapClassProvider.LUCENEFG.getShortName())
+            || dataMapSchema.providerName
+            .equalsIgnoreCase(DataMapClassProvider.LUCENECG.getShortName())) {
           return true;
         }
       }

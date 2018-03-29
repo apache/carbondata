@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.datamap.lucene;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,13 +33,16 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
@@ -79,28 +83,20 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    */
   AbsoluteTableIdentifier tableIdentifier = null;
 
+  /**
+   * indexed carbon columns for lucene
+   */
+  List<String> indexedCarbonColumns = null;
+
+
   @Override
-  public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema)
+  public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws IOException, MalformedDataMapCommandException {
-    Objects.requireNonNull(identifier);
+    Objects.requireNonNull(carbonTable.getAbsoluteTableIdentifier());
     Objects.requireNonNull(dataMapSchema);
 
-    this.tableIdentifier = identifier;
+    this.tableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     this.dataMapName = dataMapSchema.getDataMapName();
-
-    // get carbonmetadata from carbonmetadata instance
-    CarbonMetadata carbonMetadata = CarbonMetadata.getInstance();
-
-    String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
-
-    // get carbon table
-    CarbonTable carbonTable = carbonMetadata.getCarbonTable(tableUniqueName);
-    if (carbonTable == null) {
-      String errorMessage =
-          String.format("failed to get carbon table with name %s", tableUniqueName);
-      LOGGER.error(errorMessage);
-      throw new IOException(errorMessage);
-    }
 
     // validate DataMapSchema and get index columns
     List<String> indexedColumns =  validateAndGetIndexedColumns(dataMapSchema, carbonTable);
@@ -151,7 +147,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
         }
       }
     }
-    List<String> textColumnList = new ArrayList<String>(textColumns.length);
+    indexedCarbonColumns = new ArrayList<>(textColumns.length);
     for (int i = 0; i < textColumns.length; i++) {
       CarbonColumn column = carbonTable.getColumnByName(carbonTable.getTableName(), textColumns[i]);
       if (null == column) {
@@ -162,9 +158,37 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
             "TEXT_COLUMNS only supports String column. " + "Unsupported column: " + textColumns[i]
                 + ", DataType: " + column.getDataType());
       }
-      textColumnList.add(column.getColName());
+      indexedCarbonColumns.add(column.getColName());
     }
-    return textColumnList;
+    return indexedCarbonColumns;
+  }
+
+  /**
+   * this method will delete the datamap folders during drop datamap
+   * @throws MalformedDataMapCommandException
+   */
+  private void deleteDatamap() throws MalformedDataMapCommandException {
+    SegmentStatusManager ssm = new SegmentStatusManager(tableIdentifier);
+    try {
+      List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
+      for (Segment segment : validSegments) {
+        String segmentId = segment.getSegmentNo();
+        String datamapPath =
+            CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segmentId)
+                + File.separator + dataMapName;
+        if (FileFactory.isFileExist(datamapPath)) {
+          CarbonFile file =
+              FileFactory.getCarbonFile(datamapPath, FileFactory.getFileType(datamapPath));
+          CarbonUtil.deleteFoldersAndFilesSilent(file);
+        }
+      }
+    } catch (IOException ex) {
+      throw new MalformedDataMapCommandException(
+          "drop datamap failed, failed to delete datamap directory");
+    } catch (InterruptedException ex) {
+      throw new MalformedDataMapCommandException(
+          "drop datamap failed, failed to delete datamap directory");
+    }
   }
 
   /**
@@ -173,8 +197,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
   @Override
   public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
     LOGGER.info("lucene data write to " + writeDirectoryPath);
-    return new LuceneDataMapWriter(
-        tableIdentifier, dataMapName, segment, writeDirectoryPath, true);
+    return new LuceneDataMapWriter(tableIdentifier, dataMapName, segment, writeDirectoryPath, true,
+        indexedCarbonColumns);
   }
 
   /**
@@ -183,9 +207,14 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
   @Override
   public List<DataMapDistributable> toDistributable(Segment segment) {
     List<DataMapDistributable> lstDataMapDistribute = new ArrayList<DataMapDistributable>();
-    DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
-        CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()));
-    lstDataMapDistribute.add(luceneDataMapDistributable);
+    CarbonFile[] indexDirs = LuceneDataMapWriter
+        .getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo(), dataMapName);
+    for (CarbonFile indexDir : indexDirs) {
+      DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
+          CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()),
+          indexDir.getAbsolutePath());
+      lstDataMapDistribute.add(luceneDataMapDistributable);
+    }
     return lstDataMapDistribute;
   }
 
@@ -205,9 +234,12 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
   /**
    * Clear all datamaps from memory
    */
-  @Override
-  public void clear() {
-
+  @Override public void clear() {
+    try {
+      deleteDatamap();
+    } catch (MalformedDataMapCommandException ex) {
+      LOGGER.error(ex, "failed to delete datamap directory ");
+    }
   }
 
   /**

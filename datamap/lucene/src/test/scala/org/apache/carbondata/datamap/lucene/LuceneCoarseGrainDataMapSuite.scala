@@ -20,6 +20,8 @@ package org.apache.carbondata.datamap.lucene
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
+
 class LuceneCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/datamap_input.csv"
@@ -47,17 +49,21 @@ class LuceneCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
 
-    sql(
-      s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test
-         | USING '${classOf[LuceneCoarseGrainDataMapFactory].getName}'
-         | DMProperties('TEXT_COLUMNS'='name,city')
+    val ex = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP dm ON TABLE datamap_test
+           | USING 'lucenecg'
+           | DMProperties('TEXT_COLUMNS'='name,city')
       """.stripMargin)
+    }
+    // TODO: change this test when lucene CG is supported
+    assert(ex.getMessage.contains("failed to create datamap, Lucene CG datamap is not yet supported"))
 
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
+    // sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
 
-    checkAnswer(sql("select * from datamap_test where name='n502670'"),
-      sql("select * from normal_test where name='n502670'"))
+    // checkAnswer(sql("select * from datamap_test where name='n502670'"),
+    // sql("select * from normal_test where name='n502670'"))
   }
 
   override protected def afterAll(): Unit = {

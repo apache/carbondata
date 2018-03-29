@@ -36,6 +36,7 @@ import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, RelationIdentifier}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -306,7 +307,7 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
 
       override def onBlockletStart(blockletId: Int): Unit = { }
 
-      override def onBlockStart(blockId: String): Unit = {
+      override def onBlockStart(blockId: String, taskId: Long): Unit = {
         // trigger the second SQL to execute
         Global.overwriteRunning = true
 
@@ -324,7 +325,7 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
 
   override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = ???
 
-  override def init(identifier: AbsoluteTableIdentifier,
+  override def init(carbonTable: CarbonTable,
       dataMapSchema: DataMapSchema): Unit = {
     this.identifier = identifier
   }

@@ -36,7 +36,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.expression.Expression
@@ -55,8 +55,8 @@ class CGDataMapFactory extends CoarseGrainDataMapFactory {
   /**
    * Initialization of Datamap factory with the identifier and datamap name
    */
-  override def init(identifier: AbsoluteTableIdentifier, dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = identifier
+  override def init(carbonTable: CarbonTable, dataMapSchema: DataMapSchema): Unit = {
+    this.identifier = carbonTable.getAbsoluteTableIdentifier
     this.dataMapSchema = dataMapSchema
   }
 
@@ -243,7 +243,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockId file name of the carbondata file
    */
-  override def onBlockStart(blockId: String): Unit = {
+  override def onBlockStart(blockId: String, taskId: Long): Unit = {
     currentBlockId = blockId
   }
 
@@ -386,7 +386,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"create datamap test_cg_datamap on table datamap_store_test using '${classOf[CGDataMapFactory].getName}' as select  id, name from datamap_store_test")
 
-    val loc = CarbonProperties.getInstance().getSystemFolderLocation + "/test_cg_datamap.dmschema"
+    val loc = CarbonProperties.getInstance().getSystemFolderLocation + "/datamap_store_test_test_cg_datamap.dmschema"
 
     assert(FileFactory.isFileExist(loc))
   }
@@ -402,7 +402,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"create datamap test_cg_datamap1 on table datamap_store_test1 using '${classOf[CGDataMapFactory].getName}' as select  id, name from datamap_store_test")
 
-    val loc = CarbonProperties.getInstance().getSystemFolderLocation + "/test_cg_datamap1.dmschema"
+    val loc = CarbonProperties.getInstance().getSystemFolderLocation + "/datamap_store_test1_test_cg_datamap1.dmschema"
 
     assert(FileFactory.isFileExist(loc))
 
@@ -422,7 +422,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"create datamap test_cg_datamap2 on table datamap_store_test2 using '${classOf[CGDataMapFactory].getName}' as select  id, name from datamap_store_test")
 
-    val loc = CarbonProperties.getInstance().getSystemFolderLocation + "/test_cg_datamap2.dmschema"
+    val loc = CarbonProperties.getInstance().getSystemFolderLocation + "/datamap_store_test2_test_cg_datamap2.dmschema"
 
     assert(FileFactory.isFileExist(loc))
 

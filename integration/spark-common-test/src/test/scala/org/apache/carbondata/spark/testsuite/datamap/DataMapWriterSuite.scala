@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -43,9 +44,9 @@ class C2DataMapFactory() extends CoarseGrainDataMapFactory {
 
   var identifier: AbsoluteTableIdentifier = _
 
-  override def init(identifier: AbsoluteTableIdentifier,
+  override def init(carbonTable: CarbonTable,
       dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = identifier
+    this.identifier = carbonTable.getAbsoluteTableIdentifier
   }
 
   override def fireEvent(event: Event): Unit = ???
@@ -203,7 +204,7 @@ object DataMapWriterSuite {
      *
      * @param blockId file name of the carbondata file
      */
-    override def onBlockStart(blockId: String) = {
+    override def onBlockStart(blockId: String, taskId: Long) = {
       callbackSeq :+= s"block start $blockId"
     }
 

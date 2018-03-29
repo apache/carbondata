@@ -24,6 +24,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
@@ -46,10 +47,12 @@ public class IndexDataMapProvider implements DataMapProvider {
           "Parent table is required to create index datamap");
     }
     ArrayList<RelationIdentifier> relationIdentifiers = new ArrayList<>();
-    dataMapSchema.setParentTables(relationIdentifiers);
-    relationIdentifiers.add(
+    RelationIdentifier relationIdentifier =
         new RelationIdentifier(mainTable.getDatabaseName(), mainTable.getTableName(),
-            mainTable.getTableInfo().getFactTable().getTableId()));
+            mainTable.getTableInfo().getFactTable().getTableId());
+    relationIdentifiers.add(relationIdentifier);
+    dataMapSchema.setRelationIdentifier(relationIdentifier);
+    dataMapSchema.setParentTables(relationIdentifiers);
     DataMapFactory dataMapFactory = createIndexDataMapFactory(dataMapSchema);
     DataMapStoreManager.getInstance().registerDataMap(mainTable, dataMapSchema, dataMapFactory);
     storageProvider.saveSchema(dataMapSchema);
@@ -62,7 +65,8 @@ public class IndexDataMapProvider implements DataMapProvider {
 
   @Override
   public void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException {
-    storageProvider.dropSchema(dataMapSchema.getDataMapName());
+    storageProvider.dropSchema(dataMapSchema.getDataMapName(),
+        dataMapSchema.getParentTables().get(0).getTableName());
   }
 
   @Override
@@ -99,25 +103,28 @@ public class IndexDataMapProvider implements DataMapProvider {
     return dataMapFactory;
   }
 
-  private DataMapFactory getDataMapFactoryByShortName(String providerName)
+  public static DataMapFactory getDataMapFactoryByShortName(String providerName)
       throws MalformedDataMapCommandException {
+    if (providerName.equalsIgnoreCase(DataMapClassProvider.LUCENECG.getShortName())) {
+      throw new MalformedDataMapCommandException(
+          "failed to create datamap, Lucene CG datamap is not yet supported");
+    }
+    DataMapRegistry.registerDataMap(DataMapClassProvider.LUCENEFG.getClassName(),
+        DataMapClassProvider.LUCENEFG.getShortName());
     DataMapFactory dataMapFactory;
-    String className = DataMapRegistry.getDataMapClassName(providerName);
+    String className = DataMapRegistry.getDataMapClassName(providerName.toLowerCase());
     if (className != null) {
       try {
         Class<? extends DataMapFactory> datamapClass =
-            (Class<? extends DataMapFactory>) Class.forName(providerName);
+            (Class<? extends DataMapFactory>) Class.forName(className);
         dataMapFactory = datamapClass.newInstance();
       } catch (ClassNotFoundException ex) {
-        throw new MalformedDataMapCommandException(
-            "DataMap '" + providerName + "' not found", ex);
+        throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
       } catch (Throwable ex) {
-        throw new MetadataProcessException(
-            "failed to create DataMap '" + providerName + "'", ex);
+        throw new MetadataProcessException("failed to create DataMap '" + providerName + "'", ex);
       }
     } else {
-      throw new MalformedDataMapCommandException(
-          "DataMap '" + providerName + "' not found");
+      throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found");
     }
     return dataMapFactory;
   }

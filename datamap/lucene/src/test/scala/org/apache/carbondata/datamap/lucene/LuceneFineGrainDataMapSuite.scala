@@ -88,6 +88,16 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       "TEXT_COLUMNS: school does not exist in table. Please check create DataMap statement.")(
       exception.getMessage)
 
+    // duplicate columns
+    exception = intercept[MalformedDataMapCommandException](sql(
+      s"""
+         | CREATE DATAMAP dm1 ON TABLE datamap_test
+         | USING 'LuceneFG'
+         | DMProperties('text_COLUMNS'='name,city,name')
+      """.stripMargin))
+
+    assertResult("TEXT_COLUMNS has duplicate columns :name")(exception.getMessage)
+
     // only support String DataType
     exception = intercept[MalformedDataMapCommandException](sql(
       s"""
@@ -343,8 +353,8 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | USING 'LuceneFG'
          | DMProperties('TEXT_COLUMNS'='c1 , c3')
       """.stripMargin)
-    sql("insert into datamap_test_table select 'abc',1,'aa','bb")
-    sql("insert into datamap_test_table select 'def',2,'dd','ee")
+    sql("insert into datamap_test_table select 'abc',1,'aa','bb'")
+    sql("insert into datamap_test_table select 'def',2,'dd','ee'")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('c1:abc')"),
       sql("select * from datamap_test_table where c1='abc'"))
   }

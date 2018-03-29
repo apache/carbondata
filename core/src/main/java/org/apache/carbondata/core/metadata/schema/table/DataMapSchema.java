@@ -70,7 +70,6 @@ public class DataMapSchema implements Serializable, Writable {
    */
   protected TableSchema childSchema;
 
-
   public DataMapSchema(String dataMapName, String providerName) {
     this.dataMapName = dataMapName;
     this.providerName = providerName;
@@ -143,12 +142,16 @@ public class DataMapSchema implements Serializable, Writable {
 
   /**
    * Return true if this datamap is an Index DataMap
+   *
    * @return
    */
   public boolean isIndexDataMap() {
-    if (providerName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.getShortName()) ||
-        providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getShortName())) {
+    if (providerName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.getShortName())
+        || providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getShortName())) {
       return false;
+    } else if (providerName.equalsIgnoreCase(DataMapClassProvider.LUCENEFG.getShortName())
+        || providerName.equalsIgnoreCase(DataMapClassProvider.LUCENECG.getShortName())) {
+      return true;
     } else {
       return true;
     }

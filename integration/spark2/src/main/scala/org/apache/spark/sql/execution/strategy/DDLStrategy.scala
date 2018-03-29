@@ -244,6 +244,13 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
         }
 
+        // TODO remove this limitation after streaming table support 'Lucene' DataMap
+        // if the table has 'Lucene' DataMap, it doesn't support streaming now
+        if (carbonTable.hasLuceneDataMap) {
+          throw new MalformedCarbonCommandException(
+            "The table has 'Lucene' DataMap, it doesn't support streaming")
+        }
+
         // TODO remove this limitation later
         val property = properties.find(_._1.equalsIgnoreCase("streaming"))
         if (property.isDefined) {

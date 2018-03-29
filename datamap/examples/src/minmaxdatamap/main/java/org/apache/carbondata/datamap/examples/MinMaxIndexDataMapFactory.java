@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
@@ -44,8 +45,8 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
 
   private AbsoluteTableIdentifier identifier;
 
-  @Override public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema) {
-    this.identifier = identifier;
+  @Override public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+    this.identifier = carbonTable.getAbsoluteTableIdentifier();
   }
 
   /**

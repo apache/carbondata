@@ -62,7 +62,17 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
   public List<FineGrainDataMap> getDataMaps(DataMapDistributable distributable,
       ReadCommittedScope readCommittedScope)
       throws IOException {
-    return getDataMaps(distributable.getSegment(), readCommittedScope);
+    List<FineGrainDataMap> lstDataMap = new ArrayList<>();
+    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer);
+    String indexPath = ((LuceneDataMapDistributable) distributable).getIndexPath();
+    try {
+      dataMap.init(new DataMapModel(indexPath));
+    } catch (MemoryException e) {
+      LOGGER.error("failed to get lucene datamap , detail is {}" + e.getMessage());
+      return lstDataMap;
+    }
+    lstDataMap.add(dataMap);
+    return lstDataMap;
   }
 
   @Override

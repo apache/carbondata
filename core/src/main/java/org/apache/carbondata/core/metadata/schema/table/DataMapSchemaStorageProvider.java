@@ -63,6 +63,6 @@ public interface DataMapSchemaStorageProvider {
    * Drop the schema from the storage by using dataMapName.
    * @param dataMapName
    */
-  void dropSchema(String dataMapName) throws IOException;
+  void dropSchema(String dataMapName,String tableName) throws IOException;
 
 }
