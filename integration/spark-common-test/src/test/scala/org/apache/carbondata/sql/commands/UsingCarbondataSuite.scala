@@ -39,14 +39,14 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
   test("CARBONDATA-2262: test check results of table with complex data type and bucketing") {
     sql("drop table if exists create_source")
     sql("create table create_source(intField int, stringField string, complexField array<int>) " +
-      "USING CARBONDATA")
+      "USING carbondata")
     sql("""insert into create_source values(1,"source","1$2$3")""")
     checkAnswer(sql("select * from create_source"), Row(1, "source", mutable.WrappedArray.newBuilder[Int].+=(1, 2, 3)))
     sql("drop table if exists create_source")
   }
 
   test("CARBONDATA-2262: Support the syntax of 'USING CarbonData' whithout tableName") {
-    sql("CREATE TABLE src_carbondata1(key INT, value STRING) using CarbonData")
+    sql("CREATE TABLE src_carbondata1(key INT, value STRING) using carbondata")
     sql("insert into src_carbondata1 values(1,'source')")
     checkAnswer(sql("select * from src_carbondata1"), Row(1, "source"))
   }

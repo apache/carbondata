@@ -157,7 +157,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
           CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
         catalogTable.provider match {
           case Some(name) if (name.equals("org.apache.spark.sql.CarbonSource")
-            || name.equalsIgnoreCase("CARBONDATA")) => name
+            || name.equalsIgnoreCase("carbondata")) => name
           case _ => throw new NoSuchTableException(database, tableIdentifier.table)
         }
         val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
@@ -551,7 +551,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
           CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
         catalogTable.provider match {
           case Some(name) if (name.equals("org.apache.spark.sql.CarbonSource")
-            || name.equalsIgnoreCase("CARBONDATA")) => name
+            || name.equalsIgnoreCase("carbondata")) => name
           case _ =>
             throw new NoSuchTableException(tableIdentifier.database.get, tableIdentifier.table)
         }
