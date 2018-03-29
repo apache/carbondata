@@ -62,26 +62,8 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), true, "preaggmain_a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), true, "preaggmain_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg2"), false, "preaggmain_a1")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), false, "preaggmain_udfsum")
     sql("drop datamap preagg2 on table PreAggMain")
-  }
-
-  test("test pre agg create table 3") {
-    dropDataMaps("PreAggMain", "preagg3")
-    sql("create datamap preagg3 on table PreAggMain using 'preaggregate' as select a,sum(b) as sum from PreAggMain group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg3"), true, "preaggmain_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg3"), true, "preaggmain_b_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg3"), false, "preaggmain_sum")
-    sql("drop datamap preagg3 on table PreAggMain")
-  }
-
-  test("test pre agg create table 4") {
-    dropDataMaps("PreAggMain", "preagg4")
-    sql("create datamap preagg4 on table PreAggMain using 'preaggregate' as select a as a1,sum(b) as sum from PreAggMain group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), true, "preaggmain_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), true, "preaggmain_b_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), false, "preaggmain_a1")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain_preagg4"), false, "preaggmain_sum")
-    sql("drop datamap preagg4 on table PreAggMain")
   }
 
   test("test pre agg create table 5") {
@@ -93,23 +75,15 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test pre agg create table 6") {
-    sql("create datamap preagg12 on table PreAggMain1 using 'preaggregate' as select a as a1,sum(b) from PreAggMain1 group by a")
+    sql("create datamap preagg12 on table PreAggMain1 using 'preaggregate' as select a as a1,sum(b) as sum from PreAggMain1 group by a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "preaggmain1_a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "preaggmain1_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), false, "preaggmain1_a1")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), false, "preaggmain1_sum")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "DICTIONARY")
     sql("drop datamap preagg12 on table PreAggMain1")
   }
-
-  test("test pre agg create table 7") {
-    sql("create datamap preagg13 on table PreAggMain1 using 'preaggregate' as select a,sum(b) as sum from PreAggMain1 group by a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), true, "preaggmain1_a")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), true, "preaggmain1_b_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), false, "preaggmain1_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg13"), true, "DICTIONARY")
-    sql("drop datamap preagg13 on table PreAggMain1")
-  }
-
+  
   test("test pre agg create table 8") {
     sql("create datamap preagg14 on table PreAggMain1 using 'preaggregate' as select a as a1,sum(b) as sum from PreAggMain1 group by a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), true, "preaggmain1_a")
