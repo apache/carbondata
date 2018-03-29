@@ -30,6 +30,7 @@ public class CarbonTableConfig {
   private String dbPath;
   private String tablePath;
   private String storePath;
+  private String unsafeMemoryInMb;
 
   @NotNull public String getDbPath() {
     return dbPath;
@@ -55,6 +56,16 @@ public class CarbonTableConfig {
 
   @Config("carbondata-store") public CarbonTableConfig setStorePath(String storePath) {
     this.storePath = storePath;
+    return this;
+  }
+
+  public String getUnsafeMemoryInMb() {
+    return unsafeMemoryInMb;
+  }
+
+  @Config("carbon.unsafe.working.memory.in.mb")
+  public CarbonTableConfig setUnsafeMemoryInMb(String unsafeMemoryInMb) {
+    this.unsafeMemoryInMb = unsafeMemoryInMb;
     return this;
   }
 }

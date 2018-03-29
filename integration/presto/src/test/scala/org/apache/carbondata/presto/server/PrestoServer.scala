@@ -69,7 +69,8 @@ object PrestoServer {
     Try {
       queryRunner.installPlugin(new CarbondataPlugin)
       val carbonProperties = ImmutableMap.builder[String, String]
-        .put("carbondata-store", carbonStorePath).build
+        .put("carbondata-store", carbonStorePath)
+        .put("carbon.unsafe.working.memory.in.mb", "512").build
 
       // CreateCatalog will create a catalog for CarbonData in etc/catalog.
       queryRunner.createCatalog(CARBONDATA_CATALOG, CARBONDATA_CONNECTOR, carbonProperties)
