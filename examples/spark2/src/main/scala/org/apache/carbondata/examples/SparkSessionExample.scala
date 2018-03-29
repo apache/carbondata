@@ -180,7 +180,6 @@ object SparkSessionExample {
     // Drop table
     sparksession.sql("DROP TABLE IF EXISTS sparksession_table")
     sparksession.sql("DROP TABLE IF EXISTS csv_table")
-    sparksession.sql("show tables").show()
 
     sparksession.stop()
   }

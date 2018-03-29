@@ -37,18 +37,18 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
   }
 
   test("CARBONDATA-2262: test check results of table with complex data type and bucketing") {
-    sql("drop table if exists create_source")
-    sql("create table create_source(intField int, stringField string, complexField array<int>) " +
+    sql("DROP TABLE IF EXISTS create_source")
+    sql("CREATE TABLE create_source(intField INT, stringField STRING, complexField ARRAY<INT>) " +
       "USING carbondata")
-    sql("""insert into create_source values(1,"source","1$2$3")""")
-    checkAnswer(sql("select * from create_source"), Row(1, "source", mutable.WrappedArray.newBuilder[Int].+=(1, 2, 3)))
-    sql("drop table if exists create_source")
+    sql("""INSERT INTO create_source VALUES(1,"source","1$2$3")""")
+    checkAnswer(sql("SELECT * FROM create_source"), Row(1, "source", mutable.WrappedArray.newBuilder[Int].+=(1, 2, 3)))
+    sql("DROP TABLE IF EXISTS create_source")
   }
 
   test("CARBONDATA-2262: Support the syntax of 'USING CarbonData' whithout tableName") {
-    sql("CREATE TABLE src_carbondata1(key INT, value STRING) using carbondata")
-    sql("insert into src_carbondata1 values(1,'source')")
-    checkAnswer(sql("select * from src_carbondata1"), Row(1, "source"))
+    sql("CREATE TABLE src_carbondata1(key INT, value STRING) USING carbondata")
+    sql("INSERT INTO src_carbondata1 VALUES(1,'source')")
+    checkAnswer(sql("SELECT * FROM src_carbondata1"), Row(1, "source"))
   }
 
    test("CARBONDATA-2262: Support the syntax of 'STORED AS carbondata, get data size and index size after minor compaction") {
