@@ -59,7 +59,7 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * @param conf
  * @param hadoopConf
  */
-class CarbonSessionCatalog(
+class CarbonHiveSessionCatalog(
     externalCatalog: HiveExternalCatalog,
     globalTempViewManager: GlobalTempViewManager,
     functionRegistry: FunctionRegistry,
@@ -68,7 +68,7 @@ class CarbonSessionCatalog(
     hadoopConf: Configuration,
     parser: ParserInterface,
     functionResourceLoader: FunctionResourceLoader)
-  extends HiveSessionCatalog(
+  extends HiveSessionCatalog (
     externalCatalog,
     globalTempViewManager,
     new HiveMetastoreCatalog(sparkSession),
@@ -77,15 +77,18 @@ class CarbonSessionCatalog(
     hadoopConf,
     parser,
     functionResourceLoader
-  ) {
+  ) with CarbonSessionCatalog {
 
   lazy val carbonEnv = {
     val env = new CarbonEnv
     env.init(sparkSession)
     env
   }
-
-  def getCarbonEnv() : CarbonEnv = {
+  /**
+   * return's the carbonEnv instance
+   * @return
+   */
+  override def getCarbonEnv() : CarbonEnv = {
     carbonEnv
   }
 
@@ -97,28 +100,9 @@ class CarbonSessionCatalog(
 
   override def lookupRelation(name: TableIdentifier): LogicalPlan = {
     val rtnRelation = super.lookupRelation(name)
-    var toRefreshRelation = false
-    rtnRelation match {
-      case SubqueryAlias(_,
-      LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)) =>
-        toRefreshRelation = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
-      case LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _) =>
-        toRefreshRelation = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
-      case SubqueryAlias(_, relation) if
-      relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
-      relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
-      relation.getClass.getName.equals(
-        "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation") =>
-        val catalogTable =
-          CarbonReflectionUtils.getFieldOfCatalogTable(
-            "tableMeta",
-            relation).asInstanceOf[CatalogTable]
-        toRefreshRelation =
-          CarbonEnv.refreshRelationFromCache(catalogTable.identifier)(sparkSession)
-      case _ =>
-    }
-
-    if (toRefreshRelation) {
+    val isRelationRefreshed =
+      CarbonSessionUtil.refreshRelation(rtnRelation, name)(sparkSession)
+    if (isRelationRefreshed) {
       super.lookupRelation(name)
     } else {
       rtnRelation
@@ -130,7 +114,7 @@ class CarbonSessionCatalog(
    *
    * @return
    */
-  def getClient(): org.apache.spark.sql.hive.client.HiveClient = {
+  override def getClient(): org.apache.spark.sql.hive.client.HiveClient = {
     sparkSession.asInstanceOf[CarbonSession].sharedState.externalCatalog
       .asInstanceOf[HiveExternalCatalog].client
   }
@@ -157,21 +141,16 @@ class CarbonSessionCatalog(
    * @param identifier
    * @return
    */
-  def getPartitionsAlternate(partitionFilters: Seq[Expression],
+  override def getPartitionsAlternate(partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
       identifier: TableIdentifier) = {
-    val allPartitions = sparkSession.sessionState.catalog.listPartitions(identifier)
-    ExternalCatalogUtils.prunePartitionsByFilter(
-      sparkSession.sessionState.catalog.getTableMetadata(identifier),
-      allPartitions,
-      partitionFilters,
-      sparkSession.sessionState.conf.sessionLocalTimeZone)
+    CarbonSessionUtil.prunePartitionsByFilter(partitionFilters, sparkSession, identifier)
   }
 
   /**
    * Update the storageformat with new location information
    */
-  def updateStorageLocation(
+  override def updateStorageLocation(
       path: Path,
       storage: CatalogStorageFormat): CatalogStorageFormat = {
     storage.copy(locationUri = Some(path.toUri))
@@ -217,8 +196,8 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
   /**
    * Create a [[CarbonSessionCatalogBuild]].
    */
-  override protected lazy val catalog: CarbonSessionCatalog = {
-    val catalog = new CarbonSessionCatalog(
+  override protected lazy val catalog: CarbonHiveSessionCatalog = {
+    val catalog = new CarbonHiveSessionCatalog(
       externalCatalog,
       session.sharedState.globalTempViewManager,
       functionRegistry,
@@ -280,6 +259,13 @@ class CarbonOptimizer(
   extends SparkOptimizer(catalog, conf, experimentalMethods) {
 
   override def execute(plan: LogicalPlan): LogicalPlan = {
+    val transFormedPlan: LogicalPlan = CarbonOptimizerUtil.transformForScalarSubQuery(plan)
+    super.execute(transFormedPlan)
+  }
+}
+
+object CarbonOptimizerUtil {
+  def transformForScalarSubQuery(plan: LogicalPlan): LogicalPlan = {
     // In case scalar subquery add flag in relation to skip the decoder plan in optimizer rule, And
     // optimize whole plan at once.
     val transFormedPlan = plan.transform {
@@ -309,10 +295,10 @@ class CarbonOptimizer(
                 lr.relation.asInstanceOf[CarbonDatasourceHadoopRelation].isSubquery += true
                 lr
             }
-            In(value, Seq(ListQuery(tPlan, l.children , exprId)))
+            In(value, Seq(ListQuery(tPlan, l.children, exprId)))
         }
     }
-    super.execute(transFormedPlan)
+    transFormedPlan
   }
 }
 

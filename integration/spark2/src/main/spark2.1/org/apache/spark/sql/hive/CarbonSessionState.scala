@@ -55,7 +55,7 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * @param conf
  * @param hadoopConf
  */
-class CarbonSessionCatalog(
+class CarbonHiveSessionCatalog(
     externalCatalog: HiveExternalCatalog,
     globalTempViewManager: GlobalTempViewManager,
     sparkSession: SparkSession,
@@ -70,14 +70,20 @@ class CarbonSessionCatalog(
     functionResourceLoader,
     functionRegistry,
     conf,
-    hadoopConf) {
+    hadoopConf) with CarbonSessionCatalog {
 
   lazy val carbonEnv = {
     val env = new CarbonEnv
     env.init(sparkSession)
     env
   }
-
+  /**
+   * return's the carbonEnv instance
+   * @return
+   */
+  override def getCarbonEnv() : CarbonEnv = {
+    carbonEnv
+  }
   // Initialize all listeners to the Operation bus.
   CarbonEnv.init(sparkSession)
 
@@ -138,7 +144,7 @@ class CarbonSessionCatalog(
    *
    * @return
    */
-  def getClient(): org.apache.spark.sql.hive.client.HiveClient = {
+  override def getClient(): org.apache.spark.sql.hive.client.HiveClient = {
     sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
   }
 
@@ -187,7 +193,7 @@ class CarbonSessionCatalog(
   /**
    * Update the storageformat with new location information
    */
-  def updateStorageLocation(
+  override def updateStorageLocation(
       path: Path,
       storage: CatalogStorageFormat): CatalogStorageFormat = {
     storage.copy(locationUri = Some(path.toString))
@@ -254,7 +260,7 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
    * Internal catalog for managing table and database states.
    */
   override lazy val catalog = {
-    new CarbonSessionCatalog(
+    new CarbonHiveSessionCatalog(
       sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog],
       sparkSession.sharedState.globalTempViewManager,
       sparkSession,
