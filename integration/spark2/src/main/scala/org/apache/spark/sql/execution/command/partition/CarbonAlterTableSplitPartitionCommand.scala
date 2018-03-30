@@ -19,11 +19,11 @@ package org.apache.spark.sql.execution.command.partition
 
 import java.text.SimpleDateFormat
 import java.util
-import java.util.concurrent.{Executors, ExecutorService, Future}
+import java.util.concurrent.{ExecutorService, Executors, Future}
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.{CarbonEnv, Row, SQLContext, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.hive.CarbonRelation
