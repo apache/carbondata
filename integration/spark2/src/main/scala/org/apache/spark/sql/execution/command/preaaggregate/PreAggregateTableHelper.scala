@@ -30,9 +30,10 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 
 /**
  * Below helper class will be used to create pre-aggregate table
@@ -52,6 +53,8 @@ case class PreAggregateTableHelper(
     ifNotExistsSet: Boolean = false) {
 
   var loadCommand: CarbonLoadDataCommand = _
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def initMeta(sparkSession: SparkSession): Seq[Row] = {
     val dmProperties = dataMapProperties.asScala
@@ -176,9 +179,12 @@ case class PreAggregateTableHelper(
 
     if (SegmentStatusManager.isLoadInProgressInTable(parentTable)) {
       throw new UnsupportedOperationException(
-        "Cannot create pre-aggregate table when insert is in progress on main table")
+        "Cannot create pre-aggregate table when insert is in progress on parent table")
     }
+    // check if any segment if available for load in the parent table
     val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath)
+      .filter(segment => segment.getSegmentStatus == SegmentStatus.SUCCESS ||
+                         segment.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS)
     if (loadAvailable.nonEmpty) {
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.
@@ -191,6 +197,8 @@ case class PreAggregateTableHelper(
         loadCommand,
         isOverwrite = false,
         sparkSession)
+    } else {
+      LOGGER.info(s"No segment available for load in table ${parentTable.getTableUniqueName}")
     }
     Seq.empty
   }

@@ -26,6 +26,7 @@ import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandExcept
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.DataMapProvider
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.datamap.DataMapManager
 
@@ -49,17 +50,12 @@ case class CarbonCreateDataMapCommand(
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     // since streaming segment does not support building index and pre-aggregate yet,
     // so streaming table does not support create datamap
-    mainTable =
-      tableIdentifier match {
-        case Some(table) =>
-          CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession)
-        case _ => null
-      }
-    if (mainTable != null && mainTable.isStreamingTable) {
-      throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
+    mainTable = tableIdentifier match {
+      case Some(table) =>
+        CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession)
+      case _ => null
     }
-
-    if (mainTable != null && mainTable.getDataMapSchema(dataMapName) != null) {
+    if (mainTable.getDataMapSchema(dataMapName) != null) {
       if (!ifNotExistsSet) {
         throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")
       } else {
@@ -68,6 +64,14 @@ case class CarbonCreateDataMapCommand(
     }
 
     dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
+    if (mainTable.isStreamingTable &&
+        !(dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
+          || dataMapSchema.getProviderName
+            .equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
+      throw new MalformedCarbonCommandException(s"Streaming table does not support creating ${
+        dataMapSchema.getProviderName
+      } datamap")
+    }
     dataMapSchema.setProperties(new java.util.HashMap[String, String](
       dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
     dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema, sparkSession)

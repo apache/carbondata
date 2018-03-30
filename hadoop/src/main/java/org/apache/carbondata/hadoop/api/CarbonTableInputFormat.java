@@ -151,7 +151,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       if (validSegments.size() == 0) {
         return getSplitsOfStreaming(job, identifier, streamSegments);
       }
-
       List<Segment> filteredSegmentToAccess = getFilteredSegment(job, segments.getValidSegments(),
           true);
       if (filteredSegmentToAccess.size() == 0) {
