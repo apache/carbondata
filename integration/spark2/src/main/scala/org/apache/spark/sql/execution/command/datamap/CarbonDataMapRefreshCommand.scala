@@ -26,8 +26,8 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.datamap.DataMapManager
 
 /**
- * Refresh the datamaps while sync with main table data.
- * @param tableIdentifier
+ * Refresh the datamaps through sync with main table data. After sync with parent table's it enables
+ * the datamap.
  */
 case class CarbonDataMapRefreshCommand(
     dataMapName: String,
@@ -41,7 +41,9 @@ case class CarbonDataMapRefreshCommand(
         CarbonEnv.getCarbonTable(identifier)(sparkSession)
       case _ => null
     }
+    // Sync the datamap with parent table
     provider.rebuild(table, schema)
+    // After sync success enable the datamap.
     DataMapStatusManager.enableDataMap(dataMapName)
     Seq.empty
   }

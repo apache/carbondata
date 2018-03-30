@@ -187,7 +187,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * The syntax of show datamap is used to show datamaps on the table
-   * REFRESH DATAMAP datamapname ON TABLE tableName
+   * REFRESH DATAMAP datamapname [ON TABLE] tableName
    */
   protected lazy val refreshDataMap: Parser[LogicalPlan] =
     REFRESH ~> DATAMAP ~> ident ~ opt(ontable) <~ opt(";") ^^ {

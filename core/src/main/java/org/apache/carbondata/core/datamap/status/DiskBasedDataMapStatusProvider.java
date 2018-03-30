@@ -40,6 +40,11 @@ import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
 
+/**
+ * It saves/serializes the array of {{@link DataMapStatusDetail}} to disk in json format.
+ * It ensures the data consistance while concurrent write through write lock. It saves the status
+ * to the datamapstatus under the system folder.
+ */
 public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvider {
 
   private static final LogService LOG =
@@ -47,7 +52,8 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
 
   private static final String DATAMAP_STATUS_FILE = "datamapstatus";
 
-  @Override public DataMapStatusDetail[] getDataMapStatusDetails() throws IOException {
+  @Override
+  public DataMapStatusDetail[] getDataMapStatusDetails() throws IOException {
     String statusPath = CarbonProperties.getInstance().getSystemFolderLocation()
         + CarbonCommonConstants.FILE_SEPARATOR + DATAMAP_STATUS_FILE;
     Gson gsonObjectToRead = new Gson();
@@ -80,6 +86,15 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
     return dataMapStatusDetails;
   }
 
+  /**
+   * Update or add the status of passed datamaps with the given datamapstatus. If the datamapstatus
+   * given is enabled/disabled then updates/adds the datamap, in case of drop it just removes it
+   * from the file.
+   * This method always overwrites the old file.
+   * @param dataMapSchemas schemas of which are need to be updated in datamap status
+   * @param dataMapStatus  status to be updated for the datamap schemas
+   * @throws IOException
+   */
   @Override
   public void updateDataMapStatus(List<DataMapSchema> dataMapSchemas, DataMapStatus dataMapStatus)
       throws IOException {
@@ -108,9 +123,11 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
                 .add(new DataMapStatusDetail(dataMapSchema.getDataMapName(), dataMapStatus));
           }
         }
+        // Add the newly added datamaps to the list.
         if (newStatusDetails.size() > 0 && dataMapStatus != DataMapStatus.DROPPED) {
           dataMapStatusList.addAll(newStatusDetails);
         }
+        // In case of dropped datamap, just remove from the list.
         if (dataMapStatus == DataMapStatus.DROPPED) {
           dataMapStatusList.removeAll(changedStatusDetails);
         }
