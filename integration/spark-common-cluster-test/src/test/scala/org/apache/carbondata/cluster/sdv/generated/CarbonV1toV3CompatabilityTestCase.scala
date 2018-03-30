@@ -31,8 +31,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 class CarbonV1toV3CompatabilityTestCase extends QueryTest with BeforeAndAfterAll {
 
   var localspark: CarbonSession = null
-  val storeLocation = s"${TestQueryExecutor.integrationPath}/spark-common-test/src/test/resources/Data/v1_version/store"
-  val metaLocation = s"${TestQueryExecutor.integrationPath}/spark-common-test/src/test/resources/Data/v1_version"
+  val storeLocation = s"${executor.integrationPath}/spark-common-test/src/test/resources/Data/v1_version/store"
+  val metaLocation = s"${executor.integrationPath}/spark-common-test/src/test/resources/Data/v1_version"
 
   override def beforeAll {
     sqlContext.sparkSession.stop()

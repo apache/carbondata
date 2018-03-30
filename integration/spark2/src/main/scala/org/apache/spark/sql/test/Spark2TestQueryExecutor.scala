@@ -19,7 +19,7 @@ package org.apache.spark.sql.test
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql._
-import org.apache.spark.sql.test.TestQueryExecutor.{hdfsUrl, integrationPath, warehouse}
+import org.apache.spark.sql.test.TestQueryExecutor._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -32,52 +32,65 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class Spark2TestQueryExecutor extends TestQueryExecutorRegister {
 
-  override def sql(sqlText: String): DataFrame = Spark2TestQueryExecutor.spark.sql(sqlText)
+  var executor: TestQueryExecutor = _
 
-  override def sqlContext: SQLContext = Spark2TestQueryExecutor.spark.sqlContext
+  override def sql(sqlText: String): DataFrame = spark.sql(sqlText)
 
-  override def stop(): Unit = Spark2TestQueryExecutor.spark.stop()
-}
+  override def sqlContext: SQLContext = spark.sqlContext
 
-object Spark2TestQueryExecutor {
+  override def stop(): Unit = spark.stop()
+
+  override def setExecutor(executor: TestQueryExecutor): Unit =
+    this.executor = executor
+
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   LOGGER.info("use TestQueryExecutorImplV2")
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
 
 
-  import org.apache.spark.sql.CarbonSession._
 
-  val conf = new SparkConf()
-  if (!TestQueryExecutor.masterUrl.startsWith("local")) {
-    conf.setJars(TestQueryExecutor.jars).
-      set("spark.driver.memory", "6g").
-      set("spark.executor.memory", "4g").
-      set("spark.executor.cores", "2").
-      set("spark.executor.instances", "2").
-      set("spark.cores.max", "4")
+  lazy val conf = {
+    val local = new SparkConf()
+    if (!executor.masterUrl.startsWith("local")) {
+      local.setJars(executor.jars).
+        set("spark.driver.memory", "6g").
+        set("spark.executor.memory", "4g").
+        set("spark.executor.cores", "2").
+        set("spark.executor.instances", "2").
+        set("spark.cores.max", "4")
+      FileFactory.getConfiguration.
+        set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
+    }
+    local
+  }
+  lazy val metastoredb = s"${executor.integrationPath}/spark-common-cluster-test/target"
+  import org.apache.spark.sql.CarbonSession._
+  lazy val spark = {
+    val localSpark = SparkSession
+      .builder().config(conf)
+      .master(executor.masterUrl)
+      .appName("Spark2TestQueryExecutor")
+      .enableHiveSupport()
+      .config("spark.sql.warehouse.dir", executor.warehouse)
+      .config("spark.sql.crossJoin.enabled", "true")
+      .config(CarbonCommonConstants.CARBON_COMMON_LISTENER_REGISTER_CLASSNAME, "")
+      .getOrCreateCarbonSession(null, executor.metastoredb)
+    if (executor.warehouse.startsWith("hdfs://")) {
+      System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, executor.warehouse)
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
+        CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+      ResourceRegisterAndCopier.
+        copyResourcesifNotExists(executor.hdfsUrl,
+          s"${ executor.integrationPath }/spark-common-test/src/test/resources",
+          s"${
+            executor
+              .integrationPath
+          }//spark-common-cluster-test/src/test/resources/testdatafileslist.txt")
+    }
     FileFactory.getConfiguration.
       set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
+    localSpark.sparkContext.setLogLevel("ERROR")
+    localSpark
   }
-  val metastoredb = s"$integrationPath/spark-common-cluster-test/target"
-  val spark = SparkSession
-    .builder().config(conf)
-    .master(TestQueryExecutor.masterUrl)
-    .appName("Spark2TestQueryExecutor")
-    .enableHiveSupport()
-    .config("spark.sql.warehouse.dir", warehouse)
-    .config("spark.sql.crossJoin.enabled", "true")
-    .config(CarbonCommonConstants.CARBON_COMMON_LISTENER_REGISTER_CLASSNAME, "")
-    .getOrCreateCarbonSession(null, TestQueryExecutor.metastoredb)
-  if (warehouse.startsWith("hdfs://")) {
-    System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, warehouse)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
-      CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
-    ResourceRegisterAndCopier.
-      copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark-common-test/src/test/resources",
-        s"$integrationPath//spark-common-cluster-test/src/test/resources/testdatafileslist.txt")
-  }
-  FileFactory.getConfiguration.
-    set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
-  spark.sparkContext.setLogLevel("ERROR")
 }

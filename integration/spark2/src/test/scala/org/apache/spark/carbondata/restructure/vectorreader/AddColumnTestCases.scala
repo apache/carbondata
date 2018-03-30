@@ -298,7 +298,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
         "TIMESTAMP)STORED BY 'carbondata' TBLPROPERTIES" +
         "('DICTIONARY_EXCLUDE'='charField')")
-      val lockFilePath = s"${ TestQueryExecutor.storeLocation }/default/carbon_table/meta.lock"
+      val lockFilePath = s"${ executor.storeLocation }/default/carbon_table/meta.lock"
       new File(lockFilePath).createNewFile()
       sql(
         "ALTER TABLE carbon_table ADD COLUMNS(newfield STRING) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")

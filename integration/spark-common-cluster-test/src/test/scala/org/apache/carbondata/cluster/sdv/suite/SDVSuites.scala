@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -65,7 +66,7 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
 
   override protected def afterAll() = {
     println("---------------- Stopping spark -----------------")
-    TestQueryExecutor.INSTANCE.stop()
+    executor.INSTANCE.stop()
     println("---------------- Stopped spark -----------------")
   }
 }
@@ -90,7 +91,7 @@ class SDVSuites1 extends Suites with BeforeAndAfterAll {
 
   override protected def afterAll() = {
     println("---------------- Stopping spark -----------------")
-    TestQueryExecutor.INSTANCE.stop()
+    executor.INSTANCE.stop()
     println("---------------- Stopped spark -----------------")
   }
 }
@@ -109,7 +110,7 @@ class SDVSuites2 extends Suites with BeforeAndAfterAll {
 
   override protected def afterAll() = {
     println("---------------- Stopping spark -----------------")
-    TestQueryExecutor.INSTANCE.stop()
+    executor.INSTANCE.stop()
     println("---------------- Stopped spark -----------------")
   }
 }
@@ -150,7 +151,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
 
   override protected def afterAll() = {
     println("---------------- Stopping spark -----------------")
-    TestQueryExecutor.INSTANCE.stop()
+    executor.INSTANCE.stop()
     println("---------------- Stopped spark -----------------")
   }
 }
@@ -166,7 +167,7 @@ class SDVSuites4 extends Suites with BeforeAndAfterAll {
 
   override protected def afterAll() = {
     println("---------------- Stopping spark -----------------")
-    TestQueryExecutor.INSTANCE.stop()
+    executor.INSTANCE.stop()
     println("---------------- Stopped spark -----------------")
   }
 }

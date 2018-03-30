@@ -37,7 +37,11 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
-class QueryTest extends PlanTest with Suite {
+class QueryTest(targetLocation: String) extends PlanTest with Suite {
+
+  def this() {
+    this(null)
+  }
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -88,7 +92,7 @@ class QueryTest extends PlanTest with Suite {
   }
 
   protected def checkAnswer(carbon: String, hive: String, uniqueIdentifier: String): Unit = {
-    val path = TestQueryExecutor.hiveresultpath + "/" + uniqueIdentifier
+    val path = executor.hiveresultpath + "/" + uniqueIdentifier
     if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
       val objinp = new ObjectInputStream(FileFactory
         .getDataInputStream(path, FileFactory.getFileType(path)))
@@ -120,12 +124,12 @@ class QueryTest extends PlanTest with Suite {
   }
 
   def sql(sqlText: String): DataFrame = {
-    val frame = TestQueryExecutor.INSTANCE.sql(sqlText)
+    val frame = executor.INSTANCE.sql(sqlText)
     val plan = frame.queryExecution.logical
-    if (TestQueryExecutor.hdfsUrl.startsWith("hdfs")) {
+    if (executor.hdfsUrl.startsWith("hdfs")) {
       plan match {
         case l: LoadDataCommand =>
-          val copyPath = TestQueryExecutor.warehouse + "/" + l.table.table.toLowerCase +
+          val copyPath = executor.warehouse + "/" + l.table.table.toLowerCase +
                          l.path.substring(l.path.lastIndexOf("/"), l.path.length)
           ResourceRegisterAndCopier.copyLocalFile(l.path, copyPath)
         case _ =>
@@ -138,9 +142,11 @@ class QueryTest extends PlanTest with Suite {
     sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
-  val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
+  val executor = TestQueryExecutor(targetLocation)
 
-  val resourcesPath = TestQueryExecutor.resourcesPath
+  val sqlContext: SQLContext = executor.INSTANCE.sqlContext
+
+  val resourcesPath = executor.resourcesPath
 
   val hiveClient = sqlContext.sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
     .getClient();

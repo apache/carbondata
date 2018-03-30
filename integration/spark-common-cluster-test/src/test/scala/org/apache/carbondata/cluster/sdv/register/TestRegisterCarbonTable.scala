@@ -32,7 +32,7 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
  *
  */
 class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
-  var dbLocationCustom = TestQueryExecutor.warehouse +
+  var dbLocationCustom = executor.warehouse +
                          CarbonCommonConstants.FILE_SEPARATOR + "dbName"
   override def beforeAll {
     sql("drop database if exists carbon cascade")
