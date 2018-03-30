@@ -548,7 +548,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
 
       sql(
-        s"""LOAD DATA INPATH  '${TestQueryExecutor
+        s"""LOAD DATA INPATH  '${executor
           .integrationPath}/spark2/src/test/resources/bool/supportBooleanBadRecords.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FAIL','FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2','SINGLE_Pass'='true')""".stripMargin)
         .collect
       checkAnswer(

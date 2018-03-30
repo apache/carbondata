@@ -32,7 +32,11 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 
 
-class QueryTest extends PlanTest {
+class QueryTest(targetLocation: String) extends PlanTest {
+
+  def this() {
+    this(null)
+  }
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -110,16 +114,18 @@ class QueryTest extends PlanTest {
     }
   }
 
-  def sql(sqlText: String): DataFrame = TestQueryExecutor.INSTANCE.sql(sqlText)
+  def sql(sqlText: String): DataFrame = executor.INSTANCE.sql(sqlText)
 
-  val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
+  val executor = TestQueryExecutor(targetLocation)
+
+  val sqlContext: SQLContext = executor.INSTANCE.sqlContext
 
   lazy val storeLocation = CarbonProperties.getInstance().
     getProperty(CarbonCommonConstants.STORE_LOCATION)
-  val resourcesPath = TestQueryExecutor.resourcesPath
-  val metastoredb = TestQueryExecutor.metastoredb
-  val integrationPath = TestQueryExecutor.integrationPath
-  val dblocation = TestQueryExecutor.location
+  val resourcesPath = executor.resourcesPath
+  val metastoredb = executor.metastoredb
+  val integrationPath = executor.integrationPath
+  val dblocation = executor.location
   val defaultParallelism = sqlContext.sparkContext.defaultParallelism
 }
 

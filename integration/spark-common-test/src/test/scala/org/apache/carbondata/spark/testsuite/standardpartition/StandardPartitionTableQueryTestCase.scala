@@ -249,7 +249,7 @@ test("Creation of partition table should fail if the colname in table schema and
   val exception = intercept[Exception]{
     sql("CREATE TABLE uniqdata_char2(name char,id int) partitioned by (NAME char)stored by 'carbondata' ")
   }
-  if(Spark2TestQueryExecutor.spark.version.startsWith("2.1.0")){
+  if(sqlContext.sparkSession.version.startsWith("2.1.0")){
     assert(exception.getMessage.contains("Operation not allowed: Partition columns should not be " +
                                          "specified in the schema: [\"name\"]"))
   }

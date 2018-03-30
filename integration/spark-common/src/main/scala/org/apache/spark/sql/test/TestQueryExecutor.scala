@@ -40,9 +40,15 @@ trait TestQueryExecutorRegister {
   def stop()
 
   def sqlContext: SQLContext
+
+  def setExecutor(executor: TestQueryExecutor)
 }
 
-object TestQueryExecutor {
+case class TestQueryExecutor(targetLoc: String) {
+
+  def this() {
+    this(null)
+  }
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -50,8 +56,13 @@ object TestQueryExecutor {
     .getCanonicalPath.replaceAll("\\\\", "/")
   LOGGER.info(s"project path: $projectPath")
   val integrationPath = s"$projectPath/integration"
-  val metastoredb = s"$integrationPath/spark-common/target"
-  val location = s"$integrationPath/spark-common/target/dbpath"
+  val target = if (targetLoc != null) {
+    targetLoc
+  } else {
+    s"$integrationPath/spark-common/target"
+  }
+  val metastoredb = target
+  val location = s"$target/dbpath"
   val masterUrl = {
     val property = System.getProperty("spark.master.url")
     if (property == null) {
@@ -86,7 +97,7 @@ object TestQueryExecutor {
   } else {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
       CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
-    s"$integrationPath/spark-common/target/store"
+    s"$target/store"
   }
   val warehouse = if (hdfsUrl.startsWith("hdfs://")) {
     val carbonFile = FileFactory.
@@ -94,13 +105,13 @@ object TestQueryExecutor {
     FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
     s"$hdfsUrl/warehouse_" + System.nanoTime()
   } else {
-    s"$integrationPath/spark-common/target/warehouse"
+    s"$target/warehouse"
   }
 
   val badStoreLocation = if (hdfsUrl.startsWith("hdfs://")) {
        s"$hdfsUrl/bad_store_" + System.nanoTime()
       } else {
-        s"$integrationPath/spark-common/target/bad_store"
+        s"$target/bad_store"
       }
     createDirectory(badStoreLocation)
 
@@ -118,14 +129,14 @@ object TestQueryExecutor {
   LOGGER.info(s"""Warehouse path taken $warehouse""")
   LOGGER.info(s"""Resource path taken $resourcesPath""")
 
-  lazy val modules = Seq(TestQueryExecutor.projectPath + "/common/target",
-    TestQueryExecutor.projectPath + "/core/target",
-    TestQueryExecutor.projectPath + "/hadoop/target",
-    TestQueryExecutor.projectPath + "/processing/target",
-    TestQueryExecutor.projectPath + "/integration/spark-common/target",
-    TestQueryExecutor.projectPath + "/integration/spark2/target",
-    TestQueryExecutor.projectPath + "/integration/spark-common/target/jars",
-    TestQueryExecutor.projectPath + "/streaming/target")
+  lazy val modules = Seq(projectPath + "/common/target",
+    projectPath + "/core/target",
+    projectPath + "/hadoop/target",
+    projectPath + "/processing/target",
+    projectPath + "/integration/spark-common/target",
+    projectPath + "/integration/spark2/target",
+    projectPath + "/integration/spark-common/target/jars",
+    projectPath + "/streaming/target")
 
   lazy val jars = {
     val jarsLocal = new ArrayBuffer[String]()
@@ -141,6 +152,7 @@ object TestQueryExecutor {
   }
 
   val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
+  INSTANCE.setExecutor(this)
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
     .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, badStoreLocation)

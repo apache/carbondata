@@ -25,7 +25,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.BatchedDataSourceScanExec
-import org.apache.spark.sql.test.TestQueryExecutor.projectPath
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -310,7 +309,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   }
 
   test("Test with different date types") {
-    val path = s"$projectPath/examples/spark2/src/main/resources/data.csv"
+    val path = s"${executor.projectPath}/examples/spark2/src/main/resources/data.csv"
 
     sql("DROP TABLE IF EXISTS carbon_localsort_difftypes")
     sql(
