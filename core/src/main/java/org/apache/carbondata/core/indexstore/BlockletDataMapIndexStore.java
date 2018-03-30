@@ -118,7 +118,13 @@ public class BlockletDataMapIndexStore
             .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()));
     for (DataFileFooter footer : indexInfo) {
       String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
-      blockMetaInfoMap.put(blockPath, createBlockMetaInfo(blockPath));
+      if (FileFactory.isFileExist(blockPath)) {
+        blockMetaInfoMap.put(blockPath, createBlockMetaInfo(blockPath));
+      } else {
+        LOGGER.warn("Skipping invalid block " + footer.getBlockInfo().getBlockUniqueName()
+            + " The block does not exist. The block might be got deleted due to clean up post"
+            + " update/delete operation over table.");
+      }
     }
     return blockMetaInfoMap;
   }
