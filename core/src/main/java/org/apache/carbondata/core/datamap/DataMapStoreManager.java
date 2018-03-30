@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
@@ -141,6 +142,16 @@ public final class DataMapStoreManager {
       throw new RuntimeException(e);
     }
     return dataMapSchemas;
+  }
+
+  public DataMapSchema getDataMapSchema(String dataMapName) throws NoSuchDataMapException {
+    List<DataMapSchema> allDataMapSchemas = getAllDataMapSchemas();
+    for (DataMapSchema dataMapSchema : allDataMapSchemas) {
+      if (dataMapSchema.getDataMapName().equalsIgnoreCase(dataMapName)) {
+        return dataMapSchema;
+      }
+    }
+    throw new NoSuchDataMapException(dataMapName);
   }
 
   /**

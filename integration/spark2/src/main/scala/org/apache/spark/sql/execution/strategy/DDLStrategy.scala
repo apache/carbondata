@@ -28,8 +28,10 @@ import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonDescribeFormattedCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
-import org.apache.spark.sql.execution.datasources.RefreshTable
+import org.apache.spark.sql.execution.command.datamap.CarbonDataMapRefreshCommand
+import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable}
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -288,6 +290,15 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         RefreshCarbonTableCommand(tableIdentifier.database,
           tableIdentifier.table).run(sparkSession)
         ExecutedCommandExec(RefreshTable(tableIdentifier)) :: Nil
+      case refresh@RefreshResource(path : String) =>
+        val plan = try {
+          new CarbonSpark2SqlParser().parse(s"REFRESH $path")
+        } catch {
+          case e: Exception =>
+            LOGGER.error(e.getMessage)
+            refresh
+        }
+        ExecutedCommandExec(plan.asInstanceOf[RunnableCommand]) :: Nil
       case alterSetLoc@AlterTableSetLocationCommand(tableName, _, _) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession)

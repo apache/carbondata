@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -158,6 +159,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       } else {
         CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false);
       }
+      DataMapStatusManager.disableDataMapsOfTable(carbonTable);
       if (operationContext != null) {
         LoadEvents.LoadTablePostStatusUpdateEvent postStatusUpdateEvent =
             new LoadEvents.LoadTablePostStatusUpdateEvent(loadModel);

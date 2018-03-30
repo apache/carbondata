@@ -47,8 +47,6 @@ public class CarbonLoadModel implements Serializable {
 
   private String tablePath;
 
-  private boolean isRetentionRequest;
-
   private String csvHeader;
   private String[] csvHeaderColumns;
   private String csvDelimiter;
@@ -391,7 +389,6 @@ public class CarbonLoadModel implements Serializable {
     copy.databaseName = databaseName;
     copy.aggLoadRequest = aggLoadRequest;
     copy.loadMetadataDetails = loadMetadataDetails;
-    copy.isRetentionRequest = isRetentionRequest;
     copy.csvHeader = csvHeader;
     copy.csvHeaderColumns = csvHeaderColumns;
     copy.csvDelimiter = csvDelimiter;
@@ -445,7 +442,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.databaseName = databaseName;
     copyObj.aggLoadRequest = aggLoadRequest;
     copyObj.loadMetadataDetails = loadMetadataDetails;
-    copyObj.isRetentionRequest = isRetentionRequest;
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
     copyObj.csvHeader = header;
     copyObj.csvHeaderColumns = csvHeaderColumns;
@@ -496,15 +492,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public String getTablePath() {
     return tablePath;
-  }
-
-  /**
-   * isRetentionRequest
-   *
-   * @return
-   */
-  public boolean isRetentionRequest() {
-    return isRetentionRequest;
   }
 
   /**
