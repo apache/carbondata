@@ -434,15 +434,15 @@
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-network-common_2.11</artifactId>
+      <artifactId>spark-network-common_${scala.binary.version}</artifactId>
       <scope>test</scope>
-      <version>2.1.0</version>
+      <version>${spark.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_2.11</artifactId>
+      <artifactId>spark-core_${scala.binary.version}</artifactId>
       <scope>test</scope>
-      <version>2.1.0</version>
+      <version>${spark.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.hadoop</groupId>
