@@ -491,7 +491,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   Overwrite insert data:
   ```
-  INSERT OVERWRITE <CARBONDATA TABLE> SELECT * FROM sourceTableName 
+  INSERT OVERWRITE TABLE <CARBONDATA TABLE> SELECT * FROM sourceTableName 
   [ WHERE { <filter_condition> } ]
   ```
 
@@ -511,7 +511,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
 
   ```
-  INSERT OVERWRITE table1 SELECT * FROM TABLE2
+  INSERT OVERWRITE TABLE table1 SELECT * FROM TABLE2
   ```
 
 ## UPDATE AND DELETE
