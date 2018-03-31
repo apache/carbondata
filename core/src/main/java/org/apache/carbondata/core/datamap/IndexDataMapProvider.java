@@ -41,6 +41,10 @@ public class IndexDataMapProvider implements DataMapProvider {
   @Override
   public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement)
       throws MalformedDataMapCommandException, IOException {
+    if (mainTable == null) {
+      throw new MalformedDataMapCommandException(
+          "Parent table is required to create index datamap");
+    }
     ArrayList<RelationIdentifier> relationIdentifiers = new ArrayList<>();
     dataMapSchema.setParentTables(relationIdentifiers);
     relationIdentifiers.add(
