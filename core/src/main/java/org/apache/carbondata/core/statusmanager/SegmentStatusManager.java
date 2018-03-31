@@ -880,6 +880,8 @@ public class SegmentStatusManager {
       CarbonTable carbonTable,
       boolean isForceDeletion,
       List<PartitionSpec> partitionSpecs) throws IOException {
+    // delete the expired segment lock files
+    CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
     if (isLoadDeletionRequired(carbonTable.getMetadataPath())) {
       AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
       ReturnTuple tuple = isUpdationRequired(isForceDeletion, carbonTable, identifier);
@@ -946,8 +948,6 @@ public class SegmentStatusManager {
         }
       }
     }
-    // delete the expired segment lock files
-    CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
   }
 
   /**
