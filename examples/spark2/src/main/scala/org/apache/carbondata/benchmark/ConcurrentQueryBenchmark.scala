@@ -60,7 +60,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 object ConcurrentQueryBenchmark {
 
   // generate number of data
-  var totalNum = 1 * 1000 * 1000
+  var totalNum = 1 * 10 * 1000
   // the number of thread pool
   var threadNum = 16
   // task number of spark sql query
@@ -86,63 +86,7 @@ object ConcurrentQueryBenchmark {
   def carbonTableName(version: String): String =
     "Num" + totalNum + "_" + s"comparetest_carbonV$version"
 
-  // Table schema:
-  // +-------------+-----------+-------------+-------------+------------+
-  // | Column name | Data type | Cardinality | Column type | Dictionary |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | id          | string    | 100,000,000 | dimension   | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | city        | string    | 6           | dimension   | yes        |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | country     | string    | 6           | dimension   | yes        |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | planet      | string    | 10,007      | dimension   | yes        |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m1          | short     | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m2          | int       | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m3          | big int   | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m4          | double    | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m5          | decimal   | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  /**
-   * generate DataFrame with above table schema
-   *
-   * @param spark SparkSession
-   * @return Dataframe of test data
-   */
-  private def generateDataFrame(spark: SparkSession): DataFrame = {
-    val rdd = spark.sparkContext
-      .parallelize(1 to totalNum, 4)
-      .map { x =>
-        ((x % 100000000).toString, "city" + x % 6, "country" + x % 6, "planet" + x % 10007,
-          (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13,
-          BigDecimal.valueOf(x.toDouble / 11))
-      }.map { x =>
-      Row(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9)
-    }
 
-    val schema = StructType(
-      Seq(
-        StructField("id", StringType, nullable = false),
-        StructField("city", StringType, nullable = false),
-        StructField("country", StringType, nullable = false),
-        StructField("planet", StringType, nullable = false),
-        StructField("m1", ShortType, nullable = false),
-        StructField("m2", IntegerType, nullable = false),
-        StructField("m3", LongType, nullable = false),
-        StructField("m4", DoubleType, nullable = false),
-        StructField("m5", DecimalType(30, 10), nullable = false)
-      )
-    )
-
-    val df = spark.createDataFrame(rdd, schema)
-    println(s"Start generate ${df.count} records, schema: ${df.schema}")
-    df
-  }
 
   // performance test queries, they are designed to test various data access type
   val r = new Random()
@@ -288,7 +232,7 @@ object ConcurrentQueryBenchmark {
    */
   def prepareTable(spark: SparkSession, table1: String, table2: String): Unit = {
     val df = if (generateFile) {
-      generateDataFrame(spark).cache
+      GenerateData.generateDataFrame(spark, totalNum).cache
     } else {
       null
     }
