@@ -30,7 +30,7 @@ public class CarbonLoadStatisticsDummy implements LoadStatistics {
   }
 
   @Override
-  public void  initPartitonInfo(String PartitionId) {
+  public void initPartitionInfo(String PartitionId) {
 
   }
 

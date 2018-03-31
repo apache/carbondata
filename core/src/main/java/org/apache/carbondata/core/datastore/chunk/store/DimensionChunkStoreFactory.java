@@ -21,7 +21,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeFixedLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeFixedLengthDimensionDataChunkStore;
-import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableLengthDimesionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -67,7 +67,7 @@ public class DimensionChunkStoreFactory {
         return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
             isInvertedIndex, numberOfRows);
       } else {
-        return new UnsafeVariableLengthDimesionDataChunkStore(totalSize, isInvertedIndex,
+        return new UnsafeVariableLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
             numberOfRows);
       }
 

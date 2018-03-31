@@ -395,19 +395,19 @@ private class CarbonOutputWriter(path: String,
   override def close(): Unit = {
     recordWriter.close(context)
     // write partition info to new file.
-    val partitonList = new util.ArrayList[String]()
+    val partitionList = new util.ArrayList[String]()
     val formattedPartitions =
     // All dynamic partitions need to be converted to proper format
       CarbonScalaUtil.updatePartitions(
         updatedPartitions.asInstanceOf[mutable.LinkedHashMap[String, String]],
         model.getCarbonDataLoadSchema.getCarbonTable)
-    formattedPartitions.foreach(p => partitonList.add(p._1 + "=" + p._2))
+    formattedPartitions.foreach(p => partitionList.add(p._1 + "=" + p._2))
     SegmentFileStore.writeSegmentFile(
       model.getTablePath,
       taskNo,
       writePath,
       model.getSegmentId + "_" + model.getFactTimeStamp + "",
-      partitonList)
+      partitionList)
   }
 
   def getPartitionPath(path: String,

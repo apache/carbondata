@@ -540,7 +540,7 @@ public class SegmentProperties {
     this.fixedLengthKeySplitter =
         new MultiDimKeyVarLengthVariableSplitGenerator(bitLength, dimensionPartitions);
     // get the size of each value in file block
-    int[] dictionayDimColumnValueSize = fixedLengthKeySplitter.getBlockKeySize();
+    int[] dictionaryDimColumnValueSize = fixedLengthKeySplitter.getBlockKeySize();
     int index = -1;
     this.eachDimColumnValueSize = new int[isDictionaryColumn.size()];
     for (int i = 0; i < eachDimColumnValueSize.length; i++) {
@@ -548,21 +548,21 @@ public class SegmentProperties {
         eachDimColumnValueSize[i] = -1;
         continue;
       }
-      eachDimColumnValueSize[i] = dictionayDimColumnValueSize[++index];
+      eachDimColumnValueSize[i] = dictionaryDimColumnValueSize[++index];
     }
     if (complexDimensions.size() > 0) {
-      int[] complexDimesionParition = new int[complexDimColumnCardinality.length];
+      int[] complexDimensionPartition = new int[complexDimColumnCardinality.length];
       // as complex dimension will be stored in column format add one
-      Arrays.fill(complexDimesionParition, 1);
+      Arrays.fill(complexDimensionPartition, 1);
       bitLength =
-          CarbonUtil.getDimensionBitLength(complexDimColumnCardinality, complexDimesionParition);
+          CarbonUtil.getDimensionBitLength(complexDimColumnCardinality, complexDimensionPartition);
       for (int i = 0; i < bitLength.length; i++) {
         if (complexDimColumnCardinality[i] == 0) {
           bitLength[i] = 64;
         }
       }
       ColumnarSplitter keySplitter =
-          new MultiDimKeyVarLengthVariableSplitGenerator(bitLength, complexDimesionParition);
+          new MultiDimKeyVarLengthVariableSplitGenerator(bitLength, complexDimensionPartition);
       eachComplexDimColumnValueSize = keySplitter.getBlockKeySize();
     } else {
       eachComplexDimColumnValueSize = new int[0];

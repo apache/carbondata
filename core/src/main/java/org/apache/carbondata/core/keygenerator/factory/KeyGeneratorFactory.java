@@ -27,14 +27,14 @@ public final class KeyGeneratorFactory {
 
   }
 
-  public static KeyGenerator getKeyGenerator(int[] dimesion) {
+  public static KeyGenerator getKeyGenerator(int[] dimension) {
     int[] incrementedCardinality;
     boolean isFullyFilled =
         Boolean.parseBoolean(CarbonCommonConstants.IS_FULLY_FILLED_BITS_DEFAULT_VALUE);
     if (!isFullyFilled) {
-      incrementedCardinality = CarbonUtil.getIncrementedCardinality(dimesion);
+      incrementedCardinality = CarbonUtil.getIncrementedCardinality(dimension);
     } else {
-      incrementedCardinality = CarbonUtil.getIncrementedCardinalityFullyFilled(dimesion);
+      incrementedCardinality = CarbonUtil.getIncrementedCardinalityFullyFilled(dimension);
     }
     return new MultiDimKeyVarLengthGenerator(incrementedCardinality);
   }

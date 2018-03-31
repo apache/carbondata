@@ -164,7 +164,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             extraNodeInfo.hasCarbonRelation = true
           }
         }
-        // only put no carbon realtion plan
+        // only put no carbon relation plan
         if (!extraNodeInfo.hasCarbonRelation) {
           extraNodeInfos.put(plan, extraNodeInfo)
         }
