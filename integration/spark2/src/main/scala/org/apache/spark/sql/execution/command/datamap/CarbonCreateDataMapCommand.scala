@@ -55,7 +55,7 @@ case class CarbonCreateDataMapCommand(
         CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession)
       case _ => null
     }
-    if (mainTable.getDataMapSchema(dataMapName) != null) {
+    if (mainTable != null && mainTable.getDataMapSchema(dataMapName) != null) {
       if (!ifNotExistsSet) {
         throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")
       } else {
@@ -64,7 +64,8 @@ case class CarbonCreateDataMapCommand(
     }
 
     dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
-    if (mainTable.isStreamingTable &&
+    if (mainTable != null &&
+        mainTable.isStreamingTable &&
         !(dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
           || dataMapSchema.getProviderName
             .equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {

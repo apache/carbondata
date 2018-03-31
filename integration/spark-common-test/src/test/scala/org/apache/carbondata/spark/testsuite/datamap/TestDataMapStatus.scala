@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.DataMapWriter
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
@@ -113,6 +114,49 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     assert(details.exists(p => p.getDataMapName.equals("statusdatamap2") && p.getStatus == DataMapStatus.ENABLED))
 
     sql("DROP TABLE IF EXISTS datamapstatustest2")
+  }
+
+  test("datamap create without on table test") {
+    sql("DROP TABLE IF EXISTS datamapstatustest3")
+    sql(
+      """
+        | CREATE TABLE datamapstatustest3(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""create datamap statusdatamap3 using '${
+          classOf[TestDataMap]
+            .getName
+        }' as select id,sum(age) from datamapstatustest3 group by id""".stripMargin)
+    }
+
+    sql(
+      s"""create datamap statusdatamap3 on table datamapstatustest3 using '${
+        classOf[TestDataMap]
+          .getName
+      }' as select id,sum(age) from datamapstatustest3 group by id""".stripMargin)
+
+    var details = DataMapStatusManager.readDataMapStatusDetails()
+
+    assert(details.length == 1)
+
+    assert(details.exists(p => p.getDataMapName.equals("statusdatamap3") && p.getStatus == DataMapStatus.DISABLED))
+
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table datamapstatustest3")
+    details = DataMapStatusManager.readDataMapStatusDetails()
+    assert(details.length == 1)
+    assert(details.exists(p => p.getDataMapName.equals("statusdatamap3") && p.getStatus == DataMapStatus.DISABLED))
+
+    sql(s"refresh datamap statusdatamap3")
+
+    details = DataMapStatusManager.readDataMapStatusDetails()
+    assert(details.length == 1)
+    assert(details.exists(p => p.getDataMapName.equals("statusdatamap3") && p.getStatus == DataMapStatus.ENABLED))
+
+    checkExistence(sql(s"show datamap"), true, "statusdatamap3")
+
+    sql("DROP TABLE IF EXISTS datamapstatustest3")
   }
 
   override def afterAll {
