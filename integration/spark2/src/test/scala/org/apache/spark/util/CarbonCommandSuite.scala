@@ -193,4 +193,21 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     dropTable(tableName)
   }
 
+  test("show history segments") {
+    val tableName = "test_tablestatus_history"
+    sql(s"drop table if exists ${tableName}")
+    sql(s"create table ${tableName} (name String, age int) stored by 'carbondata' "
+      + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
+    sql(s"insert into ${tableName} select 'abc1',1")
+    sql(s"insert into ${tableName} select 'abc2',2")
+    sql(s"insert into ${tableName} select 'abc3',3")
+    assert(sql(s"show segments for table ${tableName}").collect().length == 4)
+    assert(sql(s"show history segments for table ${tableName}").collect().length == 4)
+    sql(s"clean files for table ${tableName}")
+    assert(sql(s"show segments for table ${tableName}").collect().length == 2)
+    assert(sql(s"show history segments for table ${tableName}").collect().length == 4)
+    assert(sql(s"show history segments for table ${tableName} limit 3").collect().length == 3)
+    dropTable(tableName)
+  }
 }

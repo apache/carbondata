@@ -437,12 +437,13 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val showLoads: Parser[LogicalPlan] =
-    SHOW ~> SEGMENTS ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    (SHOW ~> opt(HISTORY) <~ SEGMENTS <~ FOR <~ TABLE) ~ (ident <~ ".").? ~ ident ~
     (LIMIT ~> numericLit).? <~
     opt(";") ^^ {
-      case databaseName ~ tableName ~ limit =>
+      case showHistory ~ databaseName ~ tableName ~ limit =>
         CarbonShowLoadsCommand(
-          convertDbNameToLowerCase(databaseName), tableName.toLowerCase(), limit)
+          convertDbNameToLowerCase(databaseName), tableName.toLowerCase(), limit,
+          showHistory.isDefined)
     }
 
   protected lazy val alterTableModifyDataType: Parser[LogicalPlan] =
