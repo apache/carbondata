@@ -46,15 +46,15 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
  * user can change variables like:
  *
  * spark-submit \
-    --class org.apache.carbondata.benchmark.ConcurrentQueryBenchmark \
-    --master  yarn \
-    --deploy-mode client \
-    --driver-memory 16g \
-    --executor-cores 4g \
-    --executor-memory 24g \
-    --num-executors 3  \
-    concurrencyTest.jar \
-    totalNum threadNum taskNum resultIsEmpty runInLocal generateFile deleteFile
+ * --class org.apache.carbondata.benchmark.ConcurrentQueryBenchmark \
+ * --master  yarn \
+ * --deploy-mode client \
+ * --driver-memory 16g \
+ * --executor-cores 4g \
+ * --executor-memory 24g \
+ * --num-executors 3  \
+ * concurrencyTest.jar \
+ * totalNum threadNum taskNum resultIsEmpty runInLocal generateFile deleteFile
  * details in initParameters method of this benchmark
  */
 object ConcurrentQueryBenchmark {
@@ -85,8 +85,6 @@ object ConcurrentQueryBenchmark {
 
   def carbonTableName(version: String): String =
     "Num" + totalNum + "_" + s"comparetest_carbonV$version"
-
-
 
   // performance test queries, they are designed to test various data access type
   val r = new Random()
@@ -232,7 +230,7 @@ object ConcurrentQueryBenchmark {
    */
   def prepareTable(spark: SparkSession, table1: String, table2: String): Unit = {
     val df = if (generateFile) {
-      GenerateData.generateDataFrame(spark, totalNum).cache
+      DataGenerator.generateDataFrame(spark, totalNum).cache
     } else {
       null
     }

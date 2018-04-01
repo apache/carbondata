@@ -20,7 +20,8 @@ package org.apache.carbondata.benchmark
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types._
 
-object GenerateData {
+// scalastyle:off println
+object DataGenerator {
   // Table schema:
   // +-------------+-----------+-------------+-------------+------------+
   // | Column name | Data type | Cardinality | Column type | Dictionary |
@@ -44,11 +45,11 @@ object GenerateData {
   // | m5          | decimal   | NA          | measure     | no         |
   // +-------------+-----------+-------------+-------------+------------+
   /**
-    * generate DataFrame with above table schema
-    *
-    * @param spark SparkSession
-    * @return Dataframe of test data
-    */
+   * generate DataFrame with above table schema
+   *
+   * @param spark SparkSession
+   * @return Dataframe of test data
+   */
   def generateDataFrame(spark: SparkSession, totalNum: Int): DataFrame = {
     val rdd = spark.sparkContext
       .parallelize(1 to totalNum, 4)
@@ -79,3 +80,4 @@ object GenerateData {
     df
   }
 }
+// scalastyle:on println

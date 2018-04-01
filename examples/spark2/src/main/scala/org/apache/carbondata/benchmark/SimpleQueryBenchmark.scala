@@ -228,7 +228,7 @@ object SimpleQueryBenchmark {
 
   // load data into parquet, carbonV2, carbonV3
   private def prepareTable(spark: SparkSession, table1: String, table2: String): Unit = {
-    val df = GenerateData.generateDataFrame(spark, totalNum = 10 * 10 * 1000).cache
+    val df = DataGenerator.generateDataFrame(spark, totalNum = 10 * 10 * 1000).cache
     println(s"loading ${df.count} records, schema: ${df.schema}")
     val table1Time = if (table1.endsWith("parquet")) {
       loadParquetTable(spark, df, table1)
