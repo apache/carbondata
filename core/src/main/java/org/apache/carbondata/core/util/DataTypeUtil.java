@@ -801,9 +801,11 @@ public final class DataTypeUtil {
    * @param converterLocal
    */
   public static void setDataTypeConverter(DataTypeConverter converterLocal) {
-    converter = converterLocal;
-    timeStampformatter.remove();
-    dateformatter.remove();
+    if (converterLocal != null) {
+      converter = converterLocal;
+      timeStampformatter.remove();
+      dateformatter.remove();
+    }
   }
 
   public static DataTypeConverter getDataTypeConverter() {
