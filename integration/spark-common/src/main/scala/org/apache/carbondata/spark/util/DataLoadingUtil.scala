@@ -372,6 +372,8 @@ object DataLoadingUtil {
       isForceDeletion: Boolean,
       carbonTable: CarbonTable,
       specs: util.List[PartitionSpec]): Unit = {
+    // delete the expired segment lock files
+    CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable)
     if (isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
@@ -437,8 +439,6 @@ object DataLoadingUtil {
         }
       }
     }
-    // delete the expired segment lock files
-    CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable)
   }
 
   private def isUpdationRequired(isForceDeletion: Boolean,
