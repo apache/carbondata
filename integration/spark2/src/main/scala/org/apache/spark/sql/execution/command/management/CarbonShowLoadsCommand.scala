@@ -28,17 +28,28 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 case class CarbonShowLoadsCommand(
     databaseNameOp: Option[String],
     tableName: String,
-    limit: Option[String])
+    limit: Option[String],
+    showHistory: Boolean = false)
   extends DataCommand {
 
   // add new columns of show segments at last
   override def output: Seq[Attribute] = {
-    Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
-      AttributeReference("Status", StringType, nullable = false)(),
-      AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-      AttributeReference("Load End Time", TimestampType, nullable = true)(),
-      AttributeReference("Merged To", StringType, nullable = false)(),
-      AttributeReference("File Format", StringType, nullable = false)())
+    if (showHistory) {
+      Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
+        AttributeReference("Status", StringType, nullable = false)(),
+        AttributeReference("Load Start Time", TimestampType, nullable = false)(),
+        AttributeReference("Load End Time", TimestampType, nullable = true)(),
+        AttributeReference("Merged To", StringType, nullable = false)(),
+        AttributeReference("File Format", StringType, nullable = false)(),
+        AttributeReference("Visibility", StringType, nullable = false)())
+    } else {
+      Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
+        AttributeReference("Status", StringType, nullable = false)(),
+        AttributeReference("Load Start Time", TimestampType, nullable = false)(),
+        AttributeReference("Load End Time", TimestampType, nullable = true)(),
+        AttributeReference("Merged To", StringType, nullable = false)(),
+        AttributeReference("File Format", StringType, nullable = false)())
+    }
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -49,7 +60,8 @@ case class CarbonShowLoadsCommand(
     }
     CarbonStore.showSegments(
       limit,
-      carbonTable.getMetadataPath
+      carbonTable.getMetadataPath,
+      showHistory
     )
   }
 }

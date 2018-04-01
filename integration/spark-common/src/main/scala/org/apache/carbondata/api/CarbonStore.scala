@@ -42,15 +42,24 @@ object CarbonStore {
 
   def showSegments(
       limit: Option[String],
-      tableFolderPath: String): Seq[Row] = {
-    val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(tableFolderPath)
+      tableFolderPath: String,
+      showHistory: Boolean): Seq[Row] = {
+    val loadMetadataDetailsArray = if (showHistory) {
+      SegmentStatusManager.readLoadMetadata(tableFolderPath) ++
+      SegmentStatusManager.readLoadHistoryMetadata(tableFolderPath)
+    } else {
+      SegmentStatusManager.readLoadMetadata(tableFolderPath)
+    }
+
     if (loadMetadataDetailsArray.nonEmpty) {
       var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith { (l1, l2) =>
         java.lang.Double.parseDouble(l1.getLoadName) > java.lang.Double.parseDouble(l2.getLoadName)
       }
-      if (limit.isDefined) {
+      if (!showHistory) {
         loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray
-          .filter(load => load.getVisibility.equalsIgnoreCase("true"))
+          .filter(_.getVisibility.equalsIgnoreCase("true"))
+      }
+      if (limit.isDefined) {
         val limitLoads = limit.get
         try {
           val lim = Integer.parseInt(limitLoads)
@@ -62,7 +71,6 @@ object CarbonStore {
       }
 
       loadMetadataDetailsSortedArray
-        .filter(_.getVisibility.equalsIgnoreCase("true"))
         .map { load =>
           val mergedTo =
             if (load.getMergedLoadName != null) {
@@ -85,13 +93,24 @@ object CarbonStore {
               new java.sql.Timestamp(load.getLoadEndTime)
             }
 
-          Row(
-            load.getLoadName,
-            load.getSegmentStatus.getMessage,
-            startTime,
-            endTime,
-            mergedTo,
-            load.getFileFormat.toString)
+          if (showHistory) {
+            Row(
+              load.getLoadName,
+              load.getSegmentStatus.getMessage,
+              startTime,
+              endTime,
+              mergedTo,
+              load.getFileFormat.toString,
+              load.getVisibility())
+          } else {
+            Row(
+              load.getLoadName,
+              load.getSegmentStatus.getMessage,
+              startTime,
+              endTime,
+              mergedTo,
+              load.getFileFormat.toString)
+          }
         }.toSeq
     } else {
       Seq.empty
