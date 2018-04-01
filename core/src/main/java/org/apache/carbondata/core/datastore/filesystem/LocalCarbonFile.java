@@ -30,6 +30,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -43,6 +46,7 @@ import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
@@ -154,6 +158,22 @@ public class LocalCarbonFile implements CarbonFile {
 
     return carbonFiles;
 
+  }
+
+  @Override
+  public List<CarbonFile> listFiles(Boolean recurssive) {
+    if (!file.isDirectory()) {
+      return new ArrayList<CarbonFile>();
+    }
+    Collection<File> fileCollection = FileUtils.listFiles(file, null, true);
+    if (fileCollection == null) {
+      return new ArrayList<CarbonFile>();
+    }
+    List<CarbonFile> carbonFiles = new ArrayList<CarbonFile>();
+    for (File file : fileCollection) {
+      carbonFiles.add(new LocalCarbonFile(file));
+    }
+    return carbonFiles;
   }
 
   @Override public boolean createNewFile() {
