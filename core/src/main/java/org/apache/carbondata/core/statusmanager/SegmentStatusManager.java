@@ -254,12 +254,12 @@ public class SegmentStatusManager {
   }
 
   /**
-   * This method will create new segment id
+   * This method will get the max segment id
    *
    * @param loadMetadataDetails
    * @return
    */
-  public static int createNewSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
+  public static int getMaxSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
     int newSegmentId = -1;
     for (int i = 0; i < loadMetadataDetails.length; i++) {
       try {
@@ -283,6 +283,17 @@ public class SegmentStatusManager {
         }
       }
     }
+    return newSegmentId;
+  }
+
+  /**
+   * This method will create new segment id
+   *
+   * @param loadMetadataDetails
+   * @return
+   */
+  public static int createNewSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
+    int newSegmentId = getMaxSegmentId(loadMetadataDetails);
     newSegmentId++;
     return newSegmentId;
   }
@@ -903,13 +914,16 @@ public class SegmentStatusManager {
 
             int invisibleSegmentPreserveCnt =
                 CarbonProperties.getInstance().getInvisibleSegmentPreserveCount();
-            int invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(tuple2.details);
+            int maxSegmentId = SegmentStatusManager.getMaxSegmentId(tuple2.details);
+            int invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(
+                tuple2.details, maxSegmentId);
+            LoadMetadataDetails[] newAddedLoadHistoryList = null;
             // if execute command 'clean files' or the number of invisible segment info
             // exceeds the value of 'carbon.invisible.segments.preserve.count',
             // it need to append the invisible segment list to 'tablestatus.history' file.
             if (isForceDeletion || (invisibleSegmentCnt > invisibleSegmentPreserveCnt)) {
               TableStatusReturnTuple tableStatusReturn = separateVisibleAndInvisibleSegments(
-                  tuple2.details, latestMetadata, invisibleSegmentCnt);
+                  tuple2.details, latestMetadata, invisibleSegmentCnt, maxSegmentId);
               LoadMetadataDetails[] oldLoadHistoryList = readLoadHistoryMetadata(
                   carbonTable.getMetadataPath());
               LoadMetadataDetails[] newLoadHistoryList = appendLoadHistoryList(
@@ -920,6 +934,8 @@ public class SegmentStatusManager {
               writeLoadDetailsIntoFile(
                   CarbonTablePath.getTableStatusHistoryFilePath(carbonTable.getTablePath()),
                   newLoadHistoryList);
+              // the segments which will be moved to history file need to be deleted
+              newAddedLoadHistoryList = tableStatusReturn.arrayOfLoadHistoryDetails;
             } else {
               // update the metadata details from old to new status.
               List<LoadMetadataDetails> latestStatus =
@@ -927,7 +943,8 @@ public class SegmentStatusManager {
               writeLoadMetadata(identifier, latestStatus);
             }
             DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(
-                identifier, carbonTable.getMetadataPath(), isForceDeletion, partitionSpecs);
+                identifier, carbonTable.getMetadataPath(),
+                newAddedLoadHistoryList, isForceDeletion, partitionSpecs);
           } else {
             String dbName = identifier.getCarbonTableIdentifier().getDatabaseName();
             String tableName = identifier.getCarbonTableIdentifier().getTableName();
@@ -953,13 +970,17 @@ public class SegmentStatusManager {
   /**
    * Get the number of invisible segment info from segment info list.
    */
-  public static int countInvisibleSegments(LoadMetadataDetails[] segmentList) {
+  public static int countInvisibleSegments(
+      LoadMetadataDetails[] segmentList, int maxSegmentId) {
     int invisibleSegmentCnt = 0;
     if (segmentList.length != 0) {
       for (LoadMetadataDetails eachSeg : segmentList) {
         // can not remove segment 0, there are some info will be used later
         // for example: updateStatusFileName
+        // also can not remove the max segment id,
+        // otherwise will impact the generation of segment id
         if (!eachSeg.getLoadName().equalsIgnoreCase("0")
+            && !eachSeg.getLoadName().equalsIgnoreCase(String.valueOf(maxSegmentId))
             && eachSeg.getVisibility().equalsIgnoreCase("false")) {
           invisibleSegmentCnt += 1;
         }
@@ -984,7 +1005,8 @@ public class SegmentStatusManager {
   public static TableStatusReturnTuple separateVisibleAndInvisibleSegments(
       LoadMetadataDetails[] oldList,
       LoadMetadataDetails[] newList,
-      int invisibleSegmentCnt) {
+      int invisibleSegmentCnt,
+      int maxSegmentId) {
     int newSegmentsLength = newList.length;
     int visibleSegmentCnt = newSegmentsLength - invisibleSegmentCnt;
     LoadMetadataDetails[] arrayOfVisibleSegments = new LoadMetadataDetails[visibleSegmentCnt];
@@ -996,7 +1018,8 @@ public class SegmentStatusManager {
       LoadMetadataDetails newSegment = newList[i];
       if (i < oldSegmentsLength) {
         LoadMetadataDetails oldSegment = oldList[i];
-        if (newSegment.getLoadName().equalsIgnoreCase("0")) {
+        if (newSegment.getLoadName().equalsIgnoreCase("0")
+            || newSegment.getLoadName().equalsIgnoreCase(String.valueOf(maxSegmentId))) {
           newSegment.setVisibility(oldSegment.getVisibility());
           arrayOfVisibleSegments[visibleIdx] = newSegment;
           visibleIdx++;
