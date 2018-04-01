@@ -31,6 +31,7 @@ public class CarbonTableConfig {
   private String tablePath;
   private String storePath;
   private String unsafeMemoryInMb;
+  private String enableUnsafeInQueryExecution;
 
   @NotNull public String getDbPath() {
     return dbPath;
@@ -66,6 +67,16 @@ public class CarbonTableConfig {
   @Config("carbon.unsafe.working.memory.in.mb")
   public CarbonTableConfig setUnsafeMemoryInMb(String unsafeMemoryInMb) {
     this.unsafeMemoryInMb = unsafeMemoryInMb;
+    return this;
+  }
+
+  public String getEnableUnsafeInQueryExecution() {
+    return enableUnsafeInQueryExecution;
+  }
+
+  @Config("carbon.unsafe.working.memory.in.mb")
+  public CarbonTableConfig setEnableUnsafeInQueryExecution(String enableUnsafeInQueryExecution) {
+    this.enableUnsafeInQueryExecution = enableUnsafeInQueryExecution;
     return this;
   }
 }
