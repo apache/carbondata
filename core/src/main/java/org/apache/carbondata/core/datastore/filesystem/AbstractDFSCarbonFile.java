@@ -492,6 +492,18 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   @Override
+  public List<CarbonFile> listFiles(Boolean recursive) throws IOException {
+    RemoteIterator<LocatedFileStatus> listStatus = null;
+    if (null != fileStatus && fileStatus.isDirectory()) {
+      Path path = fileStatus.getPath();
+      listStatus = path.getFileSystem(FileFactory.getConfiguration()).listFiles(path, recursive);
+    } else {
+      return new ArrayList<CarbonFile>();
+    }
+    return getFiles(listStatus);
+  }
+
+  @Override
   public CarbonFile[] locationAwareListFiles() throws IOException {
     if (null != fileStatus && fileStatus.isDirectory()) {
       List<FileStatus> listStatus = new ArrayList<>();
@@ -510,6 +522,9 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
    * Get the CarbonFiles from filestatus array
    */
   protected abstract CarbonFile[] getFiles(FileStatus[] listStatus);
+
+  protected abstract List<CarbonFile> getFiles(RemoteIterator<LocatedFileStatus> listStatus)
+      throws IOException;
 
   @Override public String[] getLocations() throws IOException {
     BlockLocation[] blkLocations;
