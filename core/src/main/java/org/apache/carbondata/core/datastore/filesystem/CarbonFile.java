@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.filesystem;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
@@ -33,6 +34,8 @@ public interface CarbonFile {
   CarbonFile[] listFiles(CarbonFileFilter fileFilter);
 
   CarbonFile[] listFiles();
+
+  List<CarbonFile> listFiles(Boolean recurssive) throws IOException;
 
   /**
    * It returns list of files with location details.

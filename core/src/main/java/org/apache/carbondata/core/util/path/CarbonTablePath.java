@@ -484,6 +484,23 @@ public class CarbonTablePath extends Path {
       return fileName.substring(startIndex, endIndex);
     }
 
+    /**
+     * gets updated timestamp information from given carbon data file name
+     * and compares with given timestamp
+     *
+     * @param fileName
+     * @param timestamp
+     * @return
+     */
+    public static Boolean compareCarbonFileTimeStamp(String fileName, Long timestamp) {
+      int lastIndexOfHyphen = fileName.lastIndexOf("-");
+      int lastIndexOfDot = fileName.lastIndexOf(".");
+      if (lastIndexOfHyphen > 0 && lastIndexOfDot > 0) {
+        return fileName.substring(fileName.lastIndexOf("-") + 1, fileName.lastIndexOf("."))
+            .equals(timestamp.toString());
+      }
+      return false;
+    }
 
     /**
      * This will return the timestamp present in the delete delta file.
