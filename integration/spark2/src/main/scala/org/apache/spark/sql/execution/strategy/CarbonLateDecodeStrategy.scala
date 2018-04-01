@@ -192,10 +192,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       needDecode: ArrayBuffer[AttributeReference]):
   RDD[InternalRow] = {
     if (needDecode.nonEmpty) {
-      rdd.asInstanceOf[CarbonScanRDD].setVectorReaderSupport(false)
+      rdd.asInstanceOf[CarbonScanRDD[InternalRow]].setVectorReaderSupport(false)
       getDecoderRDD(relation, needDecode, rdd, output)
     } else {
-      rdd.asInstanceOf[CarbonScanRDD]
+      rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
         .setVectorReaderSupport(supportBatchedDataSource(relation.relation.sqlContext, output))
       rdd
     }

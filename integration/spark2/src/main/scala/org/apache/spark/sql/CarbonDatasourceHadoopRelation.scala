@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.hadoop.CarbonProjection
-import org.apache.carbondata.spark.rdd.CarbonScanRDD
+import org.apache.carbondata.spark.rdd.{CarbonScanRDD, SparkReadSupport}
 
 case class CarbonDatasourceHadoopRelation(
     sparkSession: SparkSession,

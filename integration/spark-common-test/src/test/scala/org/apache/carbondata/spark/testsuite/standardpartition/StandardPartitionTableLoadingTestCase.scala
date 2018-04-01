@@ -22,7 +22,7 @@ import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors}
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.BatchedDataSourceScanExec
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
@@ -483,8 +483,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       FileUtils.deleteDirectory(folder)
       val dataFrame = sql("select * from smallpartitionfilesread")
       val scanRdd = dataFrame.queryExecution.sparkPlan.collect {
-        case b: BatchedDataSourceScanExec if b.rdd.isInstanceOf[CarbonScanRDD] => b.rdd
-          .asInstanceOf[CarbonScanRDD]
+        case b: BatchedDataSourceScanExec if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] => b.rdd
+          .asInstanceOf[CarbonScanRDD[InternalRow]]
       }.head
       assert(scanRdd.getPartitions.length < 10)
       assertResult(100)(dataFrame.count)

@@ -23,6 +23,7 @@ import java.util.{ArrayList, Date, List}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 import scala.util.Random
 import scala.util.control.Breaks.{break, breakable}
 
@@ -32,7 +33,6 @@ import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.SQLExecution
@@ -45,7 +45,7 @@ import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.{TableInfo}
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.filter.FilterUtil
 import org.apache.carbondata.core.scan.model.QueryModel
@@ -55,6 +55,7 @@ import org.apache.carbondata.core.util._
 import org.apache.carbondata.hadoop._
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
 import org.apache.carbondata.spark.util.{SparkDataTypeConverterImpl, Util}
@@ -65,7 +66,7 @@ import org.apache.carbondata.streaming.{CarbonStreamInputFormat, CarbonStreamRec
  * CarbonData file, this RDD will leverage CarbonData's index information to do CarbonData file
  * level filtering in driver side.
  */
-class CarbonScanRDD(
+class CarbonScanRDD[T: ClassTag](
     @transient spark: SparkSession,
     val columnProjection: CarbonProjection,
     var filterExpression: Expression,
@@ -73,8 +74,10 @@ class CarbonScanRDD(
     @transient serializedTableInfo: Array[Byte],
     @transient tableInfo: TableInfo,
     inputMetricsStats: InitInputMetrics,
-    @transient val partitionNames: Seq[PartitionSpec])
-  extends CarbonRDDWithTableInfo[InternalRow](spark.sparkContext, Nil, serializedTableInfo) {
+    @transient val partitionNames: Seq[PartitionSpec],
+    val dataTypeConverterClz: Class[_ <: DataTypeConverter] = classOf[SparkDataTypeConverterImpl],
+    val readSupportClz: Class[_ <: CarbonReadSupport[_]] = SparkReadSupport.readSupportClass)
+  extends CarbonRDDWithTableInfo[T](spark.sparkContext, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
@@ -82,8 +85,6 @@ class CarbonScanRDD(
     formatter.format(new Date())
   }
   private var vectorReader = false
-
-  private val readSupport = SparkReadSupport.readSupportClass
 
   private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
 
@@ -391,7 +392,7 @@ class CarbonScanRDD(
     new CarbonSparkPartition(id, partitionId, multiBlockSplit)
   }
 
-  override def internalCompute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
+  override def internalCompute(split: Partition, context: TaskContext): Iterator[T] = {
     val queryStartTime = System.currentTimeMillis
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
     if (null == carbonPropertiesFilePath) {
@@ -415,7 +416,7 @@ class CarbonScanRDD(
       val reader: RecordReader[Void, Object] = inputSplit.getFileFormat match {
         case FileFormat.ROW_V1 =>
           // create record reader for row format
-          DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
+          DataTypeUtil.setDataTypeConverter(dataTypeConverterClz.newInstance())
           val inputFormat = new CarbonStreamInputFormat
           val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
             .asInstanceOf[CarbonStreamRecordReader]
@@ -489,7 +490,7 @@ class CarbonScanRDD(
     }
 
 
-    iterator.asInstanceOf[Iterator[InternalRow]]
+    iterator.asInstanceOf[Iterator[T]]
   }
 
   private def close() {
@@ -520,12 +521,12 @@ class CarbonScanRDD(
   }
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[Object] = {
-    CarbonInputFormat.setCarbonReadSupport(conf, readSupport)
+    CarbonInputFormat.setCarbonReadSupport(conf, readSupportClz)
     val tableInfo1 = getTableInfo
     CarbonInputFormat.setTableInfo(conf, tableInfo1)
     CarbonInputFormat.setDatabaseName(conf, tableInfo1.getDatabaseName)
     CarbonInputFormat.setTableName(conf, tableInfo1.getFactTable.getTableName)
-    CarbonInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImpl)
+    CarbonInputFormat.setDataTypeConverter(conf, dataTypeConverterClz)
     createInputFormat(conf)
   }
 
