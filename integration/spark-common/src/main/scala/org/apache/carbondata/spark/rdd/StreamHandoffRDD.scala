@@ -69,10 +69,13 @@ class HandoffPartition(
 
 /**
  * package the record reader of the handoff segment to RawResultIterator
+ * todo: actually we should not extends rawResultIterator if we don't use any method or variable
+ * from it. We only use it to reduce duplicate code for compaction and handoff
+ * and we can extract it later
  */
 class StreamingRawResultIterator(
     recordReader: CarbonStreamRecordReader
-) extends RawResultIterator(null, null, null) {
+) extends RawResultIterator(null, null, null, true) {
 
   override def hasNext: Boolean = {
     recordReader.nextKeyValue()

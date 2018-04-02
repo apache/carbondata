@@ -518,6 +518,46 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
       CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT)
   }
+
+  test("MAJOR, ENABLE_PREFETCH_DURING_COMPACTION: true") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    for (i <- 0 until 2) {
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
+
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+    }
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
+
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
+
+    sql("delete from table compaction_globalsort where SEGMENT.ID in (1,2,3)")
+    sql("delete from table carbon_localsort where SEGMENT.ID in (1,2,3)")
+    sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
+
+    val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
+    val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(SegmentSequenceIds.contains("0.1"))
+    assert(SegmentSequenceIds.length == 7)
+
+    checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(12)))
+
+    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
+      sql("SELECT * FROM carbon_localsort"))
+
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Success")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Marked for Delete")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+      CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE,
+      CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT)
+  }
+
   private def resetConf() {
     val prop = CarbonProperties.getInstance()
     prop.addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
