@@ -122,7 +122,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     }
     assert(future.get.contains("PASS"))
     assert(ex.getMessage.contains(
-      "loading is in progress for table default.orders, compaction operation is not allowed"))
+      "insert overwrite is in progress for table default.orders, compaction operation is not allowed"))
   }
 
   test("update should fail if insert overwrite is in progress") {
@@ -197,14 +197,29 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
 
   // ----------- INSERT  --------------
 
-  test("compaction should fail if insert is in progress") {
-    val future = runSqlAsync("insert into table orders select * from orders_overwrite")
-    val ex = intercept[ConcurrentOperationException]{
-      sql("alter table orders compact 'MINOR'")
-    }
+  test("compaction should allow if insert is in progress") {
+    sql("drop table if exists t1")
+
+    // number of segment is 1 after createTable
+    createTable("t1")
+    // number of segment is 2 after insert
+    sql("insert into table t1 select * from orders_overwrite")
+
+    sql(
+      s"""
+         | create datamap dm_t1 on table t1
+         | using '${classOf[WaitingDataMap].getName}'
+         | as select count(a) from hiveMetaStoreTable_1")
+       """.stripMargin)
+    val future = runSqlAsync("insert into table t1 select * from orders_overwrite")
+    sql("alter table t1 compact 'MAJOR'")
     assert(future.get.contains("PASS"))
-    assert(ex.getMessage.contains(
-      "loading is in progress for table default.orders, compaction operation is not allowed"))
+
+    // all segments are compacted
+    val segments = sql("show segments for table t1").collect()
+    assert(segments.length == 5)
+
+    sql("drop table t1")
   }
 
   test("update should fail if insert is in progress") {

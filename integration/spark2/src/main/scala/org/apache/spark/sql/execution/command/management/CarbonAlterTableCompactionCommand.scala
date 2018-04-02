@@ -94,8 +94,8 @@ case class CarbonAlterTableCompactionCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    if (SegmentStatusManager.isLoadInProgressInTable(table)) {
-      throw new ConcurrentOperationException(table, "loading", "compaction")
+    if (SegmentStatusManager.isOverwriteInProgressInTable(table)) {
+      throw new ConcurrentOperationException(table, "insert overwrite", "compaction")
     }
     operationContext.setProperty("compactionException", "true")
     var compactionType: CompactionType = null
