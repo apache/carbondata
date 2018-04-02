@@ -20,8 +20,22 @@ package org.apache.carbondata.sdk.file;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.converter.SchemaConverter;
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.reader.CarbonHeaderReader;
+import org.apache.carbondata.core.util.CarbonUtil;
+
 import org.apache.hadoop.mapreduce.RecordReader;
 
+/**
+ * Reader for carbondata file
+ */
+@InterfaceAudience.User
+@InterfaceStability.Evolving
 public class CarbonReader<T> {
 
   private List<RecordReader<Void, T>> readers;
@@ -30,6 +44,9 @@ public class CarbonReader<T> {
 
   private int index;
 
+  /**
+   * Call {@link #builder(String)} to construct an instance
+   */
   CarbonReader(List<RecordReader<Void, T>> readers) {
     if (readers.size() == 0) {
       throw new IllegalArgumentException("no reader");
@@ -39,6 +56,9 @@ public class CarbonReader<T> {
     this.currentReader = readers.get(0);
   }
 
+  /**
+   * Return true if has next row
+   */
   public boolean hasNext() throws IOException, InterruptedException {
     if (currentReader.nextKeyValue()) {
       return true;
@@ -54,11 +74,34 @@ public class CarbonReader<T> {
     }
   }
 
+  /**
+   * Read and return next row object
+   */
   public T readNextRow() throws IOException, InterruptedException {
     return currentReader.getCurrentValue();
   }
 
+  /**
+   * Return a new {@link CarbonReaderBuilder} instance
+   */
   public static CarbonReaderBuilder builder(String tablePath) {
     return new CarbonReaderBuilder(tablePath);
+  }
+
+  /**
+   * Read carbondata file and return the schema
+   */
+  public static List<ColumnSchema> readSchemaInDataFile(String dataFilePath) throws IOException {
+    CarbonHeaderReader reader = new CarbonHeaderReader(dataFilePath);
+    return reader.readSchema();
+  }
+
+  /**
+   * Read schmea file and return table info object
+   */
+  public static TableInfo readSchemaFile(String schemaFilePath) throws IOException {
+    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.readSchemaFile(schemaFilePath);
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    return schemaConverter.fromExternalToWrapperTableInfo(tableInfo, "", "", "");
   }
 }

@@ -86,8 +86,6 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
-import org.apache.carbondata.format.FileHeader;
-
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -2336,69 +2334,45 @@ public final class CarbonUtil {
   /**
    * This method will read the schema file from a given path
    *
-   * @param schemaFilePath
-   * @return
+   * @return table info containing the schema
    */
   public static org.apache.carbondata.format.TableInfo inferSchema(
-      String carbonDataFilePath, AbsoluteTableIdentifier absoluteTableIdentifier,
-      boolean schemaExists) throws IOException {
-    TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
-      public org.apache.thrift.TBase<org.apache.carbondata.format.TableInfo,
-          org.apache.carbondata.format.TableInfo._Fields> create() {
-        return new org.apache.carbondata.format.TableInfo();
-      }
-    };
-    if (schemaExists == false) {
-      List<String> filePaths =
-          getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null");
-      String fistFilePath = null;
-      try {
-        fistFilePath = filePaths.get(0);
-      } catch (Exception e) {
-        LOGGER.error("CarbonData file is not present in the table location");
-      }
-      CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath);
-      FileHeader fileHeader = carbonHeaderReader.readHeader();
-      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-      List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
-      for (int i = 0; i < table_columns.size(); i++) {
-        ColumnSchema col = thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i));
-        col.setColumnReferenceId(col.getColumnUniqueId());
-        columnSchemaList.add(col);
-      }
-      TableSchema tableSchema = new TableSchema();
-      tableSchema.setTableName(absoluteTableIdentifier.getTableName());
-      tableSchema.setBucketingInfo(null);
-      tableSchema.setSchemaEvalution(null);
-      tableSchema.setTableId(UUID.randomUUID().toString());
-      tableSchema.setListOfColumns(columnSchemaList);
-
-      ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
-          new ThriftWrapperSchemaConverterImpl();
-      SchemaEvolutionEntry schemaEvolutionEntry = new SchemaEvolutionEntry();
-      schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis());
-      SchemaEvolution schemaEvol = new SchemaEvolution();
-      List<SchemaEvolutionEntry> schEntryList = new ArrayList<>();
-      schEntryList.add(schemaEvolutionEntry);
-      schemaEvol.setSchemaEvolutionEntryList(schEntryList);
-      tableSchema.setSchemaEvalution(schemaEvol);
-
-      org.apache.carbondata.format.TableSchema thriftFactTable =
-          thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
-      org.apache.carbondata.format.TableInfo tableInfo =
-          new org.apache.carbondata.format.TableInfo(thriftFactTable,
-              new ArrayList<org.apache.carbondata.format.TableSchema>());
-
-      tableInfo.setDataMapSchemas(null);
-      return tableInfo;
-    } else {
-      ThriftReader thriftReader = new ThriftReader(carbonDataFilePath, createTBase);
-      thriftReader.open();
-      org.apache.carbondata.format.TableInfo tableInfo =
-          (org.apache.carbondata.format.TableInfo) thriftReader.read();
-      thriftReader.close();
-      return tableInfo;
+      String carbonDataFilePath, String tableName) throws IOException {
+    List<String> filePaths =
+        getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null");
+    String fistFilePath = null;
+    try {
+      fistFilePath = filePaths.get(0);
+    } catch (Exception e) {
+      LOGGER.error("CarbonData file is not present in the table location");
     }
+    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath);
+    List<ColumnSchema> columnSchemaList = carbonHeaderReader.readSchema();
+    TableSchema tableSchema = new TableSchema();
+    tableSchema.setTableName(tableName);
+    tableSchema.setBucketingInfo(null);
+    tableSchema.setSchemaEvalution(null);
+    tableSchema.setTableId(UUID.randomUUID().toString());
+    tableSchema.setListOfColumns(columnSchemaList);
+
+    ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
+        new ThriftWrapperSchemaConverterImpl();
+    SchemaEvolutionEntry schemaEvolutionEntry = new SchemaEvolutionEntry();
+    schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis());
+    SchemaEvolution schemaEvol = new SchemaEvolution();
+    List<SchemaEvolutionEntry> schEntryList = new ArrayList<>();
+    schEntryList.add(schemaEvolutionEntry);
+    schemaEvol.setSchemaEvolutionEntryList(schEntryList);
+    tableSchema.setSchemaEvalution(schemaEvol);
+
+    org.apache.carbondata.format.TableSchema thriftFactTable =
+        thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
+    org.apache.carbondata.format.TableInfo tableInfo =
+        new org.apache.carbondata.format.TableInfo(thriftFactTable,
+            new ArrayList<org.apache.carbondata.format.TableSchema>());
+
+    tableInfo.setDataMapSchemas(null);
+    return tableInfo;
   }
 
 
