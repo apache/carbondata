@@ -60,10 +60,32 @@ public final class DeleteLoadFolders {
   }
 
   public static void physicalFactAndMeasureMetadataDeletion(
-      AbsoluteTableIdentifier absoluteTableIdentifier, String metadataPath, boolean isForceDelete,
+      AbsoluteTableIdentifier absoluteTableIdentifier,
+      String metadataPath,
+      LoadMetadataDetails[] newAddedLoadHistoryList,
+      boolean isForceDelete,
       List<PartitionSpec> specs) {
     LoadMetadataDetails[] currentDetails = SegmentStatusManager.readLoadMetadata(metadataPath);
-    for (LoadMetadataDetails oneLoad : currentDetails) {
+    physicalFactAndMeasureMetadataDeletion(
+        absoluteTableIdentifier,
+        currentDetails,
+        isForceDelete,
+        specs);
+    if (newAddedLoadHistoryList != null && newAddedLoadHistoryList.length > 0) {
+      physicalFactAndMeasureMetadataDeletion(
+          absoluteTableIdentifier,
+          newAddedLoadHistoryList,
+          isForceDelete,
+          specs);
+    }
+  }
+
+  public static void physicalFactAndMeasureMetadataDeletion(
+      AbsoluteTableIdentifier absoluteTableIdentifier,
+      LoadMetadataDetails[] loadDetails,
+      boolean isForceDelete,
+      List<PartitionSpec> specs) {
+    for (LoadMetadataDetails oneLoad : loadDetails) {
       if (checkIfLoadCanBeDeletedPhysically(oneLoad, isForceDelete)) {
         try {
           if (oneLoad.getSegmentFile() != null) {
