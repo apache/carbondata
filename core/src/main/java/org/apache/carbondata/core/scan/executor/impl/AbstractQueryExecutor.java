@@ -26,7 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -100,6 +100,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryProperties = new QueryExecutorProperties();
   }
 
+  public void setExecutorService(ExecutorService executorService) {
+    // add executor service for query execution
+    queryProperties.executorService = executorService;
+  }
   /**
    * Below method will be used to fill the executor properties based on query
    * model it will parse the query model and get the detail and fill it in
@@ -113,8 +117,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         queryModel.getQueryId());
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
-    // add executor service for query execution
-    queryProperties.executorService = Executors.newCachedThreadPool();
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder =

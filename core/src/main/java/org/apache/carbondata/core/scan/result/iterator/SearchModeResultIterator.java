@@ -63,7 +63,6 @@ public class SearchModeResultIterator extends AbstractDetailQueryResultIterator<
         }
       }));
     }
-    execService.shutdown();
   }
 
   @Override

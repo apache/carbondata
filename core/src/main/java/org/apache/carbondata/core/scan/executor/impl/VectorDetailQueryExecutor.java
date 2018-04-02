@@ -18,6 +18,7 @@ package org.apache.carbondata.core.scan.executor.impl;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -33,6 +34,7 @@ public class VectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
   @Override
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
+    this.setExecutorService(Executors.newCachedThreadPool());
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     this.queryIterator = new VectorDetailQueryResultIterator(
         blockExecutionInfoList,
