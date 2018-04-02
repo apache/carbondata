@@ -369,8 +369,14 @@ public class CarbonTableReader {
                                                      Expression filters)  {
     List<CarbonLocalInputSplit> result = new ArrayList<>();
     if(config.getUnsafeMemoryInMb() != null) {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
+      CarbonProperties.getInstance().addProperty(
+          CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
           config.getUnsafeMemoryInMb());
+    }
+    if(config.getEnableUnsafeInQueryExecution() != null) {
+      CarbonProperties.getInstance().addProperty(
+          CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
+          config.getEnableUnsafeInQueryExecution());
     }
     CarbonTable carbonTable = tableCacheModel.carbonTable;
     TableInfo tableInfo = tableCacheModel.carbonTable.getTableInfo();
