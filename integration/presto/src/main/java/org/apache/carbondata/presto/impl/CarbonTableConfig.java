@@ -74,7 +74,7 @@ public class CarbonTableConfig {
     return enableUnsafeInQueryExecution;
   }
 
-  @Config("carbon.unsafe.working.memory.in.mb")
+  @Config("enable.unsafe.in.query.processing")
   public CarbonTableConfig setEnableUnsafeInQueryExecution(String enableUnsafeInQueryExecution) {
     this.enableUnsafeInQueryExecution = enableUnsafeInQueryExecution;
     return this;
