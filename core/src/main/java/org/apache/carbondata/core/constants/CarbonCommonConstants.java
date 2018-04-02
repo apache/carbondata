@@ -1645,6 +1645,14 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT = "-1";
 
+  /*
+   * whether to enable prefetch for rowbatch to enhance row reconstruction during compaction
+   */
+  @CarbonProperty
+  public static final String CARBON_COMPACTION_PREFETCH_ENABLE =
+      "carbon.compaction.prefetch.enable";
+  public static final String CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }
