@@ -184,4 +184,10 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     return ByteUtil.UnsafeComparer.INSTANCE
         .compareTo(data, currentDataOffset, length, compareValue, 0, compareValue.length);
   }
+
+  @Override
+  public void freeMemory() {
+    super.freeMemory();
+    dataOffsets = null;
+  }
 }

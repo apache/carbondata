@@ -96,7 +96,9 @@ public abstract class AbstractRawColumnChunk {
     this.rowCount = rowCount;
   }
 
-  public abstract void freeMemory();
+  public void freeMemory() {
+    rawData = null;
+  }
 
   public int getColumnIndex() {
     return columnIndex;

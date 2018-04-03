@@ -72,7 +72,9 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
    * Below method will be used to free the memory occupied by the column chunk
    */
   @Override public void freeMemory() {
-    // do nothing as GC will take care of freeing memory
+    data = null;
+    invertedIndex = null;
+    invertedIndexReverse = null;
   }
 
   /**
