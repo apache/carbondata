@@ -31,6 +31,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
@@ -132,6 +134,12 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   public static final String UPADTE_T =
       "mapreduce.input.carboninputformat.partitions.to.prune";
 
+  /**
+   * Attribute for Carbon LOGGER.
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonProperties.class.getName());
+
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
 
@@ -192,7 +200,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
 
-  public static void setDataMapJob(Configuration configuration, DataMapJob dataMapJob)
+  public static void setDataMapJob(Configuration configuration, Object dataMapJob)
       throws IOException {
     if (dataMapJob != null) {
       String toString = ObjectSerializationUtil.convertObjectToString(dataMapJob);
@@ -200,7 +208,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
-  private static DataMapJob getDataMapJob(Configuration configuration) throws IOException {
+  public static DataMapJob getDataMapJob(Configuration configuration) throws IOException {
     String jobString = configuration.get(DATA_MAP_DSTR);
     if (jobString != null) {
       return (DataMapJob) ObjectSerializationUtil.convertStringToObject(jobString);
@@ -760,11 +768,9 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     List<ExtendedBlocklet> prunedBlocklets;
     if (dataMapJob != null) {
-      DistributableDataMapFormat datamapDstr =
-          new DistributableDataMapFormat(absoluteTableIdentifier, BlockletDataMap.NAME,
-              segmentIds, partitionsToPrune,
-              BlockletDataMapFactory.class.getName());
-      prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
+      prunedBlocklets =
+          getExtendedBlocklets(job, absoluteTableIdentifier, resolver, segmentIds, blockletMap,
+              dataMapJob, partitionsToPrune);
     } else {
       prunedBlocklets = blockletMap.prune(segmentIds, resolver, partitionsToPrune);
     }
@@ -809,6 +815,23 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return resultFilterredBlocks;
   }
 
+  public List<ExtendedBlocklet> getExtendedBlocklets(JobContext job,
+      AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
+      List<Segment> segmentIds, TableDataMap blockletMap, DataMapJob dataMapJob,
+      List<PartitionSpec> partitionsToPrune) {
+    List<ExtendedBlocklet> prunedBlocklets = new ArrayList<>();
+    boolean distributedDataMaps = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+            CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
+    if (distributedDataMaps) {
+      String className = "org.apache.carbondata.hadoop.api.DistributableDataMapFormat";
+      FileInputFormat dataMapFormat =
+          createDataMapJob(absoluteTableIdentifier, segmentIds, partitionsToPrune, className);
+      prunedBlocklets = dataMapJob.execute((DistributableDataMapFormat) dataMapFormat, resolver);
+    }
+    return prunedBlocklets;
+  }
+
   private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet) throws IOException {
     org.apache.carbondata.hadoop.CarbonInputSplit split =
         org.apache.carbondata.hadoop.CarbonInputSplit.from(blocklet.getSegmentId(),
@@ -817,6 +840,19 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
             ColumnarFormatVersion.valueOf((short) blocklet.getDetailInfo().getVersionNumber()));
     split.setDetailInfo(blocklet.getDetailInfo());
     return split;
+  }
+
+  public static FileInputFormat createDataMapJob(AbsoluteTableIdentifier absoluteTableIdentifier,
+      List<Segment> segments, List<PartitionSpec> partitionsToPrune, String clsName) {
+    try {
+      Constructor<?> cons = Class.forName(clsName).getDeclaredConstructors()[0];
+      return (FileInputFormat) cons
+          .newInstance(absoluteTableIdentifier, BlockletDataMap.NAME, segments, partitionsToPrune,
+              BlockletDataMapFactory.class.getName());
+    } catch (Exception e) {
+      LOGGER.error(e);
+      return null;
+    }
   }
 
   @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
@@ -953,7 +989,16 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // TODO: currently only batch segment is supported, add support for streaming table
     List<Segment> filteredSegment = getFilteredSegment(job, allSegments.getValidSegments(), false);
 
-    List<ExtendedBlocklet> blocklets = blockletMap.prune(filteredSegment, null, partitions);
+    DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
+    List<ExtendedBlocklet> blocklets;
+    if (dataMapJob != null) {
+      blocklets =
+          getExtendedBlocklets(job, identifier, null, filteredSegment, blockletMap, dataMapJob,
+              partitions);
+    } else {
+      blocklets = blockletMap.prune(filteredSegment, null, partitions);
+    }
+
     for (ExtendedBlocklet blocklet : blocklets) {
       String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);

@@ -32,6 +32,8 @@ public class BlockletDataMapModel extends DataMapModel {
 
   private String segmentId;
 
+  private boolean addToUnsafe = true;
+
   public BlockletDataMapModel(String filePath, byte[] fileData,
       Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId) {
     super(filePath);
@@ -39,6 +41,13 @@ public class BlockletDataMapModel extends DataMapModel {
     this.blockMetaInfoMap = blockMetaInfoMap;
     this.segmentId = segmentId;
   }
+
+  public BlockletDataMapModel(String filePath, byte[] fileData,
+      Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId, boolean addToUnsafe) {
+    this(filePath, fileData, blockMetaInfoMap, segmentId);
+    this.addToUnsafe = addToUnsafe;
+  }
+
 
   public byte[] getFileData() {
     return fileData;
@@ -50,5 +59,9 @@ public class BlockletDataMapModel extends DataMapModel {
 
   public String getSegmentId() {
     return segmentId;
+  }
+
+  public boolean isAddToUnsafe() {
+    return addToUnsafe;
   }
 }

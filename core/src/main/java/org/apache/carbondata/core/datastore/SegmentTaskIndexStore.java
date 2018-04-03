@@ -140,6 +140,10 @@ public class SegmentTaskIndexStore
     lruCache.remove(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
   }
 
+  @Override public void put(TableSegmentUniqueIdentifier key, SegmentTaskIndexWrapper value) {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
   /**
    * returns block timestamp value from the given task
    * @param taskKey

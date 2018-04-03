@@ -29,12 +29,12 @@ import org.apache.spark.{Partition, SparkContext, TaskContext, TaskKilledExcepti
 
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
-import org.apache.carbondata.hadoop.api.{DataMapJob, DistributableDataMapFormat}
+import org.apache.carbondata.hadoop.api.{AbstractDataMapJob, DistributableDataMapFormat}
 
 /**
  * Spark job to execute datamap job and prune all the datamaps distributable
  */
-class SparkDataMapJob extends DataMapJob {
+class SparkDataMapJob extends AbstractDataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat,
       resolverIntf: FilterResolverIntf): util.List[ExtendedBlocklet] = {

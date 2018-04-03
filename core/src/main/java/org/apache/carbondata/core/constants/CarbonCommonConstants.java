@@ -1587,6 +1587,9 @@ public final class CarbonCommonConstants {
   // default value is 2 days
   public static final String CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT = "48";
 
+  // Property to enable parallel datamap loading for a table
+  public static final String CARBON_LOAD_DATAMAPS_PARALLEL = "carbon.load.datamaps.parallel.";
+
   private CarbonCommonConstants() {
   }
 }

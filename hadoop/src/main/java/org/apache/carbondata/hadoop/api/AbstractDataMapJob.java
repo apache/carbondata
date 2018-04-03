@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.hadoop.api;
 
-import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.core.datamap.dev.DataMap;
@@ -27,14 +27,17 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /**
- * Distributable datamap job to execute the #DistributableDataMapFormat in cluster. it prunes the
- * datamaps distributably and returns the final blocklet list
+ * abstract class for data map job
  */
-public interface DataMapJob extends Serializable {
+public abstract class AbstractDataMapJob implements DataMapJob {
 
-  List<DataMap> execute(CarbonTable carbonTable, FileInputFormat<Void, DataMap> dataMapFormat);
+  @Override
+  public List<DataMap> execute(CarbonTable carbonTable, FileInputFormat<Void, DataMap> format) {
+    return null;
+  }
 
-  List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
-      FilterResolverIntf resolverIntf);
-
+  @Override public List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
+      FilterResolverIntf resolverIntf) {
+    return null;
+  }
 }

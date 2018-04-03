@@ -30,7 +30,12 @@ import static org.apache.carbondata.core.memory.CarbonUnsafe.getUnsafe;
  */
 public class UnsafeDataMapRow extends DataMapRow {
 
-  private MemoryBlock block;
+  private static final long serialVersionUID = -8649767299407770884L;
+
+  // As it is an unsafe memory block it is not recommended to serialize.
+  // If at all required to be serialized then override writeObject methods
+  // to which should take care of clearing the unsafe memory post serialization
+  private transient MemoryBlock block;
 
   private int pointer;
 

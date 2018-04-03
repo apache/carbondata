@@ -31,10 +31,13 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafExecNode
 import org.apache.spark.sql.optimizer.CarbonFilters
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 
 case class CarbonCountStar(
     attributesRaw: Seq[Attribute],
@@ -74,8 +77,18 @@ case class CarbonCountStar(
     val carbonInputFormat = new CarbonTableInputFormat[Array[Object]]()
     val jobConf: JobConf = new JobConf(new Configuration)
     SparkHadoopUtil.get.addCredentials(jobConf)
+    CarbonTableInputFormat.setDatabaseName(jobConf, absoluteTableIdentifier.getDatabaseName)
+    CarbonTableInputFormat.setTableName(jobConf, absoluteTableIdentifier.getTableName)
     val job = new Job(jobConf)
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
+    val distributedDataMaps = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+        CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean
+    if (distributedDataMaps) {
+      val className = "org.apache.carbondata.spark.rdd.SparkDataMapJob"
+      CarbonTableInputFormat
+        .setDataMapJob(job.getConfiguration, CarbonInputFormatUtil.createDataMapJob(className))
+    }
     (job, carbonInputFormat)
   }
 }

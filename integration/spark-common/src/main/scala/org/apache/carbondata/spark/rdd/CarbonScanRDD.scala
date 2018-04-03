@@ -52,6 +52,7 @@ import org.apache.carbondata.core.util._
 import org.apache.carbondata.hadoop._
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
 import org.apache.carbondata.spark.util.{SparkDataTypeConverterImpl, Util}
@@ -452,10 +453,12 @@ class CarbonScanRDD(
     CarbonTableInputFormat.setQuerySegment(conf, identifier)
     CarbonTableInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonTableInputFormat.setColumnProjection(conf, columnProjection)
-    if (CarbonProperties.getInstance()
+    val distributedDataMaps = CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-        CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
-      CarbonTableInputFormat.setDataMapJob(conf, new SparkDataMapJob)
+        CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean
+    if (distributedDataMaps) {
+      val className = "org.apache.carbondata.spark.rdd.SparkDataMapJob"
+      CarbonTableInputFormat.setDataMapJob(conf, CarbonInputFormatUtil.createDataMapJob(className))
     }
 
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat

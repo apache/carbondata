@@ -22,6 +22,9 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -37,6 +40,7 @@ import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.fs.Path;
@@ -48,6 +52,12 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  * Utility class
  */
 public class CarbonInputFormatUtil {
+
+  /**
+   * Attribute for Carbon LOGGER.
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonProperties.class.getName());
 
   public static CarbonQueryPlan createQueryPlan(CarbonTable carbonTable, String columnString) {
     String[] columns = null;
@@ -89,6 +99,7 @@ public class CarbonInputFormatUtil {
     carbonInputFormat
         .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
+    setDataMapJobIfConfigured(job, carbonInputFormat);
     return carbonInputFormat;
   }
 
@@ -101,7 +112,40 @@ public class CarbonInputFormatUtil {
     carbonTableInputFormat
         .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
+    setDataMapJobIfConfigured(job, carbonTableInputFormat);
     return carbonTableInputFormat;
+  }
+
+  /**
+   * This method set DataMapJob if configured
+   *
+   * @param job
+   * @throws IOException
+   */
+  private static void setDataMapJobIfConfigured(Job job,
+      CarbonTableInputFormat carbonTableInputFormat) throws IOException {
+    boolean distributedDataMaps = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+            CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
+    if (distributedDataMaps) {
+      String className = "org.apache.carbondata.spark.rdd.SparkDataMapJob";
+      CarbonTableInputFormat.setDataMapJob(job.getConfiguration(), createDataMapJob(className));
+    }
+  }
+
+  /**
+   * Creates instance for the DataMap Job class
+   *
+   * @param className
+   * @return
+   */
+  public static Object createDataMapJob(String className) {
+    try {
+      return Class.forName(className).getDeclaredConstructors()[0].newInstance();
+    } catch (Exception e) {
+      LOGGER.error(e);
+      return null;
+    }
   }
 
   private static void addQueryMeasure(CarbonQueryPlan plan, int order, CarbonMeasure measure) {

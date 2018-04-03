@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.core.indexstore.Blocklet;
@@ -27,7 +28,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 /**
  * Datamap is an entity which can store and retrieve index data.
  */
-public interface DataMap {
+public interface DataMap extends Serializable {
 
   /**
    * It is called to load the data map to memory or to initialize it.

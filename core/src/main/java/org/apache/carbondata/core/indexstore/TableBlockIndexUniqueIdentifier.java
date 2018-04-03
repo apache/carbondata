@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.indexstore;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -24,7 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 /**
  * Class holds the indexFile information to uniquely identitify the carbon index
  */
-public class TableBlockIndexUniqueIdentifier {
+public class TableBlockIndexUniqueIdentifier implements Serializable {
 
   private String indexFilePath;
 

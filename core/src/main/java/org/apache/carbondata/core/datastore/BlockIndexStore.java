@@ -229,6 +229,10 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
         .remove(getLruCacheKey(tableBlockUniqueIdentifier.getAbsoluteTableIdentifier(), blockInfo));
   }
 
+  @Override public void put(TableBlockUniqueIdentifier key, AbstractIndex value) {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
   @Override public void clearAccessCount(List<TableBlockUniqueIdentifier> keys) {
     for (TableBlockUniqueIdentifier tableBlockUniqueIdentifier : keys) {
       SegmentTaskIndexWrapper cacheable = (SegmentTaskIndexWrapper) lruCache

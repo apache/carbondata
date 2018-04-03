@@ -16,7 +16,10 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
+import java.util.Set;
+
 import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 
 /**
  * This class contains required information to make the Blocklet datamap distributable.
@@ -31,11 +34,24 @@ public class BlockletDataMapDistributable extends DataMapDistributable {
    */
   private String filePath;
 
-  public BlockletDataMapDistributable(String indexFilePath) {
+  private Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers;
+
+  public BlockletDataMapDistributable(String indexFilePath,
+      Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers) {
     this.filePath = indexFilePath;
+    this.tableBlockIndexUniqueIdentifiers = tableBlockIndexUniqueIdentifiers;
   }
 
   public String getFilePath() {
     return filePath;
+  }
+
+  public Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers() {
+    return tableBlockIndexUniqueIdentifiers;
+  }
+
+  public void setTableBlockIndexUniqueIdentifiers(
+      Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers) {
+    this.tableBlockIndexUniqueIdentifiers = tableBlockIndexUniqueIdentifiers;
   }
 }
