@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql.execution.streaming
 
-import java.io.IOException
 import java.util.Date
 
 import scala.collection.JavaConverters._
