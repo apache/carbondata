@@ -499,6 +499,7 @@ public abstract class BlockletScannedResult {
           for (int j = 0; j < dimensionColumnPages[i].length; j++) {
             if (null != dimensionColumnPages[i][j]) {
               dimensionColumnPages[i][j].freeMemory();
+              dimensionColumnPages[i][j] = null;
             }
           }
         }
@@ -511,6 +512,7 @@ public abstract class BlockletScannedResult {
           for (int j = 0; j < measureColumnPages[i].length; j++) {
             if (null != measureColumnPages[i][j]) {
               measureColumnPages[i][j].freeMemory();
+              measureColumnPages[i][j] = null;
             }
           }
         }
@@ -521,6 +523,7 @@ public abstract class BlockletScannedResult {
       for (int i = 0; i < dimRawColumnChunks.length; i++) {
         if (null != dimRawColumnChunks[i]) {
           dimRawColumnChunks[i].freeMemory();
+          dimRawColumnChunks[i] = null;
         }
       }
     }
