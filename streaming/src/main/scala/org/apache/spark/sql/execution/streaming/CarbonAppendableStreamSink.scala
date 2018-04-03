@@ -166,22 +166,34 @@ class CarbonAppendableStreamSink(
    * if the directory size of current segment beyond the threshold, hand off new segment
    */
   private def checkOrHandOffSegment(): Unit = {
-    val segmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
-    val fileType = FileFactory.getFileType(segmentDir)
-    if (segmentMaxSize <= StreamSegment.size(segmentDir)) {
-      val newSegmentId = StreamSegment.close(carbonTable, currentSegmentId)
-      currentSegmentId = newSegmentId
-      val newSegmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
-      FileFactory.mkdirs(newSegmentDir, fileType)
 
-      // TODO trigger hand off operation
-      if (enableAutoHandoff) {
-        StreamHandoffRDD.startStreamingHandoffThread(
-          carbonLoadModel,
-          sparkSession,
-          false)
+    // get streaming segment, if not exists, create new streaming segment
+    val segmentId = StreamSegment.open(carbonTable)
+    if (segmentId.equals(currentSegmentId)) {
+      val segmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
+      val fileType = FileFactory.getFileType(segmentDir)
+      if (segmentMaxSize <= StreamSegment.size(segmentDir)) {
+        val newSegmentId = StreamSegment.close(carbonTable, currentSegmentId)
+        currentSegmentId = newSegmentId
+        val newSegmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
+        FileFactory.mkdirs(newSegmentDir, fileType)
+
+        // trigger hand off operation
+        if (enableAutoHandoff) {
+          StreamHandoffRDD.startStreamingHandoffThread(
+            carbonLoadModel,
+            sparkSession,
+            false)
+        }
       }
+    } else {
+      currentSegmentId = segmentId
+      val newSegmentDir =
+        carbonTablePath.getSegmentDir("0", currentSegmentId)
+      val fileType = FileFactory.getFileType(newSegmentDir)
+      FileFactory.mkdirs(newSegmentDir, fileType)
     }
+
   }
 }
 
