@@ -133,7 +133,7 @@ streaming | The segment is running streaming ingestion
 streaming finish | The segment already finished streaming ingestion, <br /> it will be handed off to a segment in the columnar format
 
 ## Change segment status
-Use below command to change the status of "streaming" segment to "streaming finish" segment.
+Use below command to change the status of "streaming" segment to "streaming finish" segment. If the streaming application is running, this command will be blocked.
 ```sql
 ALTER TABLE streaming_table FINISH STREAMING
 ```

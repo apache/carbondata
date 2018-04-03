@@ -164,22 +164,33 @@ class CarbonAppendableStreamSink(
    * if the directory size of current segment beyond the threshold, hand off new segment
    */
   private def checkOrHandOffSegment(): Unit = {
-    val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, currentSegmentId)
-    val fileType = FileFactory.getFileType(segmentDir)
-    if (segmentMaxSize <= StreamSegment.size(segmentDir)) {
-      val newSegmentId = StreamSegment.close(carbonTable, currentSegmentId)
-      currentSegmentId = newSegmentId
-      val newSegmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, currentSegmentId)
-      FileFactory.mkdirs(newSegmentDir, fileType)
+    // get streaming segment, if not exists, create new streaming segment
+    val segmentId = StreamSegment.open(carbonTable)
+    if (segmentId.equals(currentSegmentId)) {
+      val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, currentSegmentId)
+      val fileType = FileFactory.getFileType(segmentDir)
+      if (segmentMaxSize <= StreamSegment.size(segmentDir)) {
+        val newSegmentId = StreamSegment.close(carbonTable, currentSegmentId)
+        currentSegmentId = newSegmentId
+        val newSegmentDir =
+          CarbonTablePath.getSegmentPath(carbonTable.getTablePath, currentSegmentId)
+        FileFactory.mkdirs(newSegmentDir, fileType)
 
-      // TODO trigger hand off operation
-      if (enableAutoHandoff) {
-        StreamHandoffRDD.startStreamingHandoffThread(
-          carbonLoadModel,
-          new OperationContext,
-          sparkSession,
-          false)
+        // trigger hand off operation
+        if (enableAutoHandoff) {
+          StreamHandoffRDD.startStreamingHandoffThread(
+            carbonLoadModel,
+            new OperationContext,
+            sparkSession,
+            false)
+        }
       }
+    } else {
+      currentSegmentId = segmentId
+      val newSegmentDir =
+        CarbonTablePath.getSegmentPath(carbonTable.getTablePath, currentSegmentId)
+      val fileType = FileFactory.getFileType(newSegmentDir)
+      FileFactory.mkdirs(newSegmentDir, fileType)
     }
   }
 }
