@@ -17,17 +17,20 @@
 
 package org.apache.carbondata.streaming
 
-import scala.collection.JavaConverters._
+import java.util
 
+import org.apache.carbondata.common.logging.LogServiceFactory
+
+import scala.collection.JavaConverters._
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
 import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
+import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
@@ -44,11 +47,41 @@ import org.apache.carbondata.streaming.segment.StreamSegment
  */
 object StreamSinkFactory {
 
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  val locks = new util.concurrent.ConcurrentHashMap[String, ICarbonLock]()
+
+  def lock(carbonTable: CarbonTable): Unit = {
+    val lock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
+      LockUsage.STREAMING_LOCK)
+    if (lock.lockWithRetries()) {
+      locks.put(carbonTable.getTableUniqueName, lock)
+      LOGGER.info("Acquired the streaming lock for stream table: " + carbonTable.getDatabaseName + "." +
+        carbonTable.getTableName)
+    } else {
+      LOGGER.error("Not able to acquire the streaming lock for stream table:" +
+        carbonTable.getDatabaseName + "." + carbonTable.getTableName)
+      throw new InterruptedException(
+        "Not able to acquire the streaming lock for stream table: " + carbonTable.getDatabaseName + "." +
+          carbonTable.getTableName)
+    }
+  }
+
+  def unLock(tableUniqueName: String): Unit = {
+    val lock = locks.remove(tableUniqueName)
+    if (lock != null) {
+      lock.unlock()
+    }
+  }
+
   def createStreamTableSink(
       sparkSession: SparkSession,
       hadoopConf: Configuration,
       carbonTable: CarbonTable,
       parameters: Map[String, String]): Sink = {
+
+    lock(carbonTable)
+
     validateParameters(parameters)
 
     // build load model
