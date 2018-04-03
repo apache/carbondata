@@ -71,8 +71,8 @@ public class BlockScan {
           scannedResults.add(blockletScannedResult);
         }
       }
-
     }
+    fileReader.finish();
   }
 
   public boolean hasNext() {
