@@ -939,12 +939,17 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   This command is used to list the segments of CarbonData table.
 
   ```
-  SHOW SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
+  SHOW [HISTORY] SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
   ```
   
   Example:
+  Show visible segments
   ```
   SHOW SEGMENTS FOR TABLE CarbonDatabase.CarbonTable LIMIT 4
+  ```
+  Show all segments, include invisible segments
+  ```
+  SHOW HISTORY SEGMENTS FOR TABLE CarbonDatabase.CarbonTable LIMIT 4
   ```
 
 ### DELETE SEGMENT BY ID
