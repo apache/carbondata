@@ -42,7 +42,7 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
       case CarbonProjectForDeleteCommand(_, databaseNameOp, tableName, timestamp) =>
         rejectIfStreamingTable(
           TableIdentifier(tableName, databaseNameOp),
-          "Date delete")
+          "Data delete")
         Nil
       case CarbonAlterTableAddColumnCommand(model) =>
         rejectIfStreamingTable(

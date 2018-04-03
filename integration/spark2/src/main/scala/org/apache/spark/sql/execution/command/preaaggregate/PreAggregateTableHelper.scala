@@ -183,8 +183,11 @@ case class PreAggregateTableHelper(
     }
     // check if any segment if available for load in the parent table
     val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath)
-      .filter(segment => segment.getSegmentStatus == SegmentStatus.SUCCESS ||
-                         segment.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS)
+      .collect {
+        case segment if segment.getSegmentStatus == SegmentStatus.SUCCESS ||
+          segment.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS =>
+          segment.getLoadName
+      }
     if (loadAvailable.nonEmpty) {
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.
@@ -192,8 +195,8 @@ case class PreAggregateTableHelper(
         .getDataFrame(sparkSession, loadCommand.logicalPlan.get))
       PreAggregateUtil.startDataLoadForDataMap(
         TableIdentifier(parentTable.getTableName, Some(parentTable.getDatabaseName)),
-        segmentToLoad = "*",
-        validateSegments = true,
+        segmentToLoad = loadAvailable.mkString(","),
+        validateSegments = false,
         loadCommand,
         isOverwrite = false,
         sparkSession)

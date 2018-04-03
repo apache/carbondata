@@ -570,12 +570,12 @@ class CarbonScanRDD(
         .getProperty(queryOnPreAggStreamingKey, "false").toBoolean
       CarbonInputFormat.setAccessStreamingSegments(conf, queryOnPreAggStreaming)
       val inputSegmentsKey = CarbonCommonConstants.CARBON_INPUT_SEGMENTS + tableUniqueKey
+      CarbonInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getThreadParams
+        .getProperty(validateInputSegmentsKey, "true").toBoolean)
+      CarbonInputFormat
+        .setQuerySegment(conf,
+          carbonSessionInfo.getThreadParams.getProperty(inputSegmentsKey, "*"))
       if(queryOnPreAggStreaming) {
-        CarbonInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getThreadParams
-          .getProperty(validateInputSegmentsKey, "true").toBoolean)
-        CarbonInputFormat
-          .setQuerySegment(conf,
-            carbonSessionInfo.getThreadParams.getProperty(inputSegmentsKey, "*"))
         carbonSessionInfo.getThreadParams.removeProperty(queryOnPreAggStreamingKey)
         carbonSessionInfo.getThreadParams.removeProperty(inputSegmentsKey)
         carbonSessionInfo.getThreadParams.removeProperty(validateInputSegmentsKey)

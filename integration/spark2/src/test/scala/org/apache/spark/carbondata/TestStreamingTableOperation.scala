@@ -157,7 +157,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("""DELETE FROM source WHERE d.c1 = 'a'""").show()
     }
     assert(exceptionMsgUpdate.getMessage.equals("Data update is not allowed for streaming table"))
-    assert(exceptionMsgDelete.getMessage.equals("Date delete is not allowed for streaming table"))
+    assert(exceptionMsgDelete.getMessage.equals("Data delete is not allowed for streaming table"))
   }
 
   test("test blocking alter table operation on streaming table") {
@@ -333,6 +333,86 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         Row("name_12", 2.0),
         Row("name_13", 2.0),
         Row("name_14", 2.0)))
+    sql("drop table agg_table2")
+  }
+
+  test("test whether data is loaded into preaggregate after handoff is fired") {
+    createTable(tableName = "agg_table2", streaming = true, withBatchLoad = false)
+    val identifier = new TableIdentifier("agg_table2", Option("streaming"))
+    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)
+      .asInstanceOf[CarbonRelation].metaData.carbonTable
+    val csvDataDir = new File("target/csvdatanew").getCanonicalPath
+    // streaming ingest 10 rows
+    val thread = createFileStreamingThread(spark, carbonTable, csvDataDir, intervalSecond = 1,
+      identifier)
+    thread.start()
+    Thread.sleep(5000)
+    thread.interrupt()
+    checkAnswer(
+      sql("select count(*) from streaming.agg_table2"),
+      Seq(Row(10)))
+    sql(s"load data inpath '$csvDataDir' into table agg_table2 options('FILEHEADER'='id, name, city, salary, tax, percent, birthday, register, updated, file')")
+    sql("create datamap p1 on table agg_table2 using 'preaggregate' as select name, sum(salary) from agg_table2 group by name")
+    sql("alter table agg_table2 finish streaming")
+    sql("alter table agg_table2 compact 'streaming'")
+    // Data should be loaded into aggregate table as hand-off is fired
+    checkAnswer(sql("select name, sum(salary) from agg_table2 group by name"),
+        Seq(
+          Row("name_10", 400000.0),
+          Row("name_14", 560000.0),
+          Row("name_12", 480000.0),
+          Row("name_11", 440000.0),
+          Row("name_13", 520000.0)))
+    checkAnswer(sql("select * from agg_table2_p1"),
+      Seq(
+        Row("name_10", 200000.0),
+        Row("name_11", 220000.0),
+        Row("name_12", 240000.0),
+        Row("name_13", 260000.0),
+        Row("name_14", 280000.0),
+        Row("name_10", 200000.0),
+        Row("name_11", 220000.0),
+        Row("name_12", 240000.0),
+        Row("name_13", 260000.0),
+        Row("name_14", 280000.0)))
+
+    sql("drop table agg_table2")
+  }
+
+  test("test whether data is loaded into preaggregate before handoff is fired") {
+    createTable(tableName = "agg_table2", streaming = true, withBatchLoad = false)
+    val identifier = new TableIdentifier("agg_table2", Option("streaming"))
+    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)
+      .asInstanceOf[CarbonRelation].metaData.carbonTable
+    val csvDataDir = new File("target/csvdatanew").getCanonicalPath
+    // streaming ingest 10 rows
+    val thread = createFileStreamingThread(spark, carbonTable, csvDataDir, intervalSecond = 1,
+      identifier)
+    thread.start()
+    Thread.sleep(5000)
+    thread.interrupt()
+    checkAnswer(
+      sql("select count(*) from streaming.agg_table2"),
+      Seq(Row(10)))
+    sql(s"load data inpath '$csvDataDir' into table agg_table2 options('FILEHEADER'='id, name, city, salary, tax, percent, birthday, register, updated, file')")
+    sql("create datamap p1 on table agg_table2 using 'preaggregate' as select name, sum(salary) from agg_table2 group by name")
+    // Data should be loaded into aggregate table as hand-off is fired
+    checkAnswer(sql("select name, sum(salary) from agg_table2 group by name"),
+      Seq(
+        Row("name_10", 400000.0),
+        Row("name_14", 560000.0),
+        Row("name_12", 480000.0),
+        Row("name_11", 440000.0),
+        Row("name_13", 520000.0)))
+    //    sql("select * from agg_table2_p1").show()
+    checkAnswer(sql("select * from agg_table2_p1"),
+      Seq(
+        Row("name_10", 200000.0),
+        Row("name_11", 220000.0),
+        Row("name_12", 240000.0),
+        Row("name_13", 260000.0),
+        Row("name_14", 280000.0)))
+
     sql("drop table agg_table2")
   }
 
@@ -1417,12 +1497,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       .filter(_.getString(0).trim.equals("Streaming"))
     assertResult(1)(resultStreaming.length)
     assertResult("true")(resultStreaming(0).getString(1).trim)
-  }
-
-  test("block streaming for 'preaggregate' table") {
-    sql("create datamap agg_table_block_agg0 on table streaming.agg_table_block using 'preaggregate' as select city, count(name) from streaming.agg_table_block group by city")
-    val msg = intercept[MalformedCarbonCommandException](sql("ALTER TABLE streaming.agg_table_block SET TBLPROPERTIES('streaming'='true')"))
-    assertResult("The table has 'preaggregate' DataMap, it doesn't support streaming")(msg.getMessage)
   }
 
   def createWriteSocketThread(
