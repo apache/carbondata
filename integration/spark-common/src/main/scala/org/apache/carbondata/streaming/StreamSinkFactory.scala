@@ -19,13 +19,14 @@ package org.apache.carbondata.streaming
 
 import java.util
 
-import org.apache.carbondata.common.logging.LogServiceFactory
-
 import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
+
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
@@ -56,14 +57,14 @@ object StreamSinkFactory {
       LockUsage.STREAMING_LOCK)
     if (lock.lockWithRetries()) {
       locks.put(carbonTable.getTableUniqueName, lock)
-      LOGGER.info("Acquired the streaming lock for stream table: " + carbonTable.getDatabaseName + "." +
-        carbonTable.getTableName)
+      LOGGER.info("Acquired the streaming lock for stream table: " + carbonTable.getDatabaseName +
+                  "." + carbonTable.getTableName)
     } else {
       LOGGER.error("Not able to acquire the streaming lock for stream table:" +
         carbonTable.getDatabaseName + "." + carbonTable.getTableName)
       throw new InterruptedException(
-        "Not able to acquire the streaming lock for stream table: " + carbonTable.getDatabaseName + "." +
-          carbonTable.getTableName)
+        "Not able to acquire the streaming lock for stream table: " +
+        carbonTable.getDatabaseName + "." + carbonTable.getTableName)
     }
   }
 
