@@ -26,6 +26,7 @@ import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.events.{AlterTableDataTypeChangePostEvent, AlterTableDataTypeChangePreEvent, OperationContext, OperationListenerBus}
@@ -96,9 +97,13 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
       tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
         .setTime_stamp(System.currentTimeMillis)
-      AlterTableUtil.updateSchemaInfo(
-        carbonTable, schemaEvolutionEntry, tableInfo)(sparkSession,
-          sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
+      val schemaConverter = new ThriftWrapperSchemaConverterImpl
+      val a = List(schemaConverter.fromExternalToWrapperColumnSchema(addColumnSchema))
+      val (tableIdentifier, schemaParts, cols) = AlterTableUtil.updateSchemaInfo(
+        carbonTable, schemaEvolutionEntry, tableInfo, Some(a))(sparkSession)
+      sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
+        .alterColumnChangeDataType(tableIdentifier, schemaParts, cols)
+      sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       val alterTablePostExecutionEvent: AlterTableDataTypeChangePostEvent =
         new AlterTableDataTypeChangePostEvent(sparkSession, carbonTable,
           alterTableDataTypeChangeModel)
