@@ -19,16 +19,18 @@ package org.apache.carbondata.presto;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
@@ -43,6 +45,7 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 
 import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
@@ -60,7 +63,10 @@ import com.facebook.presto.spi.type.VarcharType;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 
+import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 
 /**
  * PrestoFilterUtil create the carbonData Expression from the presto-domain
@@ -69,6 +75,12 @@ public class PrestoFilterUtil {
 
   private static Map<Integer, Expression> filterMap = new HashMap<>();
 
+  private final static String HIVE_DEFAULT_DYNAMIC_PARTITION = "__HIVE_DEFAULT_PARTITION__";
+
+  /**
+   * @param carbondataColumnHandle
+   * @return
+   */
   private static DataType Spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {
     Type colType = carbondataColumnHandle.getColumnType();
     if (colType == BooleanType.BOOLEAN) return DataTypes.BOOLEAN;
@@ -87,6 +99,72 @@ public class PrestoFilterUtil {
   }
 
   /**
+   * Return partition filters using domain constraints
+   * @param carbonTable
+   * @param originalConstraint
+   * @return
+   */
+  public static List<String> getPartitionFilters(CarbonTable carbonTable, TupleDomain<ColumnHandle> originalConstraint) {
+    List<ColumnSchema> columnSchemas = carbonTable.getPartitionInfo().getColumnSchemaList();
+    List<String> filter = new ArrayList<>();
+    for (ColumnHandle columnHandle : originalConstraint.getDomains().get().keySet()) {
+      CarbondataColumnHandle carbondataColumnHandle = (CarbondataColumnHandle) columnHandle;
+      List<ColumnSchema> partitionedColumnSchema = columnSchemas.stream().filter(
+          columnSchema -> carbondataColumnHandle.getColumnName().equals(columnSchema.getColumnName())).collect(toList());
+      if(partitionedColumnSchema.size() != 0) {
+        filter.addAll(createPartitionFilters(originalConstraint, carbondataColumnHandle));
+      }
+    }
+    return filter;
+  }
+
+  /** Returns list of partition key and values using domain constraints
+   * @param originalConstraint
+   * @param carbonDataColumnHandle
+   */
+  private static List<String> createPartitionFilters(TupleDomain<ColumnHandle> originalConstraint,
+      CarbondataColumnHandle carbonDataColumnHandle) {
+    List<String> filter = new ArrayList<>();
+    Domain domain = originalConstraint.getDomains().get().get(carbonDataColumnHandle);
+    if (domain != null && domain.isNullableSingleValue()) {
+      Object value = domain.getNullableSingleValue();
+      Type type = domain.getType();
+      if (value == null) {
+        filter.add(carbonDataColumnHandle.getColumnName() + "=" + HIVE_DEFAULT_DYNAMIC_PARTITION);
+      } else if(carbonDataColumnHandle.getColumnType() instanceof DecimalType) {
+        int scale = ((DecimalType) carbonDataColumnHandle.getColumnType()).getScale();
+        if (value instanceof Long) {
+          //create decimal value from Long
+          BigDecimal decimalValue = new BigDecimal(new BigInteger(String.valueOf(value)), scale);
+          filter.add(carbonDataColumnHandle.getColumnName() + "=" + decimalValue.toString());
+        } else if (value instanceof Slice) {
+          //create decimal value from Slice
+          BigDecimal decimalValue = new BigDecimal(Decimals.decodeUnscaledValue((Slice) value), scale);
+          filter.add(carbonDataColumnHandle.getColumnName() + "=" + decimalValue.toString());
+        }
+      } else if (value instanceof Slice) {
+        filter.add(carbonDataColumnHandle.getColumnName() + "=" + ((Slice) value).toStringUtf8());
+      } else if (value instanceof Long && carbonDataColumnHandle.getColumnType()
+          .equals(DateType.DATE)) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(new java.sql.Date(0));
+        c.add(Calendar.DAY_OF_YEAR, ((Long) value).intValue());
+        java.sql.Date date = new java.sql.Date(c.getTime().getTime());
+        filter.add(carbonDataColumnHandle.getColumnName() + "=" + date.toString());
+      } else if (value instanceof Long && carbonDataColumnHandle.getColumnType()
+          .equals(TimestampType.TIMESTAMP)) {
+        String timeStamp = new Timestamp((Long) value).toString();
+        filter.add(carbonDataColumnHandle.getColumnName() + "=" + timeStamp.substring(0,timeStamp.indexOf('.')));
+      } else if ((value instanceof Boolean) || (value instanceof Double) || (value instanceof Long)) {
+        filter.add(carbonDataColumnHandle.getColumnName() + "=" + value.toString());
+      } else {
+        throw new PrestoException(NOT_SUPPORTED, format("Unsupported partition key type: %s", type.getDisplayName()));
+      }
+    }
+    return filter;
+  }
+
+  /**
    * Convert presto-TupleDomain predication into Carbon scan express condition
    *
    * @param originalConstraint presto-TupleDomain
@@ -102,6 +180,7 @@ public class PrestoFilterUtil {
       // Build ColumnExpression for Expression(Carbondata)
       CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
       Type type = cdch.getColumnType();
+
 
       DataType coltype = Spi2CarbondataTypeMapper(cdch);
       Expression colExpression = new ColumnExpression(cdch.getColumnName(), coltype);
@@ -176,7 +255,7 @@ public class PrestoFilterUtil {
         ListExpression candidates = null;
         List<Expression> exs = singleValues.stream()
             .map((a) -> new LiteralExpression(a, coltype))
-            .collect(Collectors.toList());
+            .collect(toList());
         candidates = new ListExpression(exs);
         filters.add(new InExpression(colExpression, candidates));
       } else if (valueExpressionMap.size() > 0) {
@@ -234,7 +313,6 @@ public class PrestoFilterUtil {
       } else {
         return rawdata;
       }
-
     } else if (type.equals(BooleanType.BOOLEAN)) return rawdata;
     else if (type.equals(DateType.DATE)) {
       Calendar c = Calendar.getInstance();

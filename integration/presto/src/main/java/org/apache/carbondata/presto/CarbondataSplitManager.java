@@ -69,7 +69,7 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
     CarbonTableCacheModel cache = carbonTableReader.getCarbonCache(key);
     Expression filters = PrestoFilterUtil.parseFilterExpression(layoutHandle.getConstraint());
     try {
-      List<CarbonLocalInputSplit> splits = carbonTableReader.getInputSplits2(cache, filters);
+      List<CarbonLocalInputSplit> splits = carbonTableReader.getInputSplits2(cache, filters, layoutHandle.getConstraint());
 
       ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
       for (CarbonLocalInputSplit split : splits) {
