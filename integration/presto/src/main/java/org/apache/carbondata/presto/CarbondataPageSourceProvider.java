@@ -31,7 +31,6 @@ import org.apache.carbondata.core.scan.executor.exception.QueryExecutionExceptio
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResultIterator;
-import org.apache.carbondata.core.service.impl.PathFactory;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
@@ -77,7 +76,7 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
   public ConnectorPageSource createPageSource(ConnectorTransactionHandle transactionHandle,
       ConnectorSession session, ConnectorSplit split, List<ColumnHandle> columns) {
     CarbonDictionaryDecodeReadSupport readSupport = new CarbonDictionaryDecodeReadSupport();
-    CarbonVectorizedRecordReader carbonRecordReader = createReader(split, columns, readSupport);
+    PrestoCarbonVectorizedRecordReader carbonRecordReader = createReader(split, columns, readSupport);
     return new CarbondataPageSource(readSupport, carbonRecordReader, columns );
   }
 
@@ -89,7 +88,7 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
    * @param readSupport
    * @return
    */
-  private CarbonVectorizedRecordReader createReader(ConnectorSplit split,
+  private PrestoCarbonVectorizedRecordReader createReader(ConnectorSplit split,
       List<? extends ColumnHandle> columns, CarbonDictionaryDecodeReadSupport readSupport) {
 
     CarbondataSplit carbondataSplit =
@@ -101,7 +100,7 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
     try {
       CarbonIterator iterator = queryExecutor.execute(queryModel);
       readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
-      return new CarbonVectorizedRecordReader(queryExecutor, queryModel,
+      return new PrestoCarbonVectorizedRecordReader(queryExecutor, queryModel,
           (AbstractDetailQueryResultIterator) iterator);
     } catch (IOException e) {
       throw new RuntimeException("Unable to get the Query Model ", e);
@@ -127,8 +126,7 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
 
       Configuration conf = new Configuration();
       conf.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
-      String carbonTablePath = PathFactory.getInstance()
-          .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier(), null).getPath();
+      String carbonTablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
 
       conf.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
       JobConf jobConf = new JobConf(conf);
@@ -140,7 +138,7 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
       CarbonInputSplit carbonInputSplit =
           CarbonLocalInputSplit.convertSplit(carbondataSplit.getLocalInputSplit());
       QueryModel queryModel =
-          carbonTableInputFormat.getQueryModel(carbonInputSplit, hadoopAttemptContext);
+          carbonTableInputFormat.createQueryModel(carbonInputSplit, hadoopAttemptContext);
       queryModel.setVectorReader(true);
 
       List<CarbonInputSplit> splitList = new ArrayList<>(1);
@@ -210,7 +208,8 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
         carbonTableReader.getCarbonCache(carbonSplit.getSchemaTableName());
     checkNotNull(tableCacheModel, "tableCacheModel should not be null");
     checkNotNull(tableCacheModel.carbonTable, "tableCacheModel.carbonTable should not be null");
-    checkNotNull(tableCacheModel.tableInfo, "tableCacheModel.tableInfo should not be null");
+    checkNotNull(tableCacheModel.carbonTable.getTableInfo(),
+        "tableCacheModel.carbonTable.tableInfo should not be null");
     return tableCacheModel.carbonTable;
   }
 

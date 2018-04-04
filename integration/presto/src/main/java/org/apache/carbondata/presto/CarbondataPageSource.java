@@ -65,7 +65,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   private long nanoEnd;
 
   public CarbondataPageSource(CarbonDictionaryDecodeReadSupport readSupport,
-      CarbonVectorizedRecordReader vectorizedRecordReader,
+      PrestoCarbonVectorizedRecordReader vectorizedRecordReader,
       List<ColumnHandle> columnHandles ) {
     this.columnHandles = columnHandles;
     this.types = getColumnTypes();
