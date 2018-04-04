@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.streaming
 
+import java.io.IOException
 import java.util
 
 import scala.collection.JavaConverters._
@@ -62,7 +63,7 @@ object StreamSinkFactory {
     } else {
       LOGGER.error("Not able to acquire the streaming lock for stream table:" +
         carbonTable.getDatabaseName + "." + carbonTable.getTableName)
-      throw new InterruptedException(
+      throw new IOException(
         "Not able to acquire the streaming lock for stream table: " +
         carbonTable.getDatabaseName + "." + carbonTable.getTableName)
     }
