@@ -39,6 +39,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.streaming.auto.handoff.enabled | true | If this parameter value is set to true, auto trigger handoff function will be enabled.|
 | carbon.streaming.segment.max.size | 1024000000 | This parameter defines the maximum size of the streaming segment. Setting this parameter to appropriate value will avoid impacting the streaming ingestion. The value is in bytes.|
 | carbon.query.show.datamaps | true | If this parameter value is set to true, show tables command will list all the tables including datatmaps(eg: Preaggregate table), else datamaps will be excluded from the table list. |
+| carbon.segment.lock.files.preserve.hours | 48 | This property value indicates the number of hours the segment lock files will be preserved after dataload. These lock files will be deleted with the clean command after the configured number of hours. |
 
 ##  Performance Configuration
 This section provides the details of all the configurations required for CarbonData Performance Optimization.
