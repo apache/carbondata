@@ -258,6 +258,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     }
     // validate tblProperties
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
+    var unManagedTable : Boolean = false
 
     val tableInfo = if (external) {
       // read table info from schema file in the provided table path
@@ -267,9 +268,13 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         tableIdentifier.table)
       val table = try {
         val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
-        if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath)) &&
-            provider.equalsIgnoreCase("'carbonfile'")) {
-          SchemaReader.inferSchema(identifier)
+        if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
+          if (provider.equalsIgnoreCase("'carbonfile'")) {
+            SchemaReader.inferSchema(identifier, true)
+          } else {
+            unManagedTable = true
+            SchemaReader.inferSchema(identifier, false)
+          }
         }
         else {
           SchemaReader.getTableInfo(identifier)
@@ -302,6 +307,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         tableComment)
       TableNewProcessor(tableModel)
     }
+    tableInfo.setUnManagedTable(unManagedTable)
     selectQuery match {
       case query@Some(q) =>
         CarbonCreateTableAsSelectCommand(
@@ -313,7 +319,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         CarbonCreateTableCommand(
           tableInfo = tableInfo,
           ifNotExistsSet = ifNotExists,
-          tableLocation = tablePath)
+          tableLocation = tablePath,
+          external)
     }
   }
 

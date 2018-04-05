@@ -25,7 +25,7 @@ import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.dev.{DataMapModel}
+import org.apache.carbondata.core.datamap.dev.DataMapModel
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainDataMap, FineGrainDataMapFactory}
 import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapWriter}
@@ -40,6 +40,7 @@ import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
@@ -71,7 +72,7 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
   /**
    * Get the datamap for segmentid
    */
-  override def getDataMaps(segment: Segment): java.util.List[FineGrainDataMap] = {
+  override def getDataMaps(segment: Segment, readCommitted: ReadCommittedScope): java.util.List[FineGrainDataMap] = {
     val file = FileFactory
       .getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo))
 
@@ -88,8 +89,7 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
   /**
    * Get datamap for distributable object.
    */
-  override def getDataMaps(
-      distributable: DataMapDistributable): java.util.List[FineGrainDataMap]= {
+  override def getDataMaps(distributable: DataMapDistributable, readCommitted: ReadCommittedScope): java.util.List[FineGrainDataMap]= {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
     val dataMap: FineGrainDataMap = new FGDataMap()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath))

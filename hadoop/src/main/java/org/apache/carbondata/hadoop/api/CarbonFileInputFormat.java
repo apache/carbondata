@@ -36,6 +36,8 @@ import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.SingleTableProvider;
 import org.apache.carbondata.core.scan.filter.TableProvider;
@@ -78,7 +80,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
             .getSchemaFilePath(getAbsoluteTableIdentifier(configuration).getTablePath());
         if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
           TableInfo tableInfoInfer =
-              SchemaReader.inferSchema(getAbsoluteTableIdentifier(configuration));
+              SchemaReader.inferSchema(getAbsoluteTableIdentifier(configuration), true);
           localCarbonTable = CarbonTable.buildFromTableInfo(tableInfoInfer);
         } else {
           localCarbonTable =
@@ -114,6 +116,8 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       // get all valid segments and set them into the configuration
       // check for externalTable segment (Segment_null)
       // process and resolve the expression
+      ReadCommittedScope readCommittedScope = new LatestFilesReadCommittedScope(
+          identifier.getTablePath() + "/Fact/Part0/Segment_null/");
       Expression filter = getFilterPredicates(job.getConfiguration());
       TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // this will be null in case of corrupt schema file.
@@ -138,7 +142,8 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         }
         // do block filtering and get split
         List<InputSplit> splits =
-            getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null);
+            getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null,
+                readCommittedScope);
 
         return splits;
       }
@@ -156,7 +161,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    */
   private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
       List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
-      List<Integer> oldPartitionIdList) throws IOException {
+      List<Integer> oldPartitionIdList, ReadCommittedScope readCommittedScope) throws IOException {
 
     numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
@@ -170,7 +175,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment =
         getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
-            validSegments, partitionInfo, oldPartitionIdList);
+            validSegments, partitionInfo, oldPartitionIdList, readCommittedScope);
     numBlocks = dataBlocksOfSegment.size();
     for (CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 

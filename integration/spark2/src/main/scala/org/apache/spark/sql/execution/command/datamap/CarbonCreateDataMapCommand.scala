@@ -55,6 +55,11 @@ case class CarbonCreateDataMapCommand(
         CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession)
       case _ => null
     }
+
+    if (mainTable != null && mainTable.getTableInfo.isUnManagedTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    }
+
     if (mainTable != null && mainTable.getDataMapSchema(dataMapName) != null) {
       if (!ifNotExistsSet) {
         throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")

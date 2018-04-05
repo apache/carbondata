@@ -60,7 +60,7 @@ public class CarbonLoadModelBuilder {
    * @return a new CarbonLoadModel instance
    */
   public CarbonLoadModel build(
-      Map<String, String> options) throws InvalidLoadOptionException, IOException {
+      Map<String, String> options, long UUID) throws InvalidLoadOptionException, IOException {
     Map<String, String> optionsFinal = LoadOption.fillOptionWithDefaultValue(options);
 
     if (!options.containsKey("fileheader")) {
@@ -72,9 +72,12 @@ public class CarbonLoadModelBuilder {
       optionsFinal.put("fileheader", Strings.mkString(columns, ","));
     }
     CarbonLoadModel model = new CarbonLoadModel();
+    model.setCarbonUnmanagedTable(table.isUnManagedTable());
+    model.setFactTimeStamp(UUID);
 
     // we have provided 'fileheader', so it hadoopConf can be null
     build(options, optionsFinal, model, null);
+
 
     // set default values
     model.setTimestampformat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);

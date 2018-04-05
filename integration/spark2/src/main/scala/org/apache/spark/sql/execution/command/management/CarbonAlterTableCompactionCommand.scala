@@ -77,6 +77,10 @@ case class CarbonAlterTableCompactionCommand(
       }
       relation.carbonTable
     }
+    if (table.getTableInfo.isUnManagedTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    }
+
     if (CarbonUtil.hasAggregationDataMap(table) ||
         (table.isChildDataMap && null == operationContext.getProperty(table.getTableName))) {
       // If the compaction request is of 'streaming' type then we need to generate loadCommands

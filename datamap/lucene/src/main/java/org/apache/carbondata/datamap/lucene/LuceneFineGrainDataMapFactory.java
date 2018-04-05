@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 
 /**
  * CG level of lucene DataMap
@@ -38,8 +39,8 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
   /**
    * Get the datamap for segmentid
    */
-  @Override
-  public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
+  @Override public List<FineGrainDataMap> getDataMaps(Segment segment,
+      ReadCommittedScope readCommittedScope) throws IOException {
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();
     FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer);
     try {
@@ -58,9 +59,10 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
    * Get datamaps for distributable object.
    */
   @Override
-  public List<FineGrainDataMap> getDataMaps(DataMapDistributable distributable)
+  public List<FineGrainDataMap> getDataMaps(DataMapDistributable distributable,
+      ReadCommittedScope readCommittedScope)
       throws IOException {
-    return getDataMaps(distributable.getSegment());
+    return getDataMaps(distributable.getSegment(), readCommittedScope);
   }
 
   @Override

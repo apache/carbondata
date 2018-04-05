@@ -45,9 +45,11 @@ public class CarbonReaderBuilder {
   private String tablePath;
   private String[] projectionColumns;
   private Expression filterExpression;
+  private String tableName;
 
-  CarbonReaderBuilder(String tablePath) {
+  CarbonReaderBuilder(String tablePath, String tableName) {
     this.tablePath = tablePath;
+    this.tableName = tableName;
   }
 
   public CarbonReaderBuilder projection(String[] projectionColumnNames) {
@@ -63,7 +65,7 @@ public class CarbonReaderBuilder {
   }
 
   public <T> CarbonReader<T> build() throws IOException, InterruptedException {
-    CarbonTable table = CarbonTable.buildFromTablePath("_temp", tablePath);
+    CarbonTable table = CarbonTable.buildFromTablePath(tableName, tablePath);
 
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     final Job job = new Job(new Configuration());

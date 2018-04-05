@@ -33,14 +33,14 @@ object CarbonSparkUtil {
 
   def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
     val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getTableName)
-        .asScala.map(x => x.getColName) // wf : may be problem
+      .asScala.map(x => x.getColName) // wf : may be problem
     val measureAttr = carbonTable.getMeasureByTableName(carbonTable.getTableName)
-        .asScala.map(x => x.getColName)
+      .asScala.map(x => x.getColName)
     val dictionary =
       carbonTable.getDimensionByTableName(carbonTable.getTableName).asScala.map { f =>
         (f.getColName.toLowerCase,
-            f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
-                !f.getDataType.isComplexType)
+          f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+          !f.getDataType.isComplexType)
       }
     CarbonMetaData(dimensionsAttr,
       measureAttr,

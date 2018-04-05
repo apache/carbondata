@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -46,10 +47,12 @@ public class OrDataMapExprWrapper implements DataMapExprWrapper {
     this.resolverIntf = resolverIntf;
   }
 
-  @Override public List<ExtendedBlocklet> prune(List<Segment> segments,
-      List<PartitionSpec> partitionsToPrune) throws IOException {
-    List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune);
-    List<ExtendedBlocklet> rightPrune = right.prune(segments, partitionsToPrune);
+  @Override
+  public List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune,
+      ReadCommittedScope readCommittedScope) throws IOException {
+    List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune, readCommittedScope);
+    List<ExtendedBlocklet> rightPrune =
+        right.prune(segments, partitionsToPrune, readCommittedScope);
     Set<ExtendedBlocklet> andBlocklets = new HashSet<>();
     andBlocklets.addAll(leftPrune);
     andBlocklets.addAll(rightPrune);

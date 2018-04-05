@@ -366,8 +366,14 @@ public class CarbonFactDataHandlerModel {
       return paths;
     }
     AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
-    String carbonDataDirectoryPath = CarbonTablePath
-        .getSegmentPath(absoluteTableIdentifier.getTablePath(), configuration.getSegmentId() + "");
+    String carbonDataDirectoryPath;
+    if (configuration.isCarbonUnmanagedTable()) {
+      carbonDataDirectoryPath = absoluteTableIdentifier.getTablePath();
+    } else {
+      carbonDataDirectoryPath = CarbonTablePath
+          .getSegmentPath(absoluteTableIdentifier.getTablePath(),
+              configuration.getSegmentId() + "");
+    }
     CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }

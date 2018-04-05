@@ -158,7 +158,7 @@ object PartitionUtils {
       .createCarbonTableInputFormat(identifier, partitionIds.asJava, job)
     CarbonInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     val splits = format.getSplitsOfOneSegment(job, segmentId,
-      oldPartitionIdList.map(_.asInstanceOf[Integer]).asJava, partitionInfo)
+        oldPartitionIdList.map(_.asInstanceOf[Integer]).asJava, partitionInfo)
     val blockList = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
     val tableBlockInfoList = CarbonInputSplit.createBlocks(blockList.asJava)
     tableBlockInfoList

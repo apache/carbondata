@@ -143,6 +143,14 @@ public class CarbonTable implements Serializable {
 
   private boolean hasDataMapSchema;
 
+  /**
+   * The boolean field which points if the data written for UnManaged Table
+   * or Managed Table. The difference between managed and unManaged table is
+   * unManaged Table will not contain any Metadata folder and subsequently
+   * no TableStatus or Schema files.
+   */
+  private boolean isUnManagedTable;
+
   private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -241,6 +249,7 @@ public class CarbonTable implements Serializable {
     table.blockSize = tableInfo.getTableBlockSizeInMB();
     table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
     table.tableUniqueName = tableInfo.getTableUniqueName();
+    table.setUnManagedTable(tableInfo.isUnManagedTable());
     table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
     table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
     if (tableInfo.getFactTable().getBucketingInfo() != null) {
@@ -989,5 +998,13 @@ public class CarbonTable implements Serializable {
    */
   public static CarbonTableBuilder builder() {
     return new CarbonTableBuilder();
+  }
+
+  public boolean isUnManagedTable() {
+    return isUnManagedTable;
+  }
+
+  public void setUnManagedTable(boolean unManagedTable) {
+    isUnManagedTable = unManagedTable;
   }
 }
