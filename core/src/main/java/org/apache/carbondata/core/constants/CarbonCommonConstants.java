@@ -1629,6 +1629,19 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_SYSTEM_FOLDER_LOCATION = "carbon.system.folder.location";
 
+  @CarbonProperty
+  public static final String CARBON_SEARCH_MODE_ENABLE = "carbon.search.mode.enable";
+
+  public static final String CARBON_SEARCH_MODE_ENABLE_DEFAULT = "false";
+
+  /**
+   * Num of threads used in query executor when using search mode.
+   */
+  @CarbonProperty
+  public static final String CARBON_SEARCH_MODE_THREAD = "carbon.search.mode.thread";
+
+  public static final String CARBON_SEARCH_MODE_THREAD_DEFAULT = "3";
+
   private CarbonCommonConstants() {
   }
 }

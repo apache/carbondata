@@ -62,11 +62,11 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   private static final Map<DeleteDeltaInfo, Object> deleteDeltaToLockObjectMap =
       new ConcurrentHashMap<>();
 
-  private ExecutorService execService;
+  protected ExecutorService execService;
   /**
    * execution info of the block
    */
-  private List<BlockExecutionInfo> blockExecutionInfos;
+  protected List<BlockExecutionInfo> blockExecutionInfos;
 
   /**
    * file reader which will be used to execute the query
@@ -78,7 +78,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   /**
    * QueryStatisticsRecorder
    */
-  private QueryStatisticsRecorder recorder;
+  protected QueryStatisticsRecorder recorder;
   /**
    * number of cores which can be used
    */
