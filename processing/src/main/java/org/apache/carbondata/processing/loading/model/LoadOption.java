@@ -244,8 +244,9 @@ public class LoadOption {
       }
     }
 
-    if (!CarbonDataProcessorUtil.isHeaderValid(carbonLoadModel.getTableName(), csvColumns,
-        carbonLoadModel.getCarbonDataLoadSchema(), staticPartitionCols)) {
+    if (!carbonLoadModel.isCarbonUnmanagedTable() && !CarbonDataProcessorUtil
+        .isHeaderValid(carbonLoadModel.getTableName(), csvColumns,
+            carbonLoadModel.getCarbonDataLoadSchema(), staticPartitionCols)) {
       if (csvFile == null) {
         LOG.error("CSV header in DDL is not proper."
             + " Column names in schema and CSV header are not the same.");

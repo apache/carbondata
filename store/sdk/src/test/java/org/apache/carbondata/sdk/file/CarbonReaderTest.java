@@ -43,7 +43,7 @@ public class CarbonReaderTest {
 
     TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
 
-    CarbonReader reader = CarbonReader.builder(path)
+    CarbonReader reader = CarbonReader.builder(path, "_temp")
         .projection(new String[]{"name", "age"}).build();
 
     int i = 0;

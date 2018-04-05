@@ -80,14 +80,13 @@ public class SchemaReader {
         identifier.getTablePath());
   }
 
-
-  public static TableInfo inferSchema(AbsoluteTableIdentifier identifier)
-      throws IOException {
+  public static TableInfo inferSchema(AbsoluteTableIdentifier identifier,
+      boolean isCarbonFileProvider) throws IOException {
     // This routine is going to infer schema from the carbondata file footer
     // Convert the ColumnSchema -> TableSchema -> TableInfo.
     // Return the TableInfo.
-    org.apache.carbondata.format.TableInfo tableInfo =
-        CarbonUtil.inferSchema(identifier.getTablePath(), identifier.getTableName());
+    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
+        .inferSchema(identifier.getTablePath(), identifier.getTableName(), isCarbonFileProvider);
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
         tableInfo, identifier.getDatabaseName(), identifier.getTableName(),

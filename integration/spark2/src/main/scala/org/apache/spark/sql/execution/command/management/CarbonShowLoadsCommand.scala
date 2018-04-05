@@ -23,6 +23,7 @@ import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.{StringType, TimestampType}
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 case class CarbonShowLoadsCommand(
     databaseNameOp: Option[String],
@@ -43,6 +44,9 @@ case class CarbonShowLoadsCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    if (carbonTable.getTableInfo.isUnManagedTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    }
     CarbonStore.showSegments(
       limit,
       carbonTable.getMetadataPath

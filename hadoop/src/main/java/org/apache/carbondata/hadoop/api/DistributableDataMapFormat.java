@@ -30,6 +30,8 @@ import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 
@@ -101,16 +103,17 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
       private Iterator<ExtendedBlocklet> blockletIterator;
       private ExtendedBlocklet currBlocklet;
 
-      @Override
-      public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+      @Override public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
           throws IOException, InterruptedException {
         DataMapDistributableWrapper distributable = (DataMapDistributableWrapper) inputSplit;
         TableDataMap dataMap = DataMapStoreManager.getInstance()
             .getDataMap(table, distributable.getDistributable().getDataMapSchema());
-        List<ExtendedBlocklet> blocklets = dataMap.prune(
-            distributable.getDistributable(),
-            dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);
-        for (ExtendedBlocklet blocklet: blocklets) {
+        ReadCommittedScope readCommittedScope =
+            new TableStatusReadCommittedScope(table.getAbsoluteTableIdentifier());
+        List<ExtendedBlocklet> blocklets = dataMap.prune(distributable.getDistributable(),
+            dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions,
+            readCommittedScope);
+        for (ExtendedBlocklet blocklet : blocklets) {
           blocklet.setDataMapUniqueId(distributable.getUniqueId());
         }
         blockletIterator = blocklets.iterator();

@@ -153,6 +153,9 @@ case class CarbonLoadDataCommand(
     } else {
       null
     }
+    if (table.getTableInfo.isUnManagedTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    }
     // get the value of 'spark.executor.cores' from spark conf, default value is 1
     val sparkExecutorCores = sparkSession.sparkContext.conf.get("spark.executor.cores", "1")
     // get the value of 'carbon.number.of.cores.while.loading' from carbon properties,

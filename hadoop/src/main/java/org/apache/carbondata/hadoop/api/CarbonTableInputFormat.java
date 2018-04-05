@@ -45,6 +45,9 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.mutate.data.BlockMappingVO;
+import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
@@ -89,10 +92,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   private static final Log LOG = LogFactory.getLog(CarbonTableInputFormat.class);
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
+  private static final String CARBON_UNMANAGED_TABLE =
+      "mapreduce.input.carboninputformat.unmanaged";
   public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
+  private ReadCommittedScope readCommittedScope;
 
   /**
    * Get the cached CarbonTable or create it by TableInfo in `configuration`
@@ -128,12 +134,14 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
-    LoadMetadataDetails[] loadMetadataDetails = SegmentStatusManager
-        .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
+
     CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
     }
+    this.readCommittedScope = getReadCommitted(job, identifier);
+    LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
+
     SegmentUpdateStatusManager updateStatusManager =
         new SegmentUpdateStatusManager(carbonTable, loadMetadataDetails);
     List<Segment> invalidSegments = new ArrayList<>();
@@ -413,7 +421,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     List<Segment> segmentList = new ArrayList<>();
     segmentList.add(new Segment(targetSegment, null));
     setSegmentsToAccess(job.getConfiguration(), segmentList);
+
     try {
+      carbonTable = getOrCreateCarbonTable(job.getConfiguration());
+      ReadCommittedScope readCommittedScope =
+          getReadCommitted(job, carbonTable.getAbsoluteTableIdentifier());
+      this.readCommittedScope = readCommittedScope;
+
       // process and resolve the expression
       Expression filter = getFilterPredicates(job.getConfiguration());
       CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
@@ -508,7 +522,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     // for each segment fetch blocks matching filter in Driver BTree
     List<org.apache.carbondata.hadoop.CarbonInputSplit> dataBlocksOfSegment =
         getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
-            validSegments, partitionInfo, oldPartitionIdList);
+            validSegments, partitionInfo, oldPartitionIdList, readCommittedScope);
     numBlocks = dataBlocksOfSegment.size();
     for (org.apache.carbondata.hadoop.CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 
@@ -559,8 +573,10 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       List<PartitionSpec> partitions) throws IOException {
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
     TableDataMap blockletMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
-    LoadMetadataDetails[] loadMetadataDetails = SegmentStatusManager
-        .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
+
+    ReadCommittedScope readCommittedScope = getReadCommitted(job, identifier);
+    LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
+
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(
         table, loadMetadataDetails);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
@@ -571,7 +587,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     // TODO: currently only batch segment is supported, add support for streaming table
     List<Segment> filteredSegment = getFilteredSegment(job, allSegments.getValidSegments(), false);
 
-    List<ExtendedBlocklet> blocklets = blockletMap.prune(filteredSegment, null, partitions);
+    List<ExtendedBlocklet> blocklets =
+        blockletMap.prune(filteredSegment, null, partitions, readCommittedScope);
     for (ExtendedBlocklet blocklet : blocklets) {
       String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
@@ -600,5 +617,19 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
 
     return new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
+  }
+
+  public ReadCommittedScope getReadCommitted(JobContext job, AbsoluteTableIdentifier identifier)
+      throws IOException {
+    if (readCommittedScope == null) {
+      ReadCommittedScope readCommittedScope;
+      if (job.getConfiguration().getBoolean(CARBON_UNMANAGED_TABLE, false)) {
+        readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath());
+      } else {
+        readCommittedScope = new TableStatusReadCommittedScope(identifier);
+      }
+      this.readCommittedScope = readCommittedScope;
+    }
+    return readCommittedScope;
   }
 }

@@ -77,6 +77,14 @@ public class TableInfo implements Serializable, Writable {
    */
   private String tablePath;
 
+  /**
+   * The boolean field which points if the data written for UnManaged Table
+   * or Managed Table. The difference between managed and unManaged table is
+   * unManaged Table will not contain any Metadata folder and subsequently
+   * no TableStatus or Schema files.
+   */
+  private boolean isUnManagedTable;
+
   // this identifier is a lazy field which will be created when it is used first time
   private AbsoluteTableIdentifier identifier;
 
@@ -240,6 +248,7 @@ public class TableInfo implements Serializable, Writable {
     factTable.write(out);
     out.writeLong(lastUpdatedTime);
     out.writeUTF(getOrCreateAbsoluteTableIdentifier().getTablePath());
+    out.writeBoolean(isUnManagedTable);
     boolean isChildSchemaExists =
         null != dataMapSchemaList && dataMapSchemaList.size() > 0;
     out.writeBoolean(isChildSchemaExists);
@@ -267,6 +276,7 @@ public class TableInfo implements Serializable, Writable {
     this.factTable.readFields(in);
     this.lastUpdatedTime = in.readLong();
     this.tablePath = in.readUTF();
+    this.isUnManagedTable = in.readBoolean();
     boolean isChildSchemaExists = in.readBoolean();
     this.dataMapSchemaList = new ArrayList<>();
     if (isChildSchemaExists) {
@@ -320,4 +330,11 @@ public class TableInfo implements Serializable, Writable {
     return parentRelationIdentifiers;
   }
 
+  public boolean isUnManagedTable() {
+    return isUnManagedTable;
+  }
+
+  public void setUnManagedTable(boolean unManagedTable) {
+    isUnManagedTable = unManagedTable;
+  }
 }

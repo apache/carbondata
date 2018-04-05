@@ -299,7 +299,10 @@ object CarbonSource {
       tableDesc.copy(storage = updatedFormat)
     } else {
       val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
-      if (!metaStore.isReadFromHiveMetaStore) {
+      val isExternal = properties.getOrElse("isExternal", "false")
+      val isUnManagedTable = properties.getOrElse("isUnManaged", "false").contains("true")
+      tableInfo.setUnManagedTable(isUnManagedTable)
+      if (!isUnManagedTable && !metaStore.isReadFromHiveMetaStore) {
         // save to disk
         metaStore.saveToDisk(tableInfo, properties("tablePath"))
         // remove schema string from map as we don't store carbon schema to hive metastore
@@ -320,16 +323,20 @@ object CarbonSource {
       properties: Map[String, String]): Map[String, String] = {
     val model = createTableInfoFromParams(properties, dataSchema, identifier)
     val tableInfo: TableInfo = TableNewProcessor(model)
+    val isExternal = properties.getOrElse("isExternal", "false")
+    val isUnManagedTable = properties.getOrElse("isUnManaged", "false").contains("true")
+    val tablePath = properties.getOrElse("path", "")
     tableInfo.setTablePath(identifier.getTablePath)
+    tableInfo.setUnManagedTable(isUnManagedTable)
     tableInfo.setDatabaseName(identifier.getDatabaseName)
     val schemaEvolutionEntry = new SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
     tableInfo.getFactTable.getSchemaEvalution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
-    val map = if (metaStore.isReadFromHiveMetaStore) {
-      CarbonUtil.convertToMultiStringMap(tableInfo)
-    } else {
+    val map = if (!metaStore.isReadFromHiveMetaStore && !isUnManagedTable) {
       metaStore.saveToDisk(tableInfo, identifier.getTablePath)
       new java.util.HashMap[String, String]()
+    } else {
+      CarbonUtil.convertToMultiStringMap(tableInfo)
     }
     properties.foreach(e => map.put(e._1, e._2))
     map.put("tablepath", identifier.getTablePath)

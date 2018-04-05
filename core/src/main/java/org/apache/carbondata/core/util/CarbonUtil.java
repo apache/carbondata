@@ -2336,10 +2336,14 @@ public final class CarbonUtil {
    *
    * @return table info containing the schema
    */
-  public static org.apache.carbondata.format.TableInfo inferSchema(
-      String carbonDataFilePath, String tableName) throws IOException {
-    List<String> filePaths =
-        getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null");
+  public static org.apache.carbondata.format.TableInfo inferSchema(String carbonDataFilePath,
+      String tableName, boolean isCarbonFileProvider) throws IOException {
+    List<String> filePaths;
+    if (isCarbonFileProvider) {
+      filePaths = getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null");
+    } else {
+      filePaths = getFilePathExternalFilePath(carbonDataFilePath);
+    }
     String fistFilePath = null;
     try {
       fistFilePath = filePaths.get(0);
@@ -2910,13 +2914,14 @@ public final class CarbonUtil {
    * @return
    */
   public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
-      String segmentId) {
+      String segmentId, boolean isUnmangedTable) {
     String blockId;
     String blockName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
     String tablePath = identifier.getTablePath();
+
     if (filePath.startsWith(tablePath)) {
       String factDir = CarbonTablePath.getFactDir(tablePath);
-      if (filePath.startsWith(factDir)) {
+      if (filePath.startsWith(factDir) || isUnmangedTable) {
         blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
             + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       } else {
