@@ -55,6 +55,8 @@ public class CarbonWriterBuilder {
   private boolean persistSchemaFile;
   private int blockletSize;
   private int blockSize;
+  private boolean isUnManagedTable;
+  private long UUID;
 
   public CarbonWriterBuilder withSchema(Schema schema) {
     Objects.requireNonNull(schema, "schema should not be null");
@@ -82,9 +84,21 @@ public class CarbonWriterBuilder {
     return this;
   }
 
+  public CarbonWriterBuilder unManagedTable(boolean isUnManagedTable) {
+    Objects.requireNonNull(isUnManagedTable, "UnManaged Table should not be null");
+    this.isUnManagedTable = isUnManagedTable;
+    return this;
+  }
+
+  public CarbonWriterBuilder uniqueIdentifier(long UUID) {
+    Objects.requireNonNull(UUID, "Unique Identifier should not be null");
+    this.UUID = UUID;
+    return this;
+  }
+
   public CarbonWriterBuilder withBlockSize(int blockSize) {
-    if (blockSize <= 0) {
-      throw new IllegalArgumentException("blockSize should be greater than zero");
+    if (blockSize <= 0 || blockSize > 2048) {
+      throw new IllegalArgumentException("blockSize should be between 1 MB to 2048 MB");
     }
     this.blockSize = blockSize;
     return this;
@@ -129,7 +143,7 @@ public class CarbonWriterBuilder {
     }
 
     // build LoadModel
-    return buildLoadModel(table);
+    return buildLoadModel(table, UUID);
   }
 
   /**
@@ -152,8 +166,15 @@ public class CarbonWriterBuilder {
           new StructField(field.getFieldName(), field.getDataType()),
           sortColumnsList.contains(field.getFieldName()));
     }
-    String tableName = "_tempTable";
-    String dbName = "_tempDB";
+    String tableName;
+    String dbName;
+    if (!isUnManagedTable) {
+      tableName = "_tempTable";
+      dbName = "_tempDB";
+    } else {
+      dbName = null;
+      tableName = null;
+    }
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
     CarbonTable table = CarbonTable.builder()
@@ -161,6 +182,7 @@ public class CarbonWriterBuilder {
         .databaseName(dbName)
         .tablePath(path)
         .tableSchema(schema)
+        .isUnManagedTable(isUnManagedTable)
         .build();
     return table;
   }
@@ -198,13 +220,13 @@ public class CarbonWriterBuilder {
   /**
    * Build a {@link CarbonLoadModel}
    */
-  private CarbonLoadModel buildLoadModel(CarbonTable table)
+  private CarbonLoadModel buildLoadModel(CarbonTable table, long UUID)
       throws InvalidLoadOptionException, IOException {
     Map<String, String> options = new HashMap<>();
     if (sortColumns != null) {
       options.put("sort_columns", Strings.mkString(sortColumns, ","));
     }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
-    return builder.build(options);
+    return builder.build(options, UUID);
   }
 }

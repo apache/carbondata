@@ -15,26 +15,32 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.indexstore;
+package org.apache.carbondata.core.readcommitter;
 
-import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
 /**
- * Fetches the detailed segmentProperties which has more information to execute the query
+ * This class is going to save the the Index files which are taken snapshot
+ * from the readCommitter Interface.
  */
-public interface SegmentPropertiesFetcher {
+@InterfaceAudience.Internal
+@InterfaceStability.Evolving
+public class ReadCommittedIndexFileSnapShot {
 
   /**
-   * get the Segment properties based on the SegmentID.
-   * @param segmentId
-   * @param readCommittedScope
-   * @return
-   * @throws IOException
+   * Segment Numbers are mapped with list of Index Files.
    */
-  SegmentProperties getSegmentProperties(Segment segment, ReadCommittedScope readCommittedScope)
-      throws IOException;
+  private Map<String, List<String>> segmentIndexFileMap;
+
+  public ReadCommittedIndexFileSnapShot(Map<String, List<String>> segmentIndexFileMap) {
+    this.segmentIndexFileMap = segmentIndexFileMap;
+  }
+
+  public Map<String, List<String>> getSegmentIndexFileMap() {
+    return segmentIndexFileMap;
+  }
 }

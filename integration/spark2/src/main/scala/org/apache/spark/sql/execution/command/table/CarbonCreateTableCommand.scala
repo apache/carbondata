@@ -39,6 +39,7 @@ case class CarbonCreateTableCommand(
     tableInfo: TableInfo,
     ifNotExistsSet: Boolean = false,
     tableLocation: Option[String] = None,
+    isExternal : Boolean = false,
     createDSTable: Boolean = true,
     isVisible: Boolean = true)
   extends MetadataCommand {
@@ -89,6 +90,7 @@ case class CarbonCreateTableCommand(
       OperationListenerBus.getInstance.fireEvent(createTablePreExecutionEvent, operationContext)
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
       val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
+      val isUnmanaged = tableInfo.isUnManagedTable
       if (createDSTable) {
         try {
           val tablePath = tableIdentifier.getTablePath
@@ -128,6 +130,8 @@ case class CarbonCreateTableCommand(
                |  dbName "$dbName",
                |  tablePath "$tablePath",
                |  path "$tablePath",
+               |  isExternal "$isExternal",
+               |  isUnManaged "$isUnmanaged",
                |  isVisible "$isVisible"
                |  $carbonSchemaString)
                |  $partitionString

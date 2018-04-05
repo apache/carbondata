@@ -28,16 +28,15 @@ public class CarbonTableBuilder {
   private String tableName;
   private String databaseName;
   private String tablePath;
+  private boolean unManagedTable;
   private TableSchema tableSchema;
 
   public CarbonTableBuilder tableName(String tableName) {
-    Objects.requireNonNull(tableName, "tableName should not be null");
     this.tableName = tableName;
     return this;
   }
 
   public CarbonTableBuilder databaseName(String databaseName) {
-    Objects.requireNonNull(databaseName, "databaseName should not be null");
     this.databaseName = databaseName;
     return this;
   }
@@ -48,6 +47,13 @@ public class CarbonTableBuilder {
     return this;
   }
 
+
+  public CarbonTableBuilder isUnManagedTable(boolean isUnManagedTable) {
+    Objects.requireNonNull(isUnManagedTable, "UnManaged Table should not be null");
+    this.unManagedTable = isUnManagedTable;
+    return this;
+  }
+
   public CarbonTableBuilder tableSchema(TableSchema tableSchema) {
     Objects.requireNonNull(tableSchema, "tableSchema should not be null");
     this.tableSchema = tableSchema;
@@ -55,16 +61,17 @@ public class CarbonTableBuilder {
   }
 
   public CarbonTable build() {
-    Objects.requireNonNull(tableName, "tableName should not be null");
-    Objects.requireNonNull(databaseName, "databaseName should not be null");
     Objects.requireNonNull(tablePath, "tablePath should not be null");
     Objects.requireNonNull(tableSchema, "tableSchema should not be null");
+    Objects.requireNonNull(unManagedTable, "UnManaged Table should not be null");
+
 
     TableInfo tableInfo = new TableInfo();
     tableInfo.setDatabaseName(databaseName);
     tableInfo.setTableUniqueName(databaseName + "_" + tableName);
     tableInfo.setFactTable(tableSchema);
     tableInfo.setTablePath(tablePath);
+    tableInfo.setUnManagedTable(unManagedTable);
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setDataMapSchemaList(new ArrayList<DataMapSchema>(0));
     return CarbonTable.buildFromTableInfo(tableInfo);

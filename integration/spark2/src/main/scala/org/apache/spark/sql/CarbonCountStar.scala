@@ -76,6 +76,8 @@ case class CarbonCountStar(
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = new Job(jobConf)
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
+    CarbonInputFormat
+      .setUnmanagedTable(job.getConfiguration, carbonTable.getTableInfo.isUnManagedTable)
     (job, carbonInputFormat)
   }
 }

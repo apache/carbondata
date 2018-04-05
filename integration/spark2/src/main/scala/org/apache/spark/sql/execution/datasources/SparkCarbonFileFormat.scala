@@ -44,6 +44,7 @@ import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, 
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, ColumnarFormatVersion}
+import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
 import org.apache.carbondata.core.reader.CarbonHeaderReader
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
@@ -222,6 +223,8 @@ class SparkCarbonFileFormat extends FileFormat
 
 
         val segmentPath = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null")
+        val readCommittedScope = new LatestFilesReadCommittedScope(
+          identifier.getTablePath + "/Fact/Part0/Segment_null/")
         val indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(segmentPath)
         if (indexFiles.size() == 0) {
           throw new SparkException("Index file not present to read the carbondata file")
@@ -233,7 +236,7 @@ class SparkCarbonFileFormat extends FileFormat
           .choose(tab, model.getFilterExpressionResolverTree)
 
         // TODO : handle the partition for CarbonFileLevelFormat
-        val prunedBlocklets = dataMapExprWrapper.prune(segments, null)
+        val prunedBlocklets = dataMapExprWrapper.prune(segments, null, readCommittedScope)
 
         val detailInfo = prunedBlocklets.get(0).getDetailInfo
         detailInfo.readColumnSchema(detailInfo.getColumnSchemaBinary)

@@ -84,8 +84,8 @@ public class CarbonReader<T> {
   /**
    * Return a new {@link CarbonReaderBuilder} instance
    */
-  public static CarbonReaderBuilder builder(String tablePath) {
-    return new CarbonReaderBuilder(tablePath);
+  public static CarbonReaderBuilder builder(String tablePath, String tableName) {
+    return new CarbonReaderBuilder(tablePath, tableName);
   }
 
   /**

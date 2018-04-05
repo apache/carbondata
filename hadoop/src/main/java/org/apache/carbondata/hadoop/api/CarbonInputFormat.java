@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.SingleTableProvider;
 import org.apache.carbondata.core.scan.filter.TableProvider;
@@ -100,6 +101,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       "mapreduce.input.carboninputformat.filter.predicate";
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
   private static final String TABLE_INFO = "mapreduce.input.carboninputformat.tableinfo";
+  private static final String UNMANAGED_TABLE = "mapreduce.input.carboninputformat.unmanaged";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
   private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
@@ -158,6 +160,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   public static void setTablePath(Configuration configuration, String tablePath) {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
+  }
+
+  public static void setUnmanagedTable(Configuration configuration, boolean isUnmanagedTable) {
+    configuration.set(UNMANAGED_TABLE, String.valueOf(isUnmanagedTable));
   }
 
   public static void setPartitionIdList(Configuration configuration, List<String> partitionIds) {
@@ -332,7 +338,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   protected List<CarbonInputSplit> getDataBlocksOfSegment(JobContext job,
       CarbonTable carbonTable, FilterResolverIntf resolver,
       BitSet matchedPartitions, List<Segment> segmentIds, PartitionInfo partitionInfo,
-      List<Integer> oldPartitionIdList) throws IOException {
+      List<Integer> oldPartitionIdList, ReadCommittedScope readCommittedScope) throws IOException {
 
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
@@ -356,7 +362,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // Apply expression on the blocklets.
       prunedBlocklets = dataMapExprWrapper.pruneBlocklets(prunedBlocklets);
     } else {
-      prunedBlocklets = dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+      prunedBlocklets = dataMapExprWrapper.prune(segmentIds, partitionsToPrune, readCommittedScope);
     }
 
     List<CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();

@@ -117,6 +117,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
+          } else if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
+            throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
           } else {
             ExecutedCommandExec(dataTypeChange) :: Nil
           }
@@ -133,6 +135,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
+          } else if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
+            throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
           } else {
             ExecutedCommandExec(addColumn) :: Nil
           }
@@ -149,6 +153,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
+          } else if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
+            throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
           } else {
             ExecutedCommandExec(dropColumn) :: Nil
           }
@@ -181,6 +187,9 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (isCarbonTable) {
           val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
             .lookupRelation(t)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
+          if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
+            throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+          }
           if (!carbonTable.isHivePartitionTable) {
             ExecutedCommandExec(CarbonShowCarbonPartitionsCommand(t)) :: Nil
           } else {
@@ -231,6 +240,9 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         // if the table has 'preaggregate' DataMap, it doesn't support streaming now
         val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
+        if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
+          throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+        }
 
         // TODO remove this limitation later
         val property = properties.find(_._1.equalsIgnoreCase("streaming"))

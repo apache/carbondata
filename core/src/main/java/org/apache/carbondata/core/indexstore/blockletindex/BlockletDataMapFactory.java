@@ -44,6 +44,7 @@ import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
@@ -82,29 +83,23 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     throw new UnsupportedOperationException("not implemented");
   }
 
-  @Override
-  public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
+  @Override public List<CoarseGrainDataMap> getDataMaps(Segment segment,
+      ReadCommittedScope readCommittedScope) throws IOException {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
-        getTableBlockIndexUniqueIdentifiers(segment);
+        getTableBlockIndexUniqueIdentifiers(segment, readCommittedScope);
     return cache.getAll(tableBlockIndexUniqueIdentifiers);
   }
 
-  private List<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(
-      Segment segment) throws IOException {
+  private List<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(Segment segment,
+      ReadCommittedScope readCommittedScope) throws IOException {
+    if (readCommittedScope == null) {
+      throw new IOException("readCommittedScope is null. Internal error");
+    }
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segment.getSegmentNo());
     if (tableBlockIndexUniqueIdentifiers == null) {
       tableBlockIndexUniqueIdentifiers = new ArrayList<>();
-      Map<String, String> indexFiles;
-      if (segment.getSegmentFileName() == null) {
-        String path =
-            CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo());
-        indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(path);
-      } else {
-        SegmentFileStore fileStore =
-            new SegmentFileStore(identifier.getTablePath(), segment.getSegmentFileName());
-        indexFiles = fileStore.getIndexFiles();
-      }
+      Map<String, String> indexFiles = readCommittedScope.getCommittedIndexFile(segment);
       for (Map.Entry<String, String> indexFileEntry: indexFiles.entrySet()) {
         Path indexFile = new Path(indexFileEntry.getKey());
         tableBlockIndexUniqueIdentifiers.add(
@@ -122,7 +117,8 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
    * default datamap.
    */
   @Override
-  public List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment)
+  public List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment,
+      ReadCommittedScope readCommittedScope)
       throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     // If it is already detailed blocklet then type cast and return same
@@ -133,7 +129,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       return detailedBlocklets;
     }
     List<TableBlockIndexUniqueIdentifier> identifiers =
-        getTableBlockIndexUniqueIdentifiers(segment);
+        getTableBlockIndexUniqueIdentifiers(segment, readCommittedScope);
     // Retrieve each blocklets detail information from blocklet datamap
     for (Blocklet blocklet : blocklets) {
       detailedBlocklets.add(getExtendedBlocklet(identifiers, blocklet));
@@ -142,13 +138,14 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   @Override
-  public ExtendedBlocklet getExtendedBlocklet(Blocklet blocklet, Segment segment)
+  public ExtendedBlocklet getExtendedBlocklet(Blocklet blocklet, Segment segment,
+      ReadCommittedScope readCommittedScope)
       throws IOException {
     if (blocklet instanceof ExtendedBlocklet) {
       return (ExtendedBlocklet) blocklet;
     }
     List<TableBlockIndexUniqueIdentifier> identifiers =
-        getTableBlockIndexUniqueIdentifiers(segment);
+        getTableBlockIndexUniqueIdentifiers(segment, readCommittedScope);
     return getExtendedBlocklet(identifiers, blocklet);
   }
 
@@ -228,7 +225,8 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
+  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable,
+      ReadCommittedScope readCommittedScope)
       throws IOException {
     BlockletDataMapDistributable mapDistributable = (BlockletDataMapDistributable) distributable;
     List<TableBlockIndexUniqueIdentifier> identifiers = new ArrayList<>();
@@ -264,8 +262,9 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     return null;
   }
 
-  @Override public SegmentProperties getSegmentProperties(Segment segment) throws IOException {
-    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment);
+  @Override public SegmentProperties getSegmentProperties(Segment segment,
+      ReadCommittedScope readCommittedScope) throws IOException {
+    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment, readCommittedScope);
     assert (dataMaps.size() > 0);
     CoarseGrainDataMap coarseGrainDataMap = dataMaps.get(0);
     assert (coarseGrainDataMap instanceof BlockletDataMap);
@@ -273,12 +272,13 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     return dataMap.getSegmentProperties();
   }
 
-  @Override public List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions)
-      throws IOException {
+  @Override public List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions,
+      ReadCommittedScope readCommittedScope) throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
-    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment);
+    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment, readCommittedScope);
     for (CoarseGrainDataMap dataMap : dataMaps) {
-      blocklets.addAll(dataMap.prune(null, getSegmentProperties(segment), partitions));
+      blocklets.addAll(
+          dataMap.prune(null, getSegmentProperties(segment, readCommittedScope), partitions));
     }
     return blocklets;
   }
