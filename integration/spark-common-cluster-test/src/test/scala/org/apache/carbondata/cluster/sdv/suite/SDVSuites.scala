@@ -144,7 +144,8 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new TableCommentAlterTableTestCase ::
                     new StandardPartitionTestCase ::
                     new PreAggregateTestCase ::
-                    new TimeSeriesPreAggregateTestCase :: Nil
+                    new TimeSeriesPreAggregateTestCase ::
+                    new SetParameterTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
