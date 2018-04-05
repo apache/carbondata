@@ -443,24 +443,38 @@ object CarbonFilters {
       tableIdentifier)
   }
 
+  def getCurrentPartitions(sparkSession: SparkSession,
+      carbonTable: CarbonTable): Option[Seq[PartitionSpec]] = {
+    CarbonFilters.getPartitions(
+      Seq.empty,
+      sparkSession,
+      carbonTable)
+  }
+
+  def getPartitions(partitionFilters: Seq[Expression],
+      sparkSession: SparkSession,
+      identifier: TableIdentifier): Option[Seq[PartitionSpec]] = {
+    val carbonTable = CarbonEnv.getCarbonTable(identifier)(sparkSession)
+    getPartitions(partitionFilters, sparkSession, carbonTable)
+  }
   /**
    * Fetches partition information from hive
    * @param partitionFilters
    * @param sparkSession
-   * @param identifier
+   * @param carbonTable
    * @return
    */
   def getPartitions(partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
-      identifier: TableIdentifier): Option[Seq[PartitionSpec]] = {
-    val table = CarbonEnv.getCarbonTable(identifier)(sparkSession)
+      carbonTable: CarbonTable): Option[Seq[PartitionSpec]] = {
+    val identifier = TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName))
+    if (!carbonTable.isHivePartitionTable) {
+      return None
+    }
     // first try to read partitions in case if the trigger comes from the aggregation table load.
-    val partitionsForAggTable = getPartitionsForAggTable(sparkSession, table)
+    val partitionsForAggTable = getPartitionsForAggTable(sparkSession, carbonTable)
     if (partitionsForAggTable.isDefined) {
       return partitionsForAggTable
-    }
-    if (!table.isHivePartitionTable) {
-      return None
     }
     val partitions = {
       try {
@@ -503,17 +517,22 @@ object CarbonFilters {
     // when validate segments is disabled then only read from partitionmap
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (carbonSessionInfo != null) {
-      val validateSegments = carbonSessionInfo.getSessionParams
+      val validateSegments = carbonSessionInfo.getThreadParams
         .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
                      table.getDatabaseName + "." +
                      table.getTableName, "true").toBoolean
       if (!validateSegments) {
-        val segmentNumbersFromProperty = CarbonProperties.getInstance
+        val segmentNumbersFromProperty = carbonSessionInfo.getThreadParams
           .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-                       table.getDatabaseName + "." + table.getTableName)
-        val segment = Segment.toSegment(segmentNumbersFromProperty)
-        val segmentFile = new SegmentFileStore(table.getTablePath, segment.getSegmentFileName)
-        Some(segmentFile.getPartitionSpecs.asScala)
+                       table.getDatabaseName + "." + table.getTableName, "*")
+        // In case of compaction multiple segments will be passed as CARBON_INPUT_SEGMENTS.
+        // Therefore partitionSpec will be extracted from all segments.
+        val segments = segmentNumbersFromProperty.split(",").flatMap { a =>
+          val segment = Segment.toSegment(a)
+          val segmentFile = new SegmentFileStore(table.getTablePath, segment.getSegmentFileName)
+          segmentFile.getPartitionSpecs.asScala
+        }
+        Some(segments.toSet.toSeq)
       } else {
         None
       }

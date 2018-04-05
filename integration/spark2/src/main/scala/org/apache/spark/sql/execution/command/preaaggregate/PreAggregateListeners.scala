@@ -26,9 +26,11 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.AlterTableModel
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonLoadDataCommand}
+import org.apache.spark.sql.execution.command.partition.CarbonAlterTableDropHivePartitionCommand
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
-import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.exceptions.MetadataProcessException
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -38,6 +40,216 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
+
+object AlterTableDropPartitionPreStatusListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override protected def onEvent(event: Event,
+      operationContext: OperationContext) = {
+    val preStatusListener = event.asInstanceOf[AlterTableDropPartitionPreStatusEvent]
+    val carbonTable = preStatusListener.carbonTable
+    val childDropPartitionCommands = operationContext.getProperty("dropPartitionCommands")
+    if (childDropPartitionCommands != null && carbonTable.hasAggregationDataMap) {
+      val childCommands =
+        childDropPartitionCommands.asInstanceOf[Seq[CarbonAlterTableDropHivePartitionCommand]]
+      childCommands.foreach(_.processData(SparkSession.getActiveSession.get))
+    }
+  }
+}
+
+trait CommitHelper {
+
+  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+
+  protected def markInProgressSegmentAsDeleted(tableStatusFile: String,
+      operationContext: OperationContext,
+      carbonTable: CarbonTable): Unit = {
+    val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(tableStatusFile)
+    val segmentBeingLoaded =
+      operationContext.getProperty(carbonTable.getTableUniqueName + "_Segment").toString
+    val newDetails = loadMetaDataDetails.collect {
+      case detail if detail.getLoadName.equalsIgnoreCase(segmentBeingLoaded) =>
+        detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
+        detail
+      case others => others
+    }
+    SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusFile, newDetails)
+  }
+
+  /**
+   *  Used to rename table status files for commit operation.
+   */
+  protected def renameDataMapTableStatusFiles(sourceFileName: String,
+      destinationFileName: String, uuid: String): Boolean = {
+    val oldCarbonFile = FileFactory.getCarbonFile(sourceFileName)
+    val newCarbonFile = FileFactory.getCarbonFile(destinationFileName)
+    if (oldCarbonFile.exists() && newCarbonFile.exists()) {
+      val backUpPostFix = if (uuid.nonEmpty) {
+        "_backup_" + uuid
+      } else {
+        ""
+      }
+      LOGGER.info(s"Renaming $newCarbonFile to ${destinationFileName + backUpPostFix}")
+      if (newCarbonFile.renameForce(destinationFileName + backUpPostFix)) {
+        LOGGER.info(s"Renaming $oldCarbonFile to $destinationFileName")
+        oldCarbonFile.renameForce(destinationFileName)
+      } else {
+        LOGGER.info(s"Renaming $newCarbonFile to ${destinationFileName + backUpPostFix} failed")
+        false
+      }
+    } else {
+      false
+    }
+  }
+
+  /**
+   * Used to remove table status files with UUID and segment folders.
+   */
+  protected def cleanUpStaleTableStatusFiles(
+      childTables: Seq[CarbonTable],
+      operationContext: OperationContext,
+      uuid: String): Unit = {
+    childTables.foreach { childTable =>
+      val metaDataDir = FileFactory.getCarbonFile(
+        CarbonTablePath.getMetadataPath(childTable.getTablePath))
+      val tableStatusFiles = metaDataDir.listFiles(new CarbonFileFilter {
+        override def accept(file: CarbonFile): Boolean = {
+          file.getName.contains(uuid) || file.getName.contains("backup")
+        }
+      })
+      tableStatusFiles.foreach(_.delete())
+    }
+  }
+}
+
+object AlterTableDropPartitionPostStatusListener extends OperationEventListener with CommitHelper {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override protected def onEvent(event: Event,
+      operationContext: OperationContext) = {
+    val postStatusListener = event.asInstanceOf[AlterTableDropPartitionPostStatusEvent]
+    val carbonTable = postStatusListener.carbonTable
+    val childDropPartitionCommands = operationContext.getProperty("dropPartitionCommands")
+    val uuid = Option(operationContext.getProperty("uuid")).getOrElse("").toString
+    if (childDropPartitionCommands != null && carbonTable.hasAggregationDataMap) {
+      val childCommands =
+        childDropPartitionCommands.asInstanceOf[Seq[CarbonAlterTableDropHivePartitionCommand]]
+      val updateFailed = try {
+        val renamedDataMaps = childCommands.takeWhile {
+          childCommand =>
+            val childCarbonTable = childCommand.table
+            val oldTableSchemaPath = CarbonTablePath.getTableStatusFilePathWithUUID(
+              childCarbonTable.getTablePath, uuid)
+            // Generate table status file name without UUID, forExample: tablestatus
+            val newTableSchemaPath = CarbonTablePath.getTableStatusFilePath(
+              childCarbonTable.getTablePath)
+            renameDataMapTableStatusFiles(oldTableSchemaPath, newTableSchemaPath, uuid)
+        }
+        // if true then the commit for one of the child tables has failed
+        val commitFailed = renamedDataMaps.lengthCompare(childCommands.length) != 0
+        if (commitFailed) {
+          LOGGER.info("Reverting table status file to original state")
+          renamedDataMaps.foreach {
+            command =>
+              val carbonTable = command.table
+              // rename the backup tablestatus i.e tablestatus_backup_UUID to tablestatus
+              val backupTableSchemaPath =
+                CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath) + "_backup_" + uuid
+              val tableSchemaPath = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
+              renameDataMapTableStatusFiles(backupTableSchemaPath, tableSchemaPath, "")
+          }
+        }
+        commitFailed
+      } finally {
+        // after success/failure of commit delete all tablestatus files with UUID in their names.
+        // if commit failed then remove the segment directory
+        // TODO Need to handle deletion on tablestatus files with UUID in cleanup command.
+        cleanUpStaleTableStatusFiles(childCommands.map(_.table),
+          operationContext,
+          uuid)
+      }
+      if (updateFailed) {
+        sys.error("Failed to update table status for pre-aggregate table")
+      }
+    }
+  }
+}
+
+object AlterTableDropPartitionMetaListener extends OperationEventListener{
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override protected def onEvent(event: Event,
+      operationContext: OperationContext) = {
+    val dropPartitionEvent = event.asInstanceOf[AlterTableDropPartitionMetaEvent]
+    val parentCarbonTable = dropPartitionEvent.parentCarbonTable
+    val partitionsToBeDropped = dropPartitionEvent.specs.flatMap(_.keys)
+    val sparkSession = SparkSession.getActiveSession.get
+    if (parentCarbonTable.hasAggregationDataMap) {
+      // used as a flag to block direct drop partition on aggregate tables fired by the user
+      operationContext.setProperty("isInternalDropCall", "true")
+      // Filter out all the tables which dont have the partition being dropped.
+      val childTablesWithoutPartitionColumns =
+        parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala.filter { dataMapSchema =>
+          val childColumns = dataMapSchema.getChildSchema.getListOfColumns.asScala
+          val partitionColExists = partitionsToBeDropped.forall {
+            partition =>
+              childColumns.exists { childColumn =>
+                  childColumn.getAggFunction.isEmpty &&
+                  childColumn.getParentColumnTableRelations.asScala.head.getColumnName.
+                    equals(partition)
+              }
+          }
+          !partitionColExists
+      }
+      if (childTablesWithoutPartitionColumns.nonEmpty) {
+        throw new MetadataProcessException(s"Cannot drop partition as one of the partition is not" +
+                                           s" participating in the following datamaps ${
+          childTablesWithoutPartitionColumns.toList.map(_.getChildSchema.getTableName)
+        }. Please drop the specified aggregate tables to continue")
+      } else {
+        val childDropPartitionCommands =
+          parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala.map { dataMapSchema =>
+            val tableIdentifier = TableIdentifier(dataMapSchema.getChildSchema.getTableName,
+              Some(parentCarbonTable.getDatabaseName))
+            // as the aggregate table columns start with parent table name therefore the
+            // partition column also has to be updated with parent table name to generate
+            // partitionSpecs for the child table.
+            val childSpecs = dropPartitionEvent.specs.map {
+               spec => spec.map {
+                case (key, value) => (s"${parentCarbonTable.getTableName}_$key", value)
+              }
+            }
+            CarbonAlterTableDropHivePartitionCommand(
+              tableIdentifier,
+              childSpecs,
+              dropPartitionEvent.ifExists,
+              dropPartitionEvent.purge,
+              dropPartitionEvent.retainData,
+              operationContext)
+        }
+        operationContext.setProperty("dropPartitionCommands", childDropPartitionCommands)
+        childDropPartitionCommands.foreach(_.processMetadata(SparkSession.getActiveSession.get))
+
+      }
+    } else if (parentCarbonTable.isChildDataMap) {
+      if (operationContext.getProperty("isInternalDropCall") == null) {
+        throw new UnsupportedOperationException("Cannot drop partition directly on aggregate table")
+      }
+    }
+  }
+}
 
 /**
  * below class will be used to create load command for compaction
@@ -260,9 +472,7 @@ object LoadPostAggregateListener extends OperationEventListener {
  * This listener is used to commit all the child data aggregate tables in one transaction. If one
  * failes all will be reverted to original state.
  */
-object CommitPreAggregateListener extends OperationEventListener {
-
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+object CommitPreAggregateListener extends OperationEventListener with CommitHelper {
 
   override protected def onEvent(event: Event,
       operationContext: OperationContext): Unit = {
@@ -317,7 +527,7 @@ object CommitPreAggregateListener extends OperationEventListener {
             val backupTableSchemaPath =
               CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath) + "_backup_" + uuid
             val tableSchemaPath = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
-            markInProgressSegmentAsDeleted(backupTableSchemaPath, operationContext, loadCommand)
+            markInProgressSegmentAsDeleted(backupTableSchemaPath, operationContext, carbonTable)
             renameDataMapTableStatusFiles(backupTableSchemaPath, tableSchemaPath, "")
         }
       }
@@ -332,66 +542,6 @@ object CommitPreAggregateListener extends OperationEventListener {
     }
 
 
-  }
-
-  private def markInProgressSegmentAsDeleted(tableStatusFile: String,
-      operationContext: OperationContext,
-      loadDataCommand: CarbonLoadDataCommand): Unit = {
-    val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(tableStatusFile)
-    val segmentBeingLoaded =
-      operationContext.getProperty(loadDataCommand.table.getTableUniqueName + "_Segment").toString
-    val newDetails = loadMetaDataDetails.collect {
-      case detail if detail.getLoadName.equalsIgnoreCase(segmentBeingLoaded) =>
-        detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
-        detail
-      case others => others
-    }
-    SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusFile, newDetails)
-  }
-
-  /**
-   *  Used to rename table status files for commit operation.
-   */
-  private def renameDataMapTableStatusFiles(sourceFileName: String,
-      destinationFileName: String, uuid: String) = {
-    val oldCarbonFile = FileFactory.getCarbonFile(sourceFileName)
-    val newCarbonFile = FileFactory.getCarbonFile(destinationFileName)
-    if (oldCarbonFile.exists() && newCarbonFile.exists()) {
-      val backUpPostFix = if (uuid.nonEmpty) {
-        "_backup_" + uuid
-      } else {
-        ""
-      }
-      LOGGER.info(s"Renaming $newCarbonFile to ${destinationFileName + backUpPostFix}")
-      if (newCarbonFile.renameForce(destinationFileName + backUpPostFix)) {
-        LOGGER.info(s"Renaming $oldCarbonFile to $destinationFileName")
-        oldCarbonFile.renameForce(destinationFileName)
-      } else {
-        LOGGER.info(s"Renaming $newCarbonFile to ${destinationFileName + backUpPostFix} failed")
-        false
-      }
-    } else {
-      false
-    }
-  }
-
-  /**
-   * Used to remove table status files with UUID and segment folders.
-   */
-  private def cleanUpStaleTableStatusFiles(
-      childTables: Seq[CarbonTable],
-      operationContext: OperationContext,
-      uuid: String): Unit = {
-    childTables.foreach { childTable =>
-      val metaDataDir = FileFactory.getCarbonFile(
-        CarbonTablePath.getMetadataPath(childTable.getTablePath))
-      val tableStatusFiles = metaDataDir.listFiles(new CarbonFileFilter {
-        override def accept(file: CarbonFile): Boolean = {
-          file.getName.contains(uuid) || file.getName.contains("backup")
-        }
-      })
-      tableStatusFiles.foreach(_.delete())
-    }
   }
 }
 

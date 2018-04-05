@@ -170,6 +170,11 @@ object CarbonEnv {
       .addListener(classOf[LoadMetadataEvent], CompactionProcessMetaListener)
       .addListener(classOf[LoadTablePostStatusUpdateEvent], CommitPreAggregateListener)
       .addListener(classOf[AlterTableCompactionPostStatusUpdateEvent], CommitPreAggregateListener)
+      .addListener(classOf[AlterTableDropPartitionPreStatusEvent],
+        AlterTableDropPartitionPreStatusListener)
+      .addListener(classOf[AlterTableDropPartitionPostStatusEvent],
+        AlterTableDropPartitionPostStatusListener)
+      .addListener(classOf[AlterTableDropPartitionMetaEvent], AlterTableDropPartitionMetaListener)
   }
 
   def registerCommonListener(sparkSession: SparkSession): Unit = {

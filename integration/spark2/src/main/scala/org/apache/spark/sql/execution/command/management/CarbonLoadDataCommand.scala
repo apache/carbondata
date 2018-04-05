@@ -130,12 +130,6 @@ case class CarbonLoadDataCommand(
           case l: LogicalRelation => l
         }.head
       sizeInBytes = logicalPartitionRelation.relation.sizeInBytes
-      currPartitions = CarbonFilters.getCurrentPartitions(
-        sparkSession,
-        TableIdentifier(tableName, databaseNameOp)) match {
-        case Some(parts) => new util.ArrayList(parts.toList.asJava)
-        case _ => null
-      }
     }
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     if(CarbonUtil.hasAggregationDataMap(table)) {
@@ -149,7 +143,16 @@ case class CarbonLoadDataCommand(
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
-
+    currPartitions = if (table.isHivePartitionTable) {
+      CarbonFilters.getCurrentPartitions(
+        sparkSession,
+        table) match {
+        case Some(parts) => new util.ArrayList(parts.toList.asJava)
+        case _ => null
+      }
+    } else {
+      null
+    }
     // get the value of 'spark.executor.cores' from spark conf, default value is 1
     val sparkExecutorCores = sparkSession.sparkContext.conf.get("spark.executor.cores", "1")
     // get the value of 'carbon.number.of.cores.while.loading' from carbon properties,
@@ -663,19 +666,6 @@ case class CarbonLoadDataCommand(
         persistedRDD = persistedRDDLocal
         transformedPlan
       } else {
-        val rowDataTypes = attributes.map { attribute =>
-          catalogTable.schema.find(_.name.equalsIgnoreCase(attribute.name)) match {
-            case Some(attr) => attr.dataType
-            case _ => StringType
-          }
-        }
-        // Find the partition columns from the csv header attributes
-        val partitionColumns = attributes.map { attribute =>
-          catalogTable.partitionSchema.find(_.name.equalsIgnoreCase(attribute.name)) match {
-            case Some(attr) => true
-            case _ => false
-          }
-        }
         val columnCount = carbonLoadModel.getCsvHeaderColumns.length
         val rdd = CsvRDDHelper.csvFileScanRDD(
           sparkSession,
@@ -729,6 +719,7 @@ case class CarbonLoadDataCommand(
           query = logicalPlan,
           overwrite = false,
           ifPartitionNotExists = false)
+      sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
       Dataset.ofRows(sparkSession, convertedPlan)
     } catch {
       case ex: Throwable =>
@@ -767,10 +758,6 @@ case class CarbonLoadDataCommand(
         carbonLoadModel,
         table,
         operationContext)
-
-      val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
-        new LoadTablePreStatusUpdateEvent(table.getCarbonTableIdentifier, carbonLoadModel)
-      OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
 
     } catch {
       case e: Exception =>

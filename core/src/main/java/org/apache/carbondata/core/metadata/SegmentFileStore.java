@@ -579,13 +579,15 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static void commitDropPartitions(CarbonTable carbonTable, String uniqueId,
-      List<String> toBeUpdatedSegments, List<String> toBeDeleteSegments) throws IOException {
+      List<String> toBeUpdatedSegments, List<String> toBeDeleteSegments,
+      String uuid) throws IOException {
     if (toBeDeleteSegments.size() > 0 || toBeUpdatedSegments.size() > 0) {
       Set<Segment> segmentSet = new HashSet<>(
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
               .getValidAndInvalidSegments().getValidSegments());
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true,
-          Segment.toSegmentList(toBeDeleteSegments), Segment.toSegmentList(toBeUpdatedSegments));
+          Segment.toSegmentList(toBeDeleteSegments), Segment.toSegmentList(toBeUpdatedSegments),
+          uuid);
     }
   }
 

@@ -593,7 +593,6 @@ object PreAggregateUtil {
       parentTableIdentifier.table, validateSegments.toString)
     CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
       "true")
-    CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
     try {
       loadCommand.processData(sparkSession)
     } finally {

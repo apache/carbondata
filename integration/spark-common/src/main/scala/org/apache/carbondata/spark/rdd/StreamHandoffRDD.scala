@@ -37,7 +37,7 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection}
@@ -47,7 +47,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.{HandoffResult, HandoffResultImpl}
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CommonUtil, SparkDataTypeConverterImpl}
 import org.apache.carbondata.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
 
 
@@ -111,6 +111,7 @@ class StreamHandoffRDD[K, V](
   ): Iterator[(K, V)] = {
     carbonLoadModel.setTaskNo("" + split.index)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
     CarbonMetadata.getInstance().addCarbonTable(carbonTable)
     // the input iterator is using raw row
     val iteratorList = prepareInputIterator(split, carbonTable)
@@ -316,6 +317,7 @@ object StreamHandoffRDD {
         false)
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, carbonLoadModel, true, false)
       // convert a streaming segment to columnar segment
+
       val status = new StreamHandoffRDD(
         sparkSession.sparkContext,
         new HandoffResultImpl(),
@@ -353,7 +355,9 @@ object StreamHandoffRDD {
           carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCarbonTableIdentifier,
           carbonLoadModel)
       OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
+
       val done = updateLoadMetadata(handoffSegmenId, carbonLoadModel)
+
       val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =
         new LoadTablePostStatusUpdateEvent(carbonLoadModel)
       OperationListenerBus.getInstance()

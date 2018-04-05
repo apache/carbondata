@@ -47,7 +47,7 @@ import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CAR
 /**
  * This class maintains carbon session params
  */
-public class SessionParams implements Serializable {
+public class SessionParams implements Serializable, Cloneable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CacheProvider.class.getName());
@@ -228,4 +228,12 @@ public class SessionParams implements Serializable {
     sProps.clear();
   }
 
+  public SessionParams clone() throws CloneNotSupportedException {
+    super.clone();
+    SessionParams newObj = new SessionParams();
+    newObj.addedProps.putAll(this.addedProps);
+    newObj.sProps.putAll(this.sProps);
+    newObj.extraInfo.putAll(this.extraInfo);
+    return newObj;
+  }
 }
