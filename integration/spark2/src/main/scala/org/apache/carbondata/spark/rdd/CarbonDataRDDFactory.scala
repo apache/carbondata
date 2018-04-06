@@ -495,12 +495,7 @@ object CarbonDataRDDFactory {
       val newEntryLoadStatus =
       if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap &&
           !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
-
-        LOGGER.audit(s"Data load is failed for " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
-                     " as there is no data to load")
-        LOGGER.warn("Cannot write load metadata file as data load failed")
-
+        LOGGER.warn("Cannot write load metadata file as there is no data to load")
         SegmentStatus.MARKED_FOR_DELETE
       } else {
         loadStatus
