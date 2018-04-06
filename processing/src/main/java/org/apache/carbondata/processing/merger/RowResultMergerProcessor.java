@@ -99,7 +99,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * Merge function
    *
    */
-  public boolean execute(List<RawResultIterator> resultIteratorList) {
+  public boolean execute(List<RawResultIterator> resultIteratorList) throws Exception {
     initRecordHolderHeap(resultIteratorList);
     boolean mergeStatus = false;
     int index = 0;
@@ -160,9 +160,8 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       }
       mergeStatus = true;
     } catch (Exception e) {
-      LOGGER.error(e, e.getMessage());
-      LOGGER.error("Exception in compaction merger " + e.getMessage());
       mergeStatus = false;
+      throw e;
     } finally {
       try {
         if (isDataPresent) {
@@ -174,8 +173,8 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
               partitionSpec.getPartitions());
         }
       } catch (CarbonDataWriterException | IOException e) {
-        LOGGER.error(e, "Exception in compaction merger");
         mergeStatus = false;
+        throw e;
       }
     }
 

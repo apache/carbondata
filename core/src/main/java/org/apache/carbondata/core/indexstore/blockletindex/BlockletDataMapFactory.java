@@ -103,6 +103,8 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
       Set<TableBlockIndexUniqueIdentifier> validIdentifiers = BlockletDataMapUtil
           .filterIdentifiersBasedOnDistributable(tableBlockIndexUniqueIdentifiers,
               (BlockletDataMapDistributable) distributable);
+      ((BlockletDataMapDistributable) distributable)
+          .setTableBlockIndexUniqueIdentifiers(validIdentifiers);
       for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : validIdentifiers) {
         if (null == cache.getIfPresent(tableBlockIndexUniqueIdentifier)) {
           distributablesToBeLoaded.add(distributable);
