@@ -119,19 +119,22 @@ case class CarbonCreateTableCommand(
           // isVisible property is added to hive table properties to differentiate between main
           // table and datamaps(like preaggregate). It is false only for datamaps. This is added
           // to improve the show tables performance when filtering the datamaps from main tables
-          sparkSession.sql(
-            s"""CREATE TABLE $dbName.$tableName
-               |(${ rawSchema })
-               |USING org.apache.spark.sql.CarbonSource
-               |OPTIONS (
-               |  tableName "$tableName",
-               |  dbName "$dbName",
-               |  tablePath "$tablePath",
-               |  path "$tablePath",
-               |  isVisible "$isVisible"
-               |  $carbonSchemaString)
-               |  $partitionString
+          // synchronized to prevent concurrently creation of table with same name
+          CarbonCreateTableCommand.synchronized {
+            sparkSession.sql(
+              s"""CREATE TABLE $dbName.$tableName
+                 |(${ rawSchema })
+                 |USING org.apache.spark.sql.CarbonSource
+                 |OPTIONS (
+                 |  tableName "$tableName",
+                 |  dbName "$dbName",
+                 |  tablePath "$tablePath",
+                 |  path "$tablePath",
+                 |  isVisible "$isVisible"
+                 |  $carbonSchemaString)
+                 |  $partitionString
              """.stripMargin)
+          }
         } catch {
           case e: AnalysisException => throw e
           case e: Exception =>
