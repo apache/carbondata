@@ -37,7 +37,7 @@ public abstract class AbstractResultProcessor {
    * @param resultIteratorList
    * @return
    */
-  public abstract boolean execute(List<RawResultIterator> resultIteratorList);
+  public abstract boolean execute(List<RawResultIterator> resultIteratorList) throws Exception;
 
   /**
    * This method will be sued to clean up the resources and close all the spawned threads to avoid

@@ -150,7 +150,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    *
    * @param resultIteratorList
    */
-  public boolean execute(List<RawResultIterator> resultIteratorList) {
+  public boolean execute(List<RawResultIterator> resultIteratorList) throws Exception {
     boolean isCompactionSuccess = false;
     try {
       initTempStoreLocation();
@@ -166,7 +166,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       }
       isCompactionSuccess = true;
     } catch (Exception e) {
-      LOGGER.error(e, "Compaction failed: " + e.getMessage());
+      throw e;
     } finally {
       if (partitionSpec != null) {
         try {
@@ -175,8 +175,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
                   partitionSpec.getLocation().toString(), carbonLoadModel.getFactTimeStamp() + "",
                   partitionSpec.getPartitions());
         } catch (IOException e) {
-          LOGGER.error(e, "Compaction failed: " + e.getMessage());
           isCompactionSuccess = false;
+          throw e;
         }
       }
       // clear temp files and folders created during compaction
