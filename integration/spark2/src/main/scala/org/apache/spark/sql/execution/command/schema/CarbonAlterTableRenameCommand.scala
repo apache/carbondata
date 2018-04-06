@@ -73,6 +73,14 @@ private[sql] case class CarbonAlterTableRenameCommand(
                    s"Table $oldDatabaseName.$oldTableName does not exist")
       throwMetadataException(oldDatabaseName, oldTableName, "Table does not exist")
     }
+
+    var oldCarbonTable: CarbonTable = null
+    oldCarbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
+      .asInstanceOf[CarbonRelation].carbonTable
+    if (oldCarbonTable.getTableInfo.isUnManagedTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    }
+
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
       LockUsage.COMPACTION_LOCK,
       LockUsage.DELETE_SEGMENT_LOCK,

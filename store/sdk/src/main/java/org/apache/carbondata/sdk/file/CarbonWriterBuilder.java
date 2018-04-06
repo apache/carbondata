@@ -58,44 +58,76 @@ public class CarbonWriterBuilder {
   private boolean isUnManagedTable;
   private long UUID;
 
+  /**
+   * prepares the builder with the schema provided
+   * @param schema is instance of Schema
+   * @return updated CarbonWriterBuilder
+   */
   public CarbonWriterBuilder withSchema(Schema schema) {
     Objects.requireNonNull(schema, "schema should not be null");
     this.schema = schema;
     return this;
   }
 
+  /**
+   * Sets the output path of the writer builder
+   * @param path is the absolute path where output files are written
+   * @return updated CarbonWriterBuilder
+   */
   public CarbonWriterBuilder outputPath(String path) {
     Objects.requireNonNull(path, "path should not be null");
     this.path = path;
     return this;
   }
 
+  /**
+   * sets the list of columns that needs to be in sorted order
+   * @param sortColumns is a string array of columns that needs to be sorted
+   * @return updated CarbonWriterBuilder
+   */
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
     this.sortColumns = sortColumns;
     return this;
   }
 
-  public CarbonWriterBuilder partitionBy(String[] partitionColumns) {
-    throw new UnsupportedOperationException();
-  }
-
+  /**
+   * If set, create a schema file in metadata folder.
+   * @param persist is a boolean value, If set, create a schema file in metadata folder
+   * @return updated CarbonWriterBuilder
+   */
   public CarbonWriterBuilder persistSchemaFile(boolean persist) {
     this.persistSchemaFile = persist;
     return this;
   }
 
+  /**
+   * If set true, writes the carbondata and carbonindex files in a flat folder structure
+   * @param isUnManagedTable is a boolelan value if set writes
+   *                     the carbondata and carbonindex files in a flat folder structure
+   * @return updated CarbonWriterBuilder
+   */
   public CarbonWriterBuilder unManagedTable(boolean isUnManagedTable) {
     Objects.requireNonNull(isUnManagedTable, "UnManaged Table should not be null");
     this.isUnManagedTable = isUnManagedTable;
     return this;
   }
 
+  /**
+   * to set the timestamp in the carbondata and carbonindex index files
+   * @param UUID is a timestamp to be used in the carbondata and carbonindex index files
+   * @return updated CarbonWriterBuilder
+   */
   public CarbonWriterBuilder uniqueIdentifier(long UUID) {
     Objects.requireNonNull(UUID, "Unique Identifier should not be null");
     this.UUID = UUID;
     return this;
   }
 
+  /**
+   * To set the carbondata file size in MB between 1MB-2048MB
+   * @param blockSize is size in MB between 1MB to 2048 MB
+   * @return updated CarbonWriterBuilder
+   */
   public CarbonWriterBuilder withBlockSize(int blockSize) {
     if (blockSize <= 0 || blockSize > 2048) {
       throw new IllegalArgumentException("blockSize should be between 1 MB to 2048 MB");
@@ -104,6 +136,11 @@ public class CarbonWriterBuilder {
     return this;
   }
 
+  /**
+   * To set the blocklet size of carbondata file
+   * @param blockletSize is blocklet size in MB
+   * @return updated CarbonWriterBuilder
+   */
   public CarbonWriterBuilder withBlockletSize(int blockletSize) {
     if (blockletSize <= 0) {
       throw new IllegalArgumentException("blockletSize should be greater than zero");
@@ -151,8 +188,12 @@ public class CarbonWriterBuilder {
    */
   private CarbonTable buildCarbonTable() {
     TableSchemaBuilder tableSchemaBuilder = TableSchema.builder();
-    if (blockletSize > 0) {
+    if (blockSize > 0) {
       tableSchemaBuilder = tableSchemaBuilder.blockSize(blockSize);
+    }
+
+    if (blockletSize > 0) {
+      tableSchemaBuilder = tableSchemaBuilder.blockletSize(blockletSize);
     }
 
     List<String> sortColumnsList;
