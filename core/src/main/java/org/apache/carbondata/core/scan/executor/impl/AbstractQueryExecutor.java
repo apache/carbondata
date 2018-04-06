@@ -308,7 +308,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<ProjectionDimension> projectDimensions = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             queryModel.getProjectionDimensions(), tableBlockDimensions,
-            segmentProperties.getComplexDimensions(), queryModel.getProjectionMeasures().size());
+            segmentProperties.getComplexDimensions(), queryModel.getProjectionMeasures().size(),
+            queryModel.getTable().getTableInfo().isUnManagedTable());
     blockExecutionInfo.setBlockId(
         CarbonUtil.getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segmentId,
             queryModel.getTable().getTableInfo().isUnManagedTable()));
@@ -517,7 +518,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // getting the measure info which will be used while filling up measure data
     List<ProjectionMeasure> updatedQueryMeasures = RestructureUtil
         .createMeasureInfoAndGetCurrentBlockQueryMeasures(executionInfo,
-            queryModel.getProjectionMeasures(), tableBlock.getSegmentProperties().getMeasures());
+            queryModel.getProjectionMeasures(),
+            tableBlock.getSegmentProperties().getMeasures(),
+            queryModel.getTable().getTableInfo().isUnManagedTable());
     // setting the measure aggregator for all aggregation function selected
     // in query
     executionInfo.getMeasureInfo().setMeasureDataTypes(queryProperties.measureDataTypes);

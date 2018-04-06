@@ -474,7 +474,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
       DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
     } else {
-      if (isUnmanagedCarbonTable(absoluteTableIdentifier, sparkSession)) {
+      if (isUnmanagedCarbonTable(absoluteTableIdentifier)) {
         removeTableFromMetadata(dbName, tableName)
         CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
         // discard cached table info in cachedDataSourceTables
@@ -486,22 +486,9 @@ class CarbonFileMetastore extends CarbonMetaStore {
   }
 
 
-  def isUnmanagedCarbonTable(identifier: AbsoluteTableIdentifier,
-      sparkSession: SparkSession): Boolean = {
-    if (sparkSession.sessionState.catalog.listTables(identifier.getDatabaseName)
-      .exists(_.table.equalsIgnoreCase(identifier.getTableName))) {
-
-      val table = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
-        .getCarbonEnv().carbonMetastore
-        .getTableFromMetadataCache(identifier.getDatabaseName, identifier.getTableName)
-
-      table match {
-        case null => false
-        case _ => table.get.getTableInfo.isUnManagedTable
-      }
-    } else {
-      false
-    }
+  def isUnmanagedCarbonTable(identifier: AbsoluteTableIdentifier): Boolean = {
+    val table = getTableFromMetadataCache(identifier.getDatabaseName, identifier.getTableName);
+    table.map(_.getTableInfo.isUnManagedTable).getOrElse(false)
   }
 
   private def getTimestampFileAndType() = {
