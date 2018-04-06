@@ -17,7 +17,14 @@
 
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
+import java.util
+import java.util.concurrent.{Callable, ExecutorService, Executors, TimeUnit}
+
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success}
 
 import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -428,6 +435,43 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
       sql("DESCRIBE FORMATTED PreAggMain_preagg2").show()
     }
   }
+
+  test("test creation of multiple preaggregate of same name concurrently ") {
+    sql("DROP TABLE IF EXISTS tbl_concurr")
+    sql(
+      "create table if not exists  tbl_concurr(imei string,age int,mac string ,prodate timestamp," +
+      "update timestamp,gamepoint double,contrid double) stored by 'carbondata' ")
+
+    var executorService: ExecutorService = Executors.newCachedThreadPool()
+    val tasks = new util.ArrayList[Callable[String]]()
+    var i = 0
+    val count = 5
+    while (i < count) {
+      tasks
+        .add(new QueryTask(
+          s"""create datamap agg_concu1 on table tbl_concurr using
+             |'preaggregate' as select prodate, mac from tbl_concurr group by prodate,mac"""
+            .stripMargin))
+      i = i + 1
+    }
+    executorService.invokeAll(tasks)
+
+    checkExistence(sql("show tables"), true, "agg_concu1", "tbl_concurr")
+    executorService.shutdown()
+  }
+
+  class QueryTask(query: String) extends Callable[String] {
+    override def call(): String = {
+      var result = "SUCCESS"
+      try {
+        sql(query).collect()
+      } catch {
+        case exception: Exception => LOGGER.error(exception.getMessage)
+      }
+      result
+    }
+  }
+
 
   def getCarbonTable(plan: LogicalPlan) : CarbonTable ={
     var carbonTable : CarbonTable = null
