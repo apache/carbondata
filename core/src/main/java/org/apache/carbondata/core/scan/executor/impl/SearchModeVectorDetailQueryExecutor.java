@@ -43,13 +43,17 @@ public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<O
     int nThread;
     try {
       nThread = Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_THREAD,
-                      CarbonCommonConstants.CARBON_SEARCH_MODE_THREAD_DEFAULT));
+              .getProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD,
+                      CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT));
     } catch (NumberFormatException e) {
-      nThread = Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_THREAD_DEFAULT);
+      nThread = Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT);
       LOGGER.warn("The carbon.search.mode.thread is invalid. Using the default value " + nThread);
     }
-    executorService = Executors.newFixedThreadPool(nThread);
+    if (nThread > 0) {
+      executorService =  Executors.newFixedThreadPool(nThread);
+    } else {
+      executorService = Executors.newCachedThreadPool();
+    }
   }
 
   @Override
