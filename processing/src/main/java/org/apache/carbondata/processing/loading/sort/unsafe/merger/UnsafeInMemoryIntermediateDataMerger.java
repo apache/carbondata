@@ -17,17 +17,28 @@
 
 package org.apache.carbondata.processing.loading.sort.unsafe.merger;
 
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.util.AbstractQueue;
 import java.util.PriorityQueue;
+import java.util.Random;
+import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeCarbonRowForMerge;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeInmemoryMergeHolder;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
+import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 
-public class UnsafeInMemoryIntermediateDataMerger implements Runnable {
+public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
   /**
    * LOGGER
    */
@@ -54,35 +65,66 @@ public class UnsafeInMemoryIntermediateDataMerger implements Runnable {
   private long[] mergedAddresses;
 
   private byte[] rowPageIndexes;
+  private int totalSize;
+  private SortParameters sortParameters;
+  private SortStepRowHandler sortStepRowHandler;
+  private boolean spillDisk;
+  private File outputFile;
+  private DataOutputStream outputStream;
 
   /**
    * IntermediateFileMerger Constructor
    */
   public UnsafeInMemoryIntermediateDataMerger(UnsafeCarbonRowPage[] unsafeCarbonRowPages,
-      int totalSize) {
+      int totalSize, SortParameters sortParameters, boolean spillDisk) {
     this.holderCounter = unsafeCarbonRowPages.length;
     this.unsafeCarbonRowPages = unsafeCarbonRowPages;
     this.mergedAddresses = new long[totalSize];
     this.rowPageIndexes = new byte[totalSize];
     this.entryCount = 0;
+    this.totalSize = totalSize;
+    this.sortParameters = sortParameters;
+    this.sortStepRowHandler = new SortStepRowHandler(sortParameters);
+    this.spillDisk = spillDisk;
   }
 
   @Override
-  public void run() {
+  public Void call() throws Exception {
     long intermediateMergeStartTime = System.currentTimeMillis();
     int holderCounterConst = holderCounter;
     try {
       startSorting();
-      while (hasNext()) {
-        writeDataToMemory(next());
+      if (spillDisk) {
+        initSortTempFile();
+        while (hasNext()) {
+          writeDataToFile(next());
+        }
+      } else {
+        while (hasNext()) {
+          writeDataToMemory(next());
+        }
       }
+
       double intermediateMergeCostTime =
           (System.currentTimeMillis() - intermediateMergeStartTime) / 1000.0;
-      LOGGER.info("============================== Intermediate Merge of " + holderCounterConst
+      LOGGER.info("Intermediate Merge of " + holderCounterConst
           + " in-memory sort Cost Time: " + intermediateMergeCostTime + "(s)");
+      if (spillDisk) {
+        LOGGER.info("Merge and spill in-memory pages to disk, location: "
+            + outputFile.getAbsolutePath()
+            + ", file size in MB: " + outputFile.length() * 0.1 * 10 / 1024 / 1024
+            + ", containing rows: " + totalSize);
+      }
     } catch (Exception e) {
       LOGGER.error(e, "Problem while intermediate merging");
+      throw e;
+    } finally {
+      if (spillDisk) {
+        CarbonUtil.closeStreams(outputStream);
+        close();
+      }
     }
+    return null;
   }
 
   /**
@@ -195,6 +237,24 @@ public class UnsafeInMemoryIntermediateDataMerger implements Runnable {
     entryCount++;
   }
 
+  private void initSortTempFile() throws IOException {
+    String tmpDir = sortParameters.getTempFileLocation()[
+        new Random().nextInt(sortParameters.getTempFileLocation().length)];
+    outputFile = new File(tmpDir + File.separator
+        + sortParameters.getTableName() + '_'
+        + sortParameters.getRangeId() + '_' + System.nanoTime()
+        + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+    outputStream = FileFactory.getDataOutputStream(outputFile.getPath(),
+        FileFactory.FileType.LOCAL, sortParameters.getFileWriteBufferSize(),
+        sortParameters.getSortTempCompressorName());
+    outputStream.writeInt(totalSize);
+  }
+
+  private void writeDataToFile(UnsafeCarbonRowForMerge row) throws IOException {
+    IntermediateSortTempRow sortTempRow = unsafeCarbonRowPages[row.index].getRow(row.address);
+    sortStepRowHandler.writeIntermediateSortTempRowToOutputStream(sortTempRow, outputStream);
+  }
+
   public int getEntryCount() {
     return entryCount;
   }
@@ -209,5 +269,15 @@ public class UnsafeInMemoryIntermediateDataMerger implements Runnable {
 
   public byte[] getRowPageIndexes() {
     return rowPageIndexes;
+  }
+
+  public boolean isSpillDisk() {
+    return spillDisk;
+  }
+
+  public void close() {
+    for (UnsafeCarbonRowPage rowPage : unsafeCarbonRowPages) {
+      rowPage.freeMemory();
+    }
   }
 }

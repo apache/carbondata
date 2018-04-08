@@ -22,6 +22,7 @@ import java.io.FileFilter;
 import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -80,6 +81,15 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    */
   public void startFinalMerge(UnsafeCarbonRowPage[] rowPages,
       List<UnsafeInMemoryIntermediateDataMerger> merges) throws CarbonDataWriterException {
+    // remove the spilled pages
+    for (Iterator<UnsafeInMemoryIntermediateDataMerger> iter = merges.iterator();
+         iter.hasNext(); ) {
+      UnsafeInMemoryIntermediateDataMerger merger = iter.next();
+      if (merger.isSpillDisk()) {
+        // it has already been closed once the spill is finished, so no need to close it here
+        iter.remove();
+      }
+    }
     startSorting(rowPages, merges);
   }
 
@@ -99,8 +109,9 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
         LOGGER.info("No files to merge sort");
         return;
       }
-      LOGGER.info("Starting final merger");
-      LOGGER.info("Number of row pages: " + this.fileCounter);
+      LOGGER.info(String.format("Starting final merge of %d pages, including row pages: %d"
+          + ", sort temp files: %d, intermediate merges: %d",
+          this.fileCounter, rowPages.length, filesToMergeSort.size(), merges.size()));
 
       // create record holder heap
       createRecordHolderQueue();

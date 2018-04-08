@@ -120,6 +120,14 @@ public class UnsafeSortMemoryManager {
   }
 
   /**
+   * total usable memory for sort memory manager
+   * @return size in bytes
+   */
+  public long getUsableMemory() {
+    return totalMemory;
+  }
+
+  /**
    * Below method will be used to allocate dummy memory
    * this will be used to allocate first and then used when u need
    *
