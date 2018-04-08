@@ -20,10 +20,6 @@ package org.apache.carbondata.datamap.lucene
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-
 class LuceneCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/datamap_input.csv"
@@ -55,6 +51,7 @@ class LuceneCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
          | USING '${classOf[LuceneCoarseGrainDataMapFactory].getName}'
+         | DMProperties('TEXT_COLUMNS'='name,city')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
