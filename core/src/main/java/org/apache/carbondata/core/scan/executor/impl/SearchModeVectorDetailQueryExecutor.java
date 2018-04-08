@@ -49,7 +49,11 @@ public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<O
       nThread = Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_THREAD_DEFAULT);
       LOGGER.warn("The carbon.search.mode.thread is invalid. Using the default value " + nThread);
     }
-    executorService = Executors.newFixedThreadPool(nThread);
+    if (nThread > 0) {
+      executorService =  Executors.newFixedThreadPool(nThread);
+    } else {
+      executorService = Executors.newCachedThreadPool();
+    }
   }
 
   @Override

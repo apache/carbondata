@@ -1635,12 +1635,15 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_MODE_ENABLE_DEFAULT = "false";
 
   /**
-   * Num of threads used in query executor when using search mode.
+   * Thread size of static ExecutorService in each Node when using search mode.
+   * Default value is -1, it means that Executors.newCachedThreadPool() will be used to
+   * maximize utilization. If thread numbers has to be limited, set it a positive Integer
+   * will call Executors.newFixedThreadPool(int nThreads) instead
    */
   @CarbonProperty
   public static final String CARBON_SEARCH_MODE_THREAD = "carbon.search.mode.thread";
 
-  public static final String CARBON_SEARCH_MODE_THREAD_DEFAULT = "3";
+  public static final String CARBON_SEARCH_MODE_THREAD_DEFAULT = "-1";
 
   private CarbonCommonConstants() {
   }
