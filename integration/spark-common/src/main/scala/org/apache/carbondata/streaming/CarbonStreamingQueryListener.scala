@@ -31,7 +31,7 @@ class CarbonStreamingQueryListener(spark: SparkSession) extends StreamingQueryLi
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  private val cache = new util.HashMap[UUID, ICarbonLock]()
+  private val cache = new util.HashMap[UUID, String]()
 
   override def onQueryStarted(event: StreamingQueryListener.QueryStartedEvent): Unit = {
     val streamQuery = spark.streams.get(event.id)
@@ -48,19 +48,7 @@ class CarbonStreamingQueryListener(spark: SparkSession) extends StreamingQueryLi
       LOGGER.info("Carbon streaming query started: " + event.id)
       val sink = qry.sink.asInstanceOf[CarbonAppendableStreamSink]
       val carbonTable = sink.carbonTable
-      val lock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
-        LockUsage.STREAMING_LOCK)
-      if (lock.lockWithRetries()) {
-        LOGGER.info("Acquired the lock for stream table: " + carbonTable.getDatabaseName + "." +
-                    carbonTable.getTableName)
-        cache.put(event.id, lock)
-      } else {
-        LOGGER.error("Not able to acquire the lock for stream table:" +
-                     carbonTable.getDatabaseName + "." + carbonTable.getTableName)
-        throw new InterruptedException(
-          "Not able to acquire the lock for stream table: " + carbonTable.getDatabaseName + "." +
-          carbonTable.getTableName)
-      }
+      cache.put(event.id, carbonTable.getTableUniqueName)
     }
   }
 
@@ -68,10 +56,10 @@ class CarbonStreamingQueryListener(spark: SparkSession) extends StreamingQueryLi
   }
 
   override def onQueryTerminated(event: StreamingQueryListener.QueryTerminatedEvent): Unit = {
-    val lock = cache.remove(event.id)
-    if (null != lock) {
-      LOGGER.info("Carbon streaming query: " + event.id)
-      lock.unlock()
+    val tableUniqueName = cache.remove(event.id)
+    if (null != tableUniqueName) {
+      LOGGER.info("Carbon streaming query End: " + event.id)
+      StreamSinkFactory.unLock(tableUniqueName)
     }
   }
 }
