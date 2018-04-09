@@ -94,6 +94,11 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    */
   public DimensionColumnPage convertToDimColDataChunkWithOutCache(int index) {
     assert index < pagesCount;
+    // in case of filter query filter column if filter column is decoded and stored.
+    // then return the same
+    if (dataChunks != null && null != dataChunks[index]) {
+      return dataChunks[index];
+    }
     try {
       return chunkReader.decodeColumnPage(this, index);
     } catch (Exception e) {
@@ -109,6 +114,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
         }
       }
     }
+    rawData = null;
   }
 
   public void setFileReader(FileReader fileReader) {

@@ -260,16 +260,6 @@ public class BlockletFilterScanner extends BlockletFullScanner {
 
     DimensionColumnPage[][] dimensionColumnPages =
         new DimensionColumnPage[numDimensionChunks][numPages];
-    for (int chunkIndex = 0; chunkIndex < numDimensionChunks; chunkIndex++) {
-      if (dimensionRawColumnChunks[chunkIndex] != null) {
-        for (int pageId = 0; pageId < numPages; pageId++) {
-          dimensionColumnPages[chunkIndex][pageId] =
-              dimensionRawColumnChunks[chunkIndex].decodeColumnPage(pageId);
-        }
-      }
-    }
-
-
     MeasureRawColumnChunk[] measureRawColumnChunks =
         new MeasureRawColumnChunk[blockExecutionInfo.getTotalNumberOfMeasureToRead()];
     int numMeasureChunks = measureRawColumnChunks.length;
@@ -302,21 +292,13 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       }
     }
     ColumnPage[][] measureColumnPages = new ColumnPage[numMeasureChunks][numPages];
-    for (int chunkIndex = 0; chunkIndex < numMeasureChunks; chunkIndex++) {
-      if (measureRawColumnChunks[chunkIndex] != null) {
-        for (int pageId = 0; pageId < numPages; pageId++) {
-          measureColumnPages[chunkIndex][pageId] =
-              measureRawColumnChunks[chunkIndex].decodeColumnPage(pageId);
-        }
-      }
-    }
-
     scannedResult.setDimensionColumnPages(dimensionColumnPages);
     scannedResult.setPageFilteredRowId(pageFilteredRowId);
     scannedResult.setMeasureColumnPages(measureColumnPages);
     scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     scannedResult.setPageFilteredRowCount(pageFilteredRowCount);
+    scannedResult.fillDataChunks();
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
