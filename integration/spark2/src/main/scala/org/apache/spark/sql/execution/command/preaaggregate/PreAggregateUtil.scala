@@ -612,7 +612,8 @@ object PreAggregateUtil {
     val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
     val columns = tableSchema.getListOfColumns.asScala
       .filter(f => !f.getColumnName.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE))
-    columns.foreach { a =>
+    //  schema ordinal should be considered
+    columns.sortBy(_.getSchemaOrdinal).foreach { a =>
       if (a.getAggFunction.nonEmpty) {
         aggregateColumns += s"${a.getAggFunction match {
           case "count" => "sum"

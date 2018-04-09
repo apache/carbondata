@@ -497,6 +497,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     assert(sql("show segments for table agg_table2").collect().map(_.get(0)).contains("1.1"))
     assert(sql("show segments for table agg_table2_p1").collect().map(_.get(0)).contains("0.1"))
     assert(sql("show segments for table agg_table2_p2").collect().map(_.get(0)).contains("0.1"))
+    sql("drop table if exists agg_table2")
   }
 
   test("test if major compaction is successful for streaming and preaggregate tables") {
@@ -525,6 +526,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         Row("name_14", 1120000.0)))
     assert(sql("show segments for table agg_table2").collect().map(_.get(0)).contains("1.1"))
     assert(sql("show segments for table agg_table2_p1").collect().map(_.get(0)).contains("0.1"))
+    sql("drop table if exists agg_table2")
   }
 
   def loadData() {
@@ -541,6 +543,38 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir)
     Thread.sleep(5000)
     thread.interrupt()
+  }
+
+  test("test if data is displayed when alias is used for column name") {
+    sql("drop table if exists agg_table2")
+    createTable(tableName = "agg_table2", streaming = true, withBatchLoad = false)
+    val identifier = new TableIdentifier("agg_table2", Option("streaming"))
+    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)
+      .asInstanceOf[CarbonRelation].metaData.carbonTable
+    val csvDataDir = new File("target/csvdata1").getCanonicalPath
+    generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir)
+    generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir, SaveMode.Append)
+    // streaming ingest 10 rows
+    val thread = createFileStreamingThread(spark, carbonTable, csvDataDir, intervalSecond = 1,
+      identifier)
+    thread.start()
+    Thread.sleep(5000)
+    thread.interrupt()
+    checkAnswer(
+      sql("select count(*) from streaming.agg_table2"),
+      Seq(Row(10)))
+    sql(s"load data inpath '$csvDataDir' into table agg_table2 options('FILEHEADER'='id, name, city, salary, tax, percent, birthday, register, updated, file')")
+    sql("create datamap p1 on table agg_table2 using 'preaggregate' as select name, sum(salary) from agg_table2 group by name")
+    // Data should be loaded into aggregate table as hand-off is fired
+    checkAnswer(sql("select name as abc, sum(salary) as sal from agg_table2 group by name"),
+      Seq(
+        Row("name_14", 560000.0),
+        Row("name_10", 400000.0),
+        Row("name_12", 480000.0),
+        Row("name_11", 440000.0),
+        Row("name_13", 520000.0)))
+
+    sql("drop table agg_table2")
   }
 
   test("test if data is loaded in aggregate table after handoff is done for streaming table") {
