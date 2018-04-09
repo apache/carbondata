@@ -24,6 +24,7 @@ import java.util
 import java.util.{ArrayList, Date, List, UUID}
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable
 
 import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
@@ -34,34 +35,26 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.hadoop.mapreduce.{RecordReader, TaskType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier,
-ReverseDictionary}
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier, ReverseDictionary}
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl,
-FileWriteOperation}
-import org.apache.carbondata.core.metadata.converter.{SchemaConverter,
-ThriftWrapperSchemaConverterImpl}
+import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl, FileWriteOperation}
+import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension,
-CarbonMeasure, ColumnSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, CarbonMeasure, ColumnSchema}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata,
-CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter,
-CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
-import org.apache.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl,
-ThriftWriter}
+import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
+import org.apache.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl, ThriftWriter}
 import org.apache.carbondata.processing.loading.DataLoadExecutor
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
-import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat,
-CSVRecordReaderIterator, StringArrayWritable}
+import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator, StringArrayWritable}
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.TableOptionConstant
@@ -266,8 +259,8 @@ object CarbonDataStoreCreator {
     val monthlyBonus: ColumnSchema = new ColumnSchema()
     monthlyBonus.setColumnName("monthlyBonus")
     monthlyBonus.setColumnar(true)
-    monthlyBonus.setDataType(DataTypes.createDecimalType(10, 4))
-    monthlyBonus.setPrecision(10)
+    monthlyBonus.setDataType(DataTypes.createDecimalType(18, 4))
+    monthlyBonus.setPrecision(18)
     monthlyBonus.setScale(4)
     monthlyBonus.setSchemaOrdinal(8)
     monthlyBonus.setEncodingList(invertedIndexEncoding)
@@ -358,33 +351,33 @@ object CarbonDataStoreCreator {
     val reader: BufferedReader = new BufferedReader(
       new FileReader(factFilePath))
     val header: String = reader.readLine()
-    val split: Array[String] = header.split(",")
     val allCols: util.List[CarbonColumn] = new util.ArrayList[CarbonColumn]()
-    val dims: util.List[CarbonDimension] =
+    val dimensions: util.List[CarbonDimension] =
       table.getDimensionByTableName(table.getTableName)
-    allCols.addAll(dims)
+    allCols.addAll(dimensions)
     val msrs: List[CarbonMeasure] =
       table.getMeasureByTableName(table.getTableName)
     allCols.addAll(msrs)
-    val set: Array[util.Set[String]] = Array.ofDim[util.Set[String]](dims.size)
-    val dimsIndex = dims.map(dim => dim.getColumnSchema.getSchemaOrdinal)
-    for (i <- set.indices) {
-      set(i) = new util.HashSet[String]()
+    val dimensionsIndex = dimensions.map(dim => dim.getColumnSchema.getSchemaOrdinal)
+    val dimensionSet: Array[util.List[String]] = Array.ofDim[util.List[String]](dimensions.size)
+
+    for (i <- dimensionSet.indices) {
+      dimensionSet(i) = new util.ArrayList[String]()
     }
     var line: String = reader.readLine()
     while (line != null) {
       val data: Array[String] = line.split(",")
-      for (i <- set.indices) {
-        set(i).add(data(dimsIndex(i)))
+      for (index <- dimensionSet.indices) {
+        addDictionaryValuesToDimensionSet(dimensions, dimensionsIndex, dimensionSet, data, index)
       }
       line = reader.readLine()
     }
     val dictCache: Cache[DictionaryColumnUniqueIdentifier, ReverseDictionary] = CacheProvider
       .getInstance.createCache(CacheType.REVERSE_DICTIONARY)
 
-    for (i <- set.indices) {
+    for (index <- dimensionSet.indices) {
       val columnIdentifier: ColumnIdentifier =
-        new ColumnIdentifier(dims.get(i).getColumnId, null, null)
+        new ColumnIdentifier(dimensions.get(index).getColumnId, null, null)
 
       val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(
@@ -393,7 +386,7 @@ object CarbonDataStoreCreator {
           columnIdentifier.getDataType)
       val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
         dictionaryColumnUniqueIdentifier)
-      for (value <- set(i)) {
+      for (value <- dimensionSet(index).distinct) {
         writer.write(value)
       }
       writer.close()
@@ -403,7 +396,7 @@ object CarbonDataStoreCreator {
           new DictionaryColumnUniqueIdentifier(
             absoluteTableIdentifier,
             columnIdentifier,
-            dims.get(i).getDataType)
+            dimensions.get(index).getDataType)
         )
         .asInstanceOf[Dictionary]
       val preparator: CarbonDictionarySortInfoPreparator =
@@ -412,7 +405,7 @@ object CarbonDataStoreCreator {
       val dictionarySortInfo: CarbonDictionarySortInfo =
         preparator.getDictionarySortInfo(newDistinctValues,
           dict,
-          dims.get(i).getDataType)
+          dimensions.get(index).getDataType)
       val carbonDictionaryWriter: CarbonDictionarySortIndexWriter =
         new CarbonDictionarySortIndexWriterImpl(dictionaryColumnUniqueIdentifier)
       try {
@@ -432,6 +425,31 @@ object CarbonDataStoreCreator {
     reader.close()
   }
 
+
+  private def addDictionaryValuesToDimensionSet(dims: util.List[CarbonDimension],
+      dimensionIndex: mutable.Buffer[Int],
+      dimensionSet: Array[util.List[String]],
+      data: Array[String],
+      index: Int) = {
+    if (isDictionaryDefaultMember(dims, dimensionSet, index)) {
+      dimensionSet(index).add(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
+      dimensionSet(index).add(data(dimensionIndex(index)))
+    }
+    else {
+      if (data.length == 1) {
+        dimensionSet(index).add("""\N""")
+      } else {
+        dimensionSet(index).add(data(dimensionIndex(index)))
+      }
+    }
+  }
+
+  private def isDictionaryDefaultMember(dims: util.List[CarbonDimension],
+      dimensionSet: Array[util.List[String]],
+      index: Int) = {
+    dimensionSet(index).isEmpty && dims(index).hasEncoding(Encoding.DICTIONARY) &&
+    !dims(index).hasEncoding(Encoding.DIRECT_DICTIONARY)
+  }
 
   /**
    * Execute graph which will further load data
