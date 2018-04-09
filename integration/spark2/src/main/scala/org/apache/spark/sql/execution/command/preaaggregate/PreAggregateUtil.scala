@@ -745,8 +745,8 @@ object PreAggregateUtil {
    * @param aggExp aggregate expression
    * @return list of fields
    */
-  def validateAggregateFunctionAndGetFields(aggExp: AggregateExpression):
-  Seq[AggregateExpression] = {
+  def validateAggregateFunctionAndGetFields(aggExp: AggregateExpression,
+      addCastForCount: Boolean = true): Seq[AggregateExpression] = {
     aggExp.aggregateFunction match {
       case Sum(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
         Seq(AggregateExpression(Sum(Cast(
@@ -783,16 +783,23 @@ object PreAggregateUtil {
       // in case of average need to return two columns
       // sum and count of the column to added during table creation to support rollup
       case Average(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
-        Seq(AggregateExpression(Sum(Cast(
+        val sum = AggregateExpression(Sum(Cast(
           exp,
           changeDataType)),
           aggExp.mode,
-          aggExp.isDistinct),
+          aggExp.isDistinct)
+        val count = if (!addCastForCount) {
+          AggregateExpression(Count(exp),
+            aggExp.mode,
+            aggExp.isDistinct)
+        } else {
           AggregateExpression(Count(Cast(
             exp,
             changeDataType)),
             aggExp.mode,
-            aggExp.isDistinct))
+            aggExp.isDistinct)
+        }
+        Seq(sum, count)
       // in case of average need to return two columns
       // sum and count of the column to added during table creation to support rollup
       case Average(exp: Expression) =>
