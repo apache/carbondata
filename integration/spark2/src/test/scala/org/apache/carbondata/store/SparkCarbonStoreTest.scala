@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.store
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -43,7 +43,8 @@ class SparkCarbonStoreTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test CarbonStore.get, compare projection result") {
-    val rows = store.scan(s"$warehouse/t1", Seq("empno", "empname").toArray)
+    val tablePath = CarbonEnv.getCarbonTable(None, "t1")(sqlContext.sparkSession).getTablePath
+    val rows = store.scan(s"$tablePath", Seq("empno", "empname").toArray)
     val sparkResult: Array[Row] = sql("select empno, empname from t1").collect()
     sparkResult.zipWithIndex.foreach { case (r: Row, i: Int) =>
       val carbonRow = rows.next()
@@ -54,10 +55,11 @@ class SparkCarbonStoreTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test CarbonStore.get, compare projection and filter result") {
+    val tablePath = CarbonEnv.getCarbonTable(None, "t1")(sqlContext.sparkSession).getTablePath
     val filter = new EqualToExpression(
       new ColumnExpression("empno", DataTypes.INT),
       new LiteralExpression(10, DataTypes.INT))
-    val rows = store.scan(s"$warehouse/t1", Seq("empno", "empname").toArray, filter)
+    val rows = store.scan(s"$tablePath", Seq("empno", "empname").toArray, filter)
     val sparkResult: Array[Row] = sql("select empno, empname from t1 where empno = 10").collect()
     sparkResult.zipWithIndex.foreach { case (r: Row, i: Int) =>
       val carbonRow = rows.next()
