@@ -102,7 +102,11 @@ trait CommitHelper {
         false
       }
     } else {
-      false
+     /**
+      * Tablestatus_uuid will fail when Pre-Aggregate table is not valid for compaction.
+      * Hence this should return true
+      */
+      true
     }
   }
 
