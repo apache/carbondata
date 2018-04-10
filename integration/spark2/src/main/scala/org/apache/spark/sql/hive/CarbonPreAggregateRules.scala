@@ -780,10 +780,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           updatedAggExp.head,
           name)(alias.exprId, alias.qualifier, Option(alias.metadata), alias.isGenerated)
       case alias@Alias(expression, name) =>
-        AttributeReference(
-          name,
-          alias.dataType,
-          alias.nullable) (alias.exprId, alias.qualifier, alias.isGenerated)
+        alias
     }
     updatedExp
   }
