@@ -174,27 +174,29 @@ class CarbonScanRDD(
     } finally {
       Profiler.invokeIfEnable {
         val endTime = System.currentTimeMillis()
-        val executionId = spark.sparkContext.getLocalProperty(SQLExecution.EXECUTION_ID_KEY).toLong
-        Profiler.send(
-          GetPartition(
-            executionId,
-            tableInfo.getDatabaseName + "." + tableInfo.getFactTable.getTableName,
-            tablePath,
-            queryId,
-            partitions.length,
-            startTime,
-            endTime,
-            getSplitsStartTime,
-            getSplitsEndTime,
-            numSegments,
-            numStreamSegments,
-            numBlocks,
-            distributeStartTime,
-            distributeEndTime,
-            if (filterExpression == null) "" else filterExpression.getStatement,
-            if (columnProjection == null) "" else columnProjection.getAllColumns.mkString(",")
+        val executionId = spark.sparkContext.getLocalProperty(SQLExecution.EXECUTION_ID_KEY)
+        if (executionId != null) {
+          Profiler.send(
+            GetPartition(
+              executionId.toLong,
+              tableInfo.getDatabaseName + "." + tableInfo.getFactTable.getTableName,
+              tablePath,
+              queryId,
+              partitions.length,
+              startTime,
+              endTime,
+              getSplitsStartTime,
+              getSplitsEndTime,
+              numSegments,
+              numStreamSegments,
+              numBlocks,
+              distributeStartTime,
+              distributeEndTime,
+              if (filterExpression == null) "" else filterExpression.getStatement,
+              if (columnProjection == null) "" else columnProjection.getAllColumns.mkString(",")
+            )
           )
-        )
+        }
       }
     }
   }
@@ -629,7 +631,7 @@ class CarbonScanRDD(
       recorder.recordStatistics(queryStatistic)
       // print executor query statistics for each task_id
       val statistics = recorder.statisticsForTask(taskId, queryStartTime)
-      if (statistics != null) {
+      if (statistics != null && executionId != null) {
         Profiler.invokeIfEnable {
           val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
           inputSplit.calculateLength()
