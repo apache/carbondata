@@ -71,9 +71,9 @@ public class CarbonIndexFileMergeWriter {
     if (isCarbonIndexFilePresent(indexFiles) || indexFileNamesTobeAdded != null) {
       if (sfs == null) {
         return mergeNormalSegment(indexFileNamesTobeAdded, readFileFooterFromCarbonDataFile,
-            segmentPath, indexFiles);
+            segmentPath, indexFiles, segmentId);
       } else {
-        return mergePartitionSegment(indexFileNamesTobeAdded, sfs, indexFiles);
+        return mergePartitionSegment(indexFileNamesTobeAdded, sfs, indexFiles, segmentId);
       }
     }
     return null;
@@ -81,7 +81,8 @@ public class CarbonIndexFileMergeWriter {
 
 
   private SegmentIndexFIleMergeStatus mergeNormalSegment(List<String> indexFileNamesTobeAdded,
-      boolean readFileFooterFromCarbonDataFile, String segmentPath, CarbonFile[] indexFiles)
+      boolean readFileFooterFromCarbonDataFile, String segmentPath, CarbonFile[] indexFiles,
+      String segmentId)
       throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     if (readFileFooterFromCarbonDataFile) {
@@ -93,7 +94,7 @@ public class CarbonIndexFileMergeWriter {
       fileStore.readAllIIndexOfSegment(segmentPath);
     }
     Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
-    writeMergeIndexFile(indexFileNamesTobeAdded, segmentPath, indexMap);
+    writeMergeIndexFile(indexFileNamesTobeAdded, segmentPath, indexMap, segmentId);
     for (CarbonFile indexFile : indexFiles) {
       indexFile.delete();
     }
@@ -101,7 +102,7 @@ public class CarbonIndexFileMergeWriter {
   }
 
   private SegmentIndexFIleMergeStatus mergePartitionSegment(List<String> indexFileNamesTobeAdded,
-      SegmentFileStore sfs, CarbonFile[] indexFiles) throws IOException {
+      SegmentFileStore sfs, CarbonFile[] indexFiles, String segmentId) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     fileStore
         .readAllIIndexOfSegment(sfs.getSegmentFile(), sfs.getTablePath(), SegmentStatus.SUCCESS,
@@ -119,7 +120,7 @@ public class CarbonIndexFileMergeWriter {
     }
     for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
       String mergeIndexFile =
-          writeMergeIndexFile(indexFileNamesTobeAdded, entry.getKey(), entry.getValue());
+          writeMergeIndexFile(indexFileNamesTobeAdded, entry.getKey(), entry.getValue(), segmentId);
       for (Map.Entry<String, SegmentFileStore.FolderDetails> segentry : sfs.getLocationMap()
           .entrySet()) {
         String location = segentry.getKey();
@@ -141,7 +142,7 @@ public class CarbonIndexFileMergeWriter {
   }
 
   private String writeMergeIndexFile(List<String> indexFileNamesTobeAdded, String segmentPath,
-      Map<String, byte[]> indexMap) throws IOException {
+      Map<String, byte[]> indexMap, String segmentId) throws IOException {
     MergedBlockIndexHeader indexHeader = new MergedBlockIndexHeader();
     MergedBlockIndex mergedBlockIndex = new MergedBlockIndex();
     List<String> fileNames = new ArrayList<>(indexMap.size());
@@ -154,7 +155,8 @@ public class CarbonIndexFileMergeWriter {
       }
     }
     if (fileNames.size() > 0) {
-      String mergeIndexName = System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT;
+      String mergeIndexName =
+          segmentId + '_' + System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT;
       openThriftWriter(segmentPath + "/" + mergeIndexName);
       indexHeader.setFile_names(fileNames);
       mergedBlockIndex.setFileData(data);
