@@ -21,12 +21,13 @@ import java.text.SimpleDateFormat
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.sql.execution.command.AlterPartitionModel
+import org.apache.spark.sql.execution.command.{AlterPartitionModel, DataMapField, Field, PartitionerField}
 
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.{SegmentProperties, TableBlockInfo}
@@ -226,4 +227,60 @@ object PartitionUtils {
       }
     }
   }
+
+  /**
+   * Used to extract PartitionerFields for aggregation datamaps.
+   * This method will keep generating partitionerFields until the sequence of
+   * partition column is broken.
+   *
+   * For example: if x,y,z are partition columns in main table then child tables will be
+   * partitioned only if the child table has List("x,y,z", "x,y", "x") as the projection columns.
+   *
+   *
+   */
+  def getPartitionerFields(allPartitionColumn: Seq[String],
+      fieldRelations: mutable.LinkedHashMap[Field, DataMapField]): Seq[PartitionerField] = {
+
+    def generatePartitionerField(partitionColumn: List[String],
+        partitionerFields: Seq[PartitionerField]): Seq[PartitionerField] = {
+      partitionColumn match {
+        case head :: tail =>
+          // Collect the first relation which matched the condition
+          val validRelation = fieldRelations.zipWithIndex.collectFirst {
+            case ((field, dataMapField), index) if
+            dataMapField.columnTableRelationList.getOrElse(Seq()).nonEmpty &&
+            head.equals(dataMapField.columnTableRelationList.get.head.parentColumnName) &&
+            dataMapField.aggregateFunction.isEmpty =>
+              (PartitionerField(field.name.get,
+                field.dataType,
+                field.columnComment), allPartitionColumn.indexOf(head))
+          }
+          if (validRelation.isDefined) {
+            val (partitionerField, index) = validRelation.get
+            // if relation is found then check if the partitionerFields already found are equal
+            // to the index of this element.
+            // If x with index 1 is found then there should be exactly 1 element already found.
+            // If z with index 2 comes directly after x then this check will be false are 1
+            // element is skipped in between and index would be 2 and number of elements found
+            // would be 1. In that case return empty sequence so that the aggregate table is not
+            // partitioned on any column.
+            if (index == partitionerFields.length) {
+              generatePartitionerField(tail, partitionerFields :+ partitionerField)
+            } else {
+              Seq.empty
+            }
+          } else {
+            // if not found then countinue search for the rest of the elements. Because the rest
+            // of the elements can also decide if the table has to be partitioned or not.
+            generatePartitionerField(tail, partitionerFields)
+          }
+        case Nil =>
+          // if end of list then return fields.
+          partitionerFields
+      }
+    }
+
+    generatePartitionerField(allPartitionColumn.toList, Seq.empty)
+  }
+
 }
