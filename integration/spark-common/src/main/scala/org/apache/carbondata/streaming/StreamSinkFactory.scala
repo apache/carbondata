@@ -38,7 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
@@ -110,6 +110,9 @@ object StreamSinkFactory {
     val segmentId = getStreamSegmentId(carbonTable)
     carbonLoadModel.setSegmentId(segmentId)
 
+    // Used to generate load commands for child tables in case auto-handoff is fired.
+    val loadMetaEvent = new LoadMetadataEvent(carbonTable, false)
+    OperationListenerBus.getInstance().fireEvent(loadMetaEvent, operationContext)
     // start server if necessary
     val server = startDictionaryServer(
       sparkSession,
@@ -120,6 +123,7 @@ object StreamSinkFactory {
     } else {
       carbonLoadModel.setUseOnePass(false)
     }
+
     // default is carbon appended stream sink
     val carbonAppendableStreamSink = new CarbonAppendableStreamSink(
       sparkSession,
@@ -127,7 +131,8 @@ object StreamSinkFactory {
       segmentId,
       parameters,
       carbonLoadModel,
-      server)
+      server,
+      operationContext)
 
     // fire post event before streamin is started
     val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
