@@ -179,7 +179,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     assertResult("Alter table change datatype is not allowed for streaming table")(changeDataTypeException.getMessage)
   }
 
-  override def afterAll {
+  override def  afterAll {
     dropTable()
     sql("USE default")
     sql("DROP DATABASE IF EXISTS streaming CASCADE")
@@ -1452,6 +1452,35 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from streaming.stream_table_reopen"),
       Seq(Row(2 * 100 * 2))
     )
+  }
+
+  test("test autohandoff with preaggregate tables") {
+    sql("drop table if exists maintable")
+    createTable(tableName = "maintable", streaming = true, withBatchLoad = false)
+    sql("create datamap p1 on table maintable using 'preaggregate' as select name, sum(id) from maintable group by name")
+    executeStreamingIngest(
+      tableName = "maintable",
+      batchNums = 2,
+      rowNumsEachBatch = 100,
+      intervalOfSource = 5,
+      intervalOfIngest = 5,
+      continueSeconds = 20,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1L,
+      autoHandoff = false)
+    executeStreamingIngest(
+      tableName = "maintable",
+      batchNums = 2,
+      rowNumsEachBatch = 100,
+      intervalOfSource = 5,
+      intervalOfIngest = 5,
+      continueSeconds = 20,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1L,
+      autoHandoff = true)
+    checkAnswer(sql("select count(*) from maintable_p1"), Seq(Row(200)))
   }
 
   test("block drop streaming table while streaming is in progress") {
