@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -131,10 +131,14 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
 
     checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno=1"), rows)
 
-    intercept[Exception] {
+    val e = intercept[AnalysisException] {
       sql("""insert overwrite table insertstaticpartitiondynamic PARTITION(empno, empname='ravi') select designation, doj, salary, empname from insertstaticpartitiondynamic""")
     }
-
+    assert(e.getMessage().contains(
+      "The ordering of partition columns is [empno,empname]. " +
+        "All partition columns having constant values need to " +
+        "appear before other partition columns that do not " +
+        "have an assigned constant value"))
   }
 
   test("dynamic and static partition table with many partition cols overwrite ") {

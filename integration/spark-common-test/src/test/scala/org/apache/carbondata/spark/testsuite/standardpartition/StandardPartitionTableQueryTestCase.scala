@@ -16,15 +16,16 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.execution.BatchedDataSourceScanExec
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{DataFrame, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.processing.loading.exception.BadRecordFoundException
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterAll {
@@ -190,7 +191,6 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
   test("badrecords on partition column") {
     sql("create table badrecordsPartition(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartition options('bad_records_action'='force')")
-    sql("select count(*) from badrecordsPartition").show()
     checkAnswer(sql("select count(*) cnt from badrecordsPartition where intfield2 is null"), Seq(Row(9)))
     checkAnswer(sql("select count(*) cnt from badrecordsPartition where intfield2 is not null"), Seq(Row(2)))
   }
@@ -199,8 +199,16 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     sql("create table badrecordsPartitionfail(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
     intercept[Exception] {
       sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionfail options('bad_records_action'='fail')")
-
     }
+  }
+
+  //TODO: to be discussed, should throw BadRecordFoundException and check message
+  ignore("badrecords fail on partition column, todo") {
+    sql("create table badrecordsPartitionfail(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
+    val e = intercept[BadRecordFoundException] {
+      sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionfail options('bad_records_action'='fail')")
+    }
+    assert(e.getMessage.contains("Data load failed due to bad record"))
   }
 
   test("badrecords ignore on partition column") {
@@ -277,11 +285,11 @@ test("Creation of partition table should fail if the colname in table schema and
       """.stripMargin)
     sql("insert into partitionTable select 1,'huawei','abc'")
     checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc")))
-    intercept[Exception]{
-      sql("alter table partitionTable PARTITION (email='abc') rename to PARTITION (email='def)")
+    val e = intercept[UnsupportedOperationException] {
+      sql("alter table partitionTable PARTITION (email='abc') rename to PARTITION (email='def')")
     }
+    assert(e.getMessage.equals("Renaming partition on table is not supported"))
   }
-
 
   test("add partition based on location on partition table"){
     sql("drop table if exists partitionTable")
@@ -416,12 +424,12 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("insert into partitionTable select 1,'Bangalore',30,'John'")
     sql("insert into partitionTable select 2,'Chennai',20,'Huawei'")
     checkAnswer(sql("show partitions partitionTable"), Seq(Row("name=John"),Row("name=Huawei")))
-    intercept[Exception]{
+    val e = intercept[AnalysisException]{
       sql("alter table partitionTable drop PARTITION(name='John')")
     }
+    assert(e.getMessage.contains("Partition can not be dropped as it is mapped to Pre Aggregate table"))
     sql("drop datamap if exists preaggTable on table partitionTable")
   }
-
 
   private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String]) = {
     val plan = frame.queryExecution.sparkPlan

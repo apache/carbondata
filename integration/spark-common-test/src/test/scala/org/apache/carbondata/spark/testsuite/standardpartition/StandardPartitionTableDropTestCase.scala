@@ -45,7 +45,6 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
       """.stripMargin)
 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-
   }
 
   test("show partitions on partition table") {
@@ -157,7 +156,6 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
       sql(s"""select count (*) from originTable"""))
 
   }
-
 
   test("dropping all partition on table and do compaction") {
     sql(

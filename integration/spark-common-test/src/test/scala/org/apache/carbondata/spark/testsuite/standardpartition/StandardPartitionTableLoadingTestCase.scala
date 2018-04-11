@@ -284,7 +284,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
   }
 
   test("Restrict streaming on partitioned table") {
-    intercept[AnalysisException] {
+    val e = intercept[AnalysisException] {
       sql(
         """
           | CREATE TABLE streamingpartitionedtable (empname String, designation String, doj
@@ -296,6 +296,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
           | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('streaming'='true')
         """.stripMargin)
     }
+    assert(e.getMessage().contains(
+      "Operation not allowed: Streaming is not allowed on partitioned table"))
   }
 
   test("concurrent partition table load test") {
@@ -494,21 +496,18 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
-
-
   def restoreData(dblocation: String, tableName: String) = {
     val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
-    val source = dblocation+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val source = dblocation + "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
     try {
       FileUtils.copyDirectory(new File(source), new File(destination))
       FileUtils.deleteDirectory(new File(source))
     } catch {
-      case e : Exception =>
+      case _: Exception =>
         throw new IOException("carbon table data restore failed.")
-    } finally {
-
     }
   }
+
   def backUpData(dblocation: String, tableName: String) = {
     val source = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
     val destination = dblocation+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
@@ -554,6 +553,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists emp1")
     sql("drop table if exists restorepartition")
     sql("drop table if exists casesensitivepartition")
+    sql("DROP TABLE IF EXISTS smallpartitionfiles")
+    sql("DROP TABLE IF EXISTS smallpartitionfilesread")
   }
 
 }

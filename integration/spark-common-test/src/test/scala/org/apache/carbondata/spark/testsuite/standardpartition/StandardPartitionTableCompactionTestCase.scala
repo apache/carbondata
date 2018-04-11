@@ -183,7 +183,7 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql(s"""alter table compactionupdatepartition compact 'major'""").collect
   }
 
-    override def afterAll = {
+  override def afterAll = {
     dropTable
   }
 
