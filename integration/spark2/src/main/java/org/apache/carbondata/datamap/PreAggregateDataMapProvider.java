@@ -52,10 +52,11 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
   private void validateDmProperty(DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     if (!dataMapSchema.getProperties().isEmpty()) {
-      if (dataMapSchema.getProperties().size() > 1 ||
-          !dataMapSchema.getProperties().containsKey(DataMapProperty.PATH)) {
+      if (dataMapSchema.getProperties().size() > 2 || (
+              !dataMapSchema.getProperties().containsKey(DataMapProperty.PATH) &&
+                      !dataMapSchema.getProperties().containsKey(DataMapProperty.PARTITIONING))) {
         throw new MalformedDataMapCommandException(
-            "Only 'path' dmproperty is allowed for this datamap");
+                "Only 'path' and 'partitioning' dmproperties are allowed for this datamap");
       }
     }
   }

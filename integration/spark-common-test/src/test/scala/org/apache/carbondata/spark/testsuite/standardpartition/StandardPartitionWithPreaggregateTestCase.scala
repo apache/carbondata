@@ -514,6 +514,16 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
     assert(sql("show datamap on table partitiontable").collect().head.get(0).toString.equalsIgnoreCase("ag1"))
     sql("drop datamap ag1 on table partitiontable")
   }
+  
+  test("test blocking partitioning of Pre-Aggregate table") {
+    sql("drop table if exists updatetime_8")
+    sql("create table updatetime_8" +
+      "(countryid smallint,hs_len smallint,minstartdate string,startdate string,newdate string,minnewdate string) partitioned by (imex smallint) stored by 'carbondata' tblproperties('sort_scope'='global_sort','sort_columns'='countryid,imex,hs_len,minstartdate,startdate,newdate,minnewdate','table_blocksize'='256')")
+    sql("create datamap ag on table updatetime_8 using 'preaggregate' dmproperties('partitioning'='false') as select imex,sum(hs_len) from updatetime_8 group by imex")
+    val carbonTable = CarbonEnv.getCarbonTable(Some("partition_preaggregate"), "updatetime_8_ag")(sqlContext.sparkSession)
+    assert(!carbonTable.isHivePartitionTable)
+    sql("drop table if exists updatetime_8")
+  }
 
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit = {
     var isValidPlan = false
