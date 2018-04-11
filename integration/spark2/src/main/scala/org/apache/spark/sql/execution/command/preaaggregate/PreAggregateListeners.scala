@@ -1,4 +1,4 @@
-/*
+  /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -427,6 +427,32 @@ object LoadPostAggregateListener extends OperationEventListener {
       val carbonLoadModel = carbonLoadModelOption.get
       val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
       if (CarbonUtil.hasAggregationDataMap(table)) {
+        val isOverwrite =
+          operationContext.getProperty("isOverwrite").asInstanceOf[Boolean]
+        if (isOverwrite && table.isHivePartitionTable) {
+          val parentPartitionColumns = table.getPartitionInfo.getColumnSchemaList.asScala
+            .map(_.getColumnName)
+          val childTablesWithoutPartitionColumns =
+            table.getTableInfo.getDataMapSchemaList.asScala.filter { dataMapSchema =>
+              val childColumns = dataMapSchema.getChildSchema.getListOfColumns.asScala
+              val partitionColExists = parentPartitionColumns.forall {
+                partition =>
+                  childColumns.exists { childColumn =>
+                    childColumn.getAggFunction.isEmpty &&
+                    childColumn.getParentColumnTableRelations.asScala.head.getColumnName.
+                      equals(partition)
+                  }
+              }
+              !partitionColExists
+            }
+          if (childTablesWithoutPartitionColumns.nonEmpty) {
+            throw new MetadataProcessException(
+              "Cannot execute load overwrite or insert overwrite as the following aggregate tables"
+              + s" ${
+                childTablesWithoutPartitionColumns.toList.map(_.getChildSchema.getTableName)
+              } are not partitioned on all the partition column. Drop these to continue")
+          }
+        }
         // getting all the aggergate datamap schema
         val aggregationDataMapList = table.getTableInfo.getDataMapSchemaList.asScala
           .filter(_.isInstanceOf[AggregationDataMapSchema])
@@ -439,8 +465,6 @@ object LoadPostAggregateListener extends OperationEventListener {
             .asInstanceOf[CarbonLoadDataCommand]
           childLoadCommand.dataFrame = Some(PreAggregateUtil
             .getDataFrame(sparkSession, childLoadCommand.logicalPlan.get))
-          val isOverwrite =
-            operationContext.getProperty("isOverwrite").asInstanceOf[Boolean]
           childLoadCommand.operationContext = operationContext
           val timeseriesParent = childLoadCommand.internalOptions.get("timeseriesParent")
           val (parentTableIdentifier, segmentToLoad) =

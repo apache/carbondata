@@ -18,8 +18,8 @@
 package org.apache.carbondata.spark.util
 
 import java.{lang, util}
+import java.io.IOException
 import java.lang.ref.Reference
-import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -34,6 +34,7 @@ import org.apache.spark.sql.execution.command.{DataTypeInfo, UpdateTableModel}
 import org.apache.spark.sql.types._
 import org.apache.spark.util.CarbonReflectionUtils
 
+import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogService
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
@@ -496,8 +497,16 @@ object CarbonScalaUtil {
     if (ex != null) {
       ex match {
         case sparkException: SparkException =>
-          if (sparkException.getCause.isInstanceOf[DataLoadingException] ||
-              sparkException.getCause.isInstanceOf[CarbonDataLoadingException]) {
+          if (sparkException.getCause.isInstanceOf[IOException]) {
+            if (sparkException.getCause.getCause.isInstanceOf[MetadataProcessException]) {
+              executorMessage = sparkException.getCause.getCause.getMessage
+              errorMessage = errorMessage + ": " + executorMessage
+            } else {
+              executorMessage = sparkException.getCause.getMessage
+              errorMessage = errorMessage + ": " + executorMessage
+            }
+          } else if (sparkException.getCause.isInstanceOf[DataLoadingException] ||
+                     sparkException.getCause.isInstanceOf[CarbonDataLoadingException]) {
             executorMessage = sparkException.getCause.getMessage
             errorMessage = errorMessage + ": " + executorMessage
           } else if (sparkException.getCause.isInstanceOf[TextParsingException]) {
