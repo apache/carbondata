@@ -60,11 +60,9 @@ public class CarbonSessionInfo implements Serializable, Cloneable {
     CarbonSessionInfo newObj = new CarbonSessionInfo();
     newObj.setSessionParams(sessionParams.clone());
     newObj.setThreadParams(threadParams.clone());
-    Map<String, Object> nonSerializableExtraInfo = getNonSerializableExtraInfo();
-    for (Map.Entry<String, Object> entry : nonSerializableExtraInfo.entrySet()) {
-      nonSerializableExtraInfo.put(entry.getKey(), entry.getValue());
+    for (Map.Entry<String, Object> entry : getNonSerializableExtraInfo().entrySet()) {
+      newObj.getNonSerializableExtraInfo().put(entry.getKey(), entry.getValue());
     }
-    newObj.setNonSerializableExtraInfo(nonSerializableExtraInfo);
     return newObj;
   }
 
