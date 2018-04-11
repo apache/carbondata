@@ -27,7 +27,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.junit.Assert;
 
-class TestUtil {
+public class TestUtil {
 
   static void writeFilesAndVerify(Schema schema, String path) {
     writeFilesAndVerify(schema, path, null);
@@ -37,7 +37,7 @@ class TestUtil {
     writeFilesAndVerify(100, schema, path, sortColumns, false, -1, -1);
   }
 
-  static void writeFilesAndVerify(Schema schema, String path, boolean persistSchema) {
+  public static void writeFilesAndVerify(Schema schema, String path, boolean persistSchema) {
     writeFilesAndVerify(100, schema, path, null, persistSchema, -1, -1);
   }
 

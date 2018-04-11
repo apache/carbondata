@@ -28,9 +28,9 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode, ExpressionCanonicalizer}
 import org.apache.spark.sql.catalyst.plans.physical.Partitioning
 import org.apache.spark.sql.execution.{CodegenSupport, SparkPlan, UnaryExecNode}
-import org.apache.spark.sql.hive.{CarbonMetastoreTypes, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
+import org.apache.spark.util.SparkTypeConverter
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
@@ -333,8 +333,8 @@ object CarbonDictionaryDecoder {
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !carbonDimension.isComplex()) {
           val newAttr = AttributeReference(a.name,
-            convertCarbonToSparkDataType(carbonDimension,
-              relation.get.carbonRelation.carbonRelation),
+            SparkTypeConverter.convertCarbonToSparkDataType(carbonDimension.getColumnSchema,
+              relation.get.carbonRelation.carbonTable),
             a.nullable,
             a.metadata)(a.exprId).asInstanceOf[Attribute]
           newAttr
@@ -390,39 +390,6 @@ object CarbonDictionaryDecoder {
         !ep.attributes
           .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
       case _ => true
-    }
-  }
-
-  /**
-   * Converts from carbon datatype to corresponding spark datatype.
-   */
-  def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
-      relation: CarbonRelation): types.DataType = {
-    if (CarbonDataTypes.isDecimal(carbonDimension.getDataType)) {
-      val scale: Int = carbonDimension.getColumnSchema.getScale
-      val precision: Int = carbonDimension.getColumnSchema.getPrecision
-      if (scale == 0 && precision == 0) {
-        DecimalType(18, 2)
-      } else {
-        DecimalType(precision, scale)
-      }
-    } else if (CarbonDataTypes.isArrayType(carbonDimension.getDataType)) {
-      CarbonMetastoreTypes
-        .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
-    } else if (CarbonDataTypes.isStructType(carbonDimension.getDataType)) {
-      CarbonMetastoreTypes
-        .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
-    } else {
-      carbonDimension.getDataType match {
-        case CarbonDataTypes.STRING => StringType
-        case CarbonDataTypes.SHORT => ShortType
-        case CarbonDataTypes.INT => IntegerType
-        case CarbonDataTypes.LONG => LongType
-        case CarbonDataTypes.DOUBLE => DoubleType
-        case CarbonDataTypes.BOOLEAN => BooleanType
-        case CarbonDataTypes.TIMESTAMP => TimestampType
-        case CarbonDataTypes.DATE => DateType
-      }
     }
   }
 

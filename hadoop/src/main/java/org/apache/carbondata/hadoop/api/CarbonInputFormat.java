@@ -513,24 +513,27 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * It is optional, if user does not set then it reads from store
    *
    * @param configuration
-   * @param converter is the Data type converter for different computing engine
-   * @throws IOException
+   * @param converterClass is the Data type converter for different computing engine
    */
-  public static void setDataTypeConverter(Configuration configuration, DataTypeConverter converter)
-      throws IOException {
-    if (null != converter) {
-      configuration.set(CARBON_CONVERTER,
-          ObjectSerializationUtil.convertObjectToString(converter));
+  public static void setDataTypeConverter(
+      Configuration configuration, Class<? extends DataTypeConverter> converterClass) {
+    if (null != converterClass) {
+      configuration.set(CARBON_CONVERTER, converterClass.getCanonicalName());
     }
   }
 
   public static DataTypeConverter getDataTypeConverter(Configuration configuration)
       throws IOException {
-    String converter = configuration.get(CARBON_CONVERTER);
-    if (converter == null) {
+    String converterClass = configuration.get(CARBON_CONVERTER);
+    if (converterClass == null) {
       return new DataTypeConverterImpl();
     }
-    return (DataTypeConverter) ObjectSerializationUtil.convertStringToObject(converter);
+
+    try {
+      return (DataTypeConverter) Class.forName(converterClass).newInstance();
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
   }
 
   public static void setDatabaseName(Configuration configuration, String databaseName) {
