@@ -45,6 +45,7 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 
 import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
@@ -62,7 +63,9 @@ import com.facebook.presto.spi.type.VarcharType;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 
+import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -73,7 +76,6 @@ public class PrestoFilterUtil {
   private static Map<Integer, Expression> filterMap = new HashMap<>();
 
   private final static String HIVE_DEFAULT_DYNAMIC_PARTITION = "__HIVE_DEFAULT_PARTITION__";
-  private final static String PARTITION_VALUE_WILDCARD = "";
 
   /**
    * @param carbondataColumnHandle
@@ -126,6 +128,7 @@ public class PrestoFilterUtil {
     Domain domain = originalConstraint.getDomains().get().get(carbonDataColumnHandle);
     if (domain != null && domain.isNullableSingleValue()) {
       Object value = domain.getNullableSingleValue();
+      Type type = domain.getType();
       if (value == null) {
         filter.add(carbonDataColumnHandle.getColumnName() + "=" + HIVE_DEFAULT_DYNAMIC_PARTITION);
       } else if(carbonDataColumnHandle.getColumnType() instanceof DecimalType) {
@@ -155,7 +158,7 @@ public class PrestoFilterUtil {
       } else if ((value instanceof Boolean) || (value instanceof Double) || (value instanceof Long)) {
         filter.add(carbonDataColumnHandle.getColumnName() + "=" + value.toString());
       } else {
-        filter.add(carbonDataColumnHandle.getColumnName() + "=" + PARTITION_VALUE_WILDCARD);
+        throw new PrestoException(NOT_SUPPORTED, format("Unsupported partition key type: %s", type.getDisplayName()));
       }
     }
     return filter;
