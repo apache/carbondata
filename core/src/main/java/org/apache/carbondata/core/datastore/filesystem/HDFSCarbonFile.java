@@ -27,7 +27,9 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 
 public class HDFSCarbonFile extends AbstractDFSCarbonFile {
@@ -71,6 +73,17 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
       files[i] = new HDFSCarbonFile(listStatus[i]);
     }
     return files;
+  }
+
+  @Override
+  protected List<CarbonFile> getFiles(RemoteIterator<LocatedFileStatus> listStatus)
+      throws IOException {
+    List<CarbonFile> carbonFiles = new ArrayList<>();
+    while (listStatus.hasNext()) {
+      Path filePath = listStatus.next().getPath();
+      carbonFiles.add(new HDFSCarbonFile(filePath));
+    }
+    return carbonFiles;
   }
 
   @Override
