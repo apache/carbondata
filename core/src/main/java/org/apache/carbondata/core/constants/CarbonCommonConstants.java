@@ -1641,9 +1641,9 @@ public final class CarbonCommonConstants {
    * will call Executors.newFixedThreadPool(int nThreads) instead
    */
   @CarbonProperty
-  public static final String CARBON_SEARCH_MODE_THREAD = "carbon.search.mode.thread";
+  public static final String CARBON_SEARCH_MODE_SCAN_THREAD = "carbon.search.mode.scan.thread";
 
-  public static final String CARBON_SEARCH_MODE_THREAD_DEFAULT = "-1";
+  public static final String CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT = "-1";
 
   private CarbonCommonConstants() {
   }
