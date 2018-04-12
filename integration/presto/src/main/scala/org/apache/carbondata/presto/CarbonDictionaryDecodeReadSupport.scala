@@ -93,7 +93,12 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
     while (chunks.hasNext) {
       {
         val value: Array[Byte] = chunks.next
-        sliceArray(count) = wrappedBuffer(value, 0, value.length)
+        if(count ==1) {
+          sliceArray(count) = null
+        }
+        else {
+          sliceArray(count) = wrappedBuffer(value, 0, value.length)
+        }
         count += 1
       }
     }
