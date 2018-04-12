@@ -123,6 +123,10 @@ public class CarbonTableReader {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonTableReader.class.getName());
 
+  /**
+   * List Of Schemas
+   */
+ private  List<String> schemaNames = new ArrayList<>();
 
   @Inject public CarbonTableReader(CarbonTableConfig config) {
     this.config = requireNonNull(config, "CarbonTableConfig is null");
@@ -203,10 +207,16 @@ public class CarbonTableReader {
    */
   private List<String> updateSchemaList() {
     updateCarbonFile();
-
     if (carbonFileList != null) {
-      return Stream.of(carbonFileList.listFiles()).map(CarbonFile::getName).collect(Collectors.toList());
+      Stream.of(carbonFileList.listFiles()).forEach(this::getName);
+      return schemaNames;
     } else return ImmutableList.of();
+  }
+
+  private void getName(CarbonFile carbonFile){
+  if(!carbonFile.getName().equals("_system")){
+    schemaNames.add(carbonFile.getName());
+  }
   }
 
   /**
@@ -278,13 +288,13 @@ public class CarbonTableReader {
     }
 
     if (isKeyExists) {
-      CarbonTableCacheModel ctcm = carbonCache.get().get(schemaTableName);
-      if(ctcm != null && ctcm.carbonTable.getTableInfo() != null) {
+      CarbonTableCacheModel carbonTableCacheModel = carbonCache.get().get(schemaTableName);
+      if(carbonTableCacheModel != null && carbonTableCacheModel.carbonTable.getTableInfo() != null) {
         Long latestTime = FileFactory.getCarbonFile(
             CarbonTablePath.getSchemaFilePath(
                 carbonCache.get().get(schemaTableName).carbonTable.getTablePath())
         ).getLastModifiedTime();
-        Long oldTime = ctcm.carbonTable.getTableInfo().getLastUpdatedTime();
+        Long oldTime = carbonTableCacheModel.carbonTable.getTableInfo().getLastUpdatedTime();
         if (DateUtils.truncate(new Date(latestTime), Calendar.MINUTE)
             .after(DateUtils.truncate(new Date(oldTime), Calendar.MINUTE))) {
           removeTableFromCache(schemaTableName);

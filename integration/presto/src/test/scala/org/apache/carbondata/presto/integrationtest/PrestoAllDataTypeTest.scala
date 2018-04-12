@@ -19,9 +19,12 @@ package org.apache.carbondata.presto.integrationtest
 
 import java.io.File
 
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 import org.apache.carbondata.presto.server.PrestoServer
 
 
@@ -68,6 +71,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       .createCarbonStore(storePath,
         s"$rootPath/integration/presto/src/test/resources/alldatatype.csv")
     logger.info(s"\nCarbon store is created at location: $storePath")
+    cleanUp
     PrestoServer.startServer(storePath)
   }
 
@@ -497,4 +501,16 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
   }
 
+
+  test("test the show schemas result"){
+   val actualResult = PrestoServer.executeQuery("SHOW SCHEMAS")
+    assert(actualResult.equals(List(Map("Schema" -> "information_schema"), Map("Schema" -> "testdb"))))
+  }
+
+  private def cleanUp(): Unit = {
+    FileFactory.deleteFile(s"$storePath/Fact", FileType.LOCAL)
+    FileFactory
+      .createDirectoryAndSetPermission(s"$storePath/_system",
+        new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+  }
 }
