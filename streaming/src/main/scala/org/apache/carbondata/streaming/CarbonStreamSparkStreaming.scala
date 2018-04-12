@@ -30,7 +30,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.Time
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
@@ -47,38 +46,16 @@ class CarbonStreamSparkStreamingWriter(val sparkSession: SparkSession,
 
   private var isInitialize: Boolean = false
 
-  private var lock: ICarbonLock = null
   private var carbonAppendableStreamSink: Sink = null
-
-  /**
-   * Acquired the lock for stream table
-   */
-  def lockStreamTable(): Unit = {
-    lock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
-      LockUsage.STREAMING_LOCK)
-    if (lock.lockWithRetries()) {
-      LOGGER.info("Acquired the lock for stream table: " +
-                  carbonTable.getDatabaseName + "." +
-                  carbonTable.getTableName)
-    } else {
-      LOGGER.error("Not able to acquire the lock for stream table:" +
-                   carbonTable.getDatabaseName + "." + carbonTable.getTableName)
-      throw new InterruptedException(
-        "Not able to acquire the lock for stream table: " + carbonTable.getDatabaseName + "." +
-        carbonTable.getTableName)
-    }
-  }
 
   /**
    * unlock for stream table
    */
   def unLockStreamTable(): Unit = {
-    if (null != lock) {
-      lock.unlock()
-      LOGGER.info("unlock for stream table: " +
-                  carbonTable.getDatabaseName + "." +
-                  carbonTable.getTableName)
-    }
+    StreamSinkFactory.unLock(carbonTable.getTableUniqueName)
+    LOGGER.info("unlock for stream table: " +
+                carbonTable.getDatabaseName + "." +
+                carbonTable.getTableName)
   }
 
   def initialize(): Unit = {
@@ -87,8 +64,6 @@ class CarbonStreamSparkStreamingWriter(val sparkSession: SparkSession,
       configuration,
       carbonTable,
       extraOptions.toMap).asInstanceOf[CarbonAppendableStreamSink]
-
-    lockStreamTable()
 
     isInitialize = true
   }
