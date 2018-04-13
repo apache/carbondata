@@ -29,6 +29,7 @@ import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.MeasureDataVectorProcessor;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -51,8 +52,9 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   protected ColumnVectorInfo[] implictColumnInfo;
 
-  public DictionaryBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
-    super(blockExecutionInfos);
+  public DictionaryBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos,
+      QueryStatisticsModel queryStatisticsModel) {
+    super(blockExecutionInfos, queryStatisticsModel);
     // initialize only if the current block is not a restructured block else the initialization
     // will be taken care by RestructureBasedVectorResultCollector
     if (!blockExecutionInfos.isRestructuredBlock()) {

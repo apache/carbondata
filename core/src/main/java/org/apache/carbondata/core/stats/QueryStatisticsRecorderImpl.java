@@ -99,6 +99,10 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
     long total_pages = 0;
     long readTime = 0;
     long scannedPages = 0;
+    long measureFillingTime = 0L;
+    long dimensionFillingTime = 0L;
+    long resultPreparationTime = 0L;
+    long pageUncompressTime = 0L;
     try {
       for (QueryStatistic statistic : queryStatistics) {
         if (statistic.getMessage() != null) {
@@ -139,6 +143,18 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
             case QueryStatisticsConstants.PAGE_SCANNED:
               scannedPages = statistic.getCount();
               break;
+            case QueryStatisticsConstants.DIMENSION_FILLING_TIME:
+              dimensionFillingTime += statistic.getCount();
+              break;
+            case QueryStatisticsConstants.MEASURE_FILLING_TIME:
+              measureFillingTime += statistic.getCount();
+              break;
+            case QueryStatisticsConstants.RESULT_PREP_TIME:
+              resultPreparationTime += statistic.getCount();
+              break;
+            case QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME:
+              pageUncompressTime += statistic.getCount();
+              break;
             default:
               break;
           }
@@ -146,8 +162,9 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
       }
       String headers =
           "task_id,load_blocks_time,load_dictionary_time,carbon_scan_time,carbon_IO_time, "
-              + "total_executor_time,scan_blocks_num,total_blocklets,"
-              + "valid_blocklets,total_pages,scanned_pages,valid_pages,result_size";
+              + "total_executor_time,scan_blocks_num,total_blocklets,valid_blocklets,"
+              + "total_pages,scanned_pages,valid_pages,result_size,dimension_filling_time,"
+              + "measure_filling_time,page_uncompress_time,result_preparation_time";
       List<String> values = new ArrayList<String>();
       values.add(queryIWthTask);
       values.add(load_blocks_time + "ms");
@@ -162,6 +179,10 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
       values.add(String.valueOf(scannedPages));
       values.add(String.valueOf(valid_pages_blocklet));
       values.add(String.valueOf(result_size));
+      values.add(dimensionFillingTime + " ms");
+      values.add(measureFillingTime + " ms");
+      values.add(pageUncompressTime + " ms");
+      values.add(resultPreparationTime + " ms");
       StringBuilder tableInfo = new StringBuilder();
       String[] columns = headers.split(",");
       StringBuilder line = new StringBuilder("");

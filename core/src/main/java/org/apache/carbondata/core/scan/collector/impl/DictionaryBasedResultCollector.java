@@ -32,6 +32,7 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -71,8 +72,9 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
   protected Map<Integer, GenericQueryType> comlexDimensionInfoMap;
 
-  public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
-    super(blockExecutionInfos);
+  public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos,
+      QueryStatisticsModel queryStatisticsModel) {
+    super(blockExecutionInfos, queryStatisticsModel);
     queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
     queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
     initDimensionAndMeasureIndexesForFillingData();

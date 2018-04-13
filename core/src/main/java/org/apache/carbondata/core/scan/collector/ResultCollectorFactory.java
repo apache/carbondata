@@ -26,6 +26,7 @@ import org.apache.carbondata.core.scan.collector.impl.RestructureBasedDictionary
 import org.apache.carbondata.core.scan.collector.impl.RestructureBasedRawResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.RestructureBasedVectorResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 
 /**
  * This class will provide the result collector instance based on the required type
@@ -45,31 +46,37 @@ public class ResultCollectorFactory {
    * @return
    */
   public static AbstractScannedResultCollector getScannedResultCollector(
-      BlockExecutionInfo blockExecutionInfo) {
+      BlockExecutionInfo blockExecutionInfo, QueryStatisticsModel queryStatisticsModel) {
     AbstractScannedResultCollector scannerResultAggregator = null;
     if (blockExecutionInfo.isRawRecordDetailQuery()) {
       if (blockExecutionInfo.isRestructuredBlock()) {
         LOGGER.info("Restructure based raw collector is used to scan and collect the data");
-        scannerResultAggregator = new RestructureBasedRawResultCollector(blockExecutionInfo);
+        scannerResultAggregator =
+            new RestructureBasedRawResultCollector(blockExecutionInfo, queryStatisticsModel);
       } else {
         LOGGER.info("Row based raw collector is used to scan and collect the data");
-        scannerResultAggregator = new RawBasedResultCollector(blockExecutionInfo);
+        scannerResultAggregator =
+            new RawBasedResultCollector(blockExecutionInfo, queryStatisticsModel);
       }
     } else if (blockExecutionInfo.isVectorBatchCollector()) {
       if (blockExecutionInfo.isRestructuredBlock()) {
         LOGGER.info("Restructure dictionary vector collector is used to scan and collect the data");
-        scannerResultAggregator = new RestructureBasedVectorResultCollector(blockExecutionInfo);
+        scannerResultAggregator =
+            new RestructureBasedVectorResultCollector(blockExecutionInfo, queryStatisticsModel);
       } else {
         LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
-        scannerResultAggregator = new DictionaryBasedVectorResultCollector(blockExecutionInfo);
+        scannerResultAggregator =
+            new DictionaryBasedVectorResultCollector(blockExecutionInfo, queryStatisticsModel);
       }
     } else {
       if (blockExecutionInfo.isRestructuredBlock()) {
         LOGGER.info("Restructure based dictionary collector is used to scan and collect the data");
-        scannerResultAggregator = new RestructureBasedDictionaryResultCollector(blockExecutionInfo);
+        scannerResultAggregator =
+            new RestructureBasedDictionaryResultCollector(blockExecutionInfo, queryStatisticsModel);
       } else {
         LOGGER.info("Row based dictionary collector is used to scan and collect the data");
-        scannerResultAggregator = new DictionaryBasedResultCollector(blockExecutionInfo);
+        scannerResultAggregator =
+            new DictionaryBasedResultCollector(blockExecutionInfo, queryStatisticsModel);
       }
     }
     return scannerResultAggregator;

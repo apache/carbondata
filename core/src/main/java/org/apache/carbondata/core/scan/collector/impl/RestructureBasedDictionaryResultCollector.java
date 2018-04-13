@@ -25,6 +25,7 @@ import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 
 /**
  * class for handling restructure scenarios for filling result
@@ -33,8 +34,9 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
 
   private Object[] measureDefaultValues = null;
 
-  public RestructureBasedDictionaryResultCollector(BlockExecutionInfo blockExecutionInfos) {
-    super(blockExecutionInfos);
+  public RestructureBasedDictionaryResultCollector(BlockExecutionInfo blockExecutionInfos,
+      QueryStatisticsModel queryStatisticsModel) {
+    super(blockExecutionInfos, queryStatisticsModel);
     queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
     queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
     measureDefaultValues = new Object[queryMeasures.length];
