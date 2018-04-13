@@ -34,7 +34,6 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditionalResolverImpl;
 
 /**
  * This chooser does 2 jobs.
@@ -75,12 +74,12 @@ public class DataMapChooser {
       // First check for FG datamaps if any exist
       List<TableDataMap> allDataMapFG =
           DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.FG);
-      ExpressionTuple tuple = selectDataMap(expression, allDataMapFG);
+      ExpressionTuple tuple = selectDataMap(expression, allDataMapFG, resolverIntf);
       if (tuple.dataMapExprWrapper == null) {
         // Check for CG datamap
         List<TableDataMap> allDataMapCG =
             DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.CG);
-        tuple = selectDataMap(expression, allDataMapCG);
+        tuple = selectDataMap(expression, allDataMapCG, resolverIntf);
       }
       if (tuple.dataMapExprWrapper != null) {
         return tuple.dataMapExprWrapper;
@@ -92,13 +91,16 @@ public class DataMapChooser {
         resolverIntf);
   }
 
-  private ExpressionTuple selectDataMap(Expression expression, List<TableDataMap> allDataMap) {
+  private ExpressionTuple selectDataMap(Expression expression, List<TableDataMap> allDataMap,
+      FilterResolverIntf filterResolverIntf) {
     switch (expression.getFilterExpressionType()) {
       case AND:
         if (expression instanceof AndExpression) {
           AndExpression andExpression = (AndExpression) expression;
-          ExpressionTuple left = selectDataMap(andExpression.getLeft(), allDataMap);
-          ExpressionTuple right = selectDataMap(andExpression.getRight(), allDataMap);
+          ExpressionTuple left = selectDataMap(andExpression.getLeft(), allDataMap,
+              filterResolverIntf.getLeft());
+          ExpressionTuple right = selectDataMap(andExpression.getRight(), allDataMap,
+              filterResolverIntf.getRight());
           Set<ExpressionType> filterExpressionTypes = new HashSet<>();
           // If both left and right has datamap then we can either merge both datamaps to single
           // datamap if possible. Otherwise apply AND expression.
@@ -118,16 +120,14 @@ public class DataMapChooser {
             if (dataMap != null) {
               ExpressionTuple tuple = new ExpressionTuple();
               tuple.columnExpressions = columnExpressions;
-              tuple.dataMapExprWrapper = new DataMapExprWrapperImpl(dataMap,
-                  new TrueConditionalResolverImpl(expression, false, false));
+              tuple.dataMapExprWrapper = new DataMapExprWrapperImpl(dataMap, filterResolverIntf);
               return tuple;
             } else {
               // Apply AND expression.
               ExpressionTuple tuple = new ExpressionTuple();
               tuple.columnExpressions = columnExpressions;
-              tuple.dataMapExprWrapper =
-                  new AndDataMapExprWrapper(left.dataMapExprWrapper, right.dataMapExprWrapper,
-                      new TrueConditionalResolverImpl(expression, false, false));
+              tuple.dataMapExprWrapper = new AndDataMapExprWrapper(left.dataMapExprWrapper,
+                  right.dataMapExprWrapper, filterResolverIntf);
               return tuple;
             }
           } else if (left.dataMapExprWrapper != null && right.dataMapExprWrapper == null) {
@@ -142,8 +142,10 @@ public class DataMapChooser {
       case OR:
         if (expression instanceof OrExpression) {
           OrExpression orExpression = (OrExpression) expression;
-          ExpressionTuple left = selectDataMap(orExpression.getLeft(), allDataMap);
-          ExpressionTuple right = selectDataMap(orExpression.getRight(), allDataMap);
+          ExpressionTuple left = selectDataMap(orExpression.getLeft(), allDataMap,
+              filterResolverIntf.getLeft());
+          ExpressionTuple right = selectDataMap(orExpression.getRight(), allDataMap,
+              filterResolverIntf.getRight());
           Set<ExpressionType> filterExpressionTypes = new HashSet<>();
           // If both left and right has datamap then we can either merge both datamaps to single
           // datamap if possible. Otherwise apply OR expression.
@@ -162,15 +164,13 @@ public class DataMapChooser {
             if (dataMap != null) {
               ExpressionTuple tuple = new ExpressionTuple();
               tuple.columnExpressions = columnExpressions;
-              tuple.dataMapExprWrapper = new DataMapExprWrapperImpl(dataMap,
-                  new TrueConditionalResolverImpl(expression, false, false));
+              tuple.dataMapExprWrapper = new DataMapExprWrapperImpl(dataMap, filterResolverIntf);
               return tuple;
             } else {
               ExpressionTuple tuple = new ExpressionTuple();
               tuple.columnExpressions = columnExpressions;
-              tuple.dataMapExprWrapper =
-                  new OrDataMapExprWrapper(left.dataMapExprWrapper, right.dataMapExprWrapper,
-                      new TrueConditionalResolverImpl(expression, false, false));
+              tuple.dataMapExprWrapper = new OrDataMapExprWrapper(left.dataMapExprWrapper,
+                  right.dataMapExprWrapper, filterResolverIntf);
               return tuple;
             }
           } else {
@@ -187,8 +187,7 @@ public class DataMapChooser {
         TableDataMap dataMap =
             chooseDataMap(allDataMap, tuple.columnExpressions, filterExpressionTypes);
         if (dataMap != null) {
-          tuple.dataMapExprWrapper = new DataMapExprWrapperImpl(dataMap,
-              new TrueConditionalResolverImpl(expression, false, false));
+          tuple.dataMapExprWrapper = new DataMapExprWrapperImpl(dataMap, filterResolverIntf);
         }
         return tuple;
     }
