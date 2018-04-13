@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -149,7 +150,10 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     for (TableBlockIndexUniqueIdentifier identifier : identifiers) {
       if (identifier.getIndexFileName().equals(carbonIndexFileName)) {
         DataMap dataMap = cache.get(identifier);
-        return ((BlockletDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
+        String blockFileName = blocklet.getBlockId().substring(
+            blocklet.getBlockId().lastIndexOf(File.separatorChar) + 1);
+        return ((BlockletDataMap) dataMap).getDetailedBlocklet(blockFileName,
+            blocklet.getBlockletId());
       }
     }
     throw new IOException("Blocklet with blockid " + blocklet.getBlockletId() + " not found ");

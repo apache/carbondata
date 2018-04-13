@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -28,7 +29,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -125,6 +128,10 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
   private SegmentProperties segmentProperties;
 
   private int[] columnCardinality;
+  /**
+   * map blocklet (blockFileName#blockletNo) to index in UnsafeMemoryDMStore rows
+   */
+  private Map<String, Integer> blocklet2DMRowIdx = new HashMap<>();
 
   @Override
   public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
@@ -265,10 +272,14 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
         setLocations(blockMetaInfo.getLocationInfo(), row, ordinal);
         ordinal++;
         // for relative blockelt id i.e blocklet id that belongs to a particular part file
-        row.setShort((short) relativeBlockletId++, ordinal++);
+        row.setShort((short) relativeBlockletId, ordinal++);
         // Store block size
         row.setLong(blockMetaInfo.getSize(), ordinal);
+        String blockFileName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
+        this.blocklet2DMRowIdx.put(blockFileName + '#' + relativeBlockletId,
+            unsafeMemoryDMStore.getRowCount());
         unsafeMemoryDMStore.addIndexRowToUnsafe(row);
+        relativeBlockletId++;
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -731,8 +742,8 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
     }
   }
 
-  public ExtendedBlocklet getDetailedBlocklet(String blockletId) {
-    int index = Integer.parseInt(blockletId);
+  public ExtendedBlocklet getDetailedBlocklet(String blockFileName, String blockletId) {
+    int index = this.blocklet2DMRowIdx.get(blockFileName + '#' + blockletId);
     DataMapRow safeRow = unsafeMemoryDMStore.getUnsafeRow(index).convertToSafeRow();
     return createBlocklet(safeRow, safeRow.getShort(BLOCKLET_ID_INDEX));
   }
@@ -930,6 +941,7 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
 
   @Override
   public void clear() {
+    blocklet2DMRowIdx.clear();
     if (unsafeMemoryDMStore != null) {
       unsafeMemoryDMStore.freeMemory();
       unsafeMemoryDMStore = null;
