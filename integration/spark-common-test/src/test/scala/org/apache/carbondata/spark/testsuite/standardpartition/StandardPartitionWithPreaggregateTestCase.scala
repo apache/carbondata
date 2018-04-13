@@ -475,6 +475,46 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
     }
   }
 
+  test("test dropping partition which has already been deleted") {
+    sql("drop table if exists partitiontable")
+    sql("create table partitiontable(id int,name string) partitioned by (email string) " +
+      "stored by 'carbondata' tblproperties('sort_scope'='global_sort')")
+    sql("insert into table partitiontable select 1,'huawei','abc'")
+    sql("create datamap ag1 on table partitiontable using 'preaggregate' as select count(email),id" +
+      " from partitiontable group by id")
+    sql("create datamap ag2 on table partitiontable using 'preaggregate' as select sum(email),name" +
+      " from partitiontable group by name")
+    sql("create datamap ag3 on table partitiontable using 'preaggregate' as select max(email),name" +
+      " from partitiontable group by name")
+    sql("create datamap ag4 on table partitiontable using 'preaggregate' as select min(email),name" +
+      " from partitiontable group by name")
+    sql("create datamap ag5 on table partitiontable using 'preaggregate' as select avg(email),name" +
+      " from partitiontable group by name")
+    sql("alter table partitiontable add partition (email='def')")
+    sql("insert into table partitiontable select 1,'huawei','def'")
+    sql("drop datamap ag1 on table partitiontable")
+    sql("drop datamap ag2 on table partitiontable")
+    sql("drop datamap ag3 on table partitiontable")
+    sql("drop datamap ag4 on table partitiontable")
+    sql("drop datamap ag5 on table partitiontable")
+    sql("alter table partitiontable drop partition(email='def')")
+    assert(intercept[Exception] {
+      sql("alter table partitiontable drop partition(email='def')")
+    }.getMessage.contains("No partition is dropped. One partition spec 'Map(email -> def)' does not exist in table 'partitiontable' database 'partition_preaggregate'"))
+  }
+
+  test("test Pre-Aggregate table creation with count(*) on Partition table") {
+    sql("drop table if exists partitiontable")
+    sql("create table partitiontable(id int,name string) partitioned by (email string) " +
+      "stored by 'carbondata' tblproperties('sort_scope'='global_sort')")
+    sql("insert into table partitiontable select 1,'huawei','abc'")
+    sql("create datamap ag1 on table partitiontable using 'preaggregate' as select count(*),id" +
+      " from partitiontable group by id")
+    sql("insert into table partitiontable select 1,'huawei','def'")
+    assert(sql("show datamap on table partitiontable").collect().head.get(0).toString.equalsIgnoreCase("ag1"))
+    sql("drop datamap ag1 on table partitiontable")
+  }
+
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit = {
     var isValidPlan = false
     plan.transform {

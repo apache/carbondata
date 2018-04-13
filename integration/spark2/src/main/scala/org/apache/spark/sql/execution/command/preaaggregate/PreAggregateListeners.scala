@@ -207,6 +207,7 @@ object AlterTableDropPartitionMetaListener extends OperationEventListener{
             partition =>
               childColumns.exists { childColumn =>
                   childColumn.getAggFunction.isEmpty &&
+                    childColumn.getParentColumnTableRelations != null &&
                   childColumn.getParentColumnTableRelations.asScala.head.getColumnName.
                     equals(partition)
               }
