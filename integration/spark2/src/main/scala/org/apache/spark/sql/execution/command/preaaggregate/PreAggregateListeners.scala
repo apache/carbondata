@@ -206,7 +206,8 @@ object AlterTableDropPartitionMetaListener extends OperationEventListener{
           val partitionColExists = partitionsToBeDropped.forall {
             partition =>
               childColumns.exists { childColumn =>
-                  childColumn.getAggFunction.isEmpty && childColumn.getParentColumnTableRelations != null &&
+                  childColumn.getAggFunction.isEmpty &&
+                    childColumn.getParentColumnTableRelations != null &&
                   childColumn.getParentColumnTableRelations.asScala.head.getColumnName.
                     equals(partition)
               }

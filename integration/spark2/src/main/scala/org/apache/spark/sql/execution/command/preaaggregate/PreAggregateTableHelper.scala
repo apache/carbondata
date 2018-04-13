@@ -76,7 +76,9 @@ case class PreAggregateTableHelper(
     val partitionerFields = fieldRelationMap.collect {
       case (field, dataMapField) if parentPartitionColumns
         .exists(parentCol =>
-          parentCol.equals(dataMapField.columnTableRelationList.get.head.parentColumnName) &&
+          /* For count(*) while Pre-Aggregate table creation,columnTableRelationList was null */
+          dataMapField.columnTableRelationList.getOrElse(Seq()).nonEmpty &&
+            parentCol.equals(dataMapField.columnTableRelationList.get.head.parentColumnName) &&
           dataMapField.aggregateFunction.isEmpty) =>
         (PartitionerField(field.name.get,
           field.dataType,

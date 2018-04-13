@@ -475,8 +475,7 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
     }
   }
 
-  test("test dropping partition which has already been deleted")
-  {
+  test("test dropping partition which has already been deleted") {
     sql("drop table if exists partitiontable")
     sql("create table partitiontable(id int,name string) partitioned by (email string) " +
       "stored by 'carbondata' tblproperties('sort_scope'='global_sort')")
@@ -503,7 +502,19 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
       sql("alter table partitiontable drop partition(email='def')")
     }.getMessage.contains("No partition is dropped. One partition spec 'Map(email -> def)' does not exist in table 'partitiontable' database 'partition_preaggregate'"))
   }
-  
+
+  test("test Pre-Aggregate table creation with count(*) on Partition table") {
+    sql("drop table if exists partitiontable")
+    sql("create table partitiontable(id int,name string) partitioned by (email string) " +
+      "stored by 'carbondata' tblproperties('sort_scope'='global_sort')")
+    sql("insert into table partitiontable select 1,'huawei','abc'")
+    sql("create datamap ag1 on table partitiontable using 'preaggregate' as select count(*),id" +
+      " from partitiontable group by id")
+    sql("insert into table partitiontable select 1,'huawei','def'")
+    assert(sql("show datamap on table partitiontable").collect().head.get(0).toString.equalsIgnoreCase("ag1"))
+    sql("drop datamap ag1 on table partitiontable")
+  }
+
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit = {
     var isValidPlan = false
     plan.transform {
