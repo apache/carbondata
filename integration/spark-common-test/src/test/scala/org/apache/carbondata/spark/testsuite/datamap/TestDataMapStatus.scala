@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -204,7 +205,7 @@ class TestDataMap() extends CoarseGrainDataMapFactory {
 
       override def onBlockletStart(blockletId: Int): Unit = { }
 
-      override def onBlockStart(blockId: String): Unit = {
+      override def onBlockStart(blockId: String, taskId: Long): Unit = {
         // trigger the second SQL to execute
       }
 
@@ -218,8 +219,7 @@ class TestDataMap() extends CoarseGrainDataMapFactory {
 
   override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = ???
 
-  override def init(identifier: AbsoluteTableIdentifier,
-      dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = identifier
+  override def init(carbonTable: CarbonTable, dataMapSchema: DataMapSchema): Unit = {
+    this.identifier = carbonTable.getAbsoluteTableIdentifier
   }
 }

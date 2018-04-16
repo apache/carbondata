@@ -26,11 +26,22 @@ class LuceneDataMapDistributable extends DataMapDistributable {
   // TODO: seems no one use this?
   private String dataPath;
 
-  LuceneDataMapDistributable(String dataPath) {
+  private String indexPath;
+
+  LuceneDataMapDistributable(String dataPath, String indexPath) {
     this.dataPath = dataPath;
+    this.indexPath = indexPath;
   }
 
   public String getDataPath() {
     return dataPath;
+  }
+
+  public String getIndexPath() {
+    return indexPath;
+  }
+
+  public void setIndexPath(String indexPath) {
+    this.indexPath = indexPath;
   }
 }

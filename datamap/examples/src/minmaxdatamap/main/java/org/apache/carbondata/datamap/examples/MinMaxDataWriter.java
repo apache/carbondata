@@ -60,7 +60,7 @@ public class MinMaxDataWriter extends DataMapWriter {
     this.dataWritePath = dataWritePath;
   }
 
-  @Override public void onBlockStart(String blockId) {
+  @Override public void onBlockStart(String blockId, long taskId) {
     pageLevelMax = null;
     pageLevelMin = null;
     blockletLevelMax = null;

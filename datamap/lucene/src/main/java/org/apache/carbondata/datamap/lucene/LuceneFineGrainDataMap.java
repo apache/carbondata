@@ -67,14 +67,14 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       LogServiceFactory.getLogService(LuceneFineGrainDataMap.class.getName());
 
   /**
+   * index Reader object to create searcher object
+   */
+  private IndexReader indexReader = null;
+
+  /**
    * searcher object for this datamap
    */
   private IndexSearcher indexSearcher = null;
-
-  /**
-   * default max values to return
-   */
-  private static int MAX_RESULT_NUMBER = 100;
 
   /**
    * analyzer for lucene index
@@ -113,7 +113,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     // open this index path , use HDFS default configuration
     Directory indexDir = new HdfsDirectory(indexPath, FileFactory.getConfiguration());
 
-    IndexReader indexReader = DirectoryReader.open(indexDir);
+    indexReader = DirectoryReader.open(indexDir);
     if (indexReader == null) {
       throw new RuntimeException("failed to create index reader object");
     }
@@ -153,6 +153,10 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     // only for test , query all data
     String strQuery = getQueryString(filterExp.getFilterExpression());
 
+    if (null == strQuery) {
+      return null;
+    }
+
     String[] sFields = new String[fields.size()];
     fields.toArray(sFields);
 
@@ -163,9 +167,11 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
     // use MultiFieldQueryParser to parser query
     QueryParser queryParser = new MultiFieldQueryParser(sFields, analyzer);
+    queryParser.setAllowLeadingWildcard(true);
     Query query;
     try {
-      query = queryParser.parse(strQuery);
+      // always send lowercase string to lucene as it is case sensitive
+      query = queryParser.parse(strQuery.toLowerCase());
     } catch (ParseException e) {
       String errorMessage = String.format(
           "failed to filter block with query %s, detail is %s", strQuery, e.getMessage());
@@ -176,7 +182,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     // execute index search
     TopDocs result;
     try {
-      result = indexSearcher.search(query, MAX_RESULT_NUMBER);
+      result = indexSearcher.search(query, indexReader.maxDoc());
     } catch (IOException e) {
       String errorMessage =
           String.format("failed to search lucene data, detail is %s", e.getMessage());

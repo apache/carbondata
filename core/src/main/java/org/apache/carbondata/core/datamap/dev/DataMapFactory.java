@@ -24,7 +24,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.events.Event;
@@ -35,9 +35,9 @@ import org.apache.carbondata.events.Event;
 public interface DataMapFactory<T extends DataMap> {
 
   /**
-   * Initialization of Datamap factory with the identifier and datamap name
+   * Initialization of Datamap factory with the carbonTable and datamap name
    */
-  void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema)
+  void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws IOException, MalformedDataMapCommandException;
 
   /**

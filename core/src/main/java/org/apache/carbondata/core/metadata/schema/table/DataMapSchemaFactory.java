@@ -32,6 +32,9 @@ public class DataMapSchemaFactory {
       return new AggregationDataMapSchema(dataMapName, providerName);
     } else if (providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString())) {
       return new AggregationDataMapSchema(dataMapName, providerName);
+    } else if (providerName.equalsIgnoreCase(DataMapClassProvider.LUCENEFG.toString())
+        || providerName.equalsIgnoreCase(DataMapClassProvider.LUCENECG.toString())) {
+      return new DataMapSchema(dataMapName, providerName);
     } else {
       return new DataMapSchema(dataMapName, providerName);
     }

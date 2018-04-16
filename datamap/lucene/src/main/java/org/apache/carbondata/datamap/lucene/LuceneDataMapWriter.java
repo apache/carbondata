@@ -20,23 +20,30 @@ package org.apache.carbondata.datamap.lucene;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.codecs.lucene50.Lucene50StoredFieldsFormat;
+import org.apache.lucene.codecs.lucene62.Lucene62Codec;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
@@ -77,6 +84,8 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   private boolean isFineGrain = true;
 
+  private List<String> indexedCarbonColumns = null;
+
   private static final String BLOCKID_NAME = "blockId";
 
   private static final String BLOCKLETID_NAME = "blockletId";
@@ -86,30 +95,31 @@ public class LuceneDataMapWriter extends DataMapWriter {
   private static final String ROWID_NAME = "rowId";
 
   LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String dataMapName, Segment segment,
-      String writeDirectoryPath, boolean isFineGrain) {
+      String writeDirectoryPath, boolean isFineGrain, List<String> indexedCarbonColumns) {
     super(identifier, segment, writeDirectoryPath);
     this.dataMapName = dataMapName;
     this.isFineGrain = isFineGrain;
+    this.indexedCarbonColumns = indexedCarbonColumns;
   }
 
-  private String getIndexPath() {
+  private String getIndexPath(long taskId) {
     if (isFineGrain) {
-      return genDataMapStorePath(identifier.getTablePath(), segmentId, dataMapName);
+      return genDataMapStorePathOnTaskId(identifier.getTablePath(), segmentId, dataMapName, taskId);
     } else {
       // TODO: where write data in coarse grain data map
-      return genDataMapStorePath(identifier.getTablePath(), segmentId, dataMapName);
+      return genDataMapStorePathOnTaskId(identifier.getTablePath(), segmentId, dataMapName, taskId);
     }
   }
 
   /**
    * Start of new block notification.
    */
-  public void onBlockStart(String blockId) throws IOException {
+  public void onBlockStart(String blockId, long taskId) throws IOException {
     // save this block id for lucene index , used in onPageAdd function
     this.blockId = blockId;
 
     // get index path, put index data into segment's path
-    String strIndexPath = getIndexPath();
+    String strIndexPath = getIndexPath(taskId);
     Path indexPath = FileFactory.getPath(strIndexPath);
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 
@@ -124,6 +134,18 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
     // create a index writer
     Directory indexDir = new HdfsDirectory(indexPath, FileFactory.getConfiguration());
+
+    IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
+    if (CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
+            CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
+        .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
+      indexWriterConfig.setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED));
+    } else {
+      indexWriterConfig
+          .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
+    }
+
     indexWriter = new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
 
   }
@@ -202,8 +224,10 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
       // add other fields
       for (int colIdx = 0; colIdx < columnsCount; colIdx++) {
-        if (!pages[colIdx].getNullBits().get(rowId)) {
-          addField(doc, pages[colIdx], rowId, Field.Store.NO);
+        if (indexedCarbonColumns.contains(pages[colIdx].getColumnSpec().getFieldName())) {
+          if (!pages[colIdx].getNullBits().get(rowId)) {
+            addField(doc, pages[colIdx], rowId, Field.Store.NO);
+          }
         }
       }
 
@@ -226,7 +250,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
     String fieldName = page.getColumnSpec().getFieldName();
 
     //get field type
-    DataType type = page.getDataType();
+    DataType type = page.getColumnSpec().getSchemaDataType();
 
     if (type == DataTypes.BYTE) {
       // byte type , use int range to deal with byte, lucene has no byte type
@@ -322,8 +346,44 @@ public class LuceneDataMapWriter extends DataMapWriter {
   /**
    * Return store path for datamap
    */
-  static String genDataMapStorePath(String tablePath, String segmentId, String dataMapName) {
+  public static String genDataMapStorePath(String tablePath, String segmentId, String dataMapName) {
     return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName;
   }
 
+  /**
+   * Return store path for datamap based on the taskId, if three tasks get launched during loading,
+   * then three folders will be created based on the three task Ids and lucene index file will be
+   * written into those folders
+   * @return store path based on taskID
+   */
+  private static String genDataMapStorePathOnTaskId(String tablePath, String segmentId,
+      String dataMapName, long taskId) {
+    return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName
+        + File.separator + dataMapName + CarbonCommonConstants.UNDERSCORE + taskId
+        + CarbonCommonConstants.UNDERSCORE + System.currentTimeMillis();
+  }
+
+  /**
+   * returns all the directories of lucene index files for query
+   * @param tablePath
+   * @param segmentId
+   * @param dataMapName
+   * @return
+   */
+  public static CarbonFile[] getAllIndexDirs(String tablePath, String segmentId,
+      final String dataMapName) {
+    String dmPath =
+        CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName;
+    FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
+    final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
+    return dirPath.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        if (file.isDirectory() && file.getName().startsWith(dataMapName)) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    });
+  }
 }

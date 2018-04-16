@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.command.mutation
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command._
@@ -28,9 +30,10 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
@@ -60,6 +63,18 @@ private[sql] case class CarbonProjectForUpdateCommand(
     if (carbonTable.getTableInfo.isUnManagedTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
     }
+    // block update for table with lucene DM
+    val datamapSchemas = DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable).asScala
+    datamapSchemas.foreach(datamapSchema =>
+      if (datamapSchema.getProviderName
+            .equalsIgnoreCase(DataMapClassProvider.LUCENEFG.getShortName) ||
+          datamapSchema.getProviderName
+            .equalsIgnoreCase(DataMapClassProvider.LUCENECG.getShortName)) {
+        throw new MalformedCarbonCommandException(
+          "update operation is not allowed on table with lucene datamap")
+      }
+    )
+
     if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "loading", "data update")
     }

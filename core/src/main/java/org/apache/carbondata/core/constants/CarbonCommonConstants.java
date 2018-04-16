@@ -1645,6 +1645,16 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT = "-1";
 
+  /**
+   * compression mode used by lucene for index writing
+   */
+  public static final String CARBON_LUCENE_COMPRESSION_MODE = "carbon.lucene.compression.mode";
+
+  /**
+   * default lucene index compression mode
+   */
+  public static final String CARBON_LUCENE_COMPRESSION_MODE_DEFAULT = "speed";
+
   private CarbonCommonConstants() {
   }
 }

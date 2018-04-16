@@ -24,6 +24,7 @@ import scala.util.Try
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.preaaggregate._
+import org.apache.spark.sql.execution.command.Lucene._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive.{HiveSessionCatalog, _}
 import org.apache.spark.util.CarbonReflectionUtils
@@ -173,6 +174,10 @@ object CarbonEnv {
       .addListener(classOf[AlterTableDropPartitionPostStatusEvent],
         AlterTableDropPartitionPostStatusListener)
       .addListener(classOf[AlterTableDropPartitionMetaEvent], AlterTableDropPartitionMetaListener)
+      .addListener(classOf[AlterTableRenamePreEvent], LuceneRenameTablePreListener)
+      .addListener(classOf[AlterTableAddColumnPreEvent], LuceneAddColumnPreListener)
+      .addListener(classOf[AlterTableDropColumnPreEvent], LuceneDropColumnPreListener)
+      .addListener(classOf[AlterTableDataTypeChangePreEvent], LuceneChangeDataTypePreListener)
   }
 
   def registerCommonListener(sparkSession: SparkSession): Unit = {

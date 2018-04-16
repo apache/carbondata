@@ -52,7 +52,8 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
     String schemaPath =
-        storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapSchema.getDataMapName()
+        storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapSchema.relationIdentifier
+            .getTableName() + CarbonCommonConstants.UNDERSCORE + dataMapSchema.getDataMapName()
             + ".dmschema";
     FileFactory.FileType fileType = FileFactory.getFileType(schemaPath);
     if (FileFactory.isFileExist(schemaPath, fileType)) {
@@ -129,9 +130,9 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     return dataMapSchemas;
   }
 
-  @Override public void dropSchema(String dataMapName) throws IOException {
-    String schemaPath =
-        storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapName + ".dmschema";
+  @Override public void dropSchema(String dataMapName,String tableName) throws IOException {
+    String schemaPath = storePath + CarbonCommonConstants.FILE_SEPARATOR + tableName
+        + CarbonCommonConstants.UNDERSCORE + dataMapName + ".dmschema";
     if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
       throw new IOException("DataMap with name " + dataMapName + " does not exists in storage");
     }
