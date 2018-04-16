@@ -39,6 +39,10 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResultIterator;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
+import org.apache.carbondata.core.stats.QueryStatistic;
+import org.apache.carbondata.core.stats.QueryStatisticsConstants;
+import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
+import org.apache.carbondata.core.stats.TaskStatistics;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.AbstractRecordReader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
@@ -72,11 +76,17 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   private QueryExecutor queryExecutor;
 
-  public PrestoCarbonVectorizedRecordReader(QueryExecutor queryExecutor, QueryModel queryModel, AbstractDetailQueryResultIterator iterator) {
+  private long taskId;
+
+  private long queryStartTime;
+
+  public PrestoCarbonVectorizedRecordReader(QueryExecutor queryExecutor, QueryModel queryModel,
+      AbstractDetailQueryResultIterator iterator) {
     this.queryModel = queryModel;
     this.iterator = iterator;
     this.queryExecutor = queryExecutor;
     enableReturningBatches();
+    this.queryStartTime = System.currentTimeMillis();
   }
 
   /**
@@ -125,6 +135,8 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     } catch (QueryExecutionException e) {
       throw new IOException(e);
     }
+
+    logStatistics(taskId, queryStartTime, queryModel.getStatisticsRecorder());
   }
 
   @Override public boolean nextKeyValue() throws IOException, InterruptedException {
@@ -239,5 +251,30 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     return false;
   }
 
+  public void setTaskId(long taskId) {
+    this.taskId = taskId;
+  }
+
+  /**
+   * For Logging the Statistics
+   * @param taskId
+   * @param queryStartTime
+   * @param recorder
+   */
+  private void  logStatistics(
+      Long taskId,
+      Long queryStartTime,
+      QueryStatisticsRecorder recorder
+  ) {
+    if (null != recorder) {
+      QueryStatistic queryStatistic = new QueryStatistic();
+      queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
+          System.currentTimeMillis() - queryStartTime);
+      recorder.recordStatistics(queryStatistic);
+      // print executor query statistics for each task_id
+      TaskStatistics statistics = recorder.statisticsForTask(taskId, queryStartTime);
+      recorder.logStatisticsForTask(statistics);
+    }
+  }
 
 }

@@ -77,6 +77,9 @@ Please follow the below steps to query carbondata in presto
   carbondata-store={schema-store-path}
   enable.unsafe.in.query.processing=false
   carbon.unsafe.working.memory.in.mb={value}
+  enable.unsafe.columnpage=false
+  enable.unsafe.sort=false
+
   ```
   Replace the schema-store-path with the absolute path of the parent directory of the schema.
   For example, if you have a schema named 'default' stored in hdfs://namenode:9000/test/carbondata/,
@@ -112,7 +115,11 @@ Please follow the below steps to query carbondata in presto
 ####  Unsafe Properties    
   enable.unsafe.in.query.processing property by default is true in CarbonData system, the carbon.unsafe.working.memory.in.mb 
   property defines the limit for Unsafe Memory usage in Mega Bytes, the default value is 512 MB.
-  If your tables are big you can increase the unsafe memory, or disable unsafe via setting enable.unsafe.in.query.processing=false.
+  Currently Presto does not support Unsafe Memory so we have to disable the unsafe feature by setting below properties to false.
+
+  enable.unsafe.in.query.processing=false.
+  enable.unsafe.columnpage=false
+  enable.unsafe.sort=false
 
   If you updated the jar balls or configuration files, make sure you have dispatched them
    to all the presto nodes and restarted the presto servers on the nodes. The updates will not take effect before restarting.

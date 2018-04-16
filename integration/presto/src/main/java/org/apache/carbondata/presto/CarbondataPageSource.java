@@ -18,7 +18,6 @@
 package org.apache.carbondata.presto;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,17 +31,13 @@ import com.facebook.presto.hadoop.$internal.com.google.common.base.Throwables;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.Page;
-import com.facebook.presto.spi.PageBuilder;
 import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.RecordCursor;
-import com.facebook.presto.spi.RecordSet;
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.LazyBlock;
 import com.facebook.presto.spi.block.LazyBlockLoader;
 import com.facebook.presto.spi.type.Type;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -53,7 +48,6 @@ class CarbondataPageSource implements ConnectorPageSource {
   private static final LogService logger =
       LogServiceFactory.getLogService(CarbondataPageSource.class.getName());
   private final List<Type> types;
-  private final PageBuilder pageBuilder;
   private boolean closed;
   private PrestoCarbonVectorizedRecordReader vectorReader;
   private CarbonDictionaryDecodeReadSupport<Object[]> readSupport;
@@ -69,7 +63,6 @@ class CarbondataPageSource implements ConnectorPageSource {
       List<ColumnHandle> columnHandles ) {
     this.columnHandles = columnHandles;
     this.types = getColumnTypes();
-    this.pageBuilder = new PageBuilder(this.types);
     this.readSupport = readSupport;
     vectorReader = vectorizedRecordReader;
     this.readers = createStreamReaders();
@@ -84,7 +77,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   }
 
   @Override public boolean isFinished() {
-    return closed && pageBuilder.isEmpty();
+    return closed ;
   }
 
 
@@ -124,7 +117,6 @@ class CarbondataPageSource implements ConnectorPageSource {
         blocks[column] = new LazyBlock(batchSize, new CarbondataBlockLoader(column, type));
       }
       Page page = new Page(batchSize, blocks);
-      sizeOfData += columnarBatch.capacity();
       return page;
     }
     catch (PrestoException e) {
@@ -197,6 +189,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       checkState(batchId == expectedBatchId);
       try {
         Block block = readers[columnIndex].readBlock(type);
+        sizeOfData += block.getSizeInBytes();
         lazyBlock.setBlock(block);
       }
       catch (IOException e) {
