@@ -114,7 +114,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 
     // if index path not exists, create it
-    if (fs.exists(indexPath)) {
+    if (!fs.exists(indexPath)) {
       fs.mkdirs(indexPath);
     }
 

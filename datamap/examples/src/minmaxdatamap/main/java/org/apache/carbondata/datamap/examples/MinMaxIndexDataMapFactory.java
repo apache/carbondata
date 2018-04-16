@@ -19,9 +19,11 @@ package org.apache.carbondata.datamap.examples;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
@@ -31,21 +33,61 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Transformer;
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Min Max DataMap Factory
  */
 public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
-
+  private static final LogService LOGGER = LogServiceFactory.getLogService(
+      MinMaxIndexDataMapFactory.class.getName());
+  private DataMapMeta dataMapMeta;
+  private String dataMapName;
   private AbsoluteTableIdentifier identifier;
 
-  @Override public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema) {
+  // this is an example for datamap, we can choose the columns and operations that
+  // will be supported by this datamap. Furthermore, we can add cache-support for this datamap.
+  @Override public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema)
+      throws IOException, MalformedDataMapCommandException {
     this.identifier = identifier;
+    this.dataMapName = dataMapSchema.getDataMapName();
+
+    String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName);
+    if (null == carbonTable) {
+      throw new IOException("Failed to get carbon table with name " + tableUniqueName);
+    }
+
+    // columns that will be indexed
+    List<CarbonColumn> allColumns = carbonTable.getCreateOrderColumn(identifier.getTableName());
+    List<String> minMaxCols = (List) CollectionUtils.collect(allColumns, new Transformer() {
+      @Override public Object transform(Object o) {
+        return ((CarbonColumn) o).getColName();
+      }
+    });
+    LOGGER.info("MinMaxDataMap support index columns: " + StringUtils.join(minMaxCols, ", "));
+
+    // operations that will be supported on the indexed columns
+    List<ExpressionType> optOperations = new ArrayList<>();
+    optOperations.add(ExpressionType.EQUALS);
+    optOperations.add(ExpressionType.GREATERTHAN);
+    optOperations.add(ExpressionType.GREATERTHAN_EQUALTO);
+    optOperations.add(ExpressionType.LESSTHAN);
+    optOperations.add(ExpressionType.LESSTHAN_EQUALTO);
+    optOperations.add(ExpressionType.NOT_EQUALS);
+    LOGGER.error("MinMaxDataMap support operations: " + StringUtils.join(optOperations, ", "));
+    this.dataMapMeta = new DataMapMeta(minMaxCols, optOperations);
   }
 
   /**
@@ -55,7 +97,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * @return
    */
   @Override public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
-    return new MinMaxDataWriter(identifier, segment, writeDirectoryPath);
+    return new MinMaxDataWriter(identifier, dataMapName, segment, writeDirectoryPath);
   }
 
   /**
@@ -75,7 +117,10 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
     MinMaxIndexDataMap dataMap = new MinMaxIndexDataMap();
     try {
       dataMap.init(new DataMapModel(
-          CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo())));
+          MinMaxDataWriter.genDataMapStorePath(
+              CarbonTablePath.getSegmentPath(
+                  identifier.getTablePath(), segment.getSegmentNo()),
+              dataMapName)));
     } catch (MemoryException ex) {
       throw new IOException(ex);
     }
@@ -108,7 +153,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   @Override public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable,
       ReadCommittedScope readCommittedScope)
       throws IOException {
-    return null;
+    return getDataMaps(distributable.getSegment(), readCommittedScope);
   }
 
   @Override public void fireEvent(Event event) {
@@ -116,7 +161,6 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   }
 
   @Override public DataMapMeta getMeta() {
-    return new DataMapMeta(new ArrayList<String>(Arrays.asList("c2")),
-        new ArrayList<ExpressionType>());
+    return this.dataMapMeta;
   }
 }
