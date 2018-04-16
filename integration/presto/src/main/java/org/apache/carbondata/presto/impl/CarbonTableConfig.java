@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.presto.impl;
 
-import javax.validation.constraints.NotNull;
-
 import io.airlift.configuration.Config;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * Configuration read from etc/catalog/carbondata.properties
@@ -32,6 +32,10 @@ public class CarbonTableConfig {
   private String storePath;
   private String unsafeMemoryInMb;
   private String enableUnsafeInQueryExecution;
+  private String enableUnsafeColumnPage;
+  private String enableUnsafeSort;
+  private String enableQueryStatistics;
+  private String batchSize;
   private String s3A_acesssKey;
   private String s3A_secretKey;
   private String s3_acesssKey;
@@ -85,6 +89,38 @@ public class CarbonTableConfig {
   @Config("enable.unsafe.in.query.processing")
   public CarbonTableConfig setEnableUnsafeInQueryExecution(String enableUnsafeInQueryExecution) {
     this.enableUnsafeInQueryExecution = enableUnsafeInQueryExecution;
+    return this;
+  }
+
+  public String getEnableUnsafeColumnPage() { return enableUnsafeColumnPage; }
+
+  @Config("enable.unsafe.columnpage")
+  public CarbonTableConfig setEnableUnsafeColumnPage(String enableUnsafeColumnPage) {
+    this.enableUnsafeColumnPage = enableUnsafeColumnPage;
+    return this;
+  }
+
+  public String getEnableUnsafeSort() { return enableUnsafeSort; }
+
+  @Config("enable.unsafe.sort")
+  public CarbonTableConfig setEnableUnsafeSort(String enableUnsafeSort) {
+    this.enableUnsafeSort = enableUnsafeSort;
+    return this;
+  }
+
+  public String getEnableQueryStatistics() { return enableQueryStatistics; }
+
+  @Config("enable.query.statistics")
+  public CarbonTableConfig setEnableQueryStatistics(String enableQueryStatistics) {
+    this.enableQueryStatistics = enableQueryStatistics;
+    return this;
+  }
+
+  public String getBatchSize() { return batchSize; }
+
+  @Config("query.vector.batchSize")
+  public CarbonTableConfig setBatchSize(String batchSize) {
+    this.batchSize = batchSize;
     return this;
   }
 

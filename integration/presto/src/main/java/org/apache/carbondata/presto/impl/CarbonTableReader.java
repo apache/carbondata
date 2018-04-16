@@ -121,6 +121,8 @@ public class CarbonTableReader {
 
   private LoadMetadataDetails loadMetadataDetails[];
 
+  private String queryId;
+
   /**
    * Logger instance
    */
@@ -137,6 +139,7 @@ public class CarbonTableReader {
     this.carbonCache = new AtomicReference(new HashMap());
     tableList = new ConcurrentSet<>();
     setS3Properties();
+    populateCarbonProperties();
   }
 
   /**
@@ -218,10 +221,11 @@ public class CarbonTableReader {
     } else return ImmutableList.of();
   }
 
-  private void getName(CarbonFile carbonFile){
-  if(!carbonFile.getName().equalsIgnoreCase("_system") && !carbonFile.getName().equalsIgnoreCase(".ds_store")){
-    schemaNames.add(carbonFile.getName());
-  }
+  private void getName(CarbonFile carbonFile) {
+    if (!carbonFile.getName().equalsIgnoreCase("_system") && !carbonFile.getName()
+        .equalsIgnoreCase(".ds_store")) {
+      schemaNames.add(carbonFile.getName());
+    }
   }
 
   /**
@@ -243,11 +247,11 @@ public class CarbonTableReader {
    */
   private Set<String> updateTableList(String schemaName) {
     List<CarbonFile> schema =
-            Stream.of(carbonFileList.listFiles()).filter(a -> schemaName.equals(a.getName()))
-                    .collect(Collectors.toList());
+        Stream.of(carbonFileList.listFiles()).filter(a -> schemaName.equals(a.getName()))
+            .collect(Collectors.toList());
     if (schema.size() > 0) {
       return Stream.of((schema.get(0)).listFiles()).map(CarbonFile::getName)
-              .collect(Collectors.toSet());
+          .collect(Collectors.toSet());
     } else return ImmutableSet.of();
   }
 
@@ -294,11 +298,11 @@ public class CarbonTableReader {
 
     if (isKeyExists) {
       CarbonTableCacheModel carbonTableCacheModel = carbonCache.get().get(schemaTableName);
-      if(carbonTableCacheModel != null && carbonTableCacheModel.carbonTable.getTableInfo() != null) {
-        Long latestTime = FileFactory.getCarbonFile(
-            CarbonTablePath.getSchemaFilePath(
-                carbonCache.get().get(schemaTableName).carbonTable.getTablePath())
-        ).getLastModifiedTime();
+      if (carbonTableCacheModel != null
+          && carbonTableCacheModel.carbonTable.getTableInfo() != null) {
+        Long latestTime = FileFactory.getCarbonFile(CarbonTablePath
+            .getSchemaFilePath(carbonCache.get().get(schemaTableName).carbonTable.getTablePath()))
+            .getLastModifiedTime();
         Long oldTime = carbonTableCacheModel.carbonTable.getTableInfo().getLastUpdatedTime();
         if (DateUtils.truncate(new Date(latestTime), Calendar.MINUTE)
             .after(DateUtils.truncate(new Date(oldTime), Calendar.MINUTE))) {
@@ -316,7 +320,6 @@ public class CarbonTableReader {
       }
     }
   }
-
 
   /**
    * Find the table with the given name and build a CarbonTable instance for it.
@@ -401,19 +404,10 @@ public class CarbonTableReader {
     return result;
   }
 
-  public List<CarbonLocalInputSplit> getInputSplits2(CarbonTableCacheModel tableCacheModel,
+  public List<CarbonLocalMultiBlockSplit> getInputSplits2(CarbonTableCacheModel tableCacheModel,
       Expression filters, TupleDomain<ColumnHandle> constraints) throws IOException {
     List<CarbonLocalInputSplit> result = new ArrayList<>();
-    if(config.getUnsafeMemoryInMb() != null) {
-      CarbonProperties.getInstance().addProperty(
-          CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
-          config.getUnsafeMemoryInMb());
-    }
-    if(config.getEnableUnsafeInQueryExecution() != null) {
-      CarbonProperties.getInstance().addProperty(
-          CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
-          config.getEnableUnsafeInQueryExecution());
-    }
+    List<CarbonLocalMultiBlockSplit> multiBlockSplitList = new ArrayList<>();
     CarbonTable carbonTable = tableCacheModel.carbonTable;
     TableInfo tableInfo = tableCacheModel.carbonTable.getTableInfo();
     Configuration config = new Configuration();
@@ -422,56 +416,73 @@ public class CarbonTableReader {
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
     config.set(CarbonTableInputFormat.DATABASE_NAME, carbonTable.getDatabaseName());
     config.set(CarbonTableInputFormat.TABLE_NAME, carbonTable.getTableName());
+    config.set("query.id", queryId);
 
     JobConf jobConf = new JobConf(config);
     List<PartitionSpec> filteredPartitions = new ArrayList();
 
     PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
 
-    if(partitionInfo!=null && partitionInfo.getPartitionType()== PartitionType.NATIVE_HIVE) {
+    if (partitionInfo != null && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE) {
       try {
-        loadMetadataDetails= SegmentStatusManager
-            .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()));
+        loadMetadataDetails = SegmentStatusManager.readTableStatusFile(
+            CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()));
       } catch (IOException exception) {
         LOGGER.error(exception.getMessage());
         throw exception;
       }
-      filteredPartitions = findRequiredPartitions(constraints, carbonTable,loadMetadataDetails);
+      filteredPartitions = findRequiredPartitions(constraints, carbonTable, loadMetadataDetails);
     }
     try {
       CarbonTableInputFormat.setTableInfo(config, tableInfo);
       CarbonTableInputFormat carbonTableInputFormat =
-          createInputFormat(jobConf, carbonTable.getAbsoluteTableIdentifier(), filters,filteredPartitions);
+          createInputFormat(jobConf, carbonTable.getAbsoluteTableIdentifier(), filters,
+              filteredPartitions);
       Job job = Job.getInstance(jobConf);
       List<InputSplit> splits = carbonTableInputFormat.getSplits(job);
-      CarbonInputSplit carbonInputSplit = null;
       Gson gson = new Gson();
       if (splits != null && splits.size() > 0) {
         for (InputSplit inputSplit : splits) {
-          carbonInputSplit = (CarbonInputSplit) inputSplit;
+          CarbonInputSplit carbonInputSplit = (CarbonInputSplit) inputSplit;
           result.add(new CarbonLocalInputSplit(carbonInputSplit.getSegmentId(),
               carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
               carbonInputSplit.getLength(), Arrays.asList(carbonInputSplit.getLocations()),
               carbonInputSplit.getNumberOfBlocklets(), carbonInputSplit.getVersion().number(),
-              carbonInputSplit.getDeleteDeltaFiles(),
+              carbonInputSplit.getDeleteDeltaFiles(), carbonInputSplit.getBlockletId(),
               gson.toJson(carbonInputSplit.getDetailInfo())));
         }
+
+        // Use block distribution
+        List<List<CarbonLocalInputSplit>> inputSplits = new ArrayList(
+            result.stream().map(x -> (CarbonLocalInputSplit) x).collect(Collectors.groupingBy(
+                carbonInput -> carbonInput.getSegmentId().concat(carbonInput.getPath()))).values());
+        if (inputSplits != null) {
+          for (int j = 0; j < inputSplits.size(); j++) {
+            multiBlockSplitList.add(new CarbonLocalMultiBlockSplit(inputSplits.get(j),
+                inputSplits.get(j).stream().flatMap(f -> Arrays.stream(getLocations(f))).distinct()
+                    .toArray(String[]::new)));
+          }
+        }
+        LOGGER.error("Size fo MultiblockList   " + multiBlockSplitList.size());
+
       }
 
     } catch (IOException e) {
       throw new RuntimeException("Error creating Splits from CarbonTableInputFormat", e);
     }
 
-    return result;
+    return multiBlockSplitList;
   }
 
-  /** Returns list of partition specs to query based on the domain constraints
+  /**
+   * Returns list of partition specs to query based on the domain constraints
+   *
    * @param constraints
    * @param carbonTable
    * @throws IOException
    */
-  private List<PartitionSpec> findRequiredPartitions(TupleDomain<ColumnHandle> constraints, CarbonTable carbonTable,
-      LoadMetadataDetails[]loadMetadataDetails) throws IOException {
+  private List<PartitionSpec> findRequiredPartitions(TupleDomain<ColumnHandle> constraints,
+      CarbonTable carbonTable, LoadMetadataDetails[] loadMetadataDetails) throws IOException {
     Set<PartitionSpec> partitionSpecs = new HashSet<>();
     List<PartitionSpec> prunePartitions = new ArrayList();
 
@@ -490,29 +501,40 @@ public class CarbonTableReader {
     List<String> partitionValuesFromExpression =
         PrestoFilterUtil.getPartitionFilters(carbonTable, constraints);
 
-    List<PartitionSpec> partitionSpecList = partitionSpecs.stream().filter( partitionSpec ->
-        CollectionUtils.isSubCollection(partitionValuesFromExpression, partitionSpec.getPartitions())).collect(Collectors.toList());
+    List<PartitionSpec> partitionSpecList = partitionSpecs.stream().filter(
+        partitionSpec -> CollectionUtils
+            .isSubCollection(partitionValuesFromExpression, partitionSpec.getPartitions()))
+        .collect(Collectors.toList());
 
     prunePartitions.addAll(partitionSpecList);
 
     return prunePartitions;
   }
 
-  private CarbonTableInputFormat<Object>  createInputFormat( Configuration conf,
-      AbsoluteTableIdentifier identifier, Expression filterExpression, List<PartitionSpec> filteredPartitions)
-      throws IOException {
+  private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
+      AbsoluteTableIdentifier identifier, Expression filterExpression,
+      List<PartitionSpec> filteredPartitions) throws IOException {
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
-    CarbonTableInputFormat.setTablePath(conf,
-        identifier.appendWithLocalPrefix(identifier.getTablePath()));
+    CarbonTableInputFormat
+        .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));
     CarbonTableInputFormat.setFilterPredicates(conf, filterExpression);
-    if(filteredPartitions.size() != 0) {
+    if (filteredPartitions.size() != 0) {
       CarbonTableInputFormat.setPartitionsToPrune(conf, filteredPartitions);
     }
     return format;
   }
 
+  private void populateCarbonProperties() {
+    addProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, config.getUnsafeMemoryInMb());
+    addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
+        config.getEnableUnsafeInQueryExecution());
+    addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
+        config.getEnableUnsafeColumnPage());
+    addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, config.getEnableUnsafeSort());
+    addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, config.getEnableQueryStatistics());
+  }
   private void setS3Properties(){
-  FileFactory.getConfiguration()
+    FileFactory.getConfiguration()
       .set(ACCESS_KEY, Objects.toString(config.getS3A_AcesssKey(),""));
     FileFactory.getConfiguration()
         .set(SECRET_KEY, Objects.toString(config.getS3A_SecretKey()));
@@ -528,4 +550,25 @@ public class CarbonTableReader {
       Objects.toString(config.getS3EndPoint(),""));
 }
 
+  private void addProperty(String propertyName, String propertyValue) {
+    if (propertyValue != null) {
+      CarbonProperties.getInstance().addProperty(propertyName, propertyValue);
+    }
+  }
+
+  /**
+   * @param cis
+   * @return
+   */
+  private String[] getLocations(CarbonLocalInputSplit cis) {
+    return cis.getLocations().toArray(new String[cis.getLocations().size()]);
+  }
+
+  public String getQueryId() {
+    return queryId;
+  }
+
+  public void setQueryId(String queryId) {
+    this.queryId = queryId;
+  }
 }

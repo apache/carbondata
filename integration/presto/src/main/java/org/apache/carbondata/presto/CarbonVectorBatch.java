@@ -25,7 +25,7 @@ import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl
 
 public class CarbonVectorBatch {
 
-  private static final int DEFAULT_BATCH_SIZE = 1024;
+  private static final int DEFAULT_BATCH_SIZE =  4 * 1024;
 
   private final StructField[] schema;
   private final int capacity;
