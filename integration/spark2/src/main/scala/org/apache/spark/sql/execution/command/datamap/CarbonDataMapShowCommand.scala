@@ -54,7 +54,7 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
         if (carbonTable.hasDataMapSchema) {
           dataMapSchemaList.addAll(carbonTable.getTableInfo.getDataMapSchemaList)
         }
-        val indexSchemas = DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable)
+        val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
         if (!indexSchemas.isEmpty) {
           dataMapSchemaList.addAll(indexSchemas)
         }

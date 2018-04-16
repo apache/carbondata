@@ -395,7 +395,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     val dataMapProvider = classOf[CGDataMapFactory].getName
     sql(s"create datamap test_cg_datamap on table datamap_store_test using '$dataMapProvider' as select  id, name from datamap_store_test")
 
-    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap", "datamap_store_test", dataMapProvider)
+    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap")
 
     assert(FileFactory.isFileExist(loc))
   }
@@ -412,7 +412,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     val dataMapProvider = classOf[CGDataMapFactory].getName
     sql(s"create datamap test_cg_datamap1 on table datamap_store_test1 using '$dataMapProvider' as select  id, name from datamap_store_test")
 
-    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap1", "datamap_store_test1", dataMapProvider)
+    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap1")
 
     assert(FileFactory.isFileExist(loc))
 
@@ -433,7 +433,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     val dataMapProvider = classOf[CGDataMapFactory].getName
     sql(s"create datamap test_cg_datamap2 on table datamap_store_test2 using '$dataMapProvider' as select  id, name from datamap_store_test")
 
-    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation,"test_cg_datamap2", "datamap_store_test2", dataMapProvider)
+    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation,"test_cg_datamap2")
 
     assert(FileFactory.isFileExist(loc))
 

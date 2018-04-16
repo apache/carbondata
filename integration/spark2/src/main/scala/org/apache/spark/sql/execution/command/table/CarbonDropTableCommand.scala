@@ -111,7 +111,8 @@ case class CarbonDropTableCommand(
           }
         childDropCommands.foreach(_.processMetadata(sparkSession))
       }
-      val indexDatamapSchemas = DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable)
+      val indexDatamapSchemas =
+        DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
       if (!indexDatamapSchemas.isEmpty) {
         childDropDataMapCommands = indexDatamapSchemas.asScala.map { schema =>
           val command = CarbonDropDataMapCommand(schema.getDataMapName,

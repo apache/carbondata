@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.datamap;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -68,7 +69,8 @@ public class DataMapChooser {
   /**
    * Return a chosen datamap based on input filter. See {@link DataMapChooser}
    */
-  public DataMapExprWrapper choose(CarbonTable carbonTable, FilterResolverIntf resolverIntf) {
+  public DataMapExprWrapper choose(CarbonTable carbonTable, FilterResolverIntf resolverIntf)
+      throws IOException {
     if (resolverIntf != null) {
       Expression expression = resolverIntf.getFilterExpression();
       // First check for FG datamaps if any exist

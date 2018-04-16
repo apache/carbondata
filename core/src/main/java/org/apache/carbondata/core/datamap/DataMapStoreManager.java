@@ -64,6 +64,9 @@ public final class DataMapStoreManager {
 
   private Map<String, TableSegmentRefresher> segmentRefreshMap = new ConcurrentHashMap<>();
 
+  private DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
+      CarbonProperties.getInstance().getSystemFolderLocation());
+
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
 
@@ -75,7 +78,8 @@ public final class DataMapStoreManager {
    * It gives all datamaps of type @mapType except the default datamap.
    *
    */
-  public List<TableDataMap> getAllDataMap(CarbonTable carbonTable, DataMapLevel mapType) {
+  public List<TableDataMap> getAllDataMap(CarbonTable carbonTable, DataMapLevel mapType)
+      throws IOException {
     List<TableDataMap> dataMaps = new ArrayList<>();
     List<TableDataMap> tableIndices = getAllDataMap(carbonTable);
     if (tableIndices != null) {
@@ -93,9 +97,8 @@ public final class DataMapStoreManager {
    *
    * @return
    */
-  public List<TableDataMap> getAllDataMap(CarbonTable carbonTable) {
-    // TODO cache all schemas and update only when datamap status file updates
-    List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();
+  public List<TableDataMap> getAllDataMap(CarbonTable carbonTable) throws IOException {
+    List<DataMapSchema> dataMapSchemas = getDataMapSchemasOfTable(carbonTable);
     List<TableDataMap> dataMaps = new ArrayList<>();
     if (dataMapSchemas != null) {
       for (DataMapSchema dataMapSchema : dataMapSchemas) {
@@ -111,47 +114,40 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * It gives all datamap schemas.
+   * It gives all datamap schemas of a given table.
    *
-   * @return
    */
-  public List<DataMapSchema> getAllDataMapSchemas(CarbonTable carbonTable) {
-    // TODO cache all schemas and update only when datamap status file updates
-    List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();
-    List<DataMapSchema> dataMaps = new ArrayList<>();
-    if (dataMapSchemas != null) {
-      for (DataMapSchema dataMapSchema : dataMapSchemas) {
-        RelationIdentifier identifier = dataMapSchema.getParentTables().get(0);
-        if (dataMapSchema.isIndexDataMap() && identifier.getTableName()
-            .equals(carbonTable.getTableName()) && identifier.getDatabaseName()
-            .equals(carbonTable.getDatabaseName())) {
-          dataMaps.add(dataMapSchema);
-        }
-      }
-    }
-    return dataMaps;
+  public List<DataMapSchema> getDataMapSchemasOfTable(CarbonTable carbonTable) throws IOException {
+    return provider.retrieveSchemas(carbonTable);
   }
 
-  public List<DataMapSchema> getAllDataMapSchemas() {
-    DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
-        CarbonProperties.getInstance().getSystemFolderLocation());
-    List<DataMapSchema> dataMapSchemas;
-    try {
-      dataMapSchemas = provider.retrieveAllSchemas();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return dataMapSchemas;
+  /**
+   * It gives all datamap schemas from store.
+   */
+  public List<DataMapSchema> getAllDataMapSchemas() throws IOException {
+    return provider.retrieveAllSchemas();
   }
 
-  public DataMapSchema getDataMapSchema(String dataMapName) throws NoSuchDataMapException {
-    List<DataMapSchema> allDataMapSchemas = getAllDataMapSchemas();
-    for (DataMapSchema dataMapSchema : allDataMapSchemas) {
-      if (dataMapSchema.getDataMapName().equalsIgnoreCase(dataMapName)) {
-        return dataMapSchema;
-      }
-    }
-    throw new NoSuchDataMapException(dataMapName);
+
+  public DataMapSchema getDataMapSchema(String dataMapName)
+      throws NoSuchDataMapException, IOException {
+    return provider.retrieveSchema(dataMapName);
+  }
+
+  /**
+   * Saves the datamap schema to storage
+   * @param dataMapSchema
+   */
+  public void saveDataMapSchema(DataMapSchema dataMapSchema) throws IOException {
+    provider.saveSchema(dataMapSchema);
+  }
+
+  /**
+   * Drops the datamap schema from storage
+   * @param dataMapName
+   */
+  public void dropDataMapSchema(String dataMapName) throws IOException {
+    provider.dropSchema(dataMapName);
   }
 
   /**
@@ -306,7 +302,8 @@ public final class DataMapStoreManager {
    * @param carbonTable
    * @param segments
    */
-  public void clearInvalidSegments(CarbonTable carbonTable, List<Segment> segments) {
+  public void clearInvalidSegments(CarbonTable carbonTable, List<Segment> segments)
+      throws IOException {
     getDefaultDataMap(carbonTable).clear(segments);
     List<TableDataMap> allDataMap = getAllDataMap(carbonTable);
     for (TableDataMap dataMap: allDataMap) {

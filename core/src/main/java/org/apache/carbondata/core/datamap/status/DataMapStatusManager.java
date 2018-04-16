@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -51,7 +52,7 @@ public class DataMapStatusManager {
   }
 
   public static void disableDataMap(String dataMapName) throws Exception {
-    DataMapSchema dataMapSchema = validateDataMap(dataMapName, false);
+    DataMapSchema dataMapSchema = getDataMapSchema(dataMapName);
     List<DataMapSchema> list = new ArrayList<>();
     if (dataMapSchema != null) {
       list.add(dataMapSchema);
@@ -61,12 +62,12 @@ public class DataMapStatusManager {
 
   public static void disableDataMapsOfTable(CarbonTable table) throws IOException {
     List<DataMapSchema> allDataMapSchemas =
-        DataMapStoreManager.getInstance().getAllDataMapSchemas(table);
+        DataMapStoreManager.getInstance().getDataMapSchemasOfTable(table);
     storageProvider.updateDataMapStatus(allDataMapSchemas, DataMapStatus.DISABLED);
   }
 
-  public static void enableDataMap(String dataMapName) throws IOException {
-    DataMapSchema dataMapSchema = validateDataMap(dataMapName, false);
+  public static void enableDataMap(String dataMapName) throws IOException, NoSuchDataMapException {
+    DataMapSchema dataMapSchema = getDataMapSchema(dataMapName);
     List<DataMapSchema> list = new ArrayList<>();
     if (dataMapSchema != null) {
       list.add(dataMapSchema);
@@ -76,12 +77,12 @@ public class DataMapStatusManager {
 
   public static void enableDataMapsOfTable(CarbonTable table) throws IOException {
     List<DataMapSchema> allDataMapSchemas =
-        DataMapStoreManager.getInstance().getAllDataMapSchemas(table);
+        DataMapStoreManager.getInstance().getDataMapSchemasOfTable(table);
     storageProvider.updateDataMapStatus(allDataMapSchemas, DataMapStatus.ENABLED);
   }
 
-  public static void dropDataMap(String dataMapName) throws IOException {
-    DataMapSchema dataMapSchema = validateDataMap(dataMapName, false);
+  public static void dropDataMap(String dataMapName) throws IOException, NoSuchDataMapException {
+    DataMapSchema dataMapSchema = getDataMapSchema(dataMapName);
     List<DataMapSchema> list = new ArrayList<>();
     if (dataMapSchema != null) {
       list.add(dataMapSchema);
@@ -89,20 +90,9 @@ public class DataMapStatusManager {
     storageProvider.updateDataMapStatus(list, DataMapStatus.DROPPED);
   }
 
-  private static DataMapSchema validateDataMap(String dataMapName, boolean valdate) {
-    List<DataMapSchema> allDataMapSchemas =
-        DataMapStoreManager.getInstance().getAllDataMapSchemas();
-    DataMapSchema dataMapSchema = null;
-    for (DataMapSchema schema : allDataMapSchemas) {
-      if (schema.getDataMapName().equalsIgnoreCase(dataMapName)) {
-        dataMapSchema = schema;
-      }
-    }
-    if (dataMapSchema == null && valdate) {
-      throw new UnsupportedOperationException("Cannot be disabled non exist datamap");
-    } else {
-      return dataMapSchema;
-    }
+  private static DataMapSchema getDataMapSchema(String dataMapName)
+      throws IOException, NoSuchDataMapException {
+    return DataMapStoreManager.getInstance().getDataMapSchema(dataMapName);
   }
 
 }
