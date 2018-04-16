@@ -61,7 +61,8 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                               new Vector2TestCase ::
                               new PreAggregateTestCase ::
                               new TimeSeriesPreAggregateTestCase ::
-                              new TestPartitionWithGlobalSort :: Nil
+                              new TestPartitionWithGlobalSort ::
+                              new PartitionWithPreAggregateTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -149,7 +150,8 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new LuceneTestCase ::
                     new TimeSeriesPreAggregateTestCase :: 
                     new TestPartitionWithGlobalSort ::
-                    new SetParameterTestCase :: Nil
+                    new SetParameterTestCase ::
+                    new PartitionWithPreAggregateTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
