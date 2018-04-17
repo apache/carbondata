@@ -300,7 +300,7 @@ object CarbonDataRDDFactory {
     var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
 
     // create new segment folder  in carbon store
-    if (updateModel.isEmpty) {
+    if (updateModel.isEmpty && !carbonLoadModel.isCarbonUnmanagedTable) {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(carbonLoadModel.getSegmentId, carbonTable)
     }
     var loadStatus = SegmentStatus.SUCCESS
@@ -493,13 +493,14 @@ object CarbonDataRDDFactory {
       }
       // as no record loaded in new segment, new segment should be deleted
       val newEntryLoadStatus =
-      if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap &&
-          !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
-        LOGGER.warn("Cannot write load metadata file as there is no data to load")
-        SegmentStatus.MARKED_FOR_DELETE
-      } else {
-        loadStatus
-      }
+        if (!carbonLoadModel.isCarbonUnmanagedTable &&
+            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap &&
+            !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
+          LOGGER.warn("Cannot write load metadata file as there is no data to load")
+          SegmentStatus.MARKED_FOR_DELETE
+        } else {
+          loadStatus
+        }
 
       writeDictionary(carbonLoadModel, result, writeAll = false)
 

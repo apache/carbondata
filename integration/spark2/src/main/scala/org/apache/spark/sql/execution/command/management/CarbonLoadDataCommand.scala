@@ -153,9 +153,9 @@ case class CarbonLoadDataCommand(
     } else {
       null
     }
-    if (table.getTableInfo.isUnManagedTable) {
-      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
-    }
+//    if (table.getTableInfo.isUnManagedTable) {
+//      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+//    }
     // get the value of 'spark.executor.cores' from spark conf, default value is 1
     val sparkExecutorCores = sparkSession.sparkContext.conf.get("spark.executor.cores", "1")
     // get the value of 'carbon.number.of.cores.while.loading' from carbon properties,
@@ -192,6 +192,7 @@ case class CarbonLoadDataCommand(
         FileUtils.getPaths(factPathFromUser, hadoopConf)
       }
       carbonLoadModel.setFactFilePath(factPath)
+      carbonLoadModel.setCarbonUnmanagedTable(table.getTableInfo.isUnManagedTable)
       carbonLoadModel.setAggLoadRequest(
         internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
       carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
@@ -241,7 +242,8 @@ case class CarbonLoadDataCommand(
         // Clean up the old invalid segment data before creating a new entry for new load.
         SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, currPartitions)
         // add the start entry for the new load in the table status file
-        if (updateModel.isEmpty && !table.isHivePartitionTable) {
+        if (updateModel.isEmpty && !table.isHivePartitionTable &&
+            !carbonLoadModel.isCarbonUnmanagedTable) {
           CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
             carbonLoadModel,
             isOverwriteTable)
@@ -267,10 +269,12 @@ case class CarbonLoadDataCommand(
           carbonLoadModel.setUseOnePass(false)
         }
         // Create table and metadata folders if not exist
-        val metadataDirectoryPath = CarbonTablePath.getMetadataPath(table.getTablePath)
-        val fileType = FileFactory.getFileType(metadataDirectoryPath)
-        if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-          FileFactory.mkdirs(metadataDirectoryPath, fileType)
+        if (!carbonLoadModel.isCarbonUnmanagedTable) {
+          val metadataDirectoryPath = CarbonTablePath.getMetadataPath(table.getTablePath)
+          val fileType = FileFactory.getFileType(metadataDirectoryPath)
+          if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
+            FileFactory.mkdirs(metadataDirectoryPath, fileType)
+          }
         }
         val partitionStatus = SegmentStatus.SUCCESS
         val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean

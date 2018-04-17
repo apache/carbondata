@@ -145,6 +145,42 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
+
+  test("test create External Table with insert into feature")
+  {
+    buildTestData(false, false)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql("DROP TABLE IF EXISTS t1")
+
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    sql("create table if not exists t1 (name string, age int, height double) STORED BY 'org.apache.carbondata.format'")
+    sql (s"""insert into t1 values ("aaaaa", 12, 20)""").show(200,false)
+    sql("select * from t1").show(200,false)
+    sql("insert into sdkOutputTable select * from t1").show(200,false)
+
+    checkAnswer(sql(s"""select * from sdkOutputTable where age = 12"""),
+      Seq(Row("aaaaa", 12, 20.0)))
+
+    sql("DROP TABLE sdkOutputTable")
+    sql("drop table t1")
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+
+
   test("read unmanaged table, files written from sdk Writer Output)") {
     buildTestDataSingleFile()
     assert(new File(writerPath).exists())
@@ -369,12 +405,16 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
     Assert.assertNotEquals(1, dataFiles.length)
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql("DROP TABLE IF EXISTS t1")
 
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select count(*) from sdkOutputTable"), Seq(Row(1000000)))
+
+
+
 
     // drop table should not delete the files
     assert(new File(writerPath).exists())

@@ -171,6 +171,10 @@ public final class CarbonLoaderUtil {
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
       CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
       throws IOException {
+    if (loadModel.isCarbonUnmanagedTable()) {
+      return true;
+    }
+
     return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
         new ArrayList<Segment>(), new ArrayList<Segment>());
   }
@@ -191,10 +195,12 @@ public final class CarbonLoaderUtil {
     boolean status = false;
     AbsoluteTableIdentifier identifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
-    FileType fileType = FileFactory.getFileType(metadataPath);
-    if (!FileFactory.isFileExist(metadataPath, fileType)) {
-      FileFactory.mkdirs(metadataPath, fileType);
+    if (!loadModel.isCarbonUnmanagedTable()) {
+      String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
+      FileType fileType = FileFactory.getFileType(metadataPath);
+      if (!FileFactory.isFileExist(metadataPath, fileType)) {
+        FileFactory.mkdirs(metadataPath, fileType);
+      }
     }
     String tableStatusPath;
     if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !uuid.isEmpty()) {
