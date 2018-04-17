@@ -389,8 +389,7 @@ public class CarbonTableReader {
   }
 
   public List<CarbonLocalInputSplit> getInputSplits2(CarbonTableCacheModel tableCacheModel,
-      Expression filters,
-      Expression partitionFilters, TupleDomain<ColumnHandle> constraints) throws IOException {
+      Expression filters, TupleDomain<ColumnHandle> constraints) throws IOException {
     List<CarbonLocalInputSplit> result = new ArrayList<>();
     if(config.getUnsafeMemoryInMb() != null) {
       CarbonProperties.getInstance().addProperty(
@@ -410,7 +409,6 @@ public class CarbonTableReader {
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
     config.set(CarbonTableInputFormat.DATABASE_NAME, carbonTable.getDatabaseName());
     config.set(CarbonTableInputFormat.TABLE_NAME, carbonTable.getTableName());
-    CarbonTableInputFormat.setPartitionsToPrune(config, partitionFilters);
 
     JobConf jobConf = new JobConf(config);
     List<PartitionSpec> filteredPartitions = new ArrayList();
