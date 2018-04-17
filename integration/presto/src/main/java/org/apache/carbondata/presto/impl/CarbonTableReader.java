@@ -331,7 +331,6 @@ public class CarbonTableReader {
     CarbonTableCacheModel cache = null;
     try {
       cache = carbonCache.get().get(table);
-
       if (cache != null && cache.isValid()) {
         return cache;
       }
