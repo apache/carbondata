@@ -26,8 +26,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
@@ -47,6 +49,8 @@ public class TableSchemaBuilder {
 
   private int blockSize;
 
+  private int blockletSize;
+
   private String tableName;
 
   public TableSchemaBuilder blockSize(int blockSize) {
@@ -54,6 +58,14 @@ public class TableSchemaBuilder {
       throw new IllegalArgumentException("blockSize should be greater than 0");
     }
     this.blockSize = blockSize;
+    return this;
+  }
+
+  public TableSchemaBuilder blockletSize(int blockletSize) {
+    if (blockletSize <= 0) {
+      throw new IllegalArgumentException("blockletSize should be greater than 0");
+    }
+    this.blockletSize = blockletSize;
     return this;
   }
 
@@ -76,11 +88,18 @@ public class TableSchemaBuilder {
     allColumns.addAll(otherColumns);
     schema.setListOfColumns(allColumns);
 
+    Map<String, String> property = new HashMap<>();
     if (blockSize > 0) {
-      Map<String, String> property = new HashMap<>();
       property.put(CarbonCommonConstants.TABLE_BLOCKSIZE, String.valueOf(blockSize));
+    }
+    if (blockletSize > 0) {
+      property.put(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, String.valueOf(blockletSize));
+    }
+    // TODO: check other table properties
+    if (property.size() != 0) {
       schema.setTableProperties(property);
     }
+
     return schema;
   }
 
@@ -103,6 +122,11 @@ public class TableSchemaBuilder {
     newColumn.setColumnUniqueId(UUID.randomUUID().toString());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
     newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn));
+    if (DataTypes.isDecimal(field.getDataType())) {
+      DecimalType decimalType = (DecimalType) field.getDataType();
+      newColumn.setPrecision(decimalType.getPrecision());
+      newColumn.setScale(decimalType.getScale());
+    }
     if (isSortColumn) {
       sortColumns.add(newColumn);
       newColumn.setSortColumn(true);

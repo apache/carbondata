@@ -28,6 +28,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -57,12 +58,13 @@ public class RestructureUtil {
    * @param queryDimensions
    * @param tableBlockDimensions
    * @param tableComplexDimension
+   * @param isUnManagedTable
    * @return list of query dimension which is present in the table block
    */
   public static List<ProjectionDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
       BlockExecutionInfo blockExecutionInfo, List<ProjectionDimension> queryDimensions,
       List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension,
-      int measureCount) {
+      int measureCount, boolean isUnManagedTable) {
     List<ProjectionDimension> presentDimension =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     boolean[] isDimensionExists = new boolean[queryDimensions.size()];
@@ -82,7 +84,7 @@ public class RestructureUtil {
             queryDimension.getDimension().getDataType();
       } else {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
-          if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
+          if (isColumnMatches(isUnManagedTable, queryDimension.getDimension(), tableDimension)) {
             ProjectionDimension currentBlockDimension = new ProjectionDimension(tableDimension);
             tableDimension.getColumnSchema()
                 .setPrecision(queryDimension.getDimension().getColumnSchema().getPrecision());
@@ -104,7 +106,7 @@ public class RestructureUtil {
           continue;
         }
         for (CarbonDimension tableDimension : tableComplexDimension) {
-          if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
+          if (isColumnMatches(isUnManagedTable, queryDimension.getDimension(), tableDimension)) {
             ProjectionDimension currentBlockDimension = new ProjectionDimension(tableDimension);
             // TODO: for complex dimension set scale and precision by traversing
             // the child dimensions
@@ -138,6 +140,22 @@ public class RestructureUtil {
     dimensionInfo.setNewNoDictionaryColumnCount(newNoDictionaryColumnCount);
     blockExecutionInfo.setDimensionInfo(dimensionInfo);
     return presentDimension;
+  }
+
+  /**
+   * Match the columns for managed and unmanaged tables
+   * @param isUnManagedTable
+   * @param queryColumn
+   * @param tableColumn
+   * @return
+   */
+  private static boolean isColumnMatches(boolean isUnManagedTable,
+      CarbonColumn queryColumn, CarbonColumn tableColumn) {
+    // If it is unmanaged table just check the column names, no need to validate column id as
+    // multiple sdk's output placed in a single folder doesn't have same column ID but can
+    // have same column name
+    return (tableColumn.getColumnId().equals(queryColumn.getColumnId()) ||
+        (isUnManagedTable && tableColumn.getColName().equals(queryColumn.getColName())));
   }
 
   /**
@@ -337,11 +355,12 @@ public class RestructureUtil {
    * @param blockExecutionInfo
    * @param queryMeasures        measures present in query
    * @param currentBlockMeasures current block measures
+   * @param isUnManagedTable
    * @return measures present in the block
    */
   public static List<ProjectionMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
       BlockExecutionInfo blockExecutionInfo, List<ProjectionMeasure> queryMeasures,
-      List<CarbonMeasure> currentBlockMeasures) {
+      List<CarbonMeasure> currentBlockMeasures, boolean isUnManagedTable) {
     MeasureInfo measureInfo = new MeasureInfo();
     List<ProjectionMeasure> presentMeasure = new ArrayList<>(queryMeasures.size());
     int numberOfMeasureInQuery = queryMeasures.size();
@@ -354,7 +373,7 @@ public class RestructureUtil {
       // then setting measure exists is true
       // otherwise adding a default value of a measure
       for (CarbonMeasure carbonMeasure : currentBlockMeasures) {
-        if (carbonMeasure.getColumnId().equals(queryMeasure.getMeasure().getColumnId())) {
+        if (isColumnMatches(isUnManagedTable, carbonMeasure, queryMeasure.getMeasure())) {
           ProjectionMeasure currentBlockMeasure = new ProjectionMeasure(carbonMeasure);
           carbonMeasure.getColumnSchema().setDataType(queryMeasure.getMeasure().getDataType());
           carbonMeasure.getColumnSchema().setPrecision(queryMeasure.getMeasure().getPrecision());

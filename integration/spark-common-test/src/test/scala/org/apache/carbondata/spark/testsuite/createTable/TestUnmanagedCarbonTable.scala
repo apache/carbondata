@@ -43,11 +43,24 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
   //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
   writerPath = writerPath.replace("\\", "/");
 
-  // prepare SDK writer output
-  def buildTestData(persistSchema: Boolean, outputMultipleFiles: Boolean): Any = {
-
+  def buildTestDataSingleFile(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(3,false)
+  }
 
+  def buildTestDataMultipleFiles(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(1000000,false)
+  }
+
+  def buildTestDataTwice(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(3,false)
+    buildTestData(3,false)
+  }
+
+  // prepare sdk writer output
+  def buildTestData(rows:Int, persistSchema:Boolean): Any = {
     val schema = new StringBuilder()
       .append("[ \n")
       .append("   {\"name\":\"string\"},\n")
@@ -68,15 +81,11 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
         } else {
           builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).unManagedTable(true)
             .uniqueIdentifier(
-              System.currentTimeMillis).withBlockSize(1).withBlockletSize(1)
+              System.currentTimeMillis).withBlockSize(2)
             .buildWriterForCSVInput()
         }
       var i = 0
-      var row = 3
-      if (outputMultipleFiles) {
-        row = 1000000
-      }
-      while (i < row) {
+      while (i < rows) {
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
         i += 1
       }
@@ -116,7 +125,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test("test create External Table with Schema with partition, should ignore schema and partition")
   {
-    buildTestData(false, false)
+    buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
@@ -137,7 +146,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("read unmanaged table, files written from sdk Writer Output)") {
-    buildTestData(false, false)
+    buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable1")
 
@@ -178,7 +187,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test Blocked operations for unmanaged table ") {
-    buildTestData(false, false)
+    buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
@@ -244,14 +253,14 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //9. Update Segment
+    //9. Update column
     exception = intercept[MalformedCarbonCommandException] {
       sql("UPDATE sdkOutputTable SET (age) = (age + 9) ").show(false)
     }
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //10. Delete Segment
+    //10. Delete column
     exception = intercept[MalformedCarbonCommandException] {
       sql("DELETE FROM sdkOutputTable where name='robot1'").show(false)
     }
@@ -266,16 +275,23 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
       .contains("Unsupported operation on unmanaged table"))
 
     //12. Streaming table creation
-    // External table don't accept table properties
+    // No need as External table don't accept table properties
+
+    //13. Alter table rename command
+    exception = intercept[MalformedCarbonCommandException] {
+      sql("ALTER TABLE sdkOutputTable RENAME to newTable")
+    }
+    assert(exception.getMessage()
+      .contains("Unsupported operation on unmanaged table"))
 
     sql("DROP TABLE sdkOutputTable")
-    // drop table should not delete the files
+    //drop table should not delete the files
     assert(new File(writerPath).exists())
     cleanTestData()
   }
 
   test("test create External Table With Schema, should ignore the schema provided") {
-    buildTestData(false, false)
+    buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
@@ -296,7 +312,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Read sdk writer output file without Carbondata file should fail") {
-    buildTestData(false, false)
+    buildTestDataSingleFile()
     deleteFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -317,7 +333,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
 
 
   test("Read sdk writer output file without any file should fail") {
-    buildTestData(false, false)
+    buildTestDataSingleFile()
     deleteFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
     deleteFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     assert(new File(writerPath).exists())
@@ -340,7 +356,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Read sdk writer output multiple files ") {
-    buildTestData(false, true)
+    buildTestDataMultipleFiles()
     assert(new File(writerPath).exists())
     val folder = new File(writerPath)
     val dataFiles = folder.listFiles(new FileFilter() {
@@ -359,6 +375,29 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select count(*) from sdkOutputTable"), Seq(Row(1000000)))
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+  test("Read two sdk writer outputs with same column name placed in same folder") {
+    buildTestDataTwice()
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0),
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
 
     // drop table should not delete the files
     assert(new File(writerPath).exists())
