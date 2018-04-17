@@ -90,6 +90,7 @@ public class CSVCarbonWriterTest {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .withSchema(new Schema(fields))
+          .isTransactionalTable(true)
           .outputPath(path);
 
       CarbonWriter writer = builder.buildWriterForCSVInput();

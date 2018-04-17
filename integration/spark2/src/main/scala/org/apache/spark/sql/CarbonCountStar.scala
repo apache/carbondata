@@ -77,7 +77,8 @@ case class CarbonCountStar(
     val job = new Job(jobConf)
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
     CarbonInputFormat
-      .setUnmanagedTable(job.getConfiguration, carbonTable.getTableInfo.isUnManagedTable)
+      .setTransactionalTable(job.getConfiguration,
+        carbonTable.getTableInfo.isTransactionalTable)
     (job, carbonInputFormat)
   }
 }

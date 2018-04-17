@@ -68,6 +68,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   private static final String TEMP_STORE_LOCATIONS = "mapreduce.carbontable.tempstore.locations";
   private static final String OVERWRITE_SET = "mapreduce.carbontable.set.overwrite";
   public static final String COMPLEX_DELIMITERS = "mapreduce.carbontable.complex_delimiters";
+  private static final String CARBON_TRANSACTIONAL_TABLE =
+      "mapreduce.input.carboninputformat.transactional";
   public static final String SERIALIZATION_NULL_FORMAT =
       "mapreduce.carbontable.serialization.null.format";
   public static final String BAD_RECORDS_LOGGER_ENABLE =
@@ -271,6 +273,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     CarbonProperties carbonProperty = CarbonProperties.getInstance();
     model.setDatabaseName(CarbonTableOutputFormat.getDatabaseName(conf));
     model.setTableName(CarbonTableOutputFormat.getTableName(conf));
+    model.setCarbonTransactionalTable(true);
     model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(getCarbonTable(conf)));
     model.setTablePath(getTablePath(conf));
 

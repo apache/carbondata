@@ -56,6 +56,7 @@ public class TestUtil {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .withSchema(schema)
+          .isTransactionalTable(true)
           .outputPath(path);
       if (sortColumns != null) {
         builder = builder.sortBy(sortColumns);

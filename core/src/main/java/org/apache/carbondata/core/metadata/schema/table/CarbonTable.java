@@ -142,12 +142,16 @@ public class CarbonTable implements Serializable {
   private boolean hasDataMapSchema;
 
   /**
-   * The boolean field which points if the data written for UnManaged Table
-   * or Managed Table. The difference between managed and unManaged table is
-   * unManaged Table will not contain any Metadata folder and subsequently
+   * The boolean field which points if the data written for Non Transactional Table
+   * or Transactional Table.
+   * transactional table means carbon will provide transactional support when user doing data
+   * management like data loading, whether it is success or failure, data will be in consistent
+   * state
+   * The difference between Transactional and non Transactional table is
+   * non Transactional Table will not contain any Metadata folder and subsequently
    * no TableStatus or Schema files.
    */
-  private boolean isUnManagedTable;
+  private boolean isTransactionalTable = true;
 
   private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -247,7 +251,7 @@ public class CarbonTable implements Serializable {
     table.blockSize = tableInfo.getTableBlockSizeInMB();
     table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
     table.tableUniqueName = tableInfo.getTableUniqueName();
-    table.setUnManagedTable(tableInfo.isUnManagedTable());
+    table.setTransactionalTable(tableInfo.isTransactionalTable());
     table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
     table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
     if (tableInfo.getFactTable().getBucketingInfo() != null) {
@@ -939,11 +943,11 @@ public class CarbonTable implements Serializable {
     return new CarbonTableBuilder();
   }
 
-  public boolean isUnManagedTable() {
-    return isUnManagedTable;
+  public boolean isTransactionalTable() {
+    return isTransactionalTable;
   }
 
-  public void setUnManagedTable(boolean unManagedTable) {
-    isUnManagedTable = unManagedTable;
+  public void setTransactionalTable(boolean transactionalTable) {
+    isTransactionalTable = transactionalTable;
   }
 }

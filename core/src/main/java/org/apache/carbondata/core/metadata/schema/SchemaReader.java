@@ -91,6 +91,7 @@ public class SchemaReader {
     TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
         tableInfo, identifier.getDatabaseName(), identifier.getTableName(),
         identifier.getTablePath());
+    wrapperTableInfo.setTransactionalTable(false);
     return wrapperTableInfo;
   }
 }

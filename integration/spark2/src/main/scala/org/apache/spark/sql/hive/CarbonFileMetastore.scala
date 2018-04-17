@@ -104,7 +104,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         CarbonRelation(database, tableName, CarbonSparkUtil.createSparkMeta(t), t)
       case None =>
         readCarbonSchema(absIdentifier,
-          parameters.getOrElse("isUnManaged", "false").toBoolean) match {
+          !parameters.getOrElse("isTransactional", "true").toBoolean) match {
           case Some(meta) =>
             CarbonRelation(database, tableName,
               CarbonSparkUtil.createSparkMeta(meta), meta)
@@ -230,7 +230,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         schemaConverter
           .fromExternalToWrapperTableInfo(thriftTableInfo, dbName, tableName, tablePath)
       wrapperTableInfo.getFactTable.getTableProperties.put("_external", "true")
-      wrapperTableInfo.setUnManagedTable(true)
+      wrapperTableInfo.setTransactionalTable(false)
       Some(wrapperTableInfo)
     } else {
       val tableMetadataFile = CarbonTablePath.getSchemaFilePath(tablePath)
@@ -474,7 +474,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
       DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
     } else {
-      if (isUnmanagedCarbonTable(absoluteTableIdentifier)) {
+      if (!isTransactionalCarbonTable(absoluteTableIdentifier)) {
         removeTableFromMetadata(dbName, tableName)
         CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
         // discard cached table info in cachedDataSourceTables
@@ -486,9 +486,9 @@ class CarbonFileMetastore extends CarbonMetaStore {
   }
 
 
-  def isUnmanagedCarbonTable(identifier: AbsoluteTableIdentifier): Boolean = {
-    val table = getTableFromMetadataCache(identifier.getDatabaseName, identifier.getTableName);
-    table.map(_.getTableInfo.isUnManagedTable).getOrElse(false)
+  def isTransactionalCarbonTable(identifier: AbsoluteTableIdentifier): Boolean = {
+    val table = getTableFromMetadataCache(identifier.getDatabaseName, identifier.getTableName)
+    table.map(_.getTableInfo.isTransactionalTable).getOrElse(true)
   }
 
   private def getTimestampFileAndType() = {

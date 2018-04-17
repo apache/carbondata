@@ -55,8 +55,9 @@ public class CarbonWriterBuilder {
   private boolean persistSchemaFile;
   private int blockletSize;
   private int blockSize;
-  private boolean isUnManagedTable;
+  private boolean isTransactionalTable;
   private long UUID;
+  private String taskNo;
 
   /**
    * prepares the builder with the schema provided
@@ -91,6 +92,19 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * sets the taskNo for the writer. SDKs concurrently running
+   * will set taskNo in order to avoid conflits in file write.
+   * @param taskNo is the TaskNo user wants to specify. Mostly it system time.
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder taskNo(String taskNo) {
+    this.taskNo = taskNo;
+    return this;
+  }
+
+
+
+  /**
    * If set, create a schema file in metadata folder.
    * @param persist is a boolean value, If set, create a schema file in metadata folder
    * @return updated CarbonWriterBuilder
@@ -101,14 +115,14 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * If set true, writes the carbondata and carbonindex files in a flat folder structure
-   * @param isUnManagedTable is a boolelan value if set writes
+   * If set false, writes the carbondata and carbonindex files in a flat folder structure
+   * @param isTransactionalTable is a boolelan value if set to false then writes
    *                     the carbondata and carbonindex files in a flat folder structure
    * @return updated CarbonWriterBuilder
    */
-  public CarbonWriterBuilder unManagedTable(boolean isUnManagedTable) {
-    Objects.requireNonNull(isUnManagedTable, "UnManaged Table should not be null");
-    this.isUnManagedTable = isUnManagedTable;
+  public CarbonWriterBuilder isTransactionalTable(boolean isTransactionalTable) {
+    Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
+    this.isTransactionalTable = isTransactionalTable;
     return this;
   }
 
@@ -180,7 +194,7 @@ public class CarbonWriterBuilder {
     }
 
     // build LoadModel
-    return buildLoadModel(table, UUID);
+    return buildLoadModel(table, UUID, taskNo);
   }
 
   /**
@@ -209,7 +223,7 @@ public class CarbonWriterBuilder {
     }
     String tableName;
     String dbName;
-    if (!isUnManagedTable) {
+    if (isTransactionalTable) {
       tableName = "_tempTable";
       dbName = "_tempDB";
     } else {
@@ -223,7 +237,7 @@ public class CarbonWriterBuilder {
         .databaseName(dbName)
         .tablePath(path)
         .tableSchema(schema)
-        .isUnManagedTable(isUnManagedTable)
+        .isTransactionalTable(isTransactionalTable)
         .build();
     return table;
   }
@@ -261,13 +275,13 @@ public class CarbonWriterBuilder {
   /**
    * Build a {@link CarbonLoadModel}
    */
-  private CarbonLoadModel buildLoadModel(CarbonTable table, long UUID)
+  private CarbonLoadModel buildLoadModel(CarbonTable table, long UUID, String taskNo)
       throws InvalidLoadOptionException, IOException {
     Map<String, String> options = new HashMap<>();
     if (sortColumns != null) {
       options.put("sort_columns", Strings.mkString(sortColumns, ","));
     }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
-    return builder.build(options, UUID);
+    return builder.build(options, UUID, taskNo);
   }
 }

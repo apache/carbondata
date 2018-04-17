@@ -66,6 +66,7 @@ public class AvroCarbonWriterTest {
       CarbonWriter writer = CarbonWriter.builder()
           .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
           .outputPath(path)
+          .isTransactionalTable(true)
           .buildWriterForAvroInput();
 
       for (int i = 0; i < 100; i++) {

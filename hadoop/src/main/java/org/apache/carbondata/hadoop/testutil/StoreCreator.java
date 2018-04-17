@@ -128,6 +128,7 @@ public class StoreCreator {
     loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
     loadModel.setTablePath(absoluteTableIdentifier.getTablePath());
     loadModel.setDateFormat(null);
+    loadModel.setCarbonTransactionalTable(table.isTransactionalTable());
     loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));

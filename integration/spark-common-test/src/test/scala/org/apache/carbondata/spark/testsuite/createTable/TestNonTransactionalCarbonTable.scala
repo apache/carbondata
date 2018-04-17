@@ -33,7 +33,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
 
-class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
+class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   var writerPath = new File(this.getClass.getResource("/").getPath
                             +
@@ -74,14 +74,16 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)
-          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).unManagedTable(true)
-            .uniqueIdentifier(
-              System.currentTimeMillis)
+          builder.withSchema(Schema.parseJson(schema))
+            .outputPath(writerPath)
+            .isTransactionalTable(false)
+            .uniqueIdentifier(System.currentTimeMillis)
             .buildWriterForCSVInput()
         } else {
-          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).unManagedTable(true)
-            .uniqueIdentifier(
-              System.currentTimeMillis).withBlockSize(2)
+          builder.withSchema(Schema.parseJson(schema))
+            .outputPath(writerPath)
+            .isTransactionalTable(false)
+            .uniqueIdentifier(System.currentTimeMillis).withBlockSize(2)
             .buildWriterForCSVInput()
         }
       var i = 0
@@ -145,7 +147,126 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
-  test("read unmanaged table, files written from sdk Writer Output)") {
+
+  test("test create External Table with insert into feature")
+  {
+    buildTestData(3, false)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql("DROP TABLE IF EXISTS t1")
+
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    sql("create table if not exists t1 (name string, age int, height double) STORED BY 'org.apache.carbondata.format'")
+    sql (s"""insert into t1 values ("aaaaa", 12, 20)""").show(200,false)
+    sql("select * from t1").show(200,false)
+    sql("insert into sdkOutputTable select * from t1").show(200,false)
+
+    checkAnswer(sql(s"""select * from sdkOutputTable where age = 12"""),
+      Seq(Row("aaaaa", 12, 20.0)))
+
+    sql("DROP TABLE sdkOutputTable")
+    sql("drop table t1")
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+  test("test create External Table with insert overwrite")
+  {
+    buildTestData(3, false)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql("DROP TABLE IF EXISTS t1")
+    sql("DROP TABLE IF EXISTS t2")
+    sql("DROP TABLE IF EXISTS t3")
+
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    sql("create table if not exists t1 (name string, age int, height double) STORED BY 'org.apache.carbondata.format'")
+    sql (s"""insert into t1 values ("aaaaa", 12, 20)""").show(200,false)
+
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable where age = 1"""),
+      Seq(Row(1)))
+
+    sql("insert overwrite table sdkOutputTable select * from t1").show(200,false)
+
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable where age = 1"""),
+      Seq(Row(0)))
+
+    sql("DROP TABLE if exists sdkOutputTable")
+    sql("drop table if exists t1")
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+
+  test("test create External Table with Load")
+  {
+    buildTestData(3, false)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql("DROP TABLE IF EXISTS t1")
+    sql("DROP TABLE IF EXISTS t2")
+    sql("DROP TABLE IF EXISTS t3")
+
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    sql("create table if not exists t1 (name string, age int, height double) STORED BY 'org.apache.carbondata.format'")
+    sql (s"""insert into t1 values ("aaaaa", 12, 20)""").show(200,false)
+
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable where age = 1"""),
+      Seq(Row(1)))
+
+    // scalastyle:off
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$resourcesPath/nontransactional.csv'
+         | INTO TABLE sdkOutputTable
+         | OPTIONS('HEADER'='true')
+       """.stripMargin)
+
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable where height = 6.2"""),
+      Seq(Row(1)))
+
+    sql("DROP TABLE if exists sdkOutputTable")
+    sql("drop table if exists t1")
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+
+
+  test("read non transactional table, files written from sdk Writer Output)") {
     buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable1")
@@ -186,7 +307,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
-  test("Test Blocked operations for unmanaged table ") {
+  test("Test Blocked operations for non transactional table ") {
     buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -200,79 +321,65 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
       sql("Alter table sdkOutputTable change age age BIGINT")
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
-    //2. Load
-    exception = intercept[MalformedCarbonCommandException] {
-      sql("LOAD DATA LOCAL INPATH '/path/to/data' INTO TABLE sdkOutputTable ")
-    }
-    assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
-
-    //3. Datamap creation
+    //2. Datamap creation
     exception = intercept[MalformedCarbonCommandException] {
       sql(
         "CREATE DATAMAP agg_sdkOutputTable ON TABLE sdkOutputTable USING \"preaggregate\" AS " +
         "SELECT name, sum(age) FROM sdkOutputTable GROUP BY name,age")
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
-    //4. Insert Into
-    exception = intercept[MalformedCarbonCommandException] {
-      sql("insert into table sdkOutputTable SELECT 20,'robotX',2.5")
-    }
-    assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
-
-    //5. compaction
+    //3. compaction
     exception = intercept[MalformedCarbonCommandException] {
       sql("ALTER TABLE sdkOutputTable COMPACT 'MAJOR'")
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
-    //6. Show segments
+    //4. Show segments
     exception = intercept[MalformedCarbonCommandException] {
       sql("Show segments for table sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
-    //7. Delete segment by ID
+    //5. Delete segment by ID
     exception = intercept[MalformedCarbonCommandException] {
       sql("DELETE FROM TABLE sdkOutputTable WHERE SEGMENT.ID IN (0)")
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
-    //8. Delete segment by date
+    //6. Delete segment by date
     exception = intercept[MalformedCarbonCommandException] {
       sql("DELETE FROM TABLE sdkOutputTable WHERE SEGMENT.STARTTIME BEFORE '2017-06-01 12:05:06'")
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
-    //9. Update column
+    //7. Update Segment
     exception = intercept[MalformedCarbonCommandException] {
       sql("UPDATE sdkOutputTable SET (age) = (age + 9) ").show(false)
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
-    //10. Delete column
+    //8. Delete Segment
     exception = intercept[MalformedCarbonCommandException] {
       sql("DELETE FROM sdkOutputTable where name='robot1'").show(false)
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
-    //11. Show partition
+    //9. Show partition
     exception = intercept[MalformedCarbonCommandException] {
       sql("Show partitions sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
     //12. Streaming table creation
     // No need as External table don't accept table properties
@@ -282,7 +389,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
       sql("ALTER TABLE sdkOutputTable RENAME to newTable")
     }
     assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
+      .contains("Unsupported operation on non transactional table"))
 
     sql("DROP TABLE sdkOutputTable")
     //drop table should not delete the files
@@ -369,6 +476,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
     Assert.assertNotEquals(1, dataFiles.length)
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql("DROP TABLE IF EXISTS t1")
 
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION

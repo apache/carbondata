@@ -48,11 +48,11 @@ public class CarbonLoadModel implements Serializable {
   private String tablePath;
 
   /*
-     This points if the carbonTable is a Unmanaged Table or not.
+     This points if the carbonTable is a Non Transactional Table or not.
      The path will be pointed by the tablePath. And there will be
-     no Metadata folder present for the unmanaged Table.
+     no Metadata folder present for the Non Transactional Table.
    */
-  private boolean carbonUnmanagedTable;
+  private boolean carbonTransactionalTable = true;
 
   private String csvHeader;
   private String[] csvHeaderColumns;
@@ -417,7 +417,7 @@ public class CarbonLoadModel implements Serializable {
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
     copy.tablePath = tablePath;
-    copy.carbonUnmanagedTable = carbonUnmanagedTable;
+    copy.carbonTransactionalTable = carbonTransactionalTable;
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
@@ -471,7 +471,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.defaultTimestampFormat = defaultTimestampFormat;
     copyObj.maxColumns = maxColumns;
     copyObj.tablePath = tablePath;
-    copyObj.carbonUnmanagedTable = carbonUnmanagedTable;
+    copyObj.carbonTransactionalTable = carbonTransactionalTable;
     copyObj.useOnePass = useOnePass;
     copyObj.dictionaryServerHost = dictionaryServerHost;
     copyObj.dictionaryServerPort = dictionaryServerPort;
@@ -835,11 +835,11 @@ public class CarbonLoadModel implements Serializable {
     setLoadMetadataDetails(Arrays.asList(details));
   }
 
-  public boolean isCarbonUnmanagedTable() {
-    return carbonUnmanagedTable;
+  public boolean isCarbonTransactionalTable() {
+    return carbonTransactionalTable;
   }
 
-  public void setCarbonUnmanagedTable(boolean carbonUnmanagedTable) {
-    this.carbonUnmanagedTable = carbonUnmanagedTable;
+  public void setCarbonTransactionalTable(boolean carbonTransactionalTable) {
+    this.carbonTransactionalTable = carbonTransactionalTable;
   }
 }

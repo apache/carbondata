@@ -64,7 +64,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       .toString()
 
     try {
-      val builder = CarbonWriter.builder()
+      val builder = CarbonWriter.builder().isTransactionalTable(true)
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)

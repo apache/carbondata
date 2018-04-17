@@ -88,7 +88,8 @@ public class CarbonInputFormatUtil {
     if (partitionNames != null) {
       CarbonInputFormat.setPartitionsToPrune(conf, partitionNames);
     }
-    CarbonInputFormat.setUnmanagedTable(conf, carbonTable.getTableInfo().isUnManagedTable());
+    CarbonInputFormat
+        .setTransactionalTable(conf, carbonTable.getTableInfo().isTransactionalTable());
     CarbonProjection columnProjection = new CarbonProjection(projectionColumns);
     return createInputFormat(conf, carbonTable.getAbsoluteTableIdentifier(),
         filterExpression, columnProjection, dataMapJob);

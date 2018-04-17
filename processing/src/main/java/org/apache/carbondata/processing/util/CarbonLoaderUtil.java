@@ -159,6 +159,30 @@ public final class CarbonLoaderUtil {
   }
 
   /**
+   * This API deletes the content of the non Transactional Tables when insert overwrite is set true.
+   *
+   * @param loadModel
+   * @throws IOException
+   */
+  public static void deleteNonTransactionalTableForInsertOverwrite(final CarbonLoadModel loadModel)
+      throws IOException {
+    // We need to delete the content of the Table Path Folder except the
+    // Newly added file.
+    List<String> filesToBeDeleted = new ArrayList<>();
+    CarbonFile carbonFile = FileFactory.getCarbonFile(loadModel.getTablePath());
+    CarbonFile[] filteredList = carbonFile.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return !file.getName().contains(loadModel.getFactTimeStamp() + "");
+      }
+    });
+    for (CarbonFile file : filteredList) {
+      filesToBeDeleted.add(file.getAbsolutePath());
+    }
+
+    deleteFiles(filesToBeDeleted);
+  }
+
+  /**
    * This API will write the load level metadata for the loadmanagement module inorder to
    * manage the load and query execution management smoothly.
    *
@@ -169,8 +193,13 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
+      final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
       throws IOException {
+    // For Non Transactional tables no need to update the the Table Status file.
+    if (!loadModel.isCarbonTransactionalTable()) {
+      return true;
+    }
+
     return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
         new ArrayList<Segment>(), new ArrayList<Segment>());
   }
@@ -191,10 +220,12 @@ public final class CarbonLoaderUtil {
     boolean status = false;
     AbsoluteTableIdentifier identifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
-    FileType fileType = FileFactory.getFileType(metadataPath);
-    if (!FileFactory.isFileExist(metadataPath, fileType)) {
-      FileFactory.mkdirs(metadataPath, fileType);
+    if (loadModel.isCarbonTransactionalTable()) {
+      String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
+      FileType fileType = FileFactory.getFileType(metadataPath);
+      if (!FileFactory.isFileExist(metadataPath, fileType)) {
+        FileFactory.mkdirs(metadataPath, fileType);
+      }
     }
     String tableStatusPath;
     if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !uuid.isEmpty()) {
@@ -432,6 +463,10 @@ public final class CarbonLoaderUtil {
     }
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
+
+    if (!model.isCarbonTransactionalTable() && insertOverwrite) {
+      CarbonLoaderUtil.deleteNonTransactionalTableForInsertOverwrite(model);
+    }
     boolean entryAdded = CarbonLoaderUtil
         .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid);
     if (!entryAdded) {
