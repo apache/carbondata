@@ -1643,7 +1643,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_MODE_THREAD_DEFAULT = "3";
 
   /*
-   * whether to enable prefetch during compaction
+   * whether to enable prefetch for rowbatch to enhance row reconstruction during compaction
    */
   @CarbonProperty
   public static final String CARBON_COMPACTION_PREFETCH_ENABLE =

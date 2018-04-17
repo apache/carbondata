@@ -142,18 +142,25 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     }
   }
 
+  /**
+   * populate a row with index counter increased
+   */
   private void popRow() {
     fillDataFromPrefetch();
     currentRawRow = currentBuffer.get(currentIdxInBuffer);
     currentIdxInBuffer++;
   }
 
+  /**
+   * populate a row with index counter unchanged
+   */
   private void pickRow() {
     fillDataFromPrefetch();
     currentRawRow = currentBuffer.get(currentIdxInBuffer);
   }
 
-  @Override public boolean hasNext() {
+  @Override
+  public boolean hasNext() {
     fillDataFromPrefetch();
     if (currentIdxInBuffer < currentBuffer.size()) {
       return true;
@@ -162,7 +169,8 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     return false;
   }
 
-  @Override public Object[] next() {
+  @Override
+  public Object[] next() {
     try {
       popRow();
       return convertRow(this.currentRawRow);
