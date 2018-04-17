@@ -235,6 +235,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
           isRecordFound = true;
         }
       }
+      resultIterator.close();
     }
     try {
       sortDataRows.startSorting();

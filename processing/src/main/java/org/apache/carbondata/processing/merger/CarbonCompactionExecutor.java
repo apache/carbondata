@@ -117,7 +117,7 @@ public class CarbonCompactionExecutor {
         LOGGER.info("for task -" + task + "-block size is -" + list.size());
         queryModel.setTableBlockInfos(list);
         resultList.add(new RawResultIterator(executeBlockList(list), sourceSegProperties,
-            destinationSegProperties));
+            destinationSegProperties, false));
       }
     }
     return resultList;

@@ -128,6 +128,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         // index
         if (!iterator.hasNext()) {
           index--;
+          iterator.close();
           continue;
         }
         // add record to heap
