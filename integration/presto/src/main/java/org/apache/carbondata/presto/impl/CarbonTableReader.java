@@ -315,7 +315,7 @@ public class CarbonTableReader {
     for (SchemaTableName table : tableList) {
       if (!table.equals(schemaTableName)) continue;
 
-      return parseCarbonMetadata(table);
+      return parseCarbonMetadata(table).carbonTable;
     }
     throw new TableNotFoundException(schemaTableName);
   }
@@ -326,14 +326,24 @@ public class CarbonTableReader {
    * @param table name of the given table.
    * @return the CarbonTable instance which contains all the needed metadata for a table.
    */
-  private CarbonTable parseCarbonMetadata(SchemaTableName table) {
+  private CarbonTableCacheModel parseCarbonMetadata(SchemaTableName table) {
     CarbonTable result = null;
+    CarbonTableCacheModel cache = null;
     try {
-      CarbonTableCacheModel cache = carbonCache.get().get(table);
-      if (cache == null) {
-        cache = new CarbonTableCacheModel();
+      cache = carbonCache.get().get(table);
+
+      if (cache != null && cache.isValid()) {
+        return cache;
       }
-      if (cache.isValid()) return cache.carbonTable;
+
+      synchronized(this) {
+        cache = carbonCache.get().get(table);
+        if (cache == null) {
+          cache = new CarbonTableCacheModel();
+        }
+      }
+
+      if (cache.isValid()) return cache;
 
       // If table is not previously cached, then:
 
@@ -380,12 +390,11 @@ public class CarbonTableReader {
       // cache the table
       carbonCache.get().put(table, cache);
 
-      result = cache.carbonTable;
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
 
-    return result;
+    return cache;
   }
 
   public List<CarbonLocalInputSplit> getInputSplits2(CarbonTableCacheModel tableCacheModel,
