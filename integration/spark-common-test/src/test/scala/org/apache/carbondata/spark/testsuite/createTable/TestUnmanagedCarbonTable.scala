@@ -179,6 +179,89 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
+  test("test create External Table with insert overwrite")
+  {
+    buildTestData(false, false)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql("DROP TABLE IF EXISTS t1")
+    sql("DROP TABLE IF EXISTS t2")
+    sql("DROP TABLE IF EXISTS t3")
+
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    sql("create table if not exists t1 (name string, age int, height double) STORED BY 'org.apache.carbondata.format'")
+    sql (s"""insert into t1 values ("aaaaa", 12, 20)""").show(200,false)
+
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable where age = 1"""),
+      Seq(Row(1)))
+
+    sql("insert overwrite table sdkOutputTable select * from t1").show(200,false)
+
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable where age = 1"""),
+      Seq(Row(0)))
+
+    sql("DROP TABLE if exists sdkOutputTable")
+    sql("drop table if exists t1")
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+
+  test("test create External Table with Load")
+  {
+    buildTestData(false, false)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql("DROP TABLE IF EXISTS t1")
+    sql("DROP TABLE IF EXISTS t2")
+    sql("DROP TABLE IF EXISTS t3")
+
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    sql("create table if not exists t1 (name string, age int, height double) STORED BY 'org.apache.carbondata.format'")
+    sql (s"""insert into t1 values ("aaaaa", 12, 20)""").show(200,false)
+
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable where age = 1"""),
+      Seq(Row(1)))
+
+    // scalastyle:off
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$resourcesPath/unmanaged.csv'
+         | INTO TABLE sdkOutputTable
+         | OPTIONS('HEADER'='true')
+       """.stripMargin)
+
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable where height = 6.2"""),
+      Seq(Row(1)))
+
+    sql("DROP TABLE if exists sdkOutputTable")
+    sql("drop table if exists t1")
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
 
 
   test("read unmanaged table, files written from sdk Writer Output)") {
@@ -238,14 +321,7 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //2. Load
-    exception = intercept[MalformedCarbonCommandException] {
-      sql("LOAD DATA LOCAL INPATH '/path/to/data' INTO TABLE sdkOutputTable ")
-    }
-    assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
-
-    //3. Datamap creation
+    //2. Datamap creation
     exception = intercept[MalformedCarbonCommandException] {
       sql(
         "CREATE DATAMAP agg_sdkOutputTable ON TABLE sdkOutputTable USING \"preaggregate\" AS " +
@@ -254,56 +330,49 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //4. Insert Into
-    exception = intercept[MalformedCarbonCommandException] {
-      sql("insert into table sdkOutputTable SELECT 20,'robotX',2.5")
-    }
-    assert(exception.getMessage()
-      .contains("Unsupported operation on unmanaged table"))
-
-    //5. compaction
+    //3. compaction
     exception = intercept[MalformedCarbonCommandException] {
       sql("ALTER TABLE sdkOutputTable COMPACT 'MAJOR'")
     }
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //6. Show segments
+    //4. Show segments
     exception = intercept[MalformedCarbonCommandException] {
       sql("Show segments for table sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //7. Delete segment by ID
+    //5. Delete segment by ID
     exception = intercept[MalformedCarbonCommandException] {
       sql("DELETE FROM TABLE sdkOutputTable WHERE SEGMENT.ID IN (0)")
     }
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //8. Delete segment by date
+    //6. Delete segment by date
     exception = intercept[MalformedCarbonCommandException] {
       sql("DELETE FROM TABLE sdkOutputTable WHERE SEGMENT.STARTTIME BEFORE '2017-06-01 12:05:06'")
     }
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //9. Update column
+    //7. Update Segment
     exception = intercept[MalformedCarbonCommandException] {
       sql("UPDATE sdkOutputTable SET (age) = (age + 9) ").show(false)
     }
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //10. Delete column
+    //8. Delete Segment
     exception = intercept[MalformedCarbonCommandException] {
       sql("DELETE FROM sdkOutputTable where name='robot1'").show(false)
     }
     assert(exception.getMessage()
       .contains("Unsupported operation on unmanaged table"))
 
-    //11. Show partition
+    //9. Show partition
     exception = intercept[MalformedCarbonCommandException] {
       sql("Show partitions sdkOutputTable").show(false)
     }
@@ -412,9 +481,6 @@ class TestUnmanagedCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select count(*) from sdkOutputTable"), Seq(Row(1000000)))
-
-
-
 
     // drop table should not delete the files
     assert(new File(writerPath).exists())

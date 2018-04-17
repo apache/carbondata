@@ -169,9 +169,25 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
+      final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
       throws IOException {
     if (loadModel.isCarbonUnmanagedTable()) {
+      if (insertOverwrite) {
+        // We need to delete the content of the Table Path Folder except the
+        // Newly added file.
+        List<String> filesToBeDeleted = new ArrayList<>();
+        CarbonFile carbonFile = FileFactory.getCarbonFile(loadModel.getTablePath());
+        CarbonFile[] filteredList = carbonFile.listFiles(new CarbonFileFilter() {
+          @Override public boolean accept(CarbonFile file) {
+            return !file.getName().contains(loadModel.getFactTimeStamp() + "");
+          }
+        });
+        for (CarbonFile file : filteredList) {
+          filesToBeDeleted.add(file.getAbsolutePath());
+        }
+
+        deleteFiles(filesToBeDeleted);
+      }
       return true;
     }
 

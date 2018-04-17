@@ -57,10 +57,11 @@ public class CarbonLoadModelBuilder {
   /**
    * build CarbonLoadModel for data loading
    * @param options Load options from user input
+   * @param taskNo
    * @return a new CarbonLoadModel instance
    */
-  public CarbonLoadModel build(
-      Map<String, String> options, long UUID) throws InvalidLoadOptionException, IOException {
+  public CarbonLoadModel build(Map<String, String> options, long UUID, String taskNo)
+      throws InvalidLoadOptionException, IOException {
     Map<String, String> optionsFinal = LoadOption.fillOptionWithDefaultValue(options);
 
     if (!options.containsKey("fileheader")) {
@@ -74,6 +75,7 @@ public class CarbonLoadModelBuilder {
     CarbonLoadModel model = new CarbonLoadModel();
     model.setCarbonUnmanagedTable(table.isUnManagedTable());
     model.setFactTimeStamp(UUID);
+    model.setTaskNo(taskNo);
 
     // we have provided 'fileheader', so it hadoopConf can be null
     build(options, optionsFinal, model, null);

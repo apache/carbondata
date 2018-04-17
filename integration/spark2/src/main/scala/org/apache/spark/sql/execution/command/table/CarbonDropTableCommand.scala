@@ -55,10 +55,13 @@ case class CarbonDropTableCommand(
     val dbName = identifier.getCarbonTableIdentifier.getDatabaseName
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
-      locksToBeAcquired foreach {
-        lock => carbonLocks += CarbonLockUtil.getLockObject(identifier, lock)
-      }
       carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+      if (!carbonTable.isUnManagedTable) {
+        locksToBeAcquired foreach {
+          lock => carbonLocks += CarbonLockUtil.getLockObject(identifier, lock)
+        }
+      }
+
       if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
         throw new ConcurrentOperationException(carbonTable, "loading", "drop table")
       }

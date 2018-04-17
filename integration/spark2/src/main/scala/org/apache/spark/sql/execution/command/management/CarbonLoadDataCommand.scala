@@ -153,9 +153,7 @@ case class CarbonLoadDataCommand(
     } else {
       null
     }
-//    if (table.getTableInfo.isUnManagedTable) {
-//      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
-//    }
+
     // get the value of 'spark.executor.cores' from spark conf, default value is 1
     val sparkExecutorCores = sparkSession.sparkContext.conf.get("spark.executor.cores", "1")
     // get the value of 'carbon.number.of.cores.while.loading' from carbon properties,
@@ -242,8 +240,7 @@ case class CarbonLoadDataCommand(
         // Clean up the old invalid segment data before creating a new entry for new load.
         SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, currPartitions)
         // add the start entry for the new load in the table status file
-        if (updateModel.isEmpty && !table.isHivePartitionTable &&
-            !carbonLoadModel.isCarbonUnmanagedTable) {
+        if (updateModel.isEmpty && !table.isHivePartitionTable) {
           CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
             carbonLoadModel,
             isOverwriteTable)

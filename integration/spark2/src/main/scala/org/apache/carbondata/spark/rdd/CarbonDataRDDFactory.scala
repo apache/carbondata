@@ -313,7 +313,7 @@ object CarbonDataRDDFactory {
       CarbonTablePath.addSegmentPrefix(carbonLoadModel.getSegmentId) + LockUsage.LOCK)
 
     try {
-      if (segmentLock.lockWithRetries()) {
+      if (carbonLoadModel.isCarbonUnmanagedTable || segmentLock.lockWithRetries()) {
         if (updateModel.isDefined) {
           res = loadDataFrameForUpdate(
             sqlContext,

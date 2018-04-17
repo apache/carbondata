@@ -97,6 +97,7 @@ public class CSVUnManagedCarbonWriterTest {
           .withSchema(schema)
           .unManagedTable(true)
           .uniqueIdentifier(System.currentTimeMillis())
+          .taskNo(Long.toString(System.nanoTime()))
           .outputPath(path);
       if (sortColumns != null) {
         builder = builder.sortBy(sortColumns);
@@ -160,6 +161,7 @@ public class CSVUnManagedCarbonWriterTest {
           .withSchema(new Schema(fields))
           .uniqueIdentifier(System.currentTimeMillis())
           .unManagedTable(true)
+          .taskNo(Long.toString(System.nanoTime()))
           .outputPath(path);
 
       CarbonWriter writer = builder.buildWriterForCSVInput();

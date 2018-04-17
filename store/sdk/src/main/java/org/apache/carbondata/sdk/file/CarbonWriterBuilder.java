@@ -57,6 +57,7 @@ public class CarbonWriterBuilder {
   private int blockSize;
   private boolean isUnManagedTable;
   private long UUID;
+  private String taskNo;
 
   /**
    * prepares the builder with the schema provided
@@ -89,6 +90,19 @@ public class CarbonWriterBuilder {
     this.sortColumns = sortColumns;
     return this;
   }
+
+  /**
+   * sets the taskNo for the writer. SDKs concurrently running
+   * will set taskNo in order to avoid conflits in file write.
+   * @param taskNo is the TaskNo user wants to specify. Mostly it system time.
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder taskNo(String taskNo) {
+    this.taskNo = taskNo;
+    return this;
+  }
+
+
 
   /**
    * If set, create a schema file in metadata folder.
@@ -180,7 +194,7 @@ public class CarbonWriterBuilder {
     }
 
     // build LoadModel
-    return buildLoadModel(table, UUID);
+    return buildLoadModel(table, UUID, taskNo);
   }
 
   /**
@@ -261,13 +275,13 @@ public class CarbonWriterBuilder {
   /**
    * Build a {@link CarbonLoadModel}
    */
-  private CarbonLoadModel buildLoadModel(CarbonTable table, long UUID)
+  private CarbonLoadModel buildLoadModel(CarbonTable table, long UUID, String taskNo)
       throws InvalidLoadOptionException, IOException {
     Map<String, String> options = new HashMap<>();
     if (sortColumns != null) {
       options.put("sort_columns", Strings.mkString(sortColumns, ","));
     }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
-    return builder.build(options, UUID);
+    return builder.build(options, UUID, taskNo);
   }
 }
