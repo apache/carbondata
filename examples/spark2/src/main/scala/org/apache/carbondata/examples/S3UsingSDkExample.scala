@@ -36,7 +36,7 @@ object S3UsingSDKExample {
       num: Int = 3,
       persistSchema: Boolean = false): Any = {
 
-    // getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+    // getCanonicalPath gives path with \, but the code expects /.
     val writerPath = path.replace("\\", "/");
 
     val fields: Array[Field] = new Array[Field](3)
