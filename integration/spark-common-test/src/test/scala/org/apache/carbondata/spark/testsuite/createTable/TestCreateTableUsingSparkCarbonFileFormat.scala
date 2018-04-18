@@ -153,6 +153,34 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     cleanTestData()
   }
 
+  test("Running SQL directly and read carbondata files (sdk Writer Output) using the SparkCarbonFileFormat ") {
+    buildTestData(false)
+    assert(new File(filePath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    //data source file format
+    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+      //data source file format
+      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      //data source file format
+      sql(
+        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
+           |'$filePath' """.stripMargin)
+    } else {
+      // TO DO
+    }
+
+    val directSQL = sql(s"""select * FROM  carbonfile.`$filePath`""".stripMargin)
+    directSQL.show(false)
+    checkAnswer(sql("select * from sdkOutputTable"), directSQL)
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(filePath).exists())
+    cleanTestData()
+  }
+
 
   test("should not allow to alter datasource carbontable ") {
     buildTestData(false)

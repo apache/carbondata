@@ -128,7 +128,14 @@ Each of SQL data types are mapped into data types of SDK. Following are the mapp
 | STRING | DataTypes.STRING |
 | DECIMAL | DataTypes.createDecimalType(precision, scale) |
 
+## Run SQL on files directly
+Instead of creating table and query it, you can also query that file directly with SQL.
 
+### Example
+```
+SELECT * FROM carbonfile.`$Path`
+```
+Find example code at [DirectSQLExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/DirectSQLExample.scala) in the CarbonData repo.
 ## API List
 
 ### Class org.apache.carbondata.sdk.file.CarbonWriterBuilder
