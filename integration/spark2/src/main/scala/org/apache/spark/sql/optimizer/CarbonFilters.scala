@@ -528,7 +528,7 @@ object CarbonFilters {
         // In case of compaction multiple segments will be passed as CARBON_INPUT_SEGMENTS.
         // Therefore partitionSpec will be extracted from all segments.
         val segments = segmentNumbersFromProperty.split(",").flatMap { a =>
-          val segment = Segment.toSegment(a)
+          val segment = Segment.toSegment(a, null)
           val segmentFile = new SegmentFileStore(table.getTablePath, segment.getSegmentFileName)
           segmentFile.getPartitionSpecs.asScala
         }

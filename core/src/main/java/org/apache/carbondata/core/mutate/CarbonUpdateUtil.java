@@ -248,7 +248,8 @@ public class CarbonUpdateUtil {
                 // update end timestamp for each time.
                 loadMetadata.setUpdateDeltaEndTimestamp(updatedTimeStamp);
               }
-              if (segmentFilesTobeUpdated.contains(Segment.toSegment(loadMetadata.getLoadName()))) {
+              if (segmentFilesTobeUpdated
+                  .contains(Segment.toSegment(loadMetadata.getLoadName(), null))) {
                 loadMetadata.setSegmentFile(loadMetadata.getLoadName() + "_" + updatedTimeStamp
                     + CarbonTablePath.SEGMENT_EXT);
               }
@@ -553,7 +554,7 @@ public class CarbonUpdateUtil {
           }
         }
         if (updateSegmentFile) {
-          segmentFilesToBeUpdated.add(Segment.toSegment(segment.getLoadName()));
+          segmentFilesToBeUpdated.add(Segment.toSegment(segment.getLoadName(), null));
         }
       }
     }

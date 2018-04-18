@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.readcommitter;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -29,7 +30,7 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
  */
 @InterfaceAudience.Internal
 @InterfaceStability.Stable
-public interface ReadCommittedScope {
+public interface ReadCommittedScope extends Serializable {
 
   public LoadMetadataDetails[] getSegmentList() throws IOException;
 

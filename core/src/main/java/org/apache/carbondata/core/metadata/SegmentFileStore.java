@@ -586,8 +586,8 @@ public class SegmentFileStore {
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
               .getValidAndInvalidSegments().getValidSegments());
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true,
-          Segment.toSegmentList(toBeDeleteSegments), Segment.toSegmentList(toBeUpdatedSegments),
-          uuid);
+          Segment.toSegmentList(toBeDeleteSegments, null),
+          Segment.toSegmentList(toBeUpdatedSegments, null), uuid);
     }
   }
 

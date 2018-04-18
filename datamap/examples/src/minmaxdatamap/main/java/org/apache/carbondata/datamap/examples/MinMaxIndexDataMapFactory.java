@@ -37,7 +37,6 @@ import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
@@ -98,13 +97,11 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * getDataMaps Factory method Initializes the Min Max Data Map and returns.
    *
    * @param segment
-   * @param readCommittedScope
    * @return
    * @throws IOException
    */
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(Segment segment,
-      ReadCommittedScope readCommittedScope)
+  public List<CoarseGrainDataMap> getDataMaps(Segment segment)
       throws IOException {
     List<CoarseGrainDataMap> dataMapList = new ArrayList<>();
     // Form a dataMap of Type MinMaxIndexDataMap.
@@ -144,10 +141,9 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   @Override public void clear() {
   }
 
-  @Override public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable,
-      ReadCommittedScope readCommittedScope)
+  @Override public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
-    return getDataMaps(distributable.getSegment(), readCommittedScope);
+    return getDataMaps(distributable.getSegment());
   }
 
   @Override public void fireEvent(Event event) {

@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
@@ -211,9 +212,11 @@ object PartitionUtils {
         identifier.getTablePath,
         alterPartitionModel.segmentId,
         alterPartitionModel.carbonLoadModel.getFactTimeStamp.toString)
-      val segmentFiles = Seq(new Segment(alterPartitionModel.segmentId, file)).asJava
+      val segmentFiles = Seq(new Segment(alterPartitionModel.segmentId, file, null))
+        .asJava
       if (!CarbonUpdateUtil.updateTableMetadataStatus(
-        new util.HashSet[Segment](Seq(new Segment(alterPartitionModel.segmentId, null)).asJava),
+        new util.HashSet[Segment](Seq(new Segment(alterPartitionModel.segmentId,
+          null, null)).asJava),
         carbonTable,
         alterPartitionModel.carbonLoadModel.getFactTimeStamp.toString,
         true,

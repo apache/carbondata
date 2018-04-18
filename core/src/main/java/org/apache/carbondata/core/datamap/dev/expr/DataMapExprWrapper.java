@@ -24,7 +24,6 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -37,8 +36,7 @@ public interface DataMapExprWrapper extends Serializable {
    * It get the blocklets from each leaf node datamap and apply expressions on the blocklets
    * using list of segments, it is used in case on non distributable datamap.
    */
-  List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune,
-      ReadCommittedScope readCommittedScope)
+  List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune)
       throws IOException;
 
   /**

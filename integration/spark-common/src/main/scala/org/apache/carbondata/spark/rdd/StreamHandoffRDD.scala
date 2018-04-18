@@ -203,7 +203,7 @@ class StreamHandoffRDD[K, V](
     val job = Job.getInstance(FileFactory.getConfiguration)
     val inputFormat = new CarbonTableInputFormat[Array[Object]]()
     val segmentList = new util.ArrayList[Segment](1)
-    segmentList.add(Segment.toSegment(handOffSegmentId))
+    segmentList.add(Segment.toSegment(handOffSegmentId, null))
     val splits = inputFormat.getSplitsOfStreaming(
       job,
       carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier,
