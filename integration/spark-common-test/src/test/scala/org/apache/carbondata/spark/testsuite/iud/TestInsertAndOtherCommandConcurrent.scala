@@ -293,9 +293,9 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
 
   override def clear(): Unit = {}
 
-  override def getDataMaps(distributable: DataMapDistributable, readCommitted: ReadCommittedScope): util.List[CoarseGrainDataMap] = ???
+  override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = ???
 
-  override def getDataMaps(segment: Segment, readCommitted: ReadCommittedScope): util.List[CoarseGrainDataMap] = ???
+  override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = ???
 
   override def createWriter(segment: Segment, writeDirectoryPath: String): DataMapWriter = {
     new DataMapWriter(identifier, segment, writeDirectoryPath) {

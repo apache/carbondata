@@ -42,6 +42,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   private String carbonFilePath;
   private ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot;
   private LoadMetadataDetails[] loadMetadataDetails;
+
   public LatestFilesReadCommittedScope(String path) {
     this.carbonFilePath = path;
     try {

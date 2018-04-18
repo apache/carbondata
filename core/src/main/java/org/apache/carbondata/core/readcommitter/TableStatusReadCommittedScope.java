@@ -35,12 +35,20 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 @InterfaceAudience.Internal
 @InterfaceStability.Stable
 public class TableStatusReadCommittedScope implements ReadCommittedScope {
+
   private LoadMetadataDetails[] loadMetadataDetails;
+
   private AbsoluteTableIdentifier identifier;
 
   public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier) throws IOException {
     this.identifier = identifier;
     takeCarbonIndexFileSnapShot();
+  }
+
+  public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
+      LoadMetadataDetails[] loadMetadataDetails) throws IOException {
+    this.identifier = identifier;
+    this.loadMetadataDetails = loadMetadataDetails;
   }
 
   @Override public LoadMetadataDetails[] getSegmentList() throws IOException {

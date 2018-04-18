@@ -131,7 +131,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       if (FileFactory.isFileExist(segmentDir, fileType)) {
         // if external table Segments are found, add it to the List
         List<Segment> externalTableSegments = new ArrayList<Segment>();
-        Segment seg = new Segment("null", null);
+        Segment seg = new Segment("null", null, readCommittedScope);
         externalTableSegments.add(seg);
 
         Map<String, String> indexFiles =
@@ -142,8 +142,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         }
         // do block filtering and get split
         List<InputSplit> splits =
-            getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null,
-                readCommittedScope);
+            getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null);
 
         return splits;
       }
@@ -161,7 +160,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    */
   private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
       List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
-      List<Integer> oldPartitionIdList, ReadCommittedScope readCommittedScope) throws IOException {
+      List<Integer> oldPartitionIdList) throws IOException {
 
     numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
@@ -175,7 +174,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment =
         getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
-            validSegments, partitionInfo, oldPartitionIdList, readCommittedScope);
+            validSegments, partitionInfo, oldPartitionIdList);
     numBlocks = dataBlocksOfSegment.size();
     for (CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 

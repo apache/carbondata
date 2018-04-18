@@ -72,7 +72,7 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
   /**
    * Get the datamap for segmentid
    */
-  override def getDataMaps(segment: Segment, readCommitted: ReadCommittedScope): java.util.List[FineGrainDataMap] = {
+  override def getDataMaps(segment: Segment): java.util.List[FineGrainDataMap] = {
     val file = FileFactory
       .getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo))
 
@@ -89,7 +89,7 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
   /**
    * Get datamap for distributable object.
    */
-  override def getDataMaps(distributable: DataMapDistributable, readCommitted: ReadCommittedScope): java.util.List[FineGrainDataMap]= {
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[FineGrainDataMap]= {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
     val dataMap: FineGrainDataMap = new FGDataMap()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath))

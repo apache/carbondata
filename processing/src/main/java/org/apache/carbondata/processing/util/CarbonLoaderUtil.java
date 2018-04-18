@@ -295,7 +295,8 @@ public final class CarbonLoaderUtil {
           // if the segments is in the list of marked for delete then update the status.
           if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName(), null))) {
             detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
-          } else if (segmentFilesTobeUpdated.contains(Segment.toSegment(detail.getLoadName()))) {
+          } else if (segmentFilesTobeUpdated
+              .contains(Segment.toSegment(detail.getLoadName(), null))) {
             detail.setSegmentFile(
                 detail.getLoadName() + "_" + newMetaEntry.getUpdateStatusFileName()
                     + CarbonTablePath.SEGMENT_EXT);

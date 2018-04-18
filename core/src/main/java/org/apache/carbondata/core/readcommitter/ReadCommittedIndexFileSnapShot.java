@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.readcommitter;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
  */
 @InterfaceAudience.Internal
 @InterfaceStability.Evolving
-public class ReadCommittedIndexFileSnapShot {
+public class ReadCommittedIndexFileSnapShot implements Serializable {
 
   /**
    * Segment Numbers are mapped with list of Index Files.

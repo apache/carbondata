@@ -216,15 +216,16 @@ class SparkCarbonFileFormat extends FileFormat
 
         val model = format.createQueryModel(split, attemptContext)
 
-        var segments = new java.util.ArrayList[Segment]()
-        val seg = new Segment("null", null)
-        segments.add(seg)
         var partition : java.util.List[PartitionSpec] = new java.util.ArrayList[PartitionSpec]()
-
 
         val segmentPath = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null")
         val readCommittedScope = new LatestFilesReadCommittedScope(
           identifier.getTablePath + "/Fact/Part0/Segment_null/")
+
+        var segments = new java.util.ArrayList[Segment]()
+        val seg = new Segment("null", null, readCommittedScope)
+        segments.add(seg)
+
         val indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(segmentPath)
         if (indexFiles.size() == 0) {
           throw new SparkException("Index file not present to read the carbondata file")
@@ -236,7 +237,7 @@ class SparkCarbonFileFormat extends FileFormat
           .choose(tab, model.getFilterExpressionResolverTree)
 
         // TODO : handle the partition for CarbonFileLevelFormat
-        val prunedBlocklets = dataMapExprWrapper.prune(segments, null, readCommittedScope)
+        val prunedBlocklets = dataMapExprWrapper.prune(segments, null)
 
         val detailInfo = prunedBlocklets.get(0).getDetailInfo
         detailInfo.readColumnSchema(detailInfo.getColumnSchemaBinary)

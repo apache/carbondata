@@ -42,7 +42,6 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.UpdateVO;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.SingleTableProvider;
 import org.apache.carbondata.core.scan.filter.TableProvider;
@@ -238,8 +237,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     String segmentNumbersFromProperty = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tbName, "*");
     if (!segmentNumbersFromProperty.trim().equals("*")) {
-      CarbonInputFormat
-          .setSegmentsToAccess(conf, Segment.toSegmentList(segmentNumbersFromProperty.split(",")));
+      CarbonInputFormat.setSegmentsToAccess(conf,
+          Segment.toSegmentList(segmentNumbersFromProperty.split(","), null));
     }
   }
 
@@ -249,7 +248,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setQuerySegment(Configuration conf, String segmentList) {
     if (!segmentList.trim().equals("*")) {
       CarbonInputFormat
-          .setSegmentsToAccess(conf, Segment.toSegmentList(segmentList.split(",")));
+          .setSegmentsToAccess(conf, Segment.toSegmentList(segmentList.split(","), null));
     }
   }
 
@@ -335,10 +334,9 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * get data blocks of given segment
    */
-  protected List<CarbonInputSplit> getDataBlocksOfSegment(JobContext job,
-      CarbonTable carbonTable, FilterResolverIntf resolver,
-      BitSet matchedPartitions, List<Segment> segmentIds, PartitionInfo partitionInfo,
-      List<Integer> oldPartitionIdList, ReadCommittedScope readCommittedScope) throws IOException {
+  protected List<CarbonInputSplit> getDataBlocksOfSegment(JobContext job, CarbonTable carbonTable,
+      FilterResolverIntf resolver, BitSet matchedPartitions, List<Segment> segmentIds,
+      PartitionInfo partitionInfo, List<Integer> oldPartitionIdList) throws IOException {
 
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
@@ -362,7 +360,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // Apply expression on the blocklets.
       prunedBlocklets = dataMapExprWrapper.pruneBlocklets(prunedBlocklets);
     } else {
-      prunedBlocklets = dataMapExprWrapper.prune(segmentIds, partitionsToPrune, readCommittedScope);
+      prunedBlocklets = dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
     }
 
     List<CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();

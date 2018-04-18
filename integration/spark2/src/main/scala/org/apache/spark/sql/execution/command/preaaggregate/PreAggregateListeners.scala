@@ -451,7 +451,7 @@ object LoadPostAggregateListener extends OperationEventListener {
               val segment = if (currentSegmentFile != null) {
                 new Segment(carbonLoadModel.getSegmentId, currentSegmentFile.toString)
               } else {
-                Segment.toSegment(carbonLoadModel.getSegmentId)
+                Segment.toSegment(carbonLoadModel.getSegmentId, null)
               }
               (TableIdentifier(table.getTableName, Some(table.getDatabaseName)), segment.toString)
             }

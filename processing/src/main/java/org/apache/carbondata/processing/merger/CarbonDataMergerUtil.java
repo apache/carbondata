@@ -231,8 +231,8 @@ public final class CarbonDataMergerUtil {
                     .setUpdateStatusFileName(CarbonUpdateUtil.getUpdateStatusFileName(timestamp));
               }
               // Update segement file name to status file
-              int segmentFileIndex =
-                  segmentFilesToBeUpdated.indexOf(Segment.toSegment(loadDetail.getLoadName()));
+              int segmentFileIndex = segmentFilesToBeUpdated
+                  .indexOf(Segment.toSegment(loadDetail.getLoadName(), null));
               if (segmentFileIndex > -1) {
                 loadDetail.setSegmentFile(
                     segmentFilesToBeUpdated.get(segmentFileIndex).getSegmentFileName());
@@ -857,9 +857,9 @@ public final class CarbonDataMergerUtil {
       //check if this load is an already merged load.
       if (null != segment.getMergedLoadName()) {
 
-        segments.add(Segment.toSegment(segment.getMergedLoadName()));
+        segments.add(Segment.toSegment(segment.getMergedLoadName(), null));
       } else {
-        segments.add(Segment.toSegment(segment.getLoadName()));
+        segments.add(Segment.toSegment(segment.getLoadName(), null));
       }
     }
     return segments;
