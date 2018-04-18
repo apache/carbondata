@@ -542,7 +542,7 @@ test("check load and select for avg double datatype") {
     checkAnswer(sql(s"SELECT * FROM main_table_preagg_sum"),
       Seq(Row(1, null), Row(2, null), Row(3, null), Row(4, null)))
     checkAnswer(sql(s"SELECT * FROM main_table_preagg_avg"),
-      Seq(Row(1, null, 0), Row(2, null, 0), Row(3, null, 0), Row(4, null, 0)))
+      Seq(Row(1, null, 1.0), Row(2, null, 1.0), Row(3, null, 2.0), Row(4, null, 2.0)))
     checkAnswer(sql(s"SELECT * FROM main_table_preagg_count"),
       Seq(Row(1, 1), Row(2, 1), Row(3, 2), Row(4, 2)))
     checkAnswer(sql(s"SELECT * FROM main_table_preagg_min"),

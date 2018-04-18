@@ -19,6 +19,7 @@ package org.apache.spark.sql.hive
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -657,22 +658,45 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       // get new fact expression
       val factExp = updateFactTablePlanForStreaming(factAggPlan)
       // get new Aggregate node expression
+      val aggPlanNew = updateAggTablePlanForStreaming(aggPlan)
       val streamingNodeExp = getExpressionsForStreaming(aggExp)
       // clear the expression as in case of streaming it is not required
       updatedExpression.clear
       // Add Aggregate node to aggregate data from fact and aggregate
       Aggregate(
-        grExp,
+        createNewAggGroupBy(grExp, factAggPlan),
         streamingNodeExp.asInstanceOf[Seq[NamedExpression]],
         // add union node to get the result from both
         Union(
           factExp,
-          aggPlan))
+      aggPlanNew))
     } else {
       aggPlan
     }
   }
 
+  /**
+   * create group by expression for newly Added Aggregate node
+   * @param grExp fact group by expression
+   * @param plan fact query plan
+   * @return group by expression
+   */
+  private def createNewAggGroupBy(grExp: Seq[Expression], plan: LogicalPlan): Seq[Expression] = {
+    grExp.map {
+      case attr: AttributeReference =>
+        val aggModel = AggExpToColumnMappingModel(
+          removeQualifiers(PreAggregateUtil.normalizeExprId(attr, plan.allAttributes)))
+        if (factPlanGrpExpForStreaming.get(aggModel).isDefined) {
+          factPlanGrpExpForStreaming.get(aggModel).get
+        } else {
+          attr
+        }
+      case exp: Expression =>
+        val aggModel = AggExpToColumnMappingModel(
+          removeQualifiers(PreAggregateUtil.normalizeExprId(exp, plan.allAttributes)))
+        factPlanGrpExpForStreaming.get(aggModel).get
+    }
+  }
   /**
    * Method to set the segments when query is fired on streaming table with pre aggregate
    * Adding a property streaming_seg so while removing from session params we can differentiate
@@ -721,6 +745,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * to support rollup
    */
   private val factPlanExpForStreaming = mutable.HashMap[String, Seq[NamedExpression]]()
+
+  private val factPlanGrpExpForStreaming = mutable
+    .HashMap[AggExpToColumnMappingModel, AttributeReference]()
 
   /**
    * Below method will be used to get the expression for Aggregate node added for streaming
@@ -773,13 +800,101 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
   private def updateFactTablePlanForStreaming(logicalPlan: LogicalPlan) : LogicalPlan = {
     // only aggregate expression needs to be updated
     logicalPlan.transform{
-      case agg@Aggregate(_, aggExp, _) =>
+      case agg@Aggregate(grpExp, aggExp, _) =>
         agg
-          .copy(aggregateExpressions = updateAggExpInFactForStreaming(aggExp)
+          .copy(aggregateExpressions = updateAggExpInFactForStreaming(aggExp, grpExp, agg)
             .asInstanceOf[Seq[NamedExpression]])
     }
   }
 
+  /**
+   * Below method will be used to update the aggregate table plan for streaming
+   * @param logicalPlan
+   * aggergate table logical plan
+   * @return updated logical plan
+   */
+  private def updateAggTablePlanForStreaming(logicalPlan: LogicalPlan) : LogicalPlan = {
+    // only aggregate expression needs to be updated
+    logicalPlan.transform{
+      case agg@Aggregate(grpExp, aggExp, _) =>
+        agg
+          .copy(aggregateExpressions = updateAggExpInAggForStreaming(aggExp, grpExp, agg)
+            .asInstanceOf[Seq[NamedExpression]])
+    }
+  }
+
+  /**
+   * Below method will be used to update the aggregate plan for streaming
+   * @param namedExp
+   * aggregate expression
+   * @param grpExp
+   * group by expression
+   * @param plan
+   * aggregate query plan
+   * @return updated aggregate expression
+   */
+  private def updateAggExpInAggForStreaming(namedExp : Seq[NamedExpression],
+      grpExp: Seq[Expression], plan: LogicalPlan) : Seq[Expression] = {
+    // removing alias from expression to compare with grouping expression
+    // as in case of alias all the projection column will be updated with alias
+    val updatedExp = namedExp.map {
+      case Alias(attr: AttributeReference, name) =>
+        attr
+      case exp: Expression =>
+        exp
+    }
+    addGrpExpToAggExp(grpExp, updatedExp, plan)
+  }
+
+  /**
+   * below method will be used to updated the aggregate expression with missing
+   * group by expression, when only aggregate expression is selected in query
+   *
+   * @param grpExp
+   * group by expressions
+   * @param aggExp
+   * aggregate expressions
+   * @param plan
+   * logical plan
+   * @return updated aggregate expression
+   */
+  private def addGrpExpToAggExp(grpExp: Seq[Expression],
+      aggExp: Seq[Expression],
+      plan: LogicalPlan): Seq[Expression] = {
+    // set to add all the current aggregate expression
+    val expressions = mutable.LinkedHashSet.empty[AggExpToColumnMappingModel]
+    aggExp.foreach {
+      case Alias(exp, _) =>
+      expressions +=
+      AggExpToColumnMappingModel(
+        PreAggregateUtil.normalizeExprId(exp, plan.allAttributes), None)
+      case attr: AttributeReference =>
+        expressions +=
+        AggExpToColumnMappingModel(
+          PreAggregateUtil.normalizeExprId(attr, plan.allAttributes), None)
+    }
+    val newAggExp = new ArrayBuffer[Expression]
+    newAggExp ++= aggExp
+    // for each group by expression check if already present in set if it is present
+    // then no need to add otherwise add
+    var counter = 0
+    grpExp.foreach{gExp =>
+      val normalizedExp = AggExpToColumnMappingModel(
+        PreAggregateUtil.normalizeExprId(gExp, plan.allAttributes), None)
+      if(!expressions.contains(normalizedExp)) {
+        gExp match {
+          case attr: AttributeReference =>
+            newAggExp += attr
+          case exp: Expression =>
+            newAggExp += Alias(
+              exp,
+              "dummy_" + counter)(NamedExpression.newExprId, None, None, false)
+            counter = counter + 1
+        }
+      }
+    }
+    newAggExp
+  }
   /**
    * Below method will be used to update the aggregate expression for streaming fact table plan
    * @param namedExp
@@ -787,8 +902,10 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * @return
    * Updated streaming fact plan aggregate expression
    */
-  private def updateAggExpInFactForStreaming(namedExp : Seq[NamedExpression]) : Seq[Expression] = {
-    val updatedExp = namedExp.flatMap {
+  private def updateAggExpInFactForStreaming(namedExp : Seq[NamedExpression],
+  grpExp: Seq[Expression], plan: LogicalPlan) : Seq[Expression] = {
+    val addedExp = addGrpExpToAggExp(grpExp, namedExp, plan)
+    val updatedExp = addedExp.flatMap {
       case attr: AttributeReference =>
         Seq(attr)
       case alias@Alias(aggExp: AggregateExpression, name) =>
@@ -796,18 +913,28 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         val newAggExp = getAggFunctionForFactStreaming(aggExp)
         val updatedExp = newAggExp.map { exp =>
           Alias(exp,
-            name)(
-            NamedExpression.newExprId,
-            alias.qualifier,
+              name)(
+              NamedExpression.newExprId,
+              alias.qualifier,
             Some(alias.metadata),
-            alias.isGenerated)
+              alias.isGenerated)
         }
         // adding to map which will be used while Adding an Aggregate node for handling streaming
         // table plan change
         factPlanExpForStreaming.put(name, updatedExp)
         updatedExp
-      case Alias(exp: Expression, _) =>
-        Seq(exp)
+      case alias@Alias(exp: Expression, name) =>
+        val newAlias = Seq(alias)
+        val attr = AttributeReference(name,
+            alias.dataType,
+            alias.nullable,
+            alias.metadata) (alias.exprId, alias.qualifier, alias.isGenerated)
+        factPlanGrpExpForStreaming.put(
+          AggExpToColumnMappingModel(
+            removeQualifiers(PreAggregateUtil.normalizeExprId(exp, plan.allAttributes))),
+            attr)
+        factPlanExpForStreaming.put(name, newAlias)
+        newAlias
     }
     updatedExp
   }
@@ -823,13 +950,13 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
   def getAggFunctionForFactStreaming(aggExp: AggregateExpression): Seq[Expression] = {
     aggExp.aggregateFunction match {
       case Average(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
-        val newExp = Seq(AggregateExpression(Sum(Cast(exp, changeDataType)),
+        val newExp = Seq(AggregateExpression(Sum(Cast(exp, DoubleType)),
           aggExp.mode,
           isDistinct = false),
           Cast(AggregateExpression(Count(exp), aggExp.mode, false), DoubleType))
         newExp
       case Average(exp: Expression) =>
-        val newExp = Seq(AggregateExpression(Sum(exp), aggExp.mode, false),
+        val newExp = Seq(AggregateExpression(Sum(Cast(exp, DoubleType)), aggExp.mode, false),
           Cast(AggregateExpression(Count(exp), aggExp.mode, false), DoubleType))
         newExp
       case _ =>
@@ -939,8 +1066,42 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       parentLogicalPlan)
     queryAggExpLogicalPlans.forall{p =>
       mappingModel.exists{m =>
-        PreAggregateUtil.normalizeExprId(p, parentLogicalPlan.allAttributes) == m.expression}
+        matchExpression(
+          PreAggregateUtil.normalizeExprId(p, parentLogicalPlan.allAttributes),
+          m.expression)}
     }
+  }
+
+  /**
+   * Below method will be used to update the expression
+   * It will remove the qualifiers
+   * @param expression
+   * expression
+   * @return updated expressions
+   */
+  private def removeQualifiers(expression: Expression) : Expression = {
+    expression.transform {
+      case attr: AttributeReference =>
+        AttributeReference(
+          attr.name,
+          attr.dataType,
+          attr.nullable,
+          attr.metadata)(attr.exprId, None, attr.isGenerated)
+    }
+  }
+
+  /**
+   * Below method will be used to match two expressions
+   * @param firstExp
+   * first expression
+   * @param secondExp
+   * second expressios
+   * @return is similare
+   */
+  private def matchExpression(firstExp: Expression, secondExp: Expression) : Boolean = {
+    val first = removeQualifiers(firstExp)
+    val second = removeQualifiers(secondExp)
+    first == second
   }
 
   /**
@@ -1357,8 +1518,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case (schemaAggExpModel)
         if updatedAggExp
           .exists(p =>
-            schemaAggExpModel.expression ==
-            PreAggregateUtil.normalizeExprId(p, parentLogicalPlan.allAttributes)) =>
+            matchExpression(schemaAggExpModel.expression,
+            PreAggregateUtil.normalizeExprId(p, parentLogicalPlan.allAttributes))) =>
         attributes filter (_.name.equalsIgnoreCase(
           schemaAggExpModel.columnSchema.get.asInstanceOf[ColumnSchema].getColumnName))
     }.flatten
@@ -1601,7 +1762,7 @@ case class CarbonPreAggregateDataLoadingRules(sparkSession: SparkSession)
           case alias@Alias(aggExp: AggregateExpression, name) =>
             // get the updated expression for avg convert it to two expression
             // sum and count
-            val expressions = PreAggregateUtil.validateAggregateFunctionAndGetFields(aggExp)
+            val expressions = PreAggregateUtil.validateAggregateFunctionAndGetFields(aggExp, false)
             // if size is more than one then it was for average
             if(expressions.size > 1) {
               val sumExp = PreAggregateUtil.normalizeExprId(

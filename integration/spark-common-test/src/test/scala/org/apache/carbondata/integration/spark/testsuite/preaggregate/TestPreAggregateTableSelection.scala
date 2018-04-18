@@ -88,6 +88,11 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg1")
   }
 
+  test("test PreAggregate table selection with table alias") {
+    val df = sql("select name, sum(age) from mainTable as t1 group by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg1")
+  }
+
   test("test PreAggregate table selection 6") {
     val df = sql("select sum(age) from mainTable group by name")
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg1")
