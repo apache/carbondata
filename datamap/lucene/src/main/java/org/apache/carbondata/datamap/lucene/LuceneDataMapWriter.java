@@ -20,7 +20,9 @@ package org.apache.carbondata.datamap.lucene;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
@@ -196,6 +198,18 @@ public class LuceneDataMapWriter extends DataMapWriter {
       ramDir.close();
       return;
     }
+
+    // Build a mapping of column name to column index, so that we can
+    // get the indexed column by index when we add fields into lucene document below
+    int[] luceneColumnIndex = new int[indexedCarbonColumns.size()];
+    Map<String, Integer> map = new HashMap<>();
+    for (int i = 0; i < pages.length; i++) {
+      map.put(pages[i].getColumnSpec().getFieldName(), i);
+    }
+    for (int i = 0; i < indexedCarbonColumns.size(); i++) {
+      luceneColumnIndex[i] = map.get(indexedCarbonColumns.get(i));
+    }
+
     int pageSize = pages[0].getPageSize();
     for (int rowId = 0; rowId < pageSize; rowId++) {
       // create a new document
@@ -222,12 +236,10 @@ public class LuceneDataMapWriter extends DataMapWriter {
         //doc.add(new NumericDocValuesField(ROWID_NAME,rowId));
       }
 
-      // add other fields
-      for (int colIdx = 0; colIdx < columnsCount; colIdx++) {
-        if (indexedCarbonColumns.contains(pages[colIdx].getColumnSpec().getFieldName())) {
-          if (!pages[colIdx].getNullBits().get(rowId)) {
-            addField(doc, pages[colIdx], rowId, Field.Store.NO);
-          }
+      // add indexed columns value into the document
+      for (int colIdx = 0; colIdx < luceneColumnIndex.length; colIdx++) {
+        if (!pages[luceneColumnIndex[colIdx]].getNullBits().get(rowId)) {
+          addField(doc, pages[luceneColumnIndex[colIdx]], rowId, Field.Store.NO);
         }
       }
 
