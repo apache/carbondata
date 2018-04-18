@@ -45,7 +45,7 @@ class TestCreateTableWithTableComment extends QueryTest with BeforeAndAfterAll {
 
     val result = sql("describe formatted withTableComment")
 
-    checkExistence(result, true, "Comment:")
+    checkExistence(result, true, "Comment")
     checkExistence(result, true, "This table has table comment")
   }
 
@@ -62,7 +62,7 @@ class TestCreateTableWithTableComment extends QueryTest with BeforeAndAfterAll {
 
     val result = sql("describe formatted withoutTableComment")
 
-    checkExistence(result, true, "Comment:")
+    checkExistence(result, true, "Comment")
     checkExistence(result, false, "This table has table comment")
   }
 

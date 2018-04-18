@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.carbon.datastorage.filesystem.store.impl;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -43,6 +44,10 @@ public class FileFactoryImplUnitTest {
 
   @AfterClass
   public static void tearDown() {
+    cleanUp();
+  }
+
+  private static void cleanUp() {
     File file = new File(filePath);
     if (file.exists()) {
       file.delete();
@@ -83,17 +88,17 @@ public class FileFactoryImplUnitTest {
   }
 
   @Test public void testCreateNewFileWithDefaultFileType() throws IOException {
-    tearDown();
+    cleanUp();
     assertTrue(FileFactory.createNewFile(filePath, FileFactory.FileType.LOCAL));
   }
 
   @Test public void testCreateNewLockFileWithDefaultFileType() throws IOException {
-    tearDown();
+    cleanUp();
     assertTrue(FileFactory.createNewLockFile(filePath, FileFactory.FileType.LOCAL));
   }
 
   @Test public void testCreateNewLockFileWithViewFsFileType() throws IOException {
-    tearDown();
+    cleanUp();
     assertTrue(FileFactory.createNewLockFile(filePath, FileFactory.FileType.VIEWFS));
   }
 
@@ -129,20 +134,29 @@ public class FileFactoryImplUnitTest {
     assertTrue(FileFactory.mkdirs(filePath, FileFactory.FileType.VIEWFS));
   }
 
-  @Test public void testGetDataOutputStreamUsingAppendeForException() {
+  @Test public void testGetDataOutputStreamUsingAppendeForException() throws IOException {
+    DataOutputStream outputStream = null;
     try {
-      FileFactory.getDataOutputStreamUsingAppend(filePath, FileFactory.FileType.VIEWFS);
+      outputStream = FileFactory.getDataOutputStreamUsingAppend(filePath, FileFactory.FileType.VIEWFS);
     } catch (Exception exception) {
       assertEquals("Not supported", exception.getMessage());
+    } finally {
+      if (null != outputStream) {
+        outputStream.close();
+      }
     }
   }
 
   @Test public void getDataOutputStreamForVIEWFSType() throws IOException {
-    assertNotNull(FileFactory.getDataOutputStream(filePath, FileFactory.FileType.VIEWFS));
+    DataOutputStream outputStream = FileFactory.getDataOutputStream(filePath, FileFactory.FileType.VIEWFS);
+    assertNotNull(outputStream);
+    outputStream.close();
   }
 
   @Test public void getDataOutputStreamForLocalType() throws IOException {
-    assertNotNull(FileFactory.getDataOutputStream(filePath, FileFactory.FileType.LOCAL));
+    DataOutputStream outputStream = FileFactory.getDataOutputStream(filePath, FileFactory.FileType.LOCAL);
+    assertNotNull(outputStream);
+    outputStream.close();
   }
 
   @Test public void testGetCarbonFile() throws IOException {

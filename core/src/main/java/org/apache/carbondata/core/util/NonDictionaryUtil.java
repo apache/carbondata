@@ -82,18 +82,26 @@ public class NonDictionaryUtil {
   }
 
   /**
-   * Method to get the required Dimension from obj []
+   * Method to get the required dictionary Dimension from obj []
    *
    * @param index
    * @param row
    * @return
    */
-  public static Integer getDimension(int index, Object[] row) {
-
-    Integer[] dimensions = (Integer[]) row[WriteStepRowUtil.DICTIONARY_DIMENSION];
-
+  public static int getDictDimension(int index, Object[] row) {
+    int[] dimensions = (int[]) row[WriteStepRowUtil.DICTIONARY_DIMENSION];
     return dimensions[index];
+  }
 
+  /**
+   * Method to get the required non-dictionary & complex from 3-parted row
+   * @param index
+   * @param row
+   * @return
+   */
+  public static byte[] getNoDictOrComplex(int index, Object[] row) {
+    byte[][] nonDictArray = (byte[][]) row[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX];
+    return nonDictArray[index];
   }
 
   /**
@@ -108,60 +116,11 @@ public class NonDictionaryUtil {
     return measures[index];
   }
 
-  public static byte[] getByteArrayForNoDictionaryCols(Object[] row) {
-
-    return (byte[]) row[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX];
-  }
-
   public static void prepareOutObj(Object[] out, int[] dimArray, byte[][] byteBufferArr,
       Object[] measureArray) {
-
     out[WriteStepRowUtil.DICTIONARY_DIMENSION] = dimArray;
     out[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX] = byteBufferArr;
     out[WriteStepRowUtil.MEASURE] = measureArray;
-
-  }
-
-  /**
-   * This method will extract the single dimension from the complete high card dims byte[].+     *
-   * The format of the byte [] will be,  Totallength,CompleteStartOffsets,Dat
-   *
-   * @param highCardArr
-   * @param index
-   * @param highCardinalityCount
-   * @param outBuffer
-   */
-  public static void extractSingleHighCardDims(byte[] highCardArr, int index,
-      int highCardinalityCount, ByteBuffer outBuffer) {
-    ByteBuffer buff = null;
-    short secIndex = 0;
-    short firstIndex = 0;
-    int length;
-    // if the requested index is a last one then we need to calculate length
-    // based on byte[] length.
-    if (index == highCardinalityCount - 1) {
-      // need to read 2 bytes(1 short) to determine starting offset and
-      // length can be calculated by array length.
-      buff = ByteBuffer.wrap(highCardArr, (index * 2) + 2, 2);
-    } else {
-      // need to read 4 bytes(2 short) to determine starting offset and
-      // length.
-      buff = ByteBuffer.wrap(highCardArr, (index * 2) + 2, 4);
-    }
-
-    firstIndex = buff.getShort();
-    // if it is a last dimension in high card then this will be last
-    // offset.so calculate length from total length
-    if (index == highCardinalityCount - 1) {
-      secIndex = (short) highCardArr.length;
-    } else {
-      secIndex = buff.getShort();
-    }
-
-    length = secIndex - firstIndex;
-
-    outBuffer.position(firstIndex);
-    outBuffer.limit(outBuffer.position() + length);
 
   }
 }

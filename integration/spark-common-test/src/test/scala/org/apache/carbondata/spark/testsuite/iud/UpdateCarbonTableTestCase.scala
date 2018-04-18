@@ -16,9 +16,13 @@
  */
 package org.apache.carbondata.spark.testsuite.iud
 
-import org.apache.spark.sql.{Row, SaveMode}
+import java.io.File
+
+import org.apache.spark.sql.test.Spark2TestQueryExecutor
+import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
@@ -294,7 +298,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val exception = intercept[Exception] {
       sql("""update iud.dest d set (c2, c5 ) = (c2 + 1, concat(c5 , "z"), "abc")""").show()
     }
-    assertResult("Number of source and destination columns are not matching")(exception.getMessage)
+    assertResult("The number of columns in source table and destination table columns mismatch;")(exception.getMessage)
   }
 
   test("update carbon table-error[no set columns") {
@@ -394,12 +398,12 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud.show_segment""").show
     sql("""create table iud.show_segment (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.show_segment""")
-    val before_update = sql("""show segments for table iud.show_segment""").toDF()
+    val before_update = sql("""show segments for table iud.show_segment""").collect()
     sql("""update iud.show_segment d set (d.c3, d.c5 ) = (select s.c33,s.c55 from iud.source2 s where d.c1 = s.c11) where 1 = 1""").show()
-    val after_update = sql("""show segments for table iud.show_segment""").toDF()
+    val after_update = sql("""show segments for table iud.show_segment""")
     checkAnswer(
-      before_update,
-      after_update
+      after_update,
+      before_update
     )
     sql("""drop table if exists iud.show_segment""").show
   }
@@ -424,7 +428,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("More records after update operation ") {
-    sql("DROP TABLE IF EXISTS default.carbon1")
+    sql("DROP TABLE IF EXISTS carbon1")
     import sqlContext.implicits._
     val df = sqlContext.sparkContext.parallelize(1 to 36000)
       .map(x => (x+"a", "b", x))
@@ -437,15 +441,15 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
 
-    checkAnswer(sql("select count(*) from default.carbon1"), Seq(Row(36000)))
+    checkAnswer(sql("select count(*) from carbon1"), Seq(Row(36000)))
 
-    sql("update default.carbon1 set (c1)=('test123') where c1='9999a'").show()
+    sql("update carbon1 set (c1)=('test123') where c1='9999a'").show()
 
-    checkAnswer(sql("select count(*) from default.carbon1"), Seq(Row(36000)))
+    checkAnswer(sql("select count(*) from carbon1"), Seq(Row(36000)))
 
-    checkAnswer(sql("select * from default.carbon1 where c1 = 'test123'"), Row("test123","b",9999))
+    checkAnswer(sql("select * from carbon1 where c1 = 'test123'"), Row("test123","b",9999))
 
-    sql("DROP TABLE IF EXISTS default.carbon1")
+    sql("DROP TABLE IF EXISTS carbon1")
   }
 
   test("""CARBONDATA-1445 carbon.update.persist.enable=false it will fail to update data""") {
@@ -455,8 +459,8 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val df = sqlContext.sparkContext.parallelize(0 to 50)
       .map(x => ("a", x.toString, (x % 2).toString, x, x.toLong, x * 2))
       .toDF("stringField1", "stringField2", "stringField3", "intField", "longField", "int2Field")
-    sql("DROP TABLE IF EXISTS default.study_carbondata ")
-    sql(s""" CREATE TABLE IF NOT EXISTS default.study_carbondata (
+    sql("DROP TABLE IF EXISTS study_carbondata ")
+    sql(s""" CREATE TABLE IF NOT EXISTS study_carbondata (
            |    stringField1          string,
            |    stringField2          string,
            |    stringField3          string,
@@ -473,14 +477,14 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Append)
       .save()
     sql("""
-      UPDATE default.study_carbondata a
+      UPDATE study_carbondata a
           SET (a.stringField1, a.stringField2) = (concat(a.stringField1 , "_test" ), concat(a.stringField2 , "_test" ))
       WHERE a.stringField2 = '1'
       """).show()
-    assert(sql("select stringField1 from default.study_carbondata where stringField2 = '1_test'").collect().length == 1)
+    assert(sql("select stringField1 from study_carbondata where stringField2 = '1_test'").collect().length == 1)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.isPersistEnabled, "true")
-    sql("DROP TABLE IF EXISTS default.study_carbondata ")
+    sql("DROP TABLE IF EXISTS study_carbondata ")
   }
 
   test("update table in carbondata with rand() ") {
@@ -526,6 +530,179 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     }.getMessage.contains("Update operation is not supported for pre-aggregate table")
     sql("drop table if exists preaggMain")
     sql("drop table if exists preaggMain_preagg1")
+  }
+
+  test("Update operation on carbon table with singlepass") {
+    sql(s"""set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS }=true""")
+    sql("drop database if exists carbon cascade")
+    sql(s"create database carbon location '$dblocation'")
+    sql("use carbon")
+    sql("""CREATE TABLE carbontable(id int, name string, city string, age int)
+         STORED BY 'org.apache.carbondata.format'""")
+    val testData = s"$resourcesPath/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table carbontable")
+    // update operation
+    sql("""update carbon.carbontable d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    checkAnswer(
+      sql("select count(*) from carbontable"),
+      Seq(Row(6))
+    )
+    sql(s"""set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS }=false""")
+    sql("drop table carbontable")
+  }
+  test("Update operation on carbon table with persist false") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.isPersistEnabled, "false")
+    sql("drop database if exists carbon cascade")
+    sql(s"create database carbon location '$dblocation'")
+    sql("use carbon")
+    sql("""CREATE TABLE carbontable(id int, name string, city string, age int)
+         STORED BY 'org.apache.carbondata.format'""")
+    val testData = s"$resourcesPath/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table carbontable")
+    // update operation
+    sql("""update carbon.carbontable d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    checkAnswer(
+      sql("select count(*) from carbontable"),
+      Seq(Row(6))
+    )
+    sql("drop table carbontable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.isPersistEnabled,
+        CarbonCommonConstants.defaultValueIsPersistEnabled)
+  }
+
+  test("partition test update operation with 0 rows updation.") {
+    sql("""drop table if exists iud.zerorows_part""").show
+    sql("""create table iud.zerorows_part (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows_part""")
+    sql("""update iud.zerorows_part d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
+    sql("""update iud.zerorows_part d  set (d.c2) = (d.c2 + 1) where d.c1 = 'xxx'""").show()
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from iud.zerorows_part"""),
+      Seq(Row("a",2,"aa","aaa"),Row("b",2,"bb","bbb"),Row("c",3,"cc","ccc"),Row("d",4,"dd","ddd"),Row("e",5,"ee","eee"))
+    )
+    sql("""drop table iud.zerorows_part""").show
+
+  }
+
+
+  test("partition update carbon table[select from source table with where and exist]") {
+    sql("""drop table if exists iud.dest11_part""").show
+    sql("""create table iud.dest11_part (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest11_part""")
+    sql("""update iud.dest11_part d set (d.c3, d.c5 ) = (select s.c33,s.c55 from iud.source2 s where d.c1 = s.c11) where 1 = 1""").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest11_part"""),
+      Seq(Row("cc","ccc"), Row("dd","ddd"),Row("ee","eee"), Row("MGM","Disco"),Row("RGK","Music"))
+    )
+    sql("""drop table iud.dest11_part""").show
+  }
+
+  test("partition update carbon table[using destination table columns with where and exist]") {
+    sql("""drop table if exists iud.dest22_part""")
+    sql("""create table iud.dest22_part (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest22_part""")
+    checkAnswer(
+      sql("""select c2 from iud.dest22_part where c1='a'"""),
+      Seq(Row(1))
+    )
+    sql("""update iud.dest22_part d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
+    checkAnswer(
+      sql("""select c2 from iud.dest22_part where c1='a'"""),
+      Seq(Row(2))
+    )
+    sql("""drop table if exists iud.dest22_part""")
+  }
+
+  test("partition update carbon table without alias in set columns") {
+    sql("""drop table if exists iud.dest33_part""")
+    sql("""create table iud.dest33_part (c2 int,c3 string,c5 string) PARTITIONED BY(c1 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest33_part""")
+    sql("""update iud.dest33_part d set (c3,c5 ) = (select s.c33 ,s.c55  from iud.source2 s where d.c1 = s.c11) where d.c1 = 'a'""").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest33_part where c1='a'"""),
+      Seq(Row("MGM","Disco"))
+    )
+    sql("""drop table if exists iud.dest33_part""")
+  }
+
+  test("partition update carbon table without alias in set columns with mulitple loads") {
+    sql("""drop table if exists iud.dest33_part""")
+    sql("""create table iud.dest33_part (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest33_part""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest33_part""")
+    sql("""update iud.dest33_part d set (c3,c5 ) = (select s.c33 ,s.c55  from iud.source2 s where d.c1 = s.c11) where d.c1 = 'a'""").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest33_part where c1='a'"""),
+      Seq(Row("MGM","Disco"),Row("MGM","Disco"))
+    )
+    sql("""drop table if exists iud.dest33_part""")
+  }
+
+  test("test create table with tupleid as column name") {
+    try {
+      sql("create table create_with_tupleid_column(item int, tupleId String) stored by " +
+          "'carbondata'")
+    } catch {
+      case ex: Exception =>
+        assert(ex.getMessage.contains("not allowed in column name while creating table"))
+    }
+  }
+
+  test("test create table with position reference as column name") {
+    try {
+      sql(
+        "create table create_with_positionReference_column(item int, positionReference String) " +
+        "stored by 'carbondata'")
+    } catch {
+      case ex: Exception =>
+        assert(ex.getMessage.contains("not allowed in column name while creating table"))
+    }
+  }
+
+  test("test create table with position id as column name") {
+    try {
+      sql(
+        "create table create_with_positionid_column(item int, positionId String) stored by " +
+        "'carbondata'")
+    } catch {
+      case ex: Exception =>
+        assert(ex.getMessage.contains("not allowed in column name while creating table"))
+    }
+  }
+
+  test("empty folder creation after compaction and update") {
+    sql("drop table if exists t")
+    sql("create table t (c1 string, c2 string, c3 int, c4 string) stored by 'carbondata'")
+    sql("insert into t select 'asd','sdf',1,'dfg'")
+    sql("insert into t select 'asdf','sadf',2,'dafg'")
+    sql("insert into t select 'asdq','sqdf',3,'dqfg'")
+    sql("insert into t select 'aswd','sdfw',4,'dfgw'")
+    sql("insert into t select 'aesd','sdef',5,'dfge'")
+    sql("alter table t compact 'minor'")
+    sql("clean files for table t")
+    sql("delete from t where c3 = 2").show()
+    sql("update t set(c4) = ('yyy') where c3 = 3").show()
+    checkAnswer(sql("select count(*) from t where c4 = 'yyy'"), Seq(Row(1)))
+    val f = new File(dblocation + CarbonCommonConstants.FILE_SEPARATOR +
+                     CarbonCommonConstants.FILE_SEPARATOR + "t" +
+                     CarbonCommonConstants.FILE_SEPARATOR + "Fact" +
+                     CarbonCommonConstants.FILE_SEPARATOR + "Part0")
+    assert(f.list().length == 2)
+  }
+  test("test sentences func in update statement") {
+    sql("drop table if exists senten")
+    sql("create table senten(name string, comment string) stored by 'carbondata'")
+    sql("insert into senten select 'aaa','comment for aaa'")
+    sql("insert into senten select 'bbb','comment for bbb'")
+    sql("select * from senten").show()
+    val errorMessage = intercept[Exception] {
+      sql("update senten set(comment)=(sentences('Hello there! How are you?'))").show()
+    }.getMessage
+    errorMessage
+      .contains("Unsupported data type: Array")
+    sql("drop table if exists senten")
   }
 
   override def afterAll {

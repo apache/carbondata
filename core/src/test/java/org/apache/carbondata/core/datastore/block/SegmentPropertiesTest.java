@@ -84,7 +84,7 @@ public class SegmentPropertiesTest extends TestCase {
     assertTrue(true);
   }
 
-  @Test public void testBlockMetadataHasProperDimensionBlockMapping() {
+  @Test public void testBlockMetadataHasProperDimensionChunkMapping() {
     Map<Integer, Integer> dimensionOrdinalToBlockMapping = new HashMap<Integer, Integer>();
     dimensionOrdinalToBlockMapping.put(0, 0);
     dimensionOrdinalToBlockMapping.put(1, 1);
@@ -97,7 +97,7 @@ public class SegmentPropertiesTest extends TestCase {
     dimensionOrdinalToBlockMapping.put(8, 5);
     dimensionOrdinalToBlockMapping.put(9, 6);
     Map<Integer, Integer> dimensionOrdinalToBlockMappingActual =
-        blockMetadataInfos.getDimensionOrdinalToBlockMapping();
+        blockMetadataInfos.getDimensionOrdinalToChunkMapping();
     assertEquals(dimensionOrdinalToBlockMapping.size(),
         dimensionOrdinalToBlockMappingActual.size());
     Iterator<Entry<Integer, Integer>> iterator =
@@ -112,12 +112,12 @@ public class SegmentPropertiesTest extends TestCase {
     assertTrue(true);
   }
 
-  @Test public void testBlockMetadataHasProperMeasureBlockMapping() {
+  @Test public void testBlockMetadataHasProperMeasureChunkMapping() {
     Map<Integer, Integer> measureOrdinalToBlockMapping = new HashMap<Integer, Integer>();
     measureOrdinalToBlockMapping.put(0, 0);
     measureOrdinalToBlockMapping.put(1, 1);
     Map<Integer, Integer> measureOrdinalToBlockMappingActual =
-        blockMetadataInfos.getMeasuresOrdinalToBlockMapping();
+        blockMetadataInfos.getMeasuresOrdinalToChunkMapping();
     assertEquals(measureOrdinalToBlockMapping.size(), measureOrdinalToBlockMappingActual.size());
     Iterator<Entry<Integer, Integer>> iterator = measureOrdinalToBlockMapping.entrySet().iterator();
     while (iterator.hasNext()) {

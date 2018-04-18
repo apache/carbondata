@@ -34,6 +34,34 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
                                   + "../../../..").getCanonicalPath
   private val storePath = s"$rootPath/integration/presto/target/store"
 
+
+  // Table schema:
+  // +-------------+----------------+-------------+------------+
+  // | Column name | Data type      | Column type | Dictionary |
+  // +-------------+----------------+--------------+-----------+
+  // | id          | string         | dimension   | yes        |
+  // +-------------+----------------+-------------+------------+
+  // | date        | date           | dimension   | yes        |
+  // +-------------+----------------+-------------+------------+
+  // | country     | string         | dimension   | yes        |
+  // +-------------+----------------+-------------+-------------
+  // | name        | string         | dimension   | yes        |
+  // +-------------+----------------+-------------+-------------
+  // | phonetype   | string         | dimension   | yes        |
+  // +-------------+----------------+-------------+-------------
+  // | serialname  | string         | dimension   | true       |
+  // +-------------+----------------+-------------+-------------
+  // | bonus       |short decimal   | measure     | false      |
+  // +-------------+----------------+-------------+-------------
+  // | monthlyBonus| longdecimal    | measure     | false      |
+  // +-------------+----------------+-------------+-------------
+  // | dob         | timestamp      | dimension   | true       |
+  // +-------------+----------------+-------------+------------+
+  // | shortField  | shortfield     | measure     | true       |
+  // +-------------+----------------+-------------+-------------
+  // |isCurrentEmp | boolean        | measure     | true       |
+  // +-------------+----------------+-------------+------------+
+
   override def beforeAll: Unit = {
     import org.apache.carbondata.presto.util.CarbonDataStoreCreator
     CarbonDataStoreCreator
@@ -50,7 +78,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
   test("test the result for count(*) in presto") {
     val actualResult: List[Map[String, Any]] = PrestoServer
       .executeQuery("SELECT COUNT(*) AS RESULT FROM TESTDB.TESTTABLE ")
-    val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 10))
+    val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 11))
     assert(actualResult.equals(expectedResult))
   }
   test("test the result for count() clause with distinct operator in presto") {
@@ -160,7 +188,9 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       Map("NAME" -> "liang"),
       Map("NAME" -> "prince"),
       Map("NAME" -> "ravindra"),
-      Map("NAME" -> "sahil"))
+      Map("NAME" -> "sahil"),
+      Map("NAME" -> null)
+    )
     assert(actualResult.equals(expectedResult))
   }
   test("select DATE type with order by clause") {
@@ -175,7 +205,9 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       Map("DATE" -> "2015-07-28"),
       Map("DATE" -> "2015-07-29"),
       Map("DATE" -> "2015-07-30"),
-      Map("DATE" -> null))
+      Map("DATE" -> null),
+      Map("DATE" -> null)
+    )
 
     assert(actualResult.filterNot(_.get("DATE") == null).zipWithIndex.forall {
       case (map, index) => map.get("DATE").toString
@@ -194,7 +226,9 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       Map("ID" -> 6),
       Map("ID" -> 7),
       Map("ID" -> 8),
-      Map("ID" -> 9))
+      Map("ID" -> 9),
+      Map("ID" -> null)
+    )
 
     assert(actualResult.equals(expectedResult))
 
@@ -345,7 +379,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
   test("test for null operator on date data type") {
     val actualResult: List[Map[String, Any]] = PrestoServer
       .executeQuery("SELECT ID FROM TESTDB.TESTTABLE WHERE DATE IS NULL")
-    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 9))
+    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 9),Map("ID" -> null))
     assert(actualResult.equals(expectedResult))
 
   }
@@ -390,7 +424,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     val actualResult: List[Map[String, Any]] = PrestoServer
       .executeQuery(
         "SELECT ID from testdb.testtable WHERE SHORTFIELD IS NULL ORDER BY SHORTFIELD ")
-    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 7))
+    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 7),Map("ID" -> null))
 
     assert(actualResult.equals(expectedResult))
   }
@@ -427,4 +461,40 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> "jatin"))
     assert(actualResult.equals(expectedResult))
   }
+
+  test("test timestamp datatype using cast and in operator") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT ID AS RESULT FROM TESTDB.TESTTABLE WHERE DOB in (cast('2016-04-14 " +
+                    "15:00:09' as timestamp),cast('2015-10-07' as timestamp),cast('2015-10-07 01:00:03' as timestamp))")
+    val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> "2"))
+    assert(actualResult.toString() equals expectedResult.toString())
+  }
+  test("test the boolean data type") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT isCurrentEmployee AS RESULT FROM TESTDB.TESTTABLE WHERE ID=1")
+    assert(actualResult.head("RESULT").toString.toBoolean)
+  }
+  test("test the boolean data type for null value") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is null")
+    assert(actualResult.head("RESULT").toString.toInt==2)
+  }
+  test("test the boolean data type for not null value with filter ") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is NOT null AND ID>8")
+    assert(actualResult.head("RESULT").toString.toInt==9)
+  }
+  test("test the is null operator when null is included in string data type dictionary_include"){
+    // See CARBONDATA-2155
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT SERIALNAME  FROM TESTDB.TESTTABLE WHERE SERIALNAME IS NULL")
+    assert(actualResult equals List(Map("SERIALNAME" -> null)))
+  }
+  test("test the min function when null is included in string data type with dictionary_include"){
+    // See CARBONDATA-2152
+    val actualResult = PrestoServer.executeQuery("SELECT MIN(SERIALNAME) FROM TESTDB.TESTTABLE")
+    val expectedResult = List(Map("_col0" -> "ASD14875"))
+
+    assert(actualResult.equals(expectedResult))
+  }
+
 }

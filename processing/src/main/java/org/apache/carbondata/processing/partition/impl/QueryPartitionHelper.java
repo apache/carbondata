@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.processing.partition.DataPartitioner;
 import org.apache.carbondata.processing.partition.Partition;
 
@@ -45,8 +45,8 @@ public final class QueryPartitionHelper {
   /**
    * Get partitions applicable for query based on filters applied in query
    */
-  public List<Partition> getPartitionsForQuery(CarbonQueryPlan queryPlan) {
-    String tableUniqueName = queryPlan.getDatabaseName() + '_' + queryPlan.getTableName();
+  public List<Partition> getPartitionsForQuery(String databaseName, String tableName) {
+    String tableUniqueName = CarbonTable.buildUniqueName(databaseName, tableName);
 
     DataPartitioner dataPartitioner = partitionerMap.get(tableUniqueName);
 
@@ -54,7 +54,7 @@ public final class QueryPartitionHelper {
   }
 
   public List<Partition> getAllPartitions(String databaseName, String tableName) {
-    String tableUniqueName = databaseName + '_' + tableName;
+    String tableUniqueName = CarbonTable.buildUniqueName(databaseName, tableName);
 
     DataPartitioner dataPartitioner = partitionerMap.get(tableUniqueName);
 
@@ -65,7 +65,7 @@ public final class QueryPartitionHelper {
    * Get the node name where the partition is assigned to.
    */
   public String getLocation(Partition partition, String databaseName, String tableName) {
-    String tableUniqueName = databaseName + '_' + tableName;
+    String tableUniqueName = CarbonTable.buildUniqueName(databaseName, tableName);
 
     DefaultLoadBalancer loadBalancer = loadBalancerMap.get(tableUniqueName);
     return loadBalancer.getNodeForPartitions(partition);

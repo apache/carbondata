@@ -46,12 +46,38 @@ object TestQueryExecutor {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  val projectPath = new File(this.getClass.getResource("/").getPath + "../../../..")
-    .getCanonicalPath
+  val (projectPath, isIntegrationModule, localTarget) = {
+    val path = new File(this.getClass.getResource("/").getPath)
+      .getCanonicalPath.replaceAll("\\\\", "/")
+    // Check whether it is integration module
+    val isIntegrationModule = path.indexOf("/integration/") > -1
+    // Get the local target folder path
+    val targetPath = path.substring(0, path.lastIndexOf("/target/") + 8)
+    // Get the relative project path
+    val projectPathLocal = if (isIntegrationModule) {
+      path.substring(0, path.indexOf("/integration/"))
+    } else if (path.indexOf("/datamap/") > -1) {
+      path.substring(0, path.indexOf("/datamap/"))
+    } else if (path.indexOf("/tools/") > -1) {
+      path.substring(0, path.indexOf("/tools/"))
+    } else if (path.indexOf("/examples/") > -1) {
+      path.substring(0, path.indexOf("/examples/"))
+    } else {
+      path
+    }
+    (projectPathLocal, isIntegrationModule, targetPath)
+  }
   LOGGER.info(s"project path: $projectPath")
   val integrationPath = s"$projectPath/integration"
-  val metastoredb = s"$integrationPath/spark-common/target"
-  val location = s"$integrationPath/spark-common/target/dbpath"
+  val target = if (isIntegrationModule) {
+    // If integration module , always point to spark-common/target location
+    s"$integrationPath/spark-common/target"
+  } else {
+    // Otherwise point to respective target folder location
+    localTarget
+  }
+  val metastoredb = target
+  val location = s"$target/dbpath"
   val masterUrl = {
     val property = System.getProperty("spark.master.url")
     if (property == null) {
@@ -60,7 +86,6 @@ object TestQueryExecutor {
       property
     }
   }
-
   val hdfsUrl = {
     val property = System.getProperty("hdfs.url")
     if (property == null) {
@@ -87,7 +112,7 @@ object TestQueryExecutor {
   } else {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
       CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
-    s"$integrationPath/spark-common/target/store"
+    s"$target/store"
   }
   val warehouse = if (hdfsUrl.startsWith("hdfs://")) {
     val carbonFile = FileFactory.
@@ -95,15 +120,22 @@ object TestQueryExecutor {
     FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
     s"$hdfsUrl/warehouse_" + System.nanoTime()
   } else {
-    s"$integrationPath/spark-common/target/warehouse"
+    s"$target/warehouse"
   }
+
+  val badStoreLocation = if (hdfsUrl.startsWith("hdfs://")) {
+       s"$hdfsUrl/bad_store_" + System.nanoTime()
+      } else {
+        s"$target/bad_store"
+      }
+    createDirectory(badStoreLocation)
 
   val hiveresultpath = if (hdfsUrl.startsWith("hdfs://")) {
     val p = s"$hdfsUrl/hiveresultpath"
     FileFactory.mkdirs(p, FileFactory.getFileType(p))
     p
   } else {
-    val p = s"$integrationPath/spark-common/target/hiveresultpath"
+    val p = s"$target/hiveresultpath"
     new File(p).mkdirs()
     p
   }
@@ -118,7 +150,9 @@ object TestQueryExecutor {
     TestQueryExecutor.projectPath + "/processing/target",
     TestQueryExecutor.projectPath + "/integration/spark-common/target",
     TestQueryExecutor.projectPath + "/integration/spark2/target",
-    TestQueryExecutor.projectPath + "/integration/spark-common/target/jars")
+    TestQueryExecutor.projectPath + "/integration/spark-common/target/jars",
+    TestQueryExecutor.projectPath + "/streaming/target")
+
   lazy val jars = {
     val jarsLocal = new ArrayBuffer[String]()
     modules.foreach { path =>
@@ -135,15 +169,18 @@ object TestQueryExecutor {
   val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
-    .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords")
+    .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, badStoreLocation)
     .addProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
       (CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT.toInt + Random.nextInt(100)) + "")
     .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "1024")
-      .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "1024")
+    .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "1024")
 
   private def lookupQueryExecutor: Class[_] = {
     ServiceLoader.load(classOf[TestQueryExecutorRegister], Utils.getContextOrSparkClassLoader)
       .iterator().next().getClass
   }
 
+  private def createDirectory(badStoreLocation: String) = {
+    FileFactory.mkdirs(badStoreLocation, FileFactory.getFileType(badStoreLocation))
+  }
 }

@@ -23,9 +23,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.service.CarbonCommonFactory;
-import org.apache.carbondata.core.service.PathService;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
 
 import org.apache.thrift.TBase;
@@ -153,12 +150,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    * This method will form the path for dictionary metadata file for a given column
    */
   protected void initFileLocation() {
-    PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getAbsoluteCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier);
-    this.columnDictionaryMetadataFilePath = carbonTablePath.getDictionaryMetaFilePath(
-        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
+    this.columnDictionaryMetadataFilePath =
+        dictionaryColumnUniqueIdentifier.getDictionaryMetaFilePath();
   }
 
   /**

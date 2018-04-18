@@ -26,9 +26,10 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -239,7 +240,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test to check if exception is thrown with wrong char syntax") {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    intercept[Exception] {
+    try {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
@@ -249,6 +250,10 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql(
         "ALTER TABLE carbon_table ADD COLUMNS(newfield char) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
+      assert(true)
+    }
+    catch {
+      case _ => assert(false)
     }
   }
 
@@ -268,7 +273,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test to check if exception is thrown with wrong varchar syntax") {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    intercept[Exception] {
+    try {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
@@ -278,6 +283,10 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql(
         "ALTER TABLE carbon_table ADD COLUMNS(newfield varchar) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
+      assert(true)
+    }
+    catch {
+      case exception:Exception => assert(false)
     }
   }
 
@@ -641,11 +650,36 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql(
       "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
-    assert(intercept[RuntimeException] {
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain_preagg1 add columns(d string)")
     }.getMessage.contains("Cannot add columns"))
     sql("drop table if exists preaggMain")
     sql("drop table if exists preagg1")
+  }
+
+  test("test rename textFileTable") {
+    sql("drop table if exists renameTextFileTable")
+    sql("drop table if exists new_renameTextFileTable")
+    sql("create table renameTextFileTable (id int,time string) row format delimited fields terminated by ',' stored as textfile ")
+    sql("alter table renameTextFileTable rename to new_renameTextFileTable")
+    checkAnswer(sql("DESC new_renameTextFileTable"),Seq(Row("id","int",null),Row("time","string",null)))
+    intercept[Exception] {
+      sql("select * from renameTextFileTable")
+    }
+    sql("drop table if exists new_renameTextFileTable")
+    sql("drop table if exists renameTextFileTable")
+  }
+
+  test("test rename [create table, rename, create same table with different schema]"){
+    sql("drop table if exists t5")
+    sql("drop table if exists t6")
+
+    sql("create table t5 (c1 string, c2 int) stored by 'carbondata'")
+    sql("insert into t5 select 'asd',1")
+    sql("alter table t5 rename to t6")
+    sql("create table t5 (c1 string, c2 int,c3 string) stored by 'carbondata'")
+    sql("insert into t5 select 'asd',1,'sdf'")
+    checkAnswer(sql("select * from t5"),Seq(Row("asd",1,"sdf")))
   }
 
   override def afterAll {
@@ -662,6 +696,8 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_sort_columns")
     sql("DROP TABLE IF EXISTS alter_no_dict")
     sql("drop table if exists NO_INVERTED_CARBON")
+    sql("drop table if exists new_renameTextFileTable")
+    sql("drop table if exists renameTextFileTable")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)

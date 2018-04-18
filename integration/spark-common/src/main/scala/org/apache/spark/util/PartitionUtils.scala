@@ -28,13 +28,17 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.sql.execution.command.AlterPartitionModel
 
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.{SegmentProperties, TableBlockInfo}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.CommonUtil
@@ -128,9 +132,16 @@ object PartitionUtils {
    */
   def getSegmentProperties(identifier: AbsoluteTableIdentifier, segmentId: String,
       partitionIds: List[String], oldPartitionIdList: List[Int],
-      partitionInfo: PartitionInfo): SegmentProperties = {
+      partitionInfo: PartitionInfo,
+      carbonTable: CarbonTable): SegmentProperties = {
     val tableBlockInfoList =
-      getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIdList, partitionInfo)
+      getPartitionBlockList(
+        identifier,
+        segmentId,
+        partitionIds,
+        oldPartitionIdList,
+        partitionInfo,
+        carbonTable)
     val footer = CarbonUtil.readMetadatFile(tableBlockInfoList.get(0))
     val segmentProperties = new SegmentProperties(footer.getColumnInTable,
       footer.getSegmentInfo.getColumnCardinality)
@@ -139,13 +150,15 @@ object PartitionUtils {
 
   def getPartitionBlockList(identifier: AbsoluteTableIdentifier, segmentId: String,
       partitionIds: List[String], oldPartitionIdList: List[Int],
-      partitionInfo: PartitionInfo): java.util.List[TableBlockInfo] = {
+      partitionInfo: PartitionInfo,
+      carbonTable: CarbonTable): java.util.List[TableBlockInfo] = {
     val jobConf = new JobConf(new Configuration)
     val job = new Job(jobConf)
     val format = CarbonInputFormatUtil
       .createCarbonTableInputFormat(identifier, partitionIds.asJava, job)
+    CarbonInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     val splits = format.getSplitsOfOneSegment(job, segmentId,
-      oldPartitionIdList.map(_.asInstanceOf[Integer]).asJava, partitionInfo)
+        oldPartitionIdList.map(_.asInstanceOf[Integer]).asJava, partitionInfo)
     val blockList = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
     val tableBlockInfoList = CarbonInputSplit.createBlocks(blockList.asJava)
     tableBlockInfoList
@@ -163,10 +176,8 @@ object PartitionUtils {
     val tablePath = carbonLoadModel.getTablePath
     val tableBlockInfoList =
       getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIds,
-        partitionInfo).asScala
+        partitionInfo, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable).asScala
     val pathList: util.List[String] = new util.ArrayList[String]()
-    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
-    val carbonTablePath = new CarbonTablePath(carbonTableIdentifier, tablePath)
     tableBlockInfoList.foreach{ tableBlockInfo =>
       val path = tableBlockInfo.getFilePath
       val timestamp = CarbonTablePath.DataFileUtil.getTimeStampFromFileName(path)
@@ -179,8 +190,9 @@ object PartitionUtils {
         val batchNo = CarbonTablePath.DataFileUtil.getBatchNoFromTaskNo(taskNo)
         val taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskNo)
         val bucketNumber = CarbonTablePath.DataFileUtil.getBucketNo(path)
-        val indexFilePath = carbonTablePath.getCarbonIndexFilePath(String.valueOf(taskId), "0",
-          segmentId, batchNo, String.valueOf(bucketNumber), timestamp, version)
+        val indexFilePath = CarbonTablePath.getCarbonIndexFilePath(
+          tablePath, String.valueOf(taskId), segmentId, batchNo, String.valueOf(bucketNumber),
+          timestamp, version)
         // indexFilePath could be duplicated when multiple data file related to one index file
         if (indexFilePath != null && !pathList.contains(indexFilePath)) {
           pathList.add(indexFilePath)
@@ -193,5 +205,22 @@ object PartitionUtils {
       files.add(file)
     }
     CarbonUtil.deleteFiles(files.asScala.toArray)
+    if (!files.isEmpty) {
+      val carbonTable = alterPartitionModel.carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      val file = SegmentFileStore.writeSegmentFile(
+        identifier.getTablePath,
+        alterPartitionModel.segmentId,
+        alterPartitionModel.carbonLoadModel.getFactTimeStamp.toString)
+      val segmentFiles = Seq(new Segment(alterPartitionModel.segmentId, file)).asJava
+      if (!CarbonUpdateUtil.updateTableMetadataStatus(
+        new util.HashSet[Segment](Seq(new Segment(alterPartitionModel.segmentId, null)).asJava),
+        carbonTable,
+        alterPartitionModel.carbonLoadModel.getFactTimeStamp.toString,
+        true,
+        new util.ArrayList[Segment](0),
+        new util.ArrayList[Segment](segmentFiles), "")) {
+        throw new IOException("Data update failed due to failure in table status updation.")
+      }
+    }
   }
 }

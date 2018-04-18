@@ -24,15 +24,19 @@ import scala.util.parsing.combinator.RegexParsers
 
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Statistics}
+import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.util.SparkTypeConverter
 
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.processing.merger.TableMeta
+import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * Represents logical plan for one carbon table
@@ -41,65 +45,28 @@ case class CarbonRelation(
     databaseName: String,
     tableName: String,
     var metaData: CarbonMetaData,
-    tableMeta: TableMeta)
+    carbonTable: CarbonTable)
   extends LeafNode with MultiInstanceRelation {
 
-  def recursiveMethod(dimName: String, childDim: CarbonDimension): String = {
-    childDim.getDataType.getName.toLowerCase match {
-      case "array" => s"${
-        childDim.getColName.substring(dimName.length + 1)
-      }:array<${ getArrayChildren(childDim.getColName) }>"
-      case "struct" => s"${
-        childDim.getColName.substring(dimName.length + 1)
-      }:struct<${ getStructChildren(childDim.getColName) }>"
-      case dType => s"${ childDim.getColName.substring(dimName.length + 1) }:${ dType }"
-    }
-  }
-
-  def getArrayChildren(dimName: String): String = {
-    metaData.carbonTable.getChildren(dimName).asScala.map(childDim => {
-      childDim.getDataType.getName.toLowerCase match {
-        case "array" => s"array<${ getArrayChildren(childDim.getColName) }>"
-        case "struct" => s"struct<${ getStructChildren(childDim.getColName) }>"
-        case dType => addDecimalScaleAndPrecision(childDim, dType)
-      }
-    }).mkString(",")
-  }
-
-  def getStructChildren(dimName: String): String = {
-    metaData.carbonTable.getChildren(dimName).asScala.map(childDim => {
-      childDim.getDataType.getName.toLowerCase match {
-        case "array" => s"${
-          childDim.getColName.substring(dimName.length + 1)
-        }:array<${ getArrayChildren(childDim.getColName) }>"
-        case "struct" => s"${
-          childDim.getColName.substring(dimName.length + 1)
-        }:struct<${ metaData.carbonTable.getChildren(childDim.getColName)
-          .asScala.map(f => s"${ recursiveMethod(childDim.getColName, f) }").mkString(",")
-        }>"
-        case dType => s"${ childDim.getColName
-          .substring(dimName.length() + 1) }:${ addDecimalScaleAndPrecision(childDim, dType) }"
-      }
-    }).mkString(",")
-  }
-
   override def newInstance(): LogicalPlan = {
-    CarbonRelation(databaseName, tableName, metaData, tableMeta)
+    CarbonRelation(databaseName, tableName, metaData, carbonTable)
       .asInstanceOf[this.type]
   }
 
-  val dimensionsAttr = {
+  val dimensionsAttr: Seq[AttributeReference] = {
     val sett = new LinkedHashSet(
-      tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
+      carbonTable.getDimensionByTableName(carbonTable.getTableName)
         .asScala.asJava)
     sett.asScala.toSeq.map(dim => {
       val dimval = metaData.carbonTable
-        .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
+        .getDimensionByName(metaData.carbonTable.getTableName, dim.getColName)
       val output: DataType = dimval.getDataType.getName.toLowerCase match {
         case "array" =>
-          CarbonMetastoreTypes.toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
+          CarbonMetastoreTypes.toDataType(
+            s"array<${SparkTypeConverter.getArrayChildren(carbonTable, dim.getColName)}>")
         case "struct" =>
-          CarbonMetastoreTypes.toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
+          CarbonMetastoreTypes.toDataType(
+            s"struct<${SparkTypeConverter.getStructChildren(carbonTable, dim.getColName)}>")
         case dType =>
           val dataType = addDecimalScaleAndPrecision(dimval, dType)
           CarbonMetastoreTypes.toDataType(dataType)
@@ -113,11 +80,10 @@ case class CarbonRelation(
   }
 
   val measureAttr = {
-    val factTable = tableMeta.carbonTable.getFactTableName
+    val factTable = carbonTable.getTableName
     new LinkedHashSet(
-      tableMeta.carbonTable.
-        getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
-        asScala.asJava).asScala.toSeq.map { x =>
+      carbonTable.getMeasureByTableName(carbonTable.getTableName).asScala.asJava).asScala.toSeq
+      .map { x =>
       val metastoreType = metaData.carbonTable.getMeasureByName(factTable, x.getColName)
         .getDataType.getName.toLowerCase match {
         case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
@@ -131,18 +97,20 @@ case class CarbonRelation(
   }
 
   override val output = {
-    val columns = tableMeta.carbonTable.getCreateOrderColumn(tableMeta.carbonTable.getFactTableName)
+    val columns = carbonTable.getCreateOrderColumn(carbonTable.getTableName)
       .asScala
     // convert each column to Attribute
     columns.filter(!_.isInvisible).map { column =>
       if (column.isDimension()) {
         val output: DataType = column.getDataType.getName.toLowerCase match {
           case "array" =>
-            CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(column.getColName)}>")
+            CarbonMetastoreTypes.toDataType(
+              s"array<${SparkTypeConverter.getArrayChildren(carbonTable, column.getColName)}>")
           case "struct" =>
-            CarbonMetastoreTypes.toDataType(s"struct<${getStructChildren(column.getColName)}>")
+            CarbonMetastoreTypes.toDataType(
+              s"struct<${SparkTypeConverter.getStructChildren(carbonTable, column.getColName)}>")
           case dType =>
-            val dataType = addDecimalScaleAndPrecision(column, dType)
+            val dataType = SparkTypeConverter.addDecimalScaleAndPrecision(column, dType)
             CarbonMetastoreTypes.toDataType(dataType)
         }
         AttributeReference(column.getColName, output, nullable = true )(
@@ -161,17 +129,14 @@ case class CarbonRelation(
     }
   }
 
-  def addDecimalScaleAndPrecision(dimval: CarbonColumn, dataType: String): String = {
-    var dType = dataType
-    if (DataTypes.isDecimal(dimval.getDataType)) {
-      dType +=
-      "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
-    }
-    dType
-  }
-
   // TODO: Use data from the footers.
-  override lazy val statistics = Statistics(sizeInBytes = this.sizeInBytes)
+  // TODO For 2.1
+  //  override lazy val statistics = Statistics(sizeInBytes = this.sizeInBytes)
+  // Todo for 2.2
+  //  override def computeStats(conf: SQLConf): Statistics = Statistics(sizeInBytes =
+  //  this.sizeInBytes)
+
+  // override lazy val statistics = Statistics(sizeInBytes = this.sizeInBytes)
 
   override def equals(other: Any): Boolean = {
     other match {
@@ -196,16 +161,35 @@ case class CarbonRelation(
 
   def sizeInBytes: Long = {
     val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
-      tableMeta.carbonTable.getAbsoluteTableIdentifier)
-
+      carbonTable.getAbsoluteTableIdentifier)
     if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
-      val tablePath = CarbonStorePath.getCarbonTablePath(
-        tableMeta.storePath,
-        tableMeta.carbonTableIdentifier).getPath
-      val fileType = FileFactory.getFileType(tablePath)
-      if(FileFactory.isFileExist(tablePath, fileType)) {
-        tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
-        sizeInBytesLocalValue = FileFactory.getDirectorySize(tablePath)
+      if (new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+        .getValidAndInvalidSegments.getValidSegments.isEmpty) {
+        sizeInBytesLocalValue = 0L
+      } else {
+        val tablePath = carbonTable.getTablePath
+        val fileType = FileFactory.getFileType(tablePath)
+        if (FileFactory.isFileExist(tablePath, fileType)) {
+          // get the valid segments
+          val segments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+            .getValidAndInvalidSegments.getValidSegments.asScala
+          var size = 0L
+          // for each segment calculate the size
+          segments.foreach {validSeg =>
+            if (validSeg.getSegmentFileName != null) {
+              size = size + CarbonUtil.getSizeOfSegment(
+                carbonTable.getTablePath,
+                new Segment(validSeg.getSegmentNo, validSeg.getSegmentFileName))
+            } else {
+              size = size + FileFactory.getDirectorySize(
+                CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
+            }
+          }
+          // update the new table status time
+          tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
+          // update the new size
+          sizeInBytesLocalValue = size
+        }
       }
     }
     sizeInBytesLocalValue
@@ -265,7 +249,8 @@ object CarbonMetastoreTypes extends RegexParsers {
   def toDataType(metastoreType: String): DataType = {
     parseAll(dataType, metastoreType) match {
       case Success(result, _) => result
-      case failure: NoSuccess => sys.error(s"Unsupported dataType: $metastoreType")
+      case _: NoSuccess =>
+        CarbonException.analysisException(s"Unsupported dataType: $metastoreType")
     }
   }
 

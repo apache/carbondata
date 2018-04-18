@@ -52,7 +52,32 @@ public class DictionaryMessage {
    */
   private DictionaryMessageType type;
 
-  public void readData(ByteBuf byteBuf) {
+  public void readSkipLength(ByteBuf byteBuf) {
+
+    byte[] tableBytes = new byte[byteBuf.readInt()];
+    byteBuf.readBytes(tableBytes);
+    tableUniqueId = new String(tableBytes, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+
+    byte[] colBytes = new byte[byteBuf.readInt()];
+    byteBuf.readBytes(colBytes);
+    columnName = new String(colBytes, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+
+    byte typeByte = byteBuf.readByte();
+    type = getKeyType(typeByte);
+
+    byte dataType = byteBuf.readByte();
+    if (dataType == 0) {
+      dictionaryValue = byteBuf.readInt();
+    } else {
+      byte[] dataBytes = new byte[byteBuf.readInt()];
+      byteBuf.readBytes(dataBytes);
+      data = new String(dataBytes, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    }
+  }
+
+  public void readFullLength(ByteBuf byteBuf) {
+
+    byteBuf.readShort();
     byte[] tableIdBytes = new byte[byteBuf.readInt()];
     byteBuf.readBytes(tableIdBytes);
     tableUniqueId =
@@ -106,6 +131,7 @@ public class DictionaryMessage {
     // packets before proceeding to process the message.Based on the length it waits.
     byteBuf.setShort(startIndex, endIndex - startIndex - 2);
   }
+
 
   private DictionaryMessageType getKeyType(byte type) {
     switch (type) {

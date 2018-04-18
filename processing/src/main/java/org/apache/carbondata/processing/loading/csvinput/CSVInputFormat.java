@@ -25,9 +25,12 @@ import java.nio.charset.Charset;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
+import org.apache.commons.io.input.BOMInputStream;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -66,15 +69,13 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final String ESCAPE_DEFAULT = "\\";
   public static final String HEADER_PRESENT = "carbon.csvinputformat.header.present";
   public static final boolean HEADER_PRESENT_DEFAULT = false;
+  public static final String SKIP_EMPTY_LINE = "carbon.csvinputformat.skip.empty.line";
   public static final String READ_BUFFER_SIZE = "carbon.csvinputformat.read.buffer.size";
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
   public static final String MAX_COLUMNS = "carbon.csvinputformat.max.columns";
   public static final String NUMBER_OF_COLUMNS = "carbon.csvinputformat.number.of.columns";
   public static final int DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 2000;
   public static final int THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 20000;
-  // As Short data type is used for storing the length of a column during data processing hence
-  // the maximum characters that can be supported should be less than Short max value
-  public static final int MAX_CHARS_PER_COLUMN_DEFAULT = 32000;
 
   private static LogService LOGGER =
       LogServiceFactory.getLogService(CSVInputFormat.class.toString());
@@ -115,6 +116,27 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static void setCSVDelimiter(Configuration configuration, String delimiter) {
     if (delimiter != null && !delimiter.isEmpty()) {
       configuration.set(DELIMITER, delimiter);
+    }
+  }
+
+  /**
+   * Sets the skipEmptyLine to configuration. Default it is false
+   *
+   * @param configuration
+   * @param skipEmptyLine
+   */
+  public static void setSkipEmptyLine(Configuration configuration, String skipEmptyLine) {
+    if (skipEmptyLine != null && !skipEmptyLine.isEmpty()) {
+      configuration.set(SKIP_EMPTY_LINE, skipEmptyLine);
+    } else {
+      try {
+        BooleanUtils.toBoolean(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE),"true", "false");
+        configuration.set(SKIP_EMPTY_LINE, CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE));
+      } catch (Exception e) {
+        configuration.set(SKIP_EMPTY_LINE, CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT);
+      }
     }
   }
 
@@ -180,8 +202,10 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     parserSettings.setEmptyValue("");
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
-    parserSettings.setSkipEmptyLines(false);
-    parserSettings.setMaxCharsPerColumn(MAX_CHARS_PER_COLUMN_DEFAULT);
+    parserSettings.setSkipEmptyLines(
+        Boolean.valueOf(job.get(SKIP_EMPTY_LINE,
+            CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)));
+    parserSettings.setMaxCharsPerColumn(CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT);
     String maxColumns = job.get(MAX_COLUMNS, "" + DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING);
     parserSettings.setMaxColumns(Integer.parseInt(maxColumns));
     parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));
@@ -248,8 +272,11 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         filePosition = fileIn;
         inputStream = boundedInputStream;
       }
-      reader = new InputStreamReader(inputStream,
+
+      //Wrap input stream with BOMInputStream to skip UTF-8 BOM characters
+      reader = new InputStreamReader(new BOMInputStream(inputStream),
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+
       CsvParserSettings settings = extractCsvParserSettings(job);
       if (start == 0) {
         settings.setHeaderExtractionEnabled(job.getBoolean(HEADER_PRESENT,

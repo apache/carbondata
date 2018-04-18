@@ -65,14 +65,14 @@ public class TimestampStreamReader extends AbstractStreamReader {
       if (columnVector.isNullAt(i)) {
         builder.appendNull();
       } else {
-        type.writeLong(builder, columnVector.getLong(i)/ TIMESTAMP_DIVISOR);
+        type.writeLong(builder, (Long)columnVector.getData(i)/ TIMESTAMP_DIVISOR);
       }
     }
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
     for (int i = 0; i < numberOfRows; i++) {
-      type.writeLong(builder, columnVector.getLong(i)/TIMESTAMP_DIVISOR);
+      type.writeLong(builder, (Long)columnVector.getData(i)/TIMESTAMP_DIVISOR);
     }
   }
 

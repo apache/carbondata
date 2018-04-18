@@ -41,6 +41,9 @@ class QueryTest extends PlanTest {
   // Add Locale setting
   Locale.setDefault(Locale.US)
 
+  CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "false")
+
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
    * none of keywords are listed in the answer
@@ -97,15 +100,28 @@ class QueryTest extends PlanTest {
     checkAnswer(df, expectedAnswer.collect())
   }
 
+  protected def dropTable(tableName: String): Unit = {
+    sql(s"DROP TABLE IF EXISTS $tableName")
+  }
+
+  protected def dropDataMaps(tableName: String, dataMapNames: String*): Unit = {
+    for (dataMapName <- dataMapNames) {
+      sql(s"DROP DATAMAP IF EXISTS $dataMapName ON TABLE $tableName")
+    }
+  }
+
   def sql(sqlText: String): DataFrame = TestQueryExecutor.INSTANCE.sql(sqlText)
 
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
 
+  lazy val warehouse = TestQueryExecutor.warehouse
   lazy val storeLocation = CarbonProperties.getInstance().
     getProperty(CarbonCommonConstants.STORE_LOCATION)
   val resourcesPath = TestQueryExecutor.resourcesPath
+  val metastoredb = TestQueryExecutor.metastoredb
   val integrationPath = TestQueryExecutor.integrationPath
   val dblocation = TestQueryExecutor.location
+  val defaultParallelism = sqlContext.sparkContext.defaultParallelism
 }
 
 object QueryTest {

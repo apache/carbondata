@@ -75,10 +75,10 @@ public class UnsafeSortMemoryManager {
     long size;
     try {
       size = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB,
-              CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT));
+          .getProperty(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB,
+              CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB_DEFAULT));
     } catch (Exception e) {
-      size = Long.parseLong(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
+      size = Long.parseLong(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB_DEFAULT);
       LOGGER.info("Wrong memory size given, " + "so setting default value to " + size);
     }
     if (size < 1024) {
@@ -117,6 +117,14 @@ public class UnsafeSortMemoryManager {
    */
   public synchronized boolean isMemoryAvailable(long required) {
     return memoryUsed + required < totalMemory;
+  }
+
+  /**
+   * total usable memory for sort memory manager
+   * @return size in bytes
+   */
+  public long getUsableMemory() {
+    return totalMemory;
   }
 
   /**

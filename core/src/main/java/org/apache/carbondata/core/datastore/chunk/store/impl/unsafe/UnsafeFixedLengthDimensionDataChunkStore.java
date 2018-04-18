@@ -124,22 +124,22 @@ public class UnsafeFixedLengthDimensionDataChunkStore
   /**
    * to compare the two byte array
    *
-   * @param index        index of first byte array
+   * @param rowId        index of first byte array
    * @param compareValue value of to be compared
    * @return compare result
    */
-  @Override public int compareTo(int index, byte[] compareValue) {
+  @Override public int compareTo(int rowId, byte[] compareValue) {
     // based on index we need to calculate the actual position in memory block
-    index = index * columnValueSize;
+    rowId = rowId * columnValueSize;
     int compareResult = 0;
     for (int i = 0; i < compareValue.length; i++) {
       compareResult = (CarbonUnsafe.getUnsafe()
-          .getByte(dataPageMemoryBlock.getBaseObject(), dataPageMemoryBlock.getBaseOffset() + index)
+          .getByte(dataPageMemoryBlock.getBaseObject(), dataPageMemoryBlock.getBaseOffset() + rowId)
           & 0xff) - (compareValue[i] & 0xff);
       if (compareResult != 0) {
         break;
       }
-      index++;
+      rowId++;
     }
     return compareResult;
   }

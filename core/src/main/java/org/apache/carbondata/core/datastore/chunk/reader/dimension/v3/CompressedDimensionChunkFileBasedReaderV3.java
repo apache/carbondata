@@ -20,11 +20,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
@@ -78,23 +78,23 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
    * 5. Create the raw chunk object and fill the details
    *
    * @param fileReader          reader for reading the column from carbon data file
-   * @param blockletColumnIndex blocklet index of the column in carbon data file
+   * @param columnIndex blocklet index of the column in carbon data file
    * @return dimension raw chunk
    */
-  public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader,
-      int blockletColumnIndex) throws IOException {
+  public DimensionRawColumnChunk readRawDimensionChunk(FileReader fileReader,
+      int columnIndex) throws IOException {
     // get the current dimension offset
-    long currentDimensionOffset = dimensionChunksOffset.get(blockletColumnIndex);
+    long currentDimensionOffset = dimensionChunksOffset.get(columnIndex);
     int length = 0;
     // to calculate the length of the data to be read
     // column other than last column we can subtract the offset of current column with
     // next column and get the total length.
     // but for last column we need to use lastDimensionOffset which is the end position
     // of the last dimension, we can subtract current dimension offset from lastDimesionOffset
-    if (dimensionChunksOffset.size() - 1 == blockletColumnIndex) {
+    if (dimensionChunksOffset.size() - 1 == columnIndex) {
       length = (int) (lastDimensionOffsets - currentDimensionOffset);
     } else {
-      length = (int) (dimensionChunksOffset.get(blockletColumnIndex + 1) - currentDimensionOffset);
+      length = (int) (dimensionChunksOffset.get(columnIndex + 1) - currentDimensionOffset);
     }
     ByteBuffer buffer = null;
     // read the data from carbon data file
@@ -103,9 +103,15 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     }
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk = CarbonUtil.readDataChunk3(buffer, 0, length);
+    return getDimensionRawColumnChunk(fileReader, columnIndex, 0, length, buffer,
+        dataChunk);
+  }
+
+  protected DimensionRawColumnChunk getDimensionRawColumnChunk(FileReader fileReader,
+      int columnIndex, long offset, int length, ByteBuffer buffer, DataChunk3 dataChunk) {
     // creating a raw chunks instance and filling all the details
     DimensionRawColumnChunk rawColumnChunk =
-        new DimensionRawColumnChunk(blockletColumnIndex, buffer, 0, length, this);
+        new DimensionRawColumnChunk(columnIndex, buffer, offset, length, this);
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
@@ -118,7 +124,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       eachPageLength[i] = dataChunk.getData_chunk_list().get(i).getNumberOfRowsInpage();
     }
     rawColumnChunk.setDataChunkV3(dataChunk);
-    rawColumnChunk.setFileHolder(fileReader);
+    rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(dataChunk.getPage_length().size());
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
     rawColumnChunk.setMinValues(minValueOfEachPage);
@@ -147,7 +153,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
    *        blocklet index of the last dimension column
    * @ DimensionRawColumnChunk array
    */
-  protected DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileHolder fileReader,
+  protected DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileReader fileReader,
       int startBlockletColumnIndex, int endBlockletColumnIndex) throws IOException {
     // to calculate the length of the data to be read
     // column we can subtract the offset of start column offset with
@@ -166,29 +172,11 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     int runningLength = 0;
     for (int i = startBlockletColumnIndex; i <= endBlockletColumnIndex; i++) {
       int currentLength = (int) (dimensionChunksOffset.get(i + 1) - dimensionChunksOffset.get(i));
-      dimensionDataChunks[index] =
-          new DimensionRawColumnChunk(i, buffer, runningLength, currentLength, this);
       DataChunk3 dataChunk =
           CarbonUtil.readDataChunk3(buffer, runningLength, dimensionChunksLength.get(i));
-      int numberOfPages = dataChunk.getPage_length().size();
-      byte[][] maxValueOfEachPage = new byte[numberOfPages][];
-      byte[][] minValueOfEachPage = new byte[numberOfPages][];
-      int[] eachPageLength = new int[numberOfPages];
-      for (int j = 0; j < minValueOfEachPage.length; j++) {
-        maxValueOfEachPage[j] =
-            dataChunk.getData_chunk_list().get(j).getMin_max().getMax_values().get(0).array();
-        minValueOfEachPage[j] =
-            dataChunk.getData_chunk_list().get(j).getMin_max().getMin_values().get(0).array();
-        eachPageLength[j] = dataChunk.getData_chunk_list().get(j).getNumberOfRowsInpage();
-      }
-      dimensionDataChunks[index].setDataChunkV3(dataChunk);
-      dimensionDataChunks[index].setFileHolder(fileReader);
-      dimensionDataChunks[index].setPagesCount(dataChunk.getPage_length().size());
-      dimensionDataChunks[index].setMaxValues(maxValueOfEachPage);
-      dimensionDataChunks[index].setMinValues(minValueOfEachPage);
-      dimensionDataChunks[index].setRowCount(eachPageLength);
-      dimensionDataChunks[index].setOffsets(ArrayUtils
-          .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
+      dimensionDataChunks[index] =
+          getDimensionRawColumnChunk(fileReader, i, runningLength, currentLength, buffer,
+              dataChunk);
       runningLength += currentLength;
       index++;
     }
@@ -200,9 +188,9 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
    *
    * @param rawColumnPage dimension raw chunk
    * @param pageNumber              number
-   * @return DimensionColumnDataChunk
+   * @return DimensionColumnPage
    */
-  @Override public DimensionColumnDataChunk convertToDimensionChunk(
+  @Override public DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk rawColumnPage, int pageNumber) throws IOException, MemoryException {
     // data chunk of blocklet column
     DataChunk3 dataChunk3 = rawColumnPage.getDataChunkV3();
@@ -212,7 +200,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
-    int offset = rawColumnPage.getOffSet() + dimensionChunksLength
+    int offset = (int) rawColumnPage.getOffSet() + dimensionChunksLength
         .get(rawColumnPage.getColumnIndex()) + dataChunk3.getPage_offset().get(pageNumber);
     // first read the data and uncompressed it
     return decodeDimension(rawColumnPage, rawData, pageMetadata, offset);
@@ -240,20 +228,19 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     return false;
   }
 
-  private DimensionColumnDataChunk decodeDimension(DimensionRawColumnChunk rawColumnPage,
+  protected DimensionColumnPage decodeDimension(DimensionRawColumnChunk rawColumnPage,
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset)
       throws IOException, MemoryException {
     if (isEncodedWithMeta(pageMetadata)) {
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset);
-      return new ColumnPageWrapper(decodedPage,
-          eachColumnValueSize[rawColumnPage.getColumnIndex()]);
+      return new ColumnPageWrapper(decodedPage);
     } else {
       // following code is for backward compatibility
       return decodeDimensionLegacy(rawColumnPage, pageData, pageMetadata, offset);
     }
   }
 
-  private DimensionColumnDataChunk decodeDimensionLegacy(DimensionRawColumnChunk rawColumnPage,
+  private DimensionColumnPage decodeDimensionLegacy(DimensionRawColumnChunk rawColumnPage,
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset) {
     byte[] dataPage;
     int[] rlePage;
@@ -279,18 +266,18 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
           eachColumnValueSize[rawColumnPage.getColumnIndex()]);
     }
 
-    DimensionColumnDataChunk columnDataChunk = null;
+    DimensionColumnPage columnDataChunk = null;
 
     // if no dictionary column then first create a no dictionary column chunk
     // and set to data chunk instance
     if (!hasEncoding(pageMetadata.encoders, Encoding.DICTIONARY)) {
       columnDataChunk =
-          new VariableLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
+          new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               pageMetadata.getNumberOfRowsInpage());
     } else {
       // to store fixed length column chunk values
       columnDataChunk =
-          new FixedLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
+          new FixedLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               pageMetadata.getNumberOfRowsInpage(),
               eachColumnValueSize[rawColumnPage.getColumnIndex()]);
     }

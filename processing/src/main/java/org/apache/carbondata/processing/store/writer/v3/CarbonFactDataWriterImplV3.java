@@ -18,7 +18,6 @@ package org.apache.carbondata.processing.store.writer.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,9 +38,10 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverterV3;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.FileFooter3;
+import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.TablePage;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
-import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
+
 
 /**
  * Below class will be used to write the data in V3 format
@@ -65,8 +65,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    */
   private long blockletSizeThreshold;
 
-  public CarbonFactDataWriterImplV3(CarbonDataWriterVo dataWriterVo) {
-    super(dataWriterVo);
+  public CarbonFactDataWriterImplV3(CarbonFactDataHandlerModel model) {
+    super(model);
     blockletSizeThreshold = Long.parseLong(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
             CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE))
@@ -79,11 +79,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     blockletDataHolder = new BlockletDataHolder();
   }
 
-  @Override protected void writeBlockletInfoToFile(FileChannel channel, String filePath)
+  @Override protected void writeBlockletInfoToFile()
       throws CarbonDataWriterException {
     try {
       // get the current file position
-      long currentPosition = channel.size();
+      long currentPosition = currentOffsetInFile;
       // get thrift file footer instance
       FileFooter3 convertFileMeta = CarbonMetadataUtil
           .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
@@ -97,7 +97,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       buffer.put(byteArray);
       buffer.putLong(currentPosition);
       buffer.flip();
-      channel.write(buffer);
+      currentOffsetInFile += fileChannel.write(buffer);
     } catch (IOException e) {
       LOGGER.error(e, "Problem while writing the carbon file");
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
@@ -109,7 +109,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    * @param tablePage
    */
   @Override public void writeTablePage(TablePage tablePage)
-      throws CarbonDataWriterException {
+      throws CarbonDataWriterException,IOException {
     // condition for writting all the pages
     if (!tablePage.isLastPage()) {
       boolean isAdded = false;
@@ -147,7 +147,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     }
   }
 
-  private void addPageData(TablePage tablePage) {
+  private void addPageData(TablePage tablePage) throws IOException {
     blockletDataHolder.addPage(tablePage);
     if (listener != null) {
       if (pageId == 0) {
@@ -156,6 +156,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       listener.onPageAdded(blockletId, pageId++, tablePage);
     }
   }
+
+
 
   /**
    * Write the collect blocklet data (blockletDataHolder) to file
@@ -175,11 +177,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
 
     // write data to file
     try {
-      if (fileChannel.size() == 0) {
+      if (currentOffsetInFile == 0) {
         // write the header if file is empty
-        writeHeaderToFile(fileChannel);
+        writeHeaderToFile();
       }
-      writeBlockletToFile(fileChannel, dataChunkBytes);
+      writeBlockletToFile(dataChunkBytes);
       if (listener != null) {
         listener.onBlockletEnd(blockletId++);
       }
@@ -187,9 +189,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     } catch (IOException e) {
       LOGGER.error(e, "Problem while writing file");
       throw new CarbonDataWriterException("Problem while writing file", e);
+    } finally {
+      // clear the data holder
+      blockletDataHolder.clear();
     }
-    // clear the data holder
-    blockletDataHolder.clear();
 
   }
 
@@ -224,12 +227,12 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
   /**
    * write file header
    */
-  private void writeHeaderToFile(FileChannel channel) throws IOException {
+  private void writeHeaderToFile() throws IOException {
     byte[] fileHeader = CarbonUtil.getByteArray(
         CarbonMetadataUtil.getFileHeader(
-            true, thriftColumnSchemaList, dataWriterVo.getSchemaUpdatedTimeStamp()));
+            true, thriftColumnSchemaList, model.getSchemaUpdatedTimeStamp()));
     ByteBuffer buffer = ByteBuffer.wrap(fileHeader);
-    channel.write(buffer);
+    currentOffsetInFile += fileChannel.write(buffer);
   }
 
   /**
@@ -240,9 +243,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    * <Column3 Data ChunkV3><Column3<Page1><Page2><Page3><Page4>>
    * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
    */
-  private void writeBlockletToFile(FileChannel channel, byte[][] dataChunkBytes)
+  private void writeBlockletToFile(byte[][] dataChunkBytes)
       throws IOException {
-    long offset = channel.size();
+    long offset = currentOffsetInFile;
     // to maintain the offset of each data chunk in blocklet
     List<Long> currentDataChunksOffset = new ArrayList<>();
     // to maintain the length of each data chunk in blocklet
@@ -262,13 +265,13 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       currentDataChunksOffset.add(offset);
       currentDataChunksLength.add(dataChunkBytes[i].length);
       buffer = ByteBuffer.wrap(dataChunkBytes[i]);
-      channel.write(buffer);
+      currentOffsetInFile += fileChannel.write(buffer);
       offset += dataChunkBytes[i].length;
       for (EncodedTablePage encodedTablePage : encodedTablePages) {
         EncodedColumnPage dimension = encodedTablePage.getDimension(i);
         buffer = dimension.getEncodedData();
         int bufferSize = buffer.limit();
-        channel.write(buffer);
+        currentOffsetInFile += fileChannel.write(buffer);
         offset += bufferSize;
       }
     }
@@ -278,21 +281,21 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       currentDataChunksOffset.add(offset);
       currentDataChunksLength.add(dataChunkBytes[dataChunkStartIndex].length);
       buffer = ByteBuffer.wrap(dataChunkBytes[dataChunkStartIndex]);
-      channel.write(buffer);
+      currentOffsetInFile += fileChannel.write(buffer);
       offset += dataChunkBytes[dataChunkStartIndex].length;
       dataChunkStartIndex++;
       for (EncodedTablePage encodedTablePage : encodedTablePages) {
         EncodedColumnPage measure = encodedTablePage.getMeasure(i);
         buffer = measure.getEncodedData();
         int bufferSize = buffer.limit();
-        channel.write(buffer);
+        currentOffsetInFile += fileChannel.write(buffer);
         offset += bufferSize;
       }
     }
     measureOffset = offset;
     blockletIndex.add(
         CarbonMetadataUtil.getBlockletIndex(
-            encodedTablePages, dataWriterVo.getSegmentProperties().getMeasures()));
+            encodedTablePages, model.getSegmentProperties().getMeasures()));
     BlockletInfo3 blockletInfo3 =
         new BlockletInfo3(numberOfRows, currentDataChunksOffset, currentDataChunksLength,
             dimensionOffset, measureOffset, blockletDataHolder.getEncodedTablePages().size());
@@ -314,7 +317,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     for (org.apache.carbondata.format.BlockletIndex index : blockletIndex) {
       BlockletInfo3 blockletInfo3 = blockletMetadata.get(i);
       BlockletInfo blockletInfo = converterV3.getBlockletInfo(blockletInfo3,
-          dataWriterVo.getSegmentProperties().getDimensions().size());
+          model.getSegmentProperties().getDimensions().size());
       BlockletBTreeIndex bTreeIndex = new BlockletBTreeIndex(index.b_tree_index.getStart_key(),
           index.b_tree_index.getEnd_key());
       BlockletMinMaxIndex minMaxIndex = new BlockletMinMaxIndex();
@@ -357,7 +360,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
 
   @Override public void writeFooterToFile() throws CarbonDataWriterException {
     if (this.blockletMetadata.size() > 0) {
-      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
+      writeBlockletInfoToFile();
     }
   }
 }

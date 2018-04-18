@@ -40,13 +40,13 @@ object PartitionSplitter {
      val carbonLoadModel = splitPartitionCallableModel.carbonLoadModel
      val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
      val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-     val tableName = carbonTable.getFactTableName
+     val tableName = carbonTable.getTableName
      val databaseName = carbonTable.getDatabaseName
      val bucketInfo = carbonTable.getBucketingInfo(tableName)
      var finalSplitStatus = false
      val bucketNumber = bucketInfo match {
        case null => 1
-       case _ => bucketInfo.getNumberOfBuckets
+       case _ => bucketInfo.getNumOfRanges
      }
      val partitionInfo = carbonTable.getPartitionInfo(tableName)
      val partitioner = PartitionFactory.getPartitioner(partitionInfo)

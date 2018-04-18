@@ -28,9 +28,9 @@ import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolver
 public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
 
   public TrueConditionalResolverImpl(Expression exp, boolean isExpressionResolve,
-      boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
+      boolean isIncludeFilter) {
 
-    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
+    super(exp, isExpressionResolve, isIncludeFilter, false);
   }
 
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier,
@@ -45,18 +45,6 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
    */
   @Override public FilterExecuterType getFilterExecuterType() {
     return FilterExecuterType.TRUE;
-  }
-
-  /**
-   * Method will the read filter expression corresponding to the resolver.
-   * This method is required in row level executer inorder to evaluate the filter
-   * expression against spark, as mentioned above row level is a special type
-   * filter resolver.
-   *
-   * @return Expression
-   */
-  public Expression getFilterExpresion() {
-    return exp;
   }
 
 }

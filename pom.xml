@@ -35,7 +35,7 @@
   <inceptionYear>2016</inceptionYear>
   <packaging>pom</packaging>
 
-  <version>1.3.0-SNAPSHOT</version>
+  <version>1.4.0-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -101,6 +101,8 @@
     <module>hadoop</module>
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
+    <module>datamap/examples</module>
+    <module>store/sdk</module>
     <module>assembly</module>
   </modules>
 
@@ -117,6 +119,8 @@
     <spark.master.url>local[2]</spark.master.url>
     <hdfs.url>local</hdfs.url>
     <suite.name>org.apache.carbondata.cluster.sdv.suite.SDVSuites</suite.name>
+    <script.exetension>.sh</script.exetension>
+    <carbon.hive.based.metastore>false</carbon.hive.based.metastore>
   </properties>
 
   <repositories>
@@ -259,6 +263,12 @@
         <version>4.11</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest_${scala.binary.version}</artifactId>
+        <version>2.2.1</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -279,7 +289,7 @@
         </plugin>
       </plugins>
     </pluginManagement>
-    
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -428,7 +438,7 @@
       <!-- This profile only should be used for release prepare to cover all the modules -->
       <id>build-all</id>
       <properties>
-        <spark.version>2.1.0</spark.version>
+        <spark.version>2.2.1</spark.version>
         <maven.test.skip>true</maven.test.skip>
       </properties>
       <modules>
@@ -453,16 +463,13 @@
       </build>
     </profile>
     <profile>
-      <id>hadoop-2.7.2</id>
+      <id>hadoop-2.2.0</id>
       <properties>
-        <hadoop.version>2.7.2</hadoop.version>
+        <hadoop.version>2.2.0</hadoop.version>
       </properties>
     </profile>
     <profile>
       <id>spark-2.1</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.version>2.1.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
@@ -474,6 +481,7 @@
         <module>integration/presto</module>
         <module>streaming</module>
         <module>examples/spark2</module>
+        <module>datamap/lucene</module>
       </modules>
       <build>
         <plugins>
@@ -482,7 +490,7 @@
             <artifactId>coveralls-maven-plugin</artifactId>
             <version>4.3.0</version>
             <configuration>
-              <repoToken>Q8mcBW8dw34wjNiPAMx0SFQidspIwHw8g</repoToken>
+              <repoToken>opPwqWW41vYppv6KISea3u1TJvE1ugJ5Y</repoToken>
               <sourceEncoding>UTF-8</sourceEncoding>
               <jacocoReports>
                 <jacocoReport>${basedir}/target/carbondata-coverage-report/carbondata-coverage-report.xml
@@ -495,6 +503,7 @@
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark2/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark2/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark2/src/main/spark2.1</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common-test/src/main/scala</sourceDirectory>
@@ -504,7 +513,62 @@
                 <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
+              </sourceDirectories>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>spark-2.2</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <spark.version>2.2.1</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
+      </properties>
+      <modules>
+        <module>integration/spark2</module>
+        <module>integration/hive</module>
+        <module>integration/presto</module>
+        <module>streaming</module>
+        <module>examples/spark2</module>
+        <module>datamap/lucene</module>
+      </modules>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <version>4.3.0</version>
+            <configuration>
+              <repoToken>opPwqWW41vYppv6KISea3u1TJvE1ugJ5Y</repoToken>
+              <sourceEncoding>UTF-8</sourceEncoding>
+              <jacocoReports>
+                <jacocoReport>${basedir}/target/carbondata-coverage-report/carbondata-coverage-report.xml
+                </jacocoReport>
+              </jacocoReports>
+              <sourceDirectories>
+                <sourceDirectory>${basedir}/common/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/core/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark2/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark2/src/main/spark2.2</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark2/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark-common/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark-common/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
@@ -552,6 +616,12 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>windows</id>
+      <properties>
+        <script.exetension>.bat</script.exetension>
+      </properties>
     </profile>
   </profiles>
 

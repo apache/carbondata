@@ -19,7 +19,7 @@ package org.apache.carbondata.core.metadata.datatype;
 
 import java.util.List;
 
-class StructType extends DataType {
+public class StructType extends DataType {
 
   private List<StructField> fields;
 

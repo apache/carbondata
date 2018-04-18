@@ -4,7 +4,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 /**
  * Created by rahul on 19/9/17.
@@ -12,7 +12,7 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
-    sql("drop table if exists carbon_table")
+    cleanAllTable()
     sql(
       "create table carbon_table(empno int, empname String, designation String, doj Timestamp," +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
@@ -26,7 +26,24 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
           |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
   }
 
+  private def cleanAllTable(): Unit = {
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists carbon_table_join")
+    sql("drop table if exists carbon_table_update")
+    sql("drop table if exists carbon_table_delete")
+    sql("drop table if exists carbon_table_show_seg")
+    sql("drop table if exists carbon_table_compact")
+    sql("drop table if exists carbon_table_alter")
+    sql("drop table if exists carbon_table_alter_new")
+    sql("drop table if exists carbon_table_recreate")
+  }
+
+  override def afterAll(): Unit = {
+    cleanAllTable()
+  }
+
   test("test SET -V for segment reading property") {
+    sql("SET -v").show(200,false)
     try {
       checkExistence(sql("SET -v"), true, "Property to configure the list of segments to query.")
     }

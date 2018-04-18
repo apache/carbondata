@@ -33,7 +33,7 @@ class TestNullAndEmptyFieldsUnsafe extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
           CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
+        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
     val csvFilePath = s"$resourcesPath/nullandnonparsableValue.csv"
     sql(
       "CREATE TABLE IF NOT EXISTS carbonTable (ID String, date Timestamp, country String, name " +
@@ -110,8 +110,8 @@ class TestNullAndEmptyFieldsUnsafe extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hiveTable")
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
-          CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT)
+        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
+          CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
   }
 }
 

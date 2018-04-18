@@ -35,6 +35,10 @@ public class DataField implements Serializable {
 
   private String dateFormat;
 
+  private String timestampFormat;
+
+  private boolean useActualData;
+
   public boolean hasDictionaryEncoding() {
     return column.hasEncoding(Encoding.DICTIONARY);
   }
@@ -49,5 +53,21 @@ public class DataField implements Serializable {
 
   public void setDateFormat(String dateFormat) {
     this.dateFormat = dateFormat;
+  }
+
+  public String getTimestampFormat() {
+    return timestampFormat;
+  }
+
+  public void setTimestampFormat(String timestampFormat) {
+    this.timestampFormat = timestampFormat;
+  }
+
+  public boolean isUseActualData() {
+    return useActualData;
+  }
+
+  public void setUseActualData(boolean useActualData) {
+    this.useActualData = useActualData;
   }
 }

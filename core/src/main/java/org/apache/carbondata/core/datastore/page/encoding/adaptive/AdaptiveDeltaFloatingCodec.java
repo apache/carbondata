@@ -154,13 +154,13 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
     @Override
     public void encode(int rowId, double value) {
       if (targetDataType.equals(DataTypes.BYTE)) {
-        encodedPage.putByte(rowId, (byte) (max - (value * factor)));
+        encodedPage.putByte(rowId, (byte) (max - Math.round(value * factor)));
       } else if (targetDataType.equals(DataTypes.SHORT)) {
-        encodedPage.putShort(rowId, (short) (max - (value * factor)));
+        encodedPage.putShort(rowId, (short) (max - Math.round(value * factor)));
       } else if (targetDataType.equals(DataTypes.SHORT_INT)) {
-        encodedPage.putShortInt(rowId, (int) (max - (value * factor)));
+        encodedPage.putShortInt(rowId, (int) (max - Math.round(value * factor)));
       } else if (targetDataType.equals(DataTypes.INT)) {
-        encodedPage.putInt(rowId, (int) (max - (value * factor)));
+        encodedPage.putInt(rowId, (int) (max - Math.round(value * factor)));
       } else if (targetDataType.equals(DataTypes.DOUBLE)) {
         encodedPage.putDouble(rowId, value);
       } else {

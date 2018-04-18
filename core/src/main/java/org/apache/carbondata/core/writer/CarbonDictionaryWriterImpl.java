@@ -32,10 +32,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
-import org.apache.carbondata.core.service.CarbonCommonFactory;
-import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.HDFSLeaseUtils;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
@@ -147,10 +144,15 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @param value unique dictionary value
    * @throws IOException if an I/O error occurs
    */
-  @Override public void write(byte[] value) throws IOException {
+  private void write(byte[] value) throws IOException {
     if (isFirstTime) {
       init();
       isFirstTime = false;
+    }
+
+    if (value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+      throw new IOException("Dataload failed, String size cannot exceed "
+          + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
     }
     // if one chunk size is equal to list size then write the data to file
     checkAndWriteDictionaryChunkToFile();
@@ -238,14 +240,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   }
 
   protected void initPaths() {
-    PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getAbsoluteCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier);
-    this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(
-        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
-    this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(
-        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
+    this.dictionaryFilePath = dictionaryColumnUniqueIdentifier.getDictionaryFilePath();
+    this.dictionaryMetaFilePath = dictionaryColumnUniqueIdentifier.getDictionaryMetaFilePath();
   }
 
   /**

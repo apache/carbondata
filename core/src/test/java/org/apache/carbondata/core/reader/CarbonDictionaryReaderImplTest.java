@@ -25,12 +25,9 @@ import java.util.UUID;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.service.impl.PathFactory;
-import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.service.PathService;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.service.CarbonCommonFactory;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -49,23 +46,16 @@ public class CarbonDictionaryReaderImplTest {
   @BeforeClass public static void setUp() throws Exception {
     columnIdentifier = new ColumnIdentifier("1", null, null);
     absoluteTableIdentifier =
-        new AbsoluteTableIdentifier("storePath",
+        AbsoluteTableIdentifier.from("tablePath",
             new CarbonTableIdentifier("dbName", "tableName", UUID.randomUUID().toString()));
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(),
-        CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
+            columnIdentifier.getDataType());
     carbonDictionaryReaderImpl =
         new CarbonDictionaryReaderImpl(dictionaryColumnUniqueIdentifier);
   }
 
   @Test public void testRead() throws Exception {
-    new MockUp<CarbonCommonFactory>() {
-      @Mock public PathService getPathService() {
-
-        return new PathFactory();
-      }
-    };
     new MockUp<CarbonDictionaryMetadataReaderImpl>() {
       @Mock public List<CarbonDictionaryColumnMetaChunk> read() throws IOException {
         CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunks =

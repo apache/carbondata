@@ -61,4 +61,23 @@ public class CarbonRowBatch extends CarbonIterator<CarbonRow> {
   @Override public void remove() {
 
   }
+
+  /**
+   * set previous row, this can be used to set value for the RowBatch after iterating it. The
+   * `index` here is `index-1` because after we iterate this value, the `index` has increased by 1.
+   * @param row row
+   */
+  public void setPreviousRow(CarbonRow row) {
+    if (index == 0) {
+      throw new RuntimeException("Unable to set a row in RowBatch before index 0");
+    }
+    rowBatch[index - 1] = row;
+  }
+
+  /**
+   * rewind to the head, this can be used for reuse the origin batch instead of generating a new one
+   */
+  public void rewind() {
+    index = 0;
+  }
 }

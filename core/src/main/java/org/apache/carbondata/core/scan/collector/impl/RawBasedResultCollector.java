@@ -16,14 +16,12 @@
  */
 package org.apache.carbondata.core.scan.collector.impl;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.model.ProjectionMeasure;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 
 /**
@@ -31,15 +29,11 @@ import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
  */
 public class RawBasedResultCollector extends AbstractScannedResultCollector {
 
-  protected ByteArrayWrapper wrapper;
+  byte[] dictionaryKeyArray;
 
-  protected byte[] dictionaryKeyArray;
+  byte[][] noDictionaryKeyArray;
 
-  protected byte[][] noDictionaryKeyArray;
-
-  protected byte[][] complexTypeKeyArray;
-
-  protected byte[] implicitColumnByteArray;
+  private byte[][] complexTypeKeyArray;
 
   public RawBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
@@ -49,9 +43,10 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
    * This method will add a record both key and value to list object
    * it will keep track of how many record is processed, to handle limit scenario
    */
-  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+  @Override
+  public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
-    QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
+    ProjectionMeasure[] queryMeasures = executionInfo.getProjectionMeasures();
     // scan the record and add to list
     int rowCounter = 0;
     while (scannedResult.hasNext() && rowCounter < batchSize) {
@@ -65,24 +60,21 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
     return listBasedResult;
   }
 
-  protected void prepareRow(AbstractScannedResult scannedResult, List<Object[]> listBasedResult,
-      QueryMeasure[] queryMeasures) {
+  void prepareRow(BlockletScannedResult scannedResult, List<Object[]> listBasedResult,
+      ProjectionMeasure[] queryMeasures) {
     Object[] row = new Object[1 + queryMeasures.length];
-    wrapper = new ByteArrayWrapper();
+    ByteArrayWrapper wrapper = new ByteArrayWrapper();
     wrapper.setDictionaryKey(dictionaryKeyArray);
     wrapper.setNoDictionaryKeys(noDictionaryKeyArray);
     wrapper.setComplexTypesKeys(complexTypeKeyArray);
-    wrapper.setImplicitColumnByteArray(implicitColumnByteArray);
     row[0] = wrapper;
     fillMeasureData(row, 1, scannedResult);
     listBasedResult.add(row);
   }
 
-  protected void scanResultAndGetData(AbstractScannedResult scannedResult) {
+  void scanResultAndGetData(BlockletScannedResult scannedResult) {
     dictionaryKeyArray = scannedResult.getDictionaryKeyArray();
     noDictionaryKeyArray = scannedResult.getNoDictionaryKeyArray();
     complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
-    implicitColumnByteArray = scannedResult.getBlockletId()
-        .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
   }
 }

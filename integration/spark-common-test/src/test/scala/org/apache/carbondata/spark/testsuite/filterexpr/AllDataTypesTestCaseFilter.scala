@@ -52,6 +52,18 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
       sql("select empno,empname from alldatatypestableFilter where regexp_replace(workgroupcategoryname, 'er', 'ment') != 'development'"),
       sql("select empno,empname from alldatatypestableFilter_hive where regexp_replace(workgroupcategoryname, 'er', 'ment') != 'development'"))
   }
+
+  test("verify like query ends with filter push down") {
+    val df = sql("select * from alldatatypestableFilter where empname like '%nandh'").queryExecution
+      .sparkPlan
+    assert(df.metadata.get("PushedFilters").get.contains("CarbonEndsWith"))
+  }
+
+  test("verify like query contains with filter push down") {
+    val df = sql("select * from alldatatypestableFilter where empname like '%nand%'").queryExecution
+      .sparkPlan
+    assert(df.metadata.get("PushedFilters").get.contains("CarbonContainsWith"))
+  }
   
   override def afterAll {
     sql("drop table alldatatypestableFilter")

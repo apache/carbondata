@@ -26,6 +26,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.common.constants.LoggerAction
+
 /**
   * Test Class for detailed query on timestamp datatypes
   *
@@ -33,10 +35,14 @@ import org.apache.spark.sql.test.util.QueryTest
   */
 class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
 
   override def beforeAll {
     try {
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
       sql("drop table if exists directDictionaryTable ")
       sql(
         "CREATE TABLE if not exists directDictionaryTable (empno int,doj date, " +
@@ -145,6 +151,9 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 }

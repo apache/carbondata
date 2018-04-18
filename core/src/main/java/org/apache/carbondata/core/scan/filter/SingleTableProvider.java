@@ -31,7 +31,8 @@ public class SingleTableProvider implements TableProvider {
 
   @Override public CarbonTable getCarbonTable(CarbonTableIdentifier carbonTableIdentifier)
       throws IOException {
-    if (carbonTable.getCarbonTableIdentifier().equals(carbonTableIdentifier)) {
+    if (carbonTable.getCarbonTableIdentifier().getTableUniqueName()
+        .equals(carbonTableIdentifier.getTableUniqueName())) {
       return carbonTable;
     } else {
       throw new IOException("Carbon table does not exist with identifier " + carbonTableIdentifier);

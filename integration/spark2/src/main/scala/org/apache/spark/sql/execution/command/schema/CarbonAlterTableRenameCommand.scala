@@ -17,30 +17,34 @@
 
 package org.apache.spark.sql.execution.command.schema
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.{AlterTableRenameModel, RunnableCommand}
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
+import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.util.AlterTableUtil
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{AlterTableRenamePostEvent, AlterTableRenamePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.SchemaEvolutionEntry
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 private[sql] case class CarbonAlterTableRenameCommand(
     alterTableRenameModel: AlterTableRenameModel)
-  extends RunnableCommand {
+  extends MetadataCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Nothing] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val oldTableIdentifier = alterTableRenameModel.oldTableIdentifier
     val newTableIdentifier = alterTableRenameModel.newTableIdentifier
@@ -67,8 +71,16 @@ private[sql] case class CarbonAlterTableRenameCommand(
     if (relation == null) {
       LOGGER.audit(s"Rename table request has failed. " +
                    s"Table $oldDatabaseName.$oldTableName does not exist")
-      sys.error(s"Table $oldDatabaseName.$oldTableName does not exist")
+      throwMetadataException(oldDatabaseName, oldTableName, "Table does not exist")
     }
+
+    var oldCarbonTable: CarbonTable = null
+    oldCarbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
+      .asInstanceOf[CarbonRelation].carbonTable
+    if (oldCarbonTable.getTableInfo.isUnManagedTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    }
+
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
       LockUsage.COMPACTION_LOCK,
       LockUsage.DELETE_SEGMENT_LOCK,
@@ -77,19 +89,24 @@ private[sql] case class CarbonAlterTableRenameCommand(
     var locks = List.empty[ICarbonLock]
     var timeStamp = 0L
     var carbonTable: CarbonTable = null
+    // lock file path to release locks after operation
+    var carbonTableLockFilePath: String = null
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(oldDatabaseName, oldTableName, locksToBeAcquired)(
           sparkSession)
-      val tableMeta = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
-        .asInstanceOf[CarbonRelation].tableMeta
-      carbonTable = tableMeta.carbonTable
+      carbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
+        .asInstanceOf[CarbonRelation].carbonTable
+      carbonTableLockFilePath = carbonTable.getTablePath
+      // if any load is in progress for table, do not allow rename table
+      if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
+        throw new ConcurrentOperationException(carbonTable, "loading", "alter table rename")
+      }
       // invalid data map for the old table, see CARBON-1690
       val oldTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       DataMapStoreManager.getInstance().clearDataMaps(oldTableIdentifier)
       // get the latest carbon table and check for column existence
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(oldTableIdentifier)
-      val tableMetadataFile = carbonTablePath.getPath
+      val tableMetadataFile = oldTableIdentifier.getTablePath
       val operationContext = new OperationContext
       // TODO: Pass new Table Path in pre-event.
       val alterTableRenamePreEvent: AlterTableRenamePreEvent = AlterTableRenamePreEvent(
@@ -99,7 +116,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
         sparkSession)
       OperationListenerBus.getInstance().fireEvent(alterTableRenamePreEvent, operationContext)
       val tableInfo: org.apache.carbondata.format.TableInfo =
-        metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
+        metastore.getThriftTableInfo(carbonTable)
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
       schemaEvolutionEntry.setTableName(newTableName)
       timeStamp = System.currentTimeMillis()
@@ -108,33 +125,64 @@ private[sql] case class CarbonAlterTableRenameCommand(
       val fileType = FileFactory.getFileType(tableMetadataFile)
       val newTableIdentifier = new CarbonTableIdentifier(oldDatabaseName,
         newTableName, carbonTable.getCarbonTableIdentifier.getTableId)
-      var newTablePath = CarbonUtil.getNewTablePath(carbonTablePath, newTableIdentifier)
-
+      var newTablePath = CarbonTablePath.getNewTablePath(
+        oldTableIdentifier.getTablePath, newTableIdentifier.getTableName)
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
-      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
-        .runSqlHive(
+      val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
+        .getClient()
+      var partitions: Seq[CatalogTablePartition] = Seq.empty
+      if (carbonTable.isHivePartitionTable) {
+        partitions =
+          sparkSession.sessionState.catalog.listPartitions(
+            TableIdentifier(oldTableName, Some(oldDatabaseName)))
+      }
+      sparkSession.catalog.refreshTable(TableIdentifier(oldTableName,
+        Some(oldDatabaseName)).quotedString)
+      hiveClient.runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
-      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
-        .runSqlHive(
+      hiveClient.runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
           s"('tableName'='$newTableName', " +
           s"'dbName'='$oldDatabaseName', 'tablePath'='$newTablePath')")
+
       // changed the rename order to deal with situation when carbon table and hive table
       // will point to the same tablePath
       if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
-        val rename = FileFactory.getCarbonFile(carbonTablePath.getPath, fileType)
-          .renameForce(carbonTablePath.getParent.toString + CarbonCommonConstants.FILE_SEPARATOR +
-                       newTableName)
+        val rename = FileFactory.getCarbonFile(oldTableIdentifier.getTablePath, fileType)
+          .renameForce(
+            CarbonTablePath.getNewTablePath(oldTableIdentifier.getTablePath, newTableName))
         if (!rename) {
           renameBadRecords(newTableName, oldTableName, oldDatabaseName)
           sys.error(s"Folder rename failed for table $oldDatabaseName.$oldTableName")
         }
       }
-      newTablePath = metastore.updateTableSchemaForAlter(newTableIdentifier,
+      val updatedParts = updatePartitionLocations(
+        partitions,
+        oldTableIdentifier.getTablePath,
+        newTablePath,
+        sparkSession)
+
+      val newIdentifier = TableIdentifier(newTableName, Some(oldDatabaseName))
+      val catalogTable = sparkSession.sessionState.catalog.getTableMetadata(newIdentifier)
+      // Update the storage location with new path
+      sparkSession.sessionState.catalog.alterTable(
+        catalogTable.copy(storage = sparkSession.sessionState.catalog.
+          asInstanceOf[CarbonSessionCatalog].updateStorageLocation(
+          new Path(newTablePath),
+          catalogTable.storage)))
+      if (updatedParts.nonEmpty) {
+        // Update the new updated partitions specs with new location.
+        sparkSession.sessionState.catalog.alterPartitions(
+          newIdentifier,
+          updatedParts)
+      }
+
+      newTablePath = metastore.updateTableSchemaForAlter(
+        newTableIdentifier,
         carbonTable.getCarbonTableIdentifier,
         tableInfo,
         schemaEvolutionEntry,
-        tableMeta.tablePath)(sparkSession)
+        carbonTable.getTablePath)(sparkSession)
 
       val alterTableRenamePostEvent: AlterTableRenamePostEvent = AlterTableRenamePostEvent(
         carbonTable,
@@ -143,27 +191,26 @@ private[sql] case class CarbonAlterTableRenameCommand(
         sparkSession)
       OperationListenerBus.getInstance().fireEvent(alterTableRenamePostEvent, operationContext)
 
-      sparkSession.catalog.refreshTable(TableIdentifier(newTableName,
-        Some(oldDatabaseName)).quotedString)
+      sparkSession.catalog.refreshTable(newIdentifier.quotedString)
+      carbonTableLockFilePath = newTablePath
       LOGGER.audit(s"Table $oldTableName has been successfully renamed to $newTableName")
       LOGGER.info(s"Table $oldTableName has been successfully renamed to $newTableName")
     } catch {
+      case e: ConcurrentOperationException =>
+        throw e
       case e: Exception =>
         LOGGER.error(e, "Rename table failed: " + e.getMessage)
         if (carbonTable != null) {
-          AlterTableUtil
-            .revertRenameTableChanges(oldTableIdentifier,
-              newTableName,
-              carbonTable.getTablePath,
-              carbonTable.getCarbonTableIdentifier.getTableId,
-              timeStamp)(
-              sparkSession)
+          AlterTableUtil.revertRenameTableChanges(
+            newTableName,
+            carbonTable,
+            timeStamp)(
+            sparkSession)
           renameBadRecords(newTableName, oldTableName, oldDatabaseName)
         }
-        sys.error(s"Alter table rename table operation failed: ${e.getMessage}")
+        throwMetadataException(oldDatabaseName, oldTableName,
+          s"Alter table rename table operation failed: ${e.getMessage}")
     } finally {
-      // release lock after command execution completion
-      AlterTableUtil.releaseLocks(locks)
       // case specific to rename table as after table rename old table path will not be found
       if (carbonTable != null) {
         AlterTableUtil
@@ -171,10 +218,35 @@ private[sql] case class CarbonAlterTableRenameCommand(
             locksToBeAcquired,
             oldDatabaseName,
             newTableName,
-            carbonTable.getTablePath)
+            carbonTableLockFilePath)
       }
     }
     Seq.empty
+  }
+
+  /**
+   * Update partitions with new table location
+   *
+   */
+  private def updatePartitionLocations(
+      partitions: Seq[CatalogTablePartition],
+      oldTablePath: String,
+      newTablePath: String,
+      sparkSession: SparkSession): Seq[CatalogTablePartition] = {
+    partitions.map{ part =>
+      if (part.storage.locationUri.isDefined) {
+        val path = new Path(part.location)
+        if (path.toString.contains(oldTablePath)) {
+          val newPath = new Path(path.toString.replace(oldTablePath, newTablePath))
+          part.copy(storage = sparkSession.sessionState.catalog.
+            asInstanceOf[CarbonSessionCatalog].updateStorageLocation(newPath, part.storage))
+        } else {
+          part
+        }
+      } else {
+        part
+      }
+    }
   }
 
   private def renameBadRecords(

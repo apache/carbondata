@@ -35,10 +35,12 @@ public class VectorDetailQueryResultIterator extends AbstractDetailQueryResultIt
     super(infos, queryModel, execService);
   }
 
-  @Override public Object next() {
+  @Override
+  public Object next() {
     throw new UnsupportedOperationException("call processNextBatch instead");
   }
 
+  @Override
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
     synchronized (lock) {
       updateDataBlockIterator();

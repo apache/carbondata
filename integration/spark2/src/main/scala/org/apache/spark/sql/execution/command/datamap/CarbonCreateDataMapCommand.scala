@@ -21,48 +21,88 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.preaaggregate.{CreatePreAggregateTableCommand, PreAggregateUtil}
 
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.datamap.DataMapProvider
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.datamap.DataMapManager
 
 /**
  * Below command class will be used to create datamap on table
  * and updating the parent table about the datamap information
- *
- * @param queryString
  */
 case class CarbonCreateDataMapCommand(
     dataMapName: String,
-    tableIdentifier: TableIdentifier,
+    tableIdentifier: Option[TableIdentifier],
     dmClassName: String,
-    dmproperties: Map[String, String],
-    queryString: Option[String])
-  extends RunnableCommand with SchemaProcessCommand {
+    dmProperties: Map[String, String],
+    queryString: Option[String],
+    ifNotExistsSet: Boolean = false)
+  extends AtomicRunnableCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processSchema(sparkSession)
+  private var dataMapProvider: DataMapProvider = _
+  private var mainTable: CarbonTable = _
+  private var dataMapSchema: DataMapSchema = _
+
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    // since streaming segment does not support building index and pre-aggregate yet,
+    // so streaming table does not support create datamap
+    mainTable = tableIdentifier match {
+      case Some(table) =>
+        CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession)
+      case _ => null
+    }
+
+    if (mainTable != null && mainTable.getTableInfo.isUnManagedTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    }
+
+    if (mainTable != null && mainTable.getDataMapSchema(dataMapName) != null) {
+      if (!ifNotExistsSet) {
+        throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")
+      } else {
+        return Seq.empty
+      }
+    }
+
+    dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
+    if (mainTable != null &&
+        mainTable.isStreamingTable &&
+        !(dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
+          || dataMapSchema.getProviderName
+            .equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
+      throw new MalformedCarbonCommandException(s"Streaming table does not support creating ${
+        dataMapSchema.getProviderName
+      } datamap")
+    }
+    dataMapSchema.setProperties(new java.util.HashMap[String, String](
+      dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
+    dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema, sparkSession)
+    dataMapProvider.initMeta(mainTable, dataMapSchema, queryString.orNull)
+    DataMapStatusManager.disableDataMap(dataMapName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    LOGGER.audit(s"DataMap $dataMapName successfully added")
+    Seq.empty
   }
 
-  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    if (dmClassName.equals("org.apache.carbondata.datamap.AggregateDataMapHandler") ||
-        dmClassName.equalsIgnoreCase("preaggregate")) {
-      CreatePreAggregateTableCommand(dataMapName,
-        tableIdentifier,
-        dmClassName,
-        dmproperties,
-        queryString.get).run(sparkSession)
-    } else {
-      val dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
-      dataMapSchema.setProperties(new java.util.HashMap[String, String](dmproperties.asJava))
-      val dbName = GetDB.getDatabaseName(tableIdentifier.database, sparkSession)
-      // upadting the parent table about dataschema
-      PreAggregateUtil.updateMainTable(dbName, tableIdentifier.table, dataMapSchema, sparkSession)
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
+    if (dataMapProvider != null) {
+      dataMapProvider.initData(mainTable)
+      if (mainTable != null && mainTable.isAutoRefreshDataMap) {
+        dataMapProvider.rebuild(mainTable, dataMapSchema)
+      }
     }
-    LOGGER.audit(s"DataMap ${dataMapName} successfully added to Table ${tableIdentifier.table}")
+    Seq.empty
+  }
+
+  override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
+    if (dataMapProvider != null) {
+      dataMapProvider.freeMeta(mainTable, dataMapSchema)
+    }
     Seq.empty
   }
 }
-
 

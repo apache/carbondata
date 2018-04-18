@@ -16,10 +16,10 @@
  */
 package org.apache.carbondata.spark.testsuite.datetype
 
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 class DateTypeTest extends QueryTest with BeforeAndAfterAll{
 

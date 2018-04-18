@@ -122,18 +122,6 @@ public class CarbonDimension extends CarbonColumn {
     return getEncoder().contains(Encoding.DICTIONARY);
   }
 
-  public int getNumDimensionsExpanded() {
-    if (listOfChildDimensions == null) {
-      // there is no child, return 1 column
-      return 1;
-    }
-    int columnCount = 1;
-    for (CarbonDimension dimension: listOfChildDimensions) {
-      columnCount += dimension.getNumDimensionsExpanded();
-    }
-    return columnCount;
-  }
-
   /**
    * @return is column participated in sorting or not
    */

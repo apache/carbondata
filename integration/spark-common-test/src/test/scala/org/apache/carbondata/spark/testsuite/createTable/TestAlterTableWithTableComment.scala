@@ -45,7 +45,7 @@ class TestAlterTableWithTableComment extends QueryTest with BeforeAndAfterAll {
 
     val create_result = sql("describe formatted alterTableWithTableComment")
 
-    checkExistence(create_result, true, "Comment:")
+    checkExistence(create_result, true, "Comment")
     checkExistence(create_result, false, "This is table comment")
 
     sql(
@@ -59,7 +59,7 @@ class TestAlterTableWithTableComment extends QueryTest with BeforeAndAfterAll {
 
     val alter_result = sql("describe formatted alterTableWithTableComment")
 
-    checkExistence(alter_result, true, "Comment:")
+    checkExistence(alter_result, true, "Comment")
     checkExistence(alter_result, true, "This table comment is added by alter table")
   }
 
@@ -86,7 +86,7 @@ class TestAlterTableWithTableComment extends QueryTest with BeforeAndAfterAll {
 
     val alter_result = sql("describe formatted alterTableWithoutTableComment")
 
-    checkExistence(alter_result, true, "Comment:")
+    checkExistence(alter_result, true, "Comment")
     checkExistence(alter_result, true, "This table comment is modified by alter table set")
   }
 
@@ -104,7 +104,7 @@ class TestAlterTableWithTableComment extends QueryTest with BeforeAndAfterAll {
 
     val create_result = sql("describe formatted alterTableUnsetTableComment")
 
-    checkExistence(create_result, true, "Comment:")
+    checkExistence(create_result, true, "Comment")
     checkExistence(create_result, true, "This is table comment")
 
     sql(
@@ -116,7 +116,7 @@ class TestAlterTableWithTableComment extends QueryTest with BeforeAndAfterAll {
 
     val alter_result = sql("describe formatted alterTableUnsetTableComment")
 
-    checkExistence(alter_result, true, "Comment:")
+    checkExistence(alter_result, true, "Comment")
     checkExistence(alter_result, false, "This is table comment")
   }
 

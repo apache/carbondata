@@ -17,14 +17,15 @@
 
 package org.apache.carbondata.spark.testsuite.partition
 
+import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
 
 class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with BeforeAndAfterAll {
 
@@ -44,8 +45,8 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
         | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='3')
       """.stripMargin)
 
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_hashTable")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "hashTable")(sqlContext.sparkSession)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("empno"))
     assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.INT)
@@ -67,8 +68,8 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
         |  'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59','DICTIONARY_INCLUDE'='doj')
       """.stripMargin)
 
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeTable")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "rangeTable")(sqlContext.sparkSession)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("doj"))
     assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.TIMESTAMP)
@@ -95,8 +96,8 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
         |  'LIST_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59',
         |  'DICTIONARY_INCLUDE'='projectenddate')
       """.stripMargin)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_listTable")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "listTable")(sqlContext.sparkSession)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("projectenddate"))
     assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.TIMESTAMP)
@@ -127,8 +128,8 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
         | TBLPROPERTIES('PARTITION_TYPE'='LIST',
         |  'LIST_INFO'='2017-06-11 , 2017-06-13')
       """.stripMargin)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_listTableDate")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "listTableDate")(sqlContext.sparkSession)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("projectenddate"))
     assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.DATE)

@@ -36,7 +36,6 @@ public class AbsoluteTableIdentifier implements Serializable {
    */
   private String tablePath;
 
-  private boolean isLocalPath;
 
   /**
    * carbon table identifier which will have table name and table database
@@ -44,10 +43,9 @@ public class AbsoluteTableIdentifier implements Serializable {
    */
   private CarbonTableIdentifier carbonTableIdentifier;
 
-  public AbsoluteTableIdentifier(String tablePath, CarbonTableIdentifier carbonTableIdentifier) {
+  private AbsoluteTableIdentifier(String tablePath, CarbonTableIdentifier carbonTableIdentifier) {
     //TODO this should be moved to common place where path handling will be handled
     this.tablePath = FileFactory.getUpdatedFilePath(tablePath);
-    isLocalPath = tablePath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX);
     this.carbonTableIdentifier = carbonTableIdentifier;
   }
 
@@ -58,16 +56,28 @@ public class AbsoluteTableIdentifier implements Serializable {
     return carbonTableIdentifier;
   }
 
-  public static AbsoluteTableIdentifier from(String tablePath, String dbName, String tableName) {
-    CarbonTableIdentifier identifier = new CarbonTableIdentifier(dbName, tableName, "");
+  public static AbsoluteTableIdentifier from(String tablePath, String dbName, String tableName,
+      String tableId) {
+    CarbonTableIdentifier identifier = new CarbonTableIdentifier(dbName, tableName, tableId);
     return new AbsoluteTableIdentifier(tablePath, identifier);
   }
+
+  public static AbsoluteTableIdentifier from(String tablePath, String dbName, String tableName) {
+    return from(tablePath, dbName, tableName, "");
+  }
+
+  public static AbsoluteTableIdentifier from(
+      String tablePath,
+      CarbonTableIdentifier carbonTableIdentifier) {
+    return new AbsoluteTableIdentifier(tablePath, carbonTableIdentifier);
+  }
+
   public String getTablePath() {
     return tablePath;
   }
 
   public String appendWithLocalPrefix(String path) {
-    if (isLocalPath) {
+    if (tablePath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX)) {
       return CarbonCommonConstants.LOCAL_FILE_PREFIX + path;
     } else {
       return path;
@@ -123,4 +133,17 @@ public class AbsoluteTableIdentifier implements Serializable {
   public String uniqueName() {
     return tablePath + "/" + carbonTableIdentifier.toString().toLowerCase();
   }
+
+  public String getDatabaseName() {
+    return carbonTableIdentifier.getDatabaseName();
+  }
+
+  public String getTableName() {
+    return carbonTableIdentifier.getTableName();
+  }
+
+  public String toString() {
+    return carbonTableIdentifier.toString();
+  }
+
 }

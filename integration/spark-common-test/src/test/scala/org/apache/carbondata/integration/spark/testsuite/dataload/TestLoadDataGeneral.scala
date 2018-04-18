@@ -22,40 +22,39 @@ import java.math.BigDecimal
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.Row
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
 
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.spark.sql.test.util.QueryTest
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
+class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
 
-  override def beforeAll {
+  override def beforeEach {
     sql("DROP TABLE IF EXISTS loadtest")
     sql(
       """
         | CREATE TABLE loadtest(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-
   }
 
   private def checkSegmentExists(
       segmentId: String,
       datbaseName: String,
       tableName: String): Boolean = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(datbaseName + "_" + tableName)
-    val partitionPath = CarbonStorePath
-      .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier).getPartitionDir("0")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(datbaseName, tableName)
+    val partitionPath =
+      CarbonTablePath.getPartitionDir(carbonTable.getAbsoluteTableIdentifier.getTablePath)
     val fileType: FileFactory.FileType = FileFactory.getFileType(partitionPath)
     val carbonFile = FileFactory.getCarbonFile(partitionPath, fileType)
     val segments: ArrayBuffer[String] = ArrayBuffer()
     carbonFile.listFiles.foreach { file =>
-      segments += CarbonTablePath.DataPathUtil.getSegmentId(file.getAbsolutePath + "/dummy")
+      segments += CarbonTablePath.DataFileUtil.getSegmentId(file.getAbsolutePath + "/dummy")
     }
     segments.contains(segmentId)
   }
@@ -74,7 +73,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(10))
+      Seq(Row(4))
     )
   }
 
@@ -83,7 +82,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(14))
+      Seq(Row(4))
     )
   }
 
@@ -92,7 +91,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(18))
+      Seq(Row(4))
     )
   }
 
@@ -101,7 +100,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest options ('delimiter'='\\017')")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(22))
+      Seq(Row(4))
     )
   }
 
@@ -168,7 +167,100 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbon_table")
   }
 
-  override def afterAll {
+  test("test insert / update with data more than 32000 characters") {
+    val testdata =s"$resourcesPath/32000char.csv"
+    sql("drop table if exists load32000chardata")
+    sql("drop table if exists load32000chardata_dup")
+    sql("CREATE TABLE load32000chardata(dim1 String, dim2 String, mes1 int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE load32000chardata_dup(dim1 String, dim2 String, mes1 int) STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA LOCAL INPATH '$testdata' into table load32000chardata OPTIONS('FILEHEADER'='dim1,dim2,mes1')")
+    intercept[Exception] {
+      sql("insert into load32000chardata_dup select dim1,concat(load32000chardata.dim2,'aaaa'),mes1 from load32000chardata").show()
+    }
+    sql(s"LOAD DATA LOCAL INPATH '$testdata' into table load32000chardata_dup OPTIONS('FILEHEADER'='dim1,dim2,mes1')")
+    intercept[Exception] {
+      sql("update load32000chardata_dup set(load32000chardata_dup.dim2)=(select concat(load32000chardata.dim2,'aaaa') from load32000chardata)").show()
+    }
+  }
+
+  test("test load / insert / update with data more than 32000 bytes - dictionary_exclude") {
+    val testdata = s"$resourcesPath/unicodechar.csv"
+    sql("drop table if exists load32000bytes")
+    sql("create table load32000bytes(name string) stored by 'carbondata'")
+    sql("insert into table load32000bytes select 'aaa'")
+
+    assert(intercept[Exception] {
+      sql(s"load data local inpath '$testdata' into table load32000bytes OPTIONS ('FILEHEADER'='name')")
+    }.getMessage.contains("DataLoad failure: Dataload failed, String size cannot exceed 32000 bytes"))
+
+    val source = scala.io.Source.fromFile(testdata)
+    val data = source.mkString
+
+    intercept[Exception] {
+      sql(s"insert into load32000bytes values('$data')")
+    }
+
+    intercept[Exception] {
+      sql(s"update load32000bytes set(name)= ('$data')").show()
+    }
+
+    sql("drop table if exists load32000bytes")
+  }
+
+  test("test load / insert / update with data more than 32000 bytes - dictionary_include") {
+    val testdata = s"$resourcesPath/unicodechar.csv"
+    sql("drop table if exists load32000bytes")
+    sql("create table load32000bytes(name string) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='name')")
+    sql("insert into table load32000bytes select 'aaa'")
+
+    assert(intercept[Exception] {
+      sql(s"load data local inpath '$testdata' into table load32000bytes OPTIONS ('FILEHEADER'='name')")
+    }.getMessage.contains("generate global dictionary failed, Dataload failed, String size cannot exceed 32000 bytes"))
+
+    val source = scala.io.Source.fromFile(testdata)
+    val data = source.mkString
+
+    intercept[Exception] {
+      sql(s"insert into load32000bytes values('$data')")
+    }
+
+    intercept[Exception] {
+      sql(s"update load32000bytes set(name)= ('$data')").show()
+    }
+
+    sql("drop table if exists load32000bytes")
+  }
+
+  test("test if stale folders are deleting on data load") {
+    sql("drop table if exists stale")
+    sql("create table stale(a string) stored by 'carbondata'")
+    sql("insert into stale values('k')")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "stale")
+    val tableStatusFile = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
+    FileFactory.getCarbonFile(tableStatusFile).delete()
+    sql("insert into stale values('k')")
+    checkAnswer(sql("select * from stale"), Row("k"))
+  }
+
+  test("test data loading with directly writing fact data to hdfs") {
+    val originStatus = CarbonProperties.getInstance().getProperty(
+      CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS,
+      CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS_DEFAULT)
+    CarbonProperties.getInstance().addProperty(
+      CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS, "true")
+
+    val testData = s"$resourcesPath/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
+    checkAnswer(
+      sql("SELECT COUNT(*) FROM loadtest"),
+      Seq(Row(6))
+    )
+
+    CarbonProperties.getInstance().addProperty(
+      CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS,
+      originStatus)
+  }
+  override def afterEach {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")
     CarbonProperties.getInstance()

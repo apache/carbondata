@@ -25,6 +25,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -88,12 +89,12 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    */
   public ZooKeeperLocking(String lockLocation, String lockFile) {
     this.lockName = lockFile;
-    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation;
+    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonTablePath.getLockFilesDirPath(lockLocation);
 
     initialize();
 
-    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation
-        + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
+    this.lockTypeFolder = tableIdFolder + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
     try {
       createBaseNode();
       // if exists returns null then path doesnt exist. so creating.
@@ -127,20 +128,11 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    * @throws InterruptedException
    */
   private void createRecursivly(String path) throws KeeperException, InterruptedException {
-    try {
-      if (zk.exists(path, true) == null && path.length() > 0) {
-        String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
-        createRecursivly(temp);
-        zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-      } else {
-        return;
-      }
-    } catch (KeeperException e) {
-      throw e;
-    } catch (InterruptedException e) {
-      throw e;
+    if (zk.exists(path, true) == null && path.length() > 0) {
+      String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+      createRecursivly(temp);
+      zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
     }
-
   }
   /**
    * Handling of the locking mechanism using zoo keeper.

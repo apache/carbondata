@@ -123,6 +123,13 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
     }
   }
 
+  /**
+   * Method to clear out the dictionary cache.
+   */
+  @Override public void clear() {
+    CarbonUtil.clearDictionaryCache(dictionary);
+  }
+
   @Override
   public void fillColumnCardinality(List<Integer> cardinality) {
     cardinality.add(dictionaryGenerator.size());

@@ -311,6 +311,13 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void freeMemory() {
+    byteData = null;
+    shortData = null;
+    intData = null;
+    longData = null;
+    floatData = null;
+    doubleData = null;
+    shortIntData = null;
   }
 
   /**

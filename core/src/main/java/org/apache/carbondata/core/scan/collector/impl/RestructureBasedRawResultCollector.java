@@ -30,13 +30,13 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.core.scan.model.QueryDimension;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
+import org.apache.carbondata.core.scan.model.ProjectionMeasure;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -70,15 +70,15 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
    */
   private void initRestructuredKeyGenerator() {
     SegmentProperties segmentProperties =
-        tableBlockExecutionInfos.getDataBlock().getSegmentProperties();
-    QueryDimension[] queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
+        executionInfo.getDataBlock().getSegmentProperties();
+    ProjectionDimension[] queryDimensions = executionInfo.getActualQueryDimensions();
     List<Integer> updatedColumnCardinality = new ArrayList<>(queryDimensions.length);
     List<Integer> updatedDimensionPartitioner = new ArrayList<>(queryDimensions.length);
-    int[] dictionaryColumnBlockIndex = tableBlockExecutionInfos.getDictionaryColumnBlockIndex();
+    int[] dictionaryColumnBlockIndex = executionInfo.getDictionaryColumnChunkIndex();
     int dimCounterInCurrentBlock = 0;
     for (int i = 0; i < queryDimensions.length; i++) {
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        if (tableBlockExecutionInfos.getDimensionInfo().getDimensionExists()[i]) {
+        if (executionInfo.getDimensionInfo().getDimensionExists()[i]) {
           // get the dictionary key ordinal as column cardinality in segment properties
           // will only be for dictionary encoded columns
           CarbonDimension currentBlockDimension = segmentProperties.getDimensions()
@@ -124,8 +124,8 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
    */
   private void initCurrentBlockKeyGenerator() {
     SegmentProperties segmentProperties =
-        tableBlockExecutionInfos.getDataBlock().getSegmentProperties();
-    int[] dictionaryColumnBlockIndex = tableBlockExecutionInfos.getDictionaryColumnBlockIndex();
+        executionInfo.getDataBlock().getSegmentProperties();
+    int[] dictionaryColumnBlockIndex = executionInfo.getDictionaryColumnChunkIndex();
     int[] updatedColumnCardinality = new int[dictionaryColumnBlockIndex.length];
     int[] updatedDimensionPartitioner = new int[dictionaryColumnBlockIndex.length];
     for (int i = 0; i < dictionaryColumnBlockIndex.length; i++) {
@@ -149,9 +149,10 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
    * This method will add a record both key and value to list object
    * it will keep track of how many record is processed, to handle limit scenario
    */
-  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+  @Override
+  public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
-    QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
+    ProjectionMeasure[] queryMeasures = executionInfo.getActualQueryMeasures();
     // scan the record and add to list
     int rowCounter = 0;
     while (scannedResult.hasNext() && rowCounter < batchSize) {
@@ -179,7 +180,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
    * @return
    */
   private byte[] fillDictionaryKeyArrayWithLatestSchema(byte[] dictionaryKeyArray) {
-    QueryDimension[] actualQueryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
+    ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
     int newKeyArrayLength = dimensionInfo.getNewDictionaryColumnCount();
     long[] keyArray = null;
     if (null != updatedCurrentBlockKeyGenerator) {
@@ -222,7 +223,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
    * @return
    */
   private byte[][] fillNoDictionaryKeyArrayWithLatestSchema(byte[][] noDictionaryKeyArray) {
-    QueryDimension[] actualQueryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
+    ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
     byte[][] noDictionaryKeyArrayWithNewlyAddedColumns =
         new byte[noDictionaryKeyArray.length + dimensionInfo.getNewNoDictionaryColumnCount()][];
     int existingColumnValueIndex = 0;
@@ -238,10 +239,11 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
           byte[] newColumnDefaultValue = null;
           Object defaultValue = dimensionInfo.getDefaultValues()[i];
           if (null != defaultValue) {
-            newColumnDefaultValue = ((UTF8String) defaultValue).getBytes();
+            newColumnDefaultValue = (byte[]) defaultValue;
           } else if (actualQueryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
             newColumnDefaultValue =
-                UTF8String.fromString(CarbonCommonConstants.MEMBER_DEFAULT_VAL).getBytes();
+                DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8Bytes(
+                    CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
           } else {
             newColumnDefaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
           }

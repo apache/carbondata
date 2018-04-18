@@ -16,18 +16,39 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
-import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import java.util.Map;
 
+import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import org.apache.carbondata.core.indexstore.BlockMetaInfo;
+
+/**
+ * It is the model object to keep the information to build or initialize BlockletDataMap.
+ */
 public class BlockletDataMapModel extends DataMapModel {
 
   private byte[] fileData;
 
-  public BlockletDataMapModel(String filePath, byte[] fileData) {
+  private Map<String, BlockMetaInfo> blockMetaInfoMap;
+
+  private String segmentId;
+
+  public BlockletDataMapModel(String filePath, byte[] fileData,
+      Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId) {
     super(filePath);
     this.fileData = fileData;
+    this.blockMetaInfoMap = blockMetaInfoMap;
+    this.segmentId = segmentId;
   }
 
   public byte[] getFileData() {
     return fileData;
+  }
+
+  public Map<String, BlockMetaInfo> getBlockMetaInfoMap() {
+    return blockMetaInfoMap;
+  }
+
+  public String getSegmentId() {
+    return segmentId;
   }
 }

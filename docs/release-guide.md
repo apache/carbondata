@@ -1,20 +1,18 @@
 <!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more 
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership. 
+    The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with 
+    the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and 
+    limitations under the License.
 -->
 
 # Apache CarbonData Release Guide
@@ -218,8 +216,7 @@ x.x.x release".
 
 Copy the source release to dev repository on `dist.apache.org`.
 
-1. If you have not already, check out the section of the `dev` repository on `dist
-.apache.org` via Subversion. In a fresh directory:
+1. If you have not already, check out the section of the `dev` repository on `dist.apache.org` via Subversion. In a fresh directory:
 
 ```
 svn co https://dist.apache.org/repos/dist/dev/carbondata
@@ -246,7 +243,7 @@ svn commit
 
 5. Verify the files are [present](https://dist.apache.org/repos/dist/dev/carbondata).
 
-### Propose a pull request for website updates
+### Propose a pull request for website updates
 
 The final step of building a release candidate is to propose a website pull request.
 
@@ -340,7 +337,7 @@ _Checklist to proceed to the final step:_
 1. Community votes to release the proposed release
 2. While in incubation, Apache Incubator PMC votes to release the proposed release
 
-## Cancel a Release (Fix Issues)
+## Cancel a Release (Fix Issues)
 
 Any issue identified during the community review and vote should be fixed in this step.
 
@@ -369,23 +366,23 @@ Code changes should be proposed as standard pull requests and merged.
 Once all issues have been resolved, you should go back and build a new release candidate with 
 these changes.
 
-## Finalize the release
+## Finalize the release
 
 Once the release candidate has been reviewed and approved by the community, the release should be
  finalized. This involves the final deployment of the release to the release repositories, 
  merging the website changes, and announce the release.
  
-### Deploy artifacts to Maven Central repository
+### Deploy artifacts to Maven Central repository
 
 On Nexus, release the staged artifacts to Maven Central repository. In the `Staging Repositories`
  section, find the relevant release candidate `orgapachecarbondata-XXX` entry and click `Release`.
 
-### Deploy source release to dist.apache.org
+### Deploy source release to dist.apache.org
 
 Copy the source release from the `dev` repository to `release` repository at `dist.apache.org` 
 using Subversion.
 
-### Merge website pull request
+### Merge website pull request
 
 Merge the website pull request to list the release created earlier.
 
@@ -404,12 +401,12 @@ _Checklist to proceed to the next step:_
 3. Website pull request to list the release merged
 4. Release version finalized in Jira
 
-## Promote the release
+## Promote the release
 
 Once the release has been finalized, the last step of the process is to promote the release 
 within the project and beyond.
 
-### Apache mailing lists
+### Apache mailing lists
 
 Announce on the dev@ mailing list that the release has been finished.
  

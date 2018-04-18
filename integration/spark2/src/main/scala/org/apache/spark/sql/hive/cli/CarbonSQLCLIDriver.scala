@@ -39,7 +39,6 @@ object CarbonSQLCLIDriver {
 
   def init() {
     if (hiveContext == null) {
-      val sparkConf = new SparkConf(loadDefaults = true)
 
       import org.apache.spark.sql.CarbonSession._
 
@@ -50,7 +49,7 @@ object CarbonSQLCLIDriver {
           .master(System.getProperty("spark.master"))
           .appName("CarbonSQLCLIDriver")
           .config("spark.sql.warehouse.dir", warehouse)
-          .getOrCreateCarbonSession(storePath, storePath)
+          .getOrCreateCarbonSession(storePath)
 
       hiveContext = carbon.sqlContext
       hiveContext.conf.getAllConfs.toSeq.sorted.foreach { case (k, v) =>

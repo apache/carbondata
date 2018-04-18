@@ -36,8 +36,9 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -72,41 +73,12 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * tableName
    */
   private String tableName;
-
-  /**
-   * measureCount
-   */
-  private int measureCount;
-
-  /**
-   * dimensionCount
-   */
-  private int dimensionCount;
-
-  /**
-   * measure count
-   */
-  private int noDictionaryCount;
-
-  /**
-   * complexDimensionCount
-   */
-  private int complexDimensionCount;
-
+  private SortParameters sortParameters;
+  private SortStepRowHandler sortStepRowHandler;
   /**
    * tempFileLocation
    */
   private String[] tempFileLocation;
-
-  private DataType[] measureDataType;
-
-  /**
-   * below code is to check whether dimension
-   * is of no dictionary type or not
-   */
-  private boolean[] isNoDictionaryColumn;
-
-  private boolean[] isNoDictionarySortColumn;
 
   private int maxThreadForSorting;
 
@@ -115,17 +87,11 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   private List<Future<Void>> mergerTask;
 
   public SingleThreadFinalSortFilesMerger(String[] tempFileLocation, String tableName,
-      int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
-      DataType[] type, boolean[] isNoDictionaryColumn, boolean[] isNoDictionarySortColumn) {
+      SortParameters sortParameters) {
     this.tempFileLocation = tempFileLocation;
     this.tableName = tableName;
-    this.dimensionCount = dimensionCount;
-    this.complexDimensionCount = complexDimensionCount;
-    this.measureCount = measureCount;
-    this.measureDataType = type;
-    this.noDictionaryCount = noDictionaryCount;
-    this.isNoDictionaryColumn = isNoDictionaryColumn;
-    this.isNoDictionarySortColumn = isNoDictionarySortColumn;
+    this.sortParameters = sortParameters;
+    this.sortStepRowHandler = new SortStepRowHandler(sortParameters);
     try {
       maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD,
@@ -144,8 +110,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    */
   public void startFinalMerge() throws CarbonDataWriterException {
     List<File> filesToMerge = getFilesToMergeSort();
-    if (filesToMerge.size() == 0)
-    {
+    if (filesToMerge.size() == 0) {
       LOGGER.info("No file to merge in final merge stage");
       return;
     }
@@ -154,19 +119,18 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   }
 
   private List<File> getFilesToMergeSort() {
+    final int rangeId = sortParameters.getRangeId();
     FileFilter fileFilter = new FileFilter() {
       public boolean accept(File pathname) {
-        return pathname.getName().startsWith(tableName);
+        return pathname.getName().startsWith(tableName + '_' + rangeId);
       }
     };
 
     // get all the merged files
     List<File> files = new ArrayList<File>(tempFileLocation.length);
-    for (String tempLoc : tempFileLocation)
-    {
+    for (String tempLoc : tempFileLocation) {
       File[] subFiles = new File(tempLoc).listFiles(fileFilter);
-      if (null != subFiles && subFiles.length > 0)
-      {
+      if (null != subFiles && subFiles.length > 0) {
         files.addAll(Arrays.asList(subFiles));
       }
     }
@@ -211,9 +175,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
         @Override public Void call() throws CarbonSortKeyAndGroupByException {
             // create chunk holder
             SortTempFileChunkHolder sortTempFileChunkHolder =
-                new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
-                    measureCount, fileBufferSize, noDictionaryCount, measureDataType,
-                    isNoDictionaryColumn, isNoDictionarySortColumn, tableName);
+                new SortTempFileChunkHolder(tempFile, sortParameters, tableName);
           try {
             // initialize
             sortTempFileChunkHolder.initialize();
@@ -265,13 +227,14 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   }
 
   /**
-   * This method will be used to get the sorted row
+   * This method will be used to get the sorted sort temp row from the sort temp files
    *
    * @return sorted row
    * @throws CarbonSortKeyAndGroupByException
    */
   public Object[] next() {
-    return getSortedRecordFromFile();
+    IntermediateSortTempRow sortTempRow = getSortedRecordFromFile();
+    return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(sortTempRow);
   }
 
   /**
@@ -280,8 +243,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * @return sorted record sorted record
    * @throws CarbonSortKeyAndGroupByException
    */
-  private Object[] getSortedRecordFromFile() throws CarbonDataWriterException {
-    Object[] row = null;
+  private IntermediateSortTempRow getSortedRecordFromFile() throws CarbonDataWriterException {
+    IntermediateSortTempRow row = null;
 
     // poll the top object from heap
     // heap maintains binary tree which is based on heap condition that will

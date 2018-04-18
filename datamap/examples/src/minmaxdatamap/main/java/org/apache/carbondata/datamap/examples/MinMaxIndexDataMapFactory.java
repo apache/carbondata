@@ -1,0 +1,166 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.carbondata.datamap.examples;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
+import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.events.Event;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Transformer;
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * Min Max DataMap Factory
+ */
+public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
+  private static final LogService LOGGER = LogServiceFactory.getLogService(
+      MinMaxIndexDataMapFactory.class.getName());
+  private DataMapMeta dataMapMeta;
+  private String dataMapName;
+  private AbsoluteTableIdentifier identifier;
+
+  // this is an example for datamap, we can choose the columns and operations that
+  // will be supported by this datamap. Furthermore, we can add cache-support for this datamap.
+  @Override public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema)
+      throws IOException, MalformedDataMapCommandException {
+    this.identifier = identifier;
+    this.dataMapName = dataMapSchema.getDataMapName();
+
+    String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName);
+    if (null == carbonTable) {
+      throw new IOException("Failed to get carbon table with name " + tableUniqueName);
+    }
+
+    // columns that will be indexed
+    List<CarbonColumn> allColumns = carbonTable.getCreateOrderColumn(identifier.getTableName());
+    List<String> minMaxCols = (List) CollectionUtils.collect(allColumns, new Transformer() {
+      @Override public Object transform(Object o) {
+        return ((CarbonColumn) o).getColName();
+      }
+    });
+    LOGGER.info("MinMaxDataMap support index columns: " + StringUtils.join(minMaxCols, ", "));
+
+    // operations that will be supported on the indexed columns
+    List<ExpressionType> optOperations = new ArrayList<>();
+    optOperations.add(ExpressionType.EQUALS);
+    optOperations.add(ExpressionType.GREATERTHAN);
+    optOperations.add(ExpressionType.GREATERTHAN_EQUALTO);
+    optOperations.add(ExpressionType.LESSTHAN);
+    optOperations.add(ExpressionType.LESSTHAN_EQUALTO);
+    optOperations.add(ExpressionType.NOT_EQUALS);
+    LOGGER.error("MinMaxDataMap support operations: " + StringUtils.join(optOperations, ", "));
+    this.dataMapMeta = new DataMapMeta(minMaxCols, optOperations);
+  }
+
+  /**
+   * createWriter will return the MinMaxDataWriter.
+   *
+   * @param segment
+   * @return
+   */
+  @Override public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
+    return new MinMaxDataWriter(identifier, dataMapName, segment, writeDirectoryPath);
+  }
+
+  /**
+   * getDataMaps Factory method Initializes the Min Max Data Map and returns.
+   *
+   * @param segment
+   * @param readCommittedScope
+   * @return
+   * @throws IOException
+   */
+  @Override
+  public List<CoarseGrainDataMap> getDataMaps(Segment segment,
+      ReadCommittedScope readCommittedScope)
+      throws IOException {
+    List<CoarseGrainDataMap> dataMapList = new ArrayList<>();
+    // Form a dataMap of Type MinMaxIndexDataMap.
+    MinMaxIndexDataMap dataMap = new MinMaxIndexDataMap();
+    try {
+      dataMap.init(new DataMapModel(
+          MinMaxDataWriter.genDataMapStorePath(
+              CarbonTablePath.getSegmentPath(
+                  identifier.getTablePath(), segment.getSegmentNo()),
+              dataMapName)));
+    } catch (MemoryException ex) {
+      throw new IOException(ex);
+    }
+    dataMapList.add(dataMap);
+    return dataMapList;
+  }
+
+  /**
+   * @param segment
+   * @return
+   */
+  @Override public List<DataMapDistributable> toDistributable(Segment segment) {
+    return null;
+  }
+
+  /**
+   * Clear the DataMap.
+   *
+   * @param segment
+   */
+  @Override public void clear(Segment segment) {
+  }
+
+  /**
+   * Clearing the data map.
+   */
+  @Override public void clear() {
+  }
+
+  @Override public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable,
+      ReadCommittedScope readCommittedScope)
+      throws IOException {
+    return getDataMaps(distributable.getSegment(), readCommittedScope);
+  }
+
+  @Override public void fireEvent(Event event) {
+
+  }
+
+  @Override public DataMapMeta getMeta() {
+    return this.dataMapMeta;
+  }
+}

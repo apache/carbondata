@@ -36,8 +36,10 @@ public abstract class AbstractRecordReader<T> extends RecordReader<Void, T> {
    */
   public void logStatistics(int recordCount, QueryStatisticsRecorder recorder) {
     // result size
-    QueryStatistic queryStatistic = new QueryStatistic();
-    queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount);
-    recorder.recordStatistics(queryStatistic);
+    if (null != recorder) {
+      QueryStatistic queryStatistic = new QueryStatistic();
+      queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount);
+      recorder.recordStatistics(queryStatistic);
+    }
   }
 }

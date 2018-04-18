@@ -36,7 +36,8 @@ public class LiteralExpression extends LeafExpression {
     this.dataType = dataType;
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) {
+  @Override
+  public ExpressionResult evaluate(RowIntf value) {
     return new ExpressionResult(dataType, this.value, true);
   }
 
@@ -44,14 +45,21 @@ public class LiteralExpression extends LeafExpression {
     return new ExpressionResult(dataType, this.value, true);
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     // TODO Auto-generated method stub
     return ExpressionType.LITERAL;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     // TODO Auto-generated method stub
     return "LiteralExpression(" + value + ')';
+  }
+
+  @Override
+  public String getStatement() {
+    return value == null ? null : value.toString();
   }
 
   /**
@@ -67,7 +75,8 @@ public class LiteralExpression extends LeafExpression {
     return value;
   }
 
-  @Override public void findAndSetChild(Expression oldExpr, Expression newExpr) {
+  @Override
+  public void findAndSetChild(Expression oldExpr, Expression newExpr) {
   }
 
 }

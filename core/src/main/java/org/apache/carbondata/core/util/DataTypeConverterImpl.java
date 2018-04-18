@@ -18,27 +18,82 @@
 package org.apache.carbondata.core.util;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
 public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
 
   private static final long serialVersionUID = -1718154403432354200L;
 
-  public Object convertToDecimal(Object data) {
-    java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
-    return javaDecVal;
+  @Override
+  public Object convertFromStringToDecimal(Object data) {
+    if (null == data) {
+      return null;
+    }
+    if (data instanceof BigDecimal) {
+      return data;
+    }
+    return new BigDecimal(data.toString());
   }
 
-  public Object convertFromByteToUTF8String(Object data) {
-    return new String((byte[]) data, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+  @Override
+  public Object convertFromBigDecimalToDecimal(Object data) {
+    if (null == data) {
+      return null;
+    }
+    if (data instanceof BigDecimal) {
+      return data;
+    }
+    return new BigDecimal(data.toString());
   }
 
+  @Override public Object convertFromDecimalToBigDecimal(Object data) {
+    return convertFromBigDecimalToDecimal(data);
+  }
+
+  @Override
+  public Object convertFromByteToUTF8String(byte[] data) {
+    if (null == data) {
+      return null;
+    }
+    return new String(data, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+  }
+
+  @Override
+  public byte[] convertFromByteToUTF8Bytes(byte[] data) {
+    return data;
+  }
+
+  @Override
   public byte[] convertFromStringToByte(Object data) {
+    if (null == data) {
+      return null;
+    }
     return data.toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
   }
 
+  @Override
   public Object convertFromStringToUTF8String(Object data) {
+    if (null == data) {
+      return null;
+    }
     return data.toString();
+  }
+
+  @Override
+  public Object wrapWithGenericArrayData(Object data) {
+    return data;
+  }
+
+  @Override
+  public Object wrapWithGenericRow(Object[] fields) {
+    return fields;
+  }
+
+  @Override
+  public Object[] convertCarbonSchemaToSparkSchema(CarbonColumn[] carbonColumns) {
+    throw new UnsupportedOperationException();
   }
 }

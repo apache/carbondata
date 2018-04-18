@@ -51,24 +51,33 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
   }
 
   /**
+   * API for enabling the locking of file with retries.
+   */
+  public boolean lockWithRetries(int retries, int retryInterval) {
+    retryCount = retries;
+    retryTimeout = retryInterval;
+    return lockWithRetries();
+  }
+
+  /**
    * Initializes the retry count and retry timeout.
    * This will determine how many times to retry to acquire lock and the retry timeout.
    */
   protected void initRetry() {
     String retries = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK);
+        .getProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK);
     try {
       retryCount = Integer.parseInt(retries);
     } catch (NumberFormatException e) {
-      retryCount = CarbonCommonConstants.NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK_DEFAULT;
+      retryCount = CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT;
     }
 
     String maxTimeout = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK);
+        .getProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK);
     try {
       retryTimeout = Integer.parseInt(maxTimeout);
     } catch (NumberFormatException e) {
-      retryTimeout = CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK_DEFAULT;
+      retryTimeout = CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK_DEFAULT;
     }
 
   }

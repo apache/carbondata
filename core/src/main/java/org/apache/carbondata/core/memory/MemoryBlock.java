@@ -19,8 +19,6 @@ package org.apache.carbondata.core.memory;
 
 import javax.annotation.Nullable;
 
-import org.apache.spark.unsafe.Platform;
-
 /**
  * Code ported from Apache Spark {org.apache.spark.unsafe.memory} package
  * A consecutive block of memory, starting at a {@link MemoryLocation} with a fixed size.
@@ -55,10 +53,4 @@ public class MemoryBlock extends MemoryLocation {
     this.isFreed = freedStatus;
   }
 
-  /**
-   * Creates a memory block pointing to the memory used by the long array.
-   */
-  public static MemoryBlock fromLongArray(final long[] array) {
-    return new MemoryBlock(array, Platform.LONG_ARRAY_OFFSET, array.length * 8);
-  }
 }

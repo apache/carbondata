@@ -87,6 +87,8 @@ public class BlockletInfo implements Serializable, Writable {
    */
   private int numberOfPages = 1;
 
+  private int[] numberOfRowsPerPage;
+
   /**
    * @return the numberOfRows
    */
@@ -306,5 +308,13 @@ public class BlockletInfo implements Serializable, Writable {
       input.readFully(bytes);
       measureColumnChunk.add(deserializeDataChunk(bytes));
     }
+  }
+
+  public int[] getNumberOfRowsPerPage() {
+    return numberOfRowsPerPage;
+  }
+
+  public void setNumberOfRowsPerPage(int[] numberOfRowsPerPage) {
+    this.numberOfRowsPerPage = numberOfRowsPerPage;
   }
 }

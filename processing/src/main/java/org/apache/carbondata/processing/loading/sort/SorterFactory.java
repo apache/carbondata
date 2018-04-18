@@ -25,10 +25,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.sort.impl.ParallelReadMergeSorterImpl;
-import org.apache.carbondata.processing.loading.sort.impl.ParallelReadMergeSorterWithBucketingImpl;
+import org.apache.carbondata.processing.loading.sort.impl.ParallelReadMergeSorterWithColumnRangeImpl;
 import org.apache.carbondata.processing.loading.sort.impl.UnsafeBatchParallelReadMergeSorterImpl;
 import org.apache.carbondata.processing.loading.sort.impl.UnsafeParallelReadMergeSorterImpl;
-import org.apache.carbondata.processing.loading.sort.impl.UnsafeParallelReadMergeSorterWithBucketingImpl;
+import org.apache.carbondata.processing.loading.sort.impl.UnsafeParallelReadMergeSorterWithColumnRangeImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class SorterFactory {
@@ -44,15 +44,21 @@ public class SorterFactory {
     Sorter sorter;
     if (offheapsort) {
       if (configuration.getBucketingInfo() != null) {
-        sorter = new UnsafeParallelReadMergeSorterWithBucketingImpl(configuration.getDataFields(),
+        sorter = new UnsafeParallelReadMergeSorterWithColumnRangeImpl(counter,
             configuration.getBucketingInfo());
+      } else if (configuration.getSortColumnRangeInfo() != null) {
+        sorter = new UnsafeParallelReadMergeSorterWithColumnRangeImpl(counter,
+            configuration.getSortColumnRangeInfo());
       } else {
         sorter = new UnsafeParallelReadMergeSorterImpl(counter);
       }
     } else {
       if (configuration.getBucketingInfo() != null) {
-        sorter =
-            new ParallelReadMergeSorterWithBucketingImpl(counter, configuration.getBucketingInfo());
+        sorter = new ParallelReadMergeSorterWithColumnRangeImpl(counter,
+            configuration.getBucketingInfo());
+      } else if (configuration.getSortColumnRangeInfo() != null) {
+        sorter = new ParallelReadMergeSorterWithColumnRangeImpl(counter,
+            configuration.getSortColumnRangeInfo());
       } else {
         sorter = new ParallelReadMergeSorterImpl(counter);
       }

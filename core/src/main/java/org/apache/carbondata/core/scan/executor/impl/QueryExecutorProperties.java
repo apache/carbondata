@@ -37,7 +37,7 @@ public class QueryExecutorProperties {
    * this will hold the information about the dictionary dimension
    * which to
    */
-  public Map<String, Dictionary> columnToDictionayMapping;
+  public Map<String, Dictionary> columnToDictionaryMapping;
 
   /**
    * Measure datatypes

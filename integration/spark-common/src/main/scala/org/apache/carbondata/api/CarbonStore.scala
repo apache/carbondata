@@ -21,48 +21,59 @@ import java.lang.Long
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.fs.{LocatedFileStatus, Path, RemoteIterator}
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.expressions.{Cast, Literal}
-import org.apache.spark.sql.types.TimestampType
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
+import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.rdd.DataManagementFunc
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def showSegments(
-      dbName: String,
-      tableName: String,
       limit: Option[String],
-      tableFolderPath: String): Seq[Row] = {
-    val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(tableFolderPath)
+      tableFolderPath: String,
+      showHistory: Boolean): Seq[Row] = {
+    val loadMetadataDetailsArray = if (showHistory) {
+      SegmentStatusManager.readLoadMetadata(tableFolderPath) ++
+      SegmentStatusManager.readLoadHistoryMetadata(tableFolderPath)
+    } else {
+      SegmentStatusManager.readLoadMetadata(tableFolderPath)
+    }
+
     if (loadMetadataDetailsArray.nonEmpty) {
       var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith { (l1, l2) =>
         java.lang.Double.parseDouble(l1.getLoadName) > java.lang.Double.parseDouble(l2.getLoadName)
       }
-      if (limit.isDefined) {
+      if (!showHistory) {
         loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray
-          .filter(load => load.getVisibility.equalsIgnoreCase("true"))
+          .filter(_.getVisibility.equalsIgnoreCase("true"))
+      }
+      if (limit.isDefined) {
         val limitLoads = limit.get
         try {
           val lim = Integer.parseInt(limitLoads)
           loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray.slice(0, lim)
         } catch {
-          case _: NumberFormatException => sys.error(s" Entered limit is not a valid Number")
+          case _: NumberFormatException =>
+            CarbonException.analysisException("Entered limit is not a valid Number")
         }
       }
 
       loadMetadataDetailsSortedArray
-        .filter(_.getVisibility.equalsIgnoreCase("true"))
         .map { load =>
           val mergedTo =
             if (load.getMergedLoadName != null) {
@@ -85,55 +96,155 @@ object CarbonStore {
               new java.sql.Timestamp(load.getLoadEndTime)
             }
 
-          Row(
-            load.getLoadName,
-            load.getSegmentStatus.getMessage,
-            startTime,
-            endTime,
-            mergedTo)
+          if (showHistory) {
+            Row(
+              load.getLoadName,
+              load.getSegmentStatus.getMessage,
+              startTime,
+              endTime,
+              mergedTo,
+              load.getFileFormat.toString,
+              load.getVisibility())
+          } else {
+            Row(
+              load.getLoadName,
+              load.getSegmentStatus.getMessage,
+              startTime,
+              endTime,
+              mergedTo,
+              load.getFileFormat.toString)
+          }
         }.toSeq
     } else {
       Seq.empty
     }
   }
 
+  /**
+   * The method deletes all data if forceTableCLean <true> and lean garbage segment
+   * (MARKED_FOR_DELETE state) if forceTableCLean <false>
+   *
+   * @param dbName          : Database name
+   * @param tableName       : Table name
+   * @param tablePath       : Table path
+   * @param carbonTable     : CarbonTable Object <null> in case of force clean
+   * @param forceTableClean : <true> for force clean it will delete all data
+   *                        <false> it will clean garbage segment (MARKED_FOR_DELETE state)
+   * @param currentTablePartitions : Hive Partitions  details
+   */
   def cleanFiles(
       dbName: String,
       tableName: String,
-      storePath: String,
+      tablePath: String,
       carbonTable: CarbonTable,
-      forceTableClean: Boolean): Unit = {
+      forceTableClean: Boolean,
+      currentTablePartitions: Option[Seq[PartitionSpec]] = None): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     var carbonCleanFilesLock: ICarbonLock = null
-    var absoluteTableIdentifier: AbsoluteTableIdentifier = null
-    if (forceTableClean) {
-      absoluteTableIdentifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
+    val absoluteTableIdentifier = if (forceTableClean) {
+      AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
     } else {
-      absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
+      carbonTable.getAbsoluteTableIdentifier
     }
     try {
       val errorMsg = "Clean files request is failed for " +
                      s"$dbName.$tableName" +
                      ". Not able to acquire the clean files lock due to another clean files " +
                      "operation is running in the background."
-      carbonCleanFilesLock =
-        CarbonLockUtil.getLockObject(absoluteTableIdentifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
+      // in case of force clean the lock is not required
       if (forceTableClean) {
-        val absIdent = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
         FileFactory.deleteAllCarbonFilesOfDir(
-          FileFactory.getCarbonFile(absIdent.getTablePath,
-            FileFactory.getFileType(absIdent.getTablePath)))
+          FileFactory.getCarbonFile(absoluteTableIdentifier.getTablePath,
+            FileFactory.getFileType(absoluteTableIdentifier.getTablePath)))
       } else {
-        DataManagementFunc.deleteLoadsAndUpdateMetadata(
-          isForceDeletion = true, carbonTable)
+        carbonCleanFilesLock =
+          CarbonLockUtil
+            .getLockObject(absoluteTableIdentifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
+        SegmentStatusManager.deleteLoadsAndUpdateMetadata(
+          carbonTable, true, currentTablePartitions.map(_.asJava).orNull)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
+        currentTablePartitions match {
+          case Some(partitions) =>
+            SegmentFileStore.cleanSegments(
+              carbonTable,
+              currentTablePartitions.map(_.asJava).orNull,
+              true)
+          case _ =>
+        }
       }
     } finally {
+      if (currentTablePartitions.equals(None)) {
+        cleanUpPartitionFoldersRecurssively(carbonTable, List.empty[PartitionSpec])
+      } else {
+        cleanUpPartitionFoldersRecurssively(carbonTable, currentTablePartitions.get.toList)
+      }
+
       if (carbonCleanFilesLock != null) {
         CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
       }
     }
     LOGGER.audit(s"Clean files operation is success for $dbName.$tableName.")
+  }
+
+  /**
+   * delete partition folders recurssively
+   *
+   * @param carbonTable
+   * @param partitionSpecList
+   */
+  def cleanUpPartitionFoldersRecurssively(carbonTable: CarbonTable,
+      partitionSpecList: List[PartitionSpec]): Unit = {
+    if (carbonTable != null) {
+      val loadMetadataDetails = SegmentStatusManager
+        .readLoadMetadata(carbonTable.getMetadataPath)
+
+      val fileType = FileFactory.getFileType(carbonTable.getTablePath)
+      val carbonFile = FileFactory.getCarbonFile(carbonTable.getTablePath, fileType)
+
+      // list all files from table path
+      val listOfDefaultPartFilesIterator = carbonFile.listFiles(true)
+      loadMetadataDetails.foreach { metadataDetail =>
+        if (metadataDetail.getSegmentStatus.equals(SegmentStatus.MARKED_FOR_DELETE) &&
+            metadataDetail.getSegmentFile == null) {
+          val loadStartTime: Long = metadataDetail.getLoadStartTime
+          // delete all files of @loadStartTime from tablepath
+          cleanCarbonFilesInFolder(listOfDefaultPartFilesIterator, loadStartTime)
+          partitionSpecList.foreach {
+            partitionSpec =>
+              val partitionLocation = partitionSpec.getLocation
+              // For partition folder outside the tablePath
+              if (!partitionLocation.toString.startsWith(carbonTable.getTablePath)) {
+                val fileType = FileFactory.getFileType(partitionLocation.toString)
+                val partitionCarbonFile = FileFactory
+                  .getCarbonFile(partitionLocation.toString, fileType)
+                // list all files from partitionLoacation
+                val listOfExternalPartFilesIterator = partitionCarbonFile.listFiles(true)
+                // delete all files of @loadStartTime from externalPath
+                cleanCarbonFilesInFolder(listOfExternalPartFilesIterator, loadStartTime)
+              }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   *
+   * @param carbonFiles
+   * @param timestamp
+   */
+  private def cleanCarbonFilesInFolder(carbonFiles: java.util.List[CarbonFile],
+      timestamp: Long): Unit = {
+    carbonFiles.asScala.foreach {
+      carbonFile =>
+        val filePath = carbonFile.getPath
+        val fileName = carbonFile.getName
+        if (CarbonTablePath.DataFileUtil.compareCarbonFileTimeStamp(fileName, timestamp)) {
+          // delete the file
+          FileFactory.deleteFile(filePath, FileFactory.getFileType(filePath))
+
+        }
+    }
   }
 
   // validates load ids
@@ -144,6 +255,7 @@ object CarbonStore {
     }
   }
 
+  // TODO: move dbName and tableName to caller, caller should handle the log and error
   def deleteLoadById(
       loadids: Seq[String],
       dbName: String,
@@ -153,7 +265,7 @@ object CarbonStore {
     LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
     validateLoadIds(loadids)
 
-    val path = carbonTable.getMetaDataFilepath
+    val path = carbonTable.getMetadataPath
 
     try {
       val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
@@ -170,6 +282,7 @@ object CarbonStore {
     Seq.empty
   }
 
+  // TODO: move dbName and tableName to caller, caller should handle the log and error
   def deleteLoadByDate(
       timestamp: String,
       dbName: String,
@@ -178,7 +291,7 @@ object CarbonStore {
     LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
 
     val time = validateTimeFormat(timestamp)
-    val path = carbonTable.getMetaDataFilepath
+    val path = carbonTable.getMetadataPath
 
     try {
       val invalidLoadTimestamps =
@@ -212,12 +325,13 @@ object CarbonStore {
   }
 
   private def validateTimeFormat(timestamp: String): Long = {
-    val timeObj = Cast(Literal(timestamp), TimestampType).eval()
-    if (null == timeObj) {
-      val errorMessage = "Error: Invalid load start time format: " + timestamp
-      throw new MalformedCarbonCommandException(errorMessage)
+    try {
+      DateTimeUtils.stringToTimestamp(UTF8String.fromString(timestamp)).get
+    } catch {
+      case e: Exception =>
+        val errorMessage = "Error: Invalid load start time format: " + timestamp
+        throw new MalformedCarbonCommandException(errorMessage)
     }
-    timeObj.asInstanceOf[Long]
   }
 
 }

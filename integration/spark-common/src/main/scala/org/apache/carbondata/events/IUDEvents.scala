@@ -16,20 +16,24 @@
  */
 package org.apache.carbondata.events
 
+import org.apache.spark.sql.SparkSession
+
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
  *
  * @param carbonTable
  */
-case class UpdateTablePreEvent(carbonTable: CarbonTable) extends Event with UpdateTableEventInfo
+case class UpdateTablePreEvent(sparkSession: SparkSession, carbonTable: CarbonTable)
+  extends Event with UpdateTableEventInfo
 
 
 /**
  *
  * @param carbonTable
  */
-case class UpdateTablePostEvent(carbonTable: CarbonTable) extends Event with UpdateTableEventInfo
+case class UpdateTablePostEvent(sparkSession: SparkSession, carbonTable: CarbonTable)
+  extends Event with UpdateTableEventInfo
 
 
 /**
@@ -42,7 +46,7 @@ case class UpdateTableAbortEvent(carbonTable: CarbonTable) extends Event with Up
  *
  * @param carbonTable
  */
-case class DeleteFromTablePreEvent(carbonTable: CarbonTable)
+case class DeleteFromTablePreEvent(sparkSession: SparkSession, carbonTable: CarbonTable)
   extends Event with DeleteFromTableEventInfo
 
 
@@ -50,7 +54,7 @@ case class DeleteFromTablePreEvent(carbonTable: CarbonTable)
  *
  * @param carbonTable
  */
-case class DeleteFromTablePostEvent(carbonTable: CarbonTable)
+case class DeleteFromTablePostEvent(sparkSession: SparkSession, carbonTable: CarbonTable)
   extends Event with DeleteFromTableEventInfo
 
 

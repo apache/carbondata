@@ -53,7 +53,7 @@ public interface FilterProcessor {
    * @return list of DataRefNode.
    */
   List<DataRefNode> getFilterredBlocks(DataRefNode dataRefNode, FilterResolverIntf filterResolver,
-      AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier);
+      AbstractIndex segmentIndexBuilder);
 
   /**
    * This API will get the map of required partitions.

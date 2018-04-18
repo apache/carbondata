@@ -27,16 +27,8 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.Bits;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.DataTypeUtil;
-
-import org.apache.spark.sql.types.BooleanType$;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.DateType$;
-import org.apache.spark.sql.types.DoubleType$;
-import org.apache.spark.sql.types.IntegerType$;
-import org.apache.spark.sql.types.LongType$;
-import org.apache.spark.sql.types.TimestampType$;
 
 public class PrimitiveQueryType extends ComplexQueryType implements GenericQueryType {
 
@@ -95,25 +87,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     dataOutputStream.write(currentVal);
   }
 
-  @Override public DataType getSchemaType() {
-    if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT) {
-      return IntegerType$.MODULE$;
-    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE) {
-      return DoubleType$.MODULE$;
-    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG) {
-      return LongType$.MODULE$;
-    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN) {
-      return BooleanType$.MODULE$;
-    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.TIMESTAMP) {
-      return TimestampType$.MODULE$;
-    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
-      return DateType$.MODULE$;
-    } else {
-      return IntegerType$.MODULE$;
-    }
-  }
-
-  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder)
+  @Override public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);
   }

@@ -76,9 +76,9 @@ public class BTreeBlockFinderTest extends TestCase {
     buffer.array();
     IndexKey key = new IndexKey(null, buffer.array());
     DataRefNode findFirstBlock = finder.findFirstDataBlock(dataBlock, key);
-    assertEquals(1, findFirstBlock.nodeNumber());
+    assertEquals(1, findFirstBlock.nodeIndex());
     DataRefNode findLastBlock = finder.findLastDataBlock(dataBlock, key);
-    assertEquals(1, findLastBlock.nodeNumber());
+    assertEquals(1, findLastBlock.nodeIndex());
   }
 
   @Test public void testBtreeSearchIsWorkingAndGivingPorperBlockletWithNoDictionary() {
@@ -96,9 +96,9 @@ public class BTreeBlockFinderTest extends TestCase {
     buffer.array();
     IndexKey key = new IndexKey(null, buffer.array());
     DataRefNode findFirstBlock = finder.findFirstDataBlock(dataBlock, key);
-    assertEquals(0, findFirstBlock.nodeNumber());
+    assertEquals(0, findFirstBlock.nodeIndex());
     DataRefNode findLastBlock = finder.findLastDataBlock(dataBlock, key);
-    assertEquals(0, findLastBlock.nodeNumber());
+    assertEquals(0, findLastBlock.nodeIndex());
   }
 
   @Test public void testBtreeSearchIsWorkingAndGivingPorperBlockletWithDictionaryKey1()
@@ -118,9 +118,9 @@ public class BTreeBlockFinderTest extends TestCase {
     IndexKey key =
         new IndexKey(multiDimKeyVarLengthGenerator.generateKey(new int[] { 1, 1 }), null);
     DataRefNode findFirstBlock = finder.findFirstDataBlock(dataBlock, key);
-    assertEquals(0, findFirstBlock.nodeNumber());
+    assertEquals(0, findFirstBlock.nodeIndex());
     DataRefNode findLastBlock = finder.findLastDataBlock(dataBlock, key);
-    assertEquals(0, findLastBlock.nodeNumber());
+    assertEquals(0, findLastBlock.nodeIndex());
   }
 
   @Test public void testBtreeSearchIsWorkingAndGivingPorperBlockletWithDictionaryKey2()
@@ -141,9 +141,9 @@ public class BTreeBlockFinderTest extends TestCase {
         new IndexKey(multiDimKeyVarLengthGenerator.generateKey(new int[] { 0, 0 }), null);
 
     DataRefNode findFirstBlock = finder.findFirstDataBlock(dataBlock, key);
-    assertEquals(0, findFirstBlock.nodeNumber());
+    assertEquals(0, findFirstBlock.nodeIndex());
     DataRefNode findLastBlock = finder.findLastDataBlock(dataBlock, key);
-    assertEquals(0, findLastBlock.nodeNumber());
+    assertEquals(0, findLastBlock.nodeIndex());
   }
 
   /**
@@ -169,9 +169,9 @@ public class BTreeBlockFinderTest extends TestCase {
         new IndexKey(multiDimKeyVarLengthGenerator.generateKey(new int[] { 10001, 10001 }), null);
 
     DataRefNode findFirstBlock = finder.findFirstDataBlock(dataBlock, key);
-    assertEquals(99, findFirstBlock.nodeNumber());
+    assertEquals(99, findFirstBlock.nodeIndex());
     DataRefNode findLastBlock = finder.findLastDataBlock(dataBlock, key);
-    assertEquals(99, findLastBlock.nodeNumber());
+    assertEquals(99, findLastBlock.nodeIndex());
   }
 
   private List<DataFileFooter> getDataFileFooterList() {

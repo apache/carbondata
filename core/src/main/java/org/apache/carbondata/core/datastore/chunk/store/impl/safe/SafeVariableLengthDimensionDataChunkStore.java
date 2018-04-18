@@ -20,16 +20,11 @@ package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.util.ByteUtil;
-
-import org.apache.spark.sql.types.BooleanType;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.IntegerType;
-import org.apache.spark.sql.types.LongType;
-import org.apache.spark.sql.types.ShortType;
-import org.apache.spark.sql.types.StringType;
-import org.apache.spark.sql.types.TimestampType;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
@@ -142,29 +137,32 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
       length = (short) (this.data.length - currentDataOffset);
     }
     DataType dt = vector.getType();
-    if ((!(dt instanceof StringType) && length == 0) || ByteUtil.UnsafeComparer.INSTANCE
+
+    if ((!(dt == DataTypes.STRING) && length == 0) || ByteUtil.UnsafeComparer.INSTANCE
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
             CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset,
             length)) {
       vector.putNull(vectorRow);
     } else {
-      if (dt instanceof StringType) {
+      if (dt == DataTypes.STRING) {
         vector.putBytes(vectorRow, currentDataOffset, length, data);
-      } else if (dt instanceof BooleanType) {
+      } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(data[currentDataOffset]));
-      } else if (dt instanceof ShortType) {
+      } else if (dt == DataTypes.SHORT) {
         vector.putShort(vectorRow, ByteUtil.toShort(data, currentDataOffset, length));
-      } else if (dt instanceof IntegerType) {
+      } else if (dt == DataTypes.INT) {
         vector.putInt(vectorRow, ByteUtil.toInt(data, currentDataOffset, length));
-      } else if (dt instanceof LongType) {
-        vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length));
-      } else if (dt instanceof TimestampType) {
+      } else if (dt == DataTypes.LONG) {
+        vector.putLong(vectorRow,
+            DataTypeUtil.getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(),
+                currentDataOffset, length));
+      } else if (dt  == DataTypes.TIMESTAMP) {
         vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length) * 1000L);
       }
     }
   }
 
-  @Override public int compareTo(int index, byte[] compareValue) {
+  @Override public int compareTo(int rowId, byte[] compareValue) {
     // now to get the row from memory block we need to do following thing
     // 1. first get the current offset
     // 2. if it's not a last row- get the next row offset
@@ -173,11 +171,11 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     // length
 
     // get the offset of set of data
-    int currentDataOffset = dataOffsets[index];
+    int currentDataOffset = dataOffsets[rowId];
     short length = 0;
     // calculating the length of data
-    if (index < numberOfRows - 1) {
-      length = (short) (dataOffsets[index + 1] - (currentDataOffset
+    if (rowId < numberOfRows - 1) {
+      length = (short) (dataOffsets[rowId + 1] - (currentDataOffset
           + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
     } else {
       // for last record
@@ -185,5 +183,11 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     }
     return ByteUtil.UnsafeComparer.INSTANCE
         .compareTo(data, currentDataOffset, length, compareValue, 0, compareValue.length);
+  }
+
+  @Override
+  public void freeMemory() {
+    super.freeMemory();
+    dataOffsets = null;
   }
 }

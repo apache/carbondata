@@ -16,20 +16,23 @@
  */
 package org.apache.carbondata.processing.sort.sortdata;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
  * This class is used as comparator for comparing dims which are non high cardinality dims.
  * Here the dims will be in form of int[] (surrogates) so directly comparing the integers.
  */
-public class NewRowComparatorForNormalDims implements Comparator<Object[]> {
+public class NewRowComparatorForNormalDims implements Comparator<Object[]>, Serializable {
+  private static final long serialVersionUID = -1749874611112709432L;
+
   /**
    * dimension count
    */
   private int numberOfSortColumns;
 
   /**
-   * RowComparatorForNormalDims Constructor
+   * NewRowComparatorForNormalDims Constructor
    *
    * @param numberOfSortColumns
    */
@@ -46,7 +49,6 @@ public class NewRowComparatorForNormalDims implements Comparator<Object[]> {
     int diff = 0;
 
     for (int i = 0; i < numberOfSortColumns; i++) {
-
       int dimFieldA = (int)rowA[i];
       int dimFieldB = (int)rowB[i];
       diff = dimFieldA - dimFieldB;

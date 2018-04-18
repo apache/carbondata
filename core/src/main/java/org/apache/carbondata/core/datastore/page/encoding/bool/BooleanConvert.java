@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.page.encoding.bool;
 
+import java.util.Locale;
+
 /**
  * convert tools for boolean data type
  */
@@ -51,7 +53,7 @@ public class BooleanConvert {
    * @return Boolean type data
    */
   public static Boolean parseBoolean(String input) {
-    String value = input.toLowerCase();
+    String value = input.toLowerCase(Locale.getDefault());
     if (("false").equals(value)) {
       return Boolean.FALSE;
     } else if (("true").equals(value)) {

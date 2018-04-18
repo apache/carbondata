@@ -17,27 +17,18 @@
 
 package org.apache.carbondata.presto.impl;
 
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
- * Caching metadata of CarbonData(e.g. TableIdentifier, TablePath, TableInfo, CarbonTable) in Class CarbonTableReader
+ * Caching metadata of CarbonData in Class CarbonTableReader
  * to speed up query
  */
 public class CarbonTableCacheModel {
 
-  public CarbonTableIdentifier carbonTableIdentifier;
-  public CarbonTablePath carbonTablePath;
-
-  public TableInfo tableInfo;
   public CarbonTable carbonTable;
 
   public boolean isValid() {
-    if (carbonTable != null && carbonTablePath != null && carbonTableIdentifier != null)
-      return true;
-    else return false;
+    return carbonTable != null;
   }
 
 }

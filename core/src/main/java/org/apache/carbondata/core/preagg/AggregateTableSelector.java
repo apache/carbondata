@@ -36,15 +36,15 @@ public class AggregateTableSelector {
   /**
    * current query plan
    */
-  private QueryPlan queryPlan;
+  private AggregateQueryPlan aggregateQueryPlan;
 
   /**
    * parent table
    */
   private CarbonTable parentTable;
 
-  public AggregateTableSelector(QueryPlan queryPlan, CarbonTable parentTable) {
-    this.queryPlan = queryPlan;
+  public AggregateTableSelector(AggregateQueryPlan aggregateQueryPlan, CarbonTable parentTable) {
+    this.aggregateQueryPlan = aggregateQueryPlan;
     this.parentTable = parentTable;
   }
 
@@ -58,9 +58,8 @@ public class AggregateTableSelector {
    * @return selected pre aggregate table schema
    */
   public List<DataMapSchema> selectPreAggDataMapSchema() {
-    List<QueryColumn> projectionColumn = queryPlan.getProjectionColumn();
-    List<QueryColumn> aggColumns = queryPlan.getAggregationColumns();
-    List<QueryColumn> filterColumns = queryPlan.getFilterColumns();
+    List<QueryColumn> projectionColumn = aggregateQueryPlan.getProjectionColumn();
+    List<QueryColumn> filterColumns = aggregateQueryPlan.getFilterColumns();
     List<DataMapSchema> dataMapSchemaList = parentTable.getTableInfo().getDataMapSchemaList();
     List<DataMapSchema> selectedDataMapSchema = new ArrayList<>();
     boolean isMatch;
@@ -70,10 +69,11 @@ public class AggregateTableSelector {
         AggregationDataMapSchema aggregationDataMapSchema = (AggregationDataMapSchema) dmSchema;
         isMatch = true;
         for (QueryColumn queryColumn : projectionColumn) {
-          ColumnSchema columnSchemaByParentName = aggregationDataMapSchema
-              .getNonAggChildColBasedByParent(queryColumn.getColumnSchema().getColumnName());
+          ColumnSchema columnSchemaByParentName =
+              getColumnSchema(queryColumn, aggregationDataMapSchema);
           if (null == columnSchemaByParentName) {
             isMatch = false;
+            break;
           }
         }
         if (isMatch) {
@@ -95,10 +95,11 @@ public class AggregateTableSelector {
         isMatch = true;
         for (QueryColumn queryColumn : filterColumns) {
           AggregationDataMapSchema aggregationDataMapSchema = (AggregationDataMapSchema) dmSchema;
-          ColumnSchema columnSchemaByParentName = aggregationDataMapSchema
-              .getNonAggChildColBasedByParent(queryColumn.getColumnSchema().getColumnName());
+          ColumnSchema columnSchemaByParentName =
+              getColumnSchema(queryColumn, aggregationDataMapSchema);
           if (null == columnSchemaByParentName) {
             isMatch = false;
+            break;
           }
         }
         if (isMatch) {
@@ -110,26 +111,29 @@ public class AggregateTableSelector {
         return selectedDataMapSchema;
       }
     }
-    // match aggregation columns
-    if (null != aggColumns && !aggColumns.isEmpty()) {
-      List<DataMapSchema> dmSchemaToIterate =
-          selectedDataMapSchema.isEmpty() ? dataMapSchemaList : selectedDataMapSchema;
-      selectedDataMapSchema = new ArrayList<>();
-      for (DataMapSchema dmSchema : dmSchemaToIterate) {
-        isMatch = true;
-        for (QueryColumn queryColumn : aggColumns) {
-          AggregationDataMapSchema aggregationDataMapSchema = (AggregationDataMapSchema) dmSchema;
-          if (!aggregationDataMapSchema
-              .isColumnWithAggFunctionExists(queryColumn.getColumnSchema().getColumnName(),
-                  queryColumn.getAggFunction())) {
-            isMatch = false;
-          }
-        }
-        if (isMatch) {
-          selectedDataMapSchema.add(dmSchema);
-        }
-      }
-    }
     return selectedDataMapSchema;
+  }
+
+  /**
+   * Below method will be used to get column schema for projection and
+   * filter query column
+   *
+   * @param queryColumn              query column
+   * @param aggregationDataMapSchema selected data map schema
+   * @return column schema
+   */
+  private ColumnSchema getColumnSchema(QueryColumn queryColumn,
+      AggregationDataMapSchema aggregationDataMapSchema) {
+    ColumnSchema columnSchemaByParentName = null;
+    if (!queryColumn.getTimeseriesFunction().isEmpty()) {
+      columnSchemaByParentName = aggregationDataMapSchema
+          .getTimeseriesChildColBasedByParent(queryColumn.getColumnSchema().getColumnName(),
+              queryColumn.getTimeseriesFunction());
+    } else {
+      columnSchemaByParentName = aggregationDataMapSchema
+          .getNonAggNonTimeseriesChildColBasedByParent(
+              queryColumn.getColumnSchema().getColumnName());
+    }
+    return columnSchemaByParentName;
   }
 }

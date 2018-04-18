@@ -34,13 +34,20 @@ class ColumnPropertyValidationTestCase extends QueryTest with BeforeAndAfterAll 
      }
   }
   test("Validate Dictionary include _ invalid key") {
-     try {
-       sql("create table employee(empname String,empid String,city String,country String,gender String,salary Double) stored by 'org.apache.carbondata.format' tblproperties('columnproperties.invalid.key'='value')")
-       assert(false)
-       sql("drop table employee")
-     } catch {
-       case e: Throwable =>assert(true)
-     }
+    intercept[Throwable] {
+      sql(
+        s"""
+           | create table employee(
+           |    empname String,
+           |    empid String,
+           |    city String,
+           |    country String,
+           |    gender String,
+           |    salary Double)
+           | stored by 'org.apache.carbondata.format'
+           | tblproperties('columnproperties.invalid.key'='value')
+         """.stripMargin)
+    }
   }
 
   override def afterAll() {

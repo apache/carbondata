@@ -18,7 +18,6 @@
 package org.apache.carbondata.cluster.sdv.generated
 
 import org.apache.spark.sql.common.util.QueryTest
-import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
 import org.scalatest.BeforeAndAfterAll
@@ -47,10 +46,9 @@ class CarbonV1toV3CompatabilityTestCase extends QueryTest with BeforeAndAfterAll
       .appName("CarbonV1toV3CompatabilityTestCase")
       .config("spark.driver.host", "localhost")
       .getOrCreateCarbonSession(storeLocation, metaLocation).asInstanceOf[CarbonSession]
-    println("store path from env : " + CarbonEnv.getInstance(localspark).storePath)
+    println("store path : " + CarbonProperties.getStorePath)
     localspark.sparkContext.setLogLevel("WARN")
-    localspark.sessionState.asInstanceOf[CarbonSessionState].metadataHive
-      .runSqlHive(
+    hiveClient.runSqlHive(
         s"ALTER TABLE default.t3 SET SERDEPROPERTIES" +
         s"('tablePath'='$storeLocation/default/t3', 'dbname'='default', 'tablename'='t3')")
     localspark.sql("show tables").show()

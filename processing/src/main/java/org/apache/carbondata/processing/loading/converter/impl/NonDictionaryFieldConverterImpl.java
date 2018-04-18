@@ -25,6 +25,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class NonDictionaryFieldConverterImpl implements FieldConverter {
@@ -60,10 +61,34 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
     } else if (dimensionValue == null || dimensionValue.equals(nullformat)) {
       updateWithNullValue(row);
     } else {
+      String dateFormat = null;
+      if (dataType == DataTypes.DATE) {
+        dateFormat = dataField.getDateFormat();
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        dateFormat = dataField.getTimestampFormat();
+      }
       try {
-        row.update(DataTypeUtil
-            .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType,
-                dataField.getDateFormat()), index);
+        if (!dataField.isUseActualData()) {
+          byte[] value = DataTypeUtil
+              .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
+          if (dataType == DataTypes.STRING
+              && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+            throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+                + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+          }
+          row.update(value, index);
+        } else {
+          Object value = DataTypeUtil
+              .getDataDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
+          if (dataType == DataTypes.STRING
+              && value.toString().length() > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+            throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+                + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+          }
+          row.update(value, index);
+        }
+      } catch (CarbonDataLoadingException e) {
+        throw e;
       } catch (Throwable ex) {
         if (dimensionValue.length() > 0 || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
           String message = logHolder.getColumnMessageMap().get(column.getColName());
@@ -81,8 +106,13 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
     }
   }
 
+  @Override public void clear() {
+  }
+
   private void updateWithNullValue(CarbonRow row) {
-    if (dataType == DataTypes.STRING) {
+    if (dataField.isUseActualData()) {
+      row.update(null, index);
+    } else if (dataType == DataTypes.STRING) {
       row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, index);
     } else {
       row.update(CarbonCommonConstants.EMPTY_BYTE_ARRAY, index);

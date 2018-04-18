@@ -271,6 +271,9 @@ public class BadRecordsLogger {
    * closeStreams void
    */
   public synchronized void closeStreams() {
+    // removing taskKey Entry while closing the stream
+    // This will make sure the cleanup of the task status even in case of some failure.
+    removeBadRecordKey(taskKey);
     CarbonUtil.closeStreams(bufferedWriter, outStream, bufferedCSVWriter, outCSVStream);
   }
 

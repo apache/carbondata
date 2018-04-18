@@ -20,11 +20,12 @@ import scala.collection.JavaConverters._
 
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
+import org.apache.spark.sql.test.util.QueryTest
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.test.util.QueryTest
 
 /**
   * FT for compaction scenario where major compaction will only compact the segments which are
@@ -78,8 +79,10 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     var status = false
     var noOfRetries = 0
     while (!status && noOfRetries < 10) {
-      val carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME + "_" + "stopmajor")
+      val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+        "stopmajor"
+      )
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
@@ -110,15 +113,17 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     // delete merged segments
     sql("clean files for table stopmajor")
 
-    val carbonTable = CarbonMetadata.getInstance()
-      .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME + "_" + "stopmajor")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "stopmajor"
+    )
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
       absoluteTableIdentifier)
 
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentNo).toList
     assert(segments.contains("0.1"))
     assert(!segments.contains("0.2"))
     assert(!segments.contains("0"))

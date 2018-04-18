@@ -29,9 +29,9 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.model.QueryDimension;
-import org.apache.carbondata.core.scan.model.QueryMeasure;
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
+import org.apache.carbondata.core.scan.model.ProjectionMeasure;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -42,49 +42,50 @@ import org.apache.commons.lang3.ArrayUtils;
  */
 public class DictionaryBasedResultCollector extends AbstractScannedResultCollector {
 
-  protected QueryDimension[] queryDimensions;
+  protected ProjectionDimension[] queryDimensions;
 
-  protected QueryMeasure[] queryMeasures;
+  protected ProjectionMeasure[] queryMeasures;
 
-  protected DirectDictionaryGenerator[] directDictionaryGenerators;
+  private DirectDictionaryGenerator[] directDictionaryGenerators;
 
   /**
    * query order
    */
   protected int[] order;
 
-  protected int[] actualIndexInSurrogateKey;
+  private int[] actualIndexInSurrogateKey;
 
-  protected boolean[] dictionaryEncodingArray;
+  boolean[] dictionaryEncodingArray;
 
-  protected boolean[] directDictionaryEncodingArray;
+  boolean[] directDictionaryEncodingArray;
 
-  protected boolean[] implictColumnArray;
+  private boolean[] implictColumnArray;
 
-  protected boolean[] complexDataTypeArray;
+  private boolean[] complexDataTypeArray;
 
-  protected int dictionaryColumnIndex;
-  protected int noDictionaryColumnIndex;
-  protected int complexTypeColumnIndex;
+  int dictionaryColumnIndex;
+  int noDictionaryColumnIndex;
+  int complexTypeColumnIndex;
 
-  protected boolean isDimensionExists;
+  boolean isDimensionExists;
 
-  protected Map<Integer, GenericQueryType> comlexDimensionInfoMap;
+  private Map<Integer, GenericQueryType> comlexDimensionInfoMap;
 
   public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
-    queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
-    queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
+    queryDimensions = executionInfo.getProjectionDimensions();
+    queryMeasures = executionInfo.getProjectionMeasures();
     initDimensionAndMeasureIndexesForFillingData();
     isDimensionExists = queryDimensions.length > 0;
-    this.comlexDimensionInfoMap = tableBlockExecutionInfos.getComlexDimensionInfoMap();
+    this.comlexDimensionInfoMap = executionInfo.getComlexDimensionInfoMap();
   }
 
   /**
    * This method will add a record both key and value to list object
    * it will keep track of how many record is processed, to handle limit scenario
    */
-  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+  @Override
+  public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
 
     // scan the record and add to list
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
@@ -118,13 +119,13 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     return listBasedResult;
   }
 
-  protected void fillDimensionData(AbstractScannedResult scannedResult, int[] surrogateResult,
+  void fillDimensionData(BlockletScannedResult scannedResult, int[] surrogateResult,
       byte[][] noDictionaryKeys, byte[][] complexTypeKeyArray,
       Map<Integer, GenericQueryType> comlexDimensionInfoMap, Object[] row, int i) {
     if (!dictionaryEncodingArray[i]) {
       if (implictColumnArray[i]) {
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
-            .equals(queryDimensions[i].getDimension().getColName())) {
+            .equals(queryDimensions[i].getColumnName())) {
           row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
               scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
                   .getCurrentPageCounter() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
@@ -153,7 +154,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     }
   }
 
-  protected void fillMeasureData(AbstractScannedResult scannedResult, Object[] row) {
+  void fillMeasureData(BlockletScannedResult scannedResult, Object[] row) {
     if (measureInfo.getMeasureDataTypes().length > 0) {
       Object[] msrValues = new Object[measureInfo.getMeasureDataTypes().length];
       fillMeasureData(msrValues, 0, scannedResult);
@@ -163,7 +164,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     }
   }
 
-  protected void initDimensionAndMeasureIndexesForFillingData() {
+  void initDimensionAndMeasureIndexesForFillingData() {
     List<Integer> dictionaryIndexes = new ArrayList<Integer>();
     for (int i = 0; i < queryDimensions.length; i++) {
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
@@ -190,10 +191,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
     order = new int[queryDimensions.length + queryMeasures.length];
     for (int i = 0; i < queryDimensions.length; i++) {
-      order[i] = queryDimensions[i].getQueryOrder();
+      order[i] = queryDimensions[i].getOrdinal();
     }
     for (int i = 0; i < queryMeasures.length; i++) {
-      order[i + queryDimensions.length] = queryMeasures[i].getQueryOrder();
+      order[i + queryDimensions.length] = queryMeasures[i].getOrdinal();
     }
     directDictionaryGenerators = new DirectDictionaryGenerator[queryDimensions.length];
     for (int i = 0; i < queryDimensions.length; i++) {

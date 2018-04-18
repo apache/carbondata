@@ -23,9 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -34,7 +32,6 @@ import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.spark.sql.types.Decimal;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -261,8 +258,8 @@ public class LessThanEqualToExpressionUnitTest {
     left.setColIndex(1);
     lessThanEqualToExpression = new LessThanEqualToExpression(left, right);
     RowImpl value = new RowImpl();
-    Decimal[] row = new Decimal[] { Decimal.apply(46851.2) };
-    Decimal[] row1 = new Decimal[] { Decimal.apply(45821.02) };
+    BigDecimal[] row = new BigDecimal[] { new BigDecimal(46851.2) };
+    BigDecimal[] row1 = new BigDecimal[] { new BigDecimal(45821.02) };
     Object objectRow[] = { row1, row };
     value.setValues(objectRow);
 

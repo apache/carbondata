@@ -29,29 +29,10 @@ public class SegmentInfo implements Serializable {
   private static final long serialVersionUID = -1749874611112709431L;
 
   /**
-   * number of column in the segment
-   */
-  private int numberOfColumns;
-
-  /**
    * cardinality of each columns
    * column which is not participating in the multidimensional key cardinality will be -1;
    */
   private int[] columnCardinality;
-
-  /**
-   * @return the numberOfColumns
-   */
-  public int getNumberOfColumns() {
-    return numberOfColumns;
-  }
-
-  /**
-   * @param numberOfColumns the numberOfColumns to set
-   */
-  public void setNumberOfColumns(int numberOfColumns) {
-    this.numberOfColumns = numberOfColumns;
-  }
 
   /**
    * @return the columnCardinality

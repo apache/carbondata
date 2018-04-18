@@ -99,8 +99,11 @@ public interface SchemaConverter {
    * @param tableName
    * @return
    */
-  TableInfo fromExternalToWrapperTableInfo(org.apache.carbondata.format.TableInfo externalTableInfo,
-      String dbName, String tableName, String storePath);
+  TableInfo fromExternalToWrapperTableInfo(
+      org.apache.carbondata.format.TableInfo externalTableInfo,
+      String dbName,
+      String tableName,
+      String storePath);
 
   /**
    * method to convert thrift datamap schema object to wrapper

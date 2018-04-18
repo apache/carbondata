@@ -34,67 +34,66 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
   /**
    * table fully qualified name
    */
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
+  private AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier;
 
   /**
    * unique column id
    */
   private ColumnIdentifier columnIdentifier;
 
-  private transient CarbonTablePath carbonTablePath;
-
   private DataType dataType;
+
+  private String dictionaryLocation;
 
   /**
    * Will be used in case of reverse dictionary cache which will be used
    * in case of data loading.
    *
-   * @param absoluteTableIdentifier
+   * @param dictionarySourceAbsoluteTableIdentifier
    * @param columnIdentifier
    */
-  public DictionaryColumnUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
+  public DictionaryColumnUniqueIdentifier(
+      AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
       ColumnIdentifier columnIdentifier) {
-    if (absoluteTableIdentifier == null) {
+    if (dictionarySourceAbsoluteTableIdentifier == null) {
       throw new IllegalArgumentException("carbonTableIdentifier is null");
     }
     if (columnIdentifier == null) {
       throw new IllegalArgumentException("columnIdentifier is null");
     }
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
+    this.dictionarySourceAbsoluteTableIdentifier = dictionarySourceAbsoluteTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     this.dataType = columnIdentifier.getDataType();
+    this.dictionaryLocation =
+        CarbonTablePath.getMetadataPath(dictionarySourceAbsoluteTableIdentifier.getTablePath());
   }
 
   /**
    * Will be used in case of forward dictionary cache in case
    * of query execution.
    *
-   * @param absoluteTableIdentifier
+   * @param dictionarySourceAbsoluteTableIdentifier
    * @param columnIdentifier
    * @param dataType
    */
-  public DictionaryColumnUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
-      ColumnIdentifier columnIdentifier, DataType dataType, CarbonTablePath carbonTablePath) {
-    this(absoluteTableIdentifier, columnIdentifier);
+  public DictionaryColumnUniqueIdentifier(
+      AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
+      ColumnIdentifier columnIdentifier, DataType dataType) {
+    this(dictionarySourceAbsoluteTableIdentifier, columnIdentifier);
     this.dataType = dataType;
-    if (null != carbonTablePath) {
-      this.carbonTablePath = carbonTablePath;
+  }
+
+  public DictionaryColumnUniqueIdentifier(
+      AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
+      ColumnIdentifier columnIdentifier, DataType dataType, String dictionaryLocation) {
+    this(dictionarySourceAbsoluteTableIdentifier, columnIdentifier, dataType);
+    if (null != dictionaryLocation) {
+      this.dictionaryLocation = dictionaryLocation;
     }
   }
 
   public DataType getDataType() {
     return dataType;
-  }
-
-  /**
-   * @return table identifier
-   */
-  public AbsoluteTableIdentifier getAbsoluteCarbonTableIdentifier() {
-    return absoluteTableIdentifier;
-  }
-
-  public CarbonTablePath getCarbonTablePath() {
-    return carbonTablePath;
   }
 
   /**
@@ -105,18 +104,57 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
   }
 
   /**
+   * @return dictionary file path
+   */
+  public String getDictionaryFilePath() {
+    return CarbonTablePath.getExternalDictionaryFilePath(
+        dictionaryLocation, columnIdentifier.getColumnId());
+  }
+
+  /**
+   * @return dictionary metadata file path
+   */
+  public String getDictionaryMetaFilePath() {
+    return CarbonTablePath.getExternalDictionaryMetaFilePath(
+        dictionaryLocation, columnIdentifier.getColumnId());
+  }
+
+  /**
+   * @return sort index file path
+   */
+  public String getSortIndexFilePath() {
+    return CarbonTablePath.getExternalSortIndexFilePath(
+        dictionaryLocation, columnIdentifier.getColumnId());
+  }
+
+  /**
+   * @param offset
+   * @return sort index file path with given offset
+   */
+  public String getSortIndexFilePath(long offset) {
+    return CarbonTablePath.getExternalSortIndexFilePath(
+        dictionaryLocation, columnIdentifier.getColumnId(), offset);
+  }
+
+  /**
    * overridden equals method
    *
    * @param other
    * @return
    */
   @Override public boolean equals(Object other) {
-    if (this == other) return true;
-    if (other == null || getClass() != other.getClass()) return false;
+    if (this == other) {
+      return true;
+    }
+    if (other == null || getClass() != other.getClass()) {
+      return false;
+    }
     DictionaryColumnUniqueIdentifier that = (DictionaryColumnUniqueIdentifier) other;
-    if (!absoluteTableIdentifier.equals(that.absoluteTableIdentifier)) return false;
+    if (!dictionarySourceAbsoluteTableIdentifier
+        .equals(that.dictionarySourceAbsoluteTableIdentifier)) {
+      return false;
+    }
     return columnIdentifier.equals(that.columnIdentifier);
-
   }
 
   /**
@@ -125,7 +163,7 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * @return
    */
   @Override public int hashCode() {
-    int result = absoluteTableIdentifier.hashCode();
+    int result = dictionarySourceAbsoluteTableIdentifier.hashCode();
     result = 31 * result + columnIdentifier.hashCode();
     return result;
   }

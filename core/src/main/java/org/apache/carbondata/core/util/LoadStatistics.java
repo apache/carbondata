@@ -18,8 +18,8 @@
 package org.apache.carbondata.core.util;
 
 public interface LoadStatistics {
-  //Init PartitonInfo
-  void  initPartitonInfo(String PartitionId);
+  //Init PartitionInfo
+  void initPartitionInfo(String PartitionId);
 
   //Record the time
   void recordDicShuffleAndWriteTime();

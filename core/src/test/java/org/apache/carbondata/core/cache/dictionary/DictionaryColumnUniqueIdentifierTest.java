@@ -22,7 +22,6 @@ import java.util.Map;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import mockit.Mock;
@@ -45,9 +44,9 @@ public class DictionaryColumnUniqueIdentifierTest {
         new CarbonTableIdentifier("testDatabase", "testTable", "1");
     CarbonTableIdentifier carbonTableIdentifier2 =
         new CarbonTableIdentifier("testDatabase", "testTable", "2");
-    AbsoluteTableIdentifier absoluteTableIdentifier1 = new AbsoluteTableIdentifier("storepath",
+    AbsoluteTableIdentifier absoluteTableIdentifier1 = AbsoluteTableIdentifier.from("storepath",
         carbonTableIdentifier1);
-    AbsoluteTableIdentifier absoluteTableIdentifier2 = new AbsoluteTableIdentifier("storepath",
+    AbsoluteTableIdentifier absoluteTableIdentifier2 = AbsoluteTableIdentifier.from("storepath",
         carbonTableIdentifier2);
     Map<String, String> properties = new HashMap<>();
     ColumnIdentifier columnIdentifier = new ColumnIdentifier("2", properties, DataTypes.STRING);

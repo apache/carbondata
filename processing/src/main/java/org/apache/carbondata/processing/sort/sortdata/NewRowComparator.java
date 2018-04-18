@@ -17,11 +17,13 @@
 
 package org.apache.carbondata.processing.sort.sortdata;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 
-public class NewRowComparator implements Comparator<Object[]> {
+public class NewRowComparator implements Comparator<Object[]>, Serializable {
+  private static final long serialVersionUID = -1739874611112709436L;
 
   /**
    * mapping of dictionary dimensions and no dictionary of sort_column.
@@ -40,14 +42,11 @@ public class NewRowComparator implements Comparator<Object[]> {
    */
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
-
     int index = 0;
 
     for (boolean isNoDictionary : noDictionarySortColumnMaping) {
-
       if (isNoDictionary) {
         byte[] byteArr1 = (byte[]) rowA[index];
-
         byte[] byteArr2 = (byte[]) rowB[index];
 
         int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
@@ -57,6 +56,7 @@ public class NewRowComparator implements Comparator<Object[]> {
       } else {
         int dimFieldA = (int) rowA[index];
         int dimFieldB = (int) rowB[index];
+
         diff = dimFieldA - dimFieldB;
         if (diff != 0) {
           return diff;
@@ -65,7 +65,6 @@ public class NewRowComparator implements Comparator<Object[]> {
 
       index++;
     }
-
     return diff;
   }
 }

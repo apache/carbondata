@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -36,7 +37,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -162,6 +162,8 @@ public class CarbonFactDataHandlerModel {
 
   private DataMapWriterListener dataMapWriterlistener;
 
+  private short writingCoresCount;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -182,8 +184,8 @@ public class CarbonFactDataHandlerModel {
       }
     }
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        identifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + identifier
-            .getTableName());
+        identifier.getDatabaseName(), identifier.getTableName());
+
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getDimensionByTableName(identifier.getTableName()),
             carbonTable.getMeasureByTableName(identifier.getTableName()));
@@ -224,7 +226,7 @@ public class CarbonFactDataHandlerModel {
     }
 
     CarbonDataFileAttributes carbonDataFileAttributes =
-        new CarbonDataFileAttributes(Integer.parseInt(configuration.getTaskNo()),
+        new CarbonDataFileAttributes(Long.parseLong(configuration.getTaskNo()),
             (Long) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
     String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration);
 
@@ -259,8 +261,10 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
 
     DataMapWriterListener listener = new DataMapWriterListener();
-    listener.registerAllWriter(configuration.getTableIdentifier(), configuration.getSegmentId());
+    listener.registerAllWriter(configuration.getTableSpec().getCarbonTable(),
+        configuration.getSegmentId(), storeLocation[new Random().nextInt(storeLocation.length)]);
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
+    carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
 
     return carbonFactDataHandlerModel;
   }
@@ -273,7 +277,7 @@ public class CarbonFactDataHandlerModel {
    */
   public static CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel,
       CarbonTable carbonTable, SegmentProperties segmentProperties, String tableName,
-      String[] tempStoreLocation) {
+      String[] tempStoreLocation, String carbonDataDirectoryPath) {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     carbonFactDataHandlerModel.setDatabaseName(loadModel.getDatabaseName());
@@ -305,9 +309,7 @@ public class CarbonFactDataHandlerModel {
       measureDataTypes[i++] = msr.getDataType();
     }
     carbonFactDataHandlerModel.setMeasureDataType(measureDataTypes);
-    String carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .checkAndCreateCarbonStoreLocation(loadModel.getTablePath(), loadModel.getDatabaseName(),
-            tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
+    CarbonUtil.checkAndCreateFolderWithPermission(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
     boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
@@ -319,9 +321,14 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
 
-    carbonFactDataHandlerModel.tableSpec = new TableSpec(
-        segmentProperties.getDimensions(),
-        segmentProperties.getMeasures());
+    carbonFactDataHandlerModel.tableSpec =
+        new TableSpec(loadModel.getCarbonDataLoadSchema().getCarbonTable());
+    DataMapWriterListener listener = new DataMapWriterListener();
+    listener.registerAllWriter(
+        loadModel.getCarbonDataLoadSchema().getCarbonTable(),
+        loadModel.getSegmentId(),
+        tempStoreLocation[new Random().nextInt(tempStoreLocation.length)]);
+    carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     return carbonFactDataHandlerModel;
   }
 
@@ -331,11 +338,42 @@ public class CarbonFactDataHandlerModel {
    * @return data directory path
    */
   private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration) {
+    // configuration.getDataWritePath will not be null only in case of partition
+    if (configuration.getDataWritePath() != null) {
+      String paths = configuration.getDataWritePath();
+      AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
+      String partPath = absoluteTableIdentifier.getTablePath();
+      String[] dirs = paths.split(partPath);
+      /* it will create folder one by one and apply the permissions
+       else creation of folder in one go will set the permission for last directory only
+       e.g. paths="/home/rahul/Documents/store/carbonTable1/emp_name=rahul/loc=india/dept=rd"
+            So, dirs={"","/emp_name=rahul/loc=india/dept=rd"}
+            if (dirs.length > 1) then partDirs ={"","emp_name=rahul","loc=india","dept=rd"}
+            forEach partDirs partpath(say "/home/rahul/Documents/store/carbonTable1") will
+            be keep appending with "emp_name=rahul","loc=india","dept=rd" sequentially
+      */
+      if (dirs.length > 1) {
+        String[] partDirs = dirs[1].split(CarbonCommonConstants.FILE_SEPARATOR);
+        for (String partDir : partDirs) {
+          if (!partDir.isEmpty()) {
+            partPath = partPath.concat(CarbonCommonConstants.FILE_SEPARATOR + partDir);
+            CarbonUtil.checkAndCreateFolderWithPermission(partPath);
+          }
+        }
+      } else {
+        CarbonUtil.checkAndCreateFolderWithPermission(paths);
+      }
+      return paths;
+    }
     AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
-    String carbonDataDirectoryPath = carbonTablePath
-        .getCarbonDataDirectoryPath(configuration.getPartitionId(),
-            configuration.getSegmentId() + "");
+    String carbonDataDirectoryPath;
+    if (configuration.isCarbonUnmanagedTable()) {
+      carbonDataDirectoryPath = absoluteTableIdentifier.getTablePath();
+    } else {
+      carbonDataDirectoryPath = CarbonTablePath
+          .getSegmentPath(absoluteTableIdentifier.getTablePath(),
+              configuration.getSegmentId() + "");
+    }
     CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }
@@ -562,6 +600,10 @@ public class CarbonFactDataHandlerModel {
 
   public SortScopeOptions.SortScope getSortScope() {
     return sortScope;
+  }
+
+  public short getWritingCoresCount() {
+    return writingCoresCount;
   }
 
   public DataMapWriterListener getDataMapWriterlistener() {

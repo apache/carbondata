@@ -30,12 +30,14 @@ import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerat
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
+
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ColumnGroupDimensionDataChunkTest {
 
-  static ColumnGroupDimensionDataChunk columnGroupDimensionDataChunk;
+  static ColumnGroupDimensionColumnPage columnGroupDimensionDataChunk;
   static KeyGenerator keyGenerator;
 
   @BeforeClass public static void setup() {
@@ -54,7 +56,7 @@ public class ColumnGroupDimensionDataChunkTest {
       position += keyGenerator.getKeySizeInBytes();
     }
     columnGroupDimensionDataChunk =
-        new ColumnGroupDimensionDataChunk(data, keyGenerator.getKeySizeInBytes(), 3);
+        new ColumnGroupDimensionColumnPage(data, keyGenerator.getKeySizeInBytes(), 3);
   }
 
   @Test public void fillChunkDataTest() {
@@ -62,14 +64,14 @@ public class ColumnGroupDimensionDataChunkTest {
     ordinals.add(1);
     KeyStructureInfo keyStructureInfo = getKeyStructureInfo(ordinals, keyGenerator);
     byte[] buffer = new byte[1];
-    columnGroupDimensionDataChunk.fillChunkData(buffer, 0, 1, keyStructureInfo);
+    columnGroupDimensionDataChunk.fillRawData(1, 0, buffer, keyStructureInfo);
     assertEquals(buffer[0], 2);
   }
 
   @Test public void getChunkDataTest() {
     byte[] b = { 34, 2 };
     byte res[] = columnGroupDimensionDataChunk.getChunkData(1);
-    assert (Arrays.equals(res, b));
+    Assert.assertTrue(Arrays.equals(res, b));
   }
 
   @Test public void fillConvertedChunkDataTest() {
@@ -79,8 +81,8 @@ public class ColumnGroupDimensionDataChunkTest {
     ordinals.add(2);
     KeyStructureInfo keyStructureInfo = getKeyStructureInfo(ordinals, keyGenerator);
     keyStructureInfo.setMdkeyQueryDimensionOrdinal(new int[] { 2 });
-    int res = columnGroupDimensionDataChunk.fillConvertedChunkData(2, 2, row, keyStructureInfo);
-    assert (Arrays.equals(row, expected));
+    int res = columnGroupDimensionDataChunk.fillSurrogateKey(2, 2, row, keyStructureInfo);
+    Assert.assertTrue(Arrays.equals(row, expected));
   }
 
   /**

@@ -21,7 +21,6 @@ import java.nio.ByteBuffer;
 import org.apache.carbondata.core.cache.dictionary.ColumnDictionaryInfo;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.ForwardDictionary;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.Bits;
@@ -30,11 +29,6 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.spark.sql.types.BooleanType$;
-import org.apache.spark.sql.types.DoubleType$;
-import org.apache.spark.sql.types.IntegerType$;
-import org.apache.spark.sql.types.LongType$;
-import org.apache.spark.sql.types.TimestampType$;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -77,30 +71,6 @@ public class PrimitiveQueryTypeTest {
         new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.TIMESTAMP, keySize,
             forwardDictionary, false);
 
-  }
-
-  @Test public void testGetDataTypeForDefault() {
-    assertEquals(IntegerType$.MODULE$, primitiveQueryType.getSchemaType());
-  }
-
-  @Test public void testGetDataTypeForInt() {
-    assertEquals(IntegerType$.MODULE$, primitiveQueryTypeForInt.getSchemaType());
-  }
-
-  @Test public void testGetDataTypeForDouble() {
-    assertEquals(DoubleType$.MODULE$, primitiveQueryTypeForDouble.getSchemaType());
-  }
-
-  @Test public void testGetDataTypeForBoolean() {
-    assertEquals(BooleanType$.MODULE$, primitiveQueryTypeForBoolean.getSchemaType());
-  }
-
-  @Test public void testGetDataTypeForTimeStamp() {
-    assertEquals(TimestampType$.MODULE$, primitiveQueryTypeForTimeStamp.getSchemaType());
-  }
-
-  @Test public void testGetDataTypeForLong() {
-    assertEquals(LongType$.MODULE$, primitiveQueryTypeForLong.getSchemaType());
   }
 
   @Test public void testGetDataBasedOnDataTypeFromSurrogates() {

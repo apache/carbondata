@@ -23,11 +23,8 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
-
-import org.apache.spark.sql.catalyst.util.GenericArrayData;
-import org.apache.spark.sql.types.ArrayType;
-import org.apache.spark.sql.types.DataType;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 
@@ -82,11 +79,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     return children.getColsCount() + 1;
   }
 
-  @Override public DataType getSchemaType() {
-    return new ArrayType(null, true);
-  }
-
-  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder)
+  @Override public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);
     children.fillRequiredBlockData(blockChunkHolder);
@@ -101,7 +94,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     for (int i = 0; i < dataLength; i++) {
       data[i] = children.getDataBasedOnDataTypeFromSurrogates(surrogateData);
     }
-    return new GenericArrayData(data);
+    return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
   }
 
 }

@@ -38,7 +38,7 @@ public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
    *                      node
    * @param metadataIndex metadata index
    */
-  public BlockBTreeLeafNode(BTreeBuilderInfo builderInfos, int metadataIndex, long nodeNumber) {
+  BlockBTreeLeafNode(BTreeBuilderInfo builderInfos, int metadataIndex, long nodeNumber) {
     DataFileFooter footer = builderInfos.getFooterList().get(metadataIndex);
     BlockletMinMaxIndex minMaxIndex = footer.getBlockletIndex().getMinMaxIndex();
     maxKeyOfColumns = minMaxIndex.getMaxValues();
@@ -57,6 +57,14 @@ public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
    */
   public TableBlockInfo getTableBlockInfo() {
     return blockInfo.getTableBlockInfo();
+  }
+
+  /**
+   * Below method is suppose to return the Blocklet ID.
+   * @return
+   */
+  @Override public short blockletIndex() {
+    return blockInfo.getTableBlockInfo().getDetailInfo().getBlockletId();
   }
 
   /**

@@ -128,6 +128,9 @@ public class CSVInputFormatTest extends TestCase {
   @Test public void testReadCSVFiles() throws Exception{
     Configuration conf = new Configuration();
     prepareConf(conf);
+    conf.setBoolean(CSVInputFormat.HEADER_PRESENT, true);
+    File output = new File("target/output_CSVInputFormatTest");
+    conf.set("mapreduce.cluster.local.dir", output.getCanonicalPath());
     Job job = Job.getInstance(conf, "CSVInputFormat_normal");
     job.setJarByClass(CSVInputFormatTest.class);
     job.setMapperClass(CSVCheckMapper.class);
@@ -141,15 +144,42 @@ public class CSVInputFormatTest extends TestCase {
     // FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.lz4"));
     // FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.snappy"));
 
-    File output = new File("target/output_CSVInputFormatTest");
     deleteOutput(output);
     FileOutputFormat.setOutputPath(job, new Path(output.getCanonicalPath()));
 
     Assert.assertTrue(job.waitForCompletion(true));
   }
 
+  /**
+   * test read csv files encoded as UTF-8 with BOM
+   * @throws Exception
+   */
+  @Test public void testReadCSVFilesWithBOM() throws Exception{
+
+    Configuration conf = new Configuration();
+    prepareConf(conf);
+    conf.setBoolean(CSVInputFormat.HEADER_PRESENT, false);
+    File output = new File("target/output_CSVInputFormatTest_bom");
+    conf.set("mapreduce.cluster.local.dir", output.getCanonicalPath());
+    Job job = Job.getInstance(conf, "CSVInputFormat_normal_bom");
+    job.setJarByClass(CSVInputFormatTest.class);
+    job.setMapperClass(CSVCheckMapper.class);
+    job.setNumReduceTasks(0);
+    job.setInputFormatClass(CSVInputFormat.class);
+
+    String inputFolder = new File("src/test/resources/csv").getCanonicalPath();
+    FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "csv_with_bom.csv"));
+    FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "csv_with_bom.csv.bz2"));
+    FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "csv_with_bom.csv.gz"));
+
+    deleteOutput(output);
+    FileOutputFormat.setOutputPath(job, new Path(output.getCanonicalPath()));
+
+    Assert.assertTrue(job.waitForCompletion(true));
+    deleteOutput(output);
+  }
+
   private void prepareConf(Configuration conf) {
-    conf.setBoolean(CSVInputFormat.HEADER_PRESENT, true);
     conf.set(CSVInputFormat.MAX_COLUMNS, "10");
     conf.set(CSVInputFormat.NUMBER_OF_COLUMNS, "7");
   }

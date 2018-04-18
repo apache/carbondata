@@ -19,18 +19,42 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
+import org.apache.log4j.PropertyConfigurator
+import org.apache.spark.sql.SparkSession
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.ExampleUtils
+
 object CarbonSessionExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
-    spark.sparkContext.setLogLevel("WARN")
+    val rootPath = new File(this.getClass.getResource("/").getPath
+                            + "../../../..").getCanonicalPath
+    System.setProperty("path.target", s"$rootPath/examples/spark2/target")
+    // print profiler log to a separated file: target/profiler.log
+    PropertyConfigurator.configure(
+      s"$rootPath/examples/spark2/src/main/resources/log4j.properties")
 
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
+    val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
+    spark.sparkContext.setLogLevel("INFO")
+    exampleBody(spark)
+    spark.close()
+  }
+
+  def exampleBody(spark : SparkSession): Unit = {
+
+    val rootPath = new File(this.getClass.getResource("/").getPath
+                            + "../../../..").getCanonicalPath
+
+    spark.sql("DROP TABLE IF EXISTS carbonsession_table")
 
     // Create table
     spark.sql(
       s"""
-         | CREATE TABLE carbon_table(
+         | CREATE TABLE carbonsession_table(
          | shortField SHORT,
          | intField INT,
          | bigintField LONG,
@@ -40,84 +64,78 @@ object CarbonSessionExample {
          | decimalField DECIMAL(18,2),
          | dateField DATE,
          | charField CHAR(5),
-         | floatField FLOAT,
-         | complexData ARRAY<STRING>
+         | floatField FLOAT
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMNS'='', 'DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
 
     // scalastyle:off
     spark.sql(
       s"""
          | LOAD DATA LOCAL INPATH '$path'
-         | INTO TABLE carbon_table
+         | INTO TABLE carbonsession_table
          | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
        """.stripMargin)
     // scalastyle:on
 
     spark.sql(
       s"""
-        | SELECT *
-        | FROM carbon_table
-        | WHERE stringfield = 'spark' AND decimalField > 40
+         | SELECT charField, stringField, intField
+         | FROM carbonsession_table
+         | WHERE stringfield = 'spark' AND decimalField > 40
       """.stripMargin).show()
 
     spark.sql(
       s"""
          | SELECT *
-         | FROM carbon_table WHERE length(stringField) = 5
+         | FROM carbonsession_table WHERE length(stringField) = 5
        """.stripMargin).show()
 
     spark.sql(
       s"""
          | SELECT *
-         | FROM carbon_table WHERE date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
+         | FROM carbonsession_table WHERE date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
        """.stripMargin).show()
 
-    spark.sql("SELECT count(stringField) FROM carbon_table").show()
+    spark.sql("SELECT count(stringField) FROM carbonsession_table").show()
 
     spark.sql(
       s"""
          | SELECT sum(intField), stringField
-         | FROM carbon_table
+         | FROM carbonsession_table
          | GROUP BY stringField
        """.stripMargin).show()
 
     spark.sql(
       s"""
-        | SELECT t1.*, t2.*
-        | FROM carbon_table t1, carbon_table t2
-        | WHERE t1.stringField = t2.stringField
+         | SELECT t1.*, t2.*
+         | FROM carbonsession_table t1, carbonsession_table t2
+         | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
 
     spark.sql(
       s"""
-        | WITH t1 AS (
-        | SELECT * FROM carbon_table
-        | UNION ALL
-        | SELECT * FROM carbon_table
-        | )
-        | SELECT t1.*, t2.*
-        | FROM t1, carbon_table t2
-        | WHERE t1.stringField = t2.stringField
+         | WITH t1 AS (
+         | SELECT * FROM carbonsession_table
+         | UNION ALL
+         | SELECT * FROM carbonsession_table
+         | )
+         | SELECT t1.*, t2.*
+         | FROM t1, carbonsession_table t2
+         | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
 
     spark.sql(
       s"""
          | SELECT *
-         | FROM carbon_table
+         | FROM carbonsession_table
          | WHERE stringField = 'spark' and floatField > 2.8
        """.stripMargin).show()
 
     // Drop table
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
-
-    spark.stop()
+    spark.sql("DROP TABLE IF EXISTS carbonsession_table")
   }
-
 }

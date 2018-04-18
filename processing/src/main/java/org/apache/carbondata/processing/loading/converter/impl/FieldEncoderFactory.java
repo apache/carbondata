@@ -34,8 +34,6 @@ import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
-import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -89,8 +87,7 @@ public class FieldEncoderFactory {
         if (null == dataField.getColumn().getColumnSchema().getParentColumnTableRelations()
             || dataField.getColumn().getColumnSchema().getParentColumnTableRelations().isEmpty()) {
           identifier = new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
-              dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType(),
-              CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
+              dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
           return new DictionaryFieldConverterImpl(dataField, cache, absoluteTableIdentifier,
               nullFormat, index, client, useOnePass, localCache, isEmptyBadRecord,
               identifier);
@@ -106,14 +103,13 @@ public class FieldEncoderFactory {
           ColumnIdentifier parentColumnIdentifier =
               new ColumnIdentifier(parentColumnTableRelation.getColumnId(), null,
                   dataField.getColumn().getDataType());
-          CarbonTablePath carbonTablePath =
-              CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
-          AbsoluteTableIdentifier parentAbsoluteTableIdentifier = new AbsoluteTableIdentifier(
-              CarbonUtil.getNewTablePath(carbonTablePath, parentTableIdentifier),
-              parentTableIdentifier);
+          AbsoluteTableIdentifier parentAbsoluteTableIdentifier =
+              AbsoluteTableIdentifier.from(
+                  CarbonTablePath.getNewTablePath(
+                      absoluteTableIdentifier.getTablePath(), parentTableIdentifier.getTableName()),
+                  parentTableIdentifier);
           identifier = new DictionaryColumnUniqueIdentifier(parentAbsoluteTableIdentifier,
-              parentColumnIdentifier, dataField.getColumn().getDataType(),
-              CarbonStorePath.getCarbonTablePath(parentAbsoluteTableIdentifier));
+              parentColumnIdentifier, dataField.getColumn().getDataType());
           return new DictionaryFieldConverterImpl(dataField, cache, parentAbsoluteTableIdentifier,
               nullFormat, index, null, false, null, isEmptyBadRecord, identifier);
         }

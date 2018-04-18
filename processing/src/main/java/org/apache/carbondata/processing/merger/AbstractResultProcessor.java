@@ -19,10 +19,8 @@ package org.apache.carbondata.processing.merger;
 
 import java.util.List;
 
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
@@ -39,23 +37,27 @@ public abstract class AbstractResultProcessor {
    * @param resultIteratorList
    * @return
    */
-  public abstract boolean execute(List<RawResultIterator> resultIteratorList);
+  public abstract boolean execute(List<RawResultIterator> resultIteratorList) throws Exception;
+
+  /**
+   * This method will be sued to clean up the resources and close all the spawned threads to avoid
+   * any kind of memory or thread leak
+   */
+  public abstract void close();
 
   protected void setDataFileAttributesInModel(CarbonLoadModel loadModel,
-      CompactionType compactionType, CarbonTable carbonTable,
-      CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
+      CompactionType compactionType, CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
     CarbonDataFileAttributes carbonDataFileAttributes;
-    if (compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
-      int taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
-          CarbonStorePath.getCarbonTablePath(loadModel.getTablePath(),
-              carbonTable.getCarbonTableIdentifier()));
+    if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
+      long taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
+          loadModel.getTablePath());
       // Increase the Task Index as in IUD_UPDDEL_DELTA_COMPACTION the new file will
       // be written in same segment. So the TaskNo should be incremented by 1 from max val.
-      int index = taskNo + 1;
+      long index = taskNo + 1;
       carbonDataFileAttributes = new CarbonDataFileAttributes(index, loadModel.getFactTimeStamp());
     } else {
       carbonDataFileAttributes =
-          new CarbonDataFileAttributes(Integer.parseInt(loadModel.getTaskNo()),
+          new CarbonDataFileAttributes(Long.parseLong(loadModel.getTaskNo()),
               loadModel.getFactTimeStamp());
     }
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);

@@ -46,12 +46,26 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT = "false";
 
   /**
-   * option to specify the load option
+   * option to specify whether to skip empty lines in load
+   */
+  @CarbonProperty public static final String CARBON_OPTIONS_SKIP_EMPTY_LINE =
+      "carbon.options.is.empty.data.bad.record";
+
+  /**
+   * option to specify the dateFormat in load option for all date columns in table
    */
   @CarbonProperty
   public static final String CARBON_OPTIONS_DATEFORMAT =
       "carbon.options.dateformat";
   public static final String CARBON_OPTIONS_DATEFORMAT_DEFAULT = "";
+
+  /**
+   * option to specify the timestampFormat in load option for all timestamp columns in table
+   */
+  @CarbonProperty
+  public static final String CARBON_OPTIONS_TIMESTAMPFORMAT =
+          "carbon.options.timestampformat";
+  public static final String CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT = "";
   /**
    * option to specify the sort_scope
    */
@@ -86,8 +100,55 @@ public final class CarbonLoadOptionConstants {
       "carbon.options.global.sort.partitions";
 
   /**
+   * specify serialization null format, it is used describe which character in side the csv file
+   * is treated as null.
+   */
+  @CarbonProperty
+  public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT =
+      "carbon.options.serialization.null.format";
+
+  public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT_DEFAULT = "\\N";
+
+  /**
    *  Max number of dictionary values that can be given with external dictionary
    */
   public static final int MAX_EXTERNAL_DICTIONARY_SIZE = 10000000;
 
+  /**
+   * enable block size based block allocation while loading data. By default, carbondata assigns
+   * blocks to node based on block number. If this option is set to `true`, carbondata will
+   * consider block size first and make sure that all the nodes will process almost equal size of
+   * data. This option is especially useful when you encounter skewed data.
+   */
+  @CarbonProperty
+  public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION
+      = "carbon.load.skewedDataOptimization.enabled";
+  public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION_DEFAULT = "false";
+
+  /**
+   * field delimiter for each field in one bound
+   */
+  public static final String SORT_COLUMN_BOUNDS_FIELD_DELIMITER = ",";
+
+  /**
+   * row delimiter for each sort column bounds
+   */
+  public static final String SORT_COLUMN_BOUNDS_ROW_DELIMITER = ";";
+
+  @CarbonProperty
+  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS
+      = "carbon.load.directWriteHdfs.enabled";
+  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS_DEFAULT = "false";
+
+  /**
+   * If the sort memory is insufficient, spill inmemory pages to disk.
+   * The total amount of pages is at most the specified percentage of total sort memory. Default
+   * value 0 means that no pages will be spilled and the newly incoming pages will be spilled,
+   * whereas value 1 means that all pages will be spilled and newly incoming pages will be loaded
+   * into sort memory.
+   */
+  @CarbonProperty
+  public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE
+      = "carbon.load.sortMemory.spill.percentage";
+  public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
 }

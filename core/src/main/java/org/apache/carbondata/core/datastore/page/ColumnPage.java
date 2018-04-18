@@ -61,8 +61,8 @@ public abstract class ColumnPage {
   private ColumnPageStatsCollector statsCollector;
 
   protected static final boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
-          CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT));
+      .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
+          CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT));
 
   /**
    * Create a new column page with input data type and page size.
@@ -370,6 +370,38 @@ public abstract class ColumnPage {
   }
 
   /**
+   * get value at rowId, note that the value of string&bytes is LV format
+   * @param rowId rowId
+   * @return value
+   */
+  public Object getData(int rowId) {
+    if (nullBitSet.get(rowId)) {
+      return getNull(rowId);
+    }
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      byte value = getByte(rowId);
+      if (columnSpec.getSchemaDataType() == DataTypes.BOOLEAN) {
+        return BooleanConvert.byte2Boolean(value);
+      }
+      return value;
+    } else if (dataType == DataTypes.SHORT) {
+      return getShort(rowId);
+    } else if (dataType == DataTypes.INT) {
+      return getInt(rowId);
+    } else if (dataType == DataTypes.LONG) {
+      return getLong(rowId);
+    } else if (dataType == DataTypes.DOUBLE) {
+      return getDouble(rowId);
+    } else if (DataTypes.isDecimal(dataType)) {
+      return getDecimal(rowId);
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+      return getBytes(rowId);
+    } else {
+      throw new RuntimeException("unsupported data type: " + dataType);
+    }
+  }
+
+  /**
    * Set byte value at rowId
    */
   public abstract void putByte(int rowId, byte value);
@@ -443,6 +475,31 @@ public abstract class ColumnPage {
     } else {
       throw new IllegalArgumentException("unsupported data type: " + dataType);
     }
+  }
+
+  /**
+   * Get null at rowId
+   */
+  private Object getNull(int rowId) {
+    Object result;
+    if (dataType == DataTypes.BOOLEAN) {
+      result = getBoolean(rowId);
+    } else if (dataType == DataTypes.BYTE) {
+      result = getByte(rowId);
+    } else if (dataType == DataTypes.SHORT) {
+      result = getShort(rowId);
+    } else if (dataType == DataTypes.INT) {
+      result = getInt(rowId);
+    } else if (dataType == DataTypes.LONG) {
+      result = getLong(rowId);
+    } else if (dataType == DataTypes.DOUBLE) {
+      result = getDouble(rowId);
+    } else if (DataTypes.isDecimal(dataType)) {
+      result = getDecimal(rowId);
+    } else {
+      throw new IllegalArgumentException("unsupported data type: " + dataType);
+    }
+    return result;
   }
 
   /**

@@ -67,7 +67,7 @@ public class BlockLevelTraverser {
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
       blockName = blockName + CarbonTablePath.getCarbonDataExtension();
 
-      long rowCount = currentBlock.nodeSize();
+      long rowCount = currentBlock.numRows();
 
       String key = CarbonUpdateUtil.getSegmentBlockNameKey(segId, blockName);
 

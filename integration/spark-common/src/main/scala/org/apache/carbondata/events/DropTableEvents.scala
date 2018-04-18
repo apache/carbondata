@@ -27,7 +27,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
  * @param ifExistsSet
  * @param sparkSession
  */
-case class DropTablePreEvent(carbonTable: Option[CarbonTable],
+case class DropTablePreEvent(
+    carbonTable: CarbonTable,
     ifExistsSet: Boolean,
     sparkSession: SparkSession)
   extends Event with DropTableEventInfo
@@ -39,7 +40,8 @@ case class DropTablePreEvent(carbonTable: Option[CarbonTable],
  * @param ifExistsSet
  * @param sparkSession
  */
-case class DropTablePostEvent(carbonTable: Option[CarbonTable],
+case class DropTablePostEvent(
+    carbonTable: CarbonTable,
     ifExistsSet: Boolean,
     sparkSession: SparkSession)
   extends Event with DropTableEventInfo
@@ -51,7 +53,8 @@ case class DropTablePostEvent(carbonTable: Option[CarbonTable],
  * @param ifExistsSet
  * @param sparkSession
  */
-case class DropTableAbortEvent(carbonTable: Option[CarbonTable],
+case class DropTableAbortEvent(
+    carbonTable: CarbonTable,
     ifExistsSet: Boolean,
     sparkSession: SparkSession)
   extends Event with DropTableEventInfo

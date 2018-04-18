@@ -17,6 +17,10 @@
 
 package org.apache.carbondata.spark.util;
 
+import java.util.List;
+
+import org.apache.carbondata.hadoop.CarbonInputSplit;
+
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
 
@@ -26,5 +30,20 @@ public class Util {
    */
   public static String[] getConfiguredLocalDirs(SparkConf conf) {
     return Utils.getConfiguredLocalDirs(conf);
+  }
+
+  /**
+   * Method to check whether there exists any block which does not contain the blocklet info
+   *
+   * @param splitList
+   * @return
+   */
+  public static boolean isBlockWithoutBlockletInfoExists(List<CarbonInputSplit> splitList) {
+    for (CarbonInputSplit inputSplit : splitList) {
+      if (null == inputSplit.getDetailInfo().getBlockletInfo()) {
+        return true;
+      }
+    }
+    return false;
   }
 }

@@ -17,48 +17,45 @@
 
 package org.apache.carbondata.core.datastore.chunk.store;
 
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
-public class ColumnPageWrapper implements DimensionColumnDataChunk {
+public class ColumnPageWrapper implements DimensionColumnPage {
 
   private ColumnPage columnPage;
-  private int columnValueSize;
 
-  public ColumnPageWrapper(ColumnPage columnPage, int columnValueSize) {
+  public ColumnPageWrapper(ColumnPage columnPage) {
     this.columnPage = columnPage;
-    this.columnValueSize = columnValueSize;
   }
 
   @Override
-  public int fillChunkData(byte[] data, int offset, int columnIndex,
+  public int fillRawData(int rowId, int offset, byte[] data, KeyStructureInfo restructuringInfo) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey,
       KeyStructureInfo restructuringInfo) {
     throw new UnsupportedOperationException("internal error");
   }
 
   @Override
-  public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+  public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex,
       KeyStructureInfo restructuringInfo) {
     throw new UnsupportedOperationException("internal error");
   }
 
   @Override
-  public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+  public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo, int chunkIndex,
       KeyStructureInfo restructuringInfo) {
     throw new UnsupportedOperationException("internal error");
   }
 
   @Override
-  public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
-      KeyStructureInfo restructuringInfo) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public byte[] getChunkData(int columnIndex) {
-    return columnPage.getBytes(columnIndex);
+  public byte[] getChunkData(int rowId) {
+    return columnPage.getBytes(rowId);
   }
 
   @Override
@@ -66,7 +63,7 @@ public class ColumnPageWrapper implements DimensionColumnDataChunk {
     throw new UnsupportedOperationException("internal error");
   }
 
-  @Override public int getInvertedReverseIndex(int invertedIndex) {
+  @Override public int getInvertedReverseIndex(int rowId) {
     throw new UnsupportedOperationException("internal error");
   }
 
@@ -76,17 +73,12 @@ public class ColumnPageWrapper implements DimensionColumnDataChunk {
   }
 
   @Override
-  public int getColumnValueSize() {
-    return columnValueSize;
-  }
-
-  @Override
   public boolean isExplicitSorted() {
     return false;
   }
 
   @Override
-  public int compareTo(int index, byte[] compareValue) {
+  public int compareTo(int rowId, byte[] compareValue) {
     throw new UnsupportedOperationException("internal error");
   }
 

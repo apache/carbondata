@@ -106,7 +106,7 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
   private BTreeNode findFirstLeafNode(IndexKey key, BTreeNode node) {
     int childNodeIndex;
     int low = 0;
-    int high = node.nodeSize() - 1;
+    int high = node.numRows() - 1;
     int mid = 0;
     int compareRes = -1;
     IndexKey[] nodeKeys = node.getNodeKeys();
@@ -156,7 +156,7 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
   private BTreeNode findLastLeafNode(IndexKey key, BTreeNode node) {
     int childNodeIndex;
     int low = 0;
-    int high = node.nodeSize() - 1;
+    int high = node.numRows() - 1;
     int mid = 0;
     int compareRes = -1;
     IndexKey[] nodeKeys = node.getNodeKeys();
@@ -172,7 +172,7 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
       } else {
         int currentPos = mid;
         // if key is matched then get the first entry
-        while (currentPos + 1 < node.nodeSize()
+        while (currentPos + 1 < node.numRows()
             && compareIndexes(key, nodeKeys[currentPos + 1]) == 0) {
           currentPos++;
         }

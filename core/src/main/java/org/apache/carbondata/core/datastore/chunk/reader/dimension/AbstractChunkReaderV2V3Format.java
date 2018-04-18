@@ -19,7 +19,7 @@ package org.apache.carbondata.core.datastore.chunk.reader.dimension;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.format.Encoding;
@@ -55,43 +55,43 @@ public abstract class AbstractChunkReaderV2V3Format extends AbstractChunkReader 
    * For last column read is separately and process
    *
    * @param fileReader      file reader to read the blocks from file
-   * @param blockletIndexes blocks range to be read
+   * @param columnIndexRange column index range to be read
    * @return dimension column chunks
    */
-  @Override public DimensionRawColumnChunk[] readRawDimensionChunks(final FileHolder fileReader,
-      final int[][] blockletIndexes) throws IOException {
+  @Override public DimensionRawColumnChunk[] readRawDimensionChunks(final FileReader fileReader,
+      final int[][] columnIndexRange) throws IOException {
     // read the column chunk based on block index and add
     DimensionRawColumnChunk[] dataChunks =
         new DimensionRawColumnChunk[dimensionChunksOffset.size()];
     // if blocklet index is empty then return empry data chunk
-    if (blockletIndexes.length == 0) {
+    if (columnIndexRange.length == 0) {
       return dataChunks;
     }
     DimensionRawColumnChunk[] groupChunk = null;
     int index = 0;
     // iterate till block indexes -1 as block index will be in sorted order, so to avoid
     // the last column reading in group
-    for (int i = 0; i < blockletIndexes.length - 1; i++) {
+    for (int i = 0; i < columnIndexRange.length - 1; i++) {
       index = 0;
       groupChunk =
-          readRawDimensionChunksInGroup(fileReader, blockletIndexes[i][0], blockletIndexes[i][1]);
-      for (int j = blockletIndexes[i][0]; j <= blockletIndexes[i][1]; j++) {
+          readRawDimensionChunksInGroup(fileReader, columnIndexRange[i][0], columnIndexRange[i][1]);
+      for (int j = columnIndexRange[i][0]; j <= columnIndexRange[i][1]; j++) {
         dataChunks[j] = groupChunk[index++];
       }
     }
     // check last index is present in block index, if it is present then read separately
-    if (blockletIndexes[blockletIndexes.length - 1][0] == dimensionChunksOffset.size() - 1) {
-      dataChunks[blockletIndexes[blockletIndexes.length - 1][0]] =
-          readRawDimensionChunk(fileReader, blockletIndexes[blockletIndexes.length - 1][0]);
+    if (columnIndexRange[columnIndexRange.length - 1][0] == dimensionChunksOffset.size() - 1) {
+      dataChunks[columnIndexRange[columnIndexRange.length - 1][0]] =
+          readRawDimensionChunk(fileReader, columnIndexRange[columnIndexRange.length - 1][0]);
     }
     // otherwise read the data in group
     else {
-      groupChunk =
-          readRawDimensionChunksInGroup(fileReader, blockletIndexes[blockletIndexes.length - 1][0],
-              blockletIndexes[blockletIndexes.length - 1][1]);
+      groupChunk = readRawDimensionChunksInGroup(
+          fileReader, columnIndexRange[columnIndexRange.length - 1][0],
+          columnIndexRange[columnIndexRange.length - 1][1]);
       index = 0;
-      for (int j = blockletIndexes[blockletIndexes.length - 1][0];
-           j <= blockletIndexes[blockletIndexes.length - 1][1]; j++) {
+      for (int j = columnIndexRange[columnIndexRange.length - 1][0];
+           j <= columnIndexRange[columnIndexRange.length - 1][1]; j++) {
         dataChunks[j] = groupChunk[index++];
       }
     }
@@ -109,7 +109,7 @@ public abstract class AbstractChunkReaderV2V3Format extends AbstractChunkReader 
    * @return measure raw chunkArray
    * @throws IOException
    */
-  protected abstract DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileHolder fileReader,
+  protected abstract DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileReader fileReader,
       int startColumnBlockletIndex, int endColumnBlockletIndex) throws IOException;
 
   /**

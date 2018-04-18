@@ -41,7 +41,13 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
-import static org.apache.carbondata.format.Encoding.*;
+import static org.apache.carbondata.format.Encoding.ADAPTIVE_DELTA_FLOATING;
+import static org.apache.carbondata.format.Encoding.ADAPTIVE_DELTA_INTEGRAL;
+import static org.apache.carbondata.format.Encoding.ADAPTIVE_FLOATING;
+import static org.apache.carbondata.format.Encoding.ADAPTIVE_INTEGRAL;
+import static org.apache.carbondata.format.Encoding.BOOL_BYTE;
+import static org.apache.carbondata.format.Encoding.DIRECT_COMPRESS;
+import static org.apache.carbondata.format.Encoding.RLE_INTEGRAL;
 
 /**
  * Base class for encoding factory implementation.
@@ -98,9 +104,9 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       return new RLECodec().createDecoder(metadata);
     } else if (encoding == BOOL_BYTE) {
-      RLEEncoderMeta metadata = new RLEEncoderMeta();
+      ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.readFields(in);
-      return new RLECodec().createDecoder(metadata);
+      return new DirectCompressCodec(metadata.getStoreDataType()).createDecoder(metadata);
     } else {
       // for backward compatibility
       ValueEncoderMeta metadata = CarbonUtil.deserializeEncoderMetaV3(encoderMeta);

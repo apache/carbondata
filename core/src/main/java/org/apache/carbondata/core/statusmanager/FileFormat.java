@@ -18,23 +18,28 @@
 package org.apache.carbondata.core.statusmanager;
 
 /**
- * the data file format which was supported
+ * The data file format supported in carbondata project
  */
 public enum FileFormat {
-  carbondata, rowformat;
+
+  // carbondata columnar file format, optimized for read
+  COLUMNAR_V3,
+
+  // carbondata row file format, optimized for write
+  ROW_V1;
 
   public static FileFormat getByOrdinal(int ordinal) {
     if (ordinal < 0 || ordinal >= FileFormat.values().length) {
-      return carbondata;
+      return COLUMNAR_V3;
     }
 
     switch (ordinal) {
       case 0:
-        return carbondata;
+        return COLUMNAR_V3;
       case 1:
-        return rowformat;
+        return ROW_V1;
     }
 
-    return carbondata;
+    return COLUMNAR_V3;
   }
 }

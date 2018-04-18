@@ -49,6 +49,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS index2")
     sql("DROP TABLE IF EXISTS hiveNoInvertedIndexTable")
     sql("DROP TABLE IF EXISTS carbonNoInvertedIndexTable")
+    sql("DROP TABLE IF EXISTS testNull")
   }
 
   test("no inverted index load and point query") {
@@ -281,10 +282,18 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       true,"NOINVERTEDINDEX")
   }
 
+  test("filter query on dictionary and no inverted index column where all values are null"){
+    sql("""create table testNull (c1 string,c2 int,c3 string,c5 string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='C2','NO_INVERTED_INDEX'='C2')""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table testNull OPTIONS('delimiter'=';','fileheader'='c1,c2,c3,c5')""")
+    sql("""select c2 from testNull where c2 is null""").show()
+    checkAnswer(sql("""select c2 from testNull where c2 is null"""), Seq(Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
+  }
+
   override def afterAll {
     sql("drop table if exists index1")
     sql("drop table if exists index2")
     sql("drop table if exists indexFormat")
+    sql("drop table if exists testNull")
     clean
   }
 

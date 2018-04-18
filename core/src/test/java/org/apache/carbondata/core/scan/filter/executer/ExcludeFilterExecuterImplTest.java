@@ -18,12 +18,12 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 public class ExcludeFilterExecuterImplTest extends IncludeFilterExecuterImplTest {
 
- @Override public BitSet setFilterdIndexToBitSetNew(DimensionColumnDataChunk dimColumnDataChunk,
+ @Override public BitSet setFilterdIndexToBitSetNew(DimensionColumnPage dimColumnDataChunk,
      int numerOfRows, byte[][] filterValues) {
    BitSet bitSet = new BitSet(numerOfRows);
    bitSet.flip(0, numerOfRows);
@@ -46,7 +46,7 @@ public class ExcludeFilterExecuterImplTest extends IncludeFilterExecuterImplTest
    return bitSet;
  }
 
- @Override public BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimColumnDataChunk,
+ @Override public BitSet setFilterdIndexToBitSet(DimensionColumnPage dimColumnDataChunk,
       int numerOfRows, byte[][] filterValues) {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);

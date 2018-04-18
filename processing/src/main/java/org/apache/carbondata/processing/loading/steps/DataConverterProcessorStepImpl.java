@@ -17,28 +17,34 @@
 
 package org.apache.carbondata.processing.loading.steps;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.constants.LoggerAction;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.SortColumnRangeInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
+import org.apache.carbondata.processing.loading.BadRecordsLoggerProvider;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
-import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
+import org.apache.carbondata.processing.loading.converter.FieldConverter;
 import org.apache.carbondata.processing.loading.converter.RowConverter;
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
+import org.apache.carbondata.processing.loading.partition.Partitioner;
+import org.apache.carbondata.processing.loading.partition.impl.HashPartitionerImpl;
+import org.apache.carbondata.processing.loading.partition.impl.RangePartitionerImpl;
+import org.apache.carbondata.processing.loading.partition.impl.RawRowComparator;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Replace row data fields with dictionary values if column is configured dictionary encoded.
@@ -47,7 +53,10 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private List<RowConverter> converters;
+  private Partitioner<CarbonRow> partitioner;
   private BadRecordsLogger badRecordLogger;
+  private boolean isSortColumnRangeEnabled = false;
+  private boolean isBucketColumnEnabled = false;
 
   public DataConverterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -64,12 +73,87 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     super.initialize();
     child.initialize();
     converters = new ArrayList<>();
-    badRecordLogger = createBadRecordLogger(configuration);
+    badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     RowConverter converter =
         new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
     configuration.setCardinalityFinder(converter);
     converters.add(converter);
     converter.initialize();
+
+    if (null != configuration.getBucketingInfo()) {
+      this.isBucketColumnEnabled = true;
+      initializeBucketColumnPartitioner();
+    } else if (null != configuration.getSortColumnRangeInfo()) {
+      this.isSortColumnRangeEnabled = true;
+      initializeSortColumnRangesPartitioner();
+    }
+  }
+
+  /**
+   * initialize partitioner for bucket column
+   */
+  private void initializeBucketColumnPartitioner() {
+    List<Integer> indexes = new ArrayList<>();
+    List<ColumnSchema> columnSchemas = new ArrayList<>();
+    DataField[] inputDataFields = getOutput();
+    BucketingInfo bucketingInfo = configuration.getBucketingInfo();
+    for (int i = 0; i < inputDataFields.length; i++) {
+      for (int j = 0; j < bucketingInfo.getListOfColumns().size(); j++) {
+        if (inputDataFields[i].getColumn().getColName()
+            .equals(bucketingInfo.getListOfColumns().get(j).getColumnName())) {
+          indexes.add(i);
+          columnSchemas.add(inputDataFields[i].getColumn().getColumnSchema());
+          break;
+        }
+      }
+    }
+
+    // hash partitioner to dispatch rows by bucket column
+    this.partitioner =
+        new HashPartitionerImpl(indexes, columnSchemas, bucketingInfo.getNumOfRanges());
+  }
+
+
+  /**
+   * initialize partitioner for sort column ranges
+   */
+  private void initializeSortColumnRangesPartitioner() {
+    // convert user specified sort-column ranges
+    SortColumnRangeInfo sortColumnRangeInfo = configuration.getSortColumnRangeInfo();
+    int rangeValueCnt = sortColumnRangeInfo.getUserSpecifiedRanges().length;
+    CarbonRow[] convertedSortColumnRanges = new CarbonRow[rangeValueCnt];
+    for (int i = 0; i < rangeValueCnt; i++) {
+      Object[] fakeOriginRow = new Object[configuration.getDataFields().length];
+      String[] oneBound = StringUtils.splitPreserveAllTokens(
+          sortColumnRangeInfo.getUserSpecifiedRanges()[i], sortColumnRangeInfo.getSeparator(), -1);
+      // set the corresponding sort column
+      int j = 0;
+      for (int colIdx : sortColumnRangeInfo.getSortColumnIndex()) {
+        fakeOriginRow[colIdx] = oneBound[j++];
+      }
+      CarbonRow fakeCarbonRow = new CarbonRow(fakeOriginRow);
+      convertFakeRow(fakeCarbonRow, sortColumnRangeInfo);
+      convertedSortColumnRanges[i] = fakeCarbonRow;
+    }
+    // sort the range bounds (sort in carbon is a little different from what we think)
+    Arrays.sort(convertedSortColumnRanges,
+        new RawRowComparator(sortColumnRangeInfo.getSortColumnIndex(),
+            sortColumnRangeInfo.getIsSortColumnNoDict()));
+
+    // range partitioner to dispatch rows by sort columns
+    this.partitioner = new RangePartitionerImpl(convertedSortColumnRanges,
+        new RawRowComparator(sortColumnRangeInfo.getSortColumnIndex(),
+            sortColumnRangeInfo.getIsSortColumnNoDict()));
+  }
+
+  // only convert sort column fields
+  private void convertFakeRow(CarbonRow fakeRow, SortColumnRangeInfo sortColumnRangeInfo) {
+    FieldConverter[] fieldConverters = converters.get(0).getFieldConverters();
+    BadRecordLogHolder logHolder = new BadRecordLogHolder();
+    logHolder.setLogged(false);
+    for (int colIdx : sortColumnRangeInfo.getSortColumnIndex()) {
+      fieldConverters[colIdx].convert(fakeRow, logHolder);
+    }
   }
 
   /**
@@ -106,12 +190,18 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
    * @return processed row.
    */
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch, RowConverter localConverter) {
-    CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
     while (rowBatch.hasNext()) {
-      newBatch.addRow(localConverter.convert(rowBatch.next()));
+      CarbonRow convertRow = localConverter.convert(rowBatch.next());
+      if (isSortColumnRangeEnabled || isBucketColumnEnabled) {
+        short rangeNumber = (short) partitioner.getPartition(convertRow);
+        convertRow.setRangeId(rangeNumber);
+      }
+      rowBatch.setPreviousRow(convertRow);
     }
-    rowCounter.getAndAdd(newBatch.getSize());
-    return newBatch;
+    rowCounter.getAndAdd(rowBatch.getSize());
+    // reuse the origin batch
+    rowBatch.rewind();
+    return rowBatch;
   }
 
   @Override
@@ -119,70 +209,12 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     throw new UnsupportedOperationException();
   }
 
-  public static BadRecordsLogger createBadRecordLogger(CarbonDataLoadConfiguration configuration) {
-    boolean badRecordsLogRedirect = false;
-    boolean badRecordConvertNullDisable = false;
-    boolean isDataLoadFail = false;
-    boolean badRecordsLoggerEnable = Boolean.parseBoolean(
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
-            .toString());
-    Object bad_records_action =
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION)
-            .toString();
-    if (null != bad_records_action) {
-      LoggerAction loggerAction = null;
-      try {
-        loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
-      } catch (IllegalArgumentException e) {
-        loggerAction = LoggerAction.FORCE;
-      }
-      switch (loggerAction) {
-        case FORCE:
-          badRecordConvertNullDisable = false;
-          break;
-        case REDIRECT:
-          badRecordsLogRedirect = true;
-          badRecordConvertNullDisable = true;
-          break;
-        case IGNORE:
-          badRecordsLogRedirect = false;
-          badRecordConvertNullDisable = true;
-          break;
-        case FAIL:
-          isDataLoadFail = true;
-          break;
-      }
-    }
-    CarbonTableIdentifier identifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    return new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
-        identifier.getTableName() + '_' + System.currentTimeMillis(),
-        getBadLogStoreLocation(configuration,
-            identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-                .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration
-                .getSegmentId() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo()),
-        badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
-  }
-
-  public static String getBadLogStoreLocation(CarbonDataLoadConfiguration configuration,
-      String storeLocation) {
-    String badLogStoreLocation = (String) configuration
-        .getDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
-    if (null == badLogStoreLocation) {
-      badLogStoreLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
-    }
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
-    return badLogStoreLocation;
-  }
-
   @Override
   public void close() {
     if (!closed) {
       if (null != badRecordLogger) {
         badRecordLogger.closeStreams();
-        renameBadRecord(badRecordLogger, configuration);
+        CarbonBadRecordUtil.renameBadRecord(configuration);
       }
       super.close();
       if (converters != null) {
@@ -195,33 +227,13 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     }
   }
 
-  public static void close(BadRecordsLogger badRecordLogger, CarbonDataLoadConfiguration
-      configuration, RowConverter converter) {
-    if (badRecordLogger != null) {
-      badRecordLogger.closeStreams();
-      renameBadRecord(badRecordLogger, configuration);
-    }
-    if (converter != null) {
-      converter.finish();
-    }
-  }
-
-  private static void renameBadRecord(BadRecordsLogger badRecordLogger,
-      CarbonDataLoadConfiguration configuration) {
-    // rename operation should be performed only in case either bad reccords loggers is enabled
-    // or bad records redirect is enabled
-    if (badRecordLogger.isBadRecordLoggerEnable() || badRecordLogger.isBadRecordsLogRedirect()) {
-      // rename the bad record in progress to normal
-      CarbonTableIdentifier identifier =
-          configuration.getTableIdentifier().getCarbonTableIdentifier();
-      CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(configuration,
-          identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-              .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getSegmentId()
-              + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo());
-    }
-  }
-
   @Override protected String getStepName() {
-    return "Data Converter";
+    if (isBucketColumnEnabled) {
+      return "Data Converter with Bucketing";
+    } else if (isSortColumnRangeEnabled) {
+      return "Data Converter with sort column range";
+    } else {
+      return "Data Converter";
+    }
   }
 }

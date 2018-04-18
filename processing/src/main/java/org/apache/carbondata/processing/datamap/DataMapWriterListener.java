@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.processing.datamap;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +28,12 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.processing.store.TablePage;
 
 /**
@@ -48,12 +50,13 @@ public class DataMapWriterListener {
   /**
    * register all datamap writer for specified table and segment
    */
-  public void registerAllWriter(AbsoluteTableIdentifier identifier, String segmentId) {
-    List<TableDataMap> tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(identifier);
-    if (tableDataMaps != null) {
-      for (TableDataMap tableDataMap : tableDataMaps) {
+  public void registerAllWriter(CarbonTable carbonTable, String segmentId,
+      String dataWritePath) {
+    List<TableDataMap> tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+    if (tableIndices != null) {
+      for (TableDataMap tableDataMap : tableIndices) {
         DataMapFactory factory = tableDataMap.getDataMapFactory();
-        register(factory, segmentId);
+        register(factory, segmentId, dataWritePath);
       }
     }
   }
@@ -61,7 +64,7 @@ public class DataMapWriterListener {
   /**
    * Register a DataMapWriter
    */
-  private void register(DataMapFactory factory, String segmentId) {
+  private void register(DataMapFactory factory, String segmentId, String dataWritePath) {
     assert (factory != null);
     assert (segmentId != null);
     DataMapMeta meta = factory.getMeta();
@@ -71,7 +74,7 @@ public class DataMapWriterListener {
     }
     List<String> columns = factory.getMeta().getIndexedColumns();
     List<DataMapWriter> writers = registry.get(columns);
-    DataMapWriter writer = factory.createWriter(segmentId);
+    DataMapWriter writer = factory.createWriter(new Segment(segmentId, null), dataWritePath);
     if (writers != null) {
       writers.add(writer);
     } else {
@@ -82,7 +85,7 @@ public class DataMapWriterListener {
     LOG.info("DataMapWriter " + writer + " added");
   }
 
-  public void onBlockStart(String blockId) {
+  public void onBlockStart(String blockId, String blockPath) throws IOException {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
         writer.onBlockStart(blockId);
@@ -90,7 +93,7 @@ public class DataMapWriterListener {
     }
   }
 
-  public void onBlockEnd(String blockId) {
+  public void onBlockEnd(String blockId) throws IOException {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
         writer.onBlockEnd(blockId);
@@ -120,7 +123,7 @@ public class DataMapWriterListener {
    * @param pageId     sequence number of page, start from 0
    * @param tablePage  page data
    */
-  public void onPageAdded(int blockletId, int pageId, TablePage tablePage) {
+  public void onPageAdded(int blockletId, int pageId, TablePage tablePage) throws IOException {
     Set<Map.Entry<List<String>, List<DataMapWriter>>> entries = registry.entrySet();
     for (Map.Entry<List<String>, List<DataMapWriter>> entry : entries) {
       List<String> indexedColumns = entry.getKey();
@@ -131,6 +134,17 @@ public class DataMapWriterListener {
       List<DataMapWriter> writers = entry.getValue();
       for (DataMapWriter writer : writers) {
         writer.onPageAdded(blockletId, pageId, pages);
+      }
+    }
+  }
+
+  /**
+   * Finish all datamap writers
+   */
+  public void finish() throws IOException {
+    for (List<DataMapWriter> writers : registry.values()) {
+      for (DataMapWriter writer : writers) {
+        writer.finish();
       }
     }
   }

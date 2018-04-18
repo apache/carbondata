@@ -27,8 +27,6 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentif
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.service.CarbonCommonFactory;
-import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -134,28 +132,20 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   }
 
   protected void initPath() {
-    PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getAbsoluteCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier);
-    String dictionaryPath = carbonTablePath.getDictionaryFilePath(
-        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
-    long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
-    this.sortIndexFilePath = carbonTablePath
-        .getSortIndexFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
-            dictOffset);
-    cleanUpOldSortIndex(carbonTablePath, dictionaryPath);
+    String dictionaryFilePath = dictionaryColumnUniqueIdentifier.getDictionaryFilePath();
+    long dictOffset = CarbonUtil.getFileSize(dictionaryFilePath);
+    this.sortIndexFilePath = dictionaryColumnUniqueIdentifier.getSortIndexFilePath(dictOffset);
+    cleanUpOldSortIndex(dictionaryFilePath);
   }
 
   /**
    * It cleans up old unused sortindex file
    *
-   * @param carbonTablePath
+   * @param dictPath
    */
-  protected void cleanUpOldSortIndex(CarbonTablePath carbonTablePath, String dictPath) {
-    CarbonFile dictFile =
-        FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath));
-    CarbonFile[] files = carbonTablePath.getSortIndexFiles(dictFile.getParentFile(),
+  protected void cleanUpOldSortIndex(String dictPath) {
+    CarbonFile dictFile = FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath));
+    CarbonFile[] files = CarbonTablePath.getSortIndexFiles(dictFile.getParentFile(),
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     int maxTime;
     try {

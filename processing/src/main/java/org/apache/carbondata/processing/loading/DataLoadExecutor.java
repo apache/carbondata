@@ -25,6 +25,7 @@ import org.apache.carbondata.processing.loading.exception.BadRecordFoundExceptio
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.exception.NoRetryException;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
 /**
  * It executes the data load.
@@ -49,8 +50,7 @@ public class DataLoadExecutor {
       // 2. execute the step
       loadProcessorStep.execute();
       // check and remove any bad record key from bad record entry logger static map
-      if (badRecordFound(
-          loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier())) {
+      if (CarbonBadRecordUtil.hasBadRecord(loadModel)) {
         LOGGER.error("Data Load is partially success for table " + loadModel.getTableName());
       } else {
         LOGGER.info("Data loading is successful for table " + loadModel.getTableName());
@@ -65,9 +65,6 @@ public class DataLoadExecutor {
       LOGGER.error(e, "Data Loading failed for table " + loadModel.getTableName());
       throw new CarbonDataLoadingException(
           "Data Loading failed for table " + loadModel.getTableName(), e);
-    } finally {
-      removeBadRecordKey(
-          loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier());
     }
   }
 
@@ -84,16 +81,6 @@ public class DataLoadExecutor {
       badRecordKeyFound = true;
     }
     return badRecordKeyFound;
-  }
-
-  /**
-   * This method will remove the bad record key from bad record logger
-   *
-   * @param carbonTableIdentifier
-   */
-  private void removeBadRecordKey(CarbonTableIdentifier carbonTableIdentifier) {
-    String badRecordLoggerKey = carbonTableIdentifier.getBadRecordLoggerKey();
-    BadRecordsLogger.removeBadRecordKey(badRecordLoggerKey);
   }
 
   /**

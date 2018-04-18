@@ -34,7 +34,7 @@ class CarbonDeleteLoadRDD[V: ClassTag](
     databaseName: String,
     tableName: String,
     partitioner: Partitioner)
-  extends CarbonRDD[V](sc, Nil) {
+  extends CarbonRDD[V](sc, Nil, sc.hadoopConfiguration) {
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {

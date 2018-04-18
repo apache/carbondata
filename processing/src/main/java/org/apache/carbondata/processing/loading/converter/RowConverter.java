@@ -31,6 +31,6 @@ public interface RowConverter extends DictionaryCardinalityFinder {
   CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
 
   RowConverter createCopyForNewThread();
-
+  FieldConverter[] getFieldConverters();
   void finish();
 }

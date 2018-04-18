@@ -26,6 +26,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -71,14 +72,7 @@ public class SortParameters implements Serializable {
    * observer
    */
   private SortObserver observer;
-  /**
-   * sortTempFileNoOFRecordsInCompression
-   */
-  private int sortTempFileNoOFRecordsInCompression;
-  /**
-   * isSortTempFileCompressionEnabled
-   */
-  private boolean isSortFileCompressionEnabled;
+  private String sortTempCompressorName;
   /**
    * prefetch
    */
@@ -125,6 +119,7 @@ public class SortParameters implements Serializable {
   private int numberOfCores;
 
   private int batchSortSizeinMb;
+  private int rangeId = 0;
 
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
@@ -137,8 +132,7 @@ public class SortParameters implements Serializable {
     parameters.numberOfIntermediateFileToBeMerged = numberOfIntermediateFileToBeMerged;
     parameters.fileWriteBufferSize = fileWriteBufferSize;
     parameters.observer = observer;
-    parameters.sortTempFileNoOFRecordsInCompression = sortTempFileNoOFRecordsInCompression;
-    parameters.isSortFileCompressionEnabled = isSortFileCompressionEnabled;
+    parameters.sortTempCompressorName = sortTempCompressorName;
     parameters.prefetch = prefetch;
     parameters.bufferSize = bufferSize;
     parameters.databaseName = databaseName;
@@ -154,6 +148,7 @@ public class SortParameters implements Serializable {
     parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
     parameters.numberOfCores = numberOfCores;
     parameters.batchSortSizeinMb = batchSortSizeinMb;
+    parameters.rangeId = rangeId;
     return parameters;
   }
 
@@ -229,20 +224,12 @@ public class SortParameters implements Serializable {
     this.observer = observer;
   }
 
-  public int getSortTempFileNoOFRecordsInCompression() {
-    return sortTempFileNoOFRecordsInCompression;
+  public String getSortTempCompressorName() {
+    return sortTempCompressorName;
   }
 
-  public void setSortTempFileNoOFRecordsInCompression(int sortTempFileNoOFRecordsInCompression) {
-    this.sortTempFileNoOFRecordsInCompression = sortTempFileNoOFRecordsInCompression;
-  }
-
-  public boolean isSortFileCompressionEnabled() {
-    return isSortFileCompressionEnabled;
-  }
-
-  public void setSortFileCompressionEnabled(boolean sortFileCompressionEnabled) {
-    isSortFileCompressionEnabled = sortFileCompressionEnabled;
+  public void setSortTempCompressorName(String sortTempCompressorName) {
+    this.sortTempCompressorName = sortTempCompressorName;
   }
 
   public boolean isPrefetch() {
@@ -372,7 +359,7 @@ public class SortParameters implements Serializable {
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(tableIdentifier.getDatabaseName());
     parameters.setTableName(tableIdentifier.getTableName());
-    parameters.setPartitionID(configuration.getPartitionId());
+    parameters.setPartitionID("0");
     parameters.setSegmentId(configuration.getSegmentId());
     parameters.setTaskNo(configuration.getTaskNo());
     parameters.setMeasureColCount(configuration.getMeasureCount());
@@ -408,10 +395,9 @@ public class SortParameters implements Serializable {
 
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
-    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
-            tableIdentifier.getTableName(), configuration.getTaskNo(),
-            configuration.getPartitionId(), configuration.getSegmentId(), false, false);
+    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil.getLocalDataFolderLocation(
+        tableIdentifier.getDatabaseName(), tableIdentifier.getTableName(),
+        configuration.getTaskNo(), configuration.getSegmentId(), false, false);
     String[] sortTempDirs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath,
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
 
@@ -419,42 +405,20 @@ public class SortParameters implements Serializable {
     LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
 
     int numberOfCores = carbonProperties.getNumberOfCores() / 2;
+    // In case of loading from partition we should use the cores specified by it
+    if (configuration.getWritingCoresCount() > 0) {
+      numberOfCores = configuration.getWritingCoresCount();
+    }
     parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
     parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties
         .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
             CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE)));
 
-    parameters.setSortFileCompressionEnabled(Boolean.parseBoolean(carbonProperties
-        .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
-            CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE)));
-
-    int sortTempFileNoOFRecordsInCompression;
-    try {
-      sortTempFileNoOFRecordsInCompression = Integer.parseInt(carbonProperties
-          .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
-              CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
-      if (sortTempFileNoOFRecordsInCompression < 1) {
-        LOGGER.error("Invalid value for: "
-            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-            + ":Only Positive Integer value(greater than zero) is allowed.Default value will "
-            + "be used");
-
-        sortTempFileNoOFRecordsInCompression = Integer.parseInt(
-            CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.error(
-          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-              + ", only Positive Integer value is allowed. Default value will be used");
-
-      sortTempFileNoOFRecordsInCompression = Integer
-          .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-    }
-    parameters.setSortTempFileNoOFRecordsInCompression(sortTempFileNoOFRecordsInCompression);
-
-    if (parameters.isSortFileCompressionEnabled()) {
-      LOGGER.info("Compression will be used for writing the sort temp File");
+    parameters.setSortTempCompressorName(CarbonProperties.getInstance().getSortTempCompressor());
+    if (!parameters.sortTempCompressorName.isEmpty()) {
+      LOGGER.info(" Compression " + parameters.sortTempCompressorName
+          + " will be used for writing the sort temp File");
     }
 
     parameters.setPrefetch(CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE);
@@ -465,6 +429,14 @@ public class SortParameters implements Serializable {
     DataType[] measureDataType = configuration.getMeasureDataType();
     parameters.setMeasureDataType(measureDataType);
     return parameters;
+  }
+
+  public int getRangeId() {
+    return rangeId;
+  }
+
+  public void setRangeId(int rangeId) {
+    this.rangeId = rangeId;
   }
 
   /**
@@ -486,13 +458,13 @@ public class SortParameters implements Serializable {
 
   public static SortParameters createSortParameters(CarbonTable carbonTable, String databaseName,
       String tableName, int dimColCount, int complexDimColCount, int measureColCount,
-      int noDictionaryCount, String partitionID, String segmentId, String taskNo,
+      int noDictionaryCount, String segmentId, String taskNo,
       boolean[] noDictionaryColMaping, boolean isCompactionFlow) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(databaseName);
     parameters.setTableName(tableName);
-    parameters.setPartitionID(partitionID);
+    parameters.setPartitionID(CarbonTablePath.DEPRECATED_PATITION_ID);
     parameters.setSegmentId(segmentId);
     parameters.setTaskNo(taskNo);
     parameters.setMeasureColCount(measureColCount);
@@ -524,7 +496,7 @@ public class SortParameters implements Serializable {
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId,
+        .getLocalDataFolderLocation(databaseName, tableName, taskNo, segmentId,
             isCompactionFlow, false);
     String[] sortTempDirs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath,
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
@@ -538,36 +510,10 @@ public class SortParameters implements Serializable {
         .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
             CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE)));
 
-    parameters.setSortFileCompressionEnabled(Boolean.parseBoolean(carbonProperties
-        .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
-            CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE)));
-
-    int sortTempFileNoOFRecordsInCompression;
-    try {
-      sortTempFileNoOFRecordsInCompression = Integer.parseInt(carbonProperties
-          .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
-              CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
-      if (sortTempFileNoOFRecordsInCompression < 1) {
-        LOGGER.error("Invalid value for: "
-            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-            + ":Only Positive Integer value(greater than zero) is allowed.Default value will "
-            + "be used");
-
-        sortTempFileNoOFRecordsInCompression = Integer.parseInt(
-            CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.error(
-          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-              + ", only Positive Integer value is allowed. Default value will be used");
-
-      sortTempFileNoOFRecordsInCompression = Integer
-          .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-    }
-    parameters.setSortTempFileNoOFRecordsInCompression(sortTempFileNoOFRecordsInCompression);
-
-    if (parameters.isSortFileCompressionEnabled()) {
-      LOGGER.info("Compression will be used for writing the sort temp File");
+    parameters.setSortTempCompressorName(CarbonProperties.getInstance().getSortTempCompressor());
+    if (!parameters.sortTempCompressorName.isEmpty()) {
+      LOGGER.info(" Compression " + parameters.sortTempCompressorName
+          + " will be used for writing the sort temp File");
     }
 
     parameters.setPrefetch(CarbonCommonConstants. CARBON_PREFETCH_IN_MERGE_VALUE);

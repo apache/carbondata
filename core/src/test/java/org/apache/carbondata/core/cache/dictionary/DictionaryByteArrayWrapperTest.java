@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.cache.dictionary;
 
 import net.jpountz.xxhash.XXHashFactory;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -37,29 +38,29 @@ public class DictionaryByteArrayWrapperTest {
 
   @Test public void equalsTestWithSameObject() {
     Boolean res = dictionaryByteArrayWrapper.equals(dictionaryByteArrayWrapper);
-    assert (res);
+    Assert.assertTrue(res);
   }
 
   @Test public void equalsTestWithString() {
     Boolean res = dictionaryByteArrayWrapper.equals("Rahul");
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithXxHash32() {
     Boolean res = dictionaryByteArrayWrapper1.equals("Rahul");
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithDictionaryByteArrayWrapper() {
     Boolean res =
         dictionaryByteArrayWrapper.equals(new DictionaryByteArrayWrapper("Rahul".getBytes()));
-    assert (res);
+    Assert.assertTrue(res);
   }
 
   @Test public void equalsTestWithDifferentLength() {
     Boolean res =
         dictionaryByteArrayWrapper.equals(new DictionaryByteArrayWrapper("Rahul ".getBytes()));
-    assert (!res);
+    Assert.assertTrue (!res);
   }
 
   @Test public void hashCodeTest() {

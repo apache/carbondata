@@ -17,17 +17,27 @@
 
 package org.apache.carbondata.examples
 
+import org.apache.spark.sql.SparkSession
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.{AllDictionaryUtil, ExampleUtils}
+
 
 object AllDictionaryExample {
 
   def main(args: Array[String]) {
     val spark = ExampleUtils.createCarbonSession("AllDictionaryExample")
+    exampleBody(spark)
+    spark.close()
+  }
+
+  def exampleBody(spark : SparkSession): Unit = {
     val testData = ExampleUtils.currentPath + "/src/main/resources/dataSample.csv"
     val csvHeader = "ID,date,country,name,phonetype,serialname,salary"
     val dictCol = "|date|country|name|phonetype|serialname|"
-    val allDictFile = ExampleUtils.currentPath + "/src/main/resources/data.dictionary"
+    val allDictFile = ExampleUtils.currentPath + "/target/data.dictionary"
+
     // extract all dictionary files from source data
     AllDictionaryUtil.extractDictionary(spark.sparkContext,
       testData, allDictFile, csvHeader, dictCol)
@@ -35,11 +45,11 @@ object AllDictionaryExample {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 
-    spark.sql("DROP TABLE IF EXISTS t3")
+    spark.sql("DROP TABLE IF EXISTS dictionary_table")
 
     spark.sql(
       s"""
-         | CREATE TABLE IF NOT EXISTS t3(
+         | CREATE TABLE IF NOT EXISTS dictionary_table(
          | ID Int,
          | date Date,
          | country String,
@@ -52,22 +62,25 @@ object AllDictionaryExample {
        """.stripMargin)
 
     spark.sql(s"""
-           LOAD DATA LOCAL INPATH '$testData' into table t3
+           LOAD DATA LOCAL INPATH '$testData' into table dictionary_table
            options('ALL_DICTIONARY_PATH'='$allDictFile', 'SINGLE_PASS'='true')
            """)
 
     spark.sql("""
-           SELECT * FROM t3
+           SELECT * FROM dictionary_table
            """).show()
 
     spark.sql("""
-           SELECT * FROM t3 where floatField=3.5
+           SELECT * FROM dictionary_table where floatField=3.5
            """).show()
 
-    spark.sql("DROP TABLE IF EXISTS t3")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_DATE_FORMAT,
+      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+
+    spark.sql("DROP TABLE IF EXISTS dictionary_table")
 
     // clean local dictionary files
     AllDictionaryUtil.cleanDictionary(allDictFile)
   }
-
 }

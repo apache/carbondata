@@ -30,41 +30,56 @@ public class QueryColumn {
   private ColumnSchema columnSchema;
 
   /**
-   * to store the change data type in case of cast
-   */
-  private String changedDataType;
-
-  /**
-   * aggregation function applied
-   */
-  private String aggFunction;
-
-  /**
    * is filter column
    */
   private boolean isFilterColumn;
 
-  public QueryColumn(ColumnSchema columnSchema, String changedDataType, String aggFunction,
-      boolean isFilterColumn) {
+  /**
+   * timeseries udf applied on column
+   */
+  private String timeseriesFunction;
+
+  public QueryColumn(ColumnSchema columnSchema, boolean isFilterColumn, String timeseriesFunction) {
     this.columnSchema = columnSchema;
-    this.changedDataType = changedDataType;
-    this.aggFunction = aggFunction;
     this.isFilterColumn = isFilterColumn;
+    this.timeseriesFunction = timeseriesFunction;
   }
 
   public ColumnSchema getColumnSchema() {
     return columnSchema;
   }
 
-  public String getChangedDataType() {
-    return changedDataType;
-  }
-
-  public String getAggFunction() {
-    return aggFunction;
-  }
-
   public boolean isFilterColumn() {
     return isFilterColumn;
+  }
+
+  public String getTimeseriesFunction() {
+    return timeseriesFunction;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    QueryColumn that = (QueryColumn) o;
+    if (isFilterColumn != that.isFilterColumn) {
+      return false;
+    }
+    if (!columnSchema.equals(that.columnSchema)) {
+      return false;
+    }
+    return timeseriesFunction != null ?
+        timeseriesFunction.equals(that.timeseriesFunction) :
+        that.timeseriesFunction == null;
+  }
+
+  @Override public int hashCode() {
+    int result = columnSchema.hashCode();
+    result = 31 * result + (timeseriesFunction != null ? timeseriesFunction.hashCode() : 0);
+    result = 31 * result + (isFilterColumn ? 1 : 0);
+    return result;
   }
 }

@@ -47,7 +47,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     byte[][] result_value = new byte[][] { { 16, 8, 24, 46, 76, 64 }, { 80, 36, 72, 48 } };
     byte[] key = new byte[] { 16, 8, 24, 46, 76, 64, 80, 36, 72, 48 };
     byte[][] result = multiDimKeyVarLengthEquiSplitGeneratorNew.splitKey(key);
-    assert (Arrays.deepEquals(result, result_value));
+    Assert.assertTrue(Arrays.deepEquals(result, result_value));
   }
 
   @Test public void testSplitKeyWithNewDimensionToSplitValue16() {
@@ -58,7 +58,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     byte[][] result_value = new byte[][] { { 16, 8, 24, 46, 76, 64, 80, 36, 72, 48 } };
     byte[] key = new byte[] { 16, 8, 24, 46, 76, 64, 80, 36, 72, 48 };
     byte[][] result = multiDimKeyVarLengthEquiSplitGeneratorNew.splitKey(key);
-    assert (Arrays.deepEquals(result, result_value));
+    Assert.assertTrue(Arrays.deepEquals(result, result_value));
   }
 
   @Test public void testGenerateAndSplitKeyAndGetKeyArrayWithActualLogic() throws KeyGenException {
@@ -76,7 +76,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
         new byte[][] { { 1, 102, 20, 56 }, { 64 }, { 36, 18 }, { 16, 28 }, { 98, 93 } };
     byte[] key = new byte[] { 1, 102, 20, 56, 64, 36, 18, 16, 28, 98, 93 };
     byte[][] result = multiDimKeyVarLengthEquiSplitGenerator.splitKey(key);
-    assert (Arrays.deepEquals(result, result_value));
+    Assert.assertTrue(Arrays.deepEquals(result, result_value));
   }
 
   @Test public void testGetKeyArray() throws Exception {
@@ -90,7 +90,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     byte[] result_value = new byte[] { 1, 102, 20, 56, 64, 36, 18, 16, 28, 98, 93 };
     byte[][] key = new byte[][] { { 1, 102, 20, 56, 64, 36, 18, 16, 28, 98, 93 } };
     byte[] result = multiDimKeyVarLengthEquiSplitGenerator.getKeyByteArray(key);
-    assert (Arrays.equals(result, result_value));
+    Assert.assertTrue(Arrays.equals(result, result_value));
   }
 
   /*
@@ -158,7 +158,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
   @Test public void testEqualsWithAnyObject() throws Exception {
     Object obj = new Object();
     boolean result = multiDimKeyVarLengthEquiSplitGenerator.equals(obj);
-    assert (!result);
+    Assert.assertTrue(!result);
   }
 
   @Test public void testEqualsWithDifferentValueMultiDimKeyVarLengthEquiSplitGeneratorObject()
@@ -167,7 +167,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     byte dimensionsToSplit = 2;
     boolean result = multiDimKeyVarLengthEquiSplitGenerator
         .equals(new MultiDimKeyVarLengthEquiSplitGenerator(lens, dimensionsToSplit));
-    assert (!result);
+    Assert.assertTrue(!result);
   }
 
   @Test public void testEqualsWithSameValueMultiDimKeyVarLengthEquiSplitGeneratorObject()
@@ -176,7 +176,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     byte dimensionsToSplit = 1;
     boolean result = multiDimKeyVarLengthEquiSplitGenerator
         .equals(new MultiDimKeyVarLengthEquiSplitGenerator(lens, dimensionsToSplit));
-    assert (result);
+    Assert.assertTrue(result);
   }
 
   /**
@@ -191,7 +191,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     byte[][] result_value = new byte[][] { { 16, 8, 24, 46, 76, 64 }, { 80, 36, 72, 48 } };
     byte[] key = new byte[] { 16, 8, 24, 46, 76 };
     byte[][] result = multiDimKeyVarLengthEquiSplitGeneratorNew.splitKey(key);
-    assert (Arrays.deepEquals(result, result_value));
+    Assert.assertTrue(Arrays.deepEquals(result, result_value));
   }
 
 }

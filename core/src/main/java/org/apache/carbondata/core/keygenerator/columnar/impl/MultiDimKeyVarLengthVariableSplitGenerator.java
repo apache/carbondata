@@ -72,10 +72,7 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
     List<Integer>[] splits = new List[splitList.size()];
     int i = 0;
     for (Set<Integer> splitLocal : splitList) {
-      List<Integer> range = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-      for (Integer index : splitLocal) {
-        range.add(index);
-      }
+      List<Integer> range = new ArrayList<Integer>(splitLocal);
       splits[i++] = range;
     }
     for (int j = 1; j < splits.length; j++) {

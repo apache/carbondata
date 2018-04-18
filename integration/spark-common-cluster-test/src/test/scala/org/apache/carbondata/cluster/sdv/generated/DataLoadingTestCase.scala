@@ -27,6 +27,7 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -124,7 +125,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Data load-->Empty BadRecords Parameters
   test("BadRecord_Dataload_011", Include) {
-    try {
+    intercept[Exception] {
       sql(s"""CREATE TABLE badrecords_test1 (ID int,CUST_ID int,sal int,cust_name string) STORED BY 'org.apache.carbondata.format'""")
 
         .collect
@@ -133,11 +134,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
       checkAnswer(
         s"""select count(*) from badrecords_test1""",
         Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_011")
-      assert(false)
-    } catch {
-      case _ => assert(true)
     }
-     sql(s"""drop table badrecords_test1""").collect
+    sql(s"""drop table badrecords_test1""").collect
   }
 
 
@@ -227,38 +225,42 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Data load-->Extra_Column_incsv
   test("BadRecord_Dataload_019", Include) {
-     sql(s"""CREATE TABLE exceed_column_in_Csv (CUST_NAME String,date timestamp) STORED BY 'org.apache.carbondata.format'""").collect
-  intercept[Exception] {
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/extra_column.csv' into table exceed_column_in_Csv OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_NAME,date')""").collect
-    checkAnswer(
-      s"""select count(*) from exceed_column_in_Csv """,
-      Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_019")
-  }
-     sql(s"""drop table exceed_column_in_Csv """).collect
+    sql(
+      s"""CREATE TABLE exceed_column_in_Csv (CUST_NAME String,date timestamp) STORED BY 'org.apache.carbondata.format'""".stripMargin).collect
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/extra_column.csv' into table exceed_column_in_Csv OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_NAME,date')""".stripMargin).collect
+      checkAnswer(s"""select count(*) from exceed_column_in_Csv """,Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_019")
+      sql(s"""drop table exceed_column_in_Csv """).collect
   }
 
 
   //Data load-->Timestamp Exceed Range
   test("BadRecord_Dataload_020", Include) {
-     sql(s"""CREATE TABLE timestamp_range (date timestamp) STORED BY 'org.apache.carbondata.format'""").collect
-    intercept[Exception] {
-      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/timetsmap.csv' into table timestamp_range OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='date')""").collect
-    }
-    checkAnswer(s"""select count(*) from timestamp_range""",
-      Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_020")
-     sql(s"""drop table timestamp_range""").collect
+    sql(
+      s"""CREATE TABLE timestamp_range (date timestamp) STORED BY 'org.apache.carbondata.format'""".stripMargin).collect
+      sql(
+        s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/timetsmap.csv' into table timestamp_range OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='date')""".stripMargin).collect
+    checkAnswer(s"""select count(*) from timestamp_range""",Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_020")
+    sql(s"""drop table timestamp_range""").collect
   }
 
 
   //Show loads-->Delimeter_check
   test("BadRecord_Dataload_021", Include) {
-     sql(s"""CREATE TABLE bad_records_test5 (String_col string,integer_col int,decimal_column decimal,date timestamp,double_col double) STORED BY 'org.apache.carbondata.format'""").collect
-  intercept[Exception] {
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/badrecords_test5.csv' into table bad_records_test5 OPTIONS('DELIMITER'='*' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='String_col,integer_col,decimal_column,date,double_col') """).collect
-  }
-    checkAnswer(s"""select count(*) from bad_records_test5""",
+    sql(
+      s"""CREATE TABLE bad_records_test5 (String_col string,integer_col int,decimal_column
+         |decimal,date timestamp,double_col double) STORED BY 'org.apache.carbondata.format'"""
+        .stripMargin)
+      .collect
+      sql(
+        s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/badrecords_test5.csv' into table
+           |bad_records_test5 OPTIONS('DELIMITER'='*' , 'QUOTECHAR'='"',
+           |'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='IGNORE',
+           |'FILEHEADER'='String_col,integer_col,decimal_column,date,double_col') """.stripMargin)
+        .collect
+    checkAnswer(
+      s"""select count(*) from bad_records_test5""",
       Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_021")
-     sql(s"""drop table bad_records_test5 """).collect
+    sql(s"""drop table bad_records_test5 """).collect
   }
 
 
@@ -727,7 +729,6 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table uniqdata""").collect
   }
 
-
   //Show loads--->Action=Fail--->Logger=False
   test("BadRecord_Dataload_025", Include) {
     dropTable("uniqdata")
@@ -740,7 +741,6 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     }
      sql(s"""drop table uniqdata""").collect
   }
-
 
   //when insert into null data,query table output NullPointerException
   test("HQ_DEFECT_2016111509706", Include) {
@@ -1470,7 +1470,5 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     sql(s"""drop table if exists uniqdata""").collect
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-      TestQueryExecutor.warehouse + "/baaaaaaadrecords")
-  }
+     }
 }

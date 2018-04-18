@@ -23,6 +23,7 @@ import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.types.StructType;
 
 /**
  * CSV Stream Parser, it is also the default parser.
@@ -31,7 +32,7 @@ public class CSVStreamParserImp implements CarbonStreamParser {
 
   private CsvParser csvParser;
 
-  @Override public void initialize(Configuration configuration) {
+  @Override public void initialize(Configuration configuration, StructType structType) {
     CsvParserSettings settings = CSVInputFormat.extractCsvParserSettings(configuration);
     csvParser = new CsvParser(settings);
   }

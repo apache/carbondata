@@ -30,7 +30,6 @@ import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.reader.CarbonDictionaryReaderImpl;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 
 import mockit.Mock;
@@ -49,7 +48,7 @@ public class DictionaryCacheLoaderImplTest {
 
   @BeforeClass public static void setUp() {
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("db", "table1", "1");
-    AbsoluteTableIdentifier absoluteTableIdentifier = new AbsoluteTableIdentifier("/tmp",
+    AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier.from("/tmp",
         carbonTableIdentifier);
     Map<String, String> columnProperties = new HashMap<>();
     columnProperties.put("prop1", "value1");
@@ -57,8 +56,7 @@ public class DictionaryCacheLoaderImplTest {
     columnIdentifier = new ColumnIdentifier("1", columnProperties, DataTypes.STRING);
     dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(), CarbonStorePath.getCarbonTablePath("/tmp",
-            carbonTableIdentifier));
+            columnIdentifier.getDataType());
     dictionaryCacheLoader = new DictionaryCacheLoaderImpl(dictionaryColumnUniqueIdentifier);
     dictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
     new MockUp<CarbonDictionaryReaderImpl>() {
@@ -89,7 +87,7 @@ public class DictionaryCacheLoaderImplTest {
         return 9999;
       }
     };
-    dictionaryCacheLoader.load(dictionaryInfo, columnIdentifier, 0L, 2L, true);
+    dictionaryCacheLoader.load(dictionaryInfo, 0L, 2L, true);
     assertEquals(dictionaryInfo.getDictionaryChunks().getSize(), 4);
   }
 
@@ -99,7 +97,7 @@ public class DictionaryCacheLoaderImplTest {
         return 10000;
       }
     };
-    dictionaryCacheLoader.load(dictionaryInfo, columnIdentifier, 0L, 2L, true);
+    dictionaryCacheLoader.load(dictionaryInfo, 0L, 2L, true);
     assertEquals(dictionaryInfo.getDictionaryChunks().getSize(), 2);
   }
 }

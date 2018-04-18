@@ -94,9 +94,9 @@ public class SortIntermediateFileMerger {
   private void startIntermediateMerging(File[] intermediateFiles) {
     int index = new Random().nextInt(parameters.getTempFileLocation().length);
     String chosenTempDir = parameters.getTempFileLocation()[index];
-    File file = new File(
-        chosenTempDir + File.separator + parameters.getTableName() + System
-            .nanoTime() + CarbonCommonConstants.MERGERD_EXTENSION);
+    File file = new File(chosenTempDir + File.separator + parameters.getTableName()
+        + '_' + parameters.getRangeId() + '_' + System.nanoTime()
+        + CarbonCommonConstants.MERGERD_EXTENSION);
     IntermediateFileMerger merger = new IntermediateFileMerger(parameters, intermediateFiles, file);
     mergerTask.add(executorService.submit(merger));
   }

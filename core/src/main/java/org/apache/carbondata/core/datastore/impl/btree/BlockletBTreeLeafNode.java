@@ -18,8 +18,9 @@ package org.apache.carbondata.core.datastore.impl.btree;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.BTreeBuilderInfo;
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.CarbonDataReaderFactory;
@@ -43,9 +44,21 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
   private MeasureColumnChunkReader measureColumnChunkReader;
 
   /**
+   * reader for dimension chunk of page level
+   */
+  private DimensionColumnChunkReader dimensionChunksPageLevelReader;
+
+  /**
+   * reader of measure chunk of page level
+   */
+  private MeasureColumnChunkReader measureColumnChunkPageLevelReader;
+
+  /**
    * number of pages in blocklet
    */
   private int numberOfPages;
+
+  private int[] pageRowCount;
 
   /**
    * Create a leaf node
@@ -56,7 +69,7 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    *                     this will be used during query execution when we can
    *                     give some leaf node of a btree to one executor some to other
    */
-  public BlockletBTreeLeafNode(BTreeBuilderInfo builderInfos, int leafIndex, long nodeNumber) {
+  BlockletBTreeLeafNode(BTreeBuilderInfo builderInfos, int leafIndex, long nodeNumber) {
     // get a lead node min max
     BlockletMinMaxIndex minMaxIndex =
         builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex).getBlockletIndex()
@@ -73,63 +86,110 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
         .getDimensionColumnChunkReader(builderInfos.getFooterList().get(0).getVersionId(),
             builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex),
             builderInfos.getDimensionColumnValueSize(),
-            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath());
+            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath(),
+            false);
     // create a instance of measure column chunk reader
     measureColumnChunkReader = CarbonDataReaderFactory.getInstance()
         .getMeasureColumnChunkReader(builderInfos.getFooterList().get(0).getVersionId(),
             builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex),
-            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath());
+            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath(),
+            false);
+    // create a instance of dimension chunk
+    dimensionChunksPageLevelReader = CarbonDataReaderFactory.getInstance()
+        .getDimensionColumnChunkReader(builderInfos.getFooterList().get(0).getVersionId(),
+            builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex),
+            builderInfos.getDimensionColumnValueSize(),
+            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath(),
+            true);
+    // create a instance of measure column chunk reader
+    measureColumnChunkPageLevelReader = CarbonDataReaderFactory.getInstance()
+        .getMeasureColumnChunkReader(builderInfos.getFooterList().get(0).getVersionId(),
+            builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex),
+            builderInfos.getFooterList().get(0).getBlockInfo().getTableBlockInfo().getFilePath(),
+            true);
+
     this.nodeNumber = nodeNumber;
     this.numberOfPages =
         builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex).getNumberOfPages();
+    this.pageRowCount = new int[numberOfPages];
+    int numberOfPagesCompletelyFilled =
+        numberOfKeys / CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+    int lastPageRowCount =
+        numberOfKeys % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+    for (int i = 0; i < numberOfPagesCompletelyFilled; i++) {
+      pageRowCount[i] = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+    }
+    if (lastPageRowCount > 0) {
+      pageRowCount[pageRowCount.length - 1] = lastPageRowCount;
+    }
+  }
+
+  @Override public short blockletIndex() {
+    return 0;
   }
 
   /**
    * Below method will be used to get the dimension chunks
    *
    * @param fileReader   file reader to read the chunks from file
-   * @param blockIndexes indexes of the blocks need to be read
+   * @param columnIndexRange indexes of the blocks need to be read
    * @return dimension data chunks
    */
-  @Override public DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader,
-      int[][] blockIndexes) throws IOException {
-    return dimensionChunksReader.readRawDimensionChunks(fileReader, blockIndexes);
+  @Override public DimensionRawColumnChunk[] readDimensionChunks(FileReader fileReader,
+      int[][] columnIndexRange) throws IOException {
+    if (fileReader.isReadPageByPage()) {
+      return dimensionChunksPageLevelReader.readRawDimensionChunks(fileReader, columnIndexRange);
+    } else {
+      return dimensionChunksReader.readRawDimensionChunks(fileReader, columnIndexRange);
+    }
   }
 
   /**
    * Below method will be used to get the dimension chunk
    *
    * @param fileReader file reader to read the chunk from file
-   * @param blockIndex block index to be read
+   * @param columnIndex block index to be read
    * @return dimension data chunk
    */
-  @Override public DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader, int blockIndex)
-      throws IOException {
-    return dimensionChunksReader.readRawDimensionChunk(fileReader, blockIndex);
+  @Override public DimensionRawColumnChunk readDimensionChunk(
+      FileReader fileReader, int columnIndex) throws IOException {
+    if (fileReader.isReadPageByPage()) {
+      return dimensionChunksPageLevelReader.readRawDimensionChunk(fileReader, columnIndex);
+    } else {
+      return dimensionChunksReader.readRawDimensionChunk(fileReader, columnIndex);
+    }
   }
 
   /**
    * Below method will be used to get the measure chunk
    *
    * @param fileReader   file reader to read the chunk from file
-   * @param blockIndexes block indexes to be read from file
+   * @param columnIndexRange block indexes to be read from file
    * @return measure column data chunk
    */
-  @Override public MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader,
-      int[][] blockIndexes) throws IOException {
-    return measureColumnChunkReader.readRawMeasureChunks(fileReader, blockIndexes);
+  @Override public MeasureRawColumnChunk[] readMeasureChunks(FileReader fileReader,
+      int[][] columnIndexRange) throws IOException {
+    if (fileReader.isReadPageByPage()) {
+      return measureColumnChunkPageLevelReader.readRawMeasureChunks(fileReader, columnIndexRange);
+    } else {
+      return measureColumnChunkReader.readRawMeasureChunks(fileReader, columnIndexRange);
+    }
   }
 
   /**
    * Below method will be used to read the measure chunk
    *
    * @param fileReader file read to read the file chunk
-   * @param blockIndex block index to be read from file
+   * @param columnIndex block index to be read from file
    * @return measure data chunk
    */
-  @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
+  @Override public MeasureRawColumnChunk readMeasureChunk(FileReader fileReader, int columnIndex)
       throws IOException {
-    return measureColumnChunkReader.readRawMeasureChunk(fileReader, blockIndex);
+    if (fileReader.isReadPageByPage()) {
+      return measureColumnChunkPageLevelReader.readRawMeasureChunk(fileReader, columnIndex);
+    } else {
+      return measureColumnChunkReader.readRawMeasureChunk(fileReader, columnIndex);
+    }
   }
 
   /**
@@ -137,5 +197,9 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    */
   @Override public int numberOfPages() {
     return numberOfPages;
+  }
+
+  @Override public int getPageRowCount(int pageNumber) {
+    return this.pageRowCount[pageNumber];
   }
 }

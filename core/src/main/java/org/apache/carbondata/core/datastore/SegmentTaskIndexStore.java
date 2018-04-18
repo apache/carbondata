@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
@@ -87,8 +88,9 @@ public class SegmentTaskIndexStore
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
     try {
       segmentTaskIndexWrapper =
-          loadAndGetTaskIdToSegmentsMap(tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos(),
-              tableSegmentUniqueIdentifier.getAbsoluteTableIdentifier(),
+          loadAndGetTaskIdToSegmentsMap(
+              tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos(),
+              CarbonTable.buildFromTablePath("name", "path"),
               tableSegmentUniqueIdentifier);
     } catch (IndexBuilderException e) {
       throw new IOException(e.getMessage(), e);
@@ -163,21 +165,20 @@ public class SegmentTaskIndexStore
    * map
    *
    * @param segmentToTableBlocksInfos segment id to block info
-   * @param absoluteTableIdentifier   absolute table identifier
+   * @param table   table handle
    * @return map of taks id to segment mapping
    * @throws IOException
    */
   private SegmentTaskIndexWrapper loadAndGetTaskIdToSegmentsMap(
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos,
-      AbsoluteTableIdentifier absoluteTableIdentifier,
+      CarbonTable table,
       TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier) throws IOException {
     // task id to segment map
     Iterator<Map.Entry<String, List<TableBlockInfo>>> iteratorOverSegmentBlocksInfos =
         segmentToTableBlocksInfos.entrySet().iterator();
     Map<TaskBucketHolder, AbstractIndex> taskIdToSegmentIndexMap = null;
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
-    SegmentUpdateStatusManager updateStatusManager =
-        new SegmentUpdateStatusManager(absoluteTableIdentifier);
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(table);
     String segmentId = null;
     TaskBucketHolder taskBucketHolder = null;
     try {
@@ -226,6 +227,7 @@ public class SegmentTaskIndexStore
               }
               Iterator<Map.Entry<TaskBucketHolder, List<TableBlockInfo>>> iterator =
                   taskIdToTableBlockInfoMap.entrySet().iterator();
+              AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
               long requiredSize =
                   calculateRequiredSize(taskIdToTableBlockInfoMap, absoluteTableIdentifier);
               segmentTaskIndexWrapper.setMemorySize(requiredSize);

@@ -21,8 +21,8 @@ import org.apache.flink.api.java.ExecutionEnvironment
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.Job
 
-import org.apache.carbondata.examples.util.ExampleUtils
-import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonProjection}
+import org.apache.carbondata.hadoop.CarbonProjection
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 
 // Write carbondata file by spark and read it by flink
 // scalastyle:off println
@@ -30,7 +30,7 @@ object FlinkExample {
 
   def main(args: Array[String]): Unit = {
     // write carbondata file by spark
-    val cc = ExampleUtils.createCarbonContext("FlinkExample")
+    val cc = ExampleUtils.createCarbonSession("FlinkExample")
     val path = ExampleUtils.writeSampleCarbonFile(cc, "carbon1")
 
     // read two columns by flink
@@ -38,11 +38,11 @@ object FlinkExample {
     projection.addColumn("c1")  // column c1
     projection.addColumn("c3")  // column c3
     val conf = new Configuration()
-    CarbonInputFormat.setColumnProjection(conf, projection)
+    CarbonTableInputFormat.setColumnProjection(conf, projection)
 
     val env = ExecutionEnvironment.getExecutionEnvironment
     val ds = env.readHadoopFile(
-      new CarbonInputFormat[Array[Object]],
+      new CarbonTableInputFormat[Array[Object]],
       classOf[Void],
       classOf[Array[Object]],
       path,

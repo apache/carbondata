@@ -22,6 +22,7 @@ import java.io.FileFilter;
 import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -29,7 +30,8 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
-import org.apache.carbondata.processing.loading.sort.SortStepRowUtil;
+import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.SortTempChunkHolder;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeFinalMergePageHolder;
@@ -55,7 +57,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   private AbstractQueue<SortTempChunkHolder> recordHolderHeapLocal;
 
   private SortParameters parameters;
-
+  private SortStepRowHandler sortStepRowHandler;
   /**
    * tempFileLocation
    */
@@ -68,6 +70,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters,
       String[] tempFileLocation) {
     this.parameters = parameters;
+    this.sortStepRowHandler = new SortStepRowHandler(parameters);
     this.tempFileLocation = tempFileLocation;
     this.tableName = parameters.getTableName();
   }
@@ -78,6 +81,15 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    */
   public void startFinalMerge(UnsafeCarbonRowPage[] rowPages,
       List<UnsafeInMemoryIntermediateDataMerger> merges) throws CarbonDataWriterException {
+    // remove the spilled pages
+    for (Iterator<UnsafeInMemoryIntermediateDataMerger> iter = merges.iterator();
+         iter.hasNext(); ) {
+      UnsafeInMemoryIntermediateDataMerger merger = iter.next();
+      if (merger.isSpillDisk()) {
+        // it has already been closed once the spill is finished, so no need to close it here
+        iter.remove();
+      }
+    }
     startSorting(rowPages, merges);
   }
 
@@ -97,8 +109,9 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
         LOGGER.info("No files to merge sort");
         return;
       }
-      LOGGER.info("Starting final merger");
-      LOGGER.info("Number of row pages: " + this.fileCounter);
+      LOGGER.info(String.format("Starting final merge of %d pages, including row pages: %d"
+          + ", sort temp files: %d, intermediate merges: %d",
+          this.fileCounter, rowPages.length, filesToMergeSort.size(), merges.size()));
 
       // create record holder heap
       createRecordHolderQueue();
@@ -107,9 +120,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       LOGGER.info("Started adding first record from each page");
       for (final UnsafeCarbonRowPage rowPage : rowPages) {
 
-        SortTempChunkHolder sortTempFileChunkHolder = new UnsafeInmemoryHolder(rowPage,
-            parameters.getDimColCount() + parameters.getComplexDimColCount() + parameters
-                .getMeasureColCount(), parameters.getNumberOfSortColumns());
+        SortTempChunkHolder sortTempFileChunkHolder = new UnsafeInmemoryHolder(rowPage);
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -120,9 +131,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       for (final UnsafeInMemoryIntermediateDataMerger merger : merges) {
 
         SortTempChunkHolder sortTempFileChunkHolder =
-            new UnsafeFinalMergePageHolder(merger, parameters.getNoDictionarySortColumn(),
-                parameters.getDimColCount() + parameters.getComplexDimColCount() + parameters
-                    .getMeasureColCount());
+            new UnsafeFinalMergePageHolder(merger, parameters.getNoDictionarySortColumn());
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -141,7 +150,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
         recordHolderHeapLocal.add(sortTempFileChunkHolder);
       }
 
-      LOGGER.info("Heap Size" + this.recordHolderHeapLocal.size());
+      LOGGER.info("Heap Size: " + this.recordHolderHeapLocal.size());
     } catch (Exception e) {
       LOGGER.error(e);
       throw new CarbonDataWriterException(e);
@@ -149,19 +158,20 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   }
 
   private List<File> getFilesToMergeSort() {
+    // this can be partitionId, bucketId or rangeId, let's call it rangeId
+    final int rangeId = parameters.getRangeId();
+
     FileFilter fileFilter = new FileFilter() {
       public boolean accept(File pathname) {
-        return pathname.getName().startsWith(tableName);
+        return pathname.getName().startsWith(tableName + '_' + rangeId);
       }
     };
 
     // get all the merged files
     List<File> files = new ArrayList<File>(tempFileLocation.length);
-    for (String tempLoc : tempFileLocation)
-    {
+    for (String tempLoc : tempFileLocation) {
       File[] subFiles = new File(tempLoc).listFiles(fileFilter);
-      if (null != subFiles && subFiles.length > 0)
-      {
+      if (null != subFiles && subFiles.length > 0) {
         files.addAll(Arrays.asList(subFiles));
       }
     }
@@ -179,12 +189,14 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   }
 
   /**
-   * This method will be used to get the sorted row
+   * This method will be used to get the sorted row in 3-parted format.
+   * The row will feed the following writer process step.
    *
    * @return sorted row
    */
   public Object[] next() {
-    return SortStepRowUtil.convertRow(getSortedRecordFromFile(), parameters);
+    IntermediateSortTempRow sortTempRow =  getSortedRecordFromFile();
+    return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(sortTempRow);
   }
 
   /**
@@ -192,8 +204,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    *
    * @return sorted record sorted record
    */
-  private Object[] getSortedRecordFromFile() throws CarbonDataWriterException {
-    Object[] row = null;
+  private IntermediateSortTempRow getSortedRecordFromFile() throws CarbonDataWriterException {
+    IntermediateSortTempRow row = null;
 
     // poll the top object from heap
     // heap maintains binary tree which is based on heap condition that will

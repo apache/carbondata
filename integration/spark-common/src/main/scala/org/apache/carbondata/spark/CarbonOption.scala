@@ -17,21 +17,17 @@
 
 package org.apache.carbondata.spark
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
  * Contains all options for Spark data source
  */
 class CarbonOption(options: Map[String, String]) {
-  def tableIdentifier: String = options.getOrElse("tableName", s"$dbName.$tableName")
 
-  def dbName: String = options.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
+  def dbName: Option[String] = options.get("dbName")
 
   def tableName: String = options.getOrElse("tableName", "default_table")
 
-  def tablePath: String = s"$dbName/$tableName"
-
-  def tableId: String = options.getOrElse("tableId", "default_table_id")
+  def tablePath: Option[String] = options.get("tablePath")
 
   def partitionCount: String = options.getOrElse("partitionCount", "1")
 
@@ -40,11 +36,13 @@ class CarbonOption(options: Map[String, String]) {
       "org.apache.carbondata.processing.partition.impl.SampleDataPartitionerImpl")
   }
 
-  def tempCSV: Boolean = options.getOrElse("tempCSV", "true").toBoolean
+  def tempCSV: Boolean = options.getOrElse("tempCSV", "false").toBoolean
 
   def compress: Boolean = options.getOrElse("compress", "false").toBoolean
 
   def singlePass: Boolean = options.getOrElse("single_pass", "false").toBoolean
+
+  def sortColumns: Option[String] = options.get("sort_columns")
 
   def dictionaryInclude: Option[String] = options.get("dictionary_include")
 
@@ -59,7 +57,8 @@ class CarbonOption(options: Map[String, String]) {
   def isBucketingEnabled: Boolean = options.contains("bucketcolumns") &&
                                     options.contains("bucketnumber")
 
-  def isStreaming: Boolean = options.getOrElse("streaming", "false").toBoolean
+  def isStreaming: Boolean =
+    options.getOrElse("streaming", "false").toBoolean
 
   def toMap: Map[String, String] = options
 }

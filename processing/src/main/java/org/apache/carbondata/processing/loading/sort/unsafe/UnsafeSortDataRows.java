@@ -17,11 +17,10 @@
 
 package org.apache.carbondata.processing.loading.sort.unsafe;
 
-import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.IntPointerBuffer;
 import org.apache.carbondata.core.memory.MemoryBlock;
@@ -42,13 +42,14 @@ import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.processing.loading.sort.unsafe.comparator.UnsafeRowComparator;
-import org.apache.carbondata.processing.loading.sort.unsafe.comparator.UnsafeRowComparatorForNormalDIms;
+import org.apache.carbondata.processing.loading.sort.unsafe.comparator.UnsafeRowComparatorForNormalDims;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeCarbonRow;
 import org.apache.carbondata.processing.loading.sort.unsafe.merger.UnsafeIntermediateMerger;
 import org.apache.carbondata.processing.loading.sort.unsafe.sort.TimSort;
 import org.apache.carbondata.processing.loading.sort.unsafe.sort.UnsafeIntSortDataFormat;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
+import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class UnsafeSortDataRows {
@@ -70,7 +71,8 @@ public class UnsafeSortDataRows {
    */
 
   private SortParameters parameters;
-
+  private TableFieldStat tableFieldStat;
+  private ThreadLocal<ByteBuffer> rowBuffer;
   private UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger;
 
   private UnsafeCarbonRowPage rowPage;
@@ -95,7 +97,13 @@ public class UnsafeSortDataRows {
   public UnsafeSortDataRows(SortParameters parameters,
       UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSize) {
     this.parameters = parameters;
-
+    this.tableFieldStat = new TableFieldStat(parameters);
+    this.rowBuffer = new ThreadLocal<ByteBuffer>() {
+      @Override protected ByteBuffer initialValue() {
+        byte[] backedArray = new byte[2 * 1024 * 1024];
+        return ByteBuffer.wrap(backedArray);
+      }
+    };
     this.unsafeInMemoryIntermediateFileMerger = unsafeInMemoryIntermediateFileMerger;
 
     // observer of writing file in thread
@@ -120,19 +128,8 @@ public class UnsafeSortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize() throws MemoryException {
-    MemoryBlock baseBlock =
-        UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-    boolean isMemoryAvailable =
-        UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
-    if (isMemoryAvailable) {
-      UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
-    }
-    this.rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
-        parameters.getNoDictionarySortColumn(),
-        parameters.getDimColCount() + parameters.getComplexDimColCount(),
-        parameters.getMeasureColCount(), parameters.getMeasureDataType(), baseBlock,
-        !isMemoryAvailable, taskId);
+  public void initialize() throws MemoryException, CarbonSortKeyAndGroupByException {
+    this.rowPage = createUnsafeRowPage();
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 
@@ -142,6 +139,22 @@ public class UnsafeSortDataRows {
         .newFixedThreadPool(parameters.getNumberOfCores(),
             new CarbonThreadFactory("UnsafeSortDataRowPool:" + parameters.getTableName()));
     semaphore = new Semaphore(parameters.getNumberOfCores());
+  }
+
+  private UnsafeCarbonRowPage createUnsafeRowPage()
+      throws MemoryException, CarbonSortKeyAndGroupByException {
+    MemoryBlock baseBlock =
+        UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
+    boolean isMemoryAvailable =
+        UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
+    if (isMemoryAvailable) {
+      UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
+    } else {
+      LOGGER.info("trigger in-memory merge and spill for table " + parameters.getTableName());
+      // merge and spill in-memory pages to disk if memory is not enough
+      unsafeInMemoryIntermediateFileMerger.tryTriggerInmemoryMerging(true);
+    }
+    return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
   }
 
   public boolean canAdd() {
@@ -179,31 +192,12 @@ public class UnsafeSortDataRows {
   private void addBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
     for (int i = 0; i < size; i++) {
       if (rowPage.canAdd()) {
-        bytesAdded += rowPage.addRow(rowBatch[i]);
+        bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
       } else {
         try {
-          if (enableInMemoryIntermediateMerge) {
-            unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
-          }
-          unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
-          semaphore.acquire();
-          dataSorterAndWriterExecutorService.execute(new DataSorterAndWriter(rowPage));
-          MemoryBlock memoryBlock =
-              UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-          boolean saveToDisk =
-              UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(memoryBlock.size());
-          if (!saveToDisk) {
-            UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
-          }
-          rowPage = new UnsafeCarbonRowPage(
-                  parameters.getNoDictionaryDimnesionColumn(),
-                  parameters.getNoDictionarySortColumn(),
-                  parameters.getDimColCount() + parameters.getComplexDimColCount(),
-                  parameters.getMeasureColCount(),
-                  parameters.getMeasureDataType(),
-                  memoryBlock,
-                  saveToDisk, taskId);
-          bytesAdded += rowPage.addRow(rowBatch[i]);
+          handlePreviousPage();
+          rowPage = createUnsafeRowPage();
+          bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
         } catch (Exception e) {
           LOGGER.error(
                   "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
@@ -221,79 +215,73 @@ public class UnsafeSortDataRows {
     // if record holder list size is equal to sort buffer size then it will
     // sort the list and then write current list data to file
     if (rowPage.canAdd()) {
-      rowPage.addRow(row);
+      rowPage.addRow(row, rowBuffer.get());
     } else {
       try {
-        if (enableInMemoryIntermediateMerge) {
-          unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
-        }
-        unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
-        semaphore.acquire();
-        dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
-        MemoryBlock memoryBlock =
-            UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-        boolean saveToDisk = UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(memoryBlock.size());
-        if (!saveToDisk) {
-          UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
-        }
-        rowPage = new UnsafeCarbonRowPage(
-            parameters.getNoDictionaryDimnesionColumn(),
-            parameters.getNoDictionarySortColumn(),
-            parameters.getDimColCount(), parameters.getMeasureColCount(),
-            parameters.getMeasureDataType(), memoryBlock,
-            saveToDisk, taskId);
-        rowPage.addRow(row);
+        handlePreviousPage();
+        rowPage = createUnsafeRowPage();
+        rowPage.addRow(row, rowBuffer.get());
       } catch (Exception e) {
         LOGGER.error(
             "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
         throw new CarbonSortKeyAndGroupByException(e);
       }
-
     }
   }
 
   /**
-   * Below method will be used to start storing process This method will get
-   * all the temp files present in sort temp folder then it will create the
-   * record holder heap and then it will read first record from each file and
-   * initialize the heap
+   * Below method will be used to start sorting process. This method will get
+   * all the temp unsafe pages in memory and all the temp files and try to merge them if possible.
+   * Also, it will spill the pages to disk or add it to unsafe sort memory.
    *
-   * @throws InterruptedException
+   * @throws CarbonSortKeyAndGroupByException if error occurs during in-memory merge
+   * @throws InterruptedException if error occurs during data sort and write
    */
-  public void startSorting() throws InterruptedException {
+  public void startSorting() throws CarbonSortKeyAndGroupByException, InterruptedException {
     LOGGER.info("Unsafe based sorting will be used");
     if (this.rowPage.getUsedSize() > 0) {
-      TimSort<UnsafeCarbonRow, IntPointerBuffer> timSort = new TimSort<>(
-          new UnsafeIntSortDataFormat(rowPage));
-      if (parameters.getNumberOfNoDictSortColumns() > 0) {
-        timSort.sort(rowPage.getBuffer(), 0, rowPage.getBuffer().getActualSize(),
-            new UnsafeRowComparator(rowPage));
-      } else {
-        timSort.sort(rowPage.getBuffer(), 0, rowPage.getBuffer().getActualSize(),
-            new UnsafeRowComparatorForNormalDIms(rowPage));
-      }
-      unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(rowPage);
+      handlePreviousPage();
     } else {
       rowPage.freeMemory();
     }
     startFileBasedMerge();
   }
 
-  private void writeData(UnsafeCarbonRowPage rowPage, File file)
+  /**
+   * Deal with the previous pages added to sort-memory. Carbondata will merge the in-memory pages
+   * or merge the sort temp files if possible. After that, carbondata will add current page to
+   * sort memory or just spill them.
+   */
+  private void handlePreviousPage()
+      throws CarbonSortKeyAndGroupByException, InterruptedException {
+    if (enableInMemoryIntermediateMerge) {
+      unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
+    }
+    unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
+    semaphore.acquire();
+    dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
+  }
+
+  /**
+   * write a page to sort temp file
+   * @param rowPage page
+   * @param file file
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  private void writeDataToFile(UnsafeCarbonRowPage rowPage, File file)
       throws CarbonSortKeyAndGroupByException {
     DataOutputStream stream = null;
     try {
       // open stream
-      stream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file),
-          parameters.getFileWriteBufferSize()));
+      stream = FileFactory.getDataOutputStream(file.getPath(), FileFactory.FileType.LOCAL,
+          parameters.getFileWriteBufferSize(), parameters.getSortTempCompressorName());
       int actualSize = rowPage.getBuffer().getActualSize();
       // write number of entries to the file
       stream.writeInt(actualSize);
       for (int i = 0; i < actualSize; i++) {
-        rowPage.fillRow(rowPage.getBuffer().get(i) + rowPage.getDataBlock().getBaseOffset(),
-            stream);
+        rowPage.writeRow(
+            rowPage.getBuffer().get(i) + rowPage.getDataBlock().getBaseOffset(), stream);
       }
-
     } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
     } finally {
@@ -362,20 +350,21 @@ public class UnsafeSortDataRows {
               new UnsafeRowComparator(page));
         } else {
           timSort.sort(page.getBuffer(), 0, page.getBuffer().getActualSize(),
-              new UnsafeRowComparatorForNormalDIms(page));
+              new UnsafeRowComparatorForNormalDims(page));
         }
         if (page.isSaveToDisk()) {
           // create a new file every time
           // create a new file and pick a temp directory randomly every time
           String tmpDir = parameters.getTempFileLocation()[
               new Random().nextInt(parameters.getTempFileLocation().length)];
-          File sortTempFile = new File(
-              tmpDir + File.separator + parameters.getTableName()
-                  + System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
-          writeData(page, sortTempFile);
+          File sortTempFile = new File(tmpDir + File.separator + parameters.getTableName()
+              + '_' + parameters.getRangeId() + '_' + System.nanoTime()
+              + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+          writeDataToFile(page, sortTempFile);
           LOGGER.info("Time taken to sort row page with size" + page.getBuffer().getActualSize()
               + " and write is: " + (System.currentTimeMillis() - startTime) + ": location:"
-              + sortTempFile);
+              + sortTempFile + ", sort temp file size in MB is "
+              + sortTempFile.length() * 0.1 * 10 / 1024 / 1024);
           page.freeMemory();
           // add sort temp filename to and arrayList. When the list size reaches 20 then
           // intermediate merging of sort temp files will be triggered

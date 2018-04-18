@@ -37,6 +37,7 @@ import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.parser.RowParser;
 import org.apache.carbondata.processing.loading.parser.impl.RowParserImpl;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * It reads data from record reader and sends data to next step.
@@ -51,7 +52,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
    * executor service to execute the query
    */
   public ExecutorService executorService;
-
+  boolean isRawDataRequired = false;
   public InputProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       CarbonIterator<Object[]>[] inputIterators) {
     super(configuration, null);
@@ -68,6 +69,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
         "InputProcessorPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
             .getTableName()));
+    // if logger is enabled then raw data will be required.
+    this.isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(configuration);
   }
 
   @Override public Iterator<CarbonRowBatch>[] execute() {
@@ -77,7 +80,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
           new InputProcessorIterator(readerIterators[i], rowParser, batchSize,
-              configuration.isPreFetch(), executorService, rowCounter);
+              configuration.isPreFetch(), executorService, rowCounter, isRawDataRequired);
     }
     return outIterators;
   }
@@ -150,9 +153,11 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     private AtomicLong rowCounter;
 
+    private boolean isRawDataRequired = false;
+
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators,
         RowParser rowParser, int batchSize, boolean preFetch, ExecutorService executorService,
-        AtomicLong rowCounter) {
+        AtomicLong rowCounter, boolean isRawDataRequired) {
       this.inputIterators = inputIterators;
       this.batchSize = batchSize;
       this.rowParser = rowParser;
@@ -164,6 +169,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       this.preFetch = preFetch;
       this.nextBatch = false;
       this.firstTime = true;
+      this.isRawDataRequired = isRawDataRequired;
     }
 
     @Override
@@ -235,9 +241,17 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       // Create batch and fill it.
       CarbonRowBatch carbonRowBatch = new CarbonRowBatch(batchSize);
       int count = 0;
-      while (internalHasNext() && count < batchSize) {
-        carbonRowBatch.addRow(new CarbonRow(rowParser.parseRow(currentIterator.next())));
-        count++;
+      if (isRawDataRequired) {
+        while (internalHasNext() && count < batchSize) {
+          Object[] rawRow = currentIterator.next();
+          carbonRowBatch.addRow(new CarbonRow(rowParser.parseRow(rawRow), rawRow));
+          count++;
+        }
+      } else {
+        while (internalHasNext() && count < batchSize) {
+          carbonRowBatch.addRow(new CarbonRow(rowParser.parseRow(currentIterator.next())));
+          count++;
+        }
       }
       rowCounter.getAndAdd(carbonRowBatch.getSize());
       return carbonRowBatch;

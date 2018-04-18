@@ -23,16 +23,27 @@ import java.util.LinkedList;
 import java.util.Map;
 import javax.annotation.concurrent.GuardedBy;
 
+import org.apache.carbondata.core.util.CarbonProperties;
+
 /**
  * Code ported from Apache Spark {org.apache.spark.unsafe.memory} package
  * A simple {@link MemoryAllocator} that can allocate up to 16GB using a JVM long primitive array.
  */
 public class HeapMemoryAllocator implements MemoryAllocator {
 
-  @GuardedBy("this") private final Map<Long, LinkedList<WeakReference<MemoryBlock>>>
+  @GuardedBy("this") private final Map<Long, LinkedList<WeakReference<long[]>>>
       bufferPoolsBySize = new HashMap<>();
 
-  private static final int POOLING_THRESHOLD_BYTES = 1024 * 1024;
+  private int poolingThresholdBytes;
+  private boolean shouldPooling = true;
+
+  public HeapMemoryAllocator() {
+    poolingThresholdBytes = CarbonProperties.getInstance().getHeapMemoryPoolingThresholdBytes();
+    // if set 'poolingThresholdBytes' to -1, it should not go through the pooling mechanism.
+    if (poolingThresholdBytes == -1) {
+      shouldPooling = false;
+    }
+  }
 
   /**
    * Returns true if allocations of the given size should go through the pooling mechanism and
@@ -40,42 +51,53 @@ public class HeapMemoryAllocator implements MemoryAllocator {
    */
   private boolean shouldPool(long size) {
     // Very small allocations are less likely to benefit from pooling.
-    return size >= POOLING_THRESHOLD_BYTES;
+    return shouldPooling && (size >= poolingThresholdBytes);
   }
 
   @Override public MemoryBlock allocate(long size) throws OutOfMemoryError {
-    if (shouldPool(size)) {
+    int numWords = (int) ((size + 7) / 8);
+    long alignedSize = numWords * 8L;
+    assert (alignedSize >= size);
+    if (shouldPool(alignedSize)) {
       synchronized (this) {
-        final LinkedList<WeakReference<MemoryBlock>> pool = bufferPoolsBySize.get(size);
+        final LinkedList<WeakReference<long[]>> pool = bufferPoolsBySize.get(alignedSize);
         if (pool != null) {
           while (!pool.isEmpty()) {
-            final WeakReference<MemoryBlock> blockReference = pool.pop();
-            final MemoryBlock memory = blockReference.get();
-            if (memory != null) {
-              assert (memory.size() == size);
+            final WeakReference<long[]> arrayReference = pool.pop();
+            final long[] array = arrayReference.get();
+            if (array != null) {
+              assert (array.length * 8L >= size);
+              MemoryBlock memory = new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size);
               // reuse this MemoryBlock
               memory.setFreedStatus(false);
               return memory;
             }
           }
-          bufferPoolsBySize.remove(size);
+          bufferPoolsBySize.remove(alignedSize);
         }
       }
     }
-    long[] array = new long[(int) ((size + 7) / 8)];
+    long[] array = new long[numWords];
     return new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size);
   }
 
   @Override public void free(MemoryBlock memory) {
     final long size = memory.size();
-    if (shouldPool(size)) {
+
+    // As an additional layer of defense against use-after-free bugs, we mutate the
+    // MemoryBlock to null out its reference to the long[] array.
+    long[] array = (long[]) memory.obj;
+    memory.setObjAndOffset(null, 0);
+
+    long alignedSize = ((size + 7) / 8) * 8;
+    if (shouldPool(alignedSize)) {
       synchronized (this) {
-        LinkedList<WeakReference<MemoryBlock>> pool = bufferPoolsBySize.get(size);
+        LinkedList<WeakReference<long[]>> pool = bufferPoolsBySize.get(alignedSize);
         if (pool == null) {
           pool = new LinkedList<>();
-          bufferPoolsBySize.put(size, pool);
+          bufferPoolsBySize.put(alignedSize, pool);
         }
-        pool.add(new WeakReference<>(memory));
+        pool.add(new WeakReference<>(array));
       }
     }
     memory.setFreedStatus(true);

@@ -18,7 +18,7 @@ package org.apache.carbondata.core.scan.collector;
 
 import java.util.List;
 
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 
 /**
@@ -27,17 +27,13 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 public interface ScannedResultCollector {
 
   /**
-   * Below method will be used to aggregate the scanned result
-   *
-   * @param scannedResult scanned result
-   * @return how many records was aggregated
+   * Return the aggregated scanned result in list of rows
    */
-  List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize);
+  List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize);
 
   /**
-   * Collects data in columnar format.
-   * @param scannedResult
-   * @param columnarBatch
+   * Collects result and set it in the specified columnar batch
    */
-  void collectVectorBatch(AbstractScannedResult scannedResult, CarbonColumnarBatch columnarBatch);
+  void collectResultInColumnarBatch(BlockletScannedResult scannedResult,
+      CarbonColumnarBatch columnarBatch);
 }

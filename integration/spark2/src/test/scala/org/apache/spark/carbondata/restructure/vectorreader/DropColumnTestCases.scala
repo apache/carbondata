@@ -17,13 +17,11 @@
 
 package org.apache.spark.carbondata.restructure.vectorreader
 
-import java.math.{BigDecimal, RoundingMode}
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -106,8 +104,8 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
     sql("alter table preaggmain drop columns(c)")
-    checkExistence(sql("desc table preaggmain"), false, "c")
-    assert(intercept[RuntimeException] {
+//    checkExistence(sql("desc table preaggmain"), false, "c")
+    assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain_preagg1 drop columns(preaggmain_b_sum)").show
     }.getMessage.contains("Cannot drop columns in pre-aggreagate table"))
     sql("drop table if exists preaggMain")

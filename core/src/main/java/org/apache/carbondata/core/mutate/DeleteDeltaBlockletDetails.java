@@ -46,14 +46,6 @@ public class DeleteDeltaBlockletDetails implements Serializable {
     return deletedRows.add(row);
   }
 
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
   public Integer getPageId() {
     return pageId;
   }

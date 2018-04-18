@@ -23,11 +23,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.SortColumnRangeInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.loading.converter.DictionaryCardinalityFinder;
 
@@ -38,8 +40,6 @@ public class CarbonDataLoadConfiguration {
   private AbsoluteTableIdentifier tableIdentifier;
 
   private String[] header;
-
-  private String partitionId;
 
   private String segmentId;
 
@@ -64,6 +64,21 @@ public class CarbonDataLoadConfiguration {
    */
   private int dictionaryServerPort;
 
+  /**
+   * dictionary server secret key
+   */
+  private String dictionaryServerSecretKey;
+
+  /**
+   * Dictionary Service Provider.
+   */
+  private DictionaryServiceProvider dictionaryServiceProvider;
+
+  /**
+   * Secure Mode or not.
+   */
+  private Boolean dictionaryEncryptServerSecure;
+
   private boolean preFetch;
 
   private int dimensionCount;
@@ -87,6 +102,20 @@ public class CarbonDataLoadConfiguration {
 
   // contains metadata used in write step of loading process
   private TableSpec tableSpec;
+
+  /**
+   * Number of thread cores to use while writing data files
+   */
+  private short writingCoresCount;
+
+  private SortColumnRangeInfo sortColumnRangeInfo;
+
+  private boolean carbonUnmanagedTable;
+
+  /**
+   * Flder path to where data should be written for this load.
+   */
+  private String dataWritePath;
 
   public CarbonDataLoadConfiguration() {
   }
@@ -168,14 +197,6 @@ public class CarbonDataLoadConfiguration {
     this.tableIdentifier = tableIdentifier;
   }
 
-  public String getPartitionId() {
-    return partitionId;
-  }
-
-  public void setPartitionId(String partitionId) {
-    this.partitionId = partitionId;
-  }
-
   public String getSegmentId() {
     return segmentId;
   }
@@ -230,6 +251,30 @@ public class CarbonDataLoadConfiguration {
 
   public void setDictionaryServerPort(int dictionaryServerPort) {
     this.dictionaryServerPort = dictionaryServerPort;
+  }
+
+  public String getDictionaryServerSecretKey() {
+    return dictionaryServerSecretKey;
+  }
+
+  public void setDictionaryServerSecretKey(String dictionaryServerSecretKey) {
+    this.dictionaryServerSecretKey = dictionaryServerSecretKey;
+  }
+
+  public DictionaryServiceProvider getDictionaryServiceProvider() {
+    return dictionaryServiceProvider;
+  }
+
+  public void setDictionaryServiceProvider(DictionaryServiceProvider dictionaryServiceProvider) {
+    this.dictionaryServiceProvider = dictionaryServiceProvider;
+  }
+
+  public Boolean getDictionaryEncryptServerSecure() {
+    return dictionaryEncryptServerSecure;
+  }
+
+  public void setDictionaryEncryptServerSecure(Boolean dictionaryEncryptServerSecure) {
+    this.dictionaryEncryptServerSecure = dictionaryEncryptServerSecure;
   }
 
   public boolean isPreFetch() {
@@ -309,5 +354,37 @@ public class CarbonDataLoadConfiguration {
 
   public void setTableSpec(TableSpec tableSpec) {
     this.tableSpec = tableSpec;
+  }
+
+  public short getWritingCoresCount() {
+    return writingCoresCount;
+  }
+
+  public void setWritingCoresCount(short writingCoresCount) {
+    this.writingCoresCount = writingCoresCount;
+  }
+
+  public String getDataWritePath() {
+    return dataWritePath;
+  }
+
+  public void setDataWritePath(String dataWritePath) {
+    this.dataWritePath = dataWritePath;
+  }
+
+  public SortColumnRangeInfo getSortColumnRangeInfo() {
+    return sortColumnRangeInfo;
+  }
+
+  public void setSortColumnRangeInfo(SortColumnRangeInfo sortColumnRangeInfo) {
+    this.sortColumnRangeInfo = sortColumnRangeInfo;
+  }
+
+  public boolean isCarbonUnmanagedTable() {
+    return carbonUnmanagedTable;
+  }
+
+  public void setCarbonUnmanagedTable(boolean carbonUnmanagedTable) {
+    this.carbonUnmanagedTable = carbonUnmanagedTable;
   }
 }

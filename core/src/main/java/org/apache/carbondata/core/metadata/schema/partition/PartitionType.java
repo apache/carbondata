@@ -23,5 +23,6 @@ public enum PartitionType {
   RANGE,
   RANGE_INTERVAL,
   LIST,
-  HASH
+  HASH,
+  NATIVE_HIVE
 }

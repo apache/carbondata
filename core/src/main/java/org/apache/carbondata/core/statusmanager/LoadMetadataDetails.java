@@ -26,6 +26,29 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
+/*
+  Prior to Carbon 1.3 the the loadMetaData @timestamp and @loadStartTime was stored as
+  as date string format "dd-MM-yyyy HH:mm:ss:SSS". The date string value is specific
+  to the timezone. SO the timestamp in long by the date string will not result into
+  same value if converted to date in different timezone.
+  Json Object of LoadMetaData before CarbonData 1.3
+ |-------------------------------------------------------------------------------------------|
+ | [{"timestamp":"15-12-2017 16:50:31:703","loadStatus":"Success","loadName":"0",            |
+ | "partitionCount":"0","isDeleted":"FALSE","dataSize":"912","indexSize":"700",              |
+ | "updateDeltaEndTimestamp":"","updateDeltaStartTimestamp":"","updateStatusFileName":"",    |
+ | "loadStartTime":"15-12-2017 16:50:27:493","visibility":"true","fileFormat":"COLUMNAR_V3"}]|
+ |-------------------------------------------------------------------------------------------|
+  Fix: As the System.currentTimeMillis() returns the same value irrespective of timezone.
+  So if Carbon stores the long value for @timestamp  and @loadStartTime value then the
+  value will be same irrespective of the timezone.
+  Json Object of LoadMetaData for CarbonData 1.3
+ |-------------------------------------------------------------------------------------------|
+ | [{"timestamp":"1513336827593","loadStatus":"Success","loadName":"0",                      |
+ | "partitionCount":"0","isDeleted":"FALSE","dataSize":"912","indexSize":"700",              |
+ | "updateDeltaEndTimestamp":"","updateDeltaStartTimestamp":"","updateStatusFileName":"",    |
+ | "loadStartTime":"1513336827593","visibility":"true","fileFormat":"COLUMNAR_V3"}]          |
+ |-------------------------------------------------------------------------------------------|
+ */
 public class LoadMetadataDetails implements Serializable {
 
   private static final long serialVersionUID = 1106104914918491724L;
@@ -41,6 +64,24 @@ public class LoadMetadataDetails implements Serializable {
   private String partitionCount;
 
   private String isDeleted = CarbonCommonConstants.KEYWORD_FALSE;
+  private String dataSize;
+  private String indexSize;
+
+  public String getDataSize() {
+    return dataSize;
+  }
+
+  public void setDataSize(String dataSize) {
+    this.dataSize = dataSize;
+  }
+
+  public String getIndexSize() {
+    return indexSize;
+  }
+
+  public void setIndexSize(String indexSize) {
+    this.indexSize = indexSize;
+  }
 
   // update delta end timestamp
   private String updateDeltaEndTimestamp = "";
@@ -80,12 +121,18 @@ public class LoadMetadataDetails implements Serializable {
   /**
    * the file format of this segment
    */
-  private FileFormat fileFormat = FileFormat.carbondata;
+  private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
+
+  /**
+   * Segment file name where it has the information of partition information.
+   */
+  private String segmentFile;
 
   public String getPartitionCount() {
     return partitionCount;
   }
 
+  @Deprecated
   public void setPartitionCount(String partitionCount) {
     this.partitionCount = partitionCount;
   }
@@ -98,7 +145,7 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public void setLoadEndTime(long timestamp) {
-    this.timestamp = getTimeStampConvertion(timestamp);;
+    this.timestamp = Long.toString(timestamp);
   }
 
   public SegmentStatus getSegmentStatus() {
@@ -132,7 +179,7 @@ public class LoadMetadataDetails implements Serializable {
    */
   public void setModificationOrdeletionTimesStamp(long modificationOrdeletionTimesStamp) {
     this.modificationOrdeletionTimesStamp =
-        getTimeStampConvertion(modificationOrdeletionTimesStamp);
+        Long.toString(modificationOrdeletionTimesStamp);
   }
 
   /* (non-Javadoc)
@@ -190,24 +237,34 @@ public class LoadMetadataDetails implements Serializable {
    * This method will convert a given timestamp to long value and then to string back
    *
    * @param factTimeStamp
-   * @return
+   * @return Long    TimeStamp value is milliseconds
    */
   private long convertTimeStampToLong(String factTimeStamp) {
-    SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
-    Date dateToStr = null;
     try {
-      dateToStr = parser.parse(factTimeStamp);
-      return dateToStr.getTime();
-    } catch (ParseException e) {
-      LOGGER.error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e.getMessage());
-      parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
+      return Long.parseLong(factTimeStamp);
+    } catch (NumberFormatException nf) {
+      SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
+      // it is the processing for existing table before carbon 1.3
+      Date dateToStr = null;
       try {
         dateToStr = parser.parse(factTimeStamp);
         return dateToStr.getTime();
-      } catch (ParseException e1) {
+      } catch (ParseException e) {
         LOGGER
-            .error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e1.getMessage());
-        return 0;
+            .error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e.getMessage());
+        parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
+        try {
+          // if the load is in progress, factTimeStamp will be null, so use current time
+          if (null == factTimeStamp) {
+            return System.currentTimeMillis();
+          }
+          dateToStr = parser.parse(factTimeStamp);
+          return dateToStr.getTime();
+        } catch (ParseException e1) {
+          LOGGER.error(
+              "Cannot convert" + factTimeStamp + " to Time/Long type value" + e1.getMessage());
+          return 0;
+        }
       }
     }
   }
@@ -216,29 +273,30 @@ public class LoadMetadataDetails implements Serializable {
    * returns load start time as long value
    *
    * @param loadStartTime
-   * @return
+   * @return Long  TimeStamp value is nanoseconds
    */
   public Long getTimeStamp(String loadStartTime) {
-    Date dateToStr = null;
     try {
-      dateToStr = parser.parse(loadStartTime);
-      return dateToStr.getTime() * 1000;
-    } catch (ParseException e) {
-      LOGGER.error("Cannot convert" + loadStartTime + " to Time/Long type value" + e.getMessage());
-      return null;
+      return Long.parseLong(loadStartTime) * 1000L;
+    } catch (NumberFormatException nf) {
+      // it is the processing for existing table before carbon 1.3
+      Date dateToStr = null;
+      try {
+        dateToStr = parser.parse(loadStartTime);
+        return dateToStr.getTime() * 1000;
+      } catch (ParseException e) {
+        LOGGER.error("Cannot convert" + loadStartTime +
+            " to Time/Long type value" + e.getMessage());
+        return null;
+      }
     }
-  }
-
-  private String getTimeStampConvertion(long time) {
-    SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
-    return sdf.format(time);
   }
 
   /**
    * @param loadStartTime
    */
   public void setLoadStartTime(long loadStartTime) {
-    this.loadStartTime = getTimeStampConvertion(loadStartTime);
+    this.loadStartTime = Long.toString(loadStartTime);
   }
 
   /**
@@ -284,15 +342,6 @@ public class LoadMetadataDetails implements Serializable {
    */
   public void setMajorCompacted(String majorCompacted) {
     this.majorCompacted = majorCompacted;
-  }
-
-  /**
-   * To get isDeleted property.
-   *
-   * @return isDeleted
-   */
-  public String getIsDeleted() {
-    return isDeleted;
   }
 
   /**
@@ -364,5 +413,18 @@ public class LoadMetadataDetails implements Serializable {
 
   public void setFileFormat(FileFormat fileFormat) {
     this.fileFormat = fileFormat;
+  }
+
+  public String getSegmentFile() {
+    return segmentFile;
+  }
+
+  public void setSegmentFile(String segmentFile) {
+    this.segmentFile = segmentFile;
+  }
+
+  @Override public String toString() {
+    return "LoadMetadataDetails{" + "loadStatus=" + loadStatus + ", loadName='" + loadName + '\''
+        + ", loadStartTime='" + loadStartTime + '\'' + ", segmentFile='" + segmentFile + '\'' + '}';
   }
 }

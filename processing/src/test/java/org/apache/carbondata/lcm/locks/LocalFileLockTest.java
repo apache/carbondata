@@ -19,7 +19,6 @@ package org.apache.carbondata.lcm.locks;
 import java.io.File;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.locks.LocalFileLock;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -66,7 +65,7 @@ public class LocalFileLockTest {
 
     Assert.assertTrue(localLock1.unlock());
     Assert.assertTrue(localLock2.lock());
-
+    Assert.assertTrue(localLock2.unlock());
   }
 
 }

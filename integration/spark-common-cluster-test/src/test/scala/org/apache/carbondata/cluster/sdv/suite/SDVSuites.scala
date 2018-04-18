@@ -20,6 +20,7 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.{BeforeAndAfterAll, Suites}
 
 import org.apache.carbondata.cluster.sdv.generated._
+import org.apache.carbondata.cluster.sdv.register.TestRegisterCarbonTable
 
 /**
  * Suite class for all tests.
@@ -32,6 +33,7 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                               new BatchSortLoad2TestCase ::
                               new BatchSortQueryTestCase ::
                               new ColumndictTestCase ::
+                              new CreateTableAsSelectTestCase ::
                               new DataLoadingTestCase ::
                               new DataLoadingV3TestCase ::
                               new InvertedindexTestCase ::
@@ -51,10 +53,15 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                               new ShowLoadsTestCase ::
                               new SinglepassTestCase ::
                               new SortColumnTestCase ::
+                              new TableCommentAlterTableTestCase ::
                               new TimestamptypesTestCase ::
                               new V3offheapvectorTestCase ::
+                              new StandardPartitionTestCase ::
                               new Vector1TestCase ::
-                              new Vector2TestCase ::Nil
+                              new Vector2TestCase ::
+                              new PreAggregateTestCase ::
+                              new TimeSeriesPreAggregateTestCase ::
+                              new TestPartitionWithGlobalSort :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -117,6 +124,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
   val suites =      new AlterTableTestCase ::
                     new BatchSortLoad2TestCase ::
                     new BucketingTestCase ::
+                    new CreateTableAsSelectTestCase ::
                     new InvertedindexTestCase ::
                     new OffheapQuery1TestCase ::
                     new OffheapQuery2TestCase ::
@@ -133,7 +141,14 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new QueriesRangeFilterTestCase ::
                     new QueriesSparkBlockDistTestCase ::
                     new DataLoadingV3TestCase ::
-                    new QueriesIncludeDictionaryTestCase :: Nil
+                    new QueriesIncludeDictionaryTestCase ::
+                    new TestRegisterCarbonTable ::
+                    new TableCommentAlterTableTestCase ::
+                    new StandardPartitionTestCase ::
+                    new PreAggregateTestCase ::
+                    new TimeSeriesPreAggregateTestCase :: 
+                    new TestPartitionWithGlobalSort ::
+                    new SetParameterTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -149,7 +164,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
  */
 class SDVSuites4 extends Suites with BeforeAndAfterAll {
 
-  val suites =     new CarbonV1toV3CompatabilityTestCase  :: Nil
+  val suites =     new CarbonV1toV3CompatabilityTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 

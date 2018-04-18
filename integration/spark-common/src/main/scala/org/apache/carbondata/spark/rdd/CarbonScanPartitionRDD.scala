@@ -29,14 +29,15 @@ import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.block.{Distributable, SegmentProperties, TaskBlockInfo}
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, CarbonMeasure}
@@ -44,10 +45,12 @@ import org.apache.carbondata.core.scan.result.iterator.PartitionSpliterRawResult
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.merger.CarbonCompactionUtil
 import org.apache.carbondata.processing.partition.spliter.CarbonSplitExecutor
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
+import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 
 
 /**
@@ -89,12 +92,12 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
   val measureIndexGroup: ArrayBuffer[Int] = new ArrayBuffer[Int]()
 
   override def getPartitions: Array[Partition] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val parallelism = sparkContext.defaultParallelism
     val jobConf = new JobConf(new Configuration)
     val job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonTableInputFormat(absoluteTableIdentifier,
       partitionIds.toList.asJava, job)
+    CarbonInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     job.getConfiguration.set("query.id", queryId)
 
     val splits = format.getSplitsOfOneSegment(job, segmentId,
@@ -113,7 +116,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
           val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
           if (blocksPerTask.size() != 0) {
             val multiBlockSplit =
-              new CarbonMultiBlockSplit(absoluteTableIdentifier, splits.asJava, Array(node))
+              new CarbonMultiBlockSplit(splits.asJava, Array(node))
             val partition = new CarbonSparkPartition(id, partition_num, multiBlockSplit)
             result.add(partition)
             partition_num += 1
@@ -139,18 +142,20 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
         var result : java.util.List[PartitionSpliterRawResultIterator] = null
         try {
           exec = new CarbonSplitExecutor(segmentMapping, carbonTable)
-          result = exec.processDataBlocks(segmentId)
+          result = exec.processDataBlocks(segmentId, new SparkDataTypeConverterImpl())
         } catch {
           case e: Throwable =>
             LOGGER.error(e)
             if (null != e.getMessage) {
-              sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
+              CarbonException.analysisException(
+                s"Exception occurred in query execution :: ${e.getMessage}")
             } else {
-              sys.error("Exception occurred in query execution. Please check logs.")
+              CarbonException.analysisException(
+                "Exception occurred in query execution. Please check logs.")
             }
         }
         val segmentProperties = PartitionUtils.getSegmentProperties(absoluteTableIdentifier,
-          segmentId, partitionIds.toList, oldPartitionIdList, partitionInfo)
+          segmentId, partitionIds.toList, oldPartitionIdList, partitionInfo, carbonTable)
         val partColIdx = getPartitionColumnIndex(partitionColumnName, segmentProperties)
         indexInitialise()
         for (iterator <- result.asScala) {

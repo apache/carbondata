@@ -16,11 +16,8 @@
  */
 package org.apache.carbondata.lcm.locks;
 
-import mockit.NonStrictExpectations;
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.locks.ZooKeeperLocking;
@@ -32,7 +29,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;

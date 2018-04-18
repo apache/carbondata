@@ -21,24 +21,25 @@ import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.Map
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
-import org.apache.carbondata.core.service.CarbonCommonFactory
+import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.DataTypeUtil
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
@@ -47,7 +48,6 @@ import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
 case class TableModel(
     ifNotExistsSet: Boolean,
-    var databaseName: String,
     databaseNameOp: Option[String],
     tableName: String,
     tableProperties: Map[String, String],
@@ -57,8 +57,7 @@ case class TableModel(
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
     columnGroups: Seq[String],
-    colProps: Option[util.Map[String,
-    util.List[ColumnProperty]]] = None,
+    colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None,
     bucketFields: Option[BucketFields],
     partitionInfo: Option[PartitionInfo],
     tableComment: Option[String] = None,
@@ -69,7 +68,8 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
     children: Option[List[Field]], parent: String = null,
     storeType: Option[String] = Some("columnar"),
     var schemaOrdinal: Int = -1,
-    var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "") {
+    var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "",
+    var columnComment: String = "") {
   override def equals(o: Any) : Boolean = o match {
     case that: Field =>
       that.column.equalsIgnoreCase(this.column)
@@ -78,8 +78,8 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
   override def hashCode : Int = column.hashCode
 }
 
-case class DataMapField(aggregateFunction: String = "",
-    columnTableRelation: Option[ColumnTableRelation] = None) {
+case class DataMapField(var aggregateFunction: String = "",
+    columnTableRelationList: Option[Seq[ColumnTableRelation]] = None) {
 }
 
 case class ColumnTableRelation(parentColumnName: String, parentColumnId: String,
@@ -103,42 +103,49 @@ case class DataLoadTableFileMapping(table: String, loadPath: String)
 
 case class ExecutionErrors(var failureCauses: FailureCauses, var errorMsg: String )
 
-case class CarbonMergerMapping(hdfsStoreLocation: String,
+case class CarbonMergerMapping(
+    hdfsStoreLocation: String,
     metadataFilePath: String,
     var mergedLoadName: String,
     databaseName: String,
     factTableName: String,
-    validSegments: Array[String],
+    validSegments: Array[Segment],
     tableId: String,
     campactionType: CompactionType,
     // maxSegmentColCardinality is Cardinality of last segment of compaction
     var maxSegmentColCardinality: Array[Int],
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
-    var maxSegmentColumnSchemaList: List[ColumnSchema])
+    var maxSegmentColumnSchemaList: List[ColumnSchema],
+    currentPartitions: Option[Seq[PartitionSpec]])
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
-case class AlterTableModel(dbName: Option[String],
-                           tableName: String,
-                           segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
-                           compactionType: String,
-                           factTimeStamp: Option[Long],
-                           var alterSql: String)
+case class AlterTableModel(
+    dbName: Option[String],
+    tableName: String,
+    segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
+    compactionType: String,
+    factTimeStamp: Option[Long],
+    var alterSql: String)
 
-case class UpdateTableModel(isUpdate: Boolean,
-                            updatedTimeStamp: Long,
-                            var executorErrors: ExecutionErrors)
+case class UpdateTableModel(
+    isUpdate: Boolean,
+    updatedTimeStamp: Long,
+    var executorErrors: ExecutionErrors,
+    deletedSegments: Seq[Segment])
 
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,
     carbonTable: CarbonTable,
-    isDDLTrigger: Boolean)
+    isDDLTrigger: Boolean,
+    currentPartitions: Option[Seq[PartitionSpec]])
 
 case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     carbonTable: CarbonTable,
     loadsToMerge: util.List[LoadMetadataDetails],
     sqlContext: SQLContext,
-    compactionType: CompactionType)
+    compactionType: CompactionType,
+    currentPartitions: Option[Seq[PartitionSpec]])
 
 case class AlterPartitionModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,
@@ -153,7 +160,7 @@ case class SplitPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     sqlContext: SQLContext)
 
 case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
-    segmentId: String,
+    segmentId: Segment,
     partitionId: String,
     oldPartitionIds: List[Int],
     dropWithData: Boolean,
@@ -199,8 +206,7 @@ class AlterTableColumnSchemaGenerator(
     alterTableModel: AlterTableAddColumnsModel,
     dbName: String,
     tableInfo: TableInfo,
-    carbonTablePath: CarbonTablePath,
-    tableIdentifier: CarbonTableIdentifier,
+    tableIdentifier: AbsoluteTableIdentifier,
     sc: SparkContext) {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -267,6 +273,15 @@ class AlterTableColumnSchemaGenerator(
       sys.error(s"Duplicate column found with name: $name")
     })
 
+    if (newCols.exists(_.getDataType.isComplexType)) {
+      LOGGER.error(s"Complex column cannot be added")
+      LOGGER.audit(
+        s"Validation failed for Create/Alter Table Operation " +
+        s"for ${ dbName }.${ alterTableModel.tableName }. " +
+        s"Complex column cannot be added")
+      sys.error(s"Complex column cannot be added")
+    }
+
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
 
@@ -318,7 +333,8 @@ class AlterTableColumnSchemaGenerator(
 
 // TODO: move this to carbon store API
 object TableNewProcessor {
-  def apply(cm: TableModel): TableInfo = {
+  def apply(
+      cm: TableModel): TableInfo = {
     new TableNewProcessor(cm).process
   }
 
@@ -351,8 +367,8 @@ object TableNewProcessor {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     columnSchema.setEncodingList(encoders)
-    val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(databaseName, columnSchema)
+    val colUniqueIdGenerator = ColumnUniqueIdGenerator.getInstance
+    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(columnSchema)
     columnSchema.setColumnUniqueId(columnUniqueId)
     columnSchema.setColumnReferenceId(columnUniqueId)
     columnSchema.setColumnar(true)
@@ -415,9 +431,8 @@ class TableNewProcessor(cm: TableModel) {
       }
     }
     columnSchema.setEncodingList(encoders)
-    val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(cm.databaseName,
-      columnSchema)
+    val colUniqueIdGenerator = ColumnUniqueIdGenerator.getInstance
+    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(columnSchema)
     columnSchema.setColumnUniqueId(columnUniqueId)
     columnSchema.setColumnReferenceId(columnUniqueId)
     columnSchema.setDimensionColumn(isDimensionCol)
@@ -427,18 +442,33 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setSortColumn(false)
     if(isParentColumnRelation) {
       val dataMapField = map.get.get(field).get
-      columnSchema.setAggFunction(dataMapField.aggregateFunction)
-        val relation = dataMapField.columnTableRelation.get
-        val parentColumnTableRelationList = new util.ArrayList[ParentColumnTableRelation]
-        val relationIdentifier = new RelationIdentifier(
-          relation.parentDatabaseName, relation.parentTableName, relation.parentTableId)
-        val parentColumnTableRelation = new ParentColumnTableRelation(
-          relationIdentifier, relation.parentColumnId, relation.parentColumnName)
-        parentColumnTableRelationList.add(parentColumnTableRelation)
-        columnSchema.setParentColumnTableRelations(parentColumnTableRelationList)
+      columnSchema.setFunction(dataMapField.aggregateFunction)
+      val columnRelationList = dataMapField.columnTableRelationList.get
+      val parentColumnTableRelationList = new util.ArrayList[ParentColumnTableRelation]
+      columnRelationList.foreach {
+        columnRelation =>
+          val relationIdentifier = new RelationIdentifier(
+            columnRelation.parentDatabaseName,
+            columnRelation.parentTableName,
+            columnRelation.parentTableId)
+          val parentColumnTableRelation = new ParentColumnTableRelation(
+            relationIdentifier,
+            columnRelation.parentColumnId,
+            columnRelation.parentColumnName)
+          parentColumnTableRelationList.add(parentColumnTableRelation)
+      }
+      columnSchema.setParentColumnTableRelations(parentColumnTableRelationList)
     }
     // TODO: Need to fill RowGroupID, converted type
     // & Number of Children after DDL finalization
+    if (field.columnComment.nonEmpty) {
+      var columnProperties = columnSchema.getColumnProperties
+      if (columnProperties == null) {
+        columnProperties = new util.HashMap[String, String]()
+        columnSchema.setColumnProperties(columnProperties)
+      }
+      columnProperties.put(CarbonCommonConstants.COLUMN_COMMENT, field.columnComment)
+    }
     columnSchema
   }
 
@@ -452,10 +482,11 @@ class TableNewProcessor(cm: TableModel) {
     // Sort columns should be at the begin of all columns
     cm.sortKeyDims.get.foreach { keyDim =>
       val field = cm.dimCols.find(keyDim equals _.column).get
-      val encoders = if (cm.parentTable.isDefined && cm.dataMapRelation.get.get(field).isDefined) {
+      val encoders = if (getEncoderFromParent(field)) {
         cm.parentTable.get.getColumnByName(
-          cm.parentTable.get.getFactTableName,
-          cm.dataMapRelation.get.get(field).get.columnTableRelation.get.parentColumnName).getEncoder
+          cm.parentTable.get.getTableName,
+          cm.dataMapRelation.get.get(field).get.columnTableRelationList.
+            get(0).parentColumnName).getEncoder
       } else {
         val encoders = new java.util.ArrayList[Encoding]()
         encoders.add(Encoding.DICTIONARY)
@@ -476,12 +507,11 @@ class TableNewProcessor(cm: TableModel) {
     cm.dimCols.foreach { field =>
       val sortField = cm.sortKeyDims.get.find(field.column equals _)
       if (sortField.isEmpty) {
-        val encoders = if (cm.parentTable.isDefined &&
-                           cm.dataMapRelation.get.get(field).isDefined) {
+        val encoders = if (getEncoderFromParent(field)) {
           cm.parentTable.get.getColumnByName(
-            cm.parentTable.get.getFactTableName,
+            cm.parentTable.get.getTableName,
             cm.dataMapRelation.get.get(field).get.
-              columnTableRelation.get.parentColumnName).getEncoder
+              columnTableRelationList.get(0).parentColumnName).getEncoder
         } else {
           val encoders = new java.util.ArrayList[Encoding]()
           encoders.add(Encoding.DICTIONARY)
@@ -504,17 +534,41 @@ class TableNewProcessor(cm: TableModel) {
     }
 
     cm.msrCols.foreach { field =>
-      val encoders = new java.util.ArrayList[Encoding]()
+      // if aggregate function is defined in case of preaggregate and agg function is sum or avg
+      // then it can be stored as measure
+      var isAggFunPresent = false
+      // getting the encoder from maintable so whatever encoding is applied in maintable
+      // same encoder can be applied on aggregate table
+      val encoders = if (getEncoderFromParent(field)) {
+        isAggFunPresent =
+          cm.dataMapRelation.get.get(field).get.aggregateFunction.equalsIgnoreCase("sum") ||
+          cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg") ||
+          cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("count")
+        if(!isAggFunPresent) {
+          cm.parentTable.get.getColumnByName(
+            cm.parentTable.get.getTableName,
+            cm.dataMapRelation.get.get(field).get.columnTableRelationList.get(0).parentColumnName)
+            .getEncoder
+        } else {
+          new java.util.ArrayList[Encoding]()
+        }
+      } else {
+        new java.util.ArrayList[Encoding]()
+      }
+      // check if it can be dimension column
+      val isDimColumn = !encoders.isEmpty && !isAggFunPresent
       val columnSchema = getColumnSchema(
         DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
         encoders,
-        false,
+        isDimColumn,
         field,
         cm.dataMapRelation)
       allColumns :+= columnSchema
       index = index + 1
-      measureCount += 1
+      if (!isDimColumn) {
+        measureCount += 1
+      }
     }
 
     // Check if there is any duplicate measures or dimensions.
@@ -525,9 +579,8 @@ class TableNewProcessor(cm: TableModel) {
         LOGGER.error(s"Duplicate column found with name: $name")
         LOGGER.audit(
           s"Validation failed for Create/Alter Table Operation " +
-          s"for ${ cm.databaseName }.${ cm.tableName }" +
           s"Duplicate column found with name: $name")
-        sys.error(s"Duplicate dimensions found with name: $name")
+        CarbonException.analysisException(s"Duplicate dimensions found with name: $name")
       }
     }
 
@@ -537,20 +590,22 @@ class TableNewProcessor(cm: TableModel) {
 
     updateColumnGroupsInFields(cm.columnGroups, allColumns)
 
-    // Setting the boolean value of useInvertedIndex in column schema
-    val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
-    LOGGER.info("NoINVERTEDINDEX columns are : " + noInvertedIndexCols.mkString(","))
-    for (column <- allColumns) {
-      // When the column is measure or the specified no inverted index column in DDL,
-      // set useInvertedIndex to false, otherwise true.
-      if (noInvertedIndexCols.contains(column.getColumnName) ||
-          cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
-        column.setUseInvertedIndex(false)
-      } else {
-        column.setUseInvertedIndex(true)
+    // Setting the boolean value of useInvertedIndex in column schema, if Paranet table is defined
+    // Encoding is already decided above
+    if (!cm.parentTable.isDefined) {
+      val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
+      LOGGER.info("NoINVERTEDINDEX columns are : " + noInvertedIndexCols.mkString(","))
+      for (column <- allColumns) {
+        // When the column is measure or the specified no inverted index column in DDL,
+        // set useInvertedIndex to false, otherwise true.
+        if (noInvertedIndexCols.contains(column.getColumnName) ||
+            cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
+          column.setUseInvertedIndex(false)
+        } else {
+          column.setUseInvertedIndex(true)
+        }
       }
     }
-
     // Adding dummy measure if no measure is provided
     if (measureCount == 0) {
       val encoders = new java.util.ArrayList[Encoding]()
@@ -597,12 +652,12 @@ class TableNewProcessor(cm: TableModel) {
             } else {
               LOGGER.error(s"Bucket field must be dimension column and " +
                            s"should not be measure or complex column: ${colSchema.getColumnName}")
-              sys.error(s"Bucket field must be dimension column and " +
+              CarbonException.analysisException(s"Bucket field must be dimension column and " +
                         s"should not be measure or complex column: ${colSchema.getColumnName}")
             }
           case _ =>
             LOGGER.error(s"Bucket field is not present in table columns")
-            sys.error(s"Bucket field is not present in table columns")
+            CarbonException.analysisException(s"Bucket field is not present in table columns")
         }
       }
       tableSchema.setBucketingInfo(
@@ -610,21 +665,36 @@ class TableNewProcessor(cm: TableModel) {
     }
     if (cm.partitionInfo.isDefined) {
       val partitionInfo = cm.partitionInfo.get
-      val PartitionColumnSchema = partitionInfo.getColumnSchemaList.asScala
+      val partitionColumnSchema = partitionInfo.getColumnSchemaList.asScala
       val partitionCols = allColumns.filter { column =>
-        PartitionColumnSchema.exists(_.getColumnName.equalsIgnoreCase(column.getColumnName))
-      }.asJava
-      partitionInfo.setColumnSchemaList(partitionCols)
+        partitionColumnSchema.exists(_.getColumnName.equalsIgnoreCase(column.getColumnName))
+      }
+      val orderCols =
+        partitionColumnSchema.map(
+          f => partitionCols.find(_.getColumnName.equalsIgnoreCase(f.getColumnName)).get).asJava
+      partitionInfo.setColumnSchemaList(orderCols)
       tableSchema.setPartitionInfo(partitionInfo)
     }
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)
-    tableInfo.setDatabaseName(cm.databaseName)
-    tableInfo.setTableUniqueName(cm.databaseName + "_" + cm.tableName)
+    tableInfo.setDatabaseName(cm.databaseNameOp.getOrElse(null))
+    tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(cm.databaseNameOp.getOrElse(null),
+      cm.tableName))
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     tableInfo
+  }
+
+  /**
+   * Method to check to get the encoder from parent or not
+   * @param field column field
+   * @return get encoder from parent
+   */
+  private def getEncoderFromParent(field: Field) : Boolean = {
+     cm.parentTable.isDefined &&
+        cm.dataMapRelation.get.get(field).isDefined &&
+        cm.dataMapRelation.get.get(field).get.columnTableRelationList.size==1
   }
 
   //  For checking if the specified col group columns are specified in fields list.
@@ -650,7 +720,8 @@ class TableNewProcessor(cm: TableModel) {
           })
 
           if (!found) {
-            sys.error(s"column $colForGrouping is not present in Field list")
+            CarbonException.analysisException(
+              s"column $colForGrouping is not present in Field list")
           }
         })
       })

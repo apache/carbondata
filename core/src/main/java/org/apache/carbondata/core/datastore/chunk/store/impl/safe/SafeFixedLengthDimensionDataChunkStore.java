@@ -97,13 +97,13 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   /**
    * to compare the two byte array
    *
-   * @param index        index of first byte array
+   * @param rowId        index of first byte array
    * @param compareValue value of to be compared
    * @return compare result
    */
-  @Override public int compareTo(int index, byte[] compareValue) {
+  @Override public int compareTo(int rowId, byte[] compareValue) {
     return ByteUtil.UnsafeComparer.INSTANCE
-        .compareTo(data, index * columnValueSize, columnValueSize, compareValue, 0,
+        .compareTo(data, rowId * columnValueSize, columnValueSize, compareValue, 0,
             columnValueSize);
   }
 

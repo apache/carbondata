@@ -267,7 +267,7 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public byte getByte(int rowId) {
-    throw new UnsupportedOperationException("internal error");
+    return columnPage.getByte(rowId);
   }
 
   @Override

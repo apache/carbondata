@@ -18,7 +18,6 @@
 package org.apache.carbondata.processing.store;
 
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.apache.carbondata.processing.store.writer.v3.CarbonFactDataWriterImplV3;
 
@@ -57,15 +56,15 @@ class CarbonDataWriterFactory {
    * @return writer instance
    */
   public CarbonFactDataWriter getFactDataWriter(final ColumnarFormatVersion version,
-      final CarbonDataWriterVo carbonDataWriterVo) {
+      final CarbonFactDataHandlerModel model) {
     switch (version) {
       case V1:
       case V2:
         throw new UnsupportedOperationException("V1 and V2 CarbonData Writer is not supported");
       case V3:
-        return new CarbonFactDataWriterImplV3(carbonDataWriterVo);
+        return new CarbonFactDataWriterImplV3(model);
       default:
-        return new CarbonFactDataWriterImplV3(carbonDataWriterVo);
+        return new CarbonFactDataWriterImplV3(model);
     }
   }
 

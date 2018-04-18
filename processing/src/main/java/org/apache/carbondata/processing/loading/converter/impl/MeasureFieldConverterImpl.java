@@ -47,6 +47,8 @@ public class MeasureFieldConverterImpl implements FieldConverter {
 
   private boolean isEmptyBadRecord;
 
+  private DataField dataField;
+
   public MeasureFieldConverterImpl(DataField dataField, String nullformat, int index,
       boolean isEmptyBadRecord) {
     this.dataType = dataField.getColumn().getDataType();
@@ -54,6 +56,7 @@ public class MeasureFieldConverterImpl implements FieldConverter {
     this.nullformat = nullformat;
     this.index = index;
     this.isEmptyBadRecord = isEmptyBadRecord;
+    this.dataField = dataField;
   }
 
   @Override
@@ -85,11 +88,16 @@ public class MeasureFieldConverterImpl implements FieldConverter {
       row.update(null, index);
     } else {
       try {
-        output = DataTypeUtil.getMeasureValueBasedOnDataType(value, dataType, measure);
+        if (dataField.isUseActualData()) {
+          output = DataTypeUtil.getMeasureValueBasedOnDataType(value, dataType, measure, true);
+        } else {
+          output = DataTypeUtil.getMeasureValueBasedOnDataType(value, dataType, measure);
+        }
         row.update(output, index);
       } catch (NumberFormatException e) {
-        LOGGER.warn(
-            "Cant not convert value to Numeric type value. Value considered as null.");
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Can not convert value to Numeric type value. Value considered as null.");
+        }
         logHolder.setReason(
             CarbonDataProcessorUtil.prepareFailureReason(measure.getColName(), dataType));
         output = null;
@@ -97,5 +105,12 @@ public class MeasureFieldConverterImpl implements FieldConverter {
       }
     }
 
+  }
+
+  /**
+   * Method to clean the dictionary cache. As in this MeasureFieldConverterImpl convert no
+   * dictionary caches are acquired so nothing to clear. s
+   */
+  @Override public void clear() {
   }
 }

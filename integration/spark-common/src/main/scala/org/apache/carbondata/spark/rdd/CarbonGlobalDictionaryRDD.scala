@@ -37,13 +37,11 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -342,18 +340,12 @@ class CarbonGlobalDictionaryGenerateRDD(
     var status = SegmentStatus.SUCCESS
     val iter = new Iterator[(Int, SegmentStatus)] {
       var dictionaryForDistinctValueLookUp: Dictionary = _
-      var dictionaryForSortIndexWriting: Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
       val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
           DictionaryColumnUniqueIdentifier(
         model.table,
         model.columnIdentifier(split.index),
-        model.columnIdentifier(split.index).getDataType,
-        CarbonStorePath.getCarbonTablePath(model.table))
-      val pathService: PathService = CarbonCommonFactory.getPathService
-      val carbonTablePath: CarbonTablePath =
-        pathService
-          .getCarbonTablePath(model.table, dictionaryColumnUniqueIdentifier)
+        model.columnIdentifier(split.index).getDataType)
       if (StringUtils.isNotBlank(model.hdfsTempLocation)) {
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
           model.hdfsTempLocation)
@@ -366,7 +358,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
           model.zooKeeperUrl)
       }
-      val dictLock = CarbonLockFactory
+      val dictLock: ICarbonLock = CarbonLockFactory
         .getCarbonLockObj(model.table,
           model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
       var isDictionaryLocked = false
@@ -452,7 +444,6 @@ class CarbonGlobalDictionaryGenerateRDD(
         if (!dictionaryForDistinctValueLookUpCleared) {
           CarbonUtil.clearDictionaryCache(dictionaryForDistinctValueLookUp)
         }
-        CarbonUtil.clearDictionaryCache(dictionaryForSortIndexWriting)
         if (dictLock != null && isDictionaryLocked) {
           if (dictLock.unlock()) {
             logInfo(s"Dictionary ${
@@ -496,7 +487,7 @@ class CarbonGlobalDictionaryGenerateRDD(
 class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
   extends Partition {
   override val index: Int = id
-  val preDefDictDimension = dimension
+  val preDefDictDimension: CarbonDimension = dimension
 }
 
 
@@ -507,7 +498,6 @@ class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
  * @param sparkContext    spark context
  * @param table           carbon table identifier
  * @param dimensions      carbon dimenisons having predefined dict
- * @param hdfsLocation    carbon base store path
  * @param dictFolderPath  path of dictionary folder
  */
 class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
@@ -515,9 +505,9 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     sparkContext: SparkContext,
     table: CarbonTableIdentifier,
     dimensions: Array[CarbonDimension],
-    hdfsLocation: String,
     dictFolderPath: String)
-  extends CarbonRDD[(Int, ColumnDistinctValues)](sparkContext, Nil) {
+  extends CarbonRDD[(Int, ColumnDistinctValues)](sparkContext, Nil,
+    sparkContext.hadoopConfiguration) {
 
   override def getPartitions: Array[Partition] = {
     val primDimensions = dictionaryLoadModel.primDimensions

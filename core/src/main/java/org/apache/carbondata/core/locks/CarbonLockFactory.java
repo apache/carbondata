@@ -52,18 +52,21 @@ public class CarbonLockFactory {
    */
   public static ICarbonLock getCarbonLockObj(AbsoluteTableIdentifier absoluteTableIdentifier,
       String lockFile) {
-    switch (lockTypeConfigured) {
-      case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
-        return new LocalFileLock(absoluteTableIdentifier, lockFile);
 
-      case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
-        return new ZooKeeperLocking(absoluteTableIdentifier, lockFile);
-
-      case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
-        return new HdfsFileLock(absoluteTableIdentifier, lockFile);
-
-      default:
-        throw new UnsupportedOperationException("Not supported the lock type");
+    String tablePath = absoluteTableIdentifier.getTablePath();
+    if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
+      return new ZooKeeperLocking(absoluteTableIdentifier, lockFile);
+    } else if (tablePath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
+        tablePath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+            tablePath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_S3;
+      return new S3FileLock(absoluteTableIdentifier, lockFile);
+    } else if (tablePath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS;
+      return new HdfsFileLock(absoluteTableIdentifier, lockFile);
+    } else {
+      lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL;
+      return new LocalFileLock(absoluteTableIdentifier, lockFile);
     }
   }
 
@@ -83,6 +86,9 @@ public class CarbonLockFactory {
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
         return new HdfsFileLock(locFileLocation, lockFile);
+
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_S3:
+        return new S3FileLock(locFileLocation, lockFile);
 
       default:
         throw new UnsupportedOperationException("Not supported the lock type");

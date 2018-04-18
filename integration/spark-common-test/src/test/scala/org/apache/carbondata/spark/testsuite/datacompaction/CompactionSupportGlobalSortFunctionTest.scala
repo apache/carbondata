@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.datacompaction
 
-import java.io.{File, FilenameFilter}
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -438,10 +436,10 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
     }
     sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
 
-    assert(getIndexFileCount("compaction_globalsort", "0.1") === 3)
+    assert(getIndexFileCount("compaction_globalsort", "0.1") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(72)))
-    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
-      sql("SELECT * FROM carbon_localsort"))
+    checkAnswer(sql("SELECT * FROM compaction_globalsort order by name, id"),
+      sql("SELECT * FROM carbon_localsort order by name, id"))
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Success")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
   }
@@ -453,10 +451,10 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
     }
     sql("ALTER TABLE compaction_globalsort COMPACT 'MINOR'")
 
-    assert(getIndexFileCount("compaction_globalsort", "0.1") === 3)
+    assert(getIndexFileCount("compaction_globalsort", "0.1") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(72)))
-    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
-      sql("SELECT * FROM carbon_localsort"))
+    checkAnswer(sql("SELECT * FROM compaction_globalsort order by name, id"),
+      sql("SELECT * FROM carbon_localsort order by name, id"))
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Success")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
   }
@@ -528,7 +526,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
   }
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default" + "_" + tableName)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
     val store = carbonTable.getAbsoluteTableIdentifier.getTablePath + "/Fact/Part0/Segment_" +
                 segmentNo
     new SegmentIndexFileStore().getIndexFilesFromSegment(store).size()

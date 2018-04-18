@@ -34,7 +34,8 @@ public class ListExpression extends Expression {
     this.children = children;
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  @Override
+  public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
     List<ExpressionResult> listOfExprRes = new ArrayList<ExpressionResult>(10);
 
     for (Expression expr : children) {
@@ -47,11 +48,13 @@ public class ListExpression extends Expression {
     return new ExpressionResult(listOfExprRes);
   }
 
-  @Override public ExpressionType getFilterExpressionType() {
+  @Override
+  public ExpressionType getFilterExpressionType() {
     return ExpressionType.LIST;
   }
 
-  @Override public String getString() {
+  @Override
+  public String getString() {
     StringBuffer value = new StringBuffer();
     value.append("ListExpression(");
     for (Expression expr : children) {
@@ -62,6 +65,19 @@ public class ListExpression extends Expression {
     return  value.toString();
   }
 
-  @Override public void findAndSetChild(Expression oldExpr, Expression newExpr) {
+  @Override
+  public String getStatement() {
+    StringBuffer value = new StringBuffer();
+    value.append("(");
+    for (Expression expr : children) {
+      value.append(expr.getString()).append(";");
+    }
+    value.append(')');
+
+    return value.toString();
+  }
+
+  @Override
+  public void findAndSetChild(Expression oldExpr, Expression newExpr) {
   }
 }

@@ -29,6 +29,6 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 public interface DataMapJob extends Serializable {
 
   List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
-      FilterResolverIntf resolverIntf);
+      FilterResolverIntf filter);
 
 }

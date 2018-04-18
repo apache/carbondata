@@ -18,19 +18,21 @@
 package org.apache.carbondata.core.util;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
 /**
  * This class maintains carbon session information details
  */
 public class CarbonSessionInfo implements Serializable, Cloneable {
 
-  private static final long serialVersionUID = 7738818814501121256L;
+  private static final long serialVersionUID = 4335254187209416779L;
+
   // contains carbon session param details
   private SessionParams sessionParams;
   private SessionParams threadParams;
+  // use the below field to store the objects which need not be serialized
+  private transient Map<String, Object> nonSerializableExtraInfo;
 
   public SessionParams getSessionParams() {
     return sessionParams;
@@ -56,20 +58,23 @@ public class CarbonSessionInfo implements Serializable, Cloneable {
   public CarbonSessionInfo clone() throws CloneNotSupportedException {
     super.clone();
     CarbonSessionInfo newObj = new CarbonSessionInfo();
-    for (Map.Entry<String, String> entry : sessionParams.getAll().entrySet()) {
-      try {
-        newObj.getSessionParams().addProperty(entry.getKey(), entry.getValue(), false);
-      } catch (InvalidConfigurationException ex) {
-        ex.printStackTrace();
-      }
-    }
-    for (Map.Entry<String, String> entry : threadParams.getAll().entrySet()) {
-      try {
-        newObj.getThreadParams().addProperty(entry.getKey(), entry.getValue(), false);
-      } catch (InvalidConfigurationException ex) {
-        ex.printStackTrace();
-      }
+    newObj.setSessionParams(sessionParams.clone());
+    newObj.setThreadParams(threadParams.clone());
+    for (Map.Entry<String, Object> entry : getNonSerializableExtraInfo().entrySet()) {
+      newObj.getNonSerializableExtraInfo().put(entry.getKey(), entry.getValue());
     }
     return newObj;
+  }
+
+  public Map<String, Object> getNonSerializableExtraInfo() {
+    // as the field is transient it can be null if serialized and de serialized again
+    if (null == nonSerializableExtraInfo) {
+      nonSerializableExtraInfo = new HashMap<>();
+    }
+    return nonSerializableExtraInfo;
+  }
+
+  public void setNonSerializableExtraInfo(Map<String, Object> nonSerializableExtraInfo) {
+    this.nonSerializableExtraInfo = nonSerializableExtraInfo;
   }
 }

@@ -17,23 +17,25 @@
 
 package org.apache.spark.sql.execution.command.datamap
 
+import java.util
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.{Checker, DataProcessCommand, RunnableCommand}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
+
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 
 /**
  * Show the datamaps on the table
- * @param databaseNameOp
- * @param tableName
+ * @param tableIdentifier
  */
-case class CarbonDataMapShowCommand(
-    databaseNameOp: Option[String],
-    tableName: String)
-  extends RunnableCommand with DataProcessCommand {
+case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
+  extends DataCommand {
 
   override def output: Seq[Attribute] = {
     Seq(AttributeReference("DataMapName", StringType, nullable = false)(),
@@ -41,16 +43,24 @@ case class CarbonDataMapShowCommand(
       AttributeReference("Associated Table", StringType, nullable = false)())
   }
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
+    tableIdentifier match {
+      case Some(table) =>
+        Checker.validateTableExists(table.database, table.table, sparkSession)
+        val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)
+        if (carbonTable.hasDataMapSchema) {
+          val schemaList = carbonTable.getTableInfo.getDataMapSchemaList
+          convertToRow(schemaList)
+        } else {
+          convertToRow(DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable))
+        }
+      case _ =>
+        convertToRow(DataMapStoreManager.getInstance().getAllDataMapSchemas)
+    }
+
   }
 
-  override def processData(sparkSession: SparkSession): Seq[Row] = {
-    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
-    val schemaList = carbonTable.getTableInfo.getDataMapSchemaList
+  private def convertToRow(schemaList: util.List[DataMapSchema]) = {
     if (schemaList != null && schemaList.size() > 0) {
       schemaList.asScala.map { s =>
         var table = "(NA)"
@@ -58,7 +68,7 @@ case class CarbonDataMapShowCommand(
         if (relationIdentifier != null) {
           table = relationIdentifier.getDatabaseName + "." + relationIdentifier.getTableName
         }
-        Row(s.getDataMapName, s.getClassName, table)
+        Row(s.getDataMapName, s.getProviderName, table)
       }
     } else {
       Seq.empty

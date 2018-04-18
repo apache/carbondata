@@ -32,7 +32,9 @@ import org.apache.carbondata.core.scan.filter.intf.{ExpressionType, RowIntf}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 
-class SparkUnknownExpression(var sparkExp: SparkExpression)
+class SparkUnknownExpression(
+    var sparkExp: SparkExpression,
+    expressionType: ExpressionType = ExpressionType.UNKNOWN)
   extends UnknownExpression with ConditionalExpression {
 
   private var evaluateExpression: (InternalRow) => Any = sparkExp.eval
@@ -43,8 +45,8 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
 
     val values = carbonRowInstance.getValues.toSeq.map {
       case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
-      case d: java.math.BigDecimal =>
-        org.apache.spark.sql.types.Decimal.apply(d)
+      case d: java.math.BigDecimal => org.apache.spark.sql.types.Decimal.apply(d)
+      case b: Array[Byte] => org.apache.spark.unsafe.types.UTF8String.fromBytes(b)
       case value => value
     }
     try {
@@ -64,10 +66,14 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
   }
 
   override def getFilterExpressionType: ExpressionType = {
-    ExpressionType.UNKNOWN
+    expressionType
   }
 
   override def getString: String = {
+    sparkExp.toString()
+  }
+
+  override def getStatement: String = {
     sparkExp.toString()
   }
 

@@ -18,9 +18,10 @@ package org.apache.carbondata.core.scan.scanner;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
-import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
+import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 
 /**
  * Interface for processing the block
@@ -30,31 +31,26 @@ public interface BlockletScanner {
 
   /**
    * Checks whether this blocklet required to scan or not based on min max of each blocklet.
-   * @param blocksChunkHolder
+   * @param dataBlock
    * @return
    * @throws IOException
    */
-  boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException;
+  boolean isScanRequired(DataRefNode dataBlock);
 
   /**
    * Below method will used to process the block data and get the scanned result
    *
-   * @param blocksChunkHolder block chunk which holds the block data
+   * @param rawBlockletColumnChunks block chunk which holds the block data
    * @return scannerResult
    * result after processing
    */
-  AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
+  BlockletScannedResult scanBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws IOException, FilterUnsupportedException;
 
   /**
    * Just reads the blocklet from file, does not uncompress it.
-   * @param blocksChunkHolder
+   * @param rawBlockletColumnChunks
    */
-  void readBlocklet(BlocksChunkHolder blocksChunkHolder) throws IOException;
+  void readBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException;
 
-  /**
-   * In case if there is no filter satisfies.
-   * @return AbstractScannedResult
-   */
-  AbstractScannedResult createEmptyResult();
 }

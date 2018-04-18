@@ -107,6 +107,15 @@ class MergeResultImpl extends MergeResult[String, Boolean] {
   override def getKey(key: String, value: Boolean): (String, Boolean) = (key, value)
 }
 
+trait HandoffResult[K, V] extends Serializable {
+  def getKey(key: String, value: Boolean): (K, V)
+
+}
+
+class HandoffResultImpl extends HandoffResult[String, Boolean] {
+  override def getKey(key: String, value: Boolean): (String, Boolean) = (key, value)
+}
+
 trait AlterPartitionResult[K, V] extends Serializable {
   def getKey(key: String, value: Boolean): (K, V)
 }
