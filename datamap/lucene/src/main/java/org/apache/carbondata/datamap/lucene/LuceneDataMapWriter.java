@@ -196,6 +196,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
       ramDir.close();
       return;
     }
+
     int pageSize = pages[0].getPageSize();
     for (int rowId = 0; rowId < pageSize; rowId++) {
       // create a new document
@@ -222,12 +223,10 @@ public class LuceneDataMapWriter extends DataMapWriter {
         //doc.add(new NumericDocValuesField(ROWID_NAME,rowId));
       }
 
-      // add other fields
-      for (int colIdx = 0; colIdx < columnsCount; colIdx++) {
-        if (indexedCarbonColumns.contains(pages[colIdx].getColumnSpec().getFieldName())) {
-          if (!pages[colIdx].getNullBits().get(rowId)) {
-            addField(doc, pages[colIdx], rowId, Field.Store.NO);
-          }
+      // add indexed columns value into the document
+      for (ColumnPage page : pages) {
+        if (!page.getNullBits().get(rowId)) {
+          addField(doc, page, rowId, Field.Store.NO);
         }
       }
 
