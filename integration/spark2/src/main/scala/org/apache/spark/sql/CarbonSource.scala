@@ -17,12 +17,13 @@
 
 package org.apache.spark.sql
 
+import java.util.Locale
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.language.implicitConversions
 
 import org.apache.commons.lang.StringUtils
-import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
@@ -85,7 +86,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       parameters: Map[String, String],
       data: DataFrame): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
-    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
+    var newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
     require(!newParameters.contains("path"), "'path' should not be specified, " +
@@ -93,23 +94,16 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
                                           "specified when creating CarbonContext")
 
     val options = new CarbonOption(newParameters)
-    val tablePath = new Path(
-      CarbonEnv.getTablePath(options.dbName, options.tableName)(sqlContext.sparkSession))
-    val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
-      .exists(tablePath)
+    val isExists = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.tableExists(
+      options.tableName, options.dbName)(sqlContext.sparkSession)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
         CarbonException.analysisException(s"table path already exists.")
       case (SaveMode.Overwrite, true) =>
-        val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
-        // In order to overwrite, delete all segments in the table
-        sqlContext.sparkSession.sql(
-          s"""
-             | DELETE FROM TABLE $dbName.${options.tableName}
-             | WHERE SEGMENT.STARTTIME BEFORE '2099-06-01 01:00:00'
-           """.stripMargin)
+        newParameters += (("overwrite", "true"))
         (true, false)
       case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
+        newParameters += (("overwrite", "true"))
         (true, false)
       case (SaveMode.Append, _) =>
         (false, true)
@@ -119,9 +113,11 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
     if (doSave) {
       // save data when the save mode is Overwrite.
-      new CarbonDataFrameWriter(sqlContext, data).saveAsCarbonFile(newParameters)
+      new CarbonDataFrameWriter(sqlContext, data).saveAsCarbonFile(
+        CaseInsensitiveMap[String](newParameters))
     } else if (doAppend) {
-      new CarbonDataFrameWriter(sqlContext, data).appendToCarbonFile(newParameters)
+      new CarbonDataFrameWriter(sqlContext, data).appendToCarbonFile(
+        CaseInsensitiveMap[String](newParameters))
     }
 
     createRelation(sqlContext, newParameters, data.schema)
@@ -134,7 +130,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       dataSchema: StructType): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
-    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
+    val newParameters =
+      CaseInsensitiveMap[String](CarbonScalaUtil.getDeserializedParameters(parameters))
     val dbName: String =
       CarbonEnv.getDatabaseName(newParameters.get("dbName"))(sqlContext.sparkSession)
     val tableOption: Option[String] = newParameters.get("tableName")
@@ -363,5 +360,33 @@ object CarbonSource {
     }
     map.put("tableName", identifier.getTableName)
     map.asScala.toMap
+  }
+}
+
+/**
+ * Code ported from Apache Spark
+ * Builds a map in which keys are case insensitive. Input map can be accessed for cases where
+ * case-sensitive information is required. The primary constructor is marked private to avoid
+ * nested case-insensitive map creation, otherwise the keys in the original map will become
+ * case-insensitive in this scenario.
+ */
+case class CaseInsensitiveMap[T] (originalMap: Map[String, T]) extends Map[String, T]
+  with Serializable {
+
+  val keyLowerCasedMap = originalMap.map(kv => kv.copy(_1 = kv._1.toLowerCase(Locale.ROOT)))
+
+  override def get(k: String): Option[T] = keyLowerCasedMap.get(k.toLowerCase(Locale.ROOT))
+
+  override def contains(k: String): Boolean =
+    keyLowerCasedMap.contains(k.toLowerCase(Locale.ROOT))
+
+  override def +[B1 >: T](kv: (String, B1)): Map[String, B1] = {
+    new CaseInsensitiveMap(originalMap + kv)
+  }
+
+  override def iterator: Iterator[(String, T)] = keyLowerCasedMap.iterator
+
+  override def -(key: String): Map[String, T] = {
+    new CaseInsensitiveMap(originalMap.filterKeys(!_.equalsIgnoreCase(key)))
   }
 }

@@ -56,7 +56,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       null,
       Seq(),
       Map("fileheader" -> header) ++ options.toMap,
-      isOverwriteTable = false,
+      isOverwriteTable = options.overwriteEnabled,
       null,
       Some(dataFrame)).run(sqlContext.sparkSession)
   }
