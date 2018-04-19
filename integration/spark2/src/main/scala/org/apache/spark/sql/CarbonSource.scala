@@ -84,7 +84,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       parameters: Map[String, String],
       data: DataFrame): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
-    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
+    var newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
     require(!newParameters.contains("path"), "'path' should not be specified, " +
@@ -92,23 +92,16 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
                                           "specified when creating CarbonContext")
 
     val options = new CarbonOption(newParameters)
-    val tablePath = new Path(
-      CarbonEnv.getTablePath(options.dbName, options.tableName)(sqlContext.sparkSession))
-    val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
-      .exists(tablePath)
+    val isExists = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.tableExists(
+      options.tableName, options.dbName)(sqlContext.sparkSession)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
         CarbonException.analysisException(s"table path already exists.")
       case (SaveMode.Overwrite, true) =>
-        val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
-        // In order to overwrite, delete all segments in the table
-        sqlContext.sparkSession.sql(
-          s"""
-             | DELETE FROM TABLE $dbName.${options.tableName}
-             | WHERE SEGMENT.STARTTIME BEFORE '2099-06-01 01:00:00'
-           """.stripMargin)
+        newParameters += (("overwrite", "true"))
         (true, false)
       case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
+        newParameters += (("overwrite", "true"))
         (true, false)
       case (SaveMode.Append, _) =>
         (false, true)
