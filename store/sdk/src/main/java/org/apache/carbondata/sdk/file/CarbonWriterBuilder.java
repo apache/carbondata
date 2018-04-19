@@ -18,14 +18,14 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
-import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -57,6 +58,7 @@ public class CarbonWriterBuilder {
   private int blockSize;
   private boolean isTransactionalTable;
   private long UUID;
+  private Map<String, String> options;
   private String taskNo;
 
   /**
@@ -83,7 +85,9 @@ public class CarbonWriterBuilder {
 
   /**
    * sets the list of columns that needs to be in sorted order
-   * @param sortColumns is a string array of columns that needs to be sorted
+   * @param sortColumns is a string array of columns that needs to be sorted.
+   *                    If it is null, all dimensions are selected for sorting
+   *                    If it is empty array, no columns are sorted
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
@@ -134,6 +138,52 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder uniqueIdentifier(long UUID) {
     Objects.requireNonNull(UUID, "Unique Identifier should not be null");
     this.UUID = UUID;
+    return this;
+  }
+
+  /**
+   * To support the load options for sdk writer
+   * @param options key,value pair of load options.
+   *                supported keys values are
+   *                a. bad_records_logger_enable -- true (write into separate logs), false
+   *                b. bad_records_action -- FAIL, FORCE, IGNORE, REDIRECT
+   *                c. bad_record_path -- path
+   *                d. dateformat -- same as JAVA SimpleDateFormat
+   *                e. timestampformat -- same as JAVA SimpleDateFormat
+   *                f. complex_delimiter_level_1 -- value to Split the complexTypeData
+   *                g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
+   *                h. quotechar
+   *                i. escapechar
+   *
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withLoadOptions(Map<String, String> options) {
+    Objects.requireNonNull(options, "Load options should not be null");
+    //validate the options.
+    if (options.size() > 9) {
+      throw new IllegalArgumentException("Supports only nine options now. "
+          + "Refer method header or documentation");
+    }
+
+    for (String option: options.keySet()) {
+      if (!option.equalsIgnoreCase("bad_records_logger_enable") &&
+          !option.equalsIgnoreCase("bad_records_action") &&
+          !option.equalsIgnoreCase("bad_record_path") &&
+          !option.equalsIgnoreCase("dateformat") &&
+          !option.equalsIgnoreCase("timestampformat") &&
+          !option.equalsIgnoreCase("complex_delimiter_level_1") &&
+          !option.equalsIgnoreCase("complex_delimiter_level_2") &&
+          !option.equalsIgnoreCase("quotechar") &&
+          !option.equalsIgnoreCase("escapechar")) {
+        throw new IllegalArgumentException("Unsupported options. "
+            + "Refer method header or documentation");
+      }
+    }
+
+    // convert it to treeMap as keys need to be case insensitive
+    Map<String, String> optionsTreeMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    optionsTreeMap.putAll(options);
+    this.options = optionsTreeMap;
     return this;
   }
 
@@ -194,7 +244,7 @@ public class CarbonWriterBuilder {
     }
 
     // build LoadModel
-    return buildLoadModel(table, UUID, taskNo);
+    return buildLoadModel(table, UUID, taskNo, options);
   }
 
   /**
@@ -210,11 +260,22 @@ public class CarbonWriterBuilder {
       tableSchemaBuilder = tableSchemaBuilder.blockletSize(blockletSize);
     }
 
-    List<String> sortColumnsList;
-    if (sortColumns != null) {
-      sortColumnsList = Arrays.asList(sortColumns);
+    List<String> sortColumnsList = new ArrayList<>();
+    if (sortColumns == null) {
+      // If sort columns are not specified, default set all dimensions to sort column.
+      // When dimensions are default set to sort column,
+      // Inverted index will be supported by default for sort columns.
+      for (Field field : schema.getFields()) {
+        if (field.getDataType() == DataTypes.STRING ||
+            field.getDataType() == DataTypes.DATE ||
+            field.getDataType() == DataTypes.TIMESTAMP) {
+          sortColumnsList.add(field.getFieldName());
+        }
+      }
+      sortColumns = new String[sortColumnsList.size()];
+      sortColumns = sortColumnsList.toArray(sortColumns);
     } else {
-      sortColumnsList = new LinkedList<>();
+      sortColumnsList = Arrays.asList(sortColumns);
     }
     for (Field field : schema.getFields()) {
       tableSchemaBuilder.addColumn(
@@ -275,11 +336,10 @@ public class CarbonWriterBuilder {
   /**
    * Build a {@link CarbonLoadModel}
    */
-  private CarbonLoadModel buildLoadModel(CarbonTable table, long UUID, String taskNo)
-      throws InvalidLoadOptionException, IOException {
-    Map<String, String> options = new HashMap<>();
-    if (sortColumns != null) {
-      options.put("sort_columns", Strings.mkString(sortColumns, ","));
+  private CarbonLoadModel buildLoadModel(CarbonTable table, long UUID, String taskNo,
+      Map<String, String> options) throws InvalidLoadOptionException, IOException {
+    if (options == null) {
+      options = new HashMap<>();
     }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
     return builder.build(options, UUID, taskNo);

@@ -2349,6 +2349,7 @@ public final class CarbonUtil {
       fistFilePath = filePaths.get(0);
     } catch (Exception e) {
       LOGGER.error("CarbonData file is not present in the table location");
+      throw new IOException("CarbonData file is not present in the table location");
     }
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath);
     List<ColumnSchema> columnSchemaList = carbonHeaderReader.readSchema();
