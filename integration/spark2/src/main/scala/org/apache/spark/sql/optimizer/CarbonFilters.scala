@@ -44,7 +44,7 @@ import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseE
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
-import org.apache.carbondata.datamap.TextMatch
+import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -141,7 +141,9 @@ object CarbonFilters {
         case FalseExpr() =>
           Some(new FalseExpression(null))
         case TextMatch(queryString) =>
-          Some(new MatchExpression(queryString))
+          Some(new MatchExpression(queryString, null))
+        case TextMatchLimit(queryString, maxDoc) =>
+          Some(new MatchExpression(queryString, maxDoc))
         case _ => None
       }
     }

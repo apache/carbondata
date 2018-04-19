@@ -35,6 +35,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.MatchExpression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
@@ -149,6 +150,14 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
   }
 
   /**
+   * Return Maximum records
+   * @return
+   */
+  private int getMaxDoc() {
+    return Integer.parseInt(MatchExpression.maxDoc);
+  }
+
+  /**
    * Prune the datamap with filter expression. It returns the list of
    * blocklets where these filters can exist.
    */
@@ -161,6 +170,12 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
     // only for test , query all data
     String strQuery = getQueryString(filterExp.getFilterExpression());
+    int maxDocs;
+    try {
+      maxDocs = getMaxDoc();
+    } catch (NumberFormatException e) {
+      maxDocs = Integer.MAX_VALUE;
+    }
 
     if (null == strQuery) {
       return null;
@@ -191,7 +206,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     // execute index search
     TopDocs result;
     try {
-      result = indexSearcher.search(query, indexReader.maxDoc());
+      result = indexSearcher.search(query, maxDocs);
     } catch (IOException e) {
       String errorMessage =
           String.format("failed to search lucene data, detail is %s", e.getMessage());
