@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
@@ -42,18 +43,18 @@ public interface DataMapSchemaStorageProvider {
    * Retrieve the schema by using dataMapName.
    * @param dataMapName
    */
-  DataMapSchema retrieveSchema(String dataMapName) throws IOException;
+  DataMapSchema retrieveSchema(String dataMapName) throws IOException, NoSuchDataMapException;
 
   /**
-   * Retrieve schemas by using the list of datamap names
-   * @param dataMapNames
+   * Retrieve schemas of the given table.
+   * @param table
    * @return
    * @throws IOException
    */
-  List<DataMapSchema> retrieveSchemas(List<String> dataMapNames) throws IOException;
+  List<DataMapSchema> retrieveSchemas(CarbonTable table) throws IOException;
 
   /**
-   * Retrieve all schemas
+   * Retrieve all datamap schemas from store.
    * @return
    * @throws IOException
    */
@@ -63,7 +64,6 @@ public interface DataMapSchemaStorageProvider {
    * Drop the schema from the storage by using dataMapName.
    * @param dataMapName
    */
-  void dropSchema(String dataMapName, String tableName, String dataMapProviderName)
-      throws IOException;
+  void dropSchema(String dataMapName) throws IOException;
 
 }

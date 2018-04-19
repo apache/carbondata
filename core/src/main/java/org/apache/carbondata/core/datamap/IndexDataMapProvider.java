@@ -27,16 +27,12 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 
 @InterfaceAudience.Internal
 public class IndexDataMapProvider implements DataMapProvider {
 
-  private DataMapSchemaStorageProvider storageProvider;
-
-  public IndexDataMapProvider(DataMapSchemaStorageProvider storageProvider) {
-    this.storageProvider = storageProvider;
+  public IndexDataMapProvider() {
   }
 
   @Override
@@ -55,7 +51,7 @@ public class IndexDataMapProvider implements DataMapProvider {
     dataMapSchema.setParentTables(relationIdentifiers);
     DataMapFactory dataMapFactory = createIndexDataMapFactory(dataMapSchema);
     DataMapStoreManager.getInstance().registerDataMap(mainTable, dataMapSchema, dataMapFactory);
-    storageProvider.saveSchema(dataMapSchema);
+    DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema);
   }
 
   @Override
@@ -65,12 +61,17 @@ public class IndexDataMapProvider implements DataMapProvider {
 
   @Override
   public void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException {
-    storageProvider.dropSchema(dataMapSchema.getDataMapName(),
-        dataMapSchema.getParentTables().get(0).getTableName(), dataMapSchema.getProviderName());
+    if (mainTable == null) {
+      throw new UnsupportedOperationException("Table need to be specified in index datamaps");
+    }
+    DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName());
   }
 
   @Override
   public void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+    if (mainTable == null) {
+      throw new UnsupportedOperationException("Table need to be specified in index datamaps");
+    }
     DataMapStoreManager.getInstance().clearDataMap(
         mainTable.getAbsoluteTableIdentifier(), dataMapSchema.getDataMapName());
   }

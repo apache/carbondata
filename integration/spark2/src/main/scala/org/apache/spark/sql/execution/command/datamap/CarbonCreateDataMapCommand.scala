@@ -24,7 +24,7 @@ import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
+import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager, IndexDataMapProvider}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -105,7 +105,10 @@ case class CarbonCreateDataMapCommand(
       dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
     dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema, sparkSession)
     dataMapProvider.initMeta(mainTable, dataMapSchema, queryString.orNull)
-    DataMapStatusManager.disableDataMap(dataMapName)
+    // TODO Currently this feature is only available for index datamaps
+    if (dataMapProvider.isInstanceOf[IndexDataMapProvider]) {
+      DataMapStatusManager.disableDataMap(dataMapName)
+    }
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     LOGGER.audit(s"DataMap $dataMapName successfully added")
     Seq.empty

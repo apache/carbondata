@@ -20,9 +20,6 @@ package org.apache.carbondata.datamap;
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.datamap.IndexDataMapProvider;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
-import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
-import org.apache.carbondata.core.util.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES;
@@ -53,14 +50,9 @@ public class DataMapManager {
     } else if (dataMapSchema.getProviderName().equalsIgnoreCase(TIMESERIES.toString())) {
       provider = new TimeseriesDataMapProvider(sparkSession);
     } else {
-      provider = new IndexDataMapProvider(getDataMapSchemaStorageProvider());
+      provider = new IndexDataMapProvider();
     }
     return provider;
-  }
-
-  private DataMapSchemaStorageProvider getDataMapSchemaStorageProvider() {
-    return new DiskBasedDMSchemaStorageProvider(
-        CarbonProperties.getInstance().getSystemFolderLocation());
   }
 
 }

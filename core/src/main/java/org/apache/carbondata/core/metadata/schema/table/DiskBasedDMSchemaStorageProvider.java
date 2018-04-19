@@ -26,8 +26,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -35,6 +38,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.fs.permission.FsAction;
+import org.apache.hadoop.fs.permission.FsPermission;
 
 /**
  * Stores datamap schema in disk as json format
@@ -43,16 +48,22 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   private String storePath;
 
+  private String mdtFilePath;
+
+  private long lastModifiedTime;
+
+  private Set<DataMapSchema> dataMapSchemas = new HashSet<>();
+
   public DiskBasedDMSchemaStorageProvider(String storePath) {
     this.storePath = storePath;
+    this.mdtFilePath = storePath + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
   }
 
   @Override public void saveSchema(DataMapSchema dataMapSchema) throws IOException {
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
-    String schemaPath = getSchemaPath(storePath, dataMapSchema.getDataMapName(),
-        dataMapSchema.relationIdentifier.getTableName(), dataMapSchema.getProviderName());
+    String schemaPath = getSchemaPath(storePath, dataMapSchema.getDataMapName());
     FileFactory.FileType fileType = FileFactory.getFileType(schemaPath);
     if (FileFactory.isFileExist(schemaPath, fileType)) {
       throw new IOException(
@@ -73,48 +84,47 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
       if (null != brWriter) {
         brWriter.flush();
       }
+      checkAndReloadDataMapSchemas();
+      dataMapSchemas.add(dataMapSchema);
+      touchMDTFile();
       CarbonUtil.closeStreams(dataOutputStream, brWriter);
     }
   }
 
-  @Override public DataMapSchema retrieveSchema(String dataMapName) throws IOException {
-    if (!dataMapName.endsWith(".dmschema")) {
-      dataMapName = dataMapName + ".dmschema";
+  @Override public DataMapSchema retrieveSchema(String dataMapName)
+      throws IOException, NoSuchDataMapException {
+    checkAndReloadDataMapSchemas();
+    for (DataMapSchema dataMapSchema : dataMapSchemas) {
+      if (dataMapSchema.getDataMapName().equalsIgnoreCase(dataMapName)) {
+        return dataMapSchema;
+      }
     }
-    String schemaPath =
-        storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapName;
-    if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
-      throw new IOException("DataMap with name " + dataMapName + " does not exists in storage");
-    }
-
-    Gson gsonObjectToRead = new Gson();
-    DataInputStream dataInputStream = null;
-    BufferedReader buffReader = null;
-    InputStreamReader inStream = null;
-    try {
-      dataInputStream =
-          FileFactory.getDataInputStream(schemaPath, FileFactory.getFileType(schemaPath));
-      inStream = new InputStreamReader(dataInputStream,
-          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-      buffReader = new BufferedReader(inStream);
-      return gsonObjectToRead.fromJson(buffReader, DataMapSchema.class);
-    } finally {
-      CarbonUtil.closeStreams(buffReader, inStream, dataInputStream);
-    }
-
+    throw new NoSuchDataMapException(dataMapName);
   }
 
-  @Override public List<DataMapSchema> retrieveSchemas(List<String> dataMapNames)
-      throws IOException {
-    List<DataMapSchema> dataMapSchemas = new ArrayList<>(dataMapNames.size());
-    for (String dataMapName : dataMapNames) {
-      dataMapSchemas.add(retrieveSchema(dataMapName));
+  @Override public List<DataMapSchema> retrieveSchemas(CarbonTable carbonTable) throws IOException {
+    checkAndReloadDataMapSchemas();
+    List<DataMapSchema> dataMapSchemas = new ArrayList<>();
+    for (DataMapSchema dataMapSchema : this.dataMapSchemas) {
+      List<RelationIdentifier> parentTables = dataMapSchema.getParentTables();
+      for (RelationIdentifier identifier : parentTables) {
+        if (identifier.getTableName().equals(carbonTable.getTableName()) &&
+            identifier.getDatabaseName().equals(carbonTable.getDatabaseName())) {
+          dataMapSchemas.add(dataMapSchema);
+          break;
+        }
+      }
     }
     return dataMapSchemas;
   }
 
   @Override public List<DataMapSchema> retrieveAllSchemas() throws IOException {
-    List<DataMapSchema> dataMapSchemas = new ArrayList<>();
+    checkAndReloadDataMapSchemas();
+    return new ArrayList<>(dataMapSchemas);
+  }
+
+  private Set<DataMapSchema> retrieveAllSchemasInternal() throws IOException {
+    Set<DataMapSchema> dataMapSchemas = new HashSet<>();
     CarbonFile carbonFile = FileFactory.getCarbonFile(storePath);
     CarbonFile[] carbonFiles = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
@@ -123,36 +133,87 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     });
 
     for (CarbonFile file :carbonFiles) {
-      dataMapSchemas.add(retrieveSchema(file.getName()));
+      Gson gsonObjectToRead = new Gson();
+      DataInputStream dataInputStream = null;
+      BufferedReader buffReader = null;
+      InputStreamReader inStream = null;
+      try {
+        String absolutePath = file.getAbsolutePath();
+        dataInputStream =
+            FileFactory.getDataInputStream(
+                absolutePath, FileFactory.getFileType(absolutePath));
+        inStream = new InputStreamReader(dataInputStream,
+            Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        buffReader = new BufferedReader(inStream);
+        dataMapSchemas.add(gsonObjectToRead.fromJson(buffReader, DataMapSchema.class));
+      } finally {
+        CarbonUtil.closeStreams(buffReader, inStream, dataInputStream);
+      }
     }
     return dataMapSchemas;
   }
 
-  @Override public void dropSchema(String dataMapName, String tableName, String dataMapProviderName)
+  @Override public void dropSchema(String dataMapName)
       throws IOException {
-    String schemaPath = getSchemaPath(storePath, dataMapName, tableName, dataMapProviderName);
+    String schemaPath = getSchemaPath(storePath, dataMapName);
     if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
       throw new IOException("DataMap with name " + dataMapName + " does not exists in storage");
     }
-
+    DataMapSchema dataMapSchemaToRemove = null;
+    for (DataMapSchema dataMapSchema : dataMapSchemas) {
+      if (dataMapSchema.getDataMapName().equalsIgnoreCase(dataMapName)) {
+        dataMapSchemaToRemove =  dataMapSchema;
+      }
+    }
+    if (dataMapSchemaToRemove != null) {
+      dataMapSchemas.remove(dataMapSchemaToRemove);
+    }
     if (!FileFactory.deleteFile(schemaPath, FileFactory.getFileType(schemaPath))) {
       throw new IOException("DataMap with name " + dataMapName + " cannot be deleted");
+    } else {
+      touchMDTFile();
     }
+  }
+
+  private void checkAndReloadDataMapSchemas() throws IOException {
+    if (FileFactory.isFileExist(mdtFilePath)) {
+      long lastModifiedTime = FileFactory.getCarbonFile(mdtFilePath).getLastModifiedTime();
+      if (this.lastModifiedTime != lastModifiedTime) {
+        dataMapSchemas = retrieveAllSchemasInternal();
+        this.lastModifiedTime = lastModifiedTime;
+      }
+    } else {
+      touchMDTFile();
+      dataMapSchemas = retrieveAllSchemasInternal();
+    }
+  }
+
+  private void touchMDTFile() throws IOException {
+    if (!FileFactory.isFileExist(storePath)) {
+      FileFactory.createDirectoryAndSetPermission(
+          storePath,
+          new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
+    }
+    if (!FileFactory.isFileExist(mdtFilePath)) {
+      FileFactory.createNewFile(
+          mdtFilePath,
+          FileFactory.getFileType(mdtFilePath),
+          true,
+          new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
+    }
+    long lastModifiedTime = System.currentTimeMillis();
+    FileFactory.getCarbonFile(mdtFilePath).setLastModifiedTime(lastModifiedTime);
   }
 
   /**
    * it returns the schema path for the datamap
    * @param storePath
    * @param dataMapName
-   * @param tableName
-   * @param dataMapProviderName
    * @return
    */
-  public static String getSchemaPath(String storePath, String dataMapName, String tableName,
-      String dataMapProviderName) {
-    String schemaPath = storePath + CarbonCommonConstants.FILE_SEPARATOR + tableName
-        + CarbonCommonConstants.UNDERSCORE + dataMapName + CarbonCommonConstants.UNDERSCORE
-        + dataMapProviderName + ".dmschema";
+  public static String getSchemaPath(String storePath, String dataMapName) {
+    String schemaPath =  storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapName
+        + ".dmschema";;
     return schemaPath;
   }
 }
