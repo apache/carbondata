@@ -33,7 +33,7 @@ import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
- * This is a readCommittedScope for unmanaged carbon table
+ * This is a readCommittedScope for non transactional carbon table
  */
 @InterfaceAudience.Internal
 @InterfaceStability.Stable

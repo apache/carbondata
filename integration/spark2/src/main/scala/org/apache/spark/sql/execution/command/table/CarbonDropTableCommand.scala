@@ -56,7 +56,7 @@ case class CarbonDropTableCommand(
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
       carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-      if (!carbonTable.isUnManagedTable) {
+      if (!carbonTable.isNonTransactionalTable) {
         locksToBeAcquired foreach {
           lock => carbonLocks += CarbonLockUtil.getLockObject(identifier, lock)
         }

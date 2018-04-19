@@ -99,7 +99,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       "mapreduce.input.carboninputformat.filter.predicate";
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
   private static final String TABLE_INFO = "mapreduce.input.carboninputformat.tableinfo";
-  private static final String UNMANAGED_TABLE = "mapreduce.input.carboninputformat.unmanaged";
+  private static final String NONTRANSACTIONAL_TABLE =
+      "mapreduce.input.carboninputformat.nontransactional";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
   private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
@@ -161,8 +162,9 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
-  public static void setUnmanagedTable(Configuration configuration, boolean isUnmanagedTable) {
-    configuration.set(UNMANAGED_TABLE, String.valueOf(isUnmanagedTable));
+  public static void setNonTransactionalTable(Configuration configuration,
+      boolean isNonTransactionalTable) {
+    configuration.set(NONTRANSACTIONAL_TABLE, String.valueOf(isNonTransactionalTable));
   }
 
   public static void setPartitionIdList(Configuration configuration, List<String> partitionIds) {

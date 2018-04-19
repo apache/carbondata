@@ -19,7 +19,6 @@ package org.apache.carbondata.sdk.file;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
@@ -34,7 +33,7 @@ import org.junit.Test;
 /**
  * Test suite for {@link CSVCarbonWriter}
  */
-public class CSVUnManagedCarbonWriterTest {
+public class CSVNonTransactionalCarbonWriterTest {
 
   @Test
   public void testWriteFiles() throws IOException {
@@ -95,7 +94,7 @@ public class CSVUnManagedCarbonWriterTest {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .withSchema(schema)
-          .unManagedTable(true)
+          .nonTransactionalTable(true)
           .uniqueIdentifier(System.currentTimeMillis())
           .taskNo(Long.toString(System.nanoTime()))
           .outputPath(path);
@@ -160,7 +159,7 @@ public class CSVUnManagedCarbonWriterTest {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .withSchema(new Schema(fields))
           .uniqueIdentifier(System.currentTimeMillis())
-          .unManagedTable(true)
+          .nonTransactionalTable(true)
           .taskNo(Long.toString(System.nanoTime()))
           .outputPath(path);
 

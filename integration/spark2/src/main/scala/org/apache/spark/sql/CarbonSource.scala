@@ -313,9 +313,10 @@ object CarbonSource {
     } else {
       val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
       val isExternal = properties.getOrElse("isExternal", "false")
-      val isUnManagedTable = properties.getOrElse("isUnManaged", "false").contains("true")
-      tableInfo.setUnManagedTable(isUnManagedTable)
-      if (!isUnManagedTable && !metaStore.isReadFromHiveMetaStore) {
+      val isNonTransactionalTable = properties.getOrElse("isNonTransactional", "false")
+        .contains("true")
+      tableInfo.setNonTransactionalTable(isNonTransactionalTable)
+      if (!isNonTransactionalTable && !metaStore.isReadFromHiveMetaStore) {
         // save to disk
         metaStore.saveToDisk(tableInfo, properties("tablePath"))
         // remove schema string from map as we don't store carbon schema to hive metastore
@@ -337,15 +338,16 @@ object CarbonSource {
     val model = createTableInfoFromParams(properties, dataSchema, identifier)
     val tableInfo: TableInfo = TableNewProcessor(model)
     val isExternal = properties.getOrElse("isExternal", "false")
-    val isUnManagedTable = properties.getOrElse("isUnManaged", "false").contains("true")
+    val isNonTransactionalTable = properties.getOrElse("isNonTransactional", "false")
+      .contains("true")
     val tablePath = properties.getOrElse("path", "")
     tableInfo.setTablePath(identifier.getTablePath)
-    tableInfo.setUnManagedTable(isUnManagedTable)
+    tableInfo.setNonTransactionalTable(isNonTransactionalTable)
     tableInfo.setDatabaseName(identifier.getDatabaseName)
     val schemaEvolutionEntry = new SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
     tableInfo.getFactTable.getSchemaEvalution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
-    val map = if (!metaStore.isReadFromHiveMetaStore && !isUnManagedTable) {
+    val map = if (!metaStore.isReadFromHiveMetaStore && !isNonTransactionalTable) {
       metaStore.saveToDisk(tableInfo, identifier.getTablePath)
       new java.util.HashMap[String, String]()
     } else {

@@ -56,8 +56,8 @@ case class CarbonCreateDataMapCommand(
       case _ => null
     }
 
-    if (mainTable != null && mainTable.getTableInfo.isUnManagedTable) {
-      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    if (mainTable != null && mainTable.getTableInfo.isNonTransactionalTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
     if (mainTable != null && mainTable.getDataMapSchema(dataMapName) != null) {

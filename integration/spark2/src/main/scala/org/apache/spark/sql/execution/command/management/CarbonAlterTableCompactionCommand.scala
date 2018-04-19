@@ -77,8 +77,8 @@ case class CarbonAlterTableCompactionCommand(
       }
       relation.carbonTable
     }
-    if (table.getTableInfo.isUnManagedTable) {
-      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    if (table.getTableInfo.isNonTransactionalTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
     if (CarbonUtil.hasAggregationDataMap(table) ||

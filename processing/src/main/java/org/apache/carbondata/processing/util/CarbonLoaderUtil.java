@@ -171,7 +171,7 @@ public final class CarbonLoaderUtil {
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
       final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
       throws IOException {
-    if (loadModel.isCarbonUnmanagedTable()) {
+    if (loadModel.isCarbonNonTransactionalTable()) {
       if (insertOverwrite) {
         // We need to delete the content of the Table Path Folder except the
         // Newly added file.
@@ -211,7 +211,7 @@ public final class CarbonLoaderUtil {
     boolean status = false;
     AbsoluteTableIdentifier identifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    if (!loadModel.isCarbonUnmanagedTable()) {
+    if (!loadModel.isCarbonNonTransactionalTable()) {
       String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
       FileType fileType = FileFactory.getFileType(metadataPath);
       if (!FileFactory.isFileExist(metadataPath, fileType)) {

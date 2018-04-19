@@ -244,7 +244,7 @@ public class LoadOption {
       }
     }
 
-    if (!carbonLoadModel.isCarbonUnmanagedTable() && !CarbonDataProcessorUtil
+    if (!carbonLoadModel.isCarbonNonTransactionalTable() && !CarbonDataProcessorUtil
         .isHeaderValid(carbonLoadModel.getTableName(), csvColumns,
             carbonLoadModel.getCarbonDataLoadSchema(), staticPartitionCols)) {
       if (csvFile == null) {

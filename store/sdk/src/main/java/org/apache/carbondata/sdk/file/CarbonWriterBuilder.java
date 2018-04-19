@@ -55,7 +55,7 @@ public class CarbonWriterBuilder {
   private boolean persistSchemaFile;
   private int blockletSize;
   private int blockSize;
-  private boolean isUnManagedTable;
+  private boolean isNonTransactionalTable;
   private long UUID;
   private String taskNo;
 
@@ -116,13 +116,13 @@ public class CarbonWriterBuilder {
 
   /**
    * If set true, writes the carbondata and carbonindex files in a flat folder structure
-   * @param isUnManagedTable is a boolelan value if set writes
+   * @param isNonTransactionalTable is a boolelan value if set writes
    *                     the carbondata and carbonindex files in a flat folder structure
    * @return updated CarbonWriterBuilder
    */
-  public CarbonWriterBuilder unManagedTable(boolean isUnManagedTable) {
-    Objects.requireNonNull(isUnManagedTable, "UnManaged Table should not be null");
-    this.isUnManagedTable = isUnManagedTable;
+  public CarbonWriterBuilder nonTransactionalTable(boolean isNonTransactionalTable) {
+    Objects.requireNonNull(isNonTransactionalTable, "Non Transactional Table should not be null");
+    this.isNonTransactionalTable = isNonTransactionalTable;
     return this;
   }
 
@@ -223,7 +223,7 @@ public class CarbonWriterBuilder {
     }
     String tableName;
     String dbName;
-    if (!isUnManagedTable) {
+    if (!isNonTransactionalTable) {
       tableName = "_tempTable";
       dbName = "_tempDB";
     } else {
@@ -237,7 +237,7 @@ public class CarbonWriterBuilder {
         .databaseName(dbName)
         .tablePath(path)
         .tableSchema(schema)
-        .isUnManagedTable(isUnManagedTable)
+        .isNonTransactionalTable(isNonTransactionalTable)
         .build();
     return table;
   }

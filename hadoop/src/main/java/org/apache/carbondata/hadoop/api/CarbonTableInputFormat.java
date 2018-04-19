@@ -92,8 +92,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   private static final Log LOG = LogFactory.getLog(CarbonTableInputFormat.class);
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
-  private static final String CARBON_UNMANAGED_TABLE =
-      "mapreduce.input.carboninputformat.unmanaged";
+  private static final String CARBON_NONTRANSACTIONAL_TABLE =
+      "mapreduce.input.carboninputformat.nontransactional";
   public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
   // a cache for carbon table, it will be used in task side
@@ -627,7 +627,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       throws IOException {
     if (readCommittedScope == null) {
       ReadCommittedScope readCommittedScope;
-      if (job.getConfiguration().getBoolean(CARBON_UNMANAGED_TABLE, false)) {
+      if (job.getConfiguration().getBoolean(CARBON_NONTRANSACTIONAL_TABLE, false)) {
         readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath());
       } else {
         readCommittedScope = new TableStatusReadCommittedScope(identifier);

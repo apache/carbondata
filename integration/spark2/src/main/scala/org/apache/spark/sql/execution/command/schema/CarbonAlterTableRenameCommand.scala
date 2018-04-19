@@ -77,8 +77,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
     var oldCarbonTable: CarbonTable = null
     oldCarbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
       .asInstanceOf[CarbonRelation].carbonTable
-    if (oldCarbonTable.getTableInfo.isUnManagedTable) {
-      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    if (oldCarbonTable.getTableInfo.isNonTransactionalTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK,

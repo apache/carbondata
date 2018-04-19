@@ -73,7 +73,7 @@ public class CarbonLoadModelBuilder {
       optionsFinal.put("fileheader", Strings.mkString(columns, ","));
     }
     CarbonLoadModel model = new CarbonLoadModel();
-    model.setCarbonUnmanagedTable(table.isUnManagedTable());
+    model.setCarbonNonTransactionalTable(table.isNonTransactionalTable());
     model.setFactTimeStamp(UUID);
     model.setTaskNo(taskNo);
 
