@@ -95,7 +95,6 @@ public class TableSchemaBuilder {
     if (blockletSize > 0) {
       property.put(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, String.valueOf(blockletSize));
     }
-    // TODO: check other table properties
     if (property.size() != 0) {
       schema.setTableProperties(property);
     }
@@ -119,7 +118,14 @@ public class TableSchemaBuilder {
     }
     newColumn.setSchemaOrdinal(ordinal++);
     newColumn.setColumnar(true);
-    newColumn.setColumnUniqueId(UUID.randomUUID().toString());
+
+    // For NonTransactionalTable, multiple sdk writer output with same column name can be placed in
+    // single folder for query.
+    // That time many places in code, columnId check will fail. To avoid that
+    // keep column ID as same as column name.
+    // Anyhow Alter table is not supported for NonTransactionalTable.
+    // SO, this will not have any impact.
+    newColumn.setColumnUniqueId(field.getFieldName());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
     newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn));
     if (DataTypes.isDecimal(field.getDataType())) {

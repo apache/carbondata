@@ -46,13 +46,23 @@ public class CarbonReaderTest {
     CarbonReader reader = CarbonReader.builder(path, "_temp")
         .projection(new String[]{"name", "age"}).build();
 
+    // expected output after sorting
+    String[] name = new String[100];
+    int[] age = new int[100];
+    for (int i = 0; i < 100; i++) {
+      name[i] = "robot" + (i / 10);
+      age[i] = (i % 10) * 10 + i / 10;
+    }
+
     int i = 0;
     while (reader.hasNext()) {
-      Object[] row = (Object[])reader.readNextRow();
-      Assert.assertEquals("robot" + (i % 10), row[0]);
-      Assert.assertEquals(i, row[1]);
+      Object[] row = (Object[]) reader.readNextRow();
+      // Default sort column is applied for dimensions. So, need  to validate accordingly
+      Assert.assertEquals(name[i], row[0]);
+      Assert.assertEquals(age[i], row[1]);
       i++;
     }
+    Assert.assertEquals(i, 100);
 
     FileUtils.deleteDirectory(new File(path));
   }

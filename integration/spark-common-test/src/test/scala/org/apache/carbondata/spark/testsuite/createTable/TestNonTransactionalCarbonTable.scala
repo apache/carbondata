@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io.{File, FileFilter}
+import java.util
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
@@ -32,6 +33,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
+import scala.collection.JavaConverters._
 
 class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
@@ -45,22 +47,51 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   def buildTestDataSingleFile(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(3,false)
+    buildTestData(3, false, null)
   }
 
   def buildTestDataMultipleFiles(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(1000000,false)
+    buildTestData(1000000, false, null)
   }
 
   def buildTestDataTwice(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(3,false)
-    buildTestData(3,false)
+    buildTestData(3, false, null)
+    buildTestData(3, false, null)
   }
 
+  def buildTestDataSameDirectory(): Any = {
+    buildTestData(3, false, null)
+  }
+
+  def buildTestDataWithBadRecordForce(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    var options = Map("bAd_RECords_action" -> "FORCE").asJava
+    buildTestData(3, false, options)
+  }
+
+  def buildTestDataWithBadRecordFail(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    var options = Map("bAd_RECords_action" -> "FAIL").asJava
+    buildTestData(3, false, options)
+  }
+
+  def buildTestDataWithBadRecordIgnore(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    var options = Map("bAd_RECords_action" -> "IGNORE").asJava
+    buildTestData(3, false, options)
+  }
+
+  def buildTestDataWithBadRecordRedirect(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    var options = Map("bAd_RECords_action" -> "REDIRECT").asJava
+    buildTestData(3, false, options)
+  }
+
+
   // prepare sdk writer output
-  def buildTestData(rows:Int, persistSchema:Boolean): Any = {
+  def buildTestData(rows: Int, persistSchema: Boolean, options: util.Map[String, String]): Any = {
     val schema = new StringBuilder()
       .append("[ \n")
       .append("   {\"name\":\"string\"},\n")
@@ -80,16 +111,33 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
             .uniqueIdentifier(System.currentTimeMillis)
             .buildWriterForCSVInput()
         } else {
-          builder.withSchema(Schema.parseJson(schema))
-            .outputPath(writerPath)
-            .isTransactionalTable(false)
-            .uniqueIdentifier(System.currentTimeMillis).withBlockSize(2)
-            .buildWriterForCSVInput()
+          if (options != null) {
+            builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath)
+              .isTransactionalTable(false)
+              .uniqueIdentifier(
+                System.currentTimeMillis).withBlockSize(2).withLoadOptions(options)
+              .buildWriterForCSVInput()
+          } else {
+            builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath)
+              .isTransactionalTable(false)
+              .uniqueIdentifier(
+                System.currentTimeMillis).withBlockSize(2)
+              .buildWriterForCSVInput()
+          }
         }
       var i = 0
       while (i < rows) {
-        writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+        if (options != null){
+          // writing a bad record
+          writer.write(Array[String]( "robot" + i, String.valueOf(i.toDouble / 2), "robot"))
+        } else {
+          writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+        }
         i += 1
+      }
+      if (options != null) {
+        //Keep one valid record. else carbon data file will not generate
+        writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
       }
       writer.close()
     } catch {
@@ -150,7 +198,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test("test create External Table with insert into feature")
   {
-    buildTestData(3, false)
+    buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql("DROP TABLE IF EXISTS t1")
@@ -183,7 +231,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test("test create External Table with insert overwrite")
   {
-    buildTestData(3, false)
+    buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql("DROP TABLE IF EXISTS t1")
@@ -222,7 +270,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test("test create External Table with Load")
   {
-    buildTestData(3, false)
+    buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql("DROP TABLE IF EXISTS t1")
@@ -391,6 +439,14 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Unsupported operation on non transactional table"))
 
+    //14. Block clean files
+    exception = intercept[MalformedCarbonCommandException] {
+      sql("clean files for table sdkOutputTable")
+    }
+    assert(exception.getMessage()
+      .contains("Unsupported operation on non transactional table"))
+
+
     sql("DROP TABLE sdkOutputTable")
     //drop table should not delete the files
     assert(new File(writerPath).exists())
@@ -433,8 +489,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Operation not allowed: Invalid table path provided:"))
 
-    // drop table should not delete the files
-    assert(new File(writerPath).exists())
     cleanTestData()
   }
 
@@ -457,8 +511,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Operation not allowed: Invalid table path provided:"))
 
-    // drop table should not delete the files
-    assert(new File(writerPath).exists())
     cleanTestData()
   }
 
@@ -484,13 +536,15 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql("select count(*) from sdkOutputTable"), Seq(Row(1000000)))
 
+    sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).exists())
     cleanTestData()
   }
 
   test("Read two sdk writer outputs with same column name placed in same folder") {
-    buildTestDataTwice()
+    buildTestDataSingleFile()
+
     assert(new File(writerPath).exists())
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -500,17 +554,86 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
 
 
-    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("robot0", 0, 0.0),
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    buildTestDataSameDirectory()
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot0", 0, 0.0),
       Row("robot1", 1, 0.5),
       Row("robot2", 2, 1.0),
       Row("robot0", 0, 0.0),
       Row("robot1", 1, 0.5),
       Row("robot2", 2, 1.0)))
 
+    //test filter query
+    checkAnswer(sql("select * from sdkOutputTable where age = 1"), Seq(
+      Row("robot1", 1, 0.5),
+      Row("robot1", 1, 0.5)))
+
+    // test the default sort column behavior in Nontransactional table
+    checkExistence(sql("describe formatted sdkOutputTable"), true,
+      "SORT_COLUMNS                        name")
+
+    sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).exists())
     cleanTestData()
   }
 
+  test("test bad records form sdk writer") {
+
+    //1. Action = FORCE
+    buildTestDataWithBadRecordForce()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot0", null, null),
+      Row("robot1", null, null),
+      Row("robot2", null, null),
+      Row("robot3", 3, 1.5)))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+
+
+    //2. Action = REDIRECT
+    buildTestDataWithBadRecordRedirect()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot3", 3, 1.5)))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+
+    //3. Action = IGNORE
+    buildTestDataWithBadRecordIgnore()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot3", 3, 1.5)))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+
+    cleanTestData()
+  }
 
 }

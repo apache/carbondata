@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Checker, D
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.ConcurrentOperationException
@@ -117,6 +118,9 @@ case class CarbonCleanFilesCommand(
 
   private def cleanGarbageData(sparkSession: SparkSession,
       databaseNameOp: Option[String], tableName: String): Unit = {
+    if (!carbonTable.getTableInfo.isTransactionalTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
+    }
     val partitions: Option[Seq[PartitionSpec]] = CarbonFilters.getPartitions(
       Seq.empty[Expression],
       sparkSession,
