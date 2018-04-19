@@ -50,9 +50,7 @@ import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.model.QueryProjection;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.FileHeader;
@@ -905,65 +903,6 @@ public class CarbonTable implements Serializable {
       indexSize = 0L;
     }
     return dataSize + indexSize;
-  }
-
-  /**
-   * Create a new QueryModel with projection all columns in the table.
-   */
-  public QueryModel createQueryModelWithProjectAllColumns(DataTypeConverter converter) {
-    QueryProjection projection = new QueryProjection();
-
-    List<CarbonDimension> dimensions = getDimensionByTableName(getTableName());
-    for (int i = 0; i < dimensions.size(); i++) {
-      projection.addDimension(dimensions.get(i), i);
-    }
-    List<CarbonMeasure> measures = getMeasureByTableName(getTableName());
-    for (int i = 0; i < measures.size(); i++) {
-      projection.addMeasure(measures.get(i), i);
-    }
-    QueryModel model = QueryModel.newInstance(this);
-    model.setProjection(projection);
-    model.setConverter(converter);
-    return model;
-  }
-
-  /**
-   * Create a new QueryModel with specified projection
-   */
-  public QueryModel createQueryWithProjection(String[] projectionColumnNames,
-      DataTypeConverter converter) {
-    QueryProjection projection = createProjection(projectionColumnNames);
-    QueryModel queryModel = QueryModel.newInstance(this);
-    queryModel.setProjection(projection);
-    queryModel.setConverter(converter);
-    return queryModel;
-  }
-
-  public QueryProjection createProjection(String[] projectionColumnNames) {
-    String factTableName = getTableName();
-    QueryProjection projection = new QueryProjection();
-    // fill dimensions
-    // If columns are null, set all dimensions and measures
-    int i = 0;
-    if (projectionColumnNames != null) {
-      for (String projectionColumnName : projectionColumnNames) {
-        CarbonDimension dimension = getDimensionByName(factTableName, projectionColumnName);
-        if (dimension != null) {
-          projection.addDimension(dimension, i);
-          i++;
-        } else {
-          CarbonMeasure measure = getMeasureByName(factTableName, projectionColumnName);
-          if (measure == null) {
-            throw new RuntimeException(projectionColumnName +
-                " column not found in the table " + factTableName);
-          }
-          projection.addMeasure(measure, i);
-          i++;
-        }
-      }
-    }
-
-    return projection;
   }
 
   public void processFilterExpression(Expression filterExpression,

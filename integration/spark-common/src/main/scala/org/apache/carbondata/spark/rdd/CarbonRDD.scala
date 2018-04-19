@@ -76,7 +76,7 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
     internalCompute(split, context)
   }
 
-  private def getConf: Configuration = {
+  def getConf: Configuration = {
     val configuration = new Configuration(false)
     val bai = new ByteArrayInputStream(CompressorFactory.getInstance().getCompressor
       .unCompressByte(confBytes))

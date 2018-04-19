@@ -18,16 +18,20 @@
 package org.apache.carbondata.store
 
 import java.io.IOException
+import java.net.InetAddress
 
 import scala.collection.JavaConverters._
 
 import org.apache.spark.{CarbonInputMetrics, SparkConf}
+import org.apache.spark.rpc.{Master, Worker}
 import org.apache.spark.sql.CarbonSession._
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.core.datastore.row.CarbonRow
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -36,8 +40,9 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
  * with CarbonData query optimization capability
  */
 @InterfaceAudience.Internal
-private[store] class SparkCarbonStore extends MetaCachedCarbonStore {
+class SparkCarbonStore extends MetaCachedCarbonStore {
   private var session: SparkSession = _
+  private var master: Master = _
 
   /**
    * Initialize SparkCarbonStore
@@ -54,10 +59,17 @@ private[store] class SparkCarbonStore extends MetaCachedCarbonStore {
       .getOrCreateCarbonSession()
   }
 
+  def this(sparkSession: SparkSession) = {
+    this()
+    session = sparkSession
+  }
+
   @throws[IOException]
   override def scan(
       path: String,
       projectColumns: Array[String]): java.util.Iterator[CarbonRow] = {
+    require(path != null)
+    require(projectColumns != null)
     scan(path, projectColumns, null)
   }
 
@@ -93,6 +105,47 @@ private[store] class SparkCarbonStore extends MetaCachedCarbonStore {
       .collect()
       .iterator
       .asJava
+  }
+
+  def startSearchMode(): Unit = {
+    master = new Master(session.sparkContext.getConf)
+    master.startService()
+    startAllWorkers()
+  }
+
+  def stopSearchMode(): Unit = {
+    master.stopAllWorkers()
+    master.stopService()
+    master = null
+  }
+
+  /** search mode */
+  def search(
+      table: CarbonTable,
+      projectColumns: Array[String],
+      filter: Expression,
+      globalLimit: Long,
+      localLimit: Long): java.util.Iterator[CarbonRow] = {
+    if (master == null) {
+      throw new IllegalStateException("search mode is not started")
+    }
+    master.search(table, projectColumns, filter, globalLimit, localLimit)
+      .iterator
+      .asJava
+  }
+
+  private def startAllWorkers(): Array[Int] = {
+    // TODO: how to ensure task is sent to every executor?
+    val numExecutors = session.sparkContext.getExecutorMemoryStatus.keySet.size
+    val masterIp = InetAddress.getLocalHost.getHostAddress
+    session.sparkContext.parallelize(1 to numExecutors * 10, numExecutors).mapPartitions { f =>
+      // start worker
+      Worker.init(masterIp, CarbonProperties.getSearchMasterPort)
+      new Iterator[Int] {
+        override def hasNext: Boolean = false
+        override def next(): Int = 1
+      }
+    }.collect()
   }
 
 }

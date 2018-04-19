@@ -52,6 +52,7 @@ object ExampleUtils {
       "local[" + workThreadNum.toString() + "]"
     }
     import org.apache.spark.sql.CarbonSession._
+
     val spark = SparkSession
       .builder()
       .master(masterUrl)

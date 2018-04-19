@@ -198,16 +198,6 @@ class NewCarbonDataLoadRDD[K, V](
     CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
   }
 
-  private def getConf = {
-    val configuration = new Configuration(false)
-    val bai = new ByteArrayInputStream(CompressorFactory.getInstance().getCompressor
-      .unCompressByte(confBytes))
-    val ois = new ObjectInputStream(bai)
-    configuration.readFields(ois)
-    ois.close()
-    configuration
-  }
-
   override def getPartitions: Array[Partition] = {
     blocksGroupBy.zipWithIndex.map { b =>
       new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
@@ -357,16 +347,6 @@ class NewDataFrameLoaderRDD[K, V](
     hadoopConf.write(oos)
     oos.close()
     CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
-  }
-
-  private def getConf = {
-    val configuration = new Configuration(false)
-    val bai = new ByteArrayInputStream(CompressorFactory.getInstance().getCompressor
-      .unCompressByte(confBytes))
-    val ois = new ObjectInputStream(bai)
-    configuration.readFields(ois)
-    ois.close()
-    configuration
   }
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {

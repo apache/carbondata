@@ -119,7 +119,8 @@ class TestTimeseriesTableSelection extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test timeseries table selection 2") {
-    val df = sql("SELECT TIMESERIES(mytime,'hour') FROM mainTable GROUP BY TIMESERIES(mytime,'hour')")
+    val df = sql("SELECT TIMESERIES(mytime,'hour') FROM mainTable " +
+                 "GROUP BY TIMESERIES(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0_hour")
   }
 

@@ -17,48 +17,86 @@
 
 package org.apache.carbondata.spark.testsuite.detailquery
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{CarbonSession, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
-/**
- * Test Class for detailed query on multiple datatypes
- */
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.util.DataGenerator
 
+/**
+ * Test Suite for search mode
+ */
 class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
 
-  override def beforeAll {
-    sql("CREATE TABLE alldatatypestable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE alldatatypestable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+  val numRows = 500 * 1000
+  override def beforeAll = {
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
+    sql("DROP TABLE IF EXISTS main")
 
-    sql("CREATE TABLE alldatatypestable_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
-    sql(s"""LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO TABLE alldatatypestable_hive""")
+    val df = DataGenerator.generateDataFrame(sqlContext.sparkSession, numRows)
+    df.write
+      .format("carbondata")
+      .option("tableName", "main")
+      .option("table_blocksize", "5")
+      .mode(SaveMode.Overwrite)
+      .save()
+  }
 
+  override def afterAll = {
+    sql("DROP TABLE IF EXISTS main")
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
+  }
+
+  private def sparkSql(sql: String): Seq[Row] = {
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].sparkSql(sql).collect()
+  }
+
+  private def checkSearchAnswer(query: String) = {
+    checkAnswer(sql(query), sparkSql(query))
   }
 
   test("SearchMode Query: row result") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE, "true")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
-        checkAnswer(
-      sql("select empno,empname,utilization from alldatatypestable where empname = 'ayushi'"),
-      sql("select empno,empname,utilization from alldatatypestable_hive where empname = 'ayushi'"))
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE,
-      CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE_DEFAULT)
+    checkSearchAnswer("select * from main where city = 'city3'")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
-          CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
-  }
-  test("SearchMode Query: vector result") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE, "true")
-    checkAnswer(
-      sql("select empno,empname,utilization from alldatatypestable where empname = 'ayushi'"),
-      sql("select empno,empname,utilization from alldatatypestable_hive where empname = 'ayushi'"))
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE,
-      CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE_DEFAULT)
+      CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
   }
 
-  override def afterAll {
-    sql("drop table alldatatypestable")
-    sql("drop table alldatatypestable_hive")
+  test("SearchMode Query: vector result") {
+    checkSearchAnswer("select * from main where city = 'city3'")
   }
+
+  test("equal filter") {
+    checkSearchAnswer("select id from main where id = '100'")
+    checkSearchAnswer("select id from main where planet = 'planet100'")
+  }
+
+  test("greater and less than filter") {
+    checkSearchAnswer("select id from main where m2 < 4")
+  }
+
+  test("IN filter") {
+    checkSearchAnswer("select id from main where id IN ('40', '50', '60')")
+  }
+
+  test("expression filter") {
+    checkSearchAnswer("select id from main where length(id) < 2")
+  }
+
+  test("filter with limit") {
+    checkSearchAnswer("select id from main where id = '3' limit 10")
+    checkSearchAnswer("select id from main where length(id) < 2 limit 10")
+  }
+
+  test("aggregate query") {
+    checkSearchAnswer("select city, sum(m1) from main where m2 < 10 group by city")
+  }
+
+  test("aggregate query with datamap and fallback to SparkSQL") {
+    sql("create datamap preagg on table main using 'preaggregate' as select city, count(*) from main group by city ")
+    checkSearchAnswer("select city, count(*) from main group by city")
+  }
+
 }

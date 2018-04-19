@@ -103,6 +103,7 @@
     <module>integration/spark-common-test</module>
     <module>datamap/examples</module>
     <module>store/sdk</module>
+    <module>store/search</module>
     <module>assembly</module>
   </modules>
 

@@ -19,6 +19,7 @@ package org.apache.carbondata.core.constants;
 
 import java.nio.charset.Charset;
 
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.util.CarbonProperty;
 
 public final class CarbonCommonConstants {
@@ -1629,8 +1630,14 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_SYSTEM_FOLDER_LOCATION = "carbon.system.folder.location";
 
+  /**
+   * If set to true, will use CarbonReader to do distributed scan directly instead of using
+   * compute framework like spark, thus avoiding limitation of compute framework like SQL
+   * optimizer and task scheduling overhead.
+   */
   @CarbonProperty
-  public static final String CARBON_SEARCH_MODE_ENABLE = "carbon.search.mode.enable";
+  @InterfaceStability.Unstable
+  public static final String CARBON_SEARCH_MODE_ENABLE = "carbon.search.enabled";
 
   public static final String CARBON_SEARCH_MODE_ENABLE_DEFAULT = "false";
 
@@ -1641,9 +1648,29 @@ public final class CarbonCommonConstants {
    * will call Executors.newFixedThreadPool(int nThreads) instead
    */
   @CarbonProperty
-  public static final String CARBON_SEARCH_MODE_SCAN_THREAD = "carbon.search.mode.scan.thread";
+  @InterfaceStability.Unstable
+  public static final String CARBON_SEARCH_MODE_SCAN_THREAD = "carbon.search.scan.thread";
 
   public static final String CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT = "-1";
+
+  /**
+   * In search mode, Master will listen on this port for worker registration
+   */
+  public static final String CARBON_SEARCH_MODE_MASTER_PORT = "carbon.search.master.port";
+
+  public static final String CARBON_SEARCH_MODE_MASTER_PORT_DEFAULT = "10020";
+
+  /**
+   * In search mode, Worker will listen on this port for master request like searching.
+   * If Worker failed to start service with this port, it will try to increment the port number
+   * and try to bind again, until it is success
+   */
+  @CarbonProperty
+  @InterfaceStability.Unstable
+  public static final String CARBON_SEARCH_MODE_WORKER_PORT = "carbon.search.worker.port";
+
+  public static final String CARBON_SEARCH_MODE_WORKER_PORT_DEFAULT = "10021";
+
 
   /*
    * whether to enable prefetch for rowbatch to enhance row reconstruction during compaction
