@@ -28,8 +28,10 @@ import org.apache.carbondata.core.metadata.schema.table.Writable;
  */
 public class Blocklet implements Writable,Serializable {
 
+  /** file path of this blocklet */
   private String blockId;
 
+  /** id to identify the blocklet inside the block (it is a sequential number) */
   private String blockletId;
 
   public Blocklet(String blockId, String blockletId) {

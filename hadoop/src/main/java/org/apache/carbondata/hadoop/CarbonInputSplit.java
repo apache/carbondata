@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -429,5 +430,9 @@ public class CarbonInputSplit extends FileSplit
 
   public void setFormat(FileFormat fileFormat) {
     this.fileFormat = fileFormat;
+  }
+
+  public Blocklet makeBlocklet() {
+    return new Blocklet(getPath().getName(), blockletId);
   }
 }

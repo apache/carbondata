@@ -31,21 +31,30 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.SearchModeVectorResultIterator;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD;
 
+/**
+ * Below class will be used to execute the detail query and returns columnar vectors.
+ */
 public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(SearchModeVectorDetailQueryExecutor.class.getName());
-  private static ExecutorService executorService;
+  private static ExecutorService executorService = null;
 
   static {
+    initThreadPool();
+  }
+
+  private static synchronized void initThreadPool() {
     int nThread;
     try {
       nThread = Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD,
+              .getProperty(CARBON_SEARCH_MODE_SCAN_THREAD,
                       CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT));
     } catch (NumberFormatException e) {
       nThread = Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT);
-      LOGGER.warn("The carbon.search.mode.thread is invalid. Using the default value " + nThread);
+      LOGGER.warn("The " + CARBON_SEARCH_MODE_SCAN_THREAD + " is invalid. "
+          + "Using the default value " + nThread);
     }
     if (nThread > 0) {
       executorService = Executors.newFixedThreadPool(nThread);
@@ -54,10 +63,21 @@ public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<O
     }
   }
 
+  public static synchronized void shutdownThreadPool() {
+    // shutdown all threads immediately
+    if (executorService != null) {
+      executorService.shutdownNow();
+      executorService = null;
+    }
+  }
+
   @Override
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
+    if (executorService == null) {
+      initThreadPool();
+    }
     this.queryIterator = new SearchModeVectorResultIterator(
         blockExecutionInfoList,
         queryModel,

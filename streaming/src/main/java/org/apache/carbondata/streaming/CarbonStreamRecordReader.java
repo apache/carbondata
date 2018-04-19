@@ -208,8 +208,8 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
     isProjectionRequired = new boolean[storageColumns.length];
     projectionMap = new int[storageColumns.length];
-    for (int i = 0; i < storageColumns.length; i++) {
-      for (int j = 0; j < projection.length; j++) {
+    for (int j = 0; j < projection.length; j++) {
+      for (int i = 0; i < storageColumns.length; i++) {
         if (storageColumns[i].getColName().equals(projection[j].getColName())) {
           isRequired[i] = true;
           isProjectionRequired[i] = true;
