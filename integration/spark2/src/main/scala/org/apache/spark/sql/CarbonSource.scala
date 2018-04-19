@@ -18,6 +18,7 @@
 package org.apache.spark.sql
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 import org.apache.commons.lang.StringUtils
@@ -43,7 +44,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CarbonScalaUtil
-import org.apache.carbondata.streaming.{CarbonStreamException, StreamSinkFactory}
+import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamingQueryListener, StreamSinkFactory}
 
 /**
  * Carbon relation provider compliant to data source api.
@@ -241,6 +242,19 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
                                       s"${carbonTable.getTableName} is not a streaming table")
     }
 
+    // CarbonSession has added CarbonStreamingQueryListener during the initialization.
+    // But other SparkSessions didn't, so here will add the listener once.
+    if (!"CarbonSession".equals(sparkSession.getClass.getSimpleName)) {
+      if (CarbonSource.listenerAdded.get(sparkSession.hashCode()).isEmpty) {
+        synchronized {
+          if (CarbonSource.listenerAdded.get(sparkSession.hashCode()).isEmpty) {
+            sparkSession.streams.addListener(new CarbonStreamingQueryListener(sparkSession))
+            CarbonSource.listenerAdded.put(sparkSession.hashCode(), true)
+          }
+        }
+      }
+    }
+
     // create sink
     StreamSinkFactory.createStreamTableSink(
       sqlContext.sparkSession,
@@ -252,6 +266,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 }
 
 object CarbonSource {
+
+  lazy val listenerAdded = new mutable.HashMap[Int, Boolean]()
 
   def createTableInfoFromParams(
       parameters: Map[String, String],
