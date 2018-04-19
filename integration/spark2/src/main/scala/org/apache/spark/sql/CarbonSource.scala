@@ -17,11 +17,12 @@
 
 package org.apache.spark.sql
 
+import java.util.Locale
+
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.commons.lang.StringUtils
-import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
@@ -111,9 +112,11 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
     if (doSave) {
       // save data when the save mode is Overwrite.
-      new CarbonDataFrameWriter(sqlContext, data).saveAsCarbonFile(newParameters)
+      new CarbonDataFrameWriter(sqlContext, data).saveAsCarbonFile(
+        CaseInsensitiveMap[String](newParameters))
     } else if (doAppend) {
-      new CarbonDataFrameWriter(sqlContext, data).appendToCarbonFile(newParameters)
+      new CarbonDataFrameWriter(sqlContext, data).appendToCarbonFile(
+        CaseInsensitiveMap[String](newParameters))
     }
 
     createRelation(sqlContext, newParameters, data.schema)
@@ -126,7 +129,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       dataSchema: StructType): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
-    val newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
+    val newParameters =
+      CaseInsensitiveMap[String](CarbonScalaUtil.getDeserializedParameters(parameters))
     val dbName: String =
       CarbonEnv.getDatabaseName(newParameters.get("dbName"))(sqlContext.sparkSession)
     val tableOption: Option[String] = newParameters.get("tableName")
@@ -340,5 +344,33 @@ object CarbonSource {
     }
     map.put("tableName", identifier.getTableName)
     map.asScala.toMap
+  }
+}
+
+/**
+ * Code ported from Apache Spark
+ * Builds a map in which keys are case insensitive. Input map can be accessed for cases where
+ * case-sensitive information is required. The primary constructor is marked private to avoid
+ * nested case-insensitive map creation, otherwise the keys in the original map will become
+ * case-insensitive in this scenario.
+ */
+case class CaseInsensitiveMap[T] (originalMap: Map[String, T]) extends Map[String, T]
+  with Serializable {
+
+  val keyLowerCasedMap = originalMap.map(kv => kv.copy(_1 = kv._1.toLowerCase(Locale.ROOT)))
+
+  override def get(k: String): Option[T] = keyLowerCasedMap.get(k.toLowerCase(Locale.ROOT))
+
+  override def contains(k: String): Boolean =
+    keyLowerCasedMap.contains(k.toLowerCase(Locale.ROOT))
+
+  override def +[B1 >: T](kv: (String, B1)): Map[String, B1] = {
+    new CaseInsensitiveMap(originalMap + kv)
+  }
+
+  override def iterator: Iterator[(String, T)] = keyLowerCasedMap.iterator
+
+  override def -(key: String): Map[String, T] = {
+    new CaseInsensitiveMap(originalMap.filterKeys(!_.equalsIgnoreCase(key)))
   }
 }

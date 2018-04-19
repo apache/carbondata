@@ -22,7 +22,8 @@ import java.math.BigDecimal
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{AnalysisException, DataFrame, DataFrameWriter, Row, SaveMode}
+import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.scalatest.BeforeAndAfterAll
 
 class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
@@ -363,6 +364,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   test("test load dataframe while giving already created table with delete segment") {
 
     sql(s"create table carbon_table_df1(c1 string, c2 string, c3 int) stored by 'carbondata'")
+    val table = CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
     // save dataframe to carbon file
     df.write
       .format("carbondata")
@@ -371,6 +373,9 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
 
+    assert(CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
+      .getTableInfo.getFactTable.equals(table.getTableInfo.getFactTable))
+
     sql("delete from table carbon_table_df1 where segment.id in (0)")
     df.write
       .format("carbondata")
@@ -378,9 +383,12 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .option("tempCSV", "false")
       .mode(SaveMode.Overwrite)
       .save()
+    assert(CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
+      .getTableInfo.getFactTable.equals(table.getTableInfo.getFactTable))
     checkAnswer(
-      sql("select count(*) from carbon_table_df where c3 > 500"), Row(31500)
+      sql("select count(*) from carbon_table_df1 where c3 > 500"), Row(31500)
     )
+
   }
 
   override def afterAll {
