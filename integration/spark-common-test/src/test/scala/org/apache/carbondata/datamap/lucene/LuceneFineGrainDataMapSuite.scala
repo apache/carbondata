@@ -28,6 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 
 class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
@@ -121,25 +122,93 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
 
-    //    sql("select * from normal_test where name='n34000'").show
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test where name='n10'"))
-//    checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10*')"), sql(s"SELECT * FROM datamap_test WHERE name like 'n10%'"))
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM datamap_test WHERE city='c020'"))
 
-    //    checkAnswer(
-    //      sql("select * from datamap_test where match('name:n34000')"),
-    //      sql("select * from normal_test where name='n34000'"))
+    sql("drop datamap dm on table datamap_test")
+  }
+
+  test("test lucene fine grain data map drop") {
+    sql("DROP TABLE IF EXISTS datamap_test1")
+    sql(
+      """
+        | CREATE TABLE datamap_test1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm12 ON TABLE datamap_test1
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test1 OPTIONS('header'='false')")
+
+    checkAnswer(sql("SELECT * FROM datamap_test1 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test1 where name='n10'"))
+
+    intercept[Exception] {
+      sql("drop datamap dm12")
+    }
+    val schema = DataMapStoreManager.getInstance().getDataMapSchema("dm12")
+    sql("drop datamap dm12 on table datamap_test1")
+    intercept[Exception] {
+      val schema = DataMapStoreManager.getInstance().getDataMapSchema("dm12")
+    }
+    sql("DROP TABLE IF EXISTS datamap_test1")
+  }
+
+  test("test lucene fine grain data map show") {
+    sql("DROP TABLE IF EXISTS datamap_test2")
+    sql("DROP TABLE IF EXISTS datamap_test3")
+    sql(
+      """
+        | CREATE TABLE datamap_test2(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm122 ON TABLE datamap_test2
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+      """.stripMargin)
+
+    sql(
+      """
+        | CREATE TABLE datamap_test3(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm123 ON TABLE datamap_test3
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test2 OPTIONS('header'='false')")
+
+    checkAnswer(sql("SELECT * FROM datamap_test2 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test2 where name='n10'"))
+
+    assert(sql("show datamap on table datamap_test2").count() == 1)
+    assert(sql("show datamap").count() == 2)
+    sql("DROP TABLE IF EXISTS datamap_test2")
+    sql("DROP TABLE IF EXISTS datamap_test3")
   }
 
   override protected def afterAll(): Unit = {
     LuceneFineGrainDataMapSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
     sql("DROP TABLE IF EXISTS datamap_test")
+    sql("DROP TABLE IF EXISTS datamap_test1")
+    sql("DROP TABLE IF EXISTS datamap_test2")
+    sql("DROP TABLE IF EXISTS datamap_test3")
     sql("use default")
     sql("drop database if exists lucene cascade")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
-        CarbonProperties.getStorePath)
+          CarbonProperties.getStorePath)
   }
 }
 

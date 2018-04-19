@@ -52,7 +52,13 @@ public class DataMapWriterListener {
    */
   public void registerAllWriter(CarbonTable carbonTable, String segmentId,
       String dataWritePath) {
-    List<TableDataMap> tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+    List<TableDataMap> tableIndices;
+    try {
+      tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+    } catch (IOException e) {
+      LOG.error(e, "Error while retrieving datamaps");
+      throw new RuntimeException(e);
+    }
     if (tableIndices != null) {
       for (TableDataMap tableDataMap : tableIndices) {
         DataMapFactory factory = tableDataMap.getDataMapFactory();

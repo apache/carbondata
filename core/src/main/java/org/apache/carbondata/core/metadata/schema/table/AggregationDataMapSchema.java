@@ -359,4 +359,16 @@ public class AggregationDataMapSchema extends DataMapSchema {
       this.aggExpToColumnMapping = aggExpToColumnMapping;
     }
   }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
+    AggregationDataMapSchema that = (AggregationDataMapSchema) o;
+    return that == this;
+  }
+
+  @Override public int hashCode() {
+    return super.hashCode();
+  }
 }

@@ -78,7 +78,7 @@ case class CarbonDropDataMapCommand(
         }
       }
       if (forceDrop && mainTable != null && dataMapSchema != null) {
-        dropDataMapFromSystemFolder(sparkSession, tableName)
+        dropDataMapFromSystemFolder(sparkSession)
         return Seq.empty
       }
       val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
@@ -128,7 +128,7 @@ case class CarbonDropDataMapCommand(
           }
         } else if (mainTable != null &&
                    mainTable.getTableInfo.getDataMapSchemaList.size() == 0) {
-          dropDataMapFromSystemFolder(sparkSession, tableName)
+          dropDataMapFromSystemFolder(sparkSession)
         }
       } catch {
         case e: NoSuchDataMapException =>
@@ -153,27 +153,21 @@ case class CarbonDropDataMapCommand(
       Seq.empty
   }
 
-  private def dropDataMapFromSystemFolder(sparkSession: SparkSession, tableName: String = null) = {
-    if (dataMapSchema == null) {
-      val schema = DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala.find { dm =>
-        dm.getDataMapName.equalsIgnoreCase(dataMapName)
+  private def dropDataMapFromSystemFolder(sparkSession: SparkSession) = {
+    try {
+      if (dataMapSchema == null) {
+        dataMapSchema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
       }
-      dataMapSchema = schema match {
-        case Some(dmSchema) => dmSchema
-        case _ => null
+      if (dataMapSchema != null) {
+        dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema, sparkSession)
+        DataMapStatusManager.dropDataMap(dataMapSchema.getDataMapName)
+        dataMapProvider.freeMeta(mainTable, dataMapSchema)
       }
-    }
-    if (dataMapSchema != null) {
-      // TODO do a check for existance before dropping
-      dataMapProvider = DataMapManager.get.getDataMapProvider(dataMapSchema, sparkSession)
-      DataMapStatusManager.dropDataMap(dataMapSchema.getDataMapName)
-      dataMapProvider.freeMeta(mainTable, dataMapSchema)
-    } else if (!ifExistsSet) {
-      if (tableName != null) {
-        throw new NoSuchDataMapException(dataMapName, tableName)
-      } else {
-        throw new NoSuchDataMapException(dataMapName)
-      }
+    } catch {
+      case e: Exception =>
+        if (!ifExistsSet) {
+          throw e
+        }
     }
   }
 
