@@ -42,7 +42,7 @@ import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.{TextMatch, TextMatchUDF}
+import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit, TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -535,6 +535,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             "TEXT_MATCH UDF syntax: TEXT_MATCH('luceneQuerySyntax')")
         }
         Some(TextMatch(u.children.head.toString()))
+
+      case u: ScalaUDF if u.function.isInstanceOf[TextMatchMaxDocUDF] =>
+        if (u.children.size > 2) {
+          throw new MalformedCarbonCommandException(
+            "TEXT_MATCH UDF syntax: TEXT_MATCH_LIMIT('luceneQuerySyntax')")
+        }
+        Some(TextMatchLimit(u.children.head.toString(), u.children.last.toString()))
 
       case or@Or(left, right) =>
 
