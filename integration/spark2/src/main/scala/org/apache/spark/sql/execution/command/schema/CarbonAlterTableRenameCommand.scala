@@ -125,26 +125,21 @@ private[sql] case class CarbonAlterTableRenameCommand(
       val fileType = FileFactory.getFileType(tableMetadataFile)
       val newTableIdentifier = new CarbonTableIdentifier(oldDatabaseName,
         newTableName, carbonTable.getCarbonTableIdentifier.getTableId)
+      val oldIdentifier = TableIdentifier(oldTableName, Some(oldDatabaseName))
+      val newIdentifier = TableIdentifier(newTableName, Some(oldDatabaseName))
       var newTablePath = CarbonTablePath.getNewTablePath(
         oldTableIdentifier.getTablePath, newTableIdentifier.getTableName)
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
-      val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
-        .getClient()
       var partitions: Seq[CatalogTablePartition] = Seq.empty
       if (carbonTable.isHivePartitionTable) {
         partitions =
-          sparkSession.sessionState.catalog.listPartitions(
-            TableIdentifier(oldTableName, Some(oldDatabaseName)))
+          sparkSession.sessionState.catalog.listPartitions(oldIdentifier)
       }
-      sparkSession.catalog.refreshTable(TableIdentifier(oldTableName,
-        Some(oldDatabaseName)).quotedString)
-      hiveClient.runSqlHive(
-          s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
-      hiveClient.runSqlHive(
-          s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
-          s"('tableName'='$newTableName', " +
-          s"'dbName'='$oldDatabaseName', 'tablePath'='$newTablePath')")
-
+      sparkSession.catalog.refreshTable(oldIdentifier.quotedString)
+      sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].alterTableRename(
+          oldIdentifier,
+          newIdentifier,
+          newTablePath)
       // changed the rename order to deal with situation when carbon table and hive table
       // will point to the same tablePath
       if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
@@ -160,16 +155,19 @@ private[sql] case class CarbonAlterTableRenameCommand(
         partitions,
         oldTableIdentifier.getTablePath,
         newTablePath,
-        sparkSession)
+        sparkSession,
+        newIdentifier.table,
+        oldDatabaseName)
 
-      val newIdentifier = TableIdentifier(newTableName, Some(oldDatabaseName))
       val catalogTable = sparkSession.sessionState.catalog.getTableMetadata(newIdentifier)
       // Update the storage location with new path
       sparkSession.sessionState.catalog.alterTable(
         catalogTable.copy(storage = sparkSession.sessionState.catalog.
           asInstanceOf[CarbonSessionCatalog].updateStorageLocation(
           new Path(newTablePath),
-          catalogTable.storage)))
+          catalogTable.storage,
+          newIdentifier.table,
+          oldDatabaseName)))
       if (updatedParts.nonEmpty) {
         // Update the new updated partitions specs with new location.
         sparkSession.sessionState.catalog.alterPartitions(
@@ -232,14 +230,20 @@ private[sql] case class CarbonAlterTableRenameCommand(
       partitions: Seq[CatalogTablePartition],
       oldTablePath: String,
       newTablePath: String,
-      sparkSession: SparkSession): Seq[CatalogTablePartition] = {
+      sparkSession: SparkSession,
+      newTableName: String,
+      dbName: String): Seq[CatalogTablePartition] = {
     partitions.map{ part =>
       if (part.storage.locationUri.isDefined) {
         val path = new Path(part.location)
         if (path.toString.contains(oldTablePath)) {
           val newPath = new Path(path.toString.replace(oldTablePath, newTablePath))
           part.copy(storage = sparkSession.sessionState.catalog.
-            asInstanceOf[CarbonSessionCatalog].updateStorageLocation(newPath, part.storage))
+            asInstanceOf[CarbonSessionCatalog].updateStorageLocation(
+              newPath,
+              part.storage,
+              newTableName,
+              dbName))
         } else {
           part
         }

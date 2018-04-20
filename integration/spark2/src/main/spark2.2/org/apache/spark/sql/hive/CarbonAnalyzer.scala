@@ -14,29 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.spark.sql.hive
 
-package org.apache.spark.sql.execution.command.schema
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.analysis.Analyzer
+import org.apache.spark.sql.catalyst.catalog.SessionCatalog
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.internal.SQLConf
 
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command._
-import org.apache.spark.util.AlterTableUtil
-
-
-private[sql] case class CarbonAlterTableUnsetCommand(
-    tableIdentifier: TableIdentifier,
-    propKeys: Seq[String],
-    ifExists: Boolean,
-    isView: Boolean)
-  extends RunnableCommand with MetadataProcessOpeation {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processMetadata(sparkSession)
-  }
-
-  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    AlterTableUtil.modifyTableProperties(tableIdentifier, Map.empty[String, String],
-      propKeys, false)(sparkSession)
-    Seq.empty
+class CarbonAnalyzer(catalog: SessionCatalog,
+    conf: SQLConf,
+    sparkSession: SparkSession,
+    analyzer: Analyzer) extends Analyzer(catalog, conf) {
+  override def execute(plan: LogicalPlan): LogicalPlan = {
+    var logicalPlan = analyzer.execute(plan)
+    logicalPlan = CarbonPreAggregateDataLoadingRules(sparkSession).apply(logicalPlan)
+    CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
   }
 }

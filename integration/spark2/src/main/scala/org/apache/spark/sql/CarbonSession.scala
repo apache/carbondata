@@ -43,7 +43,8 @@ import org.apache.carbondata.streaming.CarbonStreamingQueryListener
  * User needs to use {CarbonSession.getOrCreateCarbon} to create Carbon session.
  */
 class CarbonSession(@transient val sc: SparkContext,
-    @transient private val existingSharedState: Option[SharedState]
+    @transient private val existingSharedState: Option[SharedState],
+    @transient useHiveMetaStore: Boolean = true
 ) extends SparkSession(sc) { self =>
 
   def this(sc: SparkContext) {
@@ -51,8 +52,10 @@ class CarbonSession(@transient val sc: SparkContext,
   }
 
   @transient
-  override lazy val sessionState: SessionState =
-    CarbonReflectionUtils.getSessionState(sparkContext, this).asInstanceOf[SessionState]
+  override lazy val sessionState: SessionState = {
+    CarbonReflectionUtils.getSessionState(sparkContext, this, useHiveMetaStore)
+      .asInstanceOf[SessionState]
+  }
 
   /**
    * State shared across sessions, including the `SparkContext`, cached data, listener,
@@ -74,7 +77,7 @@ class CarbonSession(@transient val sc: SparkContext,
   }
 
   override def newSession(): SparkSession = {
-    new CarbonSession(sparkContext, Some(sharedState))
+    new CarbonSession(sparkContext, Some(sharedState), useHiveMetaStore)
   }
 
   override def sql(sqlText: String): DataFrame = {
@@ -116,10 +119,16 @@ object CarbonSession {
 
   private val statementId = new AtomicLong(0)
 
+  private var enableInMemCatlog: Boolean = false
+
   private[sql] val threadStatementId = new ThreadLocal[Long]()
 
   implicit class CarbonBuilder(builder: Builder) {
 
+    def enableInMemoryCatalog(): Builder = {
+      enableInMemCatlog = true
+      builder
+    }
     def getOrCreateCarbonSession(): SparkSession = {
       getOrCreateCarbonSession(null, null)
     }
@@ -132,7 +141,9 @@ object CarbonSession {
 
     def getOrCreateCarbonSession(storePath: String,
         metaStorePath: String): SparkSession = synchronized {
-      builder.enableHiveSupport()
+      if (!enableInMemCatlog) {
+        builder.enableHiveSupport()
+      }
       val options =
         getValue("options", builder).asInstanceOf[scala.collection.mutable.HashMap[String, String]]
       val userSuppliedContext: Option[SparkContext] =
@@ -205,7 +216,7 @@ object CarbonSession {
           sc
         }
 
-        session = new CarbonSession(sparkContext)
+        session = new CarbonSession(sparkContext, None, !enableInMemCatlog)
         val carbonProperties = CarbonProperties.getInstance()
         if (storePath != null) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
