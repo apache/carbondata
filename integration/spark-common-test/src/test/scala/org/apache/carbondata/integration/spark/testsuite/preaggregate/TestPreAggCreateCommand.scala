@@ -455,8 +455,8 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
             .stripMargin))
       i = i + 1
     }
-    executorService.invokeAll(tasks)
-
+    executorService.invokeAll(tasks).asScala
+    executorService.awaitTermination(5, TimeUnit.MINUTES)
     checkExistence(sql("show tables"), true, "agg_concu1", "tbl_concurr")
     executorService.shutdown()
   }

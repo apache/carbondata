@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
+import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -77,7 +78,26 @@ case class CarbonDropDataMapCommand(
             null
         }
       }
-      if (forceDrop && mainTable != null && dataMapSchema != null) {
+      // forceDrop will be true only when parent table schema updation has failed.
+      // This method will forcefully drop child table instance from metastore.
+      if (forceDrop) {
+        val childTableName = tableName + "_" + dataMapName
+        LOGGER.info(s"Trying to force drop $childTableName from metastore")
+        val childCarbonTable: Option[CarbonTable] = try {
+          Some(CarbonEnv.getCarbonTable(databaseNameOp, childTableName)(sparkSession))
+        } catch {
+          case _: Exception =>
+            LOGGER.warn(s"Child table $childTableName not found in metastore")
+            None
+        }
+        if (childCarbonTable.isDefined) {
+          val commandToRun = CarbonDropTableCommand(
+            ifExistsSet = true,
+            Some(childCarbonTable.get.getDatabaseName),
+            childCarbonTable.get.getTableName,
+            dropChildTable = true)
+          commandToRun.processMetadata(sparkSession)
+        }
         dropDataMapFromSystemFolder(sparkSession)
         return Seq.empty
       }
