@@ -21,33 +21,29 @@ import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.result.RowBatch;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 
-public class SearchModeResultIterator extends AbstractSearchModeResultIterator {
+public class SearchModeVectorResultIterator extends AbstractSearchModeResultIterator {
 
   private final Object lock = new Object();
 
-  public SearchModeResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
-                                  ExecutorService execService) {
+  public SearchModeVectorResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
+                                        ExecutorService execService) {
     super(infos, queryModel, execService);
   }
 
   @Override
-  public RowBatch next() {
-    return getBatchResult();
+  public Object next() {
+    throw new UnsupportedOperationException("call processNextBatch instead");
   }
 
-  private RowBatch getBatchResult() {
-    RowBatch rowBatch = new RowBatch();
+  @Override
+  public void processNextBatch(CarbonColumnarBatch columnarBatch) {
     synchronized (lock) {
       if (curBlockScan.hasNext()) {
-        List<Object[]> collectedResult = curBlockScan.next(batchSize);
-        while (collectedResult.size() < batchSize && hasNext()) {
-          collectedResult.addAll(curBlockScan.next(batchSize - collectedResult.size()));
-        }
-        rowBatch.setRows(collectedResult);
+        curBlockScan.processNextBatch(columnarBatch);
       }
     }
-    return rowBatch;
   }
+
 }

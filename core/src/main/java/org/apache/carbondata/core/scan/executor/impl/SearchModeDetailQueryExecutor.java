@@ -28,13 +28,13 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.result.iterator.SearchModeVectorResultIterator;
+import org.apache.carbondata.core.scan.result.iterator.SearchModeResultIterator;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 
-public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
+public class SearchModeDetailQueryExecutor extends AbstractQueryExecutor<Object> {
   private static final LogService LOGGER =
-          LogServiceFactory.getLogService(SearchModeVectorDetailQueryExecutor.class.getName());
+          LogServiceFactory.getLogService(SearchModeDetailQueryExecutor.class.getName());
   private static ExecutorService executorService;
 
   static {
@@ -58,7 +58,7 @@ public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<O
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    this.queryIterator = new SearchModeVectorResultIterator(
+    this.queryIterator = new SearchModeResultIterator(
         blockExecutionInfoList,
         queryModel,
         executorService
