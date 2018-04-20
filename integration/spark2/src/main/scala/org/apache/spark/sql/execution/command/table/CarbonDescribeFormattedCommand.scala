@@ -138,6 +138,11 @@ private[sql] case class CarbonDescribeFormattedCommand(
         tblProps.get(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS),
         CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT))
     }
+    if (tblProps.containsKey(CarbonCommonConstants.FLAT_FOLDER)) {
+      results ++= Seq((CarbonCommonConstants.FLAT_FOLDER.toUpperCase,
+        tblProps.get(CarbonCommonConstants.FLAT_FOLDER),
+        CarbonCommonConstants.DEFAULT_FLAT_FOLDER))
+    }
 
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {

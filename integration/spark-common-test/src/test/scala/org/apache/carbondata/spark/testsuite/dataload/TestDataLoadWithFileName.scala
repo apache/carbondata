@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import scala.collection.JavaConverters._
+
 import java.io.{File, FilenameFilter}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -26,7 +28,9 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 
 class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
   var originVersion = ""
@@ -49,12 +53,20 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
     val indexReader = new CarbonIndexFileReader()
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "test_table_v3")
     val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, "0")
-    val carbonIndexPaths = new File(segmentDir)
-      .listFiles(new FilenameFilter {
-        override def accept(dir: File, name: String): Boolean = {
-          name.endsWith(CarbonTablePath.getCarbonIndexExtension)
-        }
-      })
+
+    val carbonIndexPaths = if (FileFactory.isFileExist(segmentDir)) {
+      new File(segmentDir)
+        .listFiles(new FilenameFilter {
+          override def accept(dir: File, name: String): Boolean = {
+            name.endsWith(CarbonTablePath.getCarbonIndexExtension)
+          }
+        })
+    } else {
+      val segment = Segment.getSegment("0", carbonTable.getTablePath)
+      val store = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
+      store.readIndexFiles()
+      store.getIndexCarbonFiles.asScala.map(f => new File(f.getAbsolutePath)).toArray
+    }
     for (carbonIndexPath <- carbonIndexPaths) {
       indexReader.openThriftReader(carbonIndexPath.getCanonicalPath)
       assert(indexReader.readIndexHeader().getVersion === 3)

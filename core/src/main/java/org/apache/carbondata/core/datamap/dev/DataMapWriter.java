@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.core.datamap.dev;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -133,7 +132,7 @@ public abstract class DataMapWriter {
    */
   public static String getDefaultDataMapPath(
       String tablePath, String segmentId, String dataMapName) {
-    return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName;
+    return CarbonTablePath.getDataMapStorePath(tablePath, segmentId, dataMapName);
   }
 
   public boolean isWritingFinished() {

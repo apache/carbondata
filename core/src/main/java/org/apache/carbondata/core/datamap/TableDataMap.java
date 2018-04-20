@@ -103,7 +103,7 @@ public final class TableDataMap extends OperationEventListener {
       }
       blocklets.addAll(addSegmentId(
           blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment),
-          segment.getSegmentNo()));
+          segment.toString()));
     }
     return blocklets;
   }
@@ -182,7 +182,7 @@ public final class TableDataMap extends OperationEventListener {
         detailedBlocklet.setDataMapWriterPath(blockletwritePath);
         serializer.serializeBlocklet((FineGrainBlocklet) blocklet, blockletwritePath);
       }
-      detailedBlocklet.setSegmentId(distributable.getSegment().getSegmentNo());
+      detailedBlocklet.setSegmentId(distributable.getSegment().toString());
       detailedBlocklets.add(detailedBlocklet);
     }
     return detailedBlocklets;
