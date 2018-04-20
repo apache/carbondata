@@ -140,7 +140,7 @@ public class SearchRequestHandler {
     DataMapExprWrapper wrapper =
         DataMapChooser.get().choose(table, queryModel.getFilterExpressionResolverTree());
 
-    if (wrapper.getDataMapType() == DataMapLevel.FG) {
+    if (wrapper.getDataMapLevel() == DataMapLevel.FG) {
       List<Segment> segments = new LinkedList<>();
       for (CarbonInputSplit split : mbSplit.getAllSplits()) {
         segments.add(Segment.toSegment(
