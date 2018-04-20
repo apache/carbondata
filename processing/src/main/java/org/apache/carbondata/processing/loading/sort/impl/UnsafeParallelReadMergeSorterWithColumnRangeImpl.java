@@ -227,7 +227,6 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
-          int i = 0;
           while (batch.hasNext()) {
             CarbonRow row = batch.next();
             if (row != null) {

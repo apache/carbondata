@@ -107,24 +107,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       int i = 0;
       // do this concurrently
       for (Iterator<CarbonRowBatch> iterator : iterators) {
-        String[] storeLocation = getStoreLocation(tableIdentifier);
-
-        CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-            .createCarbonFactDataHandlerModel(configuration, storeLocation, i, 0);
-        CarbonFactHandler dataHandler = null;
-        boolean rowsNotExist = true;
-        while (iterator.hasNext()) {
-          if (rowsNotExist) {
-            rowsNotExist = false;
-            dataHandler = CarbonFactHandlerFactory
-                .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
-            dataHandler.initialise();
-          }
-          processBatch(iterator.next(), dataHandler);
-        }
-        if (!rowsNotExist) {
-          finish(dataHandler);
-        }
         rangeExecutorServiceSubmitList.add(
             rangeExecutorService.submit(new WriterForwarder(iterator, tableIdentifier, i)));
         i++;
