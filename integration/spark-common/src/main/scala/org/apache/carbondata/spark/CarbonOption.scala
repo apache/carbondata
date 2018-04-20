@@ -60,5 +60,8 @@ class CarbonOption(options: Map[String, String]) {
   def isStreaming: Boolean =
     options.getOrElse("streaming", "false").toBoolean
 
+  def overwriteEnabled: Boolean =
+    options.getOrElse("overwrite", "false").toBoolean
+
   def toMap: Map[String, String] = options
 }
