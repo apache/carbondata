@@ -420,6 +420,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     List<Segment> invalidSegments = new ArrayList<>();
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
 
+
     try {
       carbonTable = getOrCreateCarbonTable(job.getConfiguration());
       ReadCommittedScope readCommittedScope =
@@ -427,7 +428,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       this.readCommittedScope = readCommittedScope;
 
       List<Segment> segmentList = new ArrayList<>();
-      segmentList.add(new Segment(targetSegment, null, readCommittedScope));
+      Segment segment = Segment.getSegment(targetSegment, carbonTable.getTablePath());
+      segmentList.add(
+          new Segment(segment.getSegmentNo(), segment.getSegmentFileName(), readCommittedScope));
       setSegmentsToAccess(job.getConfiguration(), segmentList);
 
       // process and resolve the expression
@@ -599,7 +602,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
       long rowCount = blocklet.getDetailInfo().getRowCount();
 
-      String key = CarbonUpdateUtil.getSegmentBlockNameKey(blocklet.getSegmentId(), blockName);
+      String segmentId = Segment.toSegment(blocklet.getSegmentId()).getSegmentNo();
+      String key = CarbonUpdateUtil.getSegmentBlockNameKey(segmentId, blockName);
 
       // if block is invalid then dont add the count
       SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
@@ -608,11 +612,11 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         Long blockCount = blockRowCountMapping.get(key);
         if (blockCount == null) {
           blockCount = 0L;
-          Long count = segmentAndBlockCountMapping.get(blocklet.getSegmentId());
+          Long count = segmentAndBlockCountMapping.get(segmentId);
           if (count == null) {
             count = 0L;
           }
-          segmentAndBlockCountMapping.put(blocklet.getSegmentId(), count + 1);
+          segmentAndBlockCountMapping.put(segmentId, count + 1);
         }
         blockCount += rowCount;
         blockRowCountMapping.put(key, blockCount);

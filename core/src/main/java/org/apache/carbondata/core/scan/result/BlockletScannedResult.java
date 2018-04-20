@@ -45,7 +45,6 @@ import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * Scanned result class which will store and provide the result on request
@@ -525,7 +524,7 @@ public abstract class BlockletScannedResult {
    * "Part0/Segment_0/part-0-0_batchno0-0-1517155583332.carbondata/0"
    */
   public void setBlockletId(String blockletId) {
-    this.blockletId = CarbonTablePath.getShortBlockId(blockletId);
+    this.blockletId = blockletId;
     blockletNumber = CarbonUpdateUtil.getRequiredFieldFromTID(blockletId, TupleIdEnum.BLOCKLET_ID);
     // if deleted recors map is present for this block
     // then get the first page deleted vo

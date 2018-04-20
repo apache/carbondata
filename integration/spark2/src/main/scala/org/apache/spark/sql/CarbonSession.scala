@@ -99,7 +99,7 @@ class CarbonSession(@transient val sc: SparkContext,
             trySearchMode(qe, sse)
           } catch {
             case e: Exception =>
-              logError(String.format(
+              log.error(String.format(
                 "Exception when executing search mode: %s", e.getMessage))
               throw e;
           }

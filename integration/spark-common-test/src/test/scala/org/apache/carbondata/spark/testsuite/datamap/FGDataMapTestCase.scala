@@ -89,8 +89,9 @@ class FGDataMapFactory(carbonTable: CarbonTable,
    * @return
    */
   override def toDistributable(segment: Segment): java.util.List[DataMapDistributable] = {
-    val path = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segment.getSegmentNo)
-    val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
+    val path = carbonTable.getTablePath
+    val file = FileFactory.getCarbonFile(
+      path+ "/" +dataMapSchema.getDataMapName + "/" + segment.getSegmentNo)
 
     val files = file.listFiles()
     files.map { f =>
@@ -416,7 +417,6 @@ class FGDataMapWriter(carbonTable: CarbonTable,
     stream.write(bytes)
     stream.writeInt(bytes.length)
     stream.close()
-//    commitFile(fgwritepath)
   }
 }
 
