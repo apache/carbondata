@@ -35,8 +35,6 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   val file2 = resourcesPath + "/datamap_input.csv"
 
   override protected def beforeAll(): Unit = {
-    //n should be about 5000000 of reset if size is default 1024
-    val n = 15000
     LuceneFineGrainDataMapSuite.createFile(file2)
     sql("create database if not exists lucene")
     CarbonProperties.getInstance()
@@ -578,6 +576,49 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("INSERT OVERWRITE TABLE table1 select *from datamap_test where TEXT_MATCH('name:n*')")
     checkAnswer(sql("select count(*) from table1"),Seq(Row(10000)))
     sql("drop datamap dm on table datamap_test")
+  }
+
+  test("explain query with lucene datamap") {
+    sql("drop table if exists main")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE, "8")
+    sql(
+      """
+        | CREATE TABLE main(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm ON TABLE main
+         | USING 'lucene'
+         | DMProperties('TEXT_COLUMNS'='name , city')
+      """.stripMargin)
+
+    val file1 = resourcesPath + "/main.csv"
+    LuceneFineGrainDataMapSuite.createFile(file1, 1000000)
+
+    sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE main OPTIONS('header'='false')")
+
+    sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").show(false)
+    val rows = sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").collect()
+
+    assertResult(
+      """== CarbonData Profiler ==
+        |Table Scan on main
+        | - total blocklets: 1
+        | - filter: TEXT_MATCH('name:bob')
+        | - pruned by Main DataMap
+        |    - skipped blocklets: 0
+        | - pruned by FG DataMap
+        |    - name: dm
+        |    - provider: lucene
+        |    - skipped blocklets: 1
+        |""".stripMargin)(rows(0).getString(0))
+
+    LuceneFineGrainDataMapSuite.deleteFile(file1)
+    sql("drop datamap dm on table main")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.BLOCKLET_SIZE, CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
   }
 
   override protected def afterAll(): Unit = {

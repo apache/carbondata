@@ -216,8 +216,6 @@ class SparkCarbonFileFormat extends FileFormat
 
         val model = format.createQueryModel(split, attemptContext)
 
-        var partition : java.util.List[PartitionSpec] = new java.util.ArrayList[PartitionSpec]()
-
         val segmentPath = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null")
         val readCommittedScope = new LatestFilesReadCommittedScope(
           identifier.getTablePath + "/Fact/Part0/Segment_null/")

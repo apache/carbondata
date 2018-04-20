@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
+import java.io.File
+
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
@@ -377,6 +379,70 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
       "maintabledict group by year")
     val df = sql("select year,avg(year) from maintabledict group by year")
     checkAnswer(df, Seq(Row(10,10.0)))
+  }
+
+  test("explain projection query") {
+    val rows = sql("explain select name, age from mainTable").collect()
+    assertResult(
+      """== CarbonData Profiler ==
+        |Table Scan on maintable
+        | - total blocklets: 1
+        | - filter: none
+        | - pruned by Main DataMap
+        |    - skipped blocklets: 0
+        |""".stripMargin)(rows(0).getString(0))
+  }
+
+  test("explain projection query hit datamap") {
+    val rows = sql("explain select name,sum(age) from mainTable group by name").collect()
+    assertResult(
+      """== CarbonData Profiler ==
+        |Query rewrite based on DataMap:
+        | - agg1 (preaggregate)
+        |Table Scan on maintable_agg1
+        | - total blocklets: 1
+        | - filter: none
+        | - pruned by Main DataMap
+        |    - skipped blocklets: 0
+        |""".stripMargin)(rows(0).getString(0))
+  }
+
+  test("explain filter query") {
+    sql("explain select name,sum(age) from mainTable where name = 'a' group by name").show(false)
+    val rows = sql("explain select name,sum(age) from mainTable where name = 'a' group by name").collect()
+    assertResult(
+      """== CarbonData Profiler ==
+        |Query rewrite based on DataMap:
+        | - agg1 (preaggregate)
+        |Table Scan on maintable_agg1
+        | - total blocklets: 1
+        | - filter: (maintable_name <> null and maintable_name = a)
+        | - pruned by Main DataMap
+        |    - skipped blocklets: 1
+        |""".stripMargin)(rows(0).getString(0))
+
+  }
+
+  test("explain query with multiple table") {
+    val query = "explain select t1.city,sum(t1.age) from mainTable t1, mainTableavg t2 " +
+                "where t1.name = t2.name and t1.id < 3 group by t1.city"
+    sql(query).show(false)
+    val rows = sql(query).collect()
+    assert(rows(0).getString(0).contains(
+      """
+        |Table Scan on maintable
+        | - total blocklets: 1
+        | - filter: ((id <> null and id < 3) and name <> null)
+        | - pruned by Main DataMap
+        |    - skipped blocklets: 0""".stripMargin))
+    assert(rows(0).getString(0).contains(
+      """
+        |Table Scan on maintableavg
+        | - total blocklets: 1
+        | - filter: name <> null
+        | - pruned by Main DataMap
+        |    - skipped blocklets: 0""".stripMargin))
+
   }
 
   override def afterAll: Unit = {

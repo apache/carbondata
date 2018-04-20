@@ -63,6 +63,6 @@ public class MatchExpression extends Expression {
 
   @Override
   public String getStatement() {
-    return queryString;
+    return "TEXT_MATCH('" + queryString + "')";
   }
 }

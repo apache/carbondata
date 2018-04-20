@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -69,19 +70,20 @@ public class DataMapChooser {
   /**
    * Return a chosen datamap based on input filter. See {@link DataMapChooser}
    */
-  public DataMapExprWrapper choose(CarbonTable carbonTable, FilterResolverIntf resolverIntf)
+  public DataMapExprWrapper choose(CarbonTable carbonTable, FilterResolverIntf filter)
       throws IOException {
-    if (resolverIntf != null) {
-      Expression expression = resolverIntf.getFilterExpression();
+    Objects.requireNonNull(carbonTable);
+    if (filter != null) {
+      Expression expression = filter.getFilterExpression();
       // First check for FG datamaps if any exist
       List<TableDataMap> allDataMapFG =
           DataMapStoreManager.getInstance().getAllVisibleDataMap(carbonTable, DataMapLevel.FG);
-      ExpressionTuple tuple = selectDataMap(expression, allDataMapFG, resolverIntf);
+      ExpressionTuple tuple = selectDataMap(expression, allDataMapFG, filter);
       if (tuple.dataMapExprWrapper == null) {
         // Check for CG datamap
         List<TableDataMap> allDataMapCG =
             DataMapStoreManager.getInstance().getAllVisibleDataMap(carbonTable, DataMapLevel.CG);
-        tuple = selectDataMap(expression, allDataMapCG, resolverIntf);
+        tuple = selectDataMap(expression, allDataMapCG, filter);
       }
       if (tuple.dataMapExprWrapper != null) {
         return tuple.dataMapExprWrapper;
@@ -89,8 +91,7 @@ public class DataMapChooser {
     }
     // Return the default datamap if no other datamap exists.
     return new DataMapExprWrapperImpl(
-        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable),
-        resolverIntf);
+        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable), filter);
   }
 
   /**
