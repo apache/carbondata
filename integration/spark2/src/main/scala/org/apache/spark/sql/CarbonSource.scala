@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.strategy.CarbonLateDecodeStrategy
+import org.apache.spark.sql.execution.streaming.CarbonStreamingQueryListener
 import org.apache.spark.sql.execution.streaming.Sink
 import org.apache.spark.sql.hive.CarbonMetaStore
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
@@ -44,7 +45,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CarbonScalaUtil
-import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamingQueryListener, StreamSinkFactory}
+import org.apache.carbondata.streaming.{CarbonStreamException, StreamSinkFactory}
 
 /**
  * Carbon relation provider compliant to data source api.
