@@ -442,17 +442,23 @@ object CarbonFilters {
       tableIdentifier)
   }
 
+  def getPartitions(partitionFilters: Seq[Expression],
+      session: SparkSession,
+      identifier: TableIdentifier): Option[Seq[PartitionSpec]] = {
+    val table = CarbonEnv.getCarbonTable(identifier)(session)
+    getPartitions(partitionFilters, session, table)
+  }
+
   /**
    * Fetches partition information from hive
    * @param partitionFilters
    * @param sparkSession
-   * @param identifier
    * @return
    */
   def getPartitions(partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
-      identifier: TableIdentifier): Option[Seq[PartitionSpec]] = {
-    val table = CarbonEnv.getCarbonTable(identifier)(sparkSession)
+      table: CarbonTable): Option[Seq[PartitionSpec]] = {
+    val identifier = TableIdentifier(table.getTableName, Some(table.getDatabaseName))
     // first try to read partitions in case if the trigger comes from the aggregation table load.
     val partitionsForAggTable = getPartitionsForAggTable(sparkSession, table)
     if (partitionsForAggTable.isDefined) {
