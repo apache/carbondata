@@ -37,7 +37,18 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("select empno,empname,utilization from alldatatypestable where empname = 'ayushi'") {
+  test("SearchMode Query: row result") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
+        checkAnswer(
+      sql("select empno,empname,utilization from alldatatypestable where empname = 'ayushi'"),
+      sql("select empno,empname,utilization from alldatatypestable_hive where empname = 'ayushi'"))
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE,
+      CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
+          CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+  }
+  test("SearchMode Query: vector result") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE, "true")
     checkAnswer(
       sql("select empno,empname,utilization from alldatatypestable where empname = 'ayushi'"),

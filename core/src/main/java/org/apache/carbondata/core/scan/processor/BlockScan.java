@@ -95,4 +95,8 @@ public class BlockScan {
     this.scannerResultAggregator.collectResultInColumnarBatch(curResult, columnarBatch);
   }
 
+  public List<Object[]> next(int size) {
+    return this.scannerResultAggregator.collectResultInRow(curResult, size);
+  }
+
 }

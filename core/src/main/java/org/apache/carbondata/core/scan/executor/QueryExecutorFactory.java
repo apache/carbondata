@@ -16,9 +16,13 @@
  */
 package org.apache.carbondata.core.scan.executor;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.executor.impl.DetailQueryExecutor;
+import org.apache.carbondata.core.scan.executor.impl.SearchModeDetailQueryExecutor;
+import org.apache.carbondata.core.scan.executor.impl.SearchModeVectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.impl.VectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Factory class to get the query executor from RDD
@@ -27,10 +31,20 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 public class QueryExecutorFactory {
 
   public static QueryExecutor getQueryExecutor(QueryModel queryModel) {
-    if (queryModel.isVectorReader()) {
-      return new VectorDetailQueryExecutor();
+    if (CarbonProperties.getInstance().getProperty(
+            CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE,
+            CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE_DEFAULT).equals("true")) {
+      if (queryModel.isVectorReader()) {
+        return new SearchModeVectorDetailQueryExecutor();
+      } else {
+        return new SearchModeDetailQueryExecutor();
+      }
     } else {
-      return new DetailQueryExecutor();
+      if (queryModel.isVectorReader()) {
+        return new VectorDetailQueryExecutor();
+      } else {
+        return new DetailQueryExecutor();
+      }
     }
   }
 }
