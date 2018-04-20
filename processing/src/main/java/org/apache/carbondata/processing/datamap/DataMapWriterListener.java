@@ -165,6 +165,7 @@ public class DataMapWriterListener {
         writer.finish();
       }
     }
+    registry.clear();
   }
 
 }

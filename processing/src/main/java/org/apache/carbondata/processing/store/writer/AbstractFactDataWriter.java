@@ -279,7 +279,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     this.carbonDataFileName = CarbonTablePath
         .getCarbonDataFileName(fileCount, model.getCarbonDataFileAttributes().getTaskId(),
             model.getBucketId(), model.getTaskExtension(),
-            "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
+            "" + model.getCarbonDataFileAttributes().getFactTimeStamp(), model.getSegmentId());
     this.carbonDataFileHdfsPath = model.getCarbonDataDirectoryPath() + File.separator
         + carbonDataFileName;
     try {
@@ -368,7 +368,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       String rawFileName = model.getCarbonDataDirectoryPath() + File.separator + CarbonTablePath
           .getCarbonIndexFileName(model.getCarbonDataFileAttributes().getTaskId(),
               model.getBucketId(), model.getTaskExtension(),
-              "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
+              "" + model.getCarbonDataFileAttributes().getFactTimeStamp(), model.getSegmentId());
       indexFileName = FileFactory.getUpdatedFilePath(rawFileName, FileFactory.FileType.HDFS);
     } else {
       // randomly choose a temp location for index file
@@ -378,7 +378,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       indexFileName = chosenTempLocation + File.separator + CarbonTablePath
           .getCarbonIndexFileName(model.getCarbonDataFileAttributes().getTaskId(),
               model.getBucketId(), model.getTaskExtension(),
-              "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
+              "" + model.getCarbonDataFileAttributes().getFactTimeStamp(), model.getSegmentId());
     }
 
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();

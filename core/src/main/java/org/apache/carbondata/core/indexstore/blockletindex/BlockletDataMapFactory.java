@@ -122,7 +122,9 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     if (tableBlockIndexUniqueIdentifiers == null) {
       tableBlockIndexUniqueIdentifiers =
           BlockletDataMapUtil.getTableBlockUniqueIdentifiers(segment);
-      segmentMap.put(segment.getSegmentNo(), tableBlockIndexUniqueIdentifiers);
+      if (tableBlockIndexUniqueIdentifiers.size() > 0) {
+        segmentMap.put(segment.getSegmentNo(), tableBlockIndexUniqueIdentifiers);
+      }
     }
     return tableBlockIndexUniqueIdentifiers;
   }

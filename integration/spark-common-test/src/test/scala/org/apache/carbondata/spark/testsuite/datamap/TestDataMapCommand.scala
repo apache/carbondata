@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.datamap
 
+import scala.collection.JavaConverters._
+
 import java.io.{File, FilenameFilter}
 
 import org.apache.spark.sql.Row
@@ -26,7 +28,9 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.{MalformedDataMapCommandException, NoSuchDataMapException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -261,12 +265,21 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
          |    group by name
        """.stripMargin)
     assertResult(true)(new File(path).exists())
-    assertResult(true)(new File(s"${CarbonTablePath.getSegmentPath(path, "0")}")
-      .list(new FilenameFilter {
-        override def accept(dir: File, name: String): Boolean = {
-          name.contains(CarbonCommonConstants.FACT_FILE_EXT)
-        }
-      }).length > 0)
+    if (FileFactory.isFileExist(CarbonTablePath.getSegmentPath(path, "0"))) {
+      assertResult(true)(new File(s"${CarbonTablePath.getSegmentPath(path, "0")}")
+         .list(new FilenameFilter {
+           override def accept(dir: File, name: String): Boolean = {
+             name.contains(CarbonCommonConstants.FACT_FILE_EXT)
+           }
+         }).length > 0)
+    } else {
+      val segment = Segment.getSegment("0", path)
+      val store = new SegmentFileStore(path, segment.getSegmentFileName)
+      store.readIndexFiles()
+      val size = store.getIndexFilesMap.asScala.map(f => f._2.size()).sum
+      assertResult(true)(size > 0)
+    }
+
     checkAnswer(sql("select name,avg(salary) from main group by name"), Row("amy", 13.0))
     checkAnswer(sql("select * from main_preagg"), Row("amy", 26, 2))
     sql("drop datamap preagg on table main")

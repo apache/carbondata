@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.processing.merger;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
@@ -46,10 +47,11 @@ public abstract class AbstractResultProcessor {
   public abstract void close();
 
   protected void setDataFileAttributesInModel(CarbonLoadModel loadModel,
-      CompactionType compactionType, CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
+      CompactionType compactionType, CarbonFactDataHandlerModel carbonFactDataHandlerModel)
+      throws IOException {
     CarbonDataFileAttributes carbonDataFileAttributes;
     if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
-      long taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
+      long taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegment(),
           loadModel.getTablePath());
       // Increase the Task Index as in IUD_UPDDEL_DELTA_COMPACTION the new file will
       // be written in same segment. So the TaskNo should be incremented by 1 from max val.

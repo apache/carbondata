@@ -267,7 +267,8 @@ public class CarbonFactDataHandlerModel {
               carbonDataFileAttributes.getTaskId(),
               bucketId,
               0,
-              String.valueOf(carbonDataFileAttributes.getFactTimeStamp())));
+              String.valueOf(carbonDataFileAttributes.getFactTimeStamp()),
+              configuration.getSegmentId()));
     }
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
@@ -337,7 +338,8 @@ public class CarbonFactDataHandlerModel {
             CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(loadModel.getTaskNo()),
             carbonFactDataHandlerModel.getBucketId(),
             carbonFactDataHandlerModel.getTaskExtension(),
-            String.valueOf(loadModel.getFactTimeStamp())));
+            String.valueOf(loadModel.getFactTimeStamp()),
+            loadModel.getSegmentId()));
 
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     return carbonFactDataHandlerModel;
