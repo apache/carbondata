@@ -80,7 +80,7 @@ public class DataMapWriterListener {
     }
     List<String> columns = factory.getMeta().getIndexedColumns();
     List<DataMapWriter> writers = registry.get(columns);
-    DataMapWriter writer = factory.createWriter(new Segment(segmentId, null), dataWritePath);
+    DataMapWriter writer = factory.createWriter(new Segment(segmentId, null, null), dataWritePath);
     if (writers != null) {
       writers.add(writer);
     } else {

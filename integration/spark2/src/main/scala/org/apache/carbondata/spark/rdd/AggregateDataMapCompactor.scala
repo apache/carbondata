@@ -52,7 +52,7 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
     // therefore the segment file name should be loadName#segmentFileName.segment
     val segments = loadMetaDataDetails.asScala.map {
       loadDetail =>
-        new Segment(loadDetail.getLoadName, loadDetail.getSegmentFile).toString
+        new Segment(loadDetail.getLoadName, loadDetail.getSegmentFile, null).toString
     }
 
     if (segments.nonEmpty) {

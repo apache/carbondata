@@ -2440,7 +2440,7 @@ public final class CarbonUtil {
       }
       for (String value : values) {
         if (!value.equalsIgnoreCase("*")) {
-          Segment segment = Segment.toSegment(value);
+          Segment segment = Segment.toSegment(value, null);
           Float aFloatValue = Float.parseFloat(segment.getSegmentNo());
           if (aFloatValue < 0 || aFloatValue > Float.MAX_VALUE) {
             throw new InvalidConfigurationException(

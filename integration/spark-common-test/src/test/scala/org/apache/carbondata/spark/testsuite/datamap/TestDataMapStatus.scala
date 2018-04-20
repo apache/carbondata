@@ -185,13 +185,11 @@ class TestDataMap() extends CoarseGrainDataMapFactory {
 
   override def clear(): Unit = {}
 
-  override def getDataMaps(distributable: DataMapDistributable,
-      readCommitted: ReadCommittedScope): util.List[CoarseGrainDataMap] = {
+  override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = {
     ???
   }
 
-  override def getDataMaps(segment: Segment,
-      readCommitted: ReadCommittedScope): util.List[CoarseGrainDataMap] = {
+  override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = {
     ???
   }
 

@@ -26,7 +26,6 @@ import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.events.Event;
 
 /**
@@ -48,12 +47,12 @@ public interface DataMapFactory<T extends DataMap> {
   /**
    * Get the datamap for segmentid
    */
-  List<T> getDataMaps(Segment segment, ReadCommittedScope readCommittedScope) throws IOException;
+  List<T> getDataMaps(Segment segment) throws IOException;
 
   /**
    * Get datamaps for distributable object.
    */
-  List<T> getDataMaps(DataMapDistributable distributable, ReadCommittedScope readCommittedScope)
+  List<T> getDataMaps(DataMapDistributable distributable)
       throws IOException;
 
   /**

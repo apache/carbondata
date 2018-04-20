@@ -35,7 +35,6 @@ import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.events.Event;
 import org.apache.carbondata.events.OperationContext;
@@ -80,29 +79,26 @@ public final class TableDataMap extends OperationEventListener {
    *
    * @param segments
    * @param filterExp
-   * @param readCommittedScope
    * @return
    */
   public List<ExtendedBlocklet> prune(List<Segment> segments, FilterResolverIntf filterExp,
-      List<PartitionSpec> partitions, ReadCommittedScope readCommittedScope) throws IOException {
+      List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> blocklets = new ArrayList<>();
     SegmentProperties segmentProperties;
     for (Segment segment : segments) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       // if filter is not passed then return all the blocklets
       if (filterExp == null) {
-        pruneBlocklets = blockletDetailsFetcher.getAllBlocklets(segment, partitions,
-            readCommittedScope);
+        pruneBlocklets = blockletDetailsFetcher.getAllBlocklets(segment, partitions);
       } else {
-        List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment, readCommittedScope);
-        segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment,
-            readCommittedScope);
+        List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
+        segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment);
         for (DataMap dataMap : dataMaps) {
           pruneBlocklets.addAll(dataMap.prune(filterExp, segmentProperties, partitions));
         }
       }
       blocklets.addAll(addSegmentId(
-          blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment, readCommittedScope),
+          blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment),
           segment.getSegmentNo()));
     }
     return blocklets;
@@ -143,19 +139,16 @@ public final class TableDataMap extends OperationEventListener {
    *
    * @param distributable
    * @param filterExp
-   * @param readCommittedScope
    * @return
    */
   public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
-      FilterResolverIntf filterExp, List<PartitionSpec> partitions,
-      ReadCommittedScope readCommittedScope) throws IOException {
+      FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     List<Blocklet> blocklets = new ArrayList<>();
-    List<DataMap> dataMaps = dataMapFactory.getDataMaps(distributable, readCommittedScope);
+    List<DataMap> dataMaps = dataMapFactory.getDataMaps(distributable);
     for (DataMap dataMap : dataMaps) {
       blocklets.addAll(dataMap.prune(filterExp,
-          segmentPropertiesFetcher.getSegmentProperties(distributable.getSegment(),
-              readCommittedScope),
+          segmentPropertiesFetcher.getSegmentProperties(distributable.getSegment()),
           partitions));
     }
     BlockletSerializer serializer = new BlockletSerializer();
@@ -167,7 +160,7 @@ public final class TableDataMap extends OperationEventListener {
     }
     for (Blocklet blocklet : blocklets) {
       ExtendedBlocklet detailedBlocklet = blockletDetailsFetcher
-          .getExtendedBlocklet(blocklet, distributable.getSegment(), readCommittedScope);
+          .getExtendedBlocklet(blocklet, distributable.getSegment());
       if (dataMapFactory.getDataMapType() == DataMapLevel.FG) {
         String blockletwritePath =
             writePath + CarbonCommonConstants.FILE_SEPARATOR + System.nanoTime();
@@ -221,16 +214,14 @@ public final class TableDataMap extends OperationEventListener {
    *
    * @param segments
    * @param filterExp
-   * @param readCommittedScope
    * @return
    * @throws IOException
    */
-  public List<Segment> pruneSegments(List<Segment> segments, FilterResolverIntf filterExp,
-      ReadCommittedScope readCommittedScope)
+  public List<Segment> pruneSegments(List<Segment> segments, FilterResolverIntf filterExp)
       throws IOException {
     List<Segment> prunedSegments = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (Segment segment : segments) {
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment, readCommittedScope);
+      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
       for (DataMap dataMap : dataMaps) {
         if (dataMap.isScanRequired(filterExp)) {
           // If any one task in a given segment contains the data that means the segment need to
