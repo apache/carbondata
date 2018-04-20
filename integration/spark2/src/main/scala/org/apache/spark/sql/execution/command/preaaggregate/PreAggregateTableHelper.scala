@@ -23,12 +23,14 @@ import scala.collection.mutable
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
+import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -64,6 +66,7 @@ case class PreAggregateTableHelper(
     val df = sparkSession.sql(updatedQuery)
     val fieldRelationMap = PreAggregateUtil.validateActualSelectPlanAndGetAttributes(
       df.logicalPlan, queryString)
+
     val partitionInfo = parentTable.getPartitionInfo
     val fields = fieldRelationMap.keySet.toSeq
     val tableProperties = mutable.Map[String, String]()
@@ -158,9 +161,22 @@ case class PreAggregateTableHelper(
       "AGGREGATION")
     dmProperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
 
-    // updating the parent table about child table
-    PreAggregateUtil.updateMainTable(parentTable, childSchema, sparkSession)
-
+    try {
+      // updating the parent table about child table
+      PreAggregateUtil.updateMainTable(parentTable, childSchema, sparkSession)
+    } catch {
+      case e: MetadataProcessException =>
+        throw e
+      case ex: Exception =>
+        // If updation failed then forcefully remove datamap from metastore.
+        val dropTableCommand = CarbonDropDataMapCommand(childSchema.getDataMapName,
+          ifExistsSet = true,
+          Some(TableIdentifier
+            .apply(parentTable.getTableName, Some(parentTable.getDatabaseName))),
+          forceDrop = true)
+        dropTableCommand.processMetadata(sparkSession)
+        throw ex
+    }
     // After updating the parent carbon table with data map entry extract the latest table object
     // to be used in further create process.
     parentTable = CarbonEnv.getCarbonTable(Some(parentTable.getDatabaseName),
