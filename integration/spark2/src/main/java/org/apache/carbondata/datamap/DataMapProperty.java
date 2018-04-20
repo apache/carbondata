@@ -28,5 +28,6 @@ public class DataMapProperty {
   /**
    * Used to specify the store location of the datamap
    */
+  public static final String PARTITIONING = "partitioning";
   public static final String PATH = "path";
 }

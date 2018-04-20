@@ -274,7 +274,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
            | GROUP BY dob,name
        """.stripMargin)
     }
-    assert(e.getMessage.contains("Only 'path' dmproperty is allowed for this datamap"))
+    assert(e.getMessage.contains("Only 'path' and 'partitioning' dmproperties are allowed for this datamap"))
     sql("DROP TABLE IF EXISTS maintabletime")
   }
 
