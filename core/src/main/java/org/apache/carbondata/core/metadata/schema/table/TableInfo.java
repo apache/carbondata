@@ -86,8 +86,9 @@ public class TableInfo implements Serializable, Writable {
    * i.e. no TableStatus File.
    * What ever files present in the path will be read but it system doesnot ensure ACID rules for
    * this data, mostly Consistency part.
+   *
    */
-  private boolean isNonTransactionalTable;
+  private boolean isTransactionalTable = true;
 
   // this identifier is a lazy field which will be created when it is used first time
   private AbsoluteTableIdentifier identifier;
@@ -98,6 +99,7 @@ public class TableInfo implements Serializable, Writable {
 
   public TableInfo() {
     dataMapSchemaList = new ArrayList<>();
+    isTransactionalTable = true;
   }
 
   /**
@@ -252,7 +254,7 @@ public class TableInfo implements Serializable, Writable {
     factTable.write(out);
     out.writeLong(lastUpdatedTime);
     out.writeUTF(getOrCreateAbsoluteTableIdentifier().getTablePath());
-    out.writeBoolean(isNonTransactionalTable);
+    out.writeBoolean(isTransactionalTable);
     boolean isChildSchemaExists =
         null != dataMapSchemaList && dataMapSchemaList.size() > 0;
     out.writeBoolean(isChildSchemaExists);
@@ -280,7 +282,7 @@ public class TableInfo implements Serializable, Writable {
     this.factTable.readFields(in);
     this.lastUpdatedTime = in.readLong();
     this.tablePath = in.readUTF();
-    this.isNonTransactionalTable = in.readBoolean();
+    this.isTransactionalTable = in.readBoolean();
     boolean isChildSchemaExists = in.readBoolean();
     this.dataMapSchemaList = new ArrayList<>();
     if (isChildSchemaExists) {
@@ -334,11 +336,11 @@ public class TableInfo implements Serializable, Writable {
     return parentRelationIdentifiers;
   }
 
-  public boolean isNonTransactionalTable() {
-    return isNonTransactionalTable;
+  public boolean isTransactionalTable() {
+    return isTransactionalTable;
   }
 
-  public void setNonTransactionalTable(boolean nonTransactionalTable) {
-    isNonTransactionalTable = nonTransactionalTable;
+  public void setTransactionalTable(boolean transactionalTable) {
+    isTransactionalTable = transactionalTable;
   }
 }

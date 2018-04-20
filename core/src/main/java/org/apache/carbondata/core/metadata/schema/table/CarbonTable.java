@@ -143,11 +143,15 @@ public class CarbonTable implements Serializable {
 
   /**
    * The boolean field which points if the data written for Non Transactional Table
-   * or Transactional Table. The difference between Transactional and non Transactional table is
+   * or Transactional Table.
+   * transactional table means carbon will provide transactional support when user doing data
+   * management like data loading, whether it is success or failure, data will be in consistent
+   * state
+   * The difference between Transactional and non Transactional table is
    * non Transactional Table will not contain any Metadata folder and subsequently
    * no TableStatus or Schema files.
    */
-  private boolean isNonTransactionalTable;
+  private boolean isTransactionalTable = true;
 
   private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -247,7 +251,7 @@ public class CarbonTable implements Serializable {
     table.blockSize = tableInfo.getTableBlockSizeInMB();
     table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
     table.tableUniqueName = tableInfo.getTableUniqueName();
-    table.setNonTransactionalTable(tableInfo.isNonTransactionalTable());
+    table.setTransactionalTable(tableInfo.isTransactionalTable());
     table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
     table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
     if (tableInfo.getFactTable().getBucketingInfo() != null) {
@@ -939,11 +943,11 @@ public class CarbonTable implements Serializable {
     return new CarbonTableBuilder();
   }
 
-  public boolean isNonTransactionalTable() {
-    return isNonTransactionalTable;
+  public boolean isTransactionalTable() {
+    return isTransactionalTable;
   }
 
-  public void setNonTransactionalTable(boolean nonTransactionalTable) {
-    isNonTransactionalTable = nonTransactionalTable;
+  public void setTransactionalTable(boolean transactionalTable) {
+    isTransactionalTable = transactionalTable;
   }
 }

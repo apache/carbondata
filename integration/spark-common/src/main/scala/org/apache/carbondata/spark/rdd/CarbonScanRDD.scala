@@ -519,7 +519,7 @@ class CarbonScanRDD[T: ClassTag](
       CarbonInputFormat.setPartitionsToPrune(conf, partitionNames.asJava)
     }
 
-    CarbonInputFormat.setNonTransactionalTable(conf, tableInfo.isNonTransactionalTable)
+    CarbonInputFormat.setTransactionalTable(conf, tableInfo.isTransactionalTable)
     createInputFormat(conf)
   }
 

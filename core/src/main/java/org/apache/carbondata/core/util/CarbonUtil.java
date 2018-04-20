@@ -2911,17 +2911,18 @@ public final class CarbonUtil {
    * @param identifier
    * @param filePath
    * @param segmentId
+   * @param isTransactionalTable
    * @return
    */
   public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
-      String segmentId, boolean isUnmangedTable) {
+      String segmentId, boolean isTransactionalTable) {
     String blockId;
     String blockName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
     String tablePath = identifier.getTablePath();
 
     if (filePath.startsWith(tablePath)) {
       String factDir = CarbonTablePath.getFactDir(tablePath);
-      if (filePath.startsWith(factDir) || isUnmangedTable) {
+      if (filePath.startsWith(factDir) || !isTransactionalTable) {
         blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
             + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       } else {

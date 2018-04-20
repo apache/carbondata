@@ -115,7 +115,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
-          } else if (carbonTable != null && carbonTable.getTableInfo.isNonTransactionalTable) {
+          } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
             throw new MalformedCarbonCommandException(
               "Unsupported operation on non transactional table")
           } else {
@@ -134,7 +134,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
-          } else if (carbonTable != null && carbonTable.getTableInfo.isNonTransactionalTable) {
+          } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
             throw new MalformedCarbonCommandException(
               "Unsupported operation on non transactional table")
           } else {
@@ -153,7 +153,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
-          } else if (carbonTable != null && carbonTable.getTableInfo.isNonTransactionalTable) {
+          } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
             throw new MalformedCarbonCommandException(
               "Unsupported operation on non transactional table")
           } else {
@@ -188,7 +188,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (isCarbonTable) {
           val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
             .lookupRelation(t)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-          if (carbonTable != null && carbonTable.getTableInfo.isNonTransactionalTable) {
+          if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
             throw new MalformedCarbonCommandException(
               "Unsupported operation on non transactional table")
           }
@@ -242,7 +242,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         // if the table has 'preaggregate' DataMap, it doesn't support streaming now
         val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-        if (carbonTable != null && carbonTable.getTableInfo.isNonTransactionalTable) {
+        if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
           throw new MalformedCarbonCommandException(
             "Unsupported operation on non transactional table")
         }

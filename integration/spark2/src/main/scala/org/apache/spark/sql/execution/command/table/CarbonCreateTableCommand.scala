@@ -90,7 +90,7 @@ case class CarbonCreateTableCommand(
       OperationListenerBus.getInstance.fireEvent(createTablePreExecutionEvent, operationContext)
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
       val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
-      val isNonTransactionalTable = tableInfo.isNonTransactionalTable
+      val isTransactionalTable = tableInfo.isTransactionalTable
       if (createDSTable) {
         try {
           val tablePath = tableIdentifier.getTablePath
@@ -133,7 +133,7 @@ case class CarbonCreateTableCommand(
                  |  tablePath "$tablePath",
                  |  path "$tablePath",
                  |  isExternal "$isExternal",
-                 |  isNonTransactional "$isNonTransactionalTable",
+                 |  isTransactional "$isTransactionalTable",
                  |  isVisible "$isVisible"
                  |  $carbonSchemaString)
                  |  $partitionString

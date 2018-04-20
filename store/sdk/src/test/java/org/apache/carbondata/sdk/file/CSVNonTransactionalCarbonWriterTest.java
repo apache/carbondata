@@ -94,7 +94,7 @@ public class CSVNonTransactionalCarbonWriterTest {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .withSchema(schema)
-          .nonTransactionalTable(true)
+          .isTransactionalTable(false)
           .uniqueIdentifier(System.currentTimeMillis())
           .taskNo(Long.toString(System.nanoTime()))
           .outputPath(path);
@@ -159,7 +159,7 @@ public class CSVNonTransactionalCarbonWriterTest {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .withSchema(new Schema(fields))
           .uniqueIdentifier(System.currentTimeMillis())
-          .nonTransactionalTable(true)
+          .isTransactionalTable(false)
           .taskNo(Long.toString(System.nanoTime()))
           .outputPath(path);
 

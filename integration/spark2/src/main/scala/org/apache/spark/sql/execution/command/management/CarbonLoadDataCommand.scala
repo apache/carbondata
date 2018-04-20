@@ -190,7 +190,7 @@ case class CarbonLoadDataCommand(
         FileUtils.getPaths(factPathFromUser, hadoopConf)
       }
       carbonLoadModel.setFactFilePath(factPath)
-      carbonLoadModel.setCarbonNonTransactionalTable(table.getTableInfo.isNonTransactionalTable)
+      carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
       carbonLoadModel.setAggLoadRequest(
         internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
       carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
@@ -266,7 +266,7 @@ case class CarbonLoadDataCommand(
           carbonLoadModel.setUseOnePass(false)
         }
         // Create table and metadata folders if not exist
-        if (!carbonLoadModel.isCarbonNonTransactionalTable) {
+        if (carbonLoadModel.isCarbonTransactionalTable) {
           val metadataDirectoryPath = CarbonTablePath.getMetadataPath(table.getTablePath)
           val fileType = FileFactory.getFileType(metadataDirectoryPath)
           if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {

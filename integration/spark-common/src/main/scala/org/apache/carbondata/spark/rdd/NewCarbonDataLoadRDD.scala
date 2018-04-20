@@ -361,10 +361,8 @@ class NewDataFrameLoaderRDD[K, V](
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
 
-        if (!carbonLoadModel.isCarbonNonTransactionalTable) {
-          loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
-          loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
-        }
+        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         carbonLoadModel.setPreFetch(false)
 
@@ -407,11 +405,9 @@ class NewDataFrameLoaderRDD[K, V](
         TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
-        if (!carbonLoadModel.isCarbonNonTransactionalTable) {
-          if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
-            CarbonTimeStatisticsFactory.getLoadStatisticsInstance
-              .printStatisticsInfo(CarbonTablePath.DEPRECATED_PATITION_ID)
-          }
+        if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
+          CarbonTimeStatisticsFactory.getLoadStatisticsInstance
+            .printStatisticsInfo(CarbonTablePath.DEPRECATED_PATITION_ID)
         }
       }
       var finished = false

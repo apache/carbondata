@@ -28,7 +28,7 @@ public class CarbonTableBuilder {
   private String tableName;
   private String databaseName;
   private String tablePath;
-  private boolean nonTransactionalTable;
+  private boolean isTransactionalTable;
   private TableSchema tableSchema;
 
   public CarbonTableBuilder tableName(String tableName) {
@@ -47,9 +47,9 @@ public class CarbonTableBuilder {
     return this;
   }
 
-  public CarbonTableBuilder isNonTransactionalTable(boolean isNonTransactionalTable) {
-    Objects.requireNonNull(isNonTransactionalTable, "Non Transactional Table should not be null");
-    this.nonTransactionalTable = isNonTransactionalTable;
+  public CarbonTableBuilder isTransactionalTable(boolean isTransactionalTable) {
+    Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
+    this.isTransactionalTable = isTransactionalTable;
     return this;
   }
 
@@ -62,7 +62,7 @@ public class CarbonTableBuilder {
   public CarbonTable build() {
     Objects.requireNonNull(tablePath, "tablePath should not be null");
     Objects.requireNonNull(tableSchema, "tableSchema should not be null");
-    Objects.requireNonNull(nonTransactionalTable, "Non Transactional Table should not be null");
+    Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
 
 
     TableInfo tableInfo = new TableInfo();
@@ -70,7 +70,7 @@ public class CarbonTableBuilder {
     tableInfo.setTableUniqueName(databaseName + "_" + tableName);
     tableInfo.setFactTable(tableSchema);
     tableInfo.setTablePath(tablePath);
-    tableInfo.setNonTransactionalTable(nonTransactionalTable);
+    tableInfo.setTransactionalTable(isTransactionalTable);
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setDataMapSchemaList(new ArrayList<DataMapSchema>(0));
     return CarbonTable.buildFromTableInfo(tableInfo);

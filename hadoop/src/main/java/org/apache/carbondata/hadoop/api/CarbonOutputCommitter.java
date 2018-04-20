@@ -157,10 +157,14 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
       String uniqueId = null;
       if (overwriteSet) {
-        if (segmentSize == 0) {
-          newMetaEntry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+        if (!loadModel.isCarbonTransactionalTable()) {
+          CarbonLoaderUtil.deleteNonTransactionalTableForInsertOverwrite(loadModel);
+        } else {
+          if (segmentSize == 0) {
+            newMetaEntry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+          }
+          uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
         }
-        uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
       } else {
         CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
       }

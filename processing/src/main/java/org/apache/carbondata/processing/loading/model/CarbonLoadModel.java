@@ -52,7 +52,7 @@ public class CarbonLoadModel implements Serializable {
      The path will be pointed by the tablePath. And there will be
      no Metadata folder present for the Non Transactional Table.
    */
-  private boolean carbonNonTransactionalTable;
+  private boolean carbonTransactionalTable = true;
 
   private String csvHeader;
   private String[] csvHeaderColumns;
@@ -417,7 +417,7 @@ public class CarbonLoadModel implements Serializable {
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
     copy.tablePath = tablePath;
-    copy.carbonNonTransactionalTable = carbonNonTransactionalTable;
+    copy.carbonTransactionalTable = carbonTransactionalTable;
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
@@ -471,7 +471,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.defaultTimestampFormat = defaultTimestampFormat;
     copyObj.maxColumns = maxColumns;
     copyObj.tablePath = tablePath;
-    copyObj.carbonNonTransactionalTable = carbonNonTransactionalTable;
+    copyObj.carbonTransactionalTable = carbonTransactionalTable;
     copyObj.useOnePass = useOnePass;
     copyObj.dictionaryServerHost = dictionaryServerHost;
     copyObj.dictionaryServerPort = dictionaryServerPort;
@@ -835,11 +835,11 @@ public class CarbonLoadModel implements Serializable {
     setLoadMetadataDetails(Arrays.asList(details));
   }
 
-  public boolean isCarbonNonTransactionalTable() {
-    return carbonNonTransactionalTable;
+  public boolean isCarbonTransactionalTable() {
+    return carbonTransactionalTable;
   }
 
-  public void setCarbonNonTransactionalTable(boolean carbonNonTransactionalTable) {
-    this.carbonNonTransactionalTable = carbonNonTransactionalTable;
+  public void setCarbonTransactionalTable(boolean carbonTransactionalTable) {
+    this.carbonTransactionalTable = carbonTransactionalTable;
   }
 }

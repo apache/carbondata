@@ -77,7 +77,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
     var oldCarbonTable: CarbonTable = null
     oldCarbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
       .asInstanceOf[CarbonRelation].carbonTable
-    if (oldCarbonTable.getTableInfo.isNonTransactionalTable) {
+    if (!oldCarbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 

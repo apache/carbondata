@@ -50,16 +50,20 @@ case class CarbonDropTableCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
+
+
     val identifier = CarbonEnv.getIdentifier(databaseNameOp, tableName)(sparkSession)
     val dbName = identifier.getCarbonTableIdentifier.getDatabaseName
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
       carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-      if (!carbonTable.isNonTransactionalTable) {
-        locksToBeAcquired foreach {
-          lock => carbonLocks += CarbonLockUtil.getLockObject(identifier, lock)
-        }
+      val locksToBeAcquired: List[String] = if (carbonTable.isTransactionalTable) {
+        List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
+      } else {
+        List.empty
+      }
+      locksToBeAcquired foreach {
+        lock => carbonLocks += CarbonLockUtil.getLockObject(identifier, lock)
       }
 
       if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {

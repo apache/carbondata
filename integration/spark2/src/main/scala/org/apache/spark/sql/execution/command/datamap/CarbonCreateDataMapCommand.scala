@@ -56,7 +56,7 @@ case class CarbonCreateDataMapCommand(
       case _ => null
     }
 
-    if (mainTable != null && mainTable.getTableInfo.isNonTransactionalTable) {
+    if (mainTable != null && !mainTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 

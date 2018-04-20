@@ -58,13 +58,13 @@ public class RestructureUtil {
    * @param queryDimensions
    * @param tableBlockDimensions
    * @param tableComplexDimension
-   * @param isNonTransactionalTable
+   * @param isTransactionalTable
    * @return list of query dimension which is present in the table block
    */
   public static List<ProjectionDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
       BlockExecutionInfo blockExecutionInfo, List<ProjectionDimension> queryDimensions,
       List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension,
-      int measureCount, boolean isNonTransactionalTable) {
+      int measureCount, boolean isTransactionalTable) {
     List<ProjectionDimension> presentDimension =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     boolean[] isDimensionExists = new boolean[queryDimensions.size()];
@@ -84,7 +84,7 @@ public class RestructureUtil {
             queryDimension.getDimension().getDataType();
       } else {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
-          if (isColumnMatches(isNonTransactionalTable, queryDimension.getDimension(),
+          if (isColumnMatches(isTransactionalTable, queryDimension.getDimension(),
               tableDimension)) {
             ProjectionDimension currentBlockDimension = new ProjectionDimension(tableDimension);
             tableDimension.getColumnSchema()
@@ -107,7 +107,7 @@ public class RestructureUtil {
           continue;
         }
         for (CarbonDimension tableDimension : tableComplexDimension) {
-          if (isColumnMatches(isNonTransactionalTable, queryDimension.getDimension(),
+          if (isColumnMatches(isTransactionalTable, queryDimension.getDimension(),
               tableDimension)) {
             ProjectionDimension currentBlockDimension = new ProjectionDimension(tableDimension);
             // TODO: for complex dimension set scale and precision by traversing
@@ -146,18 +146,18 @@ public class RestructureUtil {
 
   /**
    * Match the columns for transactional and non transactional tables
-   * @param isNonTransactionalTable
+   * @param isTransactionalTable
    * @param queryColumn
    * @param tableColumn
    * @return
    */
-  private static boolean isColumnMatches(boolean isNonTransactionalTable,
+  private static boolean isColumnMatches(boolean isTransactionalTable,
       CarbonColumn queryColumn, CarbonColumn tableColumn) {
     // If it is non transactional table just check the column names, no need to validate
     // column id as multiple sdk's output placed in a single folder doesn't have same
     // column ID but can have same column name
     return (tableColumn.getColumnId().equals(queryColumn.getColumnId()) ||
-        (isNonTransactionalTable && tableColumn.getColName().equals(queryColumn.getColName())));
+        (!isTransactionalTable && tableColumn.getColName().equals(queryColumn.getColName())));
   }
 
   /**
@@ -357,12 +357,12 @@ public class RestructureUtil {
    * @param blockExecutionInfo
    * @param queryMeasures        measures present in query
    * @param currentBlockMeasures current block measures
-   * @param isNonTransactionalTable
+   * @param isTransactionalTable
    * @return measures present in the block
    */
   public static List<ProjectionMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
       BlockExecutionInfo blockExecutionInfo, List<ProjectionMeasure> queryMeasures,
-      List<CarbonMeasure> currentBlockMeasures, boolean isNonTransactionalTable) {
+      List<CarbonMeasure> currentBlockMeasures, boolean isTransactionalTable) {
     MeasureInfo measureInfo = new MeasureInfo();
     List<ProjectionMeasure> presentMeasure = new ArrayList<>(queryMeasures.size());
     int numberOfMeasureInQuery = queryMeasures.size();
@@ -375,7 +375,7 @@ public class RestructureUtil {
       // then setting measure exists is true
       // otherwise adding a default value of a measure
       for (CarbonMeasure carbonMeasure : currentBlockMeasures) {
-        if (isColumnMatches(isNonTransactionalTable, carbonMeasure, queryMeasure.getMeasure())) {
+        if (isColumnMatches(isTransactionalTable, carbonMeasure, queryMeasure.getMeasure())) {
           ProjectionMeasure currentBlockMeasure = new ProjectionMeasure(carbonMeasure);
           carbonMeasure.getColumnSchema().setDataType(queryMeasure.getMeasure().getDataType());
           carbonMeasure.getColumnSchema().setPrecision(queryMeasure.getMeasure().getPrecision());

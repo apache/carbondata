@@ -136,6 +136,7 @@ public class StoreCreator {
       loadModel.setDatabaseName(identifier.getCarbonTableIdentifier().getDatabaseName());
       loadModel.setTableName(identifier.getCarbonTableIdentifier().getTableName());
       loadModel.setTableName(identifier.getCarbonTableIdentifier().getTableName());
+      loadModel.setCarbonTransactionalTable(true);
       loadModel.setFactFilePath(factFilePath);
       loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
       loadModel.setTablePath(identifier.getTablePath());

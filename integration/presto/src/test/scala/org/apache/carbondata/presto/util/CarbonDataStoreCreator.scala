@@ -94,6 +94,7 @@ object CarbonDataStoreCreator {
       loadModel.setTableName(
         absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
       loadModel.setFactFilePath(dataFilePath)
+      loadModel.setCarbonTransactionalTable(table.isTransactionalTable)
       loadModel.setLoadMetadataDetails(new ArrayList[LoadMetadataDetails]())
       loadModel.setTablePath(absoluteTableIdentifier.getTablePath)
       CarbonProperties.getInstance

@@ -36,7 +36,7 @@ case class CarbonDeleteLoadByIdCommand(
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
 
-    if (carbonTable.getTableInfo.isNonTransactionalTable) {
+    if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 

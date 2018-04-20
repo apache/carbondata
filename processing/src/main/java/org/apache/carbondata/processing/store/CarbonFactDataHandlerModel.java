@@ -367,7 +367,7 @@ public class CarbonFactDataHandlerModel {
     }
     AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
     String carbonDataDirectoryPath;
-    if (configuration.isCarbonNonTransactionalTable()) {
+    if (!configuration.isCarbonTransactionalTable()) {
       carbonDataDirectoryPath = absoluteTableIdentifier.getTablePath();
     } else {
       carbonDataDirectoryPath = CarbonTablePath

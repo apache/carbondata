@@ -110,7 +110,7 @@ public class CarbonDataLoadConfiguration {
 
   private SortColumnRangeInfo sortColumnRangeInfo;
 
-  private boolean carbonNonTransactionalTable;
+  private boolean carbonTransactionalTable;
 
   /**
    * Flder path to where data should be written for this load.
@@ -380,11 +380,11 @@ public class CarbonDataLoadConfiguration {
     this.sortColumnRangeInfo = sortColumnRangeInfo;
   }
 
-  public boolean isCarbonNonTransactionalTable() {
-    return carbonNonTransactionalTable;
+  public boolean isCarbonTransactionalTable() {
+    return carbonTransactionalTable;
   }
 
-  public void setCarbonNonTransactionalTable(boolean carbonNonTransactionalTable) {
-    this.carbonNonTransactionalTable = carbonNonTransactionalTable;
+  public void setCarbonTransactionalTable(boolean carbonTransactionalTable) {
+    this.carbonTransactionalTable = carbonTransactionalTable;
   }
 }

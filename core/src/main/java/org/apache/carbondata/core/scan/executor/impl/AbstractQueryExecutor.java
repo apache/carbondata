@@ -309,10 +309,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             queryModel.getProjectionDimensions(), tableBlockDimensions,
             segmentProperties.getComplexDimensions(), queryModel.getProjectionMeasures().size(),
-            queryModel.getTable().getTableInfo().isNonTransactionalTable());
+            queryModel.getTable().getTableInfo().isTransactionalTable());
     blockExecutionInfo.setBlockId(
         CarbonUtil.getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segmentId,
-            queryModel.getTable().getTableInfo().isNonTransactionalTable()));
+            queryModel.getTable().getTableInfo().isTransactionalTable()));
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
     blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
@@ -520,7 +520,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .createMeasureInfoAndGetCurrentBlockQueryMeasures(executionInfo,
             queryModel.getProjectionMeasures(),
             tableBlock.getSegmentProperties().getMeasures(),
-            queryModel.getTable().getTableInfo().isNonTransactionalTable());
+            queryModel.getTable().getTableInfo().isTransactionalTable());
     // setting the measure aggregator for all aggregation function selected
     // in query
     executionInfo.getMeasureInfo().setMeasureDataTypes(queryProperties.measureDataTypes);

@@ -74,14 +74,16 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)
-          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).nonTransactionalTable(true)
-            .uniqueIdentifier(
-              System.currentTimeMillis)
+          builder.withSchema(Schema.parseJson(schema))
+            .outputPath(writerPath)
+            .isTransactionalTable(false)
+            .uniqueIdentifier(System.currentTimeMillis)
             .buildWriterForCSVInput()
         } else {
-          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).nonTransactionalTable(true)
-            .uniqueIdentifier(
-              System.currentTimeMillis).withBlockSize(2)
+          builder.withSchema(Schema.parseJson(schema))
+            .outputPath(writerPath)
+            .isTransactionalTable(false)
+            .uniqueIdentifier(System.currentTimeMillis).withBlockSize(2)
             .buildWriterForCSVInput()
         }
       var i = 0
