@@ -80,6 +80,7 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("select * from PreAggMain_PreAggMax"), expectedMax)
   }
 
+
   //test for incremental load
   test("PreAggregateTestCase_TC003", Include) {
     sql(s"LOAD DATA INPATH '$csvPath' into table PreAggMain").collect
@@ -207,6 +208,19 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
       "select sum(CASE WHEN id in (12,13,14) THEN salary ELSE 0 END) as sum,country from AggMain " +
       "group by country")
     checkAnswer(actual, expected)
+  }
+
+  test("Test CleanUp of Pre_aggregate tables") {
+    sql("drop table if exists maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("create datamap ag1 on table maintable using 'preaggregate' as select name,sum(price) from maintable group by name")
+    sql("insert into table maintable select 'abcd',22,3000")
+    sql("insert into table maintable select 'abcd',22,3000")
+    sql("insert into table maintable select 'abcd',22,3000")
+    sql("alter table maintable compact 'minor'")
+    sql("clean files for table maintable")
+    assert(sql("show segments for table maintable").collect().head.get(0).toString.contains("0.1"))
   }
 
   override def afterEach: Unit = {
