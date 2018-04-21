@@ -482,6 +482,7 @@
         <module>streaming</module>
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
+        <module>datamap/bloom</module>
       </modules>
       <build>
         <plugins>
@@ -537,6 +538,7 @@
         <module>streaming</module>
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
+        <module>datamap/bloom</module>
       </modules>
       <build>
         <plugins>
