@@ -19,9 +19,11 @@ package org.apache.carbondata.core.datamap;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -38,6 +40,11 @@ public class Segment implements Serializable {
   private String segmentNo;
 
   private String segmentFileName;
+
+  /**
+   * List of index files which are already got filtered through CG index operation.
+   */
+  private Set<String> filteredIndexFiles = new HashSet<>();
 
   /**
    * Points to the Read Committed Scope of the segment. This is a flavor of
@@ -140,6 +147,14 @@ public class Segment implements Serializable {
       }
     }
     return null;
+  }
+
+  public Set<String> getFilteredIndexFiles() {
+    return filteredIndexFiles;
+  }
+
+  public void setFilteredIndexFile(String filteredIndexFile) {
+    this.filteredIndexFiles.add(filteredIndexFile);
   }
 
   @Override public boolean equals(Object o) {
