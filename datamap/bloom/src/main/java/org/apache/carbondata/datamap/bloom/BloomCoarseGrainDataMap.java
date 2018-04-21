@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
@@ -53,6 +54,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
+@InterfaceAudience.Internal
 public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BloomCoarseGrainDataMap.class.getName());
@@ -60,6 +62,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private Set<String> indexedColumn;
   private List<BloomDMModel> bloomIndexList;
   private Multimap<String, List<BloomDMModel>> indexCol2BloomDMList;
+  public static final String BLOOM_INDEX_SUFFIX = ".bloomindex";
 
   @Override
   public void init(DataMapModel dataMapModel) throws MemoryException, IOException {
@@ -76,7 +79,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
 
     FileStatus[] indexFileStatus = fs.listStatus(indexPath, new PathFilter() {
       @Override public boolean accept(Path path) {
-        return path.getName().endsWith(".bloomindex");
+        return path.getName().endsWith(BLOOM_INDEX_SUFFIX);
       }
     });
     indexFilePath = new String[indexFileStatus.length];
@@ -86,7 +89,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     for (int i = 0; i < indexFileStatus.length; i++) {
       indexFilePath[i] = indexFileStatus[i].getPath().toString();
       String indexCol = StringUtils.substringBetween(indexFilePath[i], ".carbondata.",
-          ".bloomindex");
+          BLOOM_INDEX_SUFFIX);
       indexedColumn.add(indexCol);
       bloomIndexList.addAll(readBloomIndex(indexFilePath[i]));
       indexCol2BloomDMList.put(indexCol, readBloomIndex(indexFilePath[i]));
@@ -126,6 +129,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       List<PartitionSpec> partitions) throws IOException {
     List<Blocklet> hitBlocklets = new ArrayList<Blocklet>();
     if (filterExp == null) {
+      // null is different from empty here. Empty means after pruning, no blocklet need to scan.
       return null;
     }
 

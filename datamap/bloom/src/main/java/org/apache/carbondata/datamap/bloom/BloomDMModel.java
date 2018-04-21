@@ -18,8 +18,11 @@ package org.apache.carbondata.datamap.bloom;
 
 import java.io.Serializable;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+
 import com.google.common.hash.BloomFilter;
 
+@InterfaceAudience.Internal
 public class BloomDMModel implements Serializable {
   private static final long serialVersionUID = 7281578747306832771L;
   private String blockId;

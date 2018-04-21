@@ -25,8 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
@@ -42,6 +41,7 @@ import com.google.common.hash.Funnels;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+@InterfaceAudience.Internal
 public class BloomDataMapWriter extends DataMapWriter {
   /**
    * suppose one blocklet contains 20 page and all the indexed value is distinct.
@@ -156,7 +156,7 @@ public class BloomDataMapWriter extends DataMapWriter {
     String dataMapDir = genDataMapStorePath(this.writeDirectoryPath, this.dataMapName);
     for (int indexColId = 0; indexColId < indexedColumns.size(); indexColId++) {
       String dmFile = dataMapDir + File.separator + this.currentBlockId
-          + '.' + indexedColumns.get(indexColId) + ".bloomindex";
+          + '.' + indexedColumns.get(indexColId) + BloomCoarseGrainDataMap.BLOOM_INDEX_SUFFIX;
       DataOutputStream dataOutStream = null;
       ObjectOutputStream objectOutStream = null;
       try {

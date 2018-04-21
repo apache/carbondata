@@ -15,8 +15,6 @@
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
-    <lucene.version>6.3.0</lucene.version>
-    <solr.version>6.3.0</solr.version>
   </properties>
 
   <dependencies>
@@ -24,11 +22,6 @@
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-spark2</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.3.2</version>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
