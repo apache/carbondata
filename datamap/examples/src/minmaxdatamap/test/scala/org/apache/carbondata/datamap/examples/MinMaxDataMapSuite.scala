@@ -30,7 +30,7 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
   val normalTable = "carbonNormal"
   val minMaxDMSampleTable = "carbonMinMax"
   val dataMapName = "minmax_dm"
-  val lineNum = 500000
+  val lineNum = 1000000
 
   override protected def beforeAll(): Unit = {
     createFile(inputFile, line = lineNum, start = 0)
@@ -49,7 +49,7 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
         | CREATE TABLE $minMaxDMSampleTable(id INT, name STRING, city STRING, age INT,
         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
-        | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+        | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='256')
         |  """.stripMargin)
     sql(
       s"""
