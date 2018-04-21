@@ -59,12 +59,12 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-         | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $minMaxDMSampleTable
+         | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $normalTable
          | OPTIONS('header'='false')
        """.stripMargin)
     sql(
       s"""
-         | LOAD DATA LOCAL INPATH '$normalTable' INTO TABLE $minMaxDMSampleTable
+         | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $minMaxDMSampleTable
          | OPTIONS('header'='false')
        """.stripMargin)
 
