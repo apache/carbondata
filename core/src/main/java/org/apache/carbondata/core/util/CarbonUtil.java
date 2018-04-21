@@ -2943,6 +2943,5 @@ public final class CarbonUtil {
     }
     return blockId;
   }
-
 }
 

@@ -27,7 +27,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datamap.TableDataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
@@ -59,6 +65,9 @@ import org.apache.carbondata.format.FileHeader;
  * Mapping class for Carbon actual table
  */
 public class CarbonTable implements Serializable {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonTable.class.getName());
 
   /**
    * the cached table info
@@ -950,4 +959,31 @@ public class CarbonTable implements Serializable {
   public void setTransactionalTable(boolean transactionalTable) {
     isTransactionalTable = transactionalTable;
   }
+
+  /**
+   * methods returns true if operation is allowed for the corresponding datamap or not
+   * if this operation makes datamap stale it is not allowed
+   * @param carbonTable
+   * @param operation
+   * @return
+   */
+  public boolean canAllow(CarbonTable carbonTable, TableOperation operation) {
+    try {
+      List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+      if (!datamaps.isEmpty()) {
+        for (TableDataMap dataMap : datamaps) {
+          DataMapFactory factoryClass =
+              DataMapStoreManager.getInstance().getDataMapFactoryClass(dataMap.getDataMapSchema());
+          return !factoryClass.willBecomeStale(operation);
+        }
+      }
+    } catch (Exception e) {
+      // since method returns true or false and based on that calling function throws exception, no
+      // need to throw the catched exception
+      LOGGER.error(e.getMessage());
+      return true;
+    }
+    return true;
+  }
+
 }

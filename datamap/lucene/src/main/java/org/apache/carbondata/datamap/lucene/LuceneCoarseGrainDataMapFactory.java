@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
 
 /**
@@ -72,8 +73,14 @@ public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<Co
     return DataMapLevel.CG;
   }
 
-  @Override public void deleteDatamapData() {
+  @Override
+  public void deleteDatamapData() {
 
+  }
+
+  @Override
+  public boolean willBecomeStale(TableOperation operation) {
+    return false;
   }
 
 }

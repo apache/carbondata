@@ -24,6 +24,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.events.Event;
@@ -91,4 +92,9 @@ public interface DataMapFactory<T extends DataMap> {
    * delete datamap data if any
    */
   void deleteDatamapData();
+
+  /**
+   * This function should return true is the input operation enum will make the datamap become stale
+   */
+  boolean willBecomeStale(TableOperation operation);
 }

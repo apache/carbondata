@@ -87,6 +87,14 @@ case class CarbonDropDataMapCommand(
           lock => carbonLocks += CarbonLockUtil.getLockObject(tableIdentifier, lock)
         }
         LOGGER.audit(s"Deleting datamap [$dataMapName] under table [$tableName]")
+
+        // drop index datamap on the main table
+        if (mainTable != null &&
+            DataMapStoreManager.getInstance().getAllDataMap(mainTable).size() > 0) {
+          dropDataMapFromSystemFolder(sparkSession)
+          return Seq.empty
+        }
+
         // If datamap to be dropped in parent table then drop the datamap from metastore and remove
         // entry from parent table.
         // If force drop is true then remove the datamap from hivemetastore. No need to remove from

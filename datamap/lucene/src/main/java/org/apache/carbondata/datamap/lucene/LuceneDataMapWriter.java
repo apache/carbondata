@@ -28,7 +28,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -37,6 +36,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.lucene.analysis.Analyzer;
@@ -84,6 +84,8 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   public static final String BLOCKLETID_NAME = "blockletId";
 
+  private String indexShardName = null;
+
   public static final String PAGEID_NAME = "pageId";
 
   public static final String ROWID_NAME = "rowId";
@@ -111,38 +113,45 @@ public class LuceneDataMapWriter extends DataMapWriter {
    * Start of new block notification.
    */
   public void onBlockStart(String blockId, String indexShardName) throws IOException {
-    if (indexWriter != null) {
-      return;
+    if (this.indexShardName == null || !this.indexShardName.equals(indexShardName)) {
+      if (indexWriter != null) {
+        return;
+      }
+      // get index path, put index data into segment's path
+      String strIndexPath = getIndexPath(indexShardName);
+      Path indexPath = FileFactory.getPath(strIndexPath);
+      FileSystem fs = FileFactory.getFileSystem(indexPath);
+
+      // if index path not exists, create it
+      if (!fs.exists(indexPath)) {
+        fs.mkdirs(indexPath);
+      }
+
+      if (null == analyzer) {
+        analyzer = new StandardAnalyzer();
+      }
+
+      // the indexWriter closes the FileSystem on closing the writer, so for a new configuration
+      // and disable the cache for the index writer, it will be closed on closing the writer
+      Configuration conf = new Configuration();
+      conf.set("fs.hdfs.impl.disable.cache", "true");
+
+      // create a index writer
+      Directory indexDir = new HdfsDirectory(indexPath, conf);
+
+      IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
+      if (CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
+              CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
+          .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
+        indexWriterConfig.setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED));
+      } else {
+        indexWriterConfig
+            .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
+      }
+
+      indexWriter = new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
     }
-    // get index path, put index data into segment's path
-    String strIndexPath = getIndexPath(indexShardName);
-    Path indexPath = FileFactory.getPath(strIndexPath);
-    FileSystem fs = FileFactory.getFileSystem(indexPath);
-
-    // if index path not exists, create it
-    if (!fs.exists(indexPath)) {
-      fs.mkdirs(indexPath);
-    }
-
-    if (null == analyzer) {
-      analyzer = new StandardAnalyzer();
-    }
-
-    // create a index writer
-    Directory indexDir = new HdfsDirectory(indexPath, FileFactory.getConfiguration());
-
-    IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
-    if (CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
-            CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
-        .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
-      indexWriterConfig.setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED));
-    } else {
-      indexWriterConfig
-          .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
-    }
-
-    indexWriter = new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
 
   }
 
@@ -348,21 +357,5 @@ public class LuceneDataMapWriter extends DataMapWriter {
       String dataMapName, String taskName) {
     return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName
         + File.separator + taskName;
-  }
-
-  /**
-   * returns all the directories of lucene index files for query
-   * @param tablePath
-   * @param segmentId
-   * @param dataMapName
-   * @return
-   */
-  public static CarbonFile[] getAllIndexDirs(String tablePath, String segmentId,
-      final String dataMapName) {
-    String dmPath =
-        CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName;
-    FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
-    final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
-    return dirPath.listFiles();
   }
 }

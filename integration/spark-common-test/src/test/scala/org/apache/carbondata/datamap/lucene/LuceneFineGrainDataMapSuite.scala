@@ -251,7 +251,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     }
     assert(exception_duplicate_column.getMessage
-      .contains("Create lucene datamap dm1 failed, datamap already exists on column(s) name"))
+      .contains("datamap already exists on column(s)"))
     sql("drop datamap if exists dm on table datamap_test_table")
   }
 
@@ -621,6 +621,81 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.BLOCKLET_SIZE, CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
   }
 
+  test("test lucene datamap creation for blocked features") {
+    sql("DROP TABLE IF EXISTS datamap_test7")
+    sql(
+      """
+        | CREATE TABLE datamap_test7(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm124 ON TABLE datamap_test7
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+      """.stripMargin)
+
+    val ex1 = intercept[MalformedCarbonCommandException] {
+      sql("alter table datamap_test7 rename to datamap_test5")
+    }
+    assert(ex1.getMessage.contains("alter rename is not supported"))
+
+    val ex2 = intercept[MalformedCarbonCommandException] {
+      sql("alter table datamap_test7 add columns(address string)")
+    }
+    assert(ex2.getMessage.contains("alter table add column is not supported"))
+
+    val ex3 = intercept[MalformedCarbonCommandException] {
+      sql("alter table datamap_test7 change id id BIGINT")
+    }
+    assert(ex3.getMessage.contains("alter table change datatype is not supported"))
+
+    val ex4 = intercept[MalformedCarbonCommandException] {
+      sql("alter table datamap_test7 drop columns(name)")
+    }
+    assert(ex4.getMessage.contains("alter table drop column is not supported"))
+
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test7 OPTIONS('header'='false')")
+    val ex5 = intercept[MalformedCarbonCommandException] {
+      sql("UPDATE datamap_test7 d set(d.city)=('luc') where d.name='n10'").show()
+    }
+    assert(ex5.getMessage.contains("update operation is not supported"))
+
+    val ex6 = intercept[MalformedCarbonCommandException] {
+      sql("delete from datamap_test7 where name = 'n10'").show()
+    }
+    assert(ex6.getMessage.contains("delete operation is not supported"))
+  }
+
+  test("test lucene fine grain multiple data map on table") {
+    sql("DROP TABLE IF EXISTS datamap_test5")
+    sql(
+      """
+        | CREATE TABLE datamap_test5(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm2 ON TABLE datamap_test5
+         | USING 'lucene'
+         | DMProperties('TEXT_COLUMNS'='city')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm1 ON TABLE datamap_test5
+         | USING 'lucene'
+         | DMProperties('TEXT_COLUMNS'='Name')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test5 OPTIONS('header'='false')")
+    checkAnswer(sql("SELECT * FROM datamap_test5 WHERE TEXT_MATCH('name:n10')"),
+      sql(s"select * from datamap_test5 where name='n10'"))
+    checkAnswer(sql("SELECT * FROM datamap_test5 WHERE TEXT_MATCH('city:c020')"),
+      sql(s"SELECT * FROM datamap_test5 WHERE city='c020'"))
+
+  }
+
   override protected def afterAll(): Unit = {
     LuceneFineGrainDataMapSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
@@ -632,6 +707,8 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test2")
     sql("DROP TABLE IF EXISTS datamap_test3")
     sql("DROP TABLE IF EXISTS datamap_test4")
+    sql("DROP TABLE IF EXISTS datamap_test5")
+    sql("DROP TABLE IF EXISTS datamap_test7")
     sql("DROP TABLE IF EXISTS datamap_main")
     sql("use default")
     sql("drop database if exists lucene cascade")

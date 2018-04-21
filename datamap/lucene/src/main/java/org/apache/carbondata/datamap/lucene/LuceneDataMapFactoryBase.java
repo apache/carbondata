@@ -20,6 +20,7 @@ package org.apache.carbondata.datamap.lucene;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,11 +30,14 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -89,6 +93,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    */
   List<String> indexedCarbonColumns = null;
 
+  CarbonTable carbonTable = null;
+
 
   @Override
   public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
@@ -96,6 +102,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
     Objects.requireNonNull(carbonTable.getAbsoluteTableIdentifier());
     Objects.requireNonNull(dataMapSchema);
 
+    this.carbonTable = carbonTable;
     this.tableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     this.dataMapName = dataMapSchema.getDataMapName();
 
@@ -208,11 +215,10 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
   /**
    * Get all distributable objects of a segmentid
    */
-  @Override
-  public List<DataMapDistributable> toDistributable(Segment segment) {
+  @Override public List<DataMapDistributable> toDistributable(Segment segment) {
     List<DataMapDistributable> lstDataMapDistribute = new ArrayList<>();
-    CarbonFile[] indexDirs = LuceneDataMapWriter
-        .getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo(), dataMapName);
+    CarbonFile[] indexDirs =
+        getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo());
     for (CarbonFile indexDir : indexDirs) {
       // Filter out the tasks which are filtered through CG datamap.
       if (!segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
@@ -260,5 +266,40 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    */
   public DataMapMeta getMeta() {
     return dataMapMeta;
+  }
+
+  /**
+   * returns all the directories of lucene index files for query
+   * @param tablePath
+   * @param segmentId
+   * @return
+   */
+  private CarbonFile[] getAllIndexDirs(String tablePath, String segmentId) {
+    List<CarbonFile> indexDirs = new ArrayList<>();
+    List<TableDataMap> dataMaps = new ArrayList<>();
+    try {
+      // there can be multiple lucene datamaps present on a table, so get all datamaps and form
+      // the path till the index file directories in all datamaps folders present in each segment
+      dataMaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+    } catch (IOException ex) {
+      LOGGER.error("failed to get datamaps");
+    }
+    if (dataMaps.size() > 0) {
+      for (TableDataMap dataMap : dataMaps) {
+        List<CarbonFile> indexFiles;
+        String dmPath =
+            CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMap
+                .getDataMapSchema().getDataMapName();
+        FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
+        final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
+        indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
+          @Override public boolean accept(CarbonFile file) {
+            return file.isDirectory();
+          }
+        }));
+        indexDirs.addAll(indexFiles);
+      }
+    }
+    return indexDirs.toArray(new CarbonFile[0]);
   }
 }
