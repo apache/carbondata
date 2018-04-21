@@ -29,6 +29,7 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 @InterfaceAudience.Developer("DataMap")
 @InterfaceStability.Evolving
 public class DataMapMeta {
+  private String dataMapName;
 
   private List<String> indexedColumns;
 
@@ -39,11 +40,27 @@ public class DataMapMeta {
     this.optimizedOperation = optimizedOperation;
   }
 
+  public DataMapMeta(String dataMapName, List<String> indexedColumns,
+      List<ExpressionType> optimizedOperation) {
+    this(indexedColumns, optimizedOperation);
+    this.dataMapName = dataMapName;
+  }
+
+  public String getDataMapName() {
+    return dataMapName;
+  }
+
   public List<String> getIndexedColumns() {
     return indexedColumns;
   }
 
   public List<ExpressionType> getOptimizedOperation() {
     return optimizedOperation;
+  }
+
+  @Override
+  public String toString() {
+    return "DataMapMeta{" + "dataMapName='" + dataMapName + '\'' + ", indexedColumns="
+        + indexedColumns + ", optimizedOperation=" + optimizedOperation + '}';
   }
 }
