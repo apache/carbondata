@@ -262,26 +262,36 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * Return a new datamap instance and registered in the store manager.
-   * The datamap is created using datamap name, datamap factory class and table identifier.
+   * Return a new datamap instance for the given
+   * @param dataMapSchema
+   * @return
+   * @throws MalformedDataMapCommandException
    */
-  // TODO: make it private
-  public TableDataMap createAndRegisterDataMap(CarbonTable table,
-      DataMapSchema dataMapSchema) throws MalformedDataMapCommandException, IOException {
+  public DataMapFactory getDataMapFactoryClass(DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
     DataMapFactory dataMapFactory;
     try {
       // try to create datamap by reflection to test whether it is a valid DataMapFactory class
       Class<? extends DataMapFactory> factoryClass =
           (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getProviderName());
-      dataMapFactory = factoryClass.newInstance();
+      return factoryClass.newInstance();
     } catch (ClassNotFoundException e) {
       // try to create DataMapClassProvider instance by taking providerName as short name
-      dataMapFactory =
-          IndexDataMapProvider.getDataMapFactoryByShortName(dataMapSchema.getProviderName());
+      return IndexDataMapProvider.getDataMapFactoryByShortName(dataMapSchema.getProviderName());
     } catch (Throwable e) {
       throw new MetadataProcessException(
-          "failed to create DataMap '" + dataMapSchema.getProviderName() + "'", e);
+          "failed to get DataMap factory for'" + dataMapSchema.getProviderName() + "'", e);
     }
+  }
+
+  /**
+   * registered in the store manager.
+   * The datamap is created using datamap name, datamap factory class and table identifier.
+   */
+  // TODO: make it private
+  public TableDataMap createAndRegisterDataMap(CarbonTable table,
+      DataMapSchema dataMapSchema) throws MalformedDataMapCommandException, IOException {
+    DataMapFactory dataMapFactory  = getDataMapFactoryClass(dataMapSchema);
     return registerDataMap(table, dataMapSchema, dataMapFactory);
   }
 

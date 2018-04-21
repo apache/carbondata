@@ -35,6 +35,7 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactor
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
@@ -277,4 +278,9 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     }
     return blocklets;
   }
+
+  @Override public boolean willBecomeStale(TableOperation operation) {
+    return false;
+  }
+
 }

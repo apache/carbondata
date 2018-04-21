@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapWriter
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta}
 import org.apache.carbondata.core.datastore.page.ColumnPage
+import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
@@ -78,6 +79,13 @@ class C2DataMapFactory() extends CoarseGrainDataMapFactory {
    */
   override def deleteDatamapData(): Unit = {
     ???
+  }
+
+  /**
+   * defines the features scopes for the datamap
+   */
+  override def willBecomeStale(operation: TableOperation): Boolean = {
+    false
   }
 }
 

@@ -204,7 +204,8 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     }
 
     // execute index search
-    TopDocs result;
+    // initialize to null, else ScoreDoc objects will get accumulated in memory
+    TopDocs result = null;
     try {
       result = indexSearcher.search(query, maxDocs);
     } catch (IOException e) {

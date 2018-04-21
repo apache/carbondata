@@ -38,6 +38,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -229,6 +230,11 @@ public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrai
       LOGGER.error("drop datamap failed, failed to delete datamap directory");
     }
   }
+
+  @Override public boolean willBecomeStale(TableOperation operation) {
+    return false;
+  }
+
   @Override
   public DataMapMeta getMeta() {
     return this.dataMapMeta;
