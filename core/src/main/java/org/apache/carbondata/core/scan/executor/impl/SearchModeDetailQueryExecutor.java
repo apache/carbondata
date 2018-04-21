@@ -35,14 +35,18 @@ import org.apache.carbondata.core.util.CarbonProperties;
 public class SearchModeDetailQueryExecutor extends AbstractQueryExecutor<Object> {
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(SearchModeDetailQueryExecutor.class.getName());
-  private static ExecutorService executorService;
+  private static ExecutorService executorService = null;
 
   static {
+    initThreadPool();
+  }
+
+  private static synchronized void initThreadPool() {
     int nThread;
     try {
       nThread = Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD,
-                      CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT));
+          .getProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD,
+              CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT));
     } catch (NumberFormatException e) {
       nThread = Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT);
       LOGGER.warn("The carbon.search.mode.thread is invalid. Using the default value " + nThread);
@@ -58,6 +62,9 @@ public class SearchModeDetailQueryExecutor extends AbstractQueryExecutor<Object>
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
+    if (executorService == null) {
+      initThreadPool();
+    }
     this.queryIterator = new SearchModeResultIterator(
         blockExecutionInfoList,
         queryModel,

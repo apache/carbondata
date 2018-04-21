@@ -27,11 +27,8 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.SingleTableProvider;
-import org.apache.carbondata.core.scan.filter.TableProvider;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
@@ -132,22 +129,16 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
   private QueryModel getQueryModel(Configuration configuration, String path)
       throws IOException, InvalidConfigurationException {
     CarbonTable carbonTable = getCarbonTable(configuration, path);
-    TableProvider tableProvider = new SingleTableProvider(carbonTable);
-    // getting the table absoluteTableIdentifier from the carbonTable
-    // to avoid unnecessary deserialization
-
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
-
     String projectionString = getProjection(configuration, carbonTable,
         identifier.getCarbonTableIdentifier().getTableName());
     String[] projectionColumns = projectionString.split(",");
-    QueryModel queryModel = carbonTable.createQueryWithProjection(
-        projectionColumns, new DataTypeConverterImpl());
-    // set the filter to the query model in order to filter blocklet before scan
-    Expression filter = getFilterPredicates(configuration);
-    carbonTable.processFilterExpression(filter, null, null);
-    FilterResolverIntf filterIntf = carbonTable.resolveFilter(filter, tableProvider);
-    queryModel.setFilterExpressionResolverTree(filterIntf);
+    QueryModel queryModel =
+        new QueryModelBuilder(carbonTable)
+            .projectColumns(projectionColumns)
+            .filterExpression(getFilterPredicates(configuration))
+            .dataConverter(new DataTypeConverterImpl())
+            .build();
 
     return queryModel;
   }

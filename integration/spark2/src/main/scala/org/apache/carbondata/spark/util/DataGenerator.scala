@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.benchmark
+package org.apache.carbondata.spark.util
 
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types._
 
-// scalastyle:off println
 object DataGenerator {
   // Table schema:
   // +-------------+-----------+-------------+-------------+------------+
@@ -32,7 +31,7 @@ object DataGenerator {
   // +-------------+-----------+-------------+-------------+------------+
   // | country     | string    | 6           | dimension   | yes        |
   // +-------------+-----------+-------------+-------------+------------+
-  // | planet      | string    | 10,007      | dimension   | yes        |
+  // | planet      | string    | 100,000     | dimension   | yes        |
   // +-------------+-----------+-------------+-------------+------------+
   // | m1          | short     | NA          | measure     | no         |
   // +-------------+-----------+-------------+-------------+------------+
@@ -54,7 +53,7 @@ object DataGenerator {
     val rdd = spark.sparkContext
       .parallelize(1 to totalNum, 4)
       .map { x =>
-        ((x % 100000000).toString, "city" + x % 6, "country" + x % 6, "planet" + x % 10007,
+        ((x % 100000000).toString, "city" + x % 6, "country" + x % 6, "planet" + x % 100000,
           (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13,
           BigDecimal.valueOf(x.toDouble / 11))
       }.map { x =>
@@ -76,8 +75,11 @@ object DataGenerator {
     )
 
     val df = spark.createDataFrame(rdd, schema)
+
+    // scalastyle:off println
     println(s"Start generate ${df.count} records, schema: ${df.schema}")
+    // scalastyle:on println
+
     df
   }
 }
-// scalastyle:on println

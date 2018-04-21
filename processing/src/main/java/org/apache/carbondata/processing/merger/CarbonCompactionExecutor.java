@@ -39,6 +39,7 @@ import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -100,9 +101,14 @@ public class CarbonCompactionExecutor {
     List<RawResultIterator> resultList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<TableBlockInfo> list = null;
-    queryModel = carbonTable.createQueryModelWithProjectAllColumns(dataTypeConverter);
-    queryModel.setReadPageByPage(enablePageLevelReaderForCompaction());
-    queryModel.setForcedDetailRawQuery(true);
+    QueryModelBuilder builder = new QueryModelBuilder(carbonTable)
+        .projectAllColumns()
+        .dataConverter(dataTypeConverter)
+        .enableForcedDetailRawQuery();
+    if (enablePageLevelReaderForCompaction()) {
+      builder.enableReadPageByPage();
+    }
+    queryModel = builder.build();
     // iterate each seg ID
     for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
       String segmentId = taskMap.getKey();

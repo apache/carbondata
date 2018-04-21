@@ -25,11 +25,11 @@ import java.util.concurrent.{Callable, Executors, Future, TimeUnit}
 
 import scala.util.Random
 
-import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.{CarbonSession, DataFrame, Row, SaveMode, SparkSession}
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonVersionConstants}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.spark.util.DataGenerator
 
 // scalastyle:off println
 /**
@@ -60,7 +60,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 object ConcurrentQueryBenchmark {
 
   // generate number of data
-  var totalNum = 1 * 10 * 1000
+  var totalNum = 10 * 1000 * 1000
   // the number of thread pool
   var threadNum = 16
   // task number of spark sql query
@@ -505,7 +505,8 @@ object ConcurrentQueryBenchmark {
       .addProperty("carbon.enable.vector.reader", "true")
       .addProperty("enable.unsafe.sort", "true")
       .addProperty("carbon.blockletgroup.size.in.mb", "32")
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION, "false")
     import org.apache.spark.sql.CarbonSession._
 
     // 1. initParameters
@@ -559,8 +560,10 @@ object ConcurrentQueryBenchmark {
     // 2. prepareTable
     prepareTable(spark, table1, table2)
 
+    spark.asInstanceOf[CarbonSession].startSearchMode()
     // 3. runTest
     runTest(spark, table1, table2)
+    spark.asInstanceOf[CarbonSession].stopSearchMode()
 
     if (deleteFile) {
       CarbonUtil.deleteFoldersAndFiles(new File(table1))
