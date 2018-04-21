@@ -93,6 +93,48 @@ public class DataMapChooser {
         resolverIntf);
   }
 
+  /**
+   * Return a chosen datamap based on input filter. See {@link DataMapChooser}
+   */
+  public DataMapExprWrapper chooseFG(CarbonTable carbonTable, FilterResolverIntf resolverIntf)
+      throws IOException {
+    if (resolverIntf != null) {
+      Expression expression = resolverIntf.getFilterExpression();
+      // First check for FG datamaps if any exist
+      List<TableDataMap> allDataMapFG =
+          DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.FG);
+      ExpressionTuple tuple = selectDataMap(expression, allDataMapFG, resolverIntf);
+      if (tuple.dataMapExprWrapper != null) {
+        return tuple.dataMapExprWrapper;
+      }
+    }
+    // Return the default datamap if no other datamap exists.
+    return null;
+  }
+
+  /**
+   * Return a chosen datamap based on input filter. See {@link DataMapChooser}
+   */
+  public DataMapExprWrapper chooseCG(CarbonTable carbonTable, FilterResolverIntf resolverIntf)
+      throws IOException {
+    if (resolverIntf != null) {
+      Expression expression = resolverIntf.getFilterExpression();
+      // Check for CG datamap
+      List<TableDataMap> allDataMapCG =
+          DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.CG);
+      ExpressionTuple tuple = selectDataMap(expression, allDataMapCG, resolverIntf);
+      if (tuple.dataMapExprWrapper != null) {
+        return new AndDataMapExprWrapper(tuple.dataMapExprWrapper, new DataMapExprWrapperImpl(
+            DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable),
+            resolverIntf), resolverIntf);
+      }
+    }
+    // Return the default datamap if no other datamap exists.
+    return new DataMapExprWrapperImpl(
+        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable),
+        resolverIntf);
+  }
+
   private ExpressionTuple selectDataMap(Expression expression, List<TableDataMap> allDataMap,
       FilterResolverIntf filterResolverIntf) {
     switch (expression.getFilterExpressionType()) {

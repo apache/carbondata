@@ -359,22 +359,26 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
             CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
     DataMapExprWrapper dataMapExprWrapper =
-        DataMapChooser.get().choose(getOrCreateCarbonTable(job.getConfiguration()), resolver);
+        DataMapChooser.get().chooseCG(getOrCreateCarbonTable(job.getConfiguration()), resolver);
     DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
     List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     List<ExtendedBlocklet> prunedBlocklets;
-    DataMapLevel dataMapLevel = dataMapExprWrapper.getDataMapType();
-    if (dataMapJob != null &&
-        (distributedCG ||
-        (dataMapLevel == DataMapLevel.FG && isFgDataMapPruningEnable(job.getConfiguration())))) {
-      DistributableDataMapFormat datamapDstr =
-          new DistributableDataMapFormat(carbonTable, dataMapExprWrapper, segmentIds,
-              partitionsToPrune, BlockletDataMapFactory.class.getName());
-      prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
-      // Apply expression on the blocklets.
-      prunedBlocklets = dataMapExprWrapper.pruneBlocklets(prunedBlocklets);
+    if (distributedCG) {
+      prunedBlocklets =
+          executeDataMapJob(carbonTable, resolver, segmentIds, dataMapExprWrapper, dataMapJob,
+              partitionsToPrune);
     } else {
       prunedBlocklets = dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+    }
+    dataMapExprWrapper =
+        DataMapChooser.get().chooseFG(getOrCreateCarbonTable(job.getConfiguration()), resolver);
+    if (dataMapExprWrapper != null &&
+        dataMapExprWrapper.getDataMapType() == DataMapLevel.FG &&
+        isFgDataMapPruningEnable(job.getConfiguration())) {
+      updateSegments(segmentIds, prunedBlocklets);
+      prunedBlocklets =
+          executeDataMapJob(carbonTable, resolver, segmentIds, dataMapExprWrapper, dataMapJob,
+              partitionsToPrune);
     }
 
     List<CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();
@@ -415,6 +419,38 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
     recorder.recordStatisticsForDriver(statistic, job.getConfiguration().get("query.id"));
     return resultFilterredBlocks;
+  }
+
+  private List<ExtendedBlocklet> executeDataMapJob(CarbonTable carbonTable,
+      FilterResolverIntf resolver, List<Segment> segmentIds, DataMapExprWrapper dataMapExprWrapper,
+      DataMapJob dataMapJob, List<PartitionSpec> partitionsToPrune) throws IOException {
+    DistributableDataMapFormat datamapDstr =
+        new DistributableDataMapFormat(carbonTable, dataMapExprWrapper, segmentIds,
+            partitionsToPrune, BlockletDataMapFactory.class.getName());
+    List<ExtendedBlocklet> prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
+    // Apply expression on the blocklets.
+    prunedBlocklets = dataMapExprWrapper.pruneBlocklets(prunedBlocklets);
+    return prunedBlocklets;
+  }
+
+  private void updateSegments(List<Segment> segments, List<ExtendedBlocklet> prunedBlocklets) {
+    List<Segment> toBeRemovedSegments = new ArrayList<>();
+    for (Segment segmentId : segments) {
+      boolean found = false;
+      for (ExtendedBlocklet blocklet : prunedBlocklets) {
+        if (blocklet.getSegmentId().equals(segmentId.getSegmentNo())) {
+          found = true;
+          String carbonIndexFileName =
+              CarbonTablePath.getCarbonIndexFileName(blocklet.getBlockId());
+          segmentId.setFilteredIndexFile(carbonIndexFileName);
+        }
+      }
+      if (!found) {
+        toBeRemovedSegments.add(segmentId);
+      }
+    }
+
+    segments.removeAll(toBeRemovedSegments);
   }
 
   private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet) throws IOException {
