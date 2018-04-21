@@ -41,15 +41,17 @@ import com.google.common.hash.Funnels;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+/**
+ * BloomDataMap is constructed in blocklet level. For each indexed column, a bloom filter is
+ * constructed to indicate whether a value belongs to this blocklet. Bloom filter of blocklet that
+ * belongs to same block will be written to one index file suffixed with .bloomindex. So the number
+ * of bloom index file will be equal to that of the blocks.
+ */
 @InterfaceAudience.Internal
 public class BloomDataMapWriter extends DataMapWriter {
-  /**
-   * suppose one blocklet contains 20 page and all the indexed value is distinct.
-   * later we can make it configurable.
-   */
-  private static final int BLOOM_FILTER_SIZE = 32000 * 20;
   private String dataMapName;
   private List<String> indexedColumns;
+  private int bloomFilterSize;
   // map column name to ordinal in pages
   private Map<String, Integer> col2Ordianl;
   private Map<String, DataType> col2DataType;
@@ -60,11 +62,13 @@ public class BloomDataMapWriter extends DataMapWriter {
   private List<ObjectOutputStream> currentObjectOutStreams;
   private List<BloomFilter<byte[]>> indexBloomFilters;
 
+  @InterfaceAudience.Internal
   public BloomDataMapWriter(AbsoluteTableIdentifier identifier, DataMapMeta dataMapMeta,
-      Segment segment, String writeDirectoryPath) {
+      int bloomFilterSize, Segment segment, String writeDirectoryPath) {
     super(identifier, segment, writeDirectoryPath);
     dataMapName = dataMapMeta.getDataMapName();
     indexedColumns = dataMapMeta.getIndexedColumns();
+    this.bloomFilterSize = bloomFilterSize;
     col2Ordianl = new HashMap<String, Integer>(indexedColumns.size());
     col2DataType = new HashMap<String, DataType>(indexedColumns.size());
 
@@ -94,12 +98,13 @@ public class BloomDataMapWriter extends DataMapWriter {
     }
   }
 
-  @Override public void onBlockletStart(int blockletId) {
+  @Override
+  public void onBlockletStart(int blockletId) {
     this.currentBlockletId = blockletId;
     indexBloomFilters.clear();
     for (int i = 0; i < indexedColumns.size(); i++) {
       indexBloomFilters.add(BloomFilter.create(Funnels.byteArrayFunnel(),
-          BLOOM_FILTER_SIZE, 0.00001d));
+          bloomFilterSize, 0.00001d));
     }
   }
 
@@ -118,17 +123,17 @@ public class BloomDataMapWriter extends DataMapWriter {
     }
   }
 
-  @Override public void onPageAdded(int blockletId, int pageId, ColumnPage[] pages)
+  // notice that the input pages only contains the indexed columns
+  @Override
+  public void onPageAdded(int blockletId, int pageId, ColumnPage[] pages)
       throws IOException {
     col2Ordianl.clear();
     col2DataType.clear();
     for (int colId = 0; colId < pages.length; colId++) {
       String columnName = pages[colId].getColumnSpec().getFieldName().toLowerCase();
-      if (indexedColumns.contains(columnName)) {
-        col2Ordianl.put(columnName, colId);
-        DataType columnType = pages[colId].getColumnSpec().getSchemaDataType();
-        col2DataType.put(columnName, columnType);
-      }
+      col2Ordianl.put(columnName, colId);
+      DataType columnType = pages[colId].getColumnSpec().getSchemaDataType();
+      col2DataType.put(columnName, columnType);
     }
 
     // for each row
@@ -187,11 +192,13 @@ public class BloomDataMapWriter extends DataMapWriter {
     }
   }
 
-  @Override public void finish() throws IOException {
+  @Override
+  public void finish() throws IOException {
 
   }
 
-  @Override protected void commitFile(String dataMapFile) throws IOException {
+  @Override
+  protected void commitFile(String dataMapFile) throws IOException {
     super.commitFile(dataMapFile);
   }
 

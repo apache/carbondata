@@ -56,7 +56,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
          | USING '${classOf[BloomCoarseGrainDataMapFactory].getName}'
-         | DMProperties('BLOOM_COLUMNS'='city,id')
+         | DMProperties('BLOOM_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 
     sql(
@@ -73,6 +73,8 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"show datamap on table $bloomDMSampleTable").show(false)
     sql(s"select * from $bloomDMSampleTable where city = 'city_5'").show(false)
     sql(s"select * from $bloomDMSampleTable limit 5").show(false)
+
+    checkExistence(sql(s"show datamap on table $bloomDMSampleTable"), true, dataMapName)
     checkAnswer(sql(s"show datamap on table $bloomDMSampleTable"),
       Row(dataMapName, classOf[BloomCoarseGrainDataMapFactory].getName, "(NA)"))
     checkAnswer(sql(s"select * from $bloomDMSampleTable where id = 1"),
@@ -92,6 +94,8 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +
           s" from $normalTable"))
   }
+
+  // todo: will add more tests on bloom datamap, such as exception, delete datamap, show profiler
 
   override protected def afterAll(): Unit = {
     deleteFile(inputFile)

@@ -54,6 +54,11 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
+/**
+ * BloomDataCoarseGrainMap is constructed in blocklet level. For each indexed column,
+ * a bloom filter is constructed to indicate whether a value belongs to this blocklet.
+ * More information of the index file can be found in the corresponding datamap writer.
+ */
 @InterfaceAudience.Internal
 public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private static final LogService LOGGER =

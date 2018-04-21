@@ -54,10 +54,23 @@ import org.apache.commons.lang3.StringUtils;
 public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrainDataMap> {
   private static final LogService LOGGER = LogServiceFactory.getLogService(
       BloomCoarseGrainDataMapFactory.class.getName());
+  /**
+   * property for indexed column
+   */
   private static final String BLOOM_COLUMNS = "bloom_columns";
+  /**
+   * property for size of bloom filter
+   */
+  private static final String BLOOM_SIZE = "bloom_size";
+  /**
+   * default size for bloom filter: suppose one blocklet contains 20 pages
+   * and all the indexed value is distinct.
+   */
+  private static final int DEFAULT_BLOOM_FILTER_SIZE = 32000 * 20;
   private CarbonTable carbonTable;
   private DataMapMeta dataMapMeta;
   private String dataMapName;
+  private int bloomFilterSize;
 
   @Override
   public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
@@ -69,15 +82,17 @@ public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrai
     this.dataMapName = dataMapSchema.getDataMapName();
 
     List<String> indexedColumns = validateAndGetIndexedColumns(dataMapSchema, carbonTable);
+    this.bloomFilterSize = validateAndGetBloomFilterSize(dataMapSchema);
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
     // todo: support more optimize operations
     optimizedOperations.add(ExpressionType.EQUALS);
     this.dataMapMeta = new DataMapMeta(this.dataMapName, indexedColumns, optimizedOperations);
-    LOGGER.info(String.format("DataMap %s works for %s", this.dataMapName, this.dataMapMeta));
+    LOGGER.info(String.format("DataMap %s works for %s with bloom size %d",
+        this.dataMapName, this.dataMapMeta, this.bloomFilterSize));
   }
 
   /**
-   * validate Lucene DataMap
+   * validate Lucene DataMap BLOOM_COLUMNS
    * 1. require BLOOM_COLUMNS property
    * 2. BLOOM_COLUMNS can't contains illegal argument(empty, blank)
    * 3. BLOOM_COLUMNS can't contains duplicate same columns
@@ -110,13 +125,44 @@ public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrai
     return bloomColumnList;
   }
 
+  /**
+   * validate Lucene DataMap BLOOM_SIZE
+   * 1. BLOOM_SIZE property is optional, 32000 * 20 will be the default size.
+   * 2. BLOOM_SIZE should be an integer that greater than 0
+   */
+  private int validateAndGetBloomFilterSize(DataMapSchema dmSchema)
+      throws MalformedDataMapCommandException {
+    String bloomFilterSizeStr = dmSchema.getProperties().get(BLOOM_SIZE);
+    if (StringUtils.isBlank(bloomFilterSizeStr)) {
+      LOGGER.warn(
+          String.format("Bloom filter size is not configured for datamap %s, use default value %d",
+              dataMapName, DEFAULT_BLOOM_FILTER_SIZE));
+      return DEFAULT_BLOOM_FILTER_SIZE;
+    }
+    int bloomFilterSize;
+    try {
+      bloomFilterSize = Integer.parseInt(bloomFilterSizeStr);
+    } catch (NumberFormatException e) {
+      throw new MalformedDataMapCommandException(
+          String.format("Invalid value of bloom filter size '%s', it should be an integer",
+              bloomFilterSizeStr));
+    }
+    // todo: reconsider the boundaries of bloom filter size
+    if (bloomFilterSize <= 0) {
+      throw new MalformedDataMapCommandException(
+          String.format("Invalid value of bloom filter size '%s', it should be greater than 0",
+              bloomFilterSizeStr));
+    }
+    return bloomFilterSize;
+  }
+
   @Override
   public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
     LOGGER.info(
         String.format("Data of BloomCoarseGranDataMap %s for table %s will be written to %s",
             this.dataMapName, this.carbonTable.getTableName() , writeDirectoryPath));
     return new BloomDataMapWriter(this.carbonTable.getAbsoluteTableIdentifier(),
-        this.dataMapMeta, segment, writeDirectoryPath);
+        this.dataMapMeta, this.bloomFilterSize, segment, writeDirectoryPath);
   }
 
   @Override
