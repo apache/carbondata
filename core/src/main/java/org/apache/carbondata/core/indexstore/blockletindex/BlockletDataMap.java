@@ -27,6 +27,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -129,9 +130,41 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
 
   private int[] columnCardinality;
   /**
-   * map blocklet (blockFileName#blockletNo) to index in UnsafeMemoryDMStore rows
+   * map blocklet (segId,blockNo,blockletNo) to index in UnsafeMemoryDMStore rows
    */
-  private Map<String, Integer> blocklet2DMRowIdx = new HashMap<>();
+  private Map<SimpleBlockletInfo, Integer> blocklet2DMRowIdx = new HashMap<>();
+
+  /**
+   * class to store simple information about a blocklet for less memory footprint. Since part number
+   * is always 0, so skip it.
+   */
+  private static class SimpleBlockletInfo {
+    byte[] segmentId;
+    short blockNo;
+    short blockletNo;
+
+    SimpleBlockletInfo(byte[] segmentId, short blockNo, short blockletNo) {
+      this.segmentId = segmentId;
+      this.blockNo = blockNo;
+      this.blockletNo = blockletNo;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = Arrays.hashCode(segmentId);
+      result = 31 * result + blockNo;
+      result = 31 * result + blockletNo;
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof SimpleBlockletInfo
+          && Arrays.equals(segmentId, ((SimpleBlockletInfo) obj).segmentId)
+          && blockNo == (((SimpleBlockletInfo) obj).blockNo)
+          && blockletNo == (((SimpleBlockletInfo) obj).blockletNo);
+    }
+  }
 
   @Override
   public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
@@ -184,7 +217,7 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
           }
           summaryRow =
               loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow,
-                  blockMetaInfo, relativeBlockletId);
+                  blockMetaInfo, relativeBlockletId, segmentId);
           // this is done because relative blocklet id need to be incremented based on the
           // total number of blocklets
           relativeBlockletId += fileFooter.getBlockletList().size();
@@ -210,7 +243,7 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
 
   private DataMapRowImpl loadToUnsafe(DataFileFooter fileFooter,
       SegmentProperties segmentProperties, String filePath, DataMapRowImpl summaryRow,
-      BlockMetaInfo blockMetaInfo, int relativeBlockletId) {
+      BlockMetaInfo blockMetaInfo, int relativeBlockletId, byte[] segId) {
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
@@ -276,7 +309,10 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
         // Store block size
         row.setLong(blockMetaInfo.getSize(), ordinal);
         String blockFileName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
-        this.blocklet2DMRowIdx.put(blockFileName + '#' + relativeBlockletId,
+        short blockNo = Short.parseShort(blockFileName.substring("part-".length(),
+            blockFileName.indexOf("-", "part-".length() + 1)));
+        this.blocklet2DMRowIdx.put(
+            new SimpleBlockletInfo(segId, blockNo, (short) relativeBlockletId),
             unsafeMemoryDMStore.getRowCount());
         unsafeMemoryDMStore.addIndexRowToUnsafe(row);
         relativeBlockletId++;
@@ -742,8 +778,12 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
     }
   }
 
-  public ExtendedBlocklet getDetailedBlocklet(String blockFileName, String blockletId) {
-    int index = this.blocklet2DMRowIdx.get(blockFileName + '#' + blockletId);
+  public ExtendedBlocklet getDetailedBlocklet(byte[] segId, String blockFileName,
+      String blockletId) {
+    short blockNo = Short.parseShort(blockFileName.substring("part-".length(),
+        blockFileName.indexOf("-", "part-".length() + 1)));
+    int index = this.blocklet2DMRowIdx.get(
+        new SimpleBlockletInfo(segId, blockNo, Short.parseShort(blockletId)));
     DataMapRow safeRow = unsafeMemoryDMStore.getUnsafeRow(index).convertToSafeRow();
     return createBlocklet(safeRow, safeRow.getShort(BLOCKLET_ID_INDEX));
   }

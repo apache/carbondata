@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
@@ -126,9 +127,10 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     }
     List<TableBlockIndexUniqueIdentifier> identifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
+    byte[] segId = segment.getSegmentNo().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     // Retrieve each blocklets detail information from blocklet datamap
     for (Blocklet blocklet : blocklets) {
-      detailedBlocklets.add(getExtendedBlocklet(identifiers, blocklet));
+      detailedBlocklets.add(getExtendedBlocklet(segId, identifiers, blocklet));
     }
     return detailedBlocklets;
   }
@@ -141,18 +143,21 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     }
     List<TableBlockIndexUniqueIdentifier> identifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
-    return getExtendedBlocklet(identifiers, blocklet);
+    return getExtendedBlocklet(
+        segment.getSegmentNo().getBytes(CarbonCommonConstants.DEFAULT_CHARSET),
+        identifiers,
+        blocklet);
   }
 
-  private ExtendedBlocklet getExtendedBlocklet(List<TableBlockIndexUniqueIdentifier> identifiers,
-      Blocklet blocklet) throws IOException {
+  private ExtendedBlocklet getExtendedBlocklet(byte[] segId,
+      List<TableBlockIndexUniqueIdentifier> identifiers, Blocklet blocklet) throws IOException {
     String carbonIndexFileName = CarbonTablePath.getCarbonIndexFileName(blocklet.getBlockId());
     for (TableBlockIndexUniqueIdentifier identifier : identifiers) {
       if (identifier.getIndexFileName().equals(carbonIndexFileName)) {
         DataMap dataMap = cache.get(identifier);
         String blockFileName = blocklet.getBlockId().substring(
             blocklet.getBlockId().lastIndexOf(File.separatorChar) + 1);
-        return ((BlockletDataMap) dataMap).getDetailedBlocklet(blockFileName,
+        return ((BlockletDataMap) dataMap).getDetailedBlocklet(segId, blockFileName,
             blocklet.getBlockletId());
       }
     }
