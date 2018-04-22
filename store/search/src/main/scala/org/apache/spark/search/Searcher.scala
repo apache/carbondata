@@ -54,7 +54,7 @@ class Searcher(override val rpcEnv: RpcEnv) extends RpcEndpoint {
 
 // Search request sent from master to worker
 case class SearchRequest(
-    queryId: Int,
+    searchId: Int,
     split: SerializableWritable[CarbonMultiBlockSplit],
     tableInfo: TableInfo,
     projectColumns: Array[String],

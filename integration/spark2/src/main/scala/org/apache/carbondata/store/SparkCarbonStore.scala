@@ -28,6 +28,7 @@ import org.apache.spark.sql.CarbonSession._
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
@@ -43,6 +44,7 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
 class SparkCarbonStore extends MetaCachedCarbonStore {
   private var session: SparkSession = _
   private var master: Master = _
+  private final val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**
    * Initialize SparkCarbonStore
@@ -114,8 +116,17 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
   }
 
   def stopSearchMode(): Unit = {
-    master.stopAllWorkers()
+    LOG.info("Shutting down all workers...")
+    try {
+      master.stopAllWorkers()
+      LOG.info("All workers are shutted down")
+    } catch {
+      case e: Exception =>
+        LOG.error(s"failed to shutdown worker: ${e.toString}")
+    }
+    LOG.info("Stopping master...")
     master.stopService()
+    LOG.info("Master stopped")
     master = null
   }
 
@@ -138,14 +149,19 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
     // TODO: how to ensure task is sent to every executor?
     val numExecutors = session.sparkContext.getExecutorMemoryStatus.keySet.size
     val masterIp = InetAddress.getLocalHost.getHostAddress
-    session.sparkContext.parallelize(1 to numExecutors * 10, numExecutors).mapPartitions { f =>
-      // start worker
-      Worker.init(masterIp, CarbonProperties.getSearchMasterPort)
-      new Iterator[Int] {
-        override def hasNext: Boolean = false
-        override def next(): Int = 1
-      }
-    }.collect()
+    val rows = session.sparkContext.parallelize(1 to numExecutors * 10, numExecutors)
+      .mapPartitions { f =>
+        // start worker
+        Worker.init(masterIp, CarbonProperties.getSearchMasterPort)
+        new Iterator[Int] {
+          override def hasNext: Boolean = false
+
+          override def next(): Int = 1
+        }
+      }.collect()
+    LOG.info(s"Tried to start $numExecutors workers, ${master.getWorkers.size} " +
+             s"workers are started successfully")
+    rows
   }
 
 }

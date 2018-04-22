@@ -35,7 +35,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 @InterfaceAudience.Internal
 object Worker {
   private val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-  private var hostAddress = InetAddress.getLocalHost.getHostAddress
+  private val hostAddress = InetAddress.getLocalHost.getHostAddress
   private var port: Int = _
 
   def init(masterHostAddress: String, masterPort: Int): Unit = {
