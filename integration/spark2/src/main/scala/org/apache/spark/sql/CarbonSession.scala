@@ -181,6 +181,7 @@ class CarbonSession(@transient val sc: SparkContext,
 
   def startSearchMode(): Unit = {
     CarbonProperties.enableSearchMode(true)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
     if (carbonStore == null) {
       carbonStore = new SparkCarbonStore(this)
       carbonStore.startSearchMode()
@@ -189,6 +190,7 @@ class CarbonSession(@transient val sc: SparkContext,
 
   def stopSearchMode(): Unit = {
     CarbonProperties.enableSearchMode(false)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
     if (carbonStore != null) {
       try {
         carbonStore.stopSearchMode()

@@ -1649,20 +1649,18 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_MODE_ENABLE_DEFAULT = "false";
 
   /**
-   * Thread size of static ExecutorService in each Node when using search mode.
-   * Default value is -1, it means that Executors.newCachedThreadPool() will be used to
-   * maximize utilization. If thread numbers has to be limited, set it a positive Integer
-   * will call Executors.newFixedThreadPool(int nThreads) instead
+   * The size of thread pool used for reading files in Work for search mode. By default,
+   * it is number of cores in Worker
    */
   @CarbonProperty
   @InterfaceStability.Unstable
   public static final String CARBON_SEARCH_MODE_SCAN_THREAD = "carbon.search.scan.thread";
 
-  public static final String CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT = "-1";
-
   /**
    * In search mode, Master will listen on this port for worker registration
    */
+  @CarbonProperty
+  @InterfaceStability.Unstable
   public static final String CARBON_SEARCH_MODE_MASTER_PORT = "carbon.search.master.port";
 
   public static final String CARBON_SEARCH_MODE_MASTER_PORT_DEFAULT = "10020";
@@ -1678,6 +1676,17 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SEARCH_MODE_WORKER_PORT_DEFAULT = "10021";
 
+  /**
+   * If number of search request sent to Worker exceed this limit, Master will reschedule
+   * the request to another worker. In such case, locality will be lost in HDFS scenario, but
+   * it is fine for S3 scenario.
+   *
+   * If user does not set this value, by default it is 10 * number of cores in Worker
+   */
+  @CarbonProperty
+  @InterfaceStability.Unstable
+  public static final String CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT =
+      "carbon.search.worker.workload.limit";
 
   /*
    * whether to enable prefetch for rowbatch to enhance row reconstruction during compaction

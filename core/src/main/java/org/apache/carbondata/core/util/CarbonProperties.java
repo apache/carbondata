@@ -45,6 +45,8 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MAX;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MIN;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_BLOCK;
@@ -185,11 +187,39 @@ public final class CarbonProperties {
       case CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO:
         validateSchedulerMinRegisteredRatio();
         break;
+      case CARBON_SEARCH_MODE_SCAN_THREAD:
+        validatePositiveInteger(CARBON_SEARCH_MODE_SCAN_THREAD);
+        break;
+      case CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT:
+        validatePositiveInteger(CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT);
+        break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
       default:
         // none
     }
   }
+
+  /**
+   * Validate the specified property is positive integer value
+   */
+  private void validatePositiveInteger(String propertyName) {
+    String value = getInstance().getProperty(propertyName);
+    try {
+      int intValue = Integer.parseInt(value);
+      if (intValue <= 0) {
+        getInstance().removeProperty(propertyName);
+        LOGGER.warn(String.format("The value \"%s\" configured for key \"%s\" " +
+            "is invalid. Ignoring it", value, propertyName));
+        throw new IllegalArgumentException();
+      }
+    } catch (NumberFormatException e) {
+      getInstance().removeProperty(propertyName);
+      LOGGER.warn(String.format("The value \"%s\" configured for key \"%s\" " +
+          "is invalid. Ignoring it", value, propertyName));
+      throw e;
+    }
+  }
+
   /**
    * This method validates the loaded properties and loads default
    * values in case of wrong values.
@@ -822,6 +852,15 @@ public final class CarbonProperties {
     // the method will validate the added property
     // if the added property is not valid then will reset to default value.
     validateAndLoadDefaultProperties(key.toLowerCase());
+    return this;
+  }
+
+  /**
+   * Remove the specified key in property
+   */
+  public CarbonProperties removeProperty(String key) {
+    carbonProperties.remove(key);
+    addedProperty.remove(key);
     return this;
   }
 
@@ -1499,6 +1538,18 @@ public final class CarbonProperties {
               CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_PORT_DEFAULT));
     } catch (NumberFormatException e) {
       return Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_PORT_DEFAULT);
+    }
+  }
+
+  public static int getMaxWorkloadForWorker(int workerCores) {
+    int defaultValue = workerCores * 10;
+    try {
+      return Integer.parseInt(
+          getInstance().getProperty(
+              CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT,
+              String.valueOf(defaultValue)));
+    } catch (NumberFormatException e) {
+      return defaultValue;
     }
   }
 }

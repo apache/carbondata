@@ -369,4 +369,12 @@ public class QueryModel {
   public void setRequiredRowId(boolean requiredRowId) {
     this.requiredRowId = requiredRowId;
   }
+
+  @Override
+  public String toString() {
+    return String.format("scan on table %s.%s, %d projection columns with filter (%s)",
+        table.getDatabaseName(), table.getTableName(),
+        projection.getDimensions().size() + projection.getMeasures().size(),
+        filterExpressionResolverTree.getFilterExpression().toString());
+  }
 }

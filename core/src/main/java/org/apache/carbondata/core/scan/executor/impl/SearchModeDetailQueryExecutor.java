@@ -42,19 +42,27 @@ public class SearchModeDetailQueryExecutor extends AbstractQueryExecutor<Object>
   }
 
   private static synchronized void initThreadPool() {
+    int defaultValue = Runtime.getRuntime().availableProcessors();
     int nThread;
     try {
       nThread = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD,
-              CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT));
+              String.valueOf(defaultValue)));
     } catch (NumberFormatException e) {
-      nThread = Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT);
+      nThread = defaultValue;
       LOGGER.warn("The carbon.search.mode.thread is invalid. Using the default value " + nThread);
     }
     if (nThread > 0) {
       executorService = Executors.newFixedThreadPool(nThread);
     } else {
       executorService = Executors.newCachedThreadPool();
+    }
+  }
+
+  public static synchronized void shutdownThreadPool() {
+    if (executorService != null) {
+      executorService.shutdownNow();
+      executorService = null;
     }
   }
 

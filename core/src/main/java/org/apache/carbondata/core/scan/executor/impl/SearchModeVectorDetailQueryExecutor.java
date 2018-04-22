@@ -24,7 +24,6 @@ import java.util.concurrent.Executors;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -46,13 +45,13 @@ public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<O
   }
 
   private static synchronized void initThreadPool() {
+    int defaultValue = Runtime.getRuntime().availableProcessors();
     int nThread;
     try {
       nThread = Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CARBON_SEARCH_MODE_SCAN_THREAD,
-                      CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT));
+              .getProperty(CARBON_SEARCH_MODE_SCAN_THREAD, String.valueOf(defaultValue)));
     } catch (NumberFormatException e) {
-      nThread = Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT);
+      nThread = defaultValue;
       LOGGER.warn("The " + CARBON_SEARCH_MODE_SCAN_THREAD + " is invalid. "
           + "Using the default value " + nThread);
     }
