@@ -266,7 +266,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         throw new CarbonDataWriterException("Problem while writing datamap", e);
       }
     }
-    blockletId = 0;
+//    blockletId = 0;
   }
 
   /**

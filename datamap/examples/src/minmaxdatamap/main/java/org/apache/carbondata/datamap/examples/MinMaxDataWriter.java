@@ -44,6 +44,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
 import org.apache.hadoop.fs.FileSystem;
@@ -61,6 +62,7 @@ public class MinMaxDataWriter extends DataMapWriter {
   private String dataMapName;
   private int columnCnt;
   private DataType[] dataTypeArray;
+  private String carbonIndexFileName;
 
   /**
    * Since the sequence of indexed columns is defined the same as order in user-created, so
@@ -91,11 +93,14 @@ public class MinMaxDataWriter extends DataMapWriter {
   }
 
   @Override public void onBlockStart(String blockId, long taskId) {
-    blockMinMaxMap = new HashMap<Integer, BlockletMinMax>();
+    if (blockMinMaxMap == null) {
+      blockMinMaxMap = new HashMap<Integer, BlockletMinMax>();
+      carbonIndexFileName = CarbonTablePath.getCarbonIndexFileName(blockId);
+    }
   }
 
   @Override public void onBlockEnd(String blockId) {
-    updateMinMaxIndex(blockId);
+
   }
 
   @Override public void onBlockletStart(int blockletId) {
@@ -300,7 +305,7 @@ public class MinMaxDataWriter extends DataMapWriter {
   }
 
   @Override public void finish() throws IOException {
-
+    updateMinMaxIndex(carbonIndexFileName);
   }
 
   /**
