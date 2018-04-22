@@ -99,4 +99,11 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
     checkSearchAnswer("select city, count(*) from main group by city")
   }
 
+  test("set search mode") {
+    sql("set carbon.search.enabled = true")
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+    checkSearchAnswer("select id from main where id = '3' limit 10")
+    sql("set carbon.search.enabled = false")
+    assert(!sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+  }
 }
