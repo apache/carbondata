@@ -41,6 +41,11 @@
       <artifactId>carbondata-spark2</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_${scala.binary.version}</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

@@ -42,9 +42,9 @@ public class Segment implements Serializable {
   private String segmentFileName;
 
   /**
-   * List of index files which are already got filtered through CG index operation.
+   * List of index shards which are already got filtered through CG index operation.
    */
-  private Set<String> filteredIndexFiles = new HashSet<>();
+  private Set<String> filteredIndexShardNames = new HashSet<>();
 
   /**
    * Points to the Read Committed Scope of the segment. This is a flavor of
@@ -149,12 +149,12 @@ public class Segment implements Serializable {
     return null;
   }
 
-  public Set<String> getFilteredIndexFiles() {
-    return filteredIndexFiles;
+  public Set<String> getFilteredIndexShardNames() {
+    return filteredIndexShardNames;
   }
 
-  public void setFilteredIndexFile(String filteredIndexFile) {
-    this.filteredIndexFiles.add(filteredIndexFile);
+  public void setFilteredIndexShardName(String filteredIndexShardName) {
+    this.filteredIndexShardNames.add(filteredIndexShardName);
   }
 
   @Override public boolean equals(Object o) {

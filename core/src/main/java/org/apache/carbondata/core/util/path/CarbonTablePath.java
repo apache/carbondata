@@ -643,8 +643,17 @@ public class CarbonTablePath {
   }
 
   public static String getCarbonIndexFileName(String actualBlockName) {
+    return getUniqueTaskName(actualBlockName) + INDEX_FILE_EXT;
+  }
+
+  /**
+   * Unique task name
+   * @param actualBlockName
+   * @return
+   */
+  public static String getUniqueTaskName(String actualBlockName) {
     return DataFileUtil.getTaskNo(actualBlockName) + "-" + DataFileUtil.getBucketNo(actualBlockName)
-        + "-" + DataFileUtil.getTimeStampFromFileName(actualBlockName) + INDEX_FILE_EXT;
+        + "-" + DataFileUtil.getTimeStampFromFileName(actualBlockName);
   }
 
   /**

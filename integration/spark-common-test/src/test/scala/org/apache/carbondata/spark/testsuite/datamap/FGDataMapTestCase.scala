@@ -73,12 +73,10 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
    * Get the datamap for segmentid
    */
   override def getDataMaps(segment: Segment): java.util.List[FineGrainDataMap] = {
-    val file = FileFactory
-      .getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo))
+    val path = CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo)
+    val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
 
-    val files = file.listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
-    })
+    val files = file.listFiles()
     files.map { f =>
       val dataMap: FineGrainDataMap = new FGDataMap()
       dataMap.init(new DataMapModel(f.getCanonicalPath))
@@ -102,12 +100,10 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
    * @return
    */
   override def toDistributable(segment: Segment): java.util.List[DataMapDistributable] = {
-    val file = FileFactory.getCarbonFile(
-      CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo))
+    val path = CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo)
+    val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
 
-    val files = file.listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
-    })
+    val files = file.listFiles()
     files.map { f =>
       val d: DataMapDistributable = new BlockletDataMapDistributable(f.getCanonicalPath)
       d
@@ -152,24 +148,27 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
 
 class FGDataMap extends FineGrainDataMap {
 
-  var maxMin: ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)] = _
+  var maxMin: ArrayBuffer[(Int, (Array[Byte], Array[Byte]), Long, Int)] = _
   var FileReader: FileReader = _
   var filePath: String = _
   val compressor = new SnappyCompressor
+  var taskName:String = _
 
   /**
    * It is called to load the data map to memory or to initialize it.
    */
   override def init(dataMapModel: DataMapModel): Unit = {
     this.filePath = dataMapModel.getFilePath
-    val size = FileFactory.getCarbonFile(filePath).getSize
+    val carbonFile = FileFactory.getCarbonFile(filePath)
+    taskName = carbonFile.getName
+    val size = carbonFile.getSize
     FileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
     val footerLen = FileReader.readInt(filePath, size - 4)
     val bytes = FileReader.readByteArray(filePath, size - footerLen - 4, footerLen)
     val in = new ByteArrayInputStream(compressor.unCompressByte(bytes))
     val obj = new ObjectInputStream(in)
     maxMin = obj.readObject()
-      .asInstanceOf[ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)]]
+      .asInstanceOf[ArrayBuffer[(Int, (Array[Byte], Array[Byte]), Long, Int)]]
   }
 
   /**
@@ -195,9 +194,9 @@ class FGDataMap extends FineGrainDataMap {
     }.filter(_.isDefined).map(_.get).asJava
   }
 
-  private def readAndFindData(meta: (String, Int, (Array[Byte], Array[Byte]), Long, Int),
+  private def readAndFindData(meta: (Int, (Array[Byte], Array[Byte]), Long, Int),
       value: Array[Byte]): Option[FineGrainBlocklet] = {
-    val bytes = FileReader.readByteArray(filePath, meta._4, meta._5)
+    val bytes = FileReader.readByteArray(filePath, meta._3, meta._4)
     val outputStream = new ByteArrayInputStream(compressor.unCompressByte(bytes))
     val obj = new ObjectInputStream(outputStream)
     val blockletsData = obj.readObject()
@@ -220,7 +219,7 @@ class FGDataMap extends FineGrainDataMap {
         pg.setRowId(f._2(p._2).toArray)
         pg
       }
-      Some(new FineGrainBlocklet(meta._1, meta._2.toString, pages.toList.asJava))
+      Some(new FineGrainBlocklet(taskName, meta._1.toString, pages.toList.asJava))
     } else {
       None
     }
@@ -228,8 +227,8 @@ class FGDataMap extends FineGrainDataMap {
 
   private def findMeta(value: Array[Byte]) = {
     val tuples = maxMin.filter { f =>
-      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._1) >= 0 &&
-      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._2) <= 0
+      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._2._1) >= 0 &&
+      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._2._2) <= 0
     }
     tuples
   }
@@ -263,13 +262,11 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
     segment: Segment, dataWriterPath: String, dataMapSchema: DataMapSchema)
   extends DataMapWriter(identifier, segment, dataWriterPath) {
 
-  var currentBlockId: String = null
-  val fgwritepath = dataWriterPath + "/" + dataMapSchema.getDataMapName + System.nanoTime() +
-                    ".datamap"
-  val stream: DataOutputStream = FileFactory
-    .getDataOutputStream(fgwritepath, FileFactory.getFileType(fgwritepath))
+  var taskName: String = _
+  val fgwritepath = dataWriterPath + "/" + dataMapSchema.getDataMapName +"/"
+  var stream: DataOutputStream = _
   val blockletList = new ArrayBuffer[(Array[Byte], Seq[Int], Seq[Int])]()
-  val maxMin = new ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)]()
+  val maxMin = new ArrayBuffer[(Int, (Array[Byte], Array[Byte]), Long, Int)]()
   var position: Long = 0
   val compressor = new SnappyCompressor
 
@@ -278,8 +275,13 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockId file name of the carbondata file
    */
-  override def onBlockStart(blockId: String, taskId: Long): Unit = {
-    currentBlockId = blockId
+  override def onBlockStart(blockId: String, taskId: String): Unit = {
+    this.taskName = taskId
+    if (stream == null) {
+      FileFactory.mkdirs(fgwritepath, FileFactory.getFileType(fgwritepath))
+      stream = FileFactory
+        .getDataOutputStream(fgwritepath + "/"+taskName, FileFactory.getFileType(fgwritepath))
+    }
   }
 
   /**
@@ -336,7 +338,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
     val bytes = compressor.compressByte(out.getBytes)
     stream.write(bytes)
     maxMin +=
-    ((currentBlockId + "", blockletId, (blockletListUpdated.head._1, blockletListUpdated.last
+    ((blockletId, (blockletListUpdated.head._1, blockletListUpdated.last
       ._1), position, bytes.length))
     position += bytes.length
     blockletList.clear()
@@ -394,6 +396,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * class.
    */
   override def finish(): Unit = {
+    FileFactory.mkdirs(fgwritepath, FileFactory.getFileType(fgwritepath))
     val out = new ByteOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)
@@ -402,7 +405,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
     stream.write(bytes)
     stream.writeInt(bytes.length)
     stream.close()
-    commitFile(fgwritepath)
+    commitFile(fgwritepath + "/"+taskName)
   }
 }
 

@@ -61,6 +61,7 @@ public class MinMaxDataWriter extends DataMapWriter {
   private String dataMapName;
   private int columnCnt;
   private DataType[] dataTypeArray;
+  private String indexShardName;
 
   /**
    * Since the sequence of indexed columns is defined the same as order in user-created, so
@@ -90,12 +91,14 @@ public class MinMaxDataWriter extends DataMapWriter {
     }
   }
 
-  @Override public void onBlockStart(String blockId, long taskId) {
-    blockMinMaxMap = new HashMap<Integer, BlockletMinMax>();
+  @Override public void onBlockStart(String blockId, String indexShardName) {
+    if (blockMinMaxMap == null) {
+      blockMinMaxMap = new HashMap<>();
+      this.indexShardName = indexShardName;
+    }
   }
 
   @Override public void onBlockEnd(String blockId) {
-    updateMinMaxIndex(blockId);
   }
 
   @Override public void onBlockletStart(int blockletId) {
@@ -300,7 +303,7 @@ public class MinMaxDataWriter extends DataMapWriter {
   }
 
   @Override public void finish() throws IOException {
-
+    updateMinMaxIndex(indexShardName);
   }
 
   /**

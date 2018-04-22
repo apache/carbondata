@@ -41,8 +41,8 @@ public class FineGrainBlocklet extends Blocklet implements Serializable {
 
   private List<Page> pages;
 
-  public FineGrainBlocklet(String blockId, String blockletId, List<Page> pages) {
-    super(blockId, blockletId);
+  public FineGrainBlocklet(String taskName, String blockletId, List<Page> pages) {
+    super(taskName, blockletId);
     this.pages = pages;
   }
 

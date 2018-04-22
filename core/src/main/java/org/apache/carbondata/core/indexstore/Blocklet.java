@@ -29,13 +29,13 @@ import org.apache.carbondata.core.metadata.schema.table.Writable;
 public class Blocklet implements Writable,Serializable {
 
   /** file path of this blocklet */
-  private String blockId;
+  private String taskName;
 
   /** id to identify the blocklet inside the block (it is a sequential number) */
   private String blockletId;
 
-  public Blocklet(String blockId, String blockletId) {
-    this.blockId = blockId;
+  public Blocklet(String taskName, String blockletId) {
+    this.taskName = taskName;
     this.blockletId = blockletId;
   }
 
@@ -47,17 +47,17 @@ public class Blocklet implements Writable,Serializable {
     return blockletId;
   }
 
-  public String getBlockId() {
-    return blockId;
+  public String getTaskName() {
+    return taskName;
   }
 
   @Override public void write(DataOutput out) throws IOException {
-    out.writeUTF(blockId);
+    out.writeUTF(taskName);
     out.writeUTF(blockletId);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
-    blockId = in.readUTF();
+    taskName = in.readUTF();
     blockletId = in.readUTF();
   }
 
@@ -67,7 +67,7 @@ public class Blocklet implements Writable,Serializable {
 
     Blocklet blocklet = (Blocklet) o;
 
-    if (blockId != null ? !blockId.equals(blocklet.blockId) : blocklet.blockId != null) {
+    if (taskName != null ? !taskName.equals(blocklet.taskName) : blocklet.taskName != null) {
       return false;
     }
     return blockletId != null ?
@@ -76,7 +76,7 @@ public class Blocklet implements Writable,Serializable {
   }
 
   @Override public int hashCode() {
-    int result = blockId != null ? blockId.hashCode() : 0;
+    int result = taskName != null ? taskName.hashCode() : 0;
     result = 31 * result + (blockletId != null ? blockletId.hashCode() : 0);
     return result;
   }

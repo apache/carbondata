@@ -210,10 +210,14 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    */
   @Override
   public List<DataMapDistributable> toDistributable(Segment segment) {
-    List<DataMapDistributable> lstDataMapDistribute = new ArrayList<DataMapDistributable>();
+    List<DataMapDistributable> lstDataMapDistribute = new ArrayList<>();
     CarbonFile[] indexDirs = LuceneDataMapWriter
         .getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo(), dataMapName);
     for (CarbonFile indexDir : indexDirs) {
+      // Filter out the tasks which are filtered through CG datamap.
+      if (!segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
+        continue;
+      }
       DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
           CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()),
           indexDir.getAbsolutePath());

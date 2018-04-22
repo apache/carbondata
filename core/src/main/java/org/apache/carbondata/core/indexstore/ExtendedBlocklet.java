@@ -66,7 +66,7 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   public String getPath() {
-    return getBlockId();
+    return getTaskName();
   }
 
   public String getDataMapWriterPath() {
