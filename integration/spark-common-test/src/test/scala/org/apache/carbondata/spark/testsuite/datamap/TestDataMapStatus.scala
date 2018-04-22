@@ -203,7 +203,7 @@ class TestDataMap() extends CoarseGrainDataMapFactory {
 
       override def onBlockletStart(blockletId: Int): Unit = { }
 
-      override def onBlockStart(blockId: String, taskId: Long): Unit = {
+      override def onBlockStart(blockId: String, taskId: String): Unit = {
         // trigger the second SQL to execute
       }
 

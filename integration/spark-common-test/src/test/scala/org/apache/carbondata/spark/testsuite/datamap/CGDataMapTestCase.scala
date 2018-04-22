@@ -71,12 +71,10 @@ class CGDataMapFactory extends CoarseGrainDataMapFactory {
    * Get the datamap for segmentid
    */
   override def getDataMaps(segment: Segment): java.util.List[CoarseGrainDataMap] = {
-    val file = FileFactory.getCarbonFile(
-      CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo))
+    val path = CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo)
+    val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
 
-    val files = file.listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
-    })
+    val files = file.listFiles()
     files.map {f =>
       val dataMap: CoarseGrainDataMap = new CGDataMap()
       dataMap.init(new DataMapModel(f.getCanonicalPath))
@@ -109,12 +107,10 @@ class CGDataMapFactory extends CoarseGrainDataMapFactory {
    * @return
    */
   override def toDistributable(segment: Segment): java.util.List[DataMapDistributable] = {
-    val file = FileFactory.getCarbonFile(
-      CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo))
+    val path = CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo)
+    val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
 
-    val files = file.listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
-    })
+    val files = file.listFiles()
     files.map { f =>
       val d:DataMapDistributable = new BlockletDataMapDistributable(f.getCanonicalPath)
       d
@@ -153,23 +149,26 @@ class CGDataMapFactory extends CoarseGrainDataMapFactory {
 
 class CGDataMap extends CoarseGrainDataMap {
 
-  var maxMin: ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]))] = _
+  var maxMin: ArrayBuffer[(Int, (Array[Byte], Array[Byte]))] = _
   var FileReader: FileReader = _
   var filePath: String = _
   val compressor = new SnappyCompressor
+  var taskName: String = _
 
   /**
    * It is called to load the data map to memory or to initialize it.
    */
   override def init(dataMapModel: DataMapModel): Unit = {
     this.filePath = dataMapModel.getFilePath
-    val size = FileFactory.getCarbonFile(filePath).getSize
+    val carbonFile = FileFactory.getCarbonFile(filePath)
+    taskName = carbonFile.getName
+    val size = carbonFile.getSize
     FileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
     val footerLen = FileReader.readInt(filePath, size-4)
     val bytes = FileReader.readByteArray(filePath, size-footerLen-4, footerLen)
     val in = new ByteArrayInputStream(compressor.unCompressByte(bytes))
     val obj = new ObjectInputStream(in)
-    maxMin = obj.readObject().asInstanceOf[ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]))]]
+    maxMin = obj.readObject().asInstanceOf[ArrayBuffer[(Int, (Array[Byte], Array[Byte]))]]
   }
 
   /**
@@ -191,15 +190,15 @@ class CGDataMap extends CoarseGrainDataMap {
     }
     val meta = findMeta(value(0).getBytes)
     meta.map { f=>
-      new Blocklet(f._1, f._2 + "")
+      new Blocklet(taskName, f._1 + "")
     }.asJava
   }
 
 
   private def findMeta(value: Array[Byte]) = {
     val tuples = maxMin.filter { f =>
-      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._1) <= 0 &&
-      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._2) >= 0
+      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._2._1) <= 0 &&
+      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._2._2) >= 0
     }
     tuples
   }
@@ -235,13 +234,11 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
     dataMapSchema: DataMapSchema)
   extends DataMapWriter(identifier, segment, dataWritePath) {
 
-  var currentBlockId: String = null
-  val cgwritepath = dataWritePath + "/" +
-                    dataMapSchema.getDataMapName + System.nanoTime() + ".datamap"
-  lazy val stream: DataOutputStream = FileFactory
-    .getDataOutputStream(cgwritepath, FileFactory.getFileType(cgwritepath))
+  var taskName: String = _
+
+  val cgwritepath = dataWritePath + "/" + dataMapSchema.getDataMapName +"/"
   val blockletList = new ArrayBuffer[Array[Byte]]()
-  val maxMin = new ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]))]()
+  val maxMin = new ArrayBuffer[(Int, (Array[Byte], Array[Byte]))]()
   val compressor = new SnappyCompressor
 
   /**
@@ -249,8 +246,8 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockId file name of the carbondata file
    */
-  override def onBlockStart(blockId: String, taskId: Long): Unit = {
-    currentBlockId = blockId
+  override def onBlockStart(blockId: String, taskName: String): Unit = {
+    this.taskName = taskName
   }
 
   /**
@@ -278,7 +275,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
     val sorted = blockletList
       .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
     maxMin +=
-    ((currentBlockId+"", blockletId, (sorted.last, sorted.head)))
+    ((blockletId, (sorted.last, sorted.head)))
     blockletList.clear()
   }
 
@@ -315,6 +312,9 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * class.
    */
   override def finish(): Unit = {
+    FileFactory.mkdirs(cgwritepath, FileFactory.getFileType(cgwritepath))
+    var stream: DataOutputStream = FileFactory
+      .getDataOutputStream(cgwritepath + "/"+taskName, FileFactory.getFileType(cgwritepath))
     val out = new ByteOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)
@@ -323,7 +323,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
     stream.write(bytes)
     stream.writeInt(bytes.length)
     stream.close()
-    commitFile(cgwritepath)
+    commitFile(cgwritepath + "/"+taskName)
   }
 
 

@@ -29,7 +29,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -52,7 +51,6 @@ import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.IntRangeField;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StoredField;
-import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -78,15 +76,11 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   private Analyzer analyzer = null;
 
-  private String blockId = null;
-
   private String dataMapName = null;
 
   private boolean isFineGrain = true;
 
   private List<String> indexedCarbonColumns = null;
-
-  private static final String BLOCKID_NAME = "blockId";
 
   private static final String BLOCKLETID_NAME = "blockletId";
 
@@ -102,24 +96,25 @@ public class LuceneDataMapWriter extends DataMapWriter {
     this.indexedCarbonColumns = indexedCarbonColumns;
   }
 
-  private String getIndexPath(long taskId) {
+  private String getIndexPath(String taskName) {
     if (isFineGrain) {
-      return genDataMapStorePathOnTaskId(identifier.getTablePath(), segmentId, dataMapName, taskId);
+      return genDataMapStorePathOnTaskId(identifier.getTablePath(), segmentId, dataMapName,
+          taskName);
     } else {
       // TODO: where write data in coarse grain data map
-      return genDataMapStorePathOnTaskId(identifier.getTablePath(), segmentId, dataMapName, taskId);
+      return genDataMapStorePathOnTaskId(identifier.getTablePath(), segmentId, dataMapName,
+          taskName);
     }
   }
 
   /**
    * Start of new block notification.
    */
-  public void onBlockStart(String blockId, long taskId) throws IOException {
+  public void onBlockStart(String blockId, String taskName) throws IOException {
     // save this block id for lucene index , used in onPageAdd function
-    this.blockId = blockId;
 
     // get index path, put index data into segment's path
-    String strIndexPath = getIndexPath(taskId);
+    String strIndexPath = getIndexPath(taskName);
     Path indexPath = FileFactory.getPath(strIndexPath);
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 
@@ -154,13 +149,6 @@ public class LuceneDataMapWriter extends DataMapWriter {
    * End of block notification
    */
   public void onBlockEnd(String blockId) throws IOException {
-    // clean this block id
-    this.blockId = null;
-
-    // finished a file , close this index writer
-    if (indexWriter != null) {
-      indexWriter.close();
-    }
 
   }
 
@@ -201,10 +189,6 @@ public class LuceneDataMapWriter extends DataMapWriter {
     for (int rowId = 0; rowId < pageSize; rowId++) {
       // create a new document
       Document doc = new Document();
-
-      // add block id, save this id
-      doc.add(new StringField(BLOCKID_NAME, blockId, Field.Store.YES));
-
       // add blocklet Id
       doc.add(new IntPoint(BLOCKLETID_NAME, new int[] { blockletId }));
       doc.add(new StoredField(BLOCKLETID_NAME, blockletId));
@@ -339,7 +323,10 @@ public class LuceneDataMapWriter extends DataMapWriter {
    * class.
    */
   public void finish() throws IOException {
-
+    // finished a file , close this index writer
+    if (indexWriter != null) {
+      indexWriter.close();
+    }
   }
 
   /**
@@ -350,16 +337,16 @@ public class LuceneDataMapWriter extends DataMapWriter {
   }
 
   /**
-   * Return store path for datamap based on the taskId, if three tasks get launched during loading,
+   * Return store path for datamap based on the taskName,if three tasks get launched during loading,
    * then three folders will be created based on the three task Ids and lucene index file will be
    * written into those folders
+   *
    * @return store path based on taskID
    */
   private static String genDataMapStorePathOnTaskId(String tablePath, String segmentId,
-      String dataMapName, long taskId) {
+      String dataMapName, String taskName) {
     return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName
-        + File.separator + dataMapName + CarbonCommonConstants.UNDERSCORE + taskId
-        + CarbonCommonConstants.UNDERSCORE + System.currentTimeMillis();
+        + File.separator + taskName;
   }
 
   /**
@@ -375,14 +362,6 @@ public class LuceneDataMapWriter extends DataMapWriter {
         CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName;
     FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
     final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
-    return dirPath.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-        if (file.isDirectory() && file.getName().startsWith(dataMapName)) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-    });
+    return dirPath.listFiles();
   }
 }

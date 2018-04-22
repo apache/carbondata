@@ -250,8 +250,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   private void notifyDataMapBlockStart() {
     if (listener != null) {
       try {
-        listener.onBlockStart(carbonDataFileName, carbonDataFileHdfsPath,
-            model.getCarbonDataFileAttributes().getTaskId());
+        String taskName = CarbonTablePath.getUniqueTaskName(carbonDataFileName);
+        listener.onBlockStart(carbonDataFileName, carbonDataFileHdfsPath, taskName);
       } catch (IOException e) {
         throw new CarbonDataWriterException("Problem while writing datamap", e);
       }
@@ -266,7 +266,6 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         throw new CarbonDataWriterException("Problem while writing datamap", e);
       }
     }
-    blockletId = 0;
   }
 
   /**

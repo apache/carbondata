@@ -210,7 +210,7 @@ object DataMapWriterSuite {
      *
      * @param blockId file name of the carbondata file
      */
-    override def onBlockStart(blockId: String, taskId: Long) = {
+    override def onBlockStart(blockId: String, taskId: String) = {
       callbackSeq :+= s"block start $blockId"
     }
 
