@@ -94,10 +94,10 @@ public class DataMapChooser {
   }
 
   /**
-   * Return a chosen datamap based on input filter. See {@link DataMapChooser}
+   * Return a chosen FG datamap based on input filter. See {@link DataMapChooser}
    */
-  public DataMapExprWrapper chooseFG(CarbonTable carbonTable, FilterResolverIntf resolverIntf)
-      throws IOException {
+  public DataMapExprWrapper chooseFGDataMap(CarbonTable carbonTable,
+      FilterResolverIntf resolverIntf) throws IOException {
     if (resolverIntf != null) {
       Expression expression = resolverIntf.getFilterExpression();
       // First check for FG datamaps if any exist
@@ -113,10 +113,10 @@ public class DataMapChooser {
   }
 
   /**
-   * Return a chosen datamap based on input filter. See {@link DataMapChooser}
+   * Return a chosen CG datamap based on input filter. See {@link DataMapChooser}
    */
-  public DataMapExprWrapper chooseCG(CarbonTable carbonTable, FilterResolverIntf resolverIntf)
-      throws IOException {
+  public DataMapExprWrapper chooseCGDataMap(CarbonTable carbonTable,
+      FilterResolverIntf resolverIntf) throws IOException {
     if (resolverIntf != null) {
       Expression expression = resolverIntf.getFilterExpression();
       // Check for CG datamap
@@ -124,15 +124,23 @@ public class DataMapChooser {
           DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.CG);
       ExpressionTuple tuple = selectDataMap(expression, allDataMapCG, resolverIntf);
       if (tuple.dataMapExprWrapper != null) {
-        return new AndDataMapExprWrapper(tuple.dataMapExprWrapper, new DataMapExprWrapperImpl(
-            DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable),
-            resolverIntf), resolverIntf);
+        return tuple.dataMapExprWrapper;
       }
     }
+    return null;
+  }
+
+  /**
+   * Returns default blocklet datamap
+   * @param carbonTable
+   * @param resolverIntf
+   * @return
+   */
+  public DataMapExprWrapper getDefaultDataMap(CarbonTable carbonTable,
+      FilterResolverIntf resolverIntf) {
     // Return the default datamap if no other datamap exists.
     return new DataMapExprWrapperImpl(
-        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable),
-        resolverIntf);
+        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable), resolverIntf);
   }
 
   private ExpressionTuple selectDataMap(Expression expression, List<TableDataMap> allDataMap,

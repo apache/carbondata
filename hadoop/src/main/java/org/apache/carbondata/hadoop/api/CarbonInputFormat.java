@@ -355,31 +355,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     // get tokens for all the required FileSystem for table path
     TokenCache.obtainTokensForNamenodes(job.getCredentials(),
         new Path[] { new Path(carbonTable.getTablePath()) }, job.getConfiguration());
-    boolean distributedCG = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-            CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
-    DataMapExprWrapper dataMapExprWrapper =
-        DataMapChooser.get().chooseCG(getOrCreateCarbonTable(job.getConfiguration()), resolver);
-    DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
-    List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
-    List<ExtendedBlocklet> prunedBlocklets;
-    if (distributedCG) {
-      prunedBlocklets =
-          executeDataMapJob(carbonTable, resolver, segmentIds, dataMapExprWrapper, dataMapJob,
-              partitionsToPrune);
-    } else {
-      prunedBlocklets = dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
-    }
-    dataMapExprWrapper =
-        DataMapChooser.get().chooseFG(getOrCreateCarbonTable(job.getConfiguration()), resolver);
-    if (dataMapExprWrapper != null &&
-        dataMapExprWrapper.getDataMapType() == DataMapLevel.FG &&
-        isFgDataMapPruningEnable(job.getConfiguration())) {
-      updateSegments(segmentIds, prunedBlocklets);
-      prunedBlocklets =
-          executeDataMapJob(carbonTable, resolver, segmentIds, dataMapExprWrapper, dataMapJob,
-              partitionsToPrune);
-    }
+    List<ExtendedBlocklet> prunedBlocklets =
+        getPrunedBlocklets(job, carbonTable, resolver, segmentIds);
 
     List<CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();
     int partitionIndex = 0;
@@ -421,6 +398,50 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return resultFilterredBlocks;
   }
 
+  /**
+   * Prune the blocklets using the filter expression with available datamaps.
+   */
+  private List<ExtendedBlocklet> getPrunedBlocklets(JobContext job, CarbonTable carbonTable,
+      FilterResolverIntf resolver, List<Segment> segmentIds) throws IOException {
+    boolean distributedCG = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+            CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
+    DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
+    List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
+    // First prune using default datamap on driver side.
+    DataMapExprWrapper dataMapExprWrapper = DataMapChooser.get()
+        .getDefaultDataMap(getOrCreateCarbonTable(job.getConfiguration()), resolver);
+    List<ExtendedBlocklet> prunedBlocklets =
+        dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+    // Get the available CG datamaps and prune further.
+    DataMapExprWrapper cgDataMapExprWrapper = DataMapChooser.get()
+        .chooseCGDataMap(getOrCreateCarbonTable(job.getConfiguration()), resolver);
+    if (cgDataMapExprWrapper != null) {
+      // Prune segments from already pruned blocklets
+      pruneSegments(segmentIds, prunedBlocklets);
+      // Again prune with CG datamap.
+      if (distributedCG && dataMapJob != null) {
+        prunedBlocklets =
+            executeDataMapJob(carbonTable, resolver, segmentIds, dataMapExprWrapper, dataMapJob,
+                partitionsToPrune);
+      } else {
+        prunedBlocklets = dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+      }
+    }
+    // Now try to prune with FG DataMap.
+    dataMapExprWrapper = DataMapChooser.get()
+        .chooseFGDataMap(getOrCreateCarbonTable(job.getConfiguration()), resolver);
+    if (dataMapExprWrapper != null && dataMapExprWrapper.getDataMapType() == DataMapLevel.FG
+        && isFgDataMapPruningEnable(job.getConfiguration()) && dataMapJob != null) {
+      // Prune segments from already pruned blocklets
+      pruneSegments(segmentIds, prunedBlocklets);
+      prunedBlocklets =
+          executeDataMapJob(carbonTable, resolver, segmentIds, dataMapExprWrapper, dataMapJob,
+              partitionsToPrune);
+    }
+    return prunedBlocklets;
+  }
+
   private List<ExtendedBlocklet> executeDataMapJob(CarbonTable carbonTable,
       FilterResolverIntf resolver, List<Segment> segmentIds, DataMapExprWrapper dataMapExprWrapper,
       DataMapJob dataMapJob, List<PartitionSpec> partitionsToPrune) throws IOException {
@@ -433,23 +454,33 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return prunedBlocklets;
   }
 
-  private void updateSegments(List<Segment> segments, List<ExtendedBlocklet> prunedBlocklets) {
+  /**
+   * Prune the segments from the already pruned blocklets.
+   * @param segments
+   * @param prunedBlocklets
+   */
+  private void pruneSegments(List<Segment> segments, List<ExtendedBlocklet> prunedBlocklets) {
     List<Segment> toBeRemovedSegments = new ArrayList<>();
-    for (Segment segmentId : segments) {
+    for (Segment segment : segments) {
       boolean found = false;
+      // Clear the old pruned index files if any present
+      segment.getFilteredIndexFiles().clear();
+      // Check the segment exist in any of the pruned blocklets.
       for (ExtendedBlocklet blocklet : prunedBlocklets) {
-        if (blocklet.getSegmentId().equals(segmentId.getSegmentNo())) {
+        if (blocklet.getSegmentId().equals(segment.getSegmentNo())) {
           found = true;
+          // Set the pruned index file to the segment for further pruning.
           String carbonIndexFileName =
               CarbonTablePath.getCarbonIndexFileName(blocklet.getBlockId());
-          segmentId.setFilteredIndexFile(carbonIndexFileName);
+          segment.setFilteredIndexFile(carbonIndexFileName);
         }
       }
+      // Add to remove segments list if not present in pruned blocklets.
       if (!found) {
-        toBeRemovedSegments.add(segmentId);
+        toBeRemovedSegments.add(segment);
       }
     }
-
+    // Remove all segments which are already pruned from pruned blocklets
     segments.removeAll(toBeRemovedSegments);
   }
 
