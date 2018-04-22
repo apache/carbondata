@@ -110,7 +110,7 @@ class CarbonSession(@transient val sc: SparkContext,
     )
   }
 
-  private def isSearchModeEnabled = carbonStore != null
+  def isSearchModeEnabled: Boolean = carbonStore != null
 
   /**
    * Run SparkSQL directly
