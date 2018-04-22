@@ -25,18 +25,12 @@ import com.google.common.hash.BloomFilter;
 @InterfaceAudience.Internal
 public class BloomDMModel implements Serializable {
   private static final long serialVersionUID = 7281578747306832771L;
-  private String blockId;
   private int blockletNo;
   private BloomFilter<byte[]> bloomFilter;
 
-  public BloomDMModel(String blockId, int blockletNo, BloomFilter<byte[]> bloomFilter) {
-    this.blockId = blockId;
+  public BloomDMModel(int blockletNo, BloomFilter<byte[]> bloomFilter) {
     this.blockletNo = blockletNo;
     this.bloomFilter = bloomFilter;
-  }
-
-  public String getBlockId() {
-    return blockId;
   }
 
   public int getBlockletNo() {
@@ -49,7 +43,6 @@ public class BloomDMModel implements Serializable {
 
   @Override public String toString() {
     final StringBuilder sb = new StringBuilder("BloomDMModel{");
-    sb.append("blockId='").append(blockId).append('\'');
     sb.append(", blockletNo=").append(blockletNo);
     sb.append(", bloomFilter=").append(bloomFilter);
     sb.append('}');

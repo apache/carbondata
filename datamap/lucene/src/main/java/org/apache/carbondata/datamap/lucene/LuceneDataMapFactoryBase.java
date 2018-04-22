@@ -215,7 +215,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
         .getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo(), dataMapName);
     for (CarbonFile indexDir : indexDirs) {
       // Filter out the tasks which are filtered through CG datamap.
-      if (!segment.getFilteredTaskNames().contains(indexDir.getName())) {
+      if (!segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
         continue;
       }
       DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(

@@ -466,14 +466,14 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     for (Segment segment : segments) {
       boolean found = false;
       // Clear the old pruned index files if any present
-      segment.getFilteredTaskNames().clear();
+      segment.getFilteredIndexShardNames().clear();
       // Check the segment exist in any of the pruned blocklets.
       for (ExtendedBlocklet blocklet : prunedBlocklets) {
         if (blocklet.getSegmentId().equals(segment.getSegmentNo())) {
           found = true;
           // Set the pruned index file to the segment for further pruning.
           String uniqueTaskName = CarbonTablePath.getUniqueTaskName(blocklet.getTaskName());
-          segment.setFilteredIndexFile(uniqueTaskName);
+          segment.setFilteredIndexShardName(uniqueTaskName);
         }
       }
       // Add to remove segments list if not present in pruned blocklets.

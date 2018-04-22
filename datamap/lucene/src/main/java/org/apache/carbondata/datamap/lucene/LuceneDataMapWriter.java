@@ -110,11 +110,11 @@ public class LuceneDataMapWriter extends DataMapWriter {
   /**
    * Start of new block notification.
    */
-  public void onBlockStart(String blockId, String taskName) throws IOException {
+  public void onBlockStart(String blockId, String indexShardName) throws IOException {
     // save this block id for lucene index , used in onPageAdd function
 
     // get index path, put index data into segment's path
-    String strIndexPath = getIndexPath(taskName);
+    String strIndexPath = getIndexPath(indexShardName);
     Path indexPath = FileFactory.getPath(strIndexPath);
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 

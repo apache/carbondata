@@ -38,7 +38,6 @@ import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -168,15 +167,19 @@ public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrai
   @Override
   public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<CoarseGrainDataMap>(1);
-    BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
     try {
-      bloomDM.init(new DataMapModel(BloomDataMapWriter.genDataMapStorePath(
+      String dataMapStorePath = BloomDataMapWriter.genDataMapStorePath(
           CarbonTablePath.getSegmentPath(carbonTable.getTablePath(), segment.getSegmentNo()),
-          dataMapName)));
-    } catch (MemoryException e) {
+          dataMapName);
+      CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dataMapStorePath).listFiles();
+      for (CarbonFile carbonFile : carbonFiles) {
+        BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
+        bloomDM.init(new DataMapModel(carbonFile.getAbsolutePath()));
+        dataMaps.add(bloomDM);
+      }
+    } catch (Exception e) {
       throw new IOException("Error occurs while init Bloom DataMap", e);
     }
-    dataMaps.add(bloomDM);
     return dataMaps;
   }
 
