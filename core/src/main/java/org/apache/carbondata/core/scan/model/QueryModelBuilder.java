@@ -96,9 +96,8 @@ public class QueryModelBuilder {
     return this;
   }
 
-  public QueryModelBuilder enableReadPageByPage() {
+  public void enableReadPageByPage() {
     this.readPageByPage = true;
-    return this;
   }
 
   public QueryModel build() {

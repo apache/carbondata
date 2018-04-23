@@ -26,6 +26,7 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 
 /**
  * Below class will have all the properties which needed during query execution
@@ -214,6 +215,11 @@ public class BlockExecutionInfo {
    * whether it require to output the row id
    */
   private boolean requiredRowId;
+
+  /**
+   * model for collecting query stats
+   */
+  private QueryStatisticsModel queryStatisticsModel;
 
   /**
    * @param blockIndex the tableBlock to set
@@ -630,5 +636,13 @@ public class BlockExecutionInfo {
 
   public void setRequiredRowId(boolean requiredRowId) {
     this.requiredRowId = requiredRowId;
+  }
+
+  public QueryStatisticsModel getQueryStatisticsModel() {
+    return queryStatisticsModel;
+  }
+
+  public void setQueryStatisticsModel(QueryStatisticsModel queryStatisticsModel) {
+    this.queryStatisticsModel = queryStatisticsModel;
   }
 }
