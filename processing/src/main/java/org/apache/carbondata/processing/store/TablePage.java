@@ -191,7 +191,7 @@ public class TablePage {
   }
 
   /**
-   * add a complex column into internal member compleDimensionPage
+   * add a complex column into internal member complexDimensionPage
    *
    * @param index          index of the complexDimensionPage
    * @param rowId          Id of the input row
@@ -222,7 +222,7 @@ public class TablePage {
       ByteBuffer byteArrayInput = ByteBuffer.wrap(complexColumns);
       ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
       DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
-      complexDataType.parseAndBitPack(byteArrayInput, dataOutputStream,
+      complexDataType.parseComplexValue(byteArrayInput, dataOutputStream,
           model.getComplexDimensionKeyGenerator());
       complexDataType.getColumnarDataForComplexType(encodedComplexColumnar,
           ByteBuffer.wrap(byteArrayOutput.toByteArray()));

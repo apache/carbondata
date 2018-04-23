@@ -147,6 +147,10 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   }
 
+  @Override public boolean getIsColumnDictionary() {
+    return true;
+  }
+
   @Override
   public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream)
       throws IOException, DictionaryGenerationException {
@@ -168,22 +172,21 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     children.fillCardinality(dimCardWithComplex);
   }
 
-  /**
-   * parse byte array and bit pack
-   */
   @Override
-  public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator) throws IOException, KeyGenException {
+  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
+      KeyGenerator[] generator)
+      throws IOException, KeyGenException {
     int dataLength = byteArrayInput.getInt();
 
     dataOutputStream.writeInt(dataLength);
     if (children instanceof PrimitiveDataType) {
-      dataOutputStream.writeInt(generator[children.getSurrogateIndex()].getKeySizeInBytes());
+      if (children.getIsColumnDictionary()) {
+        dataOutputStream.writeInt(generator[children.getSurrogateIndex()].getKeySizeInBytes());
+      }
     }
     for (int i = 0; i < dataLength; i++) {
-      children.parseAndBitPack(byteArrayInput, dataOutputStream, generator);
+      children.parseComplexValue(byteArrayInput, dataOutputStream, generator);
     }
-
   }
 
   /*

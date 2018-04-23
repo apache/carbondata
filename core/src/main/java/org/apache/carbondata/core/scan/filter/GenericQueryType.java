@@ -43,5 +43,6 @@ public interface GenericQueryType {
 
   void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder) throws IOException;
 
-  Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData);
+  Object getDataBasedOnDataType(ByteBuffer dataBuffer);
+
 }

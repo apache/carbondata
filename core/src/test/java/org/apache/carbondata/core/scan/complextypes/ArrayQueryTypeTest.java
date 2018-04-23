@@ -41,7 +41,7 @@ public class ArrayQueryTypeTest {
     surrogateData.put(1, (byte) 0xFF);
     surrogateData.put(2, (byte) 0xFF);
     surrogateData.put(3, (byte) 0xFF);
-    assertNull(arrayQueryType.getDataBasedOnDataTypeFromSurrogates(surrogateData));
+    assertNull(arrayQueryType.getDataBasedOnDataType(surrogateData));
   }
 
   @Test public void testGetDataBasedOnDataTypeFromSurrogates() {
@@ -50,6 +50,6 @@ public class ArrayQueryTypeTest {
     arrayQueryType.setName("testName");
     arrayQueryType.setParentname("testName");
     arrayQueryType.addChildren(arrayQueryType);
-    assertNotNull(arrayQueryType.getDataBasedOnDataTypeFromSurrogates(surrogateData));
+    assertNotNull(arrayQueryType.getDataBasedOnDataType(surrogateData));
   }
 }

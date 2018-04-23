@@ -110,7 +110,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       writeCounter = new long[iterators.length];
       dimensionWithComplexCount = configuration.getDimensionCount();
       noDictWithComplextCount =
-          configuration.getNoDictionaryCount() + configuration.getComplexColumnCount();
+          configuration.getNoDictionaryCount() + configuration.getComplexDictionaryColumnCount()
+              + configuration.getComplexNonDictionaryColumnCount();
       dimensionCount = configuration.getDimensionCount() - noDictWithComplextCount;
       isNoDictionaryDimensionColumn =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());

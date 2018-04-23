@@ -146,6 +146,10 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   }
 
+  @Override public boolean getIsColumnDictionary() {
+    return true;
+  }
+
   @Override public void writeByteArray(StructObject input, DataOutputStream dataOutputStream)
       throws IOException, DictionaryGenerationException {
     dataOutputStream.writeInt(children.size());
@@ -175,20 +179,29 @@ public class StructDataType implements GenericDataType<StructObject> {
     }
   }
 
-  /*
-   * parse bytearray and bit pack
+  /**
+   *
+   * @param byteArrayInput
+   * @param dataOutputStream
+   * @param generator
+   * @return
+   * @throws IOException
+   * @throws KeyGenException
    */
-  @Override
-  public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator) throws IOException, KeyGenException {
+  @Override public void parseComplexValue(ByteBuffer byteArrayInput,
+      DataOutputStream dataOutputStream, KeyGenerator[] generator)
+      throws IOException, KeyGenException {
     int childElement = byteArrayInput.getInt();
     dataOutputStream.writeInt(childElement);
+
     for (int i = 0; i < childElement; i++) {
       if (children.get(i) instanceof PrimitiveDataType) {
-        dataOutputStream.writeInt(generator[children.get(i).getSurrogateIndex()]
-            .getKeySizeInBytes());
+        if (children.get(i).getIsColumnDictionary()) {
+          dataOutputStream
+              .writeInt(generator[children.get(i).getSurrogateIndex()].getKeySizeInBytes());
+        }
       }
-      children.get(i).parseAndBitPack(byteArrayInput, dataOutputStream, generator);
+      children.get(i).parseComplexValue(byteArrayInput, dataOutputStream, generator);
     }
   }
 

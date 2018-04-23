@@ -230,8 +230,10 @@ public final class DataLoadProcessBuilder {
       DataField dataField = new DataField(column);
       if (column.getDataType() == DataTypes.DATE) {
         dataField.setDateFormat(loadModel.getDateFormat());
+        column.setDateFormat(loadModel.getDateFormat());
       } else if (column.getDataType() == DataTypes.TIMESTAMP) {
         dataField.setTimestampFormat(loadModel.getTimestampformat());
+        column.setTimestampFormat(loadModel.getTimestampformat());
       }
       if (column.isComplex()) {
         complexDataFields.add(dataField);

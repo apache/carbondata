@@ -2348,6 +2348,7 @@ public final class CarbonUtil {
     try {
       fistFilePath = filePaths.get(0);
     } catch (Exception e) {
+      // Check if we can infer the schema from the hive metastore.
       LOGGER.error("CarbonData file is not present in the table location");
       throw new IOException("CarbonData file is not present in the table location");
     }

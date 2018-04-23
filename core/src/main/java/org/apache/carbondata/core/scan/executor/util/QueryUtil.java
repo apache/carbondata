@@ -777,6 +777,10 @@ public class QueryUtil {
         boolean isDirectDictionary = CarbonUtil
             .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
                 Encoding.DIRECT_DICTIONARY);
+        boolean isDictionary = CarbonUtil
+            .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
+                Encoding.DICTIONARY);
+
         parentQueryType.addChildren(
             new PrimitiveQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
                 dimension.getColName(), ++parentBlockIndex,

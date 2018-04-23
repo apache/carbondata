@@ -267,14 +267,24 @@ public final class CarbonDataProcessorUtil {
     return dimString.toString();
   }
 
+  private static String isDictionaryType(CarbonDimension dimension) {
+    Boolean isDictionary = true;
+    if (!(dimension.hasEncoding(Encoding.DICTIONARY))) {
+      isDictionary = false;
+    }
+    return isDictionary.toString();
+  }
+
   /**
    * This method will return all the child dimensions under complex dimension
    */
   private static void addAllComplexTypeChildren(CarbonDimension dimension, StringBuilder dimString,
       String parent) {
+
     dimString.append(dimension.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
         .append(dimension.getDataType()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
         .append(parent).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+        .append(isDictionaryType(dimension)).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
         .append(dimension.getColumnId()).append(CarbonCommonConstants.HASH_SPC_CHARACTER);
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       CarbonDimension childDim = dimension.getListOfChildDimensions().get(i);
@@ -284,6 +294,7 @@ public final class CarbonDataProcessorUtil {
         dimString.append(childDim.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(childDim.getDataType()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(dimension.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+            .append(isDictionaryType(dimension)).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(childDim.getColumnId()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(childDim.getOrdinal()).append(CarbonCommonConstants.HASH_SPC_CHARACTER);
       }
@@ -291,11 +302,21 @@ public final class CarbonDataProcessorUtil {
   }
 
   // TODO: need to simplify it. Not required create string first.
-  public static Map<String, GenericDataType> getComplexTypesMap(DataField[] dataFields) {
+  public static Map<String, GenericDataType> getComplexTypesMap(DataField[] dataFields,
+      CarbonDataLoadConfiguration configuration) {
     String complexTypeString = getComplexTypeString(dataFields);
+
     if (null == complexTypeString || complexTypeString.equals("")) {
       return new LinkedHashMap<>();
     }
+
+    String nullFormat =
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
+            .toString();
+    boolean isEmptyBadRecord = Boolean.parseBoolean(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
+            .toString());
+
     Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();
     String[] hierarchies = complexTypeString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
     for (int i = 0; i < hierarchies.length; i++) {
@@ -312,8 +333,9 @@ public final class CarbonDataProcessorUtil {
         } else if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.STRUCT)) {
           g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
         } else {
-          g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3],
-              Integer.parseInt(levelInfo[4])));
+          g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[4],
+              Integer.parseInt(levelInfo[5]), levelInfo[3].contains("true"), nullFormat,
+              isEmptyBadRecord));
         }
       }
     }

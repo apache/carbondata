@@ -535,7 +535,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           }
           if (isProjectionRequired[colCount]) {
             outputValues[projectionMap[colCount]] = queryTypes[colCount]
-                .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(b));
+                .getDataBasedOnDataType(ByteBuffer.wrap(b));
           }
         } else {
           input.skipBytes(v);

@@ -20,19 +20,27 @@ package org.apache.carbondata.sdk.file;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.CharEncoding;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Test;
 
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 import org.apache.avro.Schema;
+
+import static org.apache.hadoop.yarn.webapp.hamlet.HamletSpec.InputType.file;
 
 public class AvroCarbonWriterTest {
   private String path = "./AvroCarbonWriterSuiteWriteFiles";
@@ -177,7 +185,104 @@ public class AvroCarbonWriterTest {
 
   @Test
   public void testWriteNestedRecord() throws IOException {
-    // TODO
+    FileUtils.deleteDirectory(new File(path));
+
+    String newAvroSchema =
+        "{" +
+          " \"type\" : \"record\", " +
+          "  \"name\" : \"userInfo\", "  +
+          "  \"namespace\" : \"my.example\", " +
+          "  \"fields\" : [{\"name\" : \"username\", " +
+          "  \"type\" : \"string\", " +
+          "  \"default\" : \"NONE\"}, " +
+
+       " {\"name\" : \"age\", " +
+       " \"type\" : \"int\", " +
+       " \"default\" : -1}, " +
+
+    "{\"name\" : \"address\", " +
+     "   \"type\" : { " +
+      "  \"type\" : \"record\", " +
+       "   \"name\" : \"mailing_address\", " +
+        "  \"fields\" : [ {" +
+      "        \"name\" : \"street\", " +
+       "       \"type\" : \"string\", " +
+       "       \"default\" : \"NONE\"}, { " +
+
+      " \"name\" : \"city\", " +
+        "  \"type\" : \"string\", " +
+        "  \"default\" : \"NONE\"}, " +
+         "                 ]}, " +
+     " \"default\" : {} " +
+   " } " +
+"}";
+
+    String mySchema =
+    "{" +
+    "  \"name\": \"address\", " +
+    "   \"type\": \"record\", " +
+    "    \"fields\": [  " +
+    "  { \"name\": \"name\", \"type\": \"string\"}, " +
+    "  { \"name\": \"age\", \"type\": \"int\"}, " +
+    "  { " +
+    "    \"name\": \"address\", " +
+    "      \"type\": { " +
+    "    \"type\" : \"record\", " +
+    "        \"name\" : \"my_address\", " +
+    "        \"fields\" : [ " +
+    "    {\"name\": \"street\", \"type\": \"string\"}, " +
+    "    {\"name\": \"city\", \"type\": \"string\"} " +
+    "  ]} " +
+    "  } " +
+    "] " +
+    "}";
+
+   String json = "{\"name\":\"bob\", \"age\":10, \"address\" : {\"street\":\"abc\", \"city\":\"bang\"}}";
+
+
+    // conversion to GenericData.Record
+    Schema nn = new Schema.Parser().parse(mySchema);
+    JsonAvroConverter converter = new JsonAvroConverter();
+    GenericData.Record record = converter.convertToGenericDataRecord(
+        json.getBytes(CharEncoding.UTF_8), nn);
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("name1", DataTypes.STRING);
+    // fields[1] = new Field("age", DataTypes.INT);
+    List fld = new ArrayList<StructField>();
+    fld.add(new StructField("street", DataTypes.STRING));
+    fld.add(new StructField("city", DataTypes.STRING));
+    fields[2] = new Field("address", "struct", fld);
+
+    try {
+      CarbonWriter writer = CarbonWriter.builder()
+          .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
+          .outputPath(path)
+          .isTransactionalTable(true)
+          .buildWriterForAvroInput();
+
+      for (int i = 0; i < 100; i++) {
+        writer.write(record);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+    Assert.assertTrue(segmentFolder.exists());
+
+    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+      }
+    });
+    Assert.assertNotNull(dataFiles);
+    Assert.assertEquals(1, dataFiles.length);
+
+    FileUtils.deleteDirectory(new File(path));
   }
 
 }
