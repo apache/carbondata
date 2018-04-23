@@ -98,6 +98,14 @@ object CarbonSetCommand {
       sessionParams.addProperty(key.toLowerCase(), value)
     } else if (key.startsWith(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING)) {
       sessionParams.addProperty(key.toLowerCase(), value)
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
+      if (key.split("\\.").length == 6) {
+        sessionParams.addProperty(key.toLowerCase, value)
+      } else {
+        throw new MalformedCarbonCommandException("property should be in " +
+          "\" carbon.datamap.visible.<database_name>.<table_name>.<database_name>" +
+          " = <true/false> \" format")
+      }
     }
   }
 
