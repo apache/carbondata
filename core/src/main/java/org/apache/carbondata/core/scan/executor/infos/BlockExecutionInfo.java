@@ -86,7 +86,7 @@ public class BlockExecutionInfo {
   private int[] projectionListDimensionIndexes;
 
   /**
-   * list of dimension present in the projection
+   * list of measure present in the projection
    */
   private int[] projectionListMeasureIndexes;
 
@@ -209,6 +209,11 @@ public class BlockExecutionInfo {
   private boolean prefetchBlocklet = true;
 
   private Map<String, DeleteDeltaVo> deletedRecordsMap;
+
+  /**
+   * whether it require to output the row id
+   */
+  private boolean requiredRowId;
 
   /**
    * @param blockIndex the tableBlock to set
@@ -617,5 +622,13 @@ public class BlockExecutionInfo {
 
   public void setPrefetchBlocklet(boolean prefetchBlocklet) {
     this.prefetchBlocklet = prefetchBlocklet;
+  }
+
+  public boolean isRequiredRowId() {
+    return requiredRowId;
+  }
+
+  public void setRequiredRowId(boolean requiredRowId) {
+    this.requiredRowId = requiredRowId;
   }
 }

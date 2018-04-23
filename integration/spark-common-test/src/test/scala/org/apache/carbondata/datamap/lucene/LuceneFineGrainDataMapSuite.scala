@@ -59,6 +59,15 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'carbondata'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
+
+    sql("DROP TABLE IF EXISTS datamap_test4")
+
+    sql(
+      """
+        | CREATE TABLE datamap_test4(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+      """.stripMargin)
   }
 
   test("validate TEXT_COLUMNS DataMap property") {
@@ -127,6 +136,31 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
     sql("drop datamap dm on table datamap_test")
   }
+
+  test("test lucene refresh data map") {
+
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test4 OPTIONS('header'='false')")
+
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test4 OPTIONS('header'='false')")
+
+    sql(
+      s"""
+         | CREATE DATAMAP dm4 ON TABLE datamap_test4
+         | USING 'lucene'
+         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+      """.stripMargin)
+
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test4 OPTIONS('header'='false')")
+
+    sql("refresh datamap dm4 ON TABLE datamap_test4")
+
+    checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test4 where name='n10'"))
+    checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM datamap_test4 WHERE city='c020'"))
+
+    sql("drop datamap dm4 on table datamap_test4")
+
+  }
+
 
   test("test lucene fine grain data map drop") {
     sql("DROP TABLE IF EXISTS datamap_test1")
@@ -204,6 +238,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test1")
     sql("DROP TABLE IF EXISTS datamap_test2")
     sql("DROP TABLE IF EXISTS datamap_test3")
+    sql("DROP TABLE IF EXISTS datamap_test4")
     sql("use default")
     sql("drop database if exists lucene cascade")
     CarbonProperties.getInstance()

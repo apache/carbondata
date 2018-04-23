@@ -69,7 +69,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
   boolean isDimensionExists;
 
-  private Map<Integer, GenericQueryType> comlexDimensionInfoMap;
+  protected Map<Integer, GenericQueryType> comlexDimensionInfoMap;
 
   public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);

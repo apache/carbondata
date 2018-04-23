@@ -118,7 +118,9 @@ case class CarbonCreateDataMapCommand(
     if (dataMapProvider != null) {
       dataMapProvider.initData(mainTable)
       if (mainTable != null && mainTable.isAutoRefreshDataMap) {
-        dataMapProvider.rebuild(mainTable, dataMapSchema)
+        if (!DataMapClassProvider.LUCENE.getShortName.equals(dataMapSchema.getProviderName)) {
+          dataMapProvider.rebuild(mainTable, dataMapSchema)
+        }
       }
     }
     Seq.empty

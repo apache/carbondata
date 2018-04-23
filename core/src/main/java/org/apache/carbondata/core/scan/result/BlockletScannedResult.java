@@ -618,4 +618,8 @@ public abstract class BlockletScannedResult {
     }
     return false;
   }
+
+  public String getBlockletNumber() {
+    return blockletNumber;
+  }
 }
