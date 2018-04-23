@@ -21,6 +21,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -39,6 +41,9 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.stats.QueryStatistic;
+import org.apache.carbondata.core.stats.QueryStatisticsConstants;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -62,7 +67,7 @@ public abstract class BlockletScannedResult {
   /**
    * key size of the fixed length column
    */
-  private int fixedLengthKeySize;
+  protected int fixedLengthKeySize;
   /**
    * total number of filtered rows for each page
    */
@@ -142,7 +147,12 @@ public abstract class BlockletScannedResult {
    */
   private String blockletNumber;
 
-  public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo) {
+  protected List<Integer> validRowIds;
+
+  protected QueryStatisticsModel queryStatisticsModel;
+
+  public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
+      QueryStatisticsModel queryStatisticsModel) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
     this.noDictionaryColumnChunkIndexes = blockExecutionInfo.getNoDictionaryColumnChunkIndexes();
     this.dictionaryColumnChunkIndexes = blockExecutionInfo.getDictionaryColumnChunkIndex();
@@ -151,6 +161,8 @@ public abstract class BlockletScannedResult {
     this.complexParentBlockIndexes = blockExecutionInfo.getComplexColumnParentBlockIndexes();
     this.totalDimensionsSize = blockExecutionInfo.getProjectionDimensions().length;
     this.deletedRecordMap = blockExecutionInfo.getDeletedRecordsMap();
+    this.queryStatisticsModel = queryStatisticsModel;
+    validRowIds = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
 
   /**
@@ -324,6 +336,16 @@ public abstract class BlockletScannedResult {
   }
 
   /**
+   * This method will add the delta to row counter
+   *
+   * @param delta
+   */
+  public void incrementCounter(int delta) {
+    rowCounter += delta;
+    currentRow += delta;
+  }
+
+  /**
    * Just increment the page counter and reset the remaining counters.
    */
   public void incrementPageCounter() {
@@ -344,6 +366,7 @@ public abstract class BlockletScannedResult {
     if (pageCounter >= pageFilteredRowCount.length) {
       return;
     }
+    long startTime = System.currentTimeMillis();
     for (int i = 0; i < dimensionColumnPages.length; i++) {
       if (dimensionColumnPages[i][pageCounter] == null && dimRawColumnChunks[i] != null) {
         dimensionColumnPages[i][pageCounter] =
@@ -357,6 +380,10 @@ public abstract class BlockletScannedResult {
             msrRawColumnChunks[i].convertToColumnPageWithOutCache(pageCounter);
       }
     }
+    QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME);
+    pageUncompressTime.addCountStatistic(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME,
+        pageUncompressTime.getCount() + (System.currentTimeMillis() - startTime));
   }
 
   // free the memory for the last page chunk
@@ -373,6 +400,7 @@ public abstract class BlockletScannedResult {
         measureColumnPages[i][pageCounter - 1] = null;
       }
     }
+    clearValidRowIdList();
   }
 
   public int numberOfpages() {
@@ -414,6 +442,75 @@ public abstract class BlockletScannedResult {
           dimensionColumnPages[noDictionaryColumnChunkIndexes[i]][pageCounter].getChunkData(rowId);
     }
     return noDictionaryColumnsKeys;
+  }
+
+  /**
+   * This method will return the bitsets for valid row Id's to be scanned
+   *
+   * @param rowId
+   * @param batchSize
+   * @return
+   */
+  protected void fillValidRowIdsBatchFilling(int rowId, int batchSize) {
+    // row id will be different for every batch so clear it before filling
+    clearValidRowIdList();
+    int startPosition = rowId;
+    for (int i = 0; i < batchSize; i++) {
+      if (!containsDeletedRow(startPosition)) {
+        validRowIds.add(startPosition);
+      }
+      startPosition++;
+    }
+  }
+
+  private void clearValidRowIdList() {
+    if (null != validRowIds && !validRowIds.isEmpty()) {
+      validRowIds.clear();
+    }
+  }
+
+  public List<Integer> getValidRowIds() {
+    return validRowIds;
+  }
+
+  /**
+   * Below method will be used to get the complex type keys array based
+   * on row id for all the complex type dimension selected in query.
+   * This method will be used to fill the data column wise
+   *
+   * @return complex type key array for all the complex dimension selected in query
+   */
+  protected List<byte[][]> getComplexTypeKeyArrayBatch() {
+    List<byte[][]> complexTypeArrayList = new ArrayList<>(validRowIds.size());
+    byte[][] complexTypeData = null;
+    // everyTime it is initialized new as in case of prefetch it can modify the data
+    for (int i = 0; i < validRowIds.size(); i++) {
+      complexTypeData = new byte[complexParentBlockIndexes.length][];
+      complexTypeArrayList.add(complexTypeData);
+    }
+    for (int i = 0; i < complexParentBlockIndexes.length; i++) {
+      // get the genericQueryType for 1st column
+      GenericQueryType genericQueryType =
+          complexParentIndexToQueryMap.get(complexParentBlockIndexes[i]);
+      for (int j = 0; j < validRowIds.size(); j++) {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        DataOutputStream dataOutput = new DataOutputStream(byteStream);
+        try {
+          genericQueryType
+              .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, validRowIds.get(j),
+                  pageCounter, dataOutput);
+          // get the key array in columnar way
+          byte[][] complexKeyArray = complexTypeArrayList.get(j);
+          complexKeyArray[i] = byteStream.toByteArray();
+        } catch (IOException e) {
+          LOGGER.error(e);
+        } finally {
+          CarbonUtil.closeStreams(dataOutput);
+          CarbonUtil.closeStreams(byteStream);
+        }
+      }
+    }
+    return complexTypeArrayList;
   }
 
   /**
@@ -527,6 +624,8 @@ public abstract class BlockletScannedResult {
         }
       }
     }
+    clearValidRowIdList();
+    validRowIds = null;
   }
 
   /**
@@ -568,11 +667,28 @@ public abstract class BlockletScannedResult {
   public abstract int[] getDictionaryKeyIntegerArray();
 
   /**
+   * Method to fill each dictionary column data column wise
+   *
+   * @param batchSize
+   * @return
+   */
+  public abstract List<byte[]> getDictionaryKeyArrayBatch(int batchSize);
+
+  /**
    * Below method will be used to get the complex type key array
    *
    * @return complex type key array
    */
   public abstract byte[][] getComplexTypeKeyArray();
+
+  /**
+   * Below method will be used to get the complex type key array
+   * This method will fill the data column wise for the given batch size
+   *
+   * @param batchSize
+   * @return complex type key array
+   */
+  public abstract List<byte[][]> getComplexTypeKeyArrayBatch(int batchSize);
 
   /**
    * Below method will be used to get the no dictionary key
@@ -581,6 +697,15 @@ public abstract class BlockletScannedResult {
    * @return no dictionary key array for all the no dictionary dimension
    */
   public abstract byte[][] getNoDictionaryKeyArray();
+
+  /**
+   * Below method will be used to get the dimension key array
+   * for all the no dictionary dimension present in the query
+   * This method will fill the data column wise for the given batch size
+   *
+   * @return no dictionary keys for all no dictionary dimension
+   */
+  public abstract List<byte[][]> getNoDictionaryKeyArrayBatch(int batchSize);
 
   /**
    * Mark the filtered rows in columnar batch. These rows will not be added to vector batches later.

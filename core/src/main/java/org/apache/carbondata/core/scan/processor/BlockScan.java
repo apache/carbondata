@@ -45,6 +45,7 @@ public class BlockScan {
   public BlockScan(BlockExecutionInfo blockExecutionInfo, FileReader fileReader,
       QueryStatisticsModel queryStatisticsModel) {
     this.blockExecutionInfo = blockExecutionInfo;
+    this.blockExecutionInfo.setQueryStatisticsModel(queryStatisticsModel);
     this.fileReader = fileReader;
     this.blockletIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
         blockExecutionInfo.getNumberOfBlockToScan());

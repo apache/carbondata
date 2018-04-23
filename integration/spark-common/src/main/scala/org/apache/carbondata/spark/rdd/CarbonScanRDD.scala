@@ -464,6 +464,9 @@ class CarbonScanRDD[T: ClassTag](
         close()
         logStatistics(executionId, taskId, queryStartTime, model.getStatisticsRecorder, split)
       }
+      // create a statistics recorder
+      val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId())
+      model.setStatisticsRecorder(recorder)
       // initialize the reader
       reader.initialize(inputSplit, attemptContext)
 

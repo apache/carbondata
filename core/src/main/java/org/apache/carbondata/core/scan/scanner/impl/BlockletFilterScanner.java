@@ -185,7 +185,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       return createEmptyResult();
     }
 
-    BlockletScannedResult scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
+    BlockletScannedResult scannedResult =
+        new FilterQueryScannedResult(blockExecutionInfo, queryStatisticsModel);
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR +
             rawBlockletColumnChunks.getDataBlock().blockletIndex());

@@ -80,6 +80,7 @@ class CarbonMergerRDD[K, V](
   val tableId = carbonMergerMapping.tableId
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+    val queryStartTime = System.currentTimeMillis()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -102,8 +103,6 @@ class CarbonMergerRDD[K, V](
       var processor: AbstractResultProcessor = null
       var rawResultIteratorList: java.util.List[RawResultIterator] = null
       try {
-
-
         // sorting the table block info List.
         val splitList = carbonSparkPartition.split.value.getAllSplits
         val tableBlockInfoList = CarbonInputSplit.createBlocks(splitList)
@@ -234,7 +233,7 @@ class CarbonMergerRDD[K, V](
         // close all the query executor service and clean up memory acquired during query processing
         if (null != exec) {
           LOGGER.info("Cleaning up query resources acquired during compaction")
-          exec.close(rawResultIteratorList)
+          exec.close(rawResultIteratorList, queryStartTime)
         }
         // clean up the resources for processor
         if (null != processor) {
