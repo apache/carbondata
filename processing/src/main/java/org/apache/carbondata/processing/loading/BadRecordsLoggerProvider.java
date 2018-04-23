@@ -71,13 +71,21 @@ public class BadRecordsLoggerProvider {
     }
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
+    String storeLocation = "";
+    if (configuration.isCarbonTransactionalTable()) {
+      storeLocation =
+          identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+              .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getSegmentId()
+              + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo();
+    } else {
+      storeLocation =
+          "SdkWriterBadRecords" + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo();
+    }
+
     return new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
         identifier.getTableName() + '_' + System.currentTimeMillis(),
-        getBadLogStoreLocation(configuration,
-            identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-                .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration
-                .getSegmentId() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo()),
-        badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
+        getBadLogStoreLocation(configuration, storeLocation), badRecordsLogRedirect,
+        badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
   }
 
   public static String getBadLogStoreLocation(CarbonDataLoadConfiguration configuration,

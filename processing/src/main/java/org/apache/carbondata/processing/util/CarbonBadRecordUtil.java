@@ -49,9 +49,17 @@ public class CarbonBadRecordUtil {
     // rename the bad record in progress to normal
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
-    renameBadRecordsFromInProgressToNormal(configuration,
-        identifier.getDatabaseName() + File.separator + identifier.getTableName() + File.separator
-            + configuration.getSegmentId() + File.separator + configuration.getTaskNo());
+    String storeLocation = "";
+    if (configuration.isCarbonTransactionalTable()) {
+      storeLocation =
+          identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+              .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getSegmentId()
+              + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo();
+    } else {
+      storeLocation =
+          "SdkWriterBadRecords" + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo();
+    }
+    renameBadRecordsFromInProgressToNormal(configuration, storeLocation);
   }
 
   /**

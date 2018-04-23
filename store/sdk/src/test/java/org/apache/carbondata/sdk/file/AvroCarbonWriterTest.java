@@ -94,8 +94,86 @@ public class AvroCarbonWriterTest {
 
   @Test
   public void testWriteAllPrimitive() throws IOException {
-    // TODO
+    FileUtils.deleteDirectory(new File(path));
+
+    // Avro schema
+    // Supported Primitive Datatype.
+    // 1. Boolean
+    // 2. Int
+    // 3. long
+    // 4. float -> To carbon Internally it is double.
+    // 5. double
+    // 6. String
+
+    // Not Supported
+    // 1.NULL Datatype
+    // 2.Bytes
+
+    String avroSchema = "{\n" + "  \"name\" : \"myrecord\",\n"
+        + "  \"namespace\": \"org.apache.parquet.avro\",\n" + "  \"type\" : \"record\",\n"
+        + "  \"fields\" : [ "
+        + " {\n" + "    \"name\" : \"myboolean\",\n" + "    \"type\" : \"boolean\"\n  },"
+        + " {\n" + "    \"name\" : \"myint\",\n" + "    \"type\" : \"int\"\n" + "  }, "
+        + " {\n    \"name\" : \"mylong\",\n" + "    \"type\" : \"long\"\n" + "  },"
+        + " {\n   \"name\" : \"myfloat\",\n" + "    \"type\" : \"float\"\n" + "  }, "
+        + " {\n \"name\" : \"mydouble\",\n" + "    \"type\" : \"double\"\n" + "  },"
+        + " {\n \"name\" : \"mystring\",\n" + "    \"type\" : \"string\"\n" + "  }\n" + "] }";
+
+    String json = "{"
+        + "\"myboolean\":true, "
+        + "\"myint\": 10, "
+        + "\"mylong\": 7775656565,"
+        + " \"myfloat\": 0.2, "
+        + "\"mydouble\": 44.56, "
+        + "\"mystring\":\"Ajantha\"}";
+
+
+    // conversion to GenericData.Record
+    JsonAvroConverter converter = new JsonAvroConverter();
+    GenericData.Record record = converter.convertToGenericDataRecord(
+        json.getBytes(CharEncoding.UTF_8), new Schema.Parser().parse(avroSchema));
+
+    Field[] fields = new Field[6];
+    // fields[0] = new Field("mynull", DataTypes.NULL);
+    fields[0] = new Field("myboolean", DataTypes.BOOLEAN);
+    fields[1] = new Field("myint", DataTypes.INT);
+    fields[2] = new Field("mylong", DataTypes.LONG);
+    fields[3] = new Field("myfloat", DataTypes.DOUBLE);
+    fields[4] = new Field("mydouble", DataTypes.DOUBLE);
+    fields[5] = new Field("mystring", DataTypes.STRING);
+
+
+    try {
+      CarbonWriter writer = CarbonWriter.builder()
+          .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
+          .outputPath(path)
+          .isTransactionalTable(true)
+          .buildWriterForAvroInput();
+
+      for (int i = 0; i < 100; i++) {
+        writer.write(record);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+    Assert.assertTrue(segmentFolder.exists());
+
+    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+      }
+    });
+
+    Assert.assertNotNull(dataFiles);
+    Assert.assertEquals(1, dataFiles.length);
+
+    FileUtils.deleteDirectory(new File(path));
   }
+
 
   @Test
   public void testWriteNestedRecord() throws IOException {

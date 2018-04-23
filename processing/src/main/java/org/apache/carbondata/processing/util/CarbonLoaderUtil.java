@@ -465,9 +465,6 @@ public final class CarbonLoaderUtil {
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
 
-    if (!model.isCarbonTransactionalTable() && insertOverwrite) {
-      CarbonLoaderUtil.deleteNonTransactionalTableForInsertOverwrite(model);
-    }
     boolean entryAdded = CarbonLoaderUtil
         .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid);
     if (!entryAdded) {

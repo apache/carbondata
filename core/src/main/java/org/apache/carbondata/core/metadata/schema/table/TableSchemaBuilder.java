@@ -139,6 +139,10 @@ public class TableSchemaBuilder {
     } else {
       otherColumns.add(newColumn);
     }
+
+    if (newColumn.isDimensionColumn()) {
+      newColumn.setUseInvertedIndex(true);
+    }
     return this;
   }
 

@@ -47,7 +47,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 import org.apache.hadoop.fs.s3a.Constants;
 
 /**
- * Biulder for {@link CarbonWriter}
+ * Builder for {@link CarbonWriter}
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
@@ -66,6 +66,7 @@ public class CarbonWriterBuilder {
   /**
    * prepares the builder with the schema provided
    * @param schema is instance of Schema
+   *        This method must be called when building CarbonWriterBuilder
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withSchema(Schema schema) {
@@ -77,6 +78,7 @@ public class CarbonWriterBuilder {
   /**
    * Sets the output path of the writer builder
    * @param path is the absolute path where output files are written
+   *             This method must be called when building CarbonWriterBuilder
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder outputPath(String path) {
@@ -88,7 +90,7 @@ public class CarbonWriterBuilder {
   /**
    * sets the list of columns that needs to be in sorted order
    * @param sortColumns is a string array of columns that needs to be sorted.
-   *                    If it is null, all dimensions are selected for sorting
+   *                    If it is null or by default all dimensions are selected for sorting
    *                    If it is empty array, no columns are sorted
    * @return updated CarbonWriterBuilder
    */
@@ -99,8 +101,9 @@ public class CarbonWriterBuilder {
 
   /**
    * sets the taskNo for the writer. SDKs concurrently running
-   * will set taskNo in order to avoid conflits in file write.
-   * @param taskNo is the TaskNo user wants to specify. Mostly it system time.
+   * will set taskNo in order to avoid conflicts in file's name during write.
+   * @param taskNo is the TaskNo user wants to specify.
+   *               by default it is system time in nano seconds.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder taskNo(String taskNo) {
@@ -112,7 +115,8 @@ public class CarbonWriterBuilder {
 
   /**
    * If set, create a schema file in metadata folder.
-   * @param persist is a boolean value, If set, create a schema file in metadata folder
+   * @param persist is a boolean value, If set to true, creates a schema file in metadata folder.
+   *                By default set to false. will not create metadata folder
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder persistSchemaFile(boolean persist) {
@@ -122,8 +126,12 @@ public class CarbonWriterBuilder {
 
   /**
    * If set false, writes the carbondata and carbonindex files in a flat folder structure
-   * @param isTransactionalTable is a boolelan value if set to false then writes
-   *                     the carbondata and carbonindex files in a flat folder structure
+   * @param isTransactionalTable is a boolelan value
+   *             if set to false, then writes the carbondata and carbonindex files
+   *                                                            in a flat folder structure.
+   *             if set to true, then writes the carbondata and carbonindex files
+   *                                                            in segment folder structure..
+   *             By default set to false.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder isTransactionalTable(boolean isTransactionalTable) {
@@ -201,7 +209,8 @@ public class CarbonWriterBuilder {
 
   /**
    * to set the timestamp in the carbondata and carbonindex index files
-   * @param UUID is a timestamp to be used in the carbondata and carbonindex index files
+   * @param UUID is a timestamp to be used in the carbondata and carbonindex index files.
+   *             By default set to zero.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder uniqueIdentifier(long UUID) {
@@ -223,6 +232,18 @@ public class CarbonWriterBuilder {
    *                g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
    *                h. quotechar
    *                i. escapechar
+   *
+   *                Default values are as follows.
+   *
+   *                a. bad_records_logger_enable -- "false"
+   *                b. bad_records_action -- "FAIL"
+   *                c. bad_record_path -- ""
+   *                d. dateformat -- "" , uses from carbon.properties file
+   *                e. timestampformat -- "", uses from carbon.properties file
+   *                f. complex_delimiter_level_1 -- "$"
+   *                g. complex_delimiter_level_2 -- ":"
+   *                h. quotechar -- "\""
+   *                i. escapechar -- "\\"
    *
    * @return updated CarbonWriterBuilder
    */
@@ -259,6 +280,7 @@ public class CarbonWriterBuilder {
   /**
    * To set the carbondata file size in MB between 1MB-2048MB
    * @param blockSize is size in MB between 1MB to 2048 MB
+   *                  default value is 1024 MB
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withBlockSize(int blockSize) {
@@ -272,6 +294,7 @@ public class CarbonWriterBuilder {
   /**
    * To set the blocklet size of carbondata file
    * @param blockletSize is blocklet size in MB
+   *                     default value is 64 MB
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withBlockletSize(int blockletSize) {
@@ -284,6 +307,9 @@ public class CarbonWriterBuilder {
 
   /**
    * Build a {@link CarbonWriter}, which accepts row in CSV format
+   * @return CSVCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
    */
   public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(schema, "schema should not be null");
@@ -294,8 +320,9 @@ public class CarbonWriterBuilder {
 
   /**
    * Build a {@link CarbonWriter}, which accepts Avro object
-   * @return
+   * @return AvroCarbonWriter
    * @throws IOException
+   * @throws InvalidLoadOptionException
    */
   public CarbonWriter buildWriterForAvroInput() throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(schema, "schema should not be null");
