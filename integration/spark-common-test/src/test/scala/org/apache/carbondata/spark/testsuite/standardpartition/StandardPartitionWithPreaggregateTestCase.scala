@@ -543,6 +543,24 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
     checkAnswer(sql("select sum(hs_len) from updatetime_8 group by imex"),Seq(Row(40),Row(42),Row(83)))
   }
 
+  test("Test data updation in Aggregate query after compaction on Partitioned table with Pre-Aggregate table") {
+    sql("drop table if exists updatetime_8")
+    sql("create table updatetime_8" +
+      "(countryid smallint,hs_len smallint,minstartdate string,startdate string,newdate string,minnewdate string) partitioned by (imex smallint) stored by 'carbondata' tblproperties('sort_scope'='global_sort','sort_columns'='countryid,imex,hs_len,minstartdate,startdate,newdate,minnewdate','table_blocksize'='256')")
+    sql("create datamap ag on table updatetime_8 using 'preaggregate' as select sum(hs_len) from updatetime_8 group by imex")
+    sql("insert into updatetime_8 select 21,20,'fbv','gbv','wvsw','vwr',23")
+    sql("insert into updatetime_8 select 21,20,'fbv','gbv','wvsw','vwr',24")
+    sql("insert into updatetime_8 select 21,20,'fbv','gbv','wvsw','vwr',23")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',24")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',24")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',24")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',25")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',25")
+    sql("alter table updatetime_8 compact 'minor'")
+    sql("alter table updatetime_8 compact 'minor'")
+    checkAnswer(sql("select sum(hs_len) from updatetime_8 group by imex"),Seq(Row(40),Row(42),Row(83)))
+  }
+
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit = {
     var isValidPlan = false
     plan.transform {
