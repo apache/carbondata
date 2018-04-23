@@ -25,6 +25,7 @@ import org.apache.carbondata.core.scan.collector.impl.RawBasedResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.RestructureBasedDictionaryResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.RestructureBasedRawResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.RestructureBasedVectorResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RowIdBasedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 
 /**
@@ -67,6 +68,9 @@ public class ResultCollectorFactory {
       if (blockExecutionInfo.isRestructuredBlock()) {
         LOGGER.info("Restructure based dictionary collector is used to scan and collect the data");
         scannerResultAggregator = new RestructureBasedDictionaryResultCollector(blockExecutionInfo);
+      } else if (blockExecutionInfo.isRequiredRowId()) {
+        LOGGER.info("RowId based dictionary collector is used to scan and collect the data");
+        scannerResultAggregator = new RowIdBasedResultCollector(blockExecutionInfo);
       } else {
         LOGGER.info("Row based dictionary collector is used to scan and collect the data");
         scannerResultAggregator = new DictionaryBasedResultCollector(blockExecutionInfo);

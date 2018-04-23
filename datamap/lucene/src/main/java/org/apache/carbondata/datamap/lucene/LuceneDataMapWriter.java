@@ -82,11 +82,11 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   private List<String> indexedCarbonColumns = null;
 
-  private static final String BLOCKLETID_NAME = "blockletId";
+  public static final String BLOCKLETID_NAME = "blockletId";
 
-  private static final String PAGEID_NAME = "pageId";
+  public static final String PAGEID_NAME = "pageId";
 
-  private static final String ROWID_NAME = "rowId";
+  public static final String ROWID_NAME = "rowId";
 
   LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String dataMapName, Segment segment,
       String writeDirectoryPath, boolean isFineGrain, List<String> indexedCarbonColumns) {
@@ -111,8 +111,9 @@ public class LuceneDataMapWriter extends DataMapWriter {
    * Start of new block notification.
    */
   public void onBlockStart(String blockId, String indexShardName) throws IOException {
-    // save this block id for lucene index , used in onPageAdd function
-
+    if (indexWriter != null) {
+      return;
+    }
     // get index path, put index data into segment's path
     String strIndexPath = getIndexPath(indexShardName);
     Path indexPath = FileFactory.getPath(strIndexPath);
@@ -343,7 +344,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
    *
    * @return store path based on taskID
    */
-  private static String genDataMapStorePathOnTaskId(String tablePath, String segmentId,
+  public static String genDataMapStorePathOnTaskId(String tablePath, String segmentId,
       String dataMapName, String taskName) {
     return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName
         + File.separator + taskName;
