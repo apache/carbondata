@@ -1762,7 +1762,7 @@ case class CarbonPreAggregateDataLoadingRules(sparkSession: SparkSession)
           case alias@Alias(aggExp: AggregateExpression, name) =>
             // get the updated expression for avg convert it to two expression
             // sum and count
-            val expressions = PreAggregateUtil.validateAggregateFunctionAndGetFields(aggExp, false)
+            val expressions = PreAggregateUtil.validateAggregateFunctionAndGetFields(aggExp)
             // if size is more than one then it was for average
             if(expressions.size > 1) {
               val sumExp = PreAggregateUtil.normalizeExprId(

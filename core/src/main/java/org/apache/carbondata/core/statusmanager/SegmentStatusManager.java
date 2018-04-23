@@ -141,7 +141,7 @@ public class SegmentStatusManager {
           // check for merged loads.
           if (null != segment.getMergedLoadName()) {
             Segment seg = new Segment(segment.getMergedLoadName(), segment.getSegmentFile(),
-                readCommittedScope);
+                readCommittedScope, segment);
             if (!listOfValidSegments.contains(seg)) {
               listOfValidSegments.add(seg);
             }
@@ -164,7 +164,8 @@ public class SegmentStatusManager {
             continue;
           }
           listOfValidSegments.add(
-              new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope));
+              new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope,
+                  segment));
         } else if ((SegmentStatus.LOAD_FAILURE == segment.getSegmentStatus()
             || SegmentStatus.COMPACTED == segment.getSegmentStatus()
             || SegmentStatus.MARKED_FOR_DELETE == segment.getSegmentStatus())) {

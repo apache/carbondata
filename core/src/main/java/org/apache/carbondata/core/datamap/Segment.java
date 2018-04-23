@@ -54,6 +54,11 @@ public class Segment implements Serializable {
   private ReadCommittedScope readCommittedScope;
 
   /**
+   * keeps all the details about segments
+   */
+  private LoadMetadataDetails loadMetadataDetails;
+
+  /**
    * ReadCommittedScope will be null. So getCommittedIndexFile will not work and will throw
    * a NullPointerException. In case getCommittedIndexFile is need to be accessed then
    * use the other constructor and pass proper ReadCommittedScope.
@@ -76,6 +81,19 @@ public class Segment implements Serializable {
     this.segmentNo = segmentNo;
     this.segmentFileName = segmentFileName;
     this.readCommittedScope = readCommittedScope;
+  }
+
+  /**
+   * @param segmentNo
+   * @param segmentFileName
+   * @param readCommittedScope
+   */
+  public Segment(String segmentNo, String segmentFileName, ReadCommittedScope readCommittedScope,
+      LoadMetadataDetails loadMetadataDetails) {
+    this.segmentNo = segmentNo;
+    this.segmentFileName = segmentFileName;
+    this.readCommittedScope = readCommittedScope;
+    this.loadMetadataDetails = loadMetadataDetails;
   }
 
   /**
@@ -174,5 +192,9 @@ public class Segment implements Serializable {
     } else {
       return segmentNo;
     }
+  }
+
+  public LoadMetadataDetails getLoadMetadataDetails() {
+    return loadMetadataDetails;
   }
 }
