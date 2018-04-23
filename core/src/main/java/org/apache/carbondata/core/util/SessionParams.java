@@ -28,6 +28,7 @@ import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
@@ -208,6 +209,16 @@ public class SessionParams implements Serializable, Cloneable {
           isValid = true;
         } else if (key.startsWith(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING)) {
           isValid = true;
+        } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
+          String[] keyArray = key.split("\\.");
+          isValid = DataMapStoreManager.getInstance().isDataMapExist(
+              keyArray[keyArray.length - 3],
+              keyArray[keyArray.length - 2],
+              keyArray[keyArray.length - 1]);
+          if (!isValid) {
+            throw new InvalidConfigurationException(
+                String.format("Invalid configuration of %s, datamap does not exist", key));
+          }
         } else {
           throw new InvalidConfigurationException(
               "The key " + key + " not supported for dynamic configuration.");

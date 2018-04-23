@@ -75,12 +75,12 @@ public class DataMapChooser {
       Expression expression = resolverIntf.getFilterExpression();
       // First check for FG datamaps if any exist
       List<TableDataMap> allDataMapFG =
-          DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.FG);
+          DataMapStoreManager.getInstance().getAllVisibleDataMap(carbonTable, DataMapLevel.FG);
       ExpressionTuple tuple = selectDataMap(expression, allDataMapFG, resolverIntf);
       if (tuple.dataMapExprWrapper == null) {
         // Check for CG datamap
         List<TableDataMap> allDataMapCG =
-            DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.CG);
+            DataMapStoreManager.getInstance().getAllVisibleDataMap(carbonTable, DataMapLevel.CG);
         tuple = selectDataMap(expression, allDataMapCG, resolverIntf);
       }
       if (tuple.dataMapExprWrapper != null) {
@@ -102,7 +102,7 @@ public class DataMapChooser {
       Expression expression = resolverIntf.getFilterExpression();
       // First check for FG datamaps if any exist
       List<TableDataMap> allDataMapFG =
-          DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.FG);
+          DataMapStoreManager.getInstance().getAllVisibleDataMap(carbonTable, DataMapLevel.FG);
       ExpressionTuple tuple = selectDataMap(expression, allDataMapFG, resolverIntf);
       if (tuple.dataMapExprWrapper != null) {
         return tuple.dataMapExprWrapper;
@@ -121,7 +121,7 @@ public class DataMapChooser {
       Expression expression = resolverIntf.getFilterExpression();
       // Check for CG datamap
       List<TableDataMap> allDataMapCG =
-          DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.CG);
+          DataMapStoreManager.getInstance().getAllVisibleDataMap(carbonTable, DataMapLevel.CG);
       ExpressionTuple tuple = selectDataMap(expression, allDataMapCG, resolverIntf);
       if (tuple.dataMapExprWrapper != null) {
         return tuple.dataMapExprWrapper;

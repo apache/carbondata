@@ -62,6 +62,13 @@ public final class CarbonCommonConstants {
   public static final String CARBON_INPUT_SEGMENTS = "carbon.input.segments.";
 
   /**
+   * key prefix for set command. 'carbon.datamap.visible.dbName.tableName.dmName = false' means
+   * that the query on 'dbName.table' will not use the datamap 'dmName'
+   */
+  @InterfaceStability.Unstable
+  public static final String CARBON_DATAMAP_VISIBLE = "carbon.datamap.visible.";
+
+  /**
    * Fetch and validate the segments.
    * Used for aggregate table load as segment validation is not required.
    */
