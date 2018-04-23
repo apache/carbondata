@@ -116,6 +116,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         Object[] convertedRow = iterator.next();
         if (null == convertedRow) {
           index--;
+          iterator.close();
           continue;
         }
         if (!isDataPresent) {
@@ -140,6 +141,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       while (true) {
         Object[] convertedRow = iterator.next();
         if (null == convertedRow) {
+          iterator.close();
           break;
         }
         // do it only once

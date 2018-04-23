@@ -176,13 +176,20 @@ public class CarbonCompactionExecutor {
    * Below method will be used
    * for cleanup
    */
-  public void finish() {
+  public void close(List<RawResultIterator> rawResultIteratorList) {
     try {
+      // close all the iterators. Iterators might not closed in case of compaction failure
+      // or if process is killed
+      if (null != rawResultIteratorList) {
+        for (RawResultIterator rawResultIterator : rawResultIteratorList) {
+          rawResultIterator.close();
+        }
+      }
       for (QueryExecutor queryExecutor : queryExecutorList) {
         queryExecutor.finish();
       }
     } catch (QueryExecutionException e) {
-      LOGGER.error(e, "Problem while finish: ");
+      LOGGER.error(e, "Problem while close. Ignoring the exception");
     }
     clearDictionaryFromQueryModel();
   }

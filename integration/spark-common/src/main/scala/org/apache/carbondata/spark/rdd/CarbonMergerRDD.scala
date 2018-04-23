@@ -100,6 +100,7 @@ class CarbonMergerRDD[K, V](
       var mergeNumber = ""
       var exec: CarbonCompactionExecutor = null
       var processor: AbstractResultProcessor = null
+      var rawResultIteratorList: java.util.List[RawResultIterator] = null
       try {
 
 
@@ -180,10 +181,9 @@ class CarbonMergerRDD[K, V](
         context.addTaskCompletionListener { _ =>
           close()
         }
-        // fire a query and get the results.
-        var result2: java.util.List[RawResultIterator] = null
         try {
-          result2 = exec.processTableBlocks()
+          // fire a query and get the results.
+          rawResultIteratorList = exec.processTableBlocks()
         } catch {
           case e: Throwable =>
             LOGGER.error(e)
@@ -220,7 +220,7 @@ class CarbonMergerRDD[K, V](
               carbonMergerMapping.campactionType,
               partitionSpec)
         }
-        mergeStatus = processor.execute(result2)
+        mergeStatus = processor.execute(rawResultIteratorList)
         mergeResult = tableBlockInfoList.get(0).getSegmentId + ',' + mergeNumber
 
       } catch {
@@ -234,7 +234,7 @@ class CarbonMergerRDD[K, V](
         // close all the query executor service and clean up memory acquired during query processing
         if (null != exec) {
           LOGGER.info("Cleaning up query resources acquired during compaction")
-          exec.finish()
+          exec.close(rawResultIteratorList)
         }
         // clean up the resources for processor
         if (null != processor) {
