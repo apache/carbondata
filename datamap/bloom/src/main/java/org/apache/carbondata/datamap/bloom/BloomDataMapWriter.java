@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
@@ -38,8 +39,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 
 /**
  * BloomDataMap is constructed in blocklet level. For each indexed column, a bloom filter is
@@ -55,7 +54,7 @@ public class BloomDataMapWriter extends DataMapWriter {
   // map column name to ordinal in pages
   private Map<String, Integer> col2Ordianl;
   private Map<String, DataType> col2DataType;
-  private String currentBlockId;
+  private String indexShardName;
   private int currentBlockletId;
   private List<String> currentDMFiles;
   private List<DataOutputStream> currentDataOutStreams;
@@ -80,22 +79,16 @@ public class BloomDataMapWriter extends DataMapWriter {
   }
 
   @Override
-  public void onBlockStart(String blockId, long taskId) throws IOException {
-    this.currentBlockId = blockId;
-    this.currentBlockletId = 0;
-    currentDMFiles.clear();
-    currentDataOutStreams.clear();
-    currentObjectOutStreams.clear();
-    initDataMapFile();
+  public void onBlockStart(String blockId, String indexShardName) throws IOException {
+    if (this.indexShardName == null) {
+      this.indexShardName = indexShardName;
+      initDataMapFile();
+    }
   }
 
   @Override
   public void onBlockEnd(String blockId) throws IOException {
-    for (int indexColId = 0; indexColId < indexedColumns.size(); indexColId++) {
-      CarbonUtil.closeStreams(this.currentDataOutStreams.get(indexColId),
-          this.currentObjectOutStreams.get(indexColId));
-      commitFile(this.currentDMFiles.get(indexColId));
-    }
+
   }
 
   @Override
@@ -159,9 +152,11 @@ public class BloomDataMapWriter extends DataMapWriter {
 
   private void initDataMapFile() throws IOException {
     String dataMapDir = genDataMapStorePath(this.writeDirectoryPath, this.dataMapName);
+    dataMapDir = dataMapDir + CarbonCommonConstants.FILE_SEPARATOR + this.indexShardName;
+    FileFactory.mkdirs(dataMapDir, FileFactory.getFileType(dataMapDir));
     for (int indexColId = 0; indexColId < indexedColumns.size(); indexColId++) {
-      String dmFile = dataMapDir + File.separator + this.currentBlockId
-          + '.' + indexedColumns.get(indexColId) + BloomCoarseGrainDataMap.BLOOM_INDEX_SUFFIX;
+      String dmFile = dataMapDir + CarbonCommonConstants.FILE_SEPARATOR +
+          indexedColumns.get(indexColId) + BloomCoarseGrainDataMap.BLOOM_INDEX_SUFFIX;
       DataOutputStream dataOutStream = null;
       ObjectOutputStream objectOutStream = null;
       try {
@@ -182,7 +177,7 @@ public class BloomDataMapWriter extends DataMapWriter {
 
   private void writeBloomDataMapFile() throws IOException {
     for (int indexColId = 0; indexColId < indexedColumns.size(); indexColId++) {
-      BloomDMModel model = new BloomDMModel(this.currentBlockId, this.currentBlockletId,
+      BloomDMModel model = new BloomDMModel(this.currentBlockletId,
           indexBloomFilters.get(indexColId));
       // only in higher version of guava-bloom-filter, it provides readFrom/writeTo interface.
       // In lower version, we use default java serializer to write bloomfilter.
@@ -194,7 +189,11 @@ public class BloomDataMapWriter extends DataMapWriter {
 
   @Override
   public void finish() throws IOException {
-
+    for (int indexColId = 0; indexColId < indexedColumns.size(); indexColId++) {
+      CarbonUtil.closeStreams(this.currentDataOutStreams.get(indexColId),
+          this.currentObjectOutStreams.get(indexColId));
+      commitFile(this.currentDMFiles.get(indexColId));
+    }
   }
 
   @Override
@@ -213,11 +212,7 @@ public class BloomDataMapWriter extends DataMapWriter {
   public static String genDataMapStorePath(String dataPath, String dataMapName)
       throws IOException {
     String dmDir = dataPath + File.separator + dataMapName;
-    Path dmPath = FileFactory.getPath(dmDir);
-    FileSystem fs = FileFactory.getFileSystem(dmPath);
-    if (!fs.exists(dmPath)) {
-      fs.mkdirs(dmPath);
-    }
+    FileFactory.mkdirs(dmDir, FileFactory.getFileType(dmDir));
     return dmDir;
   }
 }

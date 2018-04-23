@@ -91,10 +91,10 @@ public class DataMapWriterListener {
     LOG.info("DataMapWriter " + writer + " added");
   }
 
-  public void onBlockStart(String blockId, String blockPath, long taskId) throws IOException {
+  public void onBlockStart(String blockId, String blockPath, String taskName) throws IOException {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
-        writer.onBlockStart(blockId, taskId);
+        writer.onBlockStart(blockId, taskName);
       }
     }
   }

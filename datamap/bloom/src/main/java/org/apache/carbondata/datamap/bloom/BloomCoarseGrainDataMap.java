@@ -36,7 +36,6 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -68,10 +67,12 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private List<BloomDMModel> bloomIndexList;
   private Multimap<String, List<BloomDMModel>> indexCol2BloomDMList;
   public static final String BLOOM_INDEX_SUFFIX = ".bloomindex";
+  private String shardName;
 
   @Override
-  public void init(DataMapModel dataMapModel) throws MemoryException, IOException {
+  public void init(DataMapModel dataMapModel) throws IOException {
     Path indexPath = FileFactory.getPath(dataMapModel.getFilePath());
+    this.shardName = indexPath.getName();
     FileSystem fs = FileFactory.getFileSystem(indexPath);
     if (!fs.exists(indexPath)) {
       throw new IOException(
@@ -93,8 +94,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     indexCol2BloomDMList = ArrayListMultimap.create();
     for (int i = 0; i < indexFileStatus.length; i++) {
       indexFilePath[i] = indexFileStatus[i].getPath().toString();
-      String indexCol = StringUtils.substringBetween(indexFilePath[i], ".carbondata.",
-          BLOOM_INDEX_SUFFIX);
+      String indexfilename = indexFileStatus[i].getPath().getName();
+      String indexCol =
+          indexfilename.substring(0, indexfilename.length() - BLOOM_INDEX_SUFFIX.length());
       indexedColumn.add(indexCol);
       bloomIndexList.addAll(readBloomIndex(indexFilePath[i]));
       indexCol2BloomDMList.put(indexCol, readBloomIndex(indexFilePath[i]));
@@ -149,15 +151,15 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
               convertValueToBytes(bloomQueryModel.dataType, bloomQueryModel.filterValue));
           if (scanRequired) {
             LOGGER.info(String.format(
-                "BloomCoarseGrainDataMap: Need to scan block#%s -> blocklet#%s",
-                bloomDMModel.getBlockId(), String.valueOf(bloomDMModel.getBlockletNo())));
-            Blocklet blocklet = new Blocklet(bloomDMModel.getBlockId(),
-                String.valueOf(bloomDMModel.getBlockletNo()));
+                "BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
+                String.valueOf(bloomDMModel.getBlockletNo())));
+            Blocklet blocklet =
+                new Blocklet(shardName, String.valueOf(bloomDMModel.getBlockletNo()));
             hitBlocklets.add(blocklet);
           } else {
             LOGGER.info(String.format(
-                "BloomCoarseGrainDataMap: Skip scan block#%s -> blocklet#%s",
-                bloomDMModel.getBlockId(), String.valueOf(bloomDMModel.getBlockletNo())));
+                "BloomCoarseGrainDataMap: Skip scan -> blocklet#%s",
+                String.valueOf(bloomDMModel.getBlockletNo())));
           }
         }
       }
