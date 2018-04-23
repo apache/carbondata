@@ -72,15 +72,23 @@ public interface GenericDataType<T> {
   void setSurrogateIndex(int surrIndex);
 
   /**
-   * converts integer surrogate to bit packed surrogate value
+   * Returns true in case the column has Dictionary Encoding.
+   * @return
+   */
+  boolean getIsColumnDictionary();
+
+  /**
+   * Parse the Complex Datatype from the ByteBuffer.
    * @param byteArrayInput
    * @param dataOutputStream
    * @param generator
+   * @return
    * @throws IOException
    * @throws KeyGenException
    */
-  void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator) throws IOException, KeyGenException;
+  void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
+      KeyGenerator[] generator)
+      throws IOException, KeyGenException;
 
   /**
    * @return columns count of each complex type

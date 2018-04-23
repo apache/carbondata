@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -379,9 +380,20 @@ public class CarbonWriterBuilder {
     }
     for (Field field : schema.getFields()) {
       if (null != field) {
-        tableSchemaBuilder.addColumn(
-            new StructField(field.getFieldName(), field.getDataType()),
-            sortColumnsList.contains(field.getFieldName()));
+        if (field.getChildren() != null && field.getChildren().size() > 0) {
+          // Loop through the inner columns and for a StructData
+          List<StructField> structFieldsArray =
+              new ArrayList<StructField>(field.getChildren().size());
+          String parentName = field.getFieldName();
+          for (StructField childFld : field.getChildren()) {
+            structFieldsArray.add(new StructField(childFld.getFieldName(), childFld.getDataType()));
+          }
+          DataType complexType = DataTypes.createStructType(structFieldsArray);
+          tableSchemaBuilder.addColumn(new StructField(field.getFieldName(), complexType), false);
+        } else {
+          tableSchemaBuilder.addColumn(new StructField(field.getFieldName(), field.getDataType()),
+              sortColumnsList.contains(field.getFieldName()));
+        }
       }
     }
     String tableName;

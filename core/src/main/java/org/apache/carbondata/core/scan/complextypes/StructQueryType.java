@@ -101,13 +101,14 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     }
   }
 
-  @Override public Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData) {
-    int childLength = surrogateData.getInt();
+  @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+    int childLength = dataBuffer.getInt();
     Object[] fields = new Object[childLength];
     for (int i = 0; i < childLength; i++) {
-      fields[i] =  children.get(i).getDataBasedOnDataTypeFromSurrogates(surrogateData);
+      fields[i] =  children.get(i).getDataBasedOnDataType(dataBuffer);
     }
 
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
   }
+
 }

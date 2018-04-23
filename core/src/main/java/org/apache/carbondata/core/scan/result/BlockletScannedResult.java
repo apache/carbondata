@@ -289,7 +289,7 @@ public abstract class BlockletScannedResult {
               pageFilteredRowId == null ? j : pageFilteredRowId[pageCounter][j], pageCounter,
               dataOutput);
           Object data = vectorInfos[i].genericQueryType
-              .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(byteStream.toByteArray()));
+              .getDataBasedOnDataType(ByteBuffer.wrap(byteStream.toByteArray()));
           vector.putObject(vectorOffset++, data);
         } catch (IOException e) {
           LOGGER.error(e);

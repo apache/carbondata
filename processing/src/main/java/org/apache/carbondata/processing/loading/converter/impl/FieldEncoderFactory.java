@@ -115,8 +115,8 @@ public class FieldEncoderFactory {
         }
       } else if (dataField.getColumn().isComplex()) {
         return new ComplexFieldConverterImpl(
-            createComplexType(dataField, cache, absoluteTableIdentifier,
-                client, useOnePass, localCache), index);
+            createComplexDataType(dataField, cache, absoluteTableIdentifier,
+                client, useOnePass, localCache, index, nullFormat, isEmptyBadRecord), index);
       } else {
         return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
       }
@@ -128,12 +128,13 @@ public class FieldEncoderFactory {
   /**
    * Create parser for the carbon column.
    */
-  private static GenericDataType createComplexType(DataField dataField,
+  private static GenericDataType createComplexDataType(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       AbsoluteTableIdentifier absoluteTableIdentifier, DictionaryClient client, Boolean useOnePass,
-      Map<Object, Integer> localCache) {
+      Map<Object, Integer> localCache, int index, String nullFormat, Boolean isEmptyBadRecords) {
     return createComplexType(dataField.getColumn(), dataField.getColumn().getColName(), cache,
-        absoluteTableIdentifier, client, useOnePass, localCache);
+        absoluteTableIdentifier, client, useOnePass, localCache, index, nullFormat,
+        isEmptyBadRecords);
   }
 
   /**
@@ -141,10 +142,11 @@ public class FieldEncoderFactory {
    *
    * @return GenericDataType
    */
+
   private static GenericDataType createComplexType(CarbonColumn carbonColumn, String parentName,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       AbsoluteTableIdentifier absoluteTableIdentifier, DictionaryClient client, Boolean useOnePass,
-      Map<Object, Integer> localCache) {
+      Map<Object, Integer> localCache, int index, String nullFormat, Boolean isEmptyBadRecords) {
     DataType dataType = carbonColumn.getDataType();
     if (DataTypes.isArrayType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
@@ -155,7 +157,7 @@ public class FieldEncoderFactory {
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), cache, absoluteTableIdentifier,
-                client, useOnePass, localCache));
+                client, useOnePass, localCache, index, nullFormat, isEmptyBadRecords));
       }
       return arrayDataType;
     } else if (DataTypes.isStructType(dataType)) {
@@ -167,15 +169,16 @@ public class FieldEncoderFactory {
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), cache, absoluteTableIdentifier,
-                client, useOnePass, localCache));
+                client, useOnePass, localCache, index, nullFormat, isEmptyBadRecords));
       }
       return structDataType;
     } else if (DataTypes.isMapType(dataType)) {
       throw new UnsupportedOperationException("Complex type Map is not supported yet");
     } else {
-      return new PrimitiveDataType(carbonColumn.getColName(), parentName,
-          carbonColumn.getColumnId(), (CarbonDimension) carbonColumn, cache,
-          absoluteTableIdentifier, client, useOnePass, localCache);
+      return new PrimitiveDataType(carbonColumn, parentName, carbonColumn.getColumnId(),
+          (CarbonDimension) carbonColumn, cache, absoluteTableIdentifier, client, useOnePass,
+          localCache, nullFormat, isEmptyBadRecords);
     }
   }
+
 }

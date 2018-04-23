@@ -364,9 +364,11 @@ public class SortParameters implements Serializable {
     parameters.setTaskNo(configuration.getTaskNo());
     parameters.setMeasureColCount(configuration.getMeasureCount());
     parameters.setDimColCount(
-        configuration.getDimensionCount() - configuration.getComplexColumnCount());
+        configuration.getDimensionCount() - (configuration.getComplexDictionaryColumnCount()
+            + configuration.getComplexNonDictionaryColumnCount()));
     parameters.setNoDictionaryCount(configuration.getNoDictionaryCount());
-    parameters.setComplexDimColCount(configuration.getComplexColumnCount());
+    parameters.setComplexDimColCount(configuration.getComplexDictionaryColumnCount() + configuration
+        .getComplexNonDictionaryColumnCount());
     parameters.setNoDictionaryDimnesionColumn(
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
     parameters.setBatchSortSizeinMb(CarbonDataProcessorUtil.getBatchSortSizeinMb(configuration));

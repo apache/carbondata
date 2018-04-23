@@ -47,7 +47,7 @@ public class StructQueryTypeTest {
     structQueryType.addChildren(arrayQueryType);
     List children = new ArrayList();
     children.add(arrayQueryType);
-    assertNotNull(structQueryType.getDataBasedOnDataTypeFromSurrogates(surrogateData));
+    assertNotNull(structQueryType.getDataBasedOnDataType(surrogateData));
   }
 
   @Test public void testGetColsCount() {

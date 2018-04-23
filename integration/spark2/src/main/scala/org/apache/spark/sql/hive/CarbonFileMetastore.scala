@@ -42,8 +42,9 @@ import org.apache.carbondata.core.fileoperations.FileWriteOperation
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema
-import org.apache.carbondata.core.metadata.schema.{table, SchemaReader}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable}
+import org.apache.carbondata.core.metadata.schema.table
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.ThriftWriter
@@ -223,9 +224,26 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tablePath = identifier.getTablePath
     val wrapperTableInfo =
     if (inferSchema) {
-      val thriftTableInfo = schemaConverter
-        .fromWrapperToExternalTableInfo(SchemaReader.inferSchema(identifier, false),
-          dbName, tableName)
+      val carbonTbl = CarbonMetadata.getInstance().getCarbonTable(dbName, tableName)
+      val tblInfoFromCache = if (carbonTbl != null) {
+        carbonTbl.getTableInfo
+      } else {
+        null
+      }
+
+      val thriftTableInfo : TableInfo = if (tblInfoFromCache != null) {
+        // In case the TableInfo is present in the Carbon Metadata Cache
+        // then get the tableinfo from the cache rather than infering from
+        // the CarbonData file.
+        schemaConverter
+          .fromWrapperToExternalTableInfo(tblInfoFromCache, dbName, tableName)
+      } else {
+        schemaConverter
+          .fromWrapperToExternalTableInfo(SchemaReader
+                      .inferSchema(identifier, false),
+            dbName, tableName)
+      }
+
       val wrapperTableInfo =
         schemaConverter
           .fromExternalToWrapperTableInfo(thriftTableInfo, dbName, tableName, tablePath)

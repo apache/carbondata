@@ -31,6 +31,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
@@ -111,7 +112,8 @@ public class TableSchemaBuilder {
     if (isSortColumn ||
         field.getDataType() == DataTypes.STRING ||
         field.getDataType() == DataTypes.DATE ||
-        field.getDataType() == DataTypes.TIMESTAMP) {
+        field.getDataType() == DataTypes.TIMESTAMP ||
+        DataTypes.isStructType(field.getDataType())) {
       newColumn.setDimensionColumn(true);
     } else {
       newColumn.setDimensionColumn(false);
@@ -128,6 +130,9 @@ public class TableSchemaBuilder {
     newColumn.setColumnUniqueId(field.getFieldName());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
     newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn));
+    if (field.getDataType().isComplexType()) {
+      newColumn.setNumberOfChild(((StructType) field.getDataType()).getFields().size());
+    }
     if (DataTypes.isDecimal(field.getDataType())) {
       DecimalType decimalType = (DecimalType) field.getDataType();
       newColumn.setPrecision(decimalType.getPrecision());
@@ -139,9 +144,17 @@ public class TableSchemaBuilder {
     } else {
       otherColumns.add(newColumn);
     }
-
     if (newColumn.isDimensionColumn()) {
       newColumn.setUseInvertedIndex(true);
+    }
+    if (field.getDataType().isComplexType()) {
+      if (((StructType) field.getDataType()).getFields().size() > 0) {
+        // This field has children.
+        List<StructField> fields = ((StructType) field.getDataType()).getFields();
+        for (int i = 0; i < fields.size(); i ++) {
+          addColumn(fields.get(i), false);
+        }
+      }
     }
     return this;
   }

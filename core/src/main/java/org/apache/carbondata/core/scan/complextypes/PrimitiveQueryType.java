@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.Bits;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -43,8 +44,10 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   private boolean isDirectDictionary;
 
+  private boolean isDictionary;
+
   public PrimitiveQueryType(String name, String parentname, int blockIndex,
-      org.apache.carbondata.core.metadata.datatype.DataType dataType, int keySize,
+      DataType dataType, int keySize,
       Dictionary dictionary, boolean isDirectDictionary) {
     super(name, parentname, blockIndex);
     this.dataType = dataType;
@@ -53,6 +56,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     this.name = name;
     this.parentname = parentname;
     this.isDirectDictionary = isDirectDictionary;
+    this.isDictionary = (dictionary != null && isDirectDictionary == false);
   }
 
   @Override public void addChildren(GenericQueryType children) {
@@ -84,6 +88,9 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       DimensionRawColumnChunk[] rawColumnChunks, int rowNumber,
       int pageNumber, DataOutputStream dataOutputStream) throws IOException {
     byte[] currentVal = copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber);
+    if (!this.isDictionary) {
+      dataOutputStream.writeInt(currentVal.length);
+    }
     dataOutputStream.write(currentVal);
   }
 
@@ -92,20 +99,35 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     readBlockDataChunk(blockChunkHolder);
   }
 
-  @Override public Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData) {
-    byte[] data = new byte[keySize];
-    surrogateData.get(data);
-    Bits bit = new Bits(new int[]{keySize * 8});
-    int surrgateValue = (int)bit.getKeyArray(data, 0)[0];
+  @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
     Object actualData = null;
+
     if (isDirectDictionary) {
-      DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
-          .getDirectDictionaryGenerator(dataType);
+      // Direct Dictionary Column
+      byte[] data = new byte[keySize];
+      dataBuffer.get(data);
+      Bits bit = new Bits(new int[] { keySize * 8 });
+      int surrgateValue = (int) bit.getKeyArray(data, 0)[0];
+      DirectDictionaryGenerator directDictionaryGenerator =
+          DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(dataType);
       actualData = directDictionaryGenerator.getValueFromSurrogate(surrgateValue);
+    } else if (!isDictionary) {
+      // No Dictionary Columns
+      int size = dataBuffer.getInt();
+      byte[] value = new byte[size];
+      dataBuffer.get(value, 0, size);
+      actualData = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType);
     } else {
+      // Dictionary Column
+      byte[] data = new byte[keySize];
+      dataBuffer.get(data);
+      Bits bit = new Bits(new int[] { keySize * 8 });
+      int surrgateValue = (int) bit.getKeyArray(data, 0)[0];
       String dictionaryValueForKey = dictionary.getDictionaryValueForKey(surrgateValue);
       actualData = DataTypeUtil.getDataBasedOnDataType(dictionaryValueForKey, this.dataType);
     }
+
     return actualData;
   }
+
 }

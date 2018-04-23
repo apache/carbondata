@@ -85,14 +85,14 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     children.fillRequiredBlockData(blockChunkHolder);
   }
 
-  @Override public Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData) {
-    int dataLength = surrogateData.getInt();
+  @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+    int dataLength = dataBuffer.getInt();
     if (dataLength == -1) {
       return null;
     }
     Object[] data = new Object[dataLength];
     for (int i = 0; i < dataLength; i++) {
-      data[i] = children.getDataBasedOnDataTypeFromSurrogates(surrogateData);
+      data[i] = children.getDataBasedOnDataType(dataBuffer);
     }
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
   }
