@@ -424,10 +424,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // Again prune with CG datamap.
       if (distributedCG && dataMapJob != null) {
         prunedBlocklets =
-            executeDataMapJob(carbonTable, resolver, segmentIds, dataMapExprWrapper, dataMapJob,
+            executeDataMapJob(carbonTable, resolver, segmentIds, cgDataMapExprWrapper, dataMapJob,
                 partitionsToPrune);
       } else {
-        prunedBlocklets = dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+        prunedBlocklets = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
       }
     }
     // Now try to prune with FG DataMap.
