@@ -19,6 +19,7 @@ package org.apache.carbondata.examples
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.SparkSession
 import org.slf4j.{Logger, LoggerFactory}
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
@@ -48,12 +49,12 @@ object S3UsingSDKExample {
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)
-          builder.withSchema(new Schema(fields)).outputPath(writerPath).unManagedTable(true)
+          builder.withSchema(new Schema(fields)).outputPath(writerPath).isTransactionalTable(true)
             .uniqueIdentifier(
               System.currentTimeMillis)
             .buildWriterForCSVInput()
         } else {
-          builder.withSchema(new Schema(fields)).outputPath(writerPath).unManagedTable(true)
+          builder.withSchema(new Schema(fields)).outputPath(writerPath).isTransactionalTable(true)
             .uniqueIdentifier(
               System.currentTimeMillis).withBlockSize(2)
             .buildWriterForCSVInput()
@@ -95,7 +96,7 @@ object S3UsingSDKExample {
     val spark = SparkSession
       .builder()
       .master(getSparkMaster(args))
-      .appName("S3Example")
+      .appName("S3UsingSDKExample")
       .config("spark.driver.host", "localhost")
       .config(accessKey, args(0))
       .config(secretKey, args(1))
@@ -115,6 +116,10 @@ object S3UsingSDKExample {
     }
     buildTestData(path, num)
 
+    spark.sql("DROP TABLE IF EXISTS s3_sdk_table")
+    spark.sql(s"CREATE EXTERNAL TABLE s3_sdk_table STORED BY 'carbondata'" +
+      s" LOCATION '$path/Fact/Part0/Segment_null'")
+    spark.sql("SELECT * FROM s3_sdk_table LIMIT 10").show()
     spark.stop()
   }
 
