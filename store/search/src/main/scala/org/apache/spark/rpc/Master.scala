@@ -210,7 +210,7 @@ class Master(sparkConf: SparkConf, port: Int) {
 
   /**
    * Prune data by using CarbonInputFormat.getSplit
-   * Return a mapping of hostname to list of block
+   * Return a mapping of host address to list of block
    */
   private def pruneBlock(
       table: CarbonTable,
