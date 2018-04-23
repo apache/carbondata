@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,6 +46,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
@@ -103,6 +105,53 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
                 indexFile.getName(), indexFileEntry.getValue(), segment.getSegmentNo()));
       }
       segmentMap.put(segment.getSegmentNo(), tableBlockIndexUniqueIdentifiers);
+    } else {
+      if (segment.getReadCommittedScope() instanceof LatestFilesReadCommittedScope) {
+        tableBlockIndexUniqueIdentifiers = checkAndRefreshTableBlockIndexUniqueIdentifiers(segment,
+            tableBlockIndexUniqueIdentifiers);
+      }
+    }
+    return tableBlockIndexUniqueIdentifiers;
+  }
+
+  private List<TableBlockIndexUniqueIdentifier> checkAndRefreshTableBlockIndexUniqueIdentifiers(
+      Segment segment, List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers)
+      throws IOException {
+    // For NonTransactional carbon table,
+    //    two carbon sdk writer output files can be placed in single path.
+    // consider the below scenario,
+    // copy one sdk output writer files and query that path. It will load segmentMap with
+    //    TableBlockIndexUniqueIdentifier of that snapshot index files.
+    // Now at same path if another sdk writer's output files are placed with same UUID.
+    //    Then it should be mapped to same existing segment as UUID for segment ID.
+    //    Below is the code to update the segment with the new refreshed list of index files.
+    boolean needRefresh = false;
+    Map<String, String> indexFiles = segment.getCommittedIndexFile();
+    if (tableBlockIndexUniqueIdentifiers.size() != indexFiles.size()) {
+      needRefresh = true;
+    } else {
+      // if same length, Need to make sure contents are same.
+      // There can be a scenario where same UUID index file is placed by deleting old one.
+      // Above scenario is valid as it is non transactional table.
+      for (TableBlockIndexUniqueIdentifier uniqueIdentifier : tableBlockIndexUniqueIdentifiers) {
+        if (!indexFiles.containsKey(
+            uniqueIdentifier.getIndexFilePath() + File.separator + uniqueIdentifier
+                .getIndexFileName())) {
+          needRefresh = true;
+        }
+      }
+    }
+    if (needRefresh) {
+      List<TableBlockIndexUniqueIdentifier> newTableBlockIndexUniqueIdentifiers = new ArrayList<>();
+      for (Map.Entry<String, String> indexFileEntry : indexFiles.entrySet()) {
+        Path indexFile = new Path(indexFileEntry.getKey());
+        newTableBlockIndexUniqueIdentifiers.add(
+            new TableBlockIndexUniqueIdentifier(indexFile.getParent().toString(),
+                indexFile.getName(), indexFileEntry.getValue(), segment.getSegmentNo()));
+        // replace old mapping of segment and index files with the new values.
+        segmentMap.put(segment.getSegmentNo(), newTableBlockIndexUniqueIdentifiers);
+        tableBlockIndexUniqueIdentifiers = newTableBlockIndexUniqueIdentifiers;
+      }
     }
     return tableBlockIndexUniqueIdentifiers;
   }

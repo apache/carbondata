@@ -97,6 +97,10 @@ public class Segment implements Serializable {
     return segmentFileName;
   }
 
+  public ReadCommittedScope getReadCommittedScope() {
+    return readCommittedScope;
+  }
+
   public static List<Segment> toSegmentList(String[] segmentIds,
       ReadCommittedScope readCommittedScope) {
     List<Segment> list = new ArrayList<>(segmentIds.length);
