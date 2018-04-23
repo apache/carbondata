@@ -85,6 +85,7 @@ class AvroCarbonWriter extends CarbonWriter {
       case LONG:
       case DOUBLE:
       case STRING:
+      case FLOAT:
         out.append(fieldValue.toString());
         break;
       default:

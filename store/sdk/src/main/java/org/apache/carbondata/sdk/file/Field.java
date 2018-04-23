@@ -32,6 +32,11 @@ public class Field {
   private String name;
   private DataType type;
 
+  /**
+   * Field Constructor
+   * @param name name of the field
+   * @param type datatype of field, specified in strings.
+   */
   public Field(String name, String type) {
     this.name = name;
     if (type.equalsIgnoreCase("string")) {
@@ -59,6 +64,11 @@ public class Field {
     }
   }
 
+  /**
+   * Field constructor
+   * @param name name of the field
+   * @param type datatype of the field of class DataType
+   */
   public Field(String name, DataType type) {
     this.name = name;
     this.type = type;

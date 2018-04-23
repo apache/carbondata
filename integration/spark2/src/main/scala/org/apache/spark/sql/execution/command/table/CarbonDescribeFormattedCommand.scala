@@ -81,12 +81,17 @@ private[sql] case class CarbonDescribeFormattedCommand(
     } else {
       colProps.toString()
     }
+    val carbonTable = relation.carbonTable
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
     results ++= Seq(("Database Name", relation.carbonTable.getDatabaseName, "")
     )
     results ++= Seq(("Table Name", relation.carbonTable.getTableName, ""))
-    results ++= Seq(("CARBON Store Path ", CarbonProperties.getStorePath, ""))
-    val carbonTable = relation.carbonTable
+    if (carbonTable.isTransactionalTable) {
+      results ++= Seq(("CARBON Store Path ", CarbonProperties.getStorePath, ""))
+    } else {
+      // for NonTransactional table should show files path.
+      results ++= Seq(("CARBON Store Path ", carbonTable.getTablePath, ""))
+    }
 
     val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties
 

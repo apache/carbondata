@@ -36,6 +36,10 @@ public class Schema {
 
   private Field[] fields;
 
+  /**
+   * construct a schema with fields
+   * @param fields
+   */
   public Schema(Field[] fields) {
     this.fields = fields;
   }
@@ -46,6 +50,8 @@ public class Schema {
    *   {"name":"string"},
    *   {"age":"int"}
    * ]
+   * @param json specified as string
+   * @return Schema
    */
   public static Schema parseJson(String json) {
     GsonBuilder gsonBuilder = new GsonBuilder();
