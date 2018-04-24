@@ -205,7 +205,6 @@ public class CSVCarbonWriterTest {
     FileUtils.deleteDirectory(new File(path));
   }
 
-
   @Test(expected = IOException.class)
   public void testWhenWriterthrowsError() throws IOException{
     CarbonWriter carbonWriter = null;
@@ -246,4 +245,55 @@ public class CSVCarbonWriterTest {
     carbonWriter.close();
 
   }
+
+  @Test
+  public void testTaskNo() throws IOException {
+    // TODO: write all data type and read by CarbonRecordReader to verify the content
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("intField", DataTypes.INT);
+
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder()
+          .withSchema(new Schema(fields))
+          .isTransactionalTable(true).taskNo("5")
+          .outputPath(path);
+
+      CarbonWriter writer = builder.buildWriterForCSVInput();
+
+      for (int i = 0; i < 2; i++) {
+        String[] row = new String[]{
+            "robot" + (i % 10),
+            String.valueOf(i)
+        };
+        writer.write(row);
+      }
+      writer.close();
+
+      File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+      Assert.assertTrue(segmentFolder.exists());
+
+      File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+        @Override public boolean accept(File pathname) {
+          return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+        }
+      });
+      Assert.assertNotNull(dataFiles);
+      Assert.assertTrue(dataFiles.length > 0);
+      String taskNo = CarbonTablePath.DataFileUtil.getTaskNo(dataFiles[0].getName());
+      long taskID = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskNo);
+      Assert.assertEquals("Task Id is not matched", taskID, 5);
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
 }

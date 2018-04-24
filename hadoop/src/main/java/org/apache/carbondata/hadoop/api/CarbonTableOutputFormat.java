@@ -233,9 +233,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   public RecordWriter<NullWritable, ObjectArrayWritable> getRecordWriter(
       TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
-    loadModel.setTaskNo(taskAttemptContext.getConfiguration().get(
-        "carbon.outputformat.taskno",
-        String.valueOf(System.nanoTime())));
+    //if loadModel having taskNo already(like in SDK) then no need to overwrite
+    if (null == loadModel.getTaskNo() || loadModel.getTaskNo().isEmpty()) {
+      loadModel.setTaskNo(taskAttemptContext.getConfiguration()
+          .get("carbon.outputformat.taskno", String.valueOf(System.nanoTime())));
+    }
     loadModel.setDataWritePath(
         taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
