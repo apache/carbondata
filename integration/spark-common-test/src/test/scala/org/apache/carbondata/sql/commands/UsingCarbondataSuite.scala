@@ -19,7 +19,7 @@ package org.apache.carbondata.sql.commands
 
 import scala.collection.mutable
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
@@ -28,11 +28,15 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
   override def beforeEach(): Unit = {
     sql("DROP TABLE IF EXISTS src_carbondata1")
+    sql("DROP TABLE IF EXISTS src_carbondata3")
+    sql("DROP TABLE IF EXISTS src_carbondata4")
     sql("DROP TABLE IF EXISTS tableSize3")
   }
 
   override def afterEach(): Unit = {
     sql("DROP TABLE IF EXISTS src_carbondata1")
+    sql("DROP TABLE IF EXISTS src_carbondata3")
+    sql("DROP TABLE IF EXISTS src_carbondata4")
     sql("DROP TABLE IF EXISTS tableSize3")
   }
 
@@ -67,6 +71,74 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res3.length == 2)
     res3.foreach(row => assert(row.getString(1).trim.toLong > 0))
+  }
+
+  test("CARBONDATA-2396 Support Create Table As Select with 'using carbondata'") {
+    sql("CREATE TABLE src_carbondata3(key INT, value STRING) USING carbondata")
+    sql("INSERT INTO src_carbondata3 VALUES(1,'source')")
+    checkAnswer(sql("SELECT * FROM src_carbondata3"), Row(1, "source"))
+    sql("CREATE TABLE src_carbondata4 USING carbondata as select * from src_carbondata3")
+    checkAnswer(sql("SELECT * FROM src_carbondata4"), Row(1, "source"))
+  }
+
+  test("CARBONDATA-2396 Support Create Table As Select with 'USING org.apache.spark.sql.CarbonSource'") {
+    sql("DROP TABLE IF EXISTS src_carbondata3")
+    sql("DROP TABLE IF EXISTS src_carbondata4")
+    sql("CREATE TABLE src_carbondata3(key INT, value STRING) USING org.apache.spark.sql.CarbonSource")
+    sql("INSERT INTO src_carbondata3 VALUES(1,'source')")
+    checkAnswer(sql("SELECT * FROM src_carbondata3"), Row(1, "source"))
+    sql("CREATE TABLE src_carbondata4 USING org.apache.spark.sql.CarbonSource as select * from src_carbondata3")
+    checkAnswer(sql("SELECT * FROM src_carbondata4"), Row(1, "source"))
+    sql("DROP TABLE IF EXISTS src_carbondata3")
+    sql("DROP TABLE IF EXISTS src_carbondata4")
+  }
+
+  test("CARBONDATA-2396 Support Create Table As Select [IF NOT EXISTS] with 'using carbondata'") {
+    sql("DROP TABLE IF EXISTS src_carbondata5")
+    sql("DROP TABLE IF EXISTS src_carbondata6")
+    sql("CREATE TABLE src_carbondata5(key INT, value STRING) USING carbondata")
+    sql("INSERT INTO src_carbondata5 VALUES(1,'source')")
+    checkAnswer(sql("SELECT * FROM src_carbondata5"), Row(1, "source"))
+    sql(
+      "CREATE TABLE IF NOT EXISTS src_carbondata6 USING carbondata as select * from " +
+      "src_carbondata5")
+    checkAnswer(sql("SELECT * FROM src_carbondata6"), Row(1, "source"))
+    sql("DROP TABLE IF EXISTS src_carbondata5")
+    sql("DROP TABLE IF EXISTS src_carbondata6")
+  }
+
+  test("CARBONDATA-2396 Support Create Table As Select with 'using carbondata' with Table properties") {
+    sql("DROP TABLE IF EXISTS src_carbondata5")
+    sql("DROP TABLE IF EXISTS src_carbondata6")
+    sql("CREATE TABLE src_carbondata5(key INT, value STRING) USING carbondata")
+    sql("INSERT INTO src_carbondata5 VALUES(1,'source')")
+    checkAnswer(sql("SELECT * FROM src_carbondata5"), Row(1, "source"))
+    sql("CREATE TABLE src_carbondata6  USING carbondata options('table_blocksize'='10'," +
+      "'sort_scope'='local_sort') as select * from src_carbondata5")
+    val result = sql("describe FORMATTED src_carbondata6")
+    checkExistence(result, true, "Table Block Size")
+    checkExistence(result, true, "10 MB")
+    checkAnswer(sql("SELECT * FROM src_carbondata6"), Row(1, "source"))
+    sql("DROP TABLE IF EXISTS src_carbondata5")
+    sql("DROP TABLE IF EXISTS src_carbondata6")
+  }
+
+  test("CARBONDATA-2396 Support Create Table As Select with 'using carbondata' with Columns") {
+    sql("DROP TABLE IF EXISTS src_carbondata5")
+    sql("DROP TABLE IF EXISTS src_carbondata6")
+    sql("CREATE TABLE src_carbondata5(key INT, value STRING) USING carbondata")
+    sql("INSERT INTO src_carbondata5 VALUES(1,'source')")
+    checkAnswer(sql("SELECT * FROM src_carbondata5"), Row(1, "source"))
+    val exception = intercept[AnalysisException](
+      sql(
+        "CREATE TABLE src_carbondata6(name String) USING carbondata as select * from " +
+        "src_carbondata5"))
+    assert(exception.getMessage
+      .contains(
+        "Operation not allowed: Schema may not be specified in a Create Table As Select (CTAS) " +
+        "statement"))
+    sql("DROP TABLE IF EXISTS src_carbondata5")
+    sql("DROP TABLE IF EXISTS src_carbondata6")
   }
 
 }
