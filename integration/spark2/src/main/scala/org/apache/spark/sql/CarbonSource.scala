@@ -26,6 +26,7 @@ import scala.language.implicitConversions
 import org.apache.commons.lang.StringUtils
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.strategy.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.streaming.Sink
@@ -87,12 +88,6 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       data: DataFrame): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
     var newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
-    // User should not specify path since only one store is supported in carbon currently,
-    // after we support multi-store, we can remove this limitation
-    require(!newParameters.contains("path"), "'path' should not be specified, " +
-                                          "the path to store carbon file is the 'storePath' " +
-                                          "specified when creating CarbonContext")
-
     val options = new CarbonOption(newParameters)
     val isExists = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.tableExists(
       options.tableName, options.dbName)(sqlContext.sparkSession)
@@ -181,7 +176,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
           dbName,
           tableName)
         val updatedParams = CarbonSource.updateAndCreateTable(
-          identifier, dataSchema, sparkSession, metaStore, parameters)
+          identifier, dataSchema, sparkSession, metaStore, parameters, None)
         (CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession), updatedParams)
       case ex: Exception =>
         throw new Exception("do not have dbname and tablename for carbon table", ex)
@@ -273,12 +268,26 @@ object CarbonSource {
   def createTableInfoFromParams(
       parameters: Map[String, String],
       dataSchema: StructType,
-      identifier: AbsoluteTableIdentifier): TableModel = {
+      identifier: AbsoluteTableIdentifier,
+      query: Option[LogicalPlan],
+      sparkSession: SparkSession): TableModel = {
     val sqlParser = new CarbonSpark2SqlParser
-    val fields = sqlParser.getFields(dataSchema)
     val map = scala.collection.mutable.Map[String, String]()
     parameters.foreach { case (key, value) => map.put(key, value.toLowerCase()) }
     val options = new CarbonOption(parameters)
+    val fields = query match {
+      case Some(q) =>
+        // if query is provided then it is a CTAS flow
+        if (sqlParser.getFields(dataSchema).nonEmpty) {
+          throw new AnalysisException(
+            "Schema cannot be specified in a Create Table As Select (CTAS) statement")
+        }
+        sqlParser
+          .getFields(CarbonEnv.getInstance(sparkSession).carbonMetastore
+            .getSchemaFromUnresolvedRelation(sparkSession, q))
+      case None =>
+        sqlParser.getFields(dataSchema)
+    }
     val bucketFields = sqlParser.getBucketFields(map, fields, options)
     sqlParser.prepareTableModel(ifNotExistPresent = false, Option(identifier.getDatabaseName),
       identifier.getTableName, fields, Nil, map, bucketFields)
@@ -292,7 +301,8 @@ object CarbonSource {
    */
   def updateCatalogTableWithCarbonSchema(
       tableDesc: CatalogTable,
-      sparkSession: SparkSession): CatalogTable = {
+      sparkSession: SparkSession,
+      query: Option[LogicalPlan] = None): CatalogTable = {
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val storageFormat = tableDesc.storage
     val properties = storageFormat.properties
@@ -306,7 +316,8 @@ object CarbonSource {
         tableDesc.schema,
         sparkSession,
         metaStore,
-        properties)
+        properties,
+        query)
       // updating params
       val updatedFormat = storageFormat.copy(properties = map)
       tableDesc.copy(storage = updatedFormat)
@@ -334,8 +345,9 @@ object CarbonSource {
       dataSchema: StructType,
       sparkSession: SparkSession,
       metaStore: CarbonMetaStore,
-      properties: Map[String, String]): Map[String, String] = {
-    val model = createTableInfoFromParams(properties, dataSchema, identifier)
+      properties: Map[String, String],
+      query: Option[LogicalPlan]): Map[String, String] = {
+    val model = createTableInfoFromParams(properties, dataSchema, identifier, query, sparkSession)
     val tableInfo: TableInfo = TableNewProcessor(model)
     val isExternal = properties.getOrElse("isExternal", "false")
     val isTransactionalTable = properties.getOrElse("isTransactional", "true")

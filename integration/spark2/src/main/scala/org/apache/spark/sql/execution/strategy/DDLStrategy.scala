@@ -29,7 +29,7 @@ import org.apache.spark.sql.execution.command.table.{CarbonDescribeFormattedComm
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
 import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.hive.{CarbonRelation, CreateCarbonSourceTableAsSelectCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
@@ -228,11 +228,28 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val cmd =
           CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
         ExecutedCommandExec(cmd) :: Nil
+      case cmd@CreateDataSourceTableAsSelectCommand(tableDesc, mode, query)
+        if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
+           && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
+               || tableDesc.provider.get.equalsIgnoreCase("carbondata")) =>
+        val updatedCatalog = CarbonSource
+          .updateCatalogTableWithCarbonSchema(tableDesc, sparkSession, Option(query))
+        val cmd = CreateCarbonSourceTableAsSelectCommand(updatedCatalog, SaveMode.Ignore, query)
+        ExecutedCommandExec(cmd) :: Nil
+      case cmd@org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, query)
+        if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
+           && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
+               || tableDesc.provider.get.equalsIgnoreCase("carbondata")) =>
+        val updatedCatalog = CarbonSource
+          .updateCatalogTableWithCarbonSchema(tableDesc, sparkSession, query)
+        val cmd = CreateCarbonSourceTableAsSelectCommand(updatedCatalog, SaveMode.Ignore, query.get)
+        ExecutedCommandExec(cmd) :: Nil
       case CreateDataSourceTableCommand(table, ignoreIfExists)
         if table.provider.get != DDLUtils.HIVE_PROVIDER
           && (table.provider.get.equals("org.apache.spark.sql.CarbonSource")
           || table.provider.get.equalsIgnoreCase("carbondata")) =>
-        val updatedCatalog = CarbonSource.updateCatalogTableWithCarbonSchema(table, sparkSession)
+        val updatedCatalog = CarbonSource
+          .updateCatalogTableWithCarbonSchema(table, sparkSession)
         val cmd = CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists)
         ExecutedCommandExec(cmd) :: Nil
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
