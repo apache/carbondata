@@ -104,4 +104,13 @@ public class CarbonReader<T> {
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     return schemaConverter.fromExternalToWrapperTableInfo(tableInfo, "", "", "");
   }
+
+  /**
+   * Close reader
+   *
+   * @throws IOException
+   */
+  public void close() throws IOException {
+    this.currentReader.close();
+  }
 }
