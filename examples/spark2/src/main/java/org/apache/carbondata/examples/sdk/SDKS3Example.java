@@ -97,7 +97,6 @@ public class SDKS3Example {
             i++;
         }
         System.out.println("\nFinished");
-        // TODO
-        //        reader.close();
+        reader.close();
     }
 }
