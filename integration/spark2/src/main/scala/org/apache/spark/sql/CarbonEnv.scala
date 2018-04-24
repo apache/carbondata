@@ -75,10 +75,14 @@ class CarbonEnv {
         // update carbon session parameters , preserve thread parameters
         val currentThreadSesssionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
         carbonSessionInfo = new CarbonSessionInfo()
+        // We should not corrupt the information in carbonSessionInfo object which is at the
+        // session level. Instead create a new object and in that set the user specified values in
+        // thread/session params
+        val threadLevelCarbonSessionInfo = new CarbonSessionInfo()
         if (currentThreadSesssionInfo != null) {
-          carbonSessionInfo.setThreadParams(currentThreadSesssionInfo.getThreadParams)
+          threadLevelCarbonSessionInfo.setThreadParams(currentThreadSesssionInfo.getThreadParams)
         }
-        ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+        ThreadLocalSessionInfo.setCarbonSessionInfo(threadLevelCarbonSessionInfo)
         val config = new CarbonSQLConf(sparkSession)
         if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT).isEmpty) {
           config.addDefaultCarbonParams()
