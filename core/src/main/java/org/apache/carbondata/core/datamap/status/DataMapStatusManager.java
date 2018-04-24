@@ -53,11 +53,11 @@ public class DataMapStatusManager {
 
   public static void disableDataMap(String dataMapName) throws Exception {
     DataMapSchema dataMapSchema = getDataMapSchema(dataMapName);
-    List<DataMapSchema> list = new ArrayList<>();
     if (dataMapSchema != null) {
+      List<DataMapSchema> list = new ArrayList<>();
       list.add(dataMapSchema);
+      storageProvider.updateDataMapStatus(list, DataMapStatus.DISABLED);
     }
-    storageProvider.updateDataMapStatus(list, DataMapStatus.DISABLED);
   }
 
   public static void disableDataMapsOfTable(CarbonTable table) throws IOException {
@@ -68,11 +68,11 @@ public class DataMapStatusManager {
 
   public static void enableDataMap(String dataMapName) throws IOException, NoSuchDataMapException {
     DataMapSchema dataMapSchema = getDataMapSchema(dataMapName);
-    List<DataMapSchema> list = new ArrayList<>();
     if (dataMapSchema != null) {
+      List<DataMapSchema> list = new ArrayList<>();
       list.add(dataMapSchema);
+      storageProvider.updateDataMapStatus(list, DataMapStatus.ENABLED);
     }
-    storageProvider.updateDataMapStatus(list, DataMapStatus.ENABLED);
   }
 
   public static void enableDataMapsOfTable(CarbonTable table) throws IOException {
@@ -83,11 +83,11 @@ public class DataMapStatusManager {
 
   public static void dropDataMap(String dataMapName) throws IOException, NoSuchDataMapException {
     DataMapSchema dataMapSchema = getDataMapSchema(dataMapName);
-    List<DataMapSchema> list = new ArrayList<>();
     if (dataMapSchema != null) {
+      List<DataMapSchema> list = new ArrayList<>();
       list.add(dataMapSchema);
+      storageProvider.updateDataMapStatus(list, DataMapStatus.DROPPED);
     }
-    storageProvider.updateDataMapStatus(list, DataMapStatus.DROPPED);
   }
 
   private static DataMapSchema getDataMapSchema(String dataMapName)

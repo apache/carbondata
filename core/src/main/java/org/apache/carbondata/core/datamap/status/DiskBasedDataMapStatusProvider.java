@@ -98,6 +98,10 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
   @Override
   public void updateDataMapStatus(List<DataMapSchema> dataMapSchemas, DataMapStatus dataMapStatus)
       throws IOException {
+    if (dataMapSchemas == null || dataMapSchemas.size() == 0) {
+      // There is nothing to update
+      return;
+    }
     ICarbonLock carbonTableStatusLock = getDataMapStatusLock();
     boolean locked = false;
     try {
