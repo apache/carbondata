@@ -151,7 +151,8 @@ object TestQueryExecutor {
     TestQueryExecutor.projectPath + "/integration/spark-common/target",
     TestQueryExecutor.projectPath + "/integration/spark2/target",
     TestQueryExecutor.projectPath + "/integration/spark-common/target/jars",
-    TestQueryExecutor.projectPath + "/streaming/target")
+    TestQueryExecutor.projectPath + "/streaming/target",
+    TestQueryExecutor.projectPath + "/store/sdk/target")
 
   lazy val jars = {
     val jarsLocal = new ArrayBuffer[String]()
