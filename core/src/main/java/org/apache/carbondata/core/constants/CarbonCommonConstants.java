@@ -65,6 +65,7 @@ public final class CarbonCommonConstants {
    * key prefix for set command. 'carbon.datamap.visible.dbName.tableName.dmName = false' means
    * that the query on 'dbName.table' will not use the datamap 'dmName'
    */
+  @InterfaceStability.Unstable
   public static final String CARBON_DATAMAP_VISIBLE = "carbon.datamap.visible.";
 
   /**
