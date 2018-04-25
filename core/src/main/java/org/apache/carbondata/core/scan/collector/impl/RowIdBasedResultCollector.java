@@ -20,9 +20,14 @@ package org.apache.carbondata.core.scan.collector.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 
+/**
+ * This class append blocklet id, page id and row id to each row.
+ */
+@InterfaceAudience.Internal
 public class RowIdBasedResultCollector extends DictionaryBasedResultCollector {
 
   public RowIdBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
