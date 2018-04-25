@@ -24,12 +24,14 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
@@ -61,6 +63,73 @@ public class CarbonReaderBuilder {
   public CarbonReaderBuilder filter(Expression fileterExpression) {
     Objects.requireNonNull(fileterExpression);
     this.filterExpression = fileterExpression;
+    return this;
+  }
+
+  /**
+   * Set the access key for S3
+   *
+   * @param key   the string of access key for different S3 type,like: fs.s3a.access.key
+   * @param value the value of access key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setAccessKey(String key, String value) {
+    FileFactory.getConfiguration().set(key, value);
+    return this;
+  }
+
+  /**
+   * Set the access key for S3.
+   *
+   * @param value the value of access key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setAccessKey(String value) {
+    return setAccessKey(Constants.ACCESS_KEY, value);
+  }
+
+  /**
+   * Set the secret key for S3
+   *
+   * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
+   * @param value the value of secret key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setSecretKey(String key, String value) {
+    FileFactory.getConfiguration().set(key, value);
+    return this;
+  }
+
+  /**
+   * Set the secret key for S3
+   *
+   * @param value the value of secret key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setSecretKey(String value) {
+    return setSecretKey(Constants.SECRET_KEY, value);
+  }
+
+  /**
+   * Set the endpoint for S3
+   *
+   * @param key   the string of endpoint for different S3 type,like: fs.s3a.endpoint
+   * @param value the value of endpoint
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setEndPoint(String key, String value) {
+    FileFactory.getConfiguration().set(key, value);
+    return this;
+  }
+
+  /**
+   * Set the endpoint for S3
+   *
+   * @param value the value of endpoint
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setEndPoint(String value) {
+    FileFactory.getConfiguration().set(Constants.ENDPOINT, value);
     return this;
   }
 
