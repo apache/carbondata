@@ -24,6 +24,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Store the data map row @{@link DataMapRow} data to memory.
@@ -83,12 +84,22 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
 
   @Override
   public UnsafeMemoryDMStore convertToUnsafeDMStore() throws MemoryException {
+    setSchemaDataType();
     UnsafeMemoryDMStore unsafeMemoryDMStore = new UnsafeMemoryDMStore(schema);
     for (DataMapRow dataMapRow : dataMapRows) {
       unsafeMemoryDMStore.addIndexRow(dataMapRow);
     }
     unsafeMemoryDMStore.finishWriting();
     return unsafeMemoryDMStore;
+  }
+
+  /**
+   * Set the dataType to the schema. Needed in case of serialization / deserialization
+   */
+  private void setSchemaDataType() {
+    for (CarbonRowSchema carbonRowSchema : schema) {
+      carbonRowSchema.setDataType(DataTypeUtil.valueOf(carbonRowSchema.getDataType(), 0, 0));
+    }
   }
 
 }

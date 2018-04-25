@@ -15,28 +15,38 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hadoop.api;
+package org.apache.carbondata.core.indexstore;
 
+import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.carbondata.core.cache.Cacheable;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 
 /**
- * abstract class for data map job
+ * A cacheable wrapper of datamaps
  */
-public abstract class AbstractDataMapJob implements DataMapJob {
+public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
 
-  @Override public void execute(CarbonTable carbonTable,
-      FileInputFormat<Void, BlockletDataMapIndexWrapper> format) {
+  private List<DataMap> dataMaps;
+
+  public BlockletDataMapIndexWrapper(List<DataMap> dataMaps) {
+    this.dataMaps = dataMaps;
   }
 
-  @Override public List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
-      FilterResolverIntf resolverIntf) {
-    return null;
+  @Override public long getFileTimeStamp() {
+    return 0;
+  }
+
+  @Override public int getAccessCount() {
+    return 0;
+  }
+
+  @Override public long getMemorySize() {
+    return 0;
+  }
+
+  public List<DataMap> getDataMaps() {
+    return dataMaps;
   }
 }

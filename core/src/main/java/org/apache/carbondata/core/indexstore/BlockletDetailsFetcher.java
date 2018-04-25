@@ -36,14 +36,4 @@ public interface BlockletDetailsFetcher {
    */
   List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment)
       throws IOException;
-
-  /**
-   * Get the blocklet detail information based on blockletid, blockid and segmentid.
-   *
-   * @param blocklet
-   * @param segment
-   * @return
-   * @throws IOException
-   */
-  ExtendedBlocklet getExtendedBlocklet(Blocklet blocklet, Segment segment) throws IOException;
 }

@@ -65,9 +65,15 @@ public class SegmentIndexFileStore {
    */
   private Map<String, byte[]> carbonIndexMapWithFullPath;
 
+  /**
+   * Stores the list of index files in a merge file
+   */
+  private Map<String, List<String>> carbonMergeFileToIndexFilesMap;
+
   public SegmentIndexFileStore() {
     carbonIndexMap = new HashMap<>();
     carbonIndexMapWithFullPath = new HashMap<>();
+    carbonMergeFileToIndexFilesMap = new HashMap<>();
   }
 
   /**
@@ -182,12 +188,8 @@ public class SegmentIndexFileStore {
     Map<String, String> indexFiles = new HashMap<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        List<String> indexFilesFromMergeFile =
-            getIndexFilesFromMergeFile(carbonIndexFiles[i].getCanonicalPath());
-        for (String file: indexFilesFromMergeFile) {
-          indexFiles.put(carbonIndexFiles[i].getParentFile().getAbsolutePath()
-              + CarbonCommonConstants.FILE_SEPARATOR + file, carbonIndexFiles[i].getName());
-        }
+        indexFiles
+            .put(carbonIndexFiles[i].getAbsolutePath(), carbonIndexFiles[i].getAbsolutePath());
       } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         indexFiles.put(carbonIndexFiles[i].getAbsolutePath(), null);
       }
@@ -216,13 +218,14 @@ public class SegmentIndexFileStore {
    * @param mergeFilePath
    * @throws IOException
    */
-  private void readMergeFile(String mergeFilePath) throws IOException {
+  public void readMergeFile(String mergeFilePath) throws IOException {
     ThriftReader thriftReader = new ThriftReader(mergeFilePath);
     try {
       thriftReader.open();
       MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
       MergedBlockIndex mergedBlockIndex = readMergeBlockIndex(thriftReader);
       List<String> file_names = indexHeader.getFile_names();
+      carbonMergeFileToIndexFilesMap.put(mergeFilePath, file_names);
       List<ByteBuffer> fileData = mergedBlockIndex.getFileData();
       CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath);
       assert (file_names.size() == fileData.size());
@@ -422,5 +425,9 @@ public class SegmentIndexFileStore {
         "Time taken to read carbondata file footer to get blocklet info " + blockInfo.getFilePath()
             + " is " + (System.currentTimeMillis() - startTime));
     return carbondataFileFooter.getBlockletList();
+  }
+
+  public Map<String, List<String>> getCarbonMergeFileToIndexFilesMap() {
+    return carbonMergeFileToIndexFilesMap;
   }
 }

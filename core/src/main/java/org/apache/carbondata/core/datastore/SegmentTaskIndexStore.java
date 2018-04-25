@@ -140,7 +140,9 @@ public class SegmentTaskIndexStore
     lruCache.remove(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
   }
 
-  @Override public void put(TableSegmentUniqueIdentifier key, SegmentTaskIndexWrapper value) {
+  @Override
+  public void put(TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier,
+      SegmentTaskIndexWrapper value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

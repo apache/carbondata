@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
+import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.memory.MemoryException;
 
 /**
@@ -29,11 +31,13 @@ import org.apache.carbondata.core.memory.MemoryException;
 public interface CacheableDataMap {
 
   /**
-   * Add the dataMap to cache
+   * Add the blockletDataMapIndexWrapper to cache for key tableBlockIndexUniqueIdentifier
    *
-   * @param dataMap
+   * @param tableBlockIndexUniqueIdentifier
+   * @param blockletDataMapIndexWrapper
    */
-  void cache(DataMap dataMap) throws IOException, MemoryException;
+  void cache(TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier,
+      BlockletDataMapIndexWrapper blockletDataMapIndexWrapper) throws IOException, MemoryException;
 
   /**
    * Get all the uncached distributables from the list.

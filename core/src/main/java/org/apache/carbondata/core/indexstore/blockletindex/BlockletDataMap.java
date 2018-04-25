@@ -18,6 +18,7 @@ package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
@@ -32,7 +33,6 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
@@ -46,7 +46,6 @@ import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SafeMemoryDMStore;
-import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
@@ -78,7 +77,7 @@ import org.xerial.snappy.Snappy;
 /**
  * Datamap implementation for blocklet.
  */
-public class BlockletDataMap implements DataMap, Cacheable {
+public class BlockletDataMap implements DataMap {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDataMap.class.getName());
@@ -134,7 +133,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private int[] columnCardinality;
 
-  private TableBlockIndexUniqueIdentifier tableBlockUniqueIdentifier;
+  private long blockletSchemaTime;
 
   @Override
   public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
@@ -159,6 +158,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
       if (segmentProperties == null) {
         List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
         schemaBinary = convertSchemaToBinary(columnInTable);
+        blockletSchemaTime = fileFooter.getSchemaUpdatedTimeStamp();
         columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
         segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
         createSchema(segmentProperties,
@@ -207,9 +207,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
           segmentId);
       summaryDMStore.finishWriting();
     }
-    LOGGER.info(
-        "Time taken to load blocklet datamap from file : " + dataMapModel.getFilePath() + " is " + (
-            System.currentTimeMillis() - startTime));
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "Time taken to load blocklet datamap from file : " + dataMapModel.getFilePath() + " is "
+              + (System.currentTimeMillis() - startTime));
+    }
   }
 
   private DataMapRowImpl loadToUnsafe(DataFileFooter fileFooter,
@@ -771,23 +773,14 @@ public class BlockletDataMap implements DataMap, Cacheable {
     detailInfo.setBlockletId((short) blockletId);
     detailInfo.setDimLens(columnCardinality);
     detailInfo.setSchemaUpdatedTimeStamp(row.getLong(SCHEMA_UPADATED_TIME_INDEX));
-    byte[] byteArray = row.getByteArray(BLOCK_INFO_INDEX);
-    BlockletInfo blockletInfo = null;
+    detailInfo.setBlockletInfoBinary(row.getByteArray(BLOCK_INFO_INDEX));
     try {
-      if (byteArray.length > 0) {
-        blockletInfo = new BlockletInfo();
-        ByteArrayInputStream stream = new ByteArrayInputStream(byteArray);
-        DataInputStream inputStream = new DataInputStream(stream);
-        blockletInfo.readFields(inputStream);
-        inputStream.close();
-      }
       blocklet.setLocation(
           new String(row.getByteArray(LOCATIONS), CarbonCommonConstants.DEFAULT_CHARSET)
               .split(","));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    detailInfo.setBlockletInfo(blockletInfo);
     blocklet.setDetailInfo(detailInfo);
     detailInfo.setBlockFooterOffset(row.getLong(BLOCK_FOOTER_OFFSET));
     detailInfo.setColumnSchemaBinary(getColumnSchemaBinary());
@@ -919,7 +912,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return dataMapRow;
   }
 
-  private byte[] getColumnSchemaBinary() {
+  public byte[] getColumnSchemaBinary() {
     DataMapRow unsafeRow = summaryDMStore.getDataMapRow(0);
     return unsafeRow.getByteArray(SCHEMA);
   }
@@ -956,17 +949,6 @@ public class BlockletDataMap implements DataMap, Cacheable {
     }
   }
 
-  @Override
-  public long getFileTimeStamp() {
-    return 0;
-  }
-
-  @Override
-  public int getAccessCount() {
-    return 0;
-  }
-
-  @Override
   public long getMemorySize() {
     long memoryUsed = 0L;
     if (memoryDMStore != null) {
@@ -978,21 +960,16 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return memoryUsed;
   }
 
-  public TableBlockIndexUniqueIdentifier getTableBlockUniqueIdentifier() {
-    return tableBlockUniqueIdentifier;
-  }
-
-  public void setTableBlockUniqueIdentifier(
-      TableBlockIndexUniqueIdentifier tableBlockUniqueIdentifier) {
-    this.tableBlockUniqueIdentifier = tableBlockUniqueIdentifier;
-  }
-
   public void setSegmentProperties(SegmentProperties segmentProperties) {
     this.segmentProperties = segmentProperties;
   }
 
   public int[] getColumnCardinality() {
     return columnCardinality;
+  }
+
+  public long getBlockletSchemaTime() {
+    return blockletSchemaTime;
   }
 
   private AbstractMemoryDMStore getMemoryDMStore(CarbonRowSchema[] schema, boolean addToUnsafe)
@@ -1022,6 +999,26 @@ public class BlockletDataMap implements DataMap, Cacheable {
       summaryDMStore.freeMemory();
       summaryDMStore = unsafeSummaryMemoryDMStore;
     }
+  }
+
+  /**
+   * Read column schema from binary
+   * @param schemaArray
+   * @throws IOException
+   */
+  public List<ColumnSchema> readColumnSchema(byte[] schemaArray) throws IOException {
+    // uncompress it.
+    schemaArray = Snappy.uncompress(schemaArray);
+    ByteArrayInputStream schemaStream = new ByteArrayInputStream(schemaArray);
+    DataInput schemaInput = new DataInputStream(schemaStream);
+    List<ColumnSchema> columnSchemas = new ArrayList<>();
+    int size = schemaInput.readShort();
+    for (int i = 0; i < size; i++) {
+      ColumnSchema columnSchema = new ColumnSchema();
+      columnSchema.readFields(schemaInput);
+      columnSchemas.add(columnSchema);
+    }
+    return columnSchemas;
   }
 
 }

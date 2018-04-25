@@ -52,7 +52,7 @@ public class DataFileFooter implements Serializable {
   /**
    * Information about leaf nodes of all columns in this file
    */
-  private List<BlockletInfo> blockletList;
+  private transient List<BlockletInfo> blockletList;
 
   /**
    * blocklet index of all blocklets in this file
