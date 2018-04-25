@@ -24,7 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,12 +35,7 @@ import org.apache.hadoop.io.Writable;
 /**
  * class to store the information about the blocklet
  */
-public class BlockletInfo implements Serializable, Writable {
-
-  /**
-   * serialization id
-   */
-  private static final long serialVersionUID = 1873135459695635381L;
+public class BlockletInfo implements Writable {
 
   /**
    * Number of rows in this blocklet

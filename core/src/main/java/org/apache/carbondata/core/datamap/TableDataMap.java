@@ -126,11 +126,11 @@ public final class TableDataMap extends OperationEventListener {
     for (DataMap dataMap : dataMaps) {
       blocklets.addAll(dataMap.prune(filterExp, partitions));
     }
-    for (Blocklet blocklet: blocklets) {
-      ExtendedBlocklet detailedBlocklet =
-          blockletDetailsFetcher.getExtendedBlocklet(blocklet, distributable.getSegment());
-      detailedBlocklet.setSegmentId(distributable.getSegment().getSegmentNo());
-      detailedBlocklets.add(detailedBlocklet);
+    List<ExtendedBlocklet> detailedBlockletList =
+        blockletDetailsFetcher.getExtendedBlocklets(blocklets, distributable.getSegment());
+    for (ExtendedBlocklet blocklet : detailedBlockletList) {
+      blocklet.setSegmentId(distributable.getSegment().getSegmentNo());
+      detailedBlocklets.add(blocklet);
     }
     return detailedBlocklets;
   }

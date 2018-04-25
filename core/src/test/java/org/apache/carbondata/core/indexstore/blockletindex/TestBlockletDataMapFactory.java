@@ -31,6 +31,7 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -48,7 +49,7 @@ public class TestBlockletDataMapFactory {
 
   private TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier;
 
-  private Cache<TableBlockIndexUniqueIdentifier, DataMap> cache;
+  private Cache<TableBlockIndexUniqueIdentifier, BlockletDataMapIndexWrapper> cache;
 
   @Before public void setUp() {
     blockletDataMapFactory = new BlockletDataMapFactory();
@@ -62,23 +63,24 @@ public class TestBlockletDataMapFactory {
   @Test public void addDataMapToCache()
       throws IOException, MemoryException, NoSuchMethodException, InvocationTargetException,
       IllegalAccessException {
-    BlockletDataMap dataMap = new BlockletDataMap();
-    dataMap.setTableBlockUniqueIdentifier(tableBlockIndexUniqueIdentifier);
-    Method method =
-        BlockletDataMapFactory.class.getDeclaredMethod("cache", DataMap.class);
+    List<DataMap> dataMaps = new ArrayList<>();
+    Method method = BlockletDataMapFactory.class
+        .getDeclaredMethod("cache", TableBlockIndexUniqueIdentifier.class,
+            BlockletDataMapIndexWrapper.class);
     method.setAccessible(true);
-    method.invoke(blockletDataMapFactory, dataMap);
-    DataMap result = cache.getIfPresent(tableBlockIndexUniqueIdentifier);
+    method.invoke(blockletDataMapFactory, tableBlockIndexUniqueIdentifier,
+        new BlockletDataMapIndexWrapper(dataMaps));
+    BlockletDataMapIndexWrapper result = cache.getIfPresent(tableBlockIndexUniqueIdentifier);
     assert null != result;
   }
 
   @Test public void getValidDistributables() throws IOException {
     BlockletDataMapDistributable blockletDataMapDistributable = new BlockletDataMapDistributable(
-        "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756709.carbonindex", null);
+        "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756709.carbonindex");
     Segment segment = new Segment("0", null);
     blockletDataMapDistributable.setSegment(segment);
     BlockletDataMapDistributable blockletDataMapDistributable1 = new BlockletDataMapDistributable(
-        "/opt/store/default/carbon_table/Fact/Part0/Segment_0/1521012756710.carbonindexmerge", null);
+        "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756701.carbonindex");
     blockletDataMapDistributable1.setSegment(segment);
     List<DataMapDistributable> dataMapDistributables = new ArrayList<>(2);
     dataMapDistributables.add(blockletDataMapDistributable);
@@ -89,15 +91,10 @@ public class TestBlockletDataMapFactory {
         TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier1 =
             new TableBlockIndexUniqueIdentifier(
                 "/opt/store/default/carbon_table/Fact/Part0/Segment_0",
-                "0_batchno0-0-1521012756701.carbonindex", "1521012756710.carbonindexmerge", "0");
-        TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier2 =
-            new TableBlockIndexUniqueIdentifier(
-                "/opt/store/default/carbon_table/Fact/Part0/Segment_0",
-                "0_batchno0-0-1521012756702.carbonindex", "1521012756710.carbonindexmerge", "0");
+                "0_batchno0-0-1521012756701.carbonindex", null, "0");
         Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = new HashSet<>(3);
         tableBlockIndexUniqueIdentifiers.add(tableBlockIndexUniqueIdentifier);
         tableBlockIndexUniqueIdentifiers.add(tableBlockIndexUniqueIdentifier1);
-        tableBlockIndexUniqueIdentifiers.add(tableBlockIndexUniqueIdentifier2);
         return tableBlockIndexUniqueIdentifiers;
       }
     };

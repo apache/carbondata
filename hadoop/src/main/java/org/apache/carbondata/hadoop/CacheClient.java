@@ -16,9 +16,9 @@
  */
 package org.apache.carbondata.hadoop;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -40,13 +40,14 @@ public class CacheClient {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CacheClient.class.getName());
 
+  private final Object lock = new Object();
+
   // segment access client for driver LRU cache
   private CacheAccessClient<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
       segmentAccessClient;
 
   private static Map<SegmentTaskIndexStore.SegmentPropertiesWrapper, SegmentProperties>
-      segmentProperties =
-      new HashMap<SegmentTaskIndexStore.SegmentPropertiesWrapper, SegmentProperties>();
+      segmentProperties = new ConcurrentHashMap<>();
 
   public CacheClient() {
     Cache<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper> segmentCache =
@@ -78,13 +79,18 @@ public class CacheClient {
             columnCardinality);
     SegmentProperties segmentProperties = this.segmentProperties.get(segmentPropertiesWrapper);
     if (null == segmentProperties) {
-      // create a metadata details
-      // this will be useful in query handling
-      // all the data file metadata will have common segment properties we
-      // can use first one to get create the segment properties
-      LOGGER.info("Constructing new SegmentProperties");
-      segmentProperties = new SegmentProperties(columnsInTable, columnCardinality);
-      this.segmentProperties.put(segmentPropertiesWrapper, segmentProperties);
+      synchronized (lock) {
+        segmentProperties = this.segmentProperties.get(segmentPropertiesWrapper);
+        if (null == segmentProperties) {
+          // create a metadata details
+          // this will be useful in query handling
+          // all the data file metadata will have common segment properties we
+          // can use first one to get create the segment properties
+          LOGGER.info("Constructing new SegmentProperties");
+          segmentProperties = new SegmentProperties(columnsInTable, columnCardinality);
+          this.segmentProperties.put(segmentPropertiesWrapper, segmentProperties);
+        }
+      }
     }
     return segmentProperties;
   }

@@ -18,11 +18,13 @@
 package org.apache.carbondata.core.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -39,6 +41,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.RemoteIterator;
 
 
@@ -46,8 +49,10 @@ public class BlockletDataMapUtil {
 
   public static Map<String, BlockMetaInfo> getBlockMetaInfoMap(
       TableBlockIndexUniqueIdentifier identifier, SegmentIndexFileStore indexFileStore,
-      Set<String> filesRead) throws IOException {
-    if (identifier.getMergeIndexFileName() != null) {
+      Set<String> filesRead, Map<String, BlockMetaInfo> fileNameToMetaInfoMapping)
+      throws IOException {
+    if (identifier.getMergeIndexFileName() != null
+        && indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
       CarbonFile indexMergeFile = FileFactory.getCarbonFile(
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getMergeIndexFileName());
@@ -68,23 +73,58 @@ public class BlockletDataMapUtil {
             .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()));
     for (DataFileFooter footer : indexInfo) {
       String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
-      blockMetaInfoMap.put(blockPath, createBlockMetaInfo(blockPath));
+      if (null == blockMetaInfoMap.get(blockPath)) {
+        blockMetaInfoMap.put(blockPath, createBlockMetaInfo(fileNameToMetaInfoMapping, blockPath));
+      }
     }
     return blockMetaInfoMap;
   }
 
-  private static BlockMetaInfo createBlockMetaInfo(String carbonDataFile) throws IOException {
-    CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile);
-    if (carbonFile instanceof AbstractDFSCarbonFile) {
-      RemoteIterator<LocatedFileStatus> iter =
-          ((AbstractDFSCarbonFile)carbonFile).fs.listLocatedStatus(new Path(carbonDataFile));
-      LocatedFileStatus fileStatus = iter.next();
-      String[] location = fileStatus.getBlockLocations()[0].getHosts();
-      long len = fileStatus.getLen();
-      return new BlockMetaInfo(location, len);
-    } else {
-      return new BlockMetaInfo(new String[]{"localhost"}, carbonFile.getSize());
+  private static BlockMetaInfo createBlockMetaInfo(
+      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, String carbonDataFile)
+      throws IOException {
+    FileFactory.FileType fileType = FileFactory.getFileType(carbonDataFile);
+    switch (fileType) {
+      case LOCAL:
+        CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile, fileType);
+        return new BlockMetaInfo(new String[] { "localhost" }, carbonFile.getSize());
+      default:
+        return fileNameToMetaInfoMapping.get(carbonDataFile);
     }
+  }
+
+  /**
+   * This method will create file name to block Meta Info Mapping. This method will reduce the
+   * number of namenode calls and using this method one namenode will fetch 1000 entries
+   *
+   * @param segmentFilePath
+   * @return
+   * @throws IOException
+   */
+  public static Map<String, BlockMetaInfo> createCarbonDataFileBlockMetaInfoMapping(
+      String segmentFilePath) throws IOException {
+    Map<String, BlockMetaInfo> fileNameToMetaInfoMapping = new TreeMap();
+    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFilePath);
+    if (carbonFile instanceof AbstractDFSCarbonFile) {
+      Path path = new Path(segmentFilePath);
+      RemoteIterator<LocatedFileStatus> iter =
+          ((AbstractDFSCarbonFile) carbonFile).fs.listLocatedStatus(path);
+      PathFilter pathFilter = new PathFilter() {
+        @Override public boolean accept(Path path) {
+          return CarbonTablePath.isCarbonDataFile(path.getName());
+        }
+      };
+      while (iter.hasNext()) {
+        LocatedFileStatus fileStatus = iter.next();
+        if (pathFilter.accept(fileStatus.getPath())) {
+          String[] location = fileStatus.getBlockLocations()[0].getHosts();
+          long len = fileStatus.getLen();
+          BlockMetaInfo blockMetaInfo = new BlockMetaInfo(location, len);
+          fileNameToMetaInfoMapping.put(fileStatus.getPath().toString(), blockMetaInfo);
+        }
+      }
+    }
+    return fileNameToMetaInfoMapping;
   }
 
   public static Set<TableBlockIndexUniqueIdentifier> getTableBlockUniqueIdentifiers(Segment segment,
@@ -96,7 +136,7 @@ public class BlockletDataMapUtil {
       indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(path);
     } else {
       SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
-      indexFiles = fileStore.getIndexFiles();
+      indexFiles = fileStore.getIndexOrMergeFiles();
     }
     for (Map.Entry<String, String> indexFileEntry : indexFiles.entrySet()) {
       Path indexFile = new Path(indexFileEntry.getKey());
@@ -108,33 +148,51 @@ public class BlockletDataMapUtil {
   }
 
   /**
-   * This method will filter out the TableBlockIndexUniqueIdentifiers belongs to that distributable
+   * This method will filter out the TableBlockIndexUniqueIdentifier belongs to that distributable
    *
    * @param tableBlockIndexUniqueIdentifiers
    * @param distributable
    * @return
    */
-  public static Set<TableBlockIndexUniqueIdentifier> filterIdentifiersBasedOnDistributable(
+  public static TableBlockIndexUniqueIdentifier filterIdentifiersBasedOnDistributable(
       Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers,
       BlockletDataMapDistributable distributable) {
-    Set<TableBlockIndexUniqueIdentifier> validIdentifiers =
-        new HashSet<>(tableBlockIndexUniqueIdentifiers.size());
-    if (distributable.getFilePath().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-      for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier :
-          tableBlockIndexUniqueIdentifiers) {
-        if (null != tableBlockIndexUniqueIdentifier.getMergeIndexFileName()) {
-          validIdentifiers.add(tableBlockIndexUniqueIdentifier);
-        }
-      }
-    } else {
-      for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier :
-          tableBlockIndexUniqueIdentifiers) {
-        if (null == tableBlockIndexUniqueIdentifier.getMergeIndexFileName()) {
-          validIdentifiers.add(tableBlockIndexUniqueIdentifier);
-        }
+    TableBlockIndexUniqueIdentifier validIdentifier = null;
+    for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier :
+        tableBlockIndexUniqueIdentifiers) {
+      if (distributable.getFilePath().equals(
+          tableBlockIndexUniqueIdentifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR
+              + tableBlockIndexUniqueIdentifier.getIndexFileName())) {
+        validIdentifier = tableBlockIndexUniqueIdentifier;
+        break;
       }
     }
-    return validIdentifiers;
+    return validIdentifier;
+  }
+
+  /**
+   * This method will the index files tableBlockIndexUniqueIdentifiers of a merge index file
+   *
+   * @param identifier
+   * @return
+   * @throws IOException
+   */
+  public static List<TableBlockIndexUniqueIdentifier> getIndexFileIdentifiersFromMergeFile(
+      TableBlockIndexUniqueIdentifier identifier, SegmentIndexFileStore segmentIndexFileStore)
+      throws IOException {
+    List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = new ArrayList<>();
+    String mergeFilePath =
+        identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+            .getIndexFileName();
+    segmentIndexFileStore.readMergeFile(mergeFilePath);
+    List<String> indexFiles =
+        segmentIndexFileStore.getCarbonMergeFileToIndexFilesMap().get(mergeFilePath);
+    for (String indexFile : indexFiles) {
+      tableBlockIndexUniqueIdentifiers.add(
+          new TableBlockIndexUniqueIdentifier(identifier.getIndexFilePath(), indexFile,
+              identifier.getIndexFileName(), identifier.getSegmentId()));
+    }
+    return tableBlockIndexUniqueIdentifiers;
   }
 
 }

@@ -40,6 +40,10 @@ public abstract class CarbonRowSchema implements Serializable {
     return dataType;
   }
 
+  public void setDataType(DataType dataType) {
+    this.dataType = dataType;
+  }
+
   /**
    * Gives length in case of fixed schema other wise returns length
    *

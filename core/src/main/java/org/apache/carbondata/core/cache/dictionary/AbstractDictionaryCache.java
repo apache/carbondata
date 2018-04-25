@@ -59,7 +59,9 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     initThreadPoolSize();
   }
 
-  @Override public void put(DictionaryColumnUniqueIdentifier key, Dictionary value) {
+  @Override
+  public void put(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      Dictionary value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

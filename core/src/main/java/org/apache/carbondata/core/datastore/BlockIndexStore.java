@@ -229,7 +229,8 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
         .remove(getLruCacheKey(tableBlockUniqueIdentifier.getAbsoluteTableIdentifier(), blockInfo));
   }
 
-  @Override public void put(TableBlockUniqueIdentifier key, AbstractIndex value) {
+  @Override
+  public void put(TableBlockUniqueIdentifier tableBlockUniqueIdentifier, AbstractIndex value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
