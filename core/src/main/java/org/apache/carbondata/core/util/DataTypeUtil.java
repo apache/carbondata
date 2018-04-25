@@ -130,9 +130,9 @@ public final class DataTypeUtil {
     if (dataType == DataTypes.BOOLEAN) {
       return BooleanConvert.byte2Boolean(bb.get());
     } else if (dataType == DataTypes.SHORT) {
-      return (short) bb.getLong();
+      return bb.getShort();
     } else if (dataType == DataTypes.INT) {
-      return (int) bb.getLong();
+      return bb.getInt();
     } else if (dataType == DataTypes.LONG) {
       return bb.getLong();
     } else if (DataTypes.isDecimal(dataType)) {
@@ -147,9 +147,9 @@ public final class DataTypeUtil {
     if (dataType == DataTypes.BOOLEAN) {
       return measurePage.getBoolean(index);
     } else if (dataType == DataTypes.SHORT) {
-      return (short) measurePage.getLong(index);
+      return measurePage.getShort(index);
     } else if (dataType == DataTypes.INT) {
-      return (int) measurePage.getLong(index);
+      return measurePage.getInt(index);
     } else if (dataType == DataTypes.LONG) {
       return measurePage.getLong(index);
     } else if (DataTypes.isDecimal(dataType)) {
