@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datamap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +30,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandExcept
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
@@ -43,6 +45,8 @@ import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
 /**
  * It maintains all the DataMaps in it.
@@ -75,13 +79,12 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * It gives all datamaps of type @mapType except the default datamap.
-   *
+   * It gives all visible datamaps of type @mapType except the default datamap.
    */
-  public List<TableDataMap> getAllDataMap(CarbonTable carbonTable, DataMapLevel mapType)
+  public List<TableDataMap> getAllVisibleDataMap(CarbonTable carbonTable, DataMapLevel mapType)
       throws IOException {
     List<TableDataMap> dataMaps = new ArrayList<>();
-    List<TableDataMap> tableIndices = getAllDataMap(carbonTable);
+    List<TableDataMap> tableIndices = getAllVisibleDataMap(carbonTable);
     if (tableIndices != null) {
       for (TableDataMap dataMap : tableIndices) {
         if (mapType == dataMap.getDataMapFactory().getDataMapType()) {
@@ -90,6 +93,30 @@ public final class DataMapStoreManager {
       }
     }
     return dataMaps;
+  }
+
+  /**
+   * It only gives the visible datamaps
+   */
+  private List<TableDataMap> getAllVisibleDataMap(CarbonTable carbonTable) throws IOException {
+    CarbonSessionInfo sessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
+    List<TableDataMap> allDataMaps = getAllDataMap(carbonTable);
+    Iterator<TableDataMap> dataMapIterator = allDataMaps.iterator();
+    while (dataMapIterator.hasNext()) {
+      TableDataMap dataMap = dataMapIterator.next();
+      String dbName = carbonTable.getDatabaseName();
+      String tableName = carbonTable.getTableName();
+      String dmName = dataMap.getDataMapSchema().getDataMapName();
+      boolean isDmVisible = sessionInfo.getSessionParams().getProperty(
+          String.format("%s%s.%s.%s", CarbonCommonConstants.CARBON_DATAMAP_VISIBLE,
+              dbName, tableName, dmName), "true").trim().equalsIgnoreCase("true");
+      if (!isDmVisible) {
+        LOGGER.warn(String.format("Ignore invisible datamap %s on table %s.%s",
+            dmName, dbName, tableName));
+        dataMapIterator.remove();
+      }
+    }
+    return allDataMaps;
   }
 
   /**
@@ -353,6 +380,22 @@ public final class DataMapStoreManager {
         i++;
       }
     }
+  }
+
+  /**
+   * is datamap exist
+   * @return true if exist, else return false
+   */
+  public boolean isDataMapExist(String dbName, String tableName, String dmName) {
+    List<TableDataMap> tableDataMaps = allDataMaps.get(dbName + '_' + tableName);
+    if (tableDataMaps != null) {
+      for (TableDataMap dm : tableDataMaps) {
+        if (dm != null && dmName.equalsIgnoreCase(dm.getDataMapSchema().getDataMapName())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /**
