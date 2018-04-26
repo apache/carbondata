@@ -126,7 +126,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    * 4. TEXT_COLUMNS should be exists in table columns
    * 5. TEXT_COLUMNS support only String DataType columns
    */
-  private List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
+  public static List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
       CarbonTable carbonTable) throws MalformedDataMapCommandException {
     String textColumnsStr = dataMapSchema.getProperties().get(TEXT_COLUMNS);
     if (textColumnsStr == null || StringUtils.isBlank(textColumnsStr)) {
@@ -148,7 +148,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
         }
       }
     }
-    indexedCarbonColumns = new ArrayList<>(textColumns.length);
+    List<String> indexedCarbonColumns = new ArrayList<>(textColumns.length);
     for (int i = 0; i < textColumns.length; i++) {
       CarbonColumn column = carbonTable.getColumnByName(carbonTable.getTableName(), textColumns[i]);
       if (null == column) {

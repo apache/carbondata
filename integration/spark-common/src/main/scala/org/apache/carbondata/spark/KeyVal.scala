@@ -139,3 +139,11 @@ trait RestructureResult[K, V] extends Serializable {
 class RestructureResultImpl extends RestructureResult[Int, Boolean] {
   override def getKey(key: Int, value: Boolean): (Int, Boolean) = (key, value)
 }
+
+trait RefreshResult[K, V] extends Serializable {
+  def getKey(key: String, value: Boolean): (K, V)
+}
+
+class RefreshResultImpl extends RefreshResult[String, Boolean] {
+  override def getKey(key: String, value: Boolean): (String, Boolean) = (key, value)
+}
