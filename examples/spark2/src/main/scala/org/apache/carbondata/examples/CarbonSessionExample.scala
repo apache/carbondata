@@ -50,6 +50,7 @@ object CarbonSessionExample {
                             + "../../../..").getCanonicalPath
 
     spark.sql("DROP TABLE IF EXISTS carbonsession_table")
+    spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
 
     // Create table
     spark.sql(
@@ -135,7 +136,19 @@ object CarbonSessionExample {
          | WHERE stringField = 'spark' and floatField > 2.8
        """.stripMargin).show()
 
+    spark.sql(
+      s"""
+         | CREATE TABLE stored_as_carbondata_table(
+         |    name STRING,
+         |    age INT
+         |    )
+         | STORED AS carbondata
+       """.stripMargin)
+    spark.sql("INSERT INTO stored_as_carbondata_table VALUES ('Bob',28) ")
+    spark.sql("SELECT * FROM stored_as_carbondata_table").show()
+
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbonsession_table")
+    spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
   }
 }

@@ -39,7 +39,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   [TBLPROPERTIES (property_name=property_value, ...)]
   [LOCATION 'path']
   ```
-  
+  **NOTE:** CarbonData also supports "STORED AS carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
 ### Usage Guidelines
 
   Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
@@ -138,6 +138,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
                    'SORT_SCOPE'='NO_SORT')
    ```
+  **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
 
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
