@@ -22,7 +22,6 @@ import java.util.UUID
 
 import scala.util.Random
 
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
