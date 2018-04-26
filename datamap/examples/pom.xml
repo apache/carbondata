@@ -49,12 +49,6 @@
   </dependencies>
 
   <build>
-    <sourceDirectory>src/minmaxdatamap/main/java</sourceDirectory>
-    <resources>
-      <resource>
-        <directory>.</directory>
-      </resource>
-    </resources>
     <plugins>
       <plugin>
         <groupId>org.scala-tools</groupId>
