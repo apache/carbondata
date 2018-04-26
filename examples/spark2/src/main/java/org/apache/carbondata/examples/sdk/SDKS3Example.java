@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.file;
+package org.apache.carbondata.examples.sdk;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.sdk.file.*;
 
 /**
  * Example for testing CarbonWriter on S3
  */
-public class CarbonWriterS3Example {
+public class SDKS3Example {
     public static void main(String[] args) throws Exception {
-        LogService logger = LogServiceFactory.getLogService(CarbonWriterS3Example.class.getName());
+        LogService logger = LogServiceFactory.getLogService(SDKS3Example.class.getName());
         if (args == null || args.length < 3) {
             logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>" +
                     "<s3-endpoint> [table-path-on-s3] [persistSchema] [transactionalTable]");
@@ -83,6 +84,9 @@ public class CarbonWriterS3Example {
         CarbonReader reader = CarbonReader
                 .builder(path, "_temp")
                 .projection(new String[]{"name", "age"})
+                .setAccessKey(args[0])
+                .setSecretKey(args[1])
+                .setEndPoint(args[2])
                 .build();
 
         System.out.println("\nData:");
