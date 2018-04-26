@@ -511,7 +511,10 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
       RemoteIterator<LocatedFileStatus> iter =
           path.getFileSystem(FileFactory.getConfiguration()).listLocatedStatus(path);
       while (iter.hasNext()) {
-        listStatus.add(iter.next());
+        LocatedFileStatus fileStatus = iter.next();
+        if (fileStatus.getLen() > 0) {
+          listStatus.add(fileStatus);
+        }
       }
       return getFiles(listStatus.toArray(new FileStatus[listStatus.size()]));
     }

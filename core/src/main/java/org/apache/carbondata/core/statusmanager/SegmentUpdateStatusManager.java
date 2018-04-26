@@ -413,7 +413,7 @@ public class SegmentUpdateStatusManager {
 
       @Override public boolean accept(CarbonFile pathName) {
         String fileName = pathName.getName();
-        if (fileName.endsWith(extension)) {
+        if (fileName.endsWith(extension) && pathName.getSize() > 0) {
           String firstPart = fileName.substring(0, fileName.indexOf('.'));
           String blockName =
               firstPart.substring(0, firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN));
@@ -469,7 +469,8 @@ public class SegmentUpdateStatusManager {
 
           @Override public boolean accept(CarbonFile pathName) {
             String fileName = pathName.getName();
-            if (fileName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)) {
+            if (fileName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+                && pathName.getSize() > 0) {
               String firstPart = fileName.substring(0, fileName.indexOf('.'));
               String blkName = firstPart.substring(0, firstPart.lastIndexOf("-"));
               long timestamp = Long.parseLong(

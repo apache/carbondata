@@ -27,7 +27,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
 
@@ -74,6 +73,7 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       brWriter.write(value);
     } catch (IOException ioe) {
       LOGGER.error("Error message: " + ioe.getLocalizedMessage());
+      throw ioe;
     } finally {
       if (null != brWriter) {
         brWriter.flush();
@@ -81,7 +81,9 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       if (null != dataOutStream) {
         dataOutStream.flush();
       }
-      CarbonUtil.closeStreams(brWriter, dataOutStream);
+      if (null != brWriter) {
+        brWriter.close();
+      }
     }
 
   }
@@ -103,6 +105,7 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       brWriter.write(deletedData);
     } catch (IOException ioe) {
       LOGGER.error("Error message: " + ioe.getLocalizedMessage());
+      throw ioe;
     } finally {
       if (null != brWriter) {
         brWriter.flush();
@@ -110,7 +113,9 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       if (null != dataOutStream) {
         dataOutStream.flush();
       }
-      CarbonUtil.closeStreams(brWriter, dataOutStream);
+      if (null != brWriter) {
+        brWriter.close();
+      }
     }
 
   }
