@@ -176,10 +176,11 @@ case class CarbonRelation(
           var size = 0L
           // for each segment calculate the size
           segments.foreach {validSeg =>
-            if (validSeg.getSegmentFileName != null) {
-              size = size + CarbonUtil.getSizeOfSegment(
-                carbonTable.getTablePath,
-                new Segment(validSeg.getSegmentNo, validSeg.getSegmentFileName))
+            // for older store
+            if (null != validSeg.getLoadMetadataDetails.getDataSize &&
+                null != validSeg.getLoadMetadataDetails.getIndexSize) {
+              size = size + validSeg.getLoadMetadataDetails.getDataSize.toLong +
+                     validSeg.getLoadMetadataDetails.getIndexSize.toLong
             } else {
               size = size + FileFactory.getDirectorySize(
                 CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
