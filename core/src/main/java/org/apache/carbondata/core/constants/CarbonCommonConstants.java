@@ -21,6 +21,8 @@ import java.nio.charset.Charset;
 
 import org.apache.carbondata.core.util.CarbonProperty;
 
+import org.apache.hadoop.classification.InterfaceStability;
+
 public final class CarbonCommonConstants {
   /**
    * surrogate value of null
@@ -1539,10 +1541,12 @@ public final class CarbonCommonConstants {
    * memory.
    */
   @CarbonProperty
+  @InterfaceStability.Evolving
   public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION =
       "carbon.enable.page.level.reader.in.compaction";
 
-  public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT = "true";
+  // Note: If this property is set to true it can impact compaction performance as IO will increase
+  public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT = "false";
 
   @CarbonProperty
   public static final String IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB =

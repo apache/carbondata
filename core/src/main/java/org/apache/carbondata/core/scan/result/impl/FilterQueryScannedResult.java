@@ -16,9 +16,12 @@
  */
 package org.apache.carbondata.core.scan.result.impl;
 
+import java.util.List;
+
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 
 /**
  * Result provider class in case of filter query
@@ -27,8 +30,9 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
  */
 public class FilterQueryScannedResult extends AbstractScannedResult {
 
-  public FilterQueryScannedResult(BlockExecutionInfo tableBlockExecutionInfos) {
-    super(tableBlockExecutionInfos);
+  public FilterQueryScannedResult(BlockExecutionInfo tableBlockExecutionInfos,
+      QueryStatisticsModel queryStatisticsModel) {
+    super(tableBlockExecutionInfos, queryStatisticsModel);
   }
 
   /**
@@ -49,6 +53,10 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
     return getDictionaryKeyIntegerArray(rowMapping[pageCounter][currentRow]);
   }
 
+  @Override public List<byte[]> getDictionaryKeyArrayBatch(int batchSize) {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
   /**
    * Below method will be used to get the complex type key array
    *
@@ -56,6 +64,10 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    */
   @Override public byte[][] getComplexTypeKeyArray() {
     return getComplexTypeKeyArray(rowMapping[pageCounter][currentRow]);
+  }
+
+  @Override public List<byte[][]> getComplexTypeKeyArrayBatch(int batchSize) {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 
   /**
@@ -76,6 +88,10 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    */
   @Override public String[] getNoDictionaryKeyStringArray() {
     return getNoDictionaryKeyStringArray(rowMapping[pageCounter][currentRow]);
+  }
+
+  @Override public List<byte[][]> getNoDictionaryKeyArrayBatch(int batchSize) {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 
   /**

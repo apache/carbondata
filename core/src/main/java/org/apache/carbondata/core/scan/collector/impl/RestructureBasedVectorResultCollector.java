@@ -30,6 +30,7 @@ import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.unsafe.types.UTF8String;
@@ -41,8 +42,9 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
 
   private Object[] measureDefaultValues = null;
 
-  public RestructureBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
-    super(blockExecutionInfos);
+  public RestructureBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos,
+      QueryStatisticsModel queryStatisticsModel) {
+    super(blockExecutionInfos, queryStatisticsModel);
     queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
     queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
     measureDefaultValues = new Object[queryMeasures.length];

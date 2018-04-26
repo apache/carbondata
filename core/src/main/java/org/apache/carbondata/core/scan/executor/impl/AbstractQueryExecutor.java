@@ -118,9 +118,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryProperties.executorService = Executors.newCachedThreadPool();
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
-    queryProperties.queryStatisticsRecorder =
-        CarbonTimeStatisticsFactory.createExecutorRecorder(queryModel.getQueryId());
-    queryModel.setStatisticsRecorder(queryProperties.queryStatisticsRecorder);
+    queryProperties.queryStatisticsRecorder = queryModel.getStatisticsRecorder();
+    if (null == queryProperties.queryStatisticsRecorder) {
+      queryProperties.queryStatisticsRecorder =
+          CarbonTimeStatisticsFactory.createExecutorRecorder(queryModel.getQueryId());
+      queryModel.setStatisticsRecorder(queryProperties.queryStatisticsRecorder);
+    }
     QueryUtil.resolveQueryModel(queryModel);
     QueryStatistic queryStatistic = new QueryStatistic();
     // sort the block info

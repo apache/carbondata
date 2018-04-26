@@ -18,6 +18,7 @@ package org.apache.carbondata.core.scan.collector.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -32,6 +33,7 @@ import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
+import org.apache.carbondata.core.stats.QueryStatisticsModel;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
@@ -57,10 +59,18 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
    */
   protected DimensionInfo dimensionInfo;
 
-  public AbstractScannedResultCollector(BlockExecutionInfo blockExecutionInfos) {
+  /**
+   * model object to be used for collecting query statistics during normal query execution,
+   * compaction and other flows that uses the query flow
+   */
+  protected QueryStatisticsModel queryStatisticsModel;
+
+  public AbstractScannedResultCollector(BlockExecutionInfo blockExecutionInfos,
+      QueryStatisticsModel queryStatisticsModel) {
     this.tableBlockExecutionInfos = blockExecutionInfos;
     measureInfo = blockExecutionInfos.getMeasureInfo();
     dimensionInfo = blockExecutionInfos.getDimensionInfo();
+    this.queryStatisticsModel = queryStatisticsModel;
   }
 
   protected void fillMeasureData(Object[] msrValues, int offset,
@@ -83,6 +93,45 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
           defaultValue = DataTypeUtil.getDataTypeConverter().convertToDecimal(defaultValue);
         }
         msrValues[i + offset] = defaultValue;
+      }
+    }
+  }
+
+  /**
+   * This method will be used to fill measure data column wise
+   *
+   * @param rows
+   * @param offset
+   * @param scannedResult
+   */
+  protected void fillMeasureDataBatch(List<Object[]> rows, int offset,
+      AbstractScannedResult scannedResult) {
+    int measureExistIndex = 0;
+    for (short i = 0; i < measureInfo.getMeasureDataTypes().length; i++) {
+      // if measure exists is block then pass measure column
+      // data chunk to the collector
+      if (measureInfo.getMeasureExists()[i]) {
+        QueryMeasure queryMeasure = tableBlockExecutionInfos.getQueryMeasures()[measureExistIndex];
+        ColumnPage measureChunk =
+            scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex]);
+        for (short j = 0; j < rows.size(); j++) {
+          Object[] rowValues = rows.get(j);
+          rowValues[i + offset] =
+              getMeasureData(measureChunk, scannedResult.getValidRowIds().get(j),
+                  queryMeasure.getMeasure());
+        }
+        measureExistIndex++;
+      } else {
+        // if not then get the default value and use that value in aggregation
+        Object defaultValue = measureInfo.getDefaultValues()[i];
+        if (null != defaultValue && DataTypes.isDecimal(measureInfo.getMeasureDataTypes()[i])) {
+          // convert data type as per the computing engine
+          defaultValue = DataTypeUtil.getDataTypeConverter().convertToDecimal(defaultValue);
+        }
+        for (short j = 0; j < rows.size(); j++) {
+          Object[] rowValues = rows.get(j);
+          rowValues[i + offset] = defaultValue;
+        }
       }
     }
   }

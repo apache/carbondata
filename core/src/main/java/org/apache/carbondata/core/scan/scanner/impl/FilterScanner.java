@@ -183,7 +183,8 @@ public class FilterScanner extends AbstractBlockletScanner {
       return createEmptyResult();
     }
 
-    AbstractScannedResult scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
+    AbstractScannedResult scannedResult =
+        new FilterQueryScannedResult(blockExecutionInfo, queryStatisticsModel);
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
             .getDataBlock().blockletId());
