@@ -19,16 +19,17 @@ package org.apache.carbondata.sdk.file;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 /**
- * Example for testing CarbonReader on S3
+ * Example for testing CarbonWriter on S3
  */
-public class CarbonReaderS3Example {
+public class CarbonWriterS3Example {
     public static void main(String[] args) throws Exception {
-        LogService logger = LogServiceFactory.getLogService(CarbonReaderS3Example.class.getCanonicalName());
-        if (args.length < 3 ) {
+        LogService logger = LogServiceFactory.getLogService(CarbonWriterS3Example.class.getName());
+        if (args == null || args.length < 3) {
             logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>" +
-                    "<s3-endpoint> [table-path-on-s3] [number-of-rows]");
+                    "<s3-endpoint> [table-path-on-s3] [persistSchema] [transactionalTable]");
             System.exit(0);
         }
 
@@ -37,23 +38,56 @@ public class CarbonReaderS3Example {
             path=args[3];
         }
 
-        int num = 20;
+        int num = 3;
         if (args.length > 4) {
             num = Integer.parseInt(args[4]);
         }
 
+        Boolean persistSchema = true;
+        if (args.length > 5) {
+            if (args[5].equalsIgnoreCase("true")) {
+                persistSchema = true;
+            } else {
+                persistSchema = false;
+            }
+        }
+
+        Boolean transactionalTable = true;
+        if (args.length > 6) {
+            if (args[6].equalsIgnoreCase("true")) {
+                transactionalTable = true;
+            } else {
+                transactionalTable = false;
+            }
+        }
+
+        Field[] fields = new Field[2];
+        fields[0] = new Field("name", DataTypes.STRING);
+        fields[1] = new Field("age", DataTypes.INT);
+        CarbonWriterBuilder builder = CarbonWriter.builder()
+                .withSchema(new Schema(fields))
+                .setAccessKey(args[0])
+                .setSecretKey(args[1])
+                .setEndPoint(args[2])
+                .outputPath(path)
+                .persistSchemaFile(persistSchema)
+                .isTransactionalTable(transactionalTable);
+
+        CarbonWriter writer = builder.buildWriterForCSVInput();
+
+        for (int i = 0; i < num; i++) {
+            writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});
+        }
+        writer.close();
         // Read data
         CarbonReader reader = CarbonReader
                 .builder(path, "_temp")
                 .projection(new String[]{"name", "age"})
-                .setAccessKey(args[0])
-                .setSecretKey(args[1])
-                .setEndPoint(args[2])
                 .build();
 
         System.out.println("\nData:");
         int i = 0;
-        while (i < num && reader.hasNext()) {
+        while (i < 20 && reader.hasNext()) {
             Object[] row = (Object[]) reader.readNextRow();
             System.out.println(row[0] + " " + row[1]);
             i++;
