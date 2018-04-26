@@ -25,10 +25,8 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentif
 import org.apache.carbondata.core.cache.dictionary.ForwardDictionaryCache;
 import org.apache.carbondata.core.cache.dictionary.ReverseDictionaryCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.BlockIndexStore;
 import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
 import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
-import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.junit.Before;
@@ -100,20 +98,6 @@ public class CacheProviderTest {
         .getProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE);
     assertEquals(1024 * 1024 * Integer.parseInt(driverCacheSize), lruCacheMemorySize);
     // drop cache
-    cacheProvider.dropAllCache();
-    // validation test for the executor memory.
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false");
-    Cache<TableBlockUniqueIdentifier, BlockIndexStore> executorCache =
-        cacheProvider.createCache(CacheType.EXECUTOR_BTREE);
-    carbonLRUCacheField = BlockIndexStore.class.getSuperclass().getDeclaredField("lruCache");
-    carbonLRUCacheField.setAccessible(true);
-    carbonLRUCache = (CarbonLRUCache) carbonLRUCacheField.get(executorCache);
-    lruCacheMemorySizeField = CarbonLRUCache.class.getDeclaredField("lruCacheMemorySize");
-    lruCacheMemorySizeField.setAccessible(true);
-    lruCacheMemorySize = (long) lruCacheMemorySizeField.get(carbonLRUCache);
-    String executorCacheSize = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE);
-    assertEquals(1024 * 1024 * Integer.parseInt(executorCacheSize), lruCacheMemorySize);
     cacheProvider.dropAllCache();
   }
 }
