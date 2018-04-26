@@ -93,18 +93,6 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     scannedResult.setMeasureChunks(columnPages);
     scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
-    if (blockExecutionInfo.isPrefetchBlocklet()) {
-      for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
-        if (dimensionRawColumnChunks[i] != null) {
-          dimensionColumnDataChunks[i] = dimensionRawColumnChunks[i].convertToDimColDataChunks();
-        }
-      }
-      for (int i = 0; i < measureRawColumnChunks.length; i++) {
-        if (measureRawColumnChunks[i] != null) {
-          columnPages[i] = measureRawColumnChunks[i].convertToColumnPage();
-        }
-      }
-    }
     int[] numberOfRows = null;
     if (blockExecutionInfo.getAllSelectedDimensionBlocksIndexes().length > 0) {
       for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
@@ -137,9 +125,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
       }
     }
     scannedResult.setNumberOfRows(numberOfRows);
-    if (!blockExecutionInfo.isPrefetchBlocklet()) {
-      scannedResult.fillDataChunks();
-    }
+    scannedResult.fillDataChunks();
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
