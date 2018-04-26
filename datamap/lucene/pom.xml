@@ -104,15 +104,6 @@
   </dependencies>
 
   <build>
-    <testSourceDirectory>src/test/scala</testSourceDirectory>
-    <resources>
-      <resource>
-        <directory>src/resources</directory>
-      </resource>
-      <resource>
-        <directory>.</directory>
-      </resource>
-    </resources>
     <plugins>
       <plugin>
         <groupId>org.scala-tools</groupId>
