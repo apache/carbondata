@@ -17,18 +17,12 @@
 package org.apache.carbondata.core.scan.filter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.DataRefNode;
-import org.apache.carbondata.core.datastore.DataRefNodeFinder;
-import org.apache.carbondata.core.datastore.IndexKey;
-import org.apache.carbondata.core.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -88,84 +82,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
       throws FilterUnsupportedException, IOException {
     if (null != expressionTree && null != tableIdentifier) {
       return getFilterResolvertree(expressionTree, tableIdentifier, tableProvider);
-    }
-    return null;
-  }
-
-  /**
-   * This API will scan the Segment level all btrees and selects the required
-   * block reference  nodes inorder to push the same to executer for applying filters
-   * on the respective data reference node.
-   * Following Algorithm is followed in below API
-   * Step:1 Get the start end key based on the filter tree resolver information
-   * Step:2 Prepare the IndexKeys inorder to scan the tree and get the start and end reference
-   * node(block)
-   * Step:3 Once data reference node ranges retrieved traverse the node within this range
-   * and select the node based on the block min and max value and the filter value.
-   * Step:4 The selected blocks will be send to executers for applying the filters with the help
-   * of Filter executers.
-   *
-   */
-  public List<DataRefNode> getFilterredBlocks(DataRefNode btreeNode,
-      FilterResolverIntf filterResolver, AbstractIndex tableSegment) {
-    // Need to get the current dimension tables
-    List<DataRefNode> listOfDataBlocksToScan = new ArrayList<DataRefNode>();
-    // getting the start and end index key based on filter for hitting the
-    // selected block reference nodes based on filter resolver tree.
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("preparing the start and end key for finding"
-          + "start and end block as per filter resolver");
-    }
-    IndexKey searchStartKey = null;
-    IndexKey searchEndKey = null;
-    try {
-      searchStartKey = FilterUtil.prepareDefaultStartIndexKey(tableSegment.getSegmentProperties());
-      searchEndKey = FilterUtil.prepareDefaultEndIndexKey(tableSegment.getSegmentProperties());
-    } catch (KeyGenException e) {
-      throw new RuntimeException(e);
-    }
-    if (LOGGER.isDebugEnabled()) {
-      char delimiter = ',';
-      LOGGER.debug(
-          "Successfully retrieved the start and end key" + "Dictionary Start Key: " + joinByteArray(
-              searchStartKey.getDictionaryKeys(), delimiter) + "No Dictionary Start Key "
-              + joinByteArray(searchStartKey.getNoDictionaryKeys(), delimiter)
-              + "Dictionary End Key: " + joinByteArray(searchEndKey.getDictionaryKeys(), delimiter)
-              + "No Dictionary End Key " + joinByteArray(searchEndKey.getNoDictionaryKeys(),
-              delimiter));
-    }
-    long startTimeInMillis = System.currentTimeMillis();
-    DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
-        tableSegment.getSegmentProperties().getEachDimColumnValueSize(),
-        tableSegment.getSegmentProperties().getNumberOfSortColumns(),
-        tableSegment.getSegmentProperties().getNumberOfNoDictSortColumns());
-    DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
-    DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
-    FilterExecuter filterExecuter =
-        FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties(),null);
-    while (startBlock != endBlock) {
-      addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, startBlock);
-      startBlock = startBlock.getNextDataRefNode();
-    }
-    addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, endBlock);
-    LOGGER.info("Total Time in retrieving the data reference node" + "after scanning the btree " + (
-        System.currentTimeMillis() - startTimeInMillis)
-        + " Total number of data reference node for executing filter(s) " + listOfDataBlocksToScan
-        .size());
-
-    return listOfDataBlocksToScan;
-  }
-
-  private String joinByteArray(byte[] bytes, char delimiter) {
-    StringBuffer byteArrayAsString = new StringBuffer();
-    byteArrayAsString.append("");
-    if (null != bytes) {
-      for (int i = 0; i < bytes.length; i++) {
-        byteArrayAsString.append(delimiter).append(bytes[i]);
-      }
-      if (byteArrayAsString.length() > 0) {
-        return byteArrayAsString.substring(1);
-      }
     }
     return null;
   }

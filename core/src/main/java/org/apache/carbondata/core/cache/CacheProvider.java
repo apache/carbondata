@@ -27,10 +27,7 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentif
 import org.apache.carbondata.core.cache.dictionary.ForwardDictionaryCache;
 import org.apache.carbondata.core.cache.dictionary.ReverseDictionaryCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.BlockIndexStore;
 import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
-import org.apache.carbondata.core.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
 import org.apache.carbondata.core.util.CarbonProperties;
 
@@ -117,8 +114,6 @@ public class CacheProvider {
     } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
       cacheObject =
           new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonLRUCache);
-    } else if (cacheType.equals(cacheType.EXECUTOR_BTREE)) {
-      cacheObject = new BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex>(carbonLRUCache);
     } else if (cacheType.equals(cacheType.DRIVER_BTREE)) {
       cacheObject =
           new SegmentTaskIndexStore(carbonLRUCache);

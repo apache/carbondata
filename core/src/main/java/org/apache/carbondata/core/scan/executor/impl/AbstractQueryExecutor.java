@@ -32,11 +32,8 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.common.logging.impl.StandardLogService;
-import org.apache.carbondata.core.cache.CacheProvider;
-import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.datastore.BlockIndexStore;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -128,42 +125,27 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // query execution
     Collections.sort(queryModel.getTableBlockInfos());
 
-    if (queryModel.getTableBlockInfos().get(0).getDetailInfo() != null) {
-      List<AbstractIndex> indexList = new ArrayList<>();
-      Map<String, List<TableBlockInfo>> listMap = new LinkedHashMap<>();
-      for (TableBlockInfo blockInfo: queryModel.getTableBlockInfos()) {
-        List<TableBlockInfo> tableBlockInfos = listMap.get(blockInfo.getFilePath());
-        if (tableBlockInfos == null) {
-          tableBlockInfos = new ArrayList<>();
-          listMap.put(blockInfo.getFilePath(), tableBlockInfos);
-        }
-        BlockletDetailInfo blockletDetailInfo = blockInfo.getDetailInfo();
-        // This is the case of old stores where blocklet information is not available so read
-        // the blocklet information from block file
-        if (blockletDetailInfo.getBlockletInfo() == null) {
-          readAndFillBlockletInfo(blockInfo, tableBlockInfos, blockletDetailInfo);
-        } else {
-          tableBlockInfos.add(blockInfo);
-        }
+    List<AbstractIndex> indexList = new ArrayList<>();
+    Map<String, List<TableBlockInfo>> listMap = new LinkedHashMap<>();
+    for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
+      List<TableBlockInfo> tableBlockInfos = listMap.get(blockInfo.getFilePath());
+      if (tableBlockInfos == null) {
+        tableBlockInfos = new ArrayList<>();
+        listMap.put(blockInfo.getFilePath(), tableBlockInfos);
       }
-      for (List<TableBlockInfo> tableBlockInfos: listMap.values()) {
-        indexList.add(new IndexWrapper(tableBlockInfos));
+      BlockletDetailInfo blockletDetailInfo = blockInfo.getDetailInfo();
+      // This is the case of old stores where blocklet information is not available so read
+      // the blocklet information from block file
+      if (blockletDetailInfo.getBlockletInfo() == null) {
+        readAndFillBlockletInfo(blockInfo, tableBlockInfos, blockletDetailInfo);
+      } else {
+        tableBlockInfos.add(blockInfo);
       }
-      queryProperties.dataBlocks = indexList;
-    } else {
-      // get the table blocks
-      CacheProvider cacheProvider = CacheProvider.getInstance();
-      BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache =
-          (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE);
-      // remove the invalid table blocks, block which is deleted or compacted
-      cache.removeTableBlocks(queryModel.getInvalidSegmentIds(),
-          queryModel.getAbsoluteTableIdentifier());
-      List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
-          prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(),
-              queryModel.getAbsoluteTableIdentifier());
-      cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
-      queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
     }
+    for (List<TableBlockInfo> tableBlockInfos : listMap.values()) {
+      indexList.add(new IndexWrapper(tableBlockInfos));
+    }
+    queryProperties.dataBlocks = indexList;
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
