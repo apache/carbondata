@@ -38,6 +38,8 @@ import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
+import org.apache.carbondata.core.util.CarbonTaskInfo;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
@@ -76,12 +78,16 @@ public class SearchRequestHandler {
    */
   private List<CarbonRow> handleRequest(SearchRequest request)
       throws IOException, InterruptedException {
+    CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
+    carbonTaskInfo.setTaskId(System.nanoTime());
+    ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
     TableInfo tableInfo = request.tableInfo();
     CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo);
     QueryModel queryModel = createQueryModel(table, request);
 
     // in search mode, plain reader is better since it requires less memory
     queryModel.setVectorReader(false);
+
     CarbonMultiBlockSplit mbSplit = request.split().value();
     long limit = request.limit();
     long rowCount = 0;
