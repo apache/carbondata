@@ -7821,8 +7821,9 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
   //BVA_SPL_DATA_TIMESTAMP_212
   test("BVA_SPL_DATA_TIMESTAMP_212", Include) {
 
-    checkAnswer(s"""select histogram_numeric(c6_Timestamp,2) from Test_Boundary""",
-      s"""select histogram_numeric(c6_Timestamp,2) from Test_Boundary_hive""", "QueriesBVATestCase_BVA_SPL_DATA_TIMESTAMP_212")
+    checkAnswer(s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(c6_Timestamp,2) as hist_table from Test_Boundary ) t lateral view explode(hist_table) exploded_table as hist) group by x""",
+      s"""select sum(y),x from (select cast(hist.x as int) as x, cast(hist.y as bigint) as y from (select histogram_numeric(c6_Timestamp,2) as hist_table from Test_Boundary_hive ) t lateral view explode(hist_table) exploded_table as hist) group by x""", "QueriesBVATestCase_BVA_SPL_DATA_TIMESTAMP_212")
+
 
   }
 
