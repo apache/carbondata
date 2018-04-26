@@ -35,7 +35,7 @@ object SDKWriteS3Example {
    */
   def main(args: Array[String]) {
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
-    if (args.length < 2 || args.length > 6) {
+    if (args.length < 3 || args.length > 6) {
       logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>" +
         "<s3-endpoint> [table-path-on-s3] [number-of-rows] [persistSchema]")
       System.exit(0)
