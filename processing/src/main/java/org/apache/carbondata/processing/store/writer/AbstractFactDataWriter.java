@@ -176,6 +176,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS,
         CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS_DEFAULT);
     this.enableDirectlyWriteData2Hdfs = "TRUE".equalsIgnoreCase(directlyWriteData2Hdfs);
+
     if (enableDirectlyWriteData2Hdfs) {
       LOGGER.info("Carbondata will directly write fact data to HDFS.");
     } else {
@@ -274,22 +275,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   protected void commitCurrentFile(boolean copyInCurrentThread) {
     notifyDataMapBlockEnd();
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
-    if (enableDirectlyWriteData2Hdfs) {
-      if (copyInCurrentThread) {
-        CarbonUtil.completeRemainingHdfsReplicas(carbonDataFileHdfsPath,
-            FileFactory.FileType.HDFS);
-      } else {
-        executorServiceSubmitList.add(executorService.submit(
-            new CompleteHdfsBackendThread(carbonDataFileHdfsPath, FileFactory.FileType.HDFS)));
-      }
-    } else {
+    if (!enableDirectlyWriteData2Hdfs) {
       if (copyInCurrentThread) {
         CarbonUtil.copyCarbonDataFileToCarbonStorePath(carbonDataFileTempPath,
-            model.getCarbonDataDirectoryPath(),
-            fileSizeInBytes);
+            model.getCarbonDataDirectoryPath(), fileSizeInBytes);
       } else {
         executorServiceSubmitList.add(executorService.submit(
-            new CompleteHdfsBackendThread(carbonDataFileTempPath, FileFactory.FileType.LOCAL)));
+            new CompleteHdfsBackendThread(carbonDataFileTempPath)));
       }
     }
   }
@@ -310,10 +302,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       if (enableDirectlyWriteData2Hdfs) {
         // the block size will be twice the block_size specified by user to make sure that
         // one carbondata file only consists exactly one HDFS block.
-        // Here we write the first replication and will complete the remaining later.
-        fileOutputStream = FileFactory.getDataOutputStream(carbonDataFileHdfsPath,
-            FileFactory.FileType.HDFS, CarbonCommonConstants.BYTEBUFFER_SIZE, fileSizeInBytes * 2,
-            (short) 1);
+        fileOutputStream = FileFactory
+            .getDataOutputStream(carbonDataFileHdfsPath, FileFactory.FileType.HDFS,
+                CarbonCommonConstants.BYTEBUFFER_SIZE, fileSizeInBytes * 2);
       } else {
         //each time we initialize writer, we choose a local temp location randomly
         String[] tempFileLocations = model.getStoreLocation();
@@ -416,13 +407,10 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       writer.writeThrift(blockIndex);
     }
     writer.close();
-    if (enableDirectlyWriteData2Hdfs) {
-      executorServiceSubmitList.add(executorService.submit(
-          new CompleteHdfsBackendThread(indexFileName, FileFactory.FileType.HDFS)));
-    } else {
-      CarbonUtil.copyCarbonDataFileToCarbonStorePath(indexFileName,
-          model.getCarbonDataDirectoryPath(),
-          fileSizeInBytes);
+    if (!enableDirectlyWriteData2Hdfs) {
+      CarbonUtil
+          .copyCarbonDataFileToCarbonStorePath(indexFileName, model.getCarbonDataDirectoryPath(),
+              fileSizeInBytes);
     }
   }
 
@@ -459,11 +447,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
      * carbon store path
      */
     private String fileName;
-    private FileFactory.FileType fileType;
 
-    private CompleteHdfsBackendThread(String fileName, FileFactory.FileType fileType) {
+    private CompleteHdfsBackendThread(String fileName) {
       this.fileName = fileName;
-      this.fileType = fileType;
     }
 
     /**
@@ -474,13 +460,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
      */
     @Override
     public Void call() throws Exception {
-      if (FileFactory.FileType.HDFS == fileType) {
-        CarbonUtil.completeRemainingHdfsReplicas(fileName, fileType);
-      } else {
-        CarbonUtil.copyCarbonDataFileToCarbonStorePath(fileName,
-            model.getCarbonDataDirectoryPath(),
-            fileSizeInBytes);
-      }
+      CarbonUtil.copyCarbonDataFileToCarbonStorePath(fileName, model.getCarbonDataDirectoryPath(),
+          fileSizeInBytes);
       return null;
     }
   }
