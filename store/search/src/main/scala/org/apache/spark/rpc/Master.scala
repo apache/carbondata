@@ -19,10 +19,9 @@ package org.apache.spark.rpc
 
 import java.io.IOException
 import java.net.InetAddress
-import java.util.{List => JList, Map => JMap, Objects, Random, Set => JSet, UUID}
+import java.util.{List => JList, Map => JMap, Objects, Random, UUID}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -58,11 +57,12 @@ class Master(sparkConf: SparkConf, port: Int) {
   private val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   // worker host address map to EndpointRef
-  private val workers = mutable.Map[String, RpcEndpointRef]()
 
   private val random = new Random
 
   private var rpcEnv: RpcEnv = _
+
+  private val scheduler: Scheduler = new Scheduler
 
   def this(sparkConf: SparkConf) = {
     this(sparkConf, CarbonProperties.getSearchMasterPort)
@@ -94,15 +94,15 @@ class Master(sparkConf: SparkConf, port: Int) {
   }
 
   def stopAllWorkers(): Unit = {
-    val futures = workers.mapValues { ref =>
-      ref.ask[ShutdownResponse](ShutdownRequest("user"))
+    val futures = scheduler.getAllWorkers.toSeq.map { case (address, schedulable) =>
+      (address, schedulable.ref.ask[ShutdownResponse](ShutdownRequest("user")))
     }
-    futures.foreach { case (hostname, future) =>
+    futures.foreach { case (address, future) =>
       ThreadUtils.awaitResult(future, Duration.apply("10s"))
       future.value match {
         case Some(result) =>
           result match {
-            case Success(response) => workers.remove(hostname)
+            case Success(response) => scheduler.removeWorker(address)
             case Failure(throwable) => throw new IOException(throwable.getMessage)
           }
         case None => throw new ExecutionTimeoutException
@@ -115,27 +115,16 @@ class Master(sparkConf: SparkConf, port: Int) {
     LOG.info(s"Receive Register request from worker ${request.hostAddress}:${request.port} " +
              s"with ${request.cores} cores")
     val workerId = UUID.randomUUID().toString
-    val workerHostAddress = request.hostAddress
+    val workerAddress = request.hostAddress
     val workerPort = request.port
     LOG.info(s"connecting to worker ${request.hostAddress}:${request.port}, workerId $workerId")
 
-    val endPointRef: RpcEndpointRef = rpcEnv.setupEndpointRef(
-      RpcAddress(workerHostAddress, workerPort), "search-service")
-
-    workers.put(workerHostAddress, endPointRef)
-    LOG.info(s"worker ${request.hostAddress}:${request.port} added")
+    val endPointRef =
+      rpcEnv.setupEndpointRef(RpcAddress(workerAddress, workerPort), "search-service")
+    scheduler.addWorker(workerAddress,
+      new Schedulable(workerId, workerAddress, workerPort, request.cores, endPointRef))
+    LOG.info(s"worker ${request.hostAddress}:${request.port} registered")
     RegisterWorkerResponse(workerId)
-  }
-
-  private def getEndpoint(workerIP: String) = {
-    try {
-      workers(workerIP)
-    } catch {
-      case e: NoSuchElementException =>
-        // no local worker available, choose one worker randomly
-        val index = new Random().nextInt(workers.size)
-        workers.toSeq(index)._2
-    }
   }
 
   /**
@@ -154,57 +143,65 @@ class Master(sparkConf: SparkConf, port: Int) {
     if (globalLimit < 0 || localLimit < 0) {
       throw new IllegalArgumentException("limit should be positive")
     }
-    if (workers.isEmpty) {
-      throw new IOException("No worker is available")
-    }
 
     val queryId = random.nextInt
-    // prune data and get a mapping of worker hostname to list of blocks,
-    // then add these blocks to the SearchRequest and fire the RPC call
-    val nodeBlockMapping: JMap[String, JList[Distributable]] = pruneBlock(table, columns, filter)
-    val futures = nodeBlockMapping.asScala.map { case (hostname, blocks) =>
-      // Build a SearchRequest
-      val split = new SerializableWritable[CarbonMultiBlockSplit](
-        new CarbonMultiBlockSplit(blocks, hostname))
-      val request = SearchRequest(queryId, split, table.getTableInfo, columns, filter, localLimit)
-
-      // fire RPC to worker asynchronously
-      getEndpoint(hostname).ask[SearchResult](request)
-    }
-    // get all results from RPC response and return to caller
     var rowCount = 0
     val output = new ArrayBuffer[CarbonRow]
 
-    // Loop to get the result of each Worker
-    futures.foreach { future: Future[SearchResult] =>
+    def onSuccess(result: SearchResult): Unit = {
+      // in case of RPC success, collect all rows in response message
+      if (result.queryId != queryId) {
+        throw new IOException(
+          s"queryId in response does not match request: ${result.queryId} != $queryId")
+      }
+      if (result.status != Status.SUCCESS.ordinal()) {
+        throw new IOException(s"failure in worker: ${ result.message }")
+      }
+
+      val itor = result.rows.iterator
+      while (itor.hasNext && rowCount < globalLimit) {
+        output += new CarbonRow(itor.next())
+        rowCount = rowCount + 1
+      }
+      LOG.info(s"[SearchId:$queryId] accumulated result size $rowCount")
+    }
+    def onFaiure(e: Throwable) = throw new IOException(s"exception in worker: ${ e.getMessage }")
+    def onTimedout() = throw new ExecutionTimeoutException()
+
+    // prune data and get a mapping of worker hostname to list of blocks,
+    // then add these blocks to the SearchRequest and fire the RPC call
+    val nodeBlockMapping: JMap[String, JList[Distributable]] = pruneBlock(table, columns, filter)
+    val tuple = nodeBlockMapping.asScala.map { case (splitAddress, blocks) =>
+      // Build a SearchRequest
+      val split = new SerializableWritable[CarbonMultiBlockSplit](
+        new CarbonMultiBlockSplit(blocks, splitAddress))
+      val request = SearchRequest(queryId, split, table.getTableInfo, columns, filter, localLimit)
+
+      // Find an Endpoind and send the request to it
+      // This RPC is non-blocking so that we do not need to wait before send to next worker
+      scheduler.sendRequestAsync[SearchResult](splitAddress, request)
+    }
+
+    // loop to get the result of each Worker
+    tuple.foreach { case (worker: Schedulable, future: Future[SearchResult]) =>
 
       // if we have enough data already, we do not need to collect more result
       if (rowCount < globalLimit) {
-        // wait on worker for 10s
+        // wait for worker for 10s
         ThreadUtils.awaitResult(future, Duration.apply("10s"))
-        future.value match {
-          case Some(response: Try[SearchResult]) =>
-            response match {
-              case Success(result) =>
-                if (result.queryId != queryId) {
-                  throw new IOException(
-                    s"queryId in response does not match request: ${ result.queryId } != $queryId")
-                }
-                if (result.status != Status.SUCCESS.ordinal()) {
-                  throw new IOException(s"failure in worker: ${ result.message }")
-                }
-
-                val itor = result.rows.iterator
-                while (itor.hasNext && rowCount < globalLimit) {
-                  output += new CarbonRow(itor.next())
-                  rowCount = rowCount + 1
-                }
-
-              case Failure(e) =>
-                throw new IOException(s"exception in worker: ${ e.getMessage }")
-            }
-          case None =>
-            throw new ExecutionTimeoutException()
+        LOG.info(s"[SearchId:$queryId] receive search response from worker " +
+                 s"${worker.address}:${worker.port}")
+        try {
+          future.value match {
+            case Some(response: Try[SearchResult]) =>
+              response match {
+                case Success(result) => onSuccess(result)
+                case Failure(e) => onFaiure(e)
+              }
+            case None => onTimedout()
+          }
+        } finally {
+          worker.workload.decrementAndGet()
         }
       }
     }
@@ -230,12 +227,12 @@ class Master(sparkConf: SparkConf, port: Int) {
     CarbonLoaderUtil.nodeBlockMapping(
       distributables.asJava,
       -1,
-      workers.keySet.toList.asJava,
+      getWorkers.asJava,
       CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST)
   }
 
   /** return hostname of all workers */
-  def getWorkers: JSet[String] = workers.keySet.asJava
+  def getWorkers: Seq[String] = scheduler.getAllWorkers.map(_._1).toSeq
 }
 
 // Exception if execution timed out in search mode

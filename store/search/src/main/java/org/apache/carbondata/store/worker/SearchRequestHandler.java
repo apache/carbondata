@@ -35,6 +35,8 @@ import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
+import org.apache.carbondata.core.scan.executor.impl.SearchModeDetailQueryExecutor;
+import org.apache.carbondata.core.scan.executor.impl.SearchModeVectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
@@ -61,15 +63,22 @@ public class SearchRequestHandler {
 
   public SearchResult handleSearch(SearchRequest request) {
     try {
+      LOG.info(String.format("[SearchId:%d] receive search request", request.searchId()));
       List<CarbonRow> rows = handleRequest(request);
+      LOG.info(String.format("[SearchId:%d] sending success response", request.searchId()));
       return createSuccessResponse(request, rows);
     } catch (IOException | InterruptedException e) {
       LOG.error(e);
+      LOG.info(String.format("[SearchId:%d] sending failure response", request.searchId()));
       return createFailureResponse(request, e);
     }
   }
 
   public ShutdownResponse handleShutdown(ShutdownRequest request) {
+    LOG.info("Shutting down worker...");
+    SearchModeDetailQueryExecutor.shutdownThreadPool();
+    SearchModeVectorDetailQueryExecutor.shutdownThreadPool();
+    LOG.info("Worker shutted down");
     return new ShutdownResponse(Status.SUCCESS.ordinal(), "");
   }
 
@@ -92,8 +101,11 @@ public class SearchRequestHandler {
     long limit = request.limit();
     long rowCount = 0;
 
+    LOG.info(String.format("[SearchId:%d] %s, number of block: %d",
+        request.searchId(), queryModel.toString(), mbSplit.getAllSplits().size()));
+
     // If there is FGDataMap, prune the split by applying FGDataMap
-    queryModel = tryPruneByFGDataMap(table, queryModel, mbSplit);
+    queryModel = tryPruneByFGDataMap(request.searchId(), table, queryModel, mbSplit);
 
     // In search mode, reader will read multiple blocks by using a thread pool
     CarbonRecordReader<CarbonRow> reader =
@@ -114,6 +126,8 @@ public class SearchRequestHandler {
     } finally {
       reader.close();
     }
+    LOG.info(String.format("[SearchId:%d] scan completed, return %d rows",
+        request.searchId(), rows.size()));
     return rows;
   }
 
@@ -121,7 +135,7 @@ public class SearchRequestHandler {
    * If there is FGDataMap defined for this table and filter condition in the query,
    * prune the splits by the DataMap and set the pruned split into the QueryModel and return
    */
-  private QueryModel tryPruneByFGDataMap(
+  private QueryModel tryPruneByFGDataMap(int queryId,
       CarbonTable table, QueryModel queryModel, CarbonMultiBlockSplit mbSplit) throws IOException {
     DataMapExprWrapper wrapper =
         DataMapChooser.get().choose(table, queryModel.getFilterExpressionResolverTree());
@@ -146,6 +160,8 @@ public class SearchRequestHandler {
           blockToRead.add(block);
         }
       }
+      LOG.info(String.format("[SearchId:%d] pruned using FG DataMap, pruned blocks: %d",
+          queryId, blockToRead.size()));
       queryModel.setTableBlockInfos(blockToRead);
     }
     return queryModel;
@@ -167,7 +183,7 @@ public class SearchRequestHandler {
    * create a failure response
    */
   private SearchResult createFailureResponse(SearchRequest request, Throwable throwable) {
-    return new SearchResult(request.queryId(), Status.FAILURE.ordinal(), throwable.getMessage(),
+    return new SearchResult(request.searchId(), Status.FAILURE.ordinal(), throwable.getMessage(),
         new Object[0][]);
   }
 
@@ -181,7 +197,7 @@ public class SearchRequestHandler {
     while (itor.hasNext()) {
       output[i++] = itor.next().getData();
     }
-    return new SearchResult(request.queryId(), Status.SUCCESS.ordinal(), "", output);
+    return new SearchResult(request.searchId(), Status.SUCCESS.ordinal(), "", output);
   }
 
 }
