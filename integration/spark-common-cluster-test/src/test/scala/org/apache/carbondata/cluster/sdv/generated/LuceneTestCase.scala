@@ -26,7 +26,7 @@ import org.scalatest.BeforeAndAfterAll
  * Test Class for LuceneDataMap Testcase to verify all scenarios
  */
 
-class LuceneTestcase extends QueryTest with BeforeAndAfterAll {
+class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
 
   val csvPath = s"$resourcesPath/source.csv"
 
@@ -73,7 +73,7 @@ class LuceneTestcase extends QueryTest with BeforeAndAfterAll {
   }
 
   //Create Lucene DataMap With DMProperties on MainTable and Load Data and Query
-  test("LuceneDataMap_TC003", Include) {
+  ignore("LuceneDataMap_TC003", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
       "CREATE TABLE datamap_main (id Int, date string, country string,name String, phonetype " +
@@ -95,7 +95,7 @@ class LuceneTestcase extends QueryTest with BeforeAndAfterAll {
 
   //Create Different Lucene DataMap With DMProperties on MainTable and filter using 'like','AND'
   // & 'OR'
-  test("LuceneDataMap_TC004", Include) {
+  ignore("LuceneDataMap_TC004", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
       "CREATE TABLE datamap_main (id Int, date string, country string,name String, phonetype " +
@@ -127,7 +127,7 @@ class LuceneTestcase extends QueryTest with BeforeAndAfterAll {
 
   //Create Different Lucene DataMap With DMProperties on MainTable and check Datamap after Delete
   // Segment
-  test("LuceneDataMap_TC005", Include) {
+  ignore("LuceneDataMap_TC005", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
       "CREATE TABLE datamap_main (id Int, date date, country string,name String, phonetype " +
@@ -152,7 +152,7 @@ class LuceneTestcase extends QueryTest with BeforeAndAfterAll {
 
   //Create Different Lucene DataMap With DMProperties on MainTable with different 'TBLProperties'
   // and Load Data with Differnt OPTIONS & Verify
-  test("LuceneDataMap_TC006", Include) {
+  ignore("LuceneDataMap_TC006", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
       "CREATE TABLE datamap_main (id Int, date string, country string,name String, phonetype " +
@@ -174,7 +174,7 @@ class LuceneTestcase extends QueryTest with BeforeAndAfterAll {
 
   //Create LuceneDataMap With DMProperties on MainTable and Insert data and Update and
   // Verify
-  test("LuceneDataMap_TC007", Include) {
+  ignore("LuceneDataMap_TC007", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
       "CREATE TABLE datamap_main (id Int,country string,name String) STORED BY 'org.apache" +
