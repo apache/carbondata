@@ -110,6 +110,7 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
   }
 
   def startSearchMode(): Unit = {
+    LOG.info("Starting search mode master")
     master = new Master(session.sparkContext.getConf)
     master.startService()
     startAllWorkers()
