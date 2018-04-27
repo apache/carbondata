@@ -47,51 +47,64 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   def buildTestDataSingleFile(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(3, false, null)
+    buildTestData(3, false, null, System.currentTimeMillis)
   }
+
+  def buildTestDataSingleFile(uuid:Long): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(3, false, null, uuid)
+  }
+
 
   def buildTestDataMultipleFiles(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(1000000, false, null)
+    buildTestData(1000000, false, null, System.currentTimeMillis)
   }
 
   def buildTestDataTwice(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(3, false, null)
-    buildTestData(3, false, null)
+    buildTestData(3, false, null, System.currentTimeMillis)
+    buildTestData(3, false, null, System.currentTimeMillis)
   }
 
   def buildTestDataSameDirectory(): Any = {
-    buildTestData(3, false, null)
+    buildTestData(3, false, null, System.currentTimeMillis)
+  }
+
+  def buildTestDataSameDirectory(uuid:Long): Any = {
+    buildTestData(3, false, null, uuid)
   }
 
   def buildTestDataWithBadRecordForce(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "FORCE").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, false, options, System.currentTimeMillis)
   }
 
   def buildTestDataWithBadRecordFail(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "FAIL").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, false, options, System.currentTimeMillis)
   }
 
   def buildTestDataWithBadRecordIgnore(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "IGNORE").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, false, options, System.currentTimeMillis)
   }
 
   def buildTestDataWithBadRecordRedirect(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "REDIRECT").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, false, options, System.currentTimeMillis)
   }
 
 
   // prepare sdk writer output
-  def buildTestData(rows: Int, persistSchema: Boolean, options: util.Map[String, String]): Any = {
+  def buildTestData(rows: Int,
+      persistSchema: Boolean,
+      options: util.Map[String, String],
+      uuid: Long): Any = {
     val schema = new StringBuilder()
       .append("[ \n")
       .append("   {\"name\":\"string\"},\n")
@@ -108,30 +121,29 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
           builder.withSchema(Schema.parseJson(schema))
             .outputPath(writerPath)
             .isTransactionalTable(false)
-            .uniqueIdentifier(System.currentTimeMillis)
+            .uniqueIdentifier(uuid)
             .buildWriterForCSVInput()
         } else {
           if (options != null) {
             builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath)
               .isTransactionalTable(false)
-              .uniqueIdentifier(
-                System.currentTimeMillis).withBlockSize(2).withLoadOptions(options)
+              .uniqueIdentifier(uuid).withBlockSize(2).withLoadOptions(options)
               .buildWriterForCSVInput()
           } else {
             builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath)
               .isTransactionalTable(false)
-              .uniqueIdentifier(
-                System.currentTimeMillis).withBlockSize(2)
+              .uniqueIdentifier(uuid).withBlockSize(2)
               .buildWriterForCSVInput()
           }
         }
       var i = 0
       while (i < rows) {
-        if (options != null){
+        if (options != null) {
           // writing a bad record
-          writer.write(Array[String]( "robot" + i, String.valueOf(i.toDouble / 2), "robot"))
+          writer.write(Array[String]("robot" + i, String.valueOf(i.toDouble / 2), "robot"))
         } else {
-          writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+          writer
+            .write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
         }
         i += 1
       }
@@ -543,7 +555,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Read two sdk writer outputs with same column name placed in same folder") {
-    buildTestDataSingleFile()
+    buildTestDataSingleFile(123)
 
     assert(new File(writerPath).exists())
 
@@ -559,7 +571,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("robot1", 1, 0.5),
       Row("robot2", 2, 1.0)))
 
-    buildTestDataSameDirectory()
+    buildTestDataSameDirectory(123)
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
