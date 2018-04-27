@@ -20,6 +20,7 @@ package org.apache.spark.rpc
 import java.io.IOException
 import java.net.{BindException, InetAddress}
 import java.util.{List => JList, Map => JMap, Objects, Random, UUID}
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -67,6 +68,8 @@ class Master(sparkConf: SparkConf) {
   /** start service and listen on port passed in constructor */
   def startService(): Unit = {
     if (rpcEnv == null) {
+      LOG.info("Start search mode master thread")
+      val isStarted: AtomicBoolean = new AtomicBoolean(false)
       new Thread(new Runnable {
         override def run(): Unit = {
           val hostAddress = InetAddress.getLocalHost.getHostAddress
@@ -96,10 +99,31 @@ class Master(sparkConf: SparkConf) {
           }
           val registryEndpoint: RpcEndpoint = new Registry(rpcEnv, Master.this)
           rpcEnv.setupEndpoint("registry-service", registryEndpoint)
+          if (isStarted.compareAndSet(false, false)) {
+            synchronized {
+              isStarted.compareAndSet(false, true)
+            }
+          }
           LOG.info("registry-service started")
           rpcEnv.awaitTermination()
         }
       }).start()
+      var count = 0
+      val countThreshold = 5000
+      while (isStarted.compareAndSet(false, false) && count < countThreshold) {
+        LOG.info(s"Waiting search mode master to start, retrying $count times")
+        Thread.sleep(10)
+        count = count + 1;
+      }
+      if (count >= countThreshold) {
+        LOG.error(s"Search mode try $countThreshold times to start master but failed")
+        throw new RuntimeException(
+          s"Search mode try $countThreshold times to start master but failed")
+      } else {
+        LOG.info("Search mode master started")
+      }
+    } else {
+      LOG.info("Search mode master has already existed before.")
     }
   }
 
