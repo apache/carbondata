@@ -146,7 +146,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new TableCommentAlterTableTestCase ::
                     new StandardPartitionTestCase ::
                     new PreAggregateTestCase ::
-                    new LuceneTestcase ::
+                    new LuceneTestCase ::
                     new TimeSeriesPreAggregateTestCase :: 
                     new TestPartitionWithGlobalSort ::
                     new SetParameterTestCase :: Nil
