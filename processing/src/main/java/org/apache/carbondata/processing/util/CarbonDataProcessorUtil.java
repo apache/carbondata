@@ -592,8 +592,10 @@ public final class CarbonDataProcessorUtil {
   public static String trimErrorMessage(String input) {
     String errorMessage = input;
     if (input != null) {
-      if (input.split("Hint").length > 0) {
+      if (input.split("Hint").length > 1) {
         errorMessage = input.split("Hint")[0];
+      } else if (input.split("Parser Configuration:").length > 1) {
+        errorMessage = input.split("Parser Configuration:")[0];
       }
     }
     return errorMessage;

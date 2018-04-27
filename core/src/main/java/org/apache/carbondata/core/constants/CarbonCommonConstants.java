@@ -1477,6 +1477,13 @@ public final class CarbonCommonConstants {
   @CarbonProperty public static final String CARBON_SKIP_EMPTY_LINE = "carbon.skip.empty.line";
 
   public static final String CARBON_SKIP_EMPTY_LINE_DEFAULT = "false";
+  /**
+   * Configures the parser/writer to limit the length of displayed contents being parsed/written
+   * in the exception message when an error occurs.
+   * Here {@code 0} means no exceptions will include the content being manipulated in their
+   * attributes.
+   */
+  public static final int CARBON_ERROR_CONTENT_LENGTH = 0;
 
   /**
    * if the byte size of streaming segment reach this value,
