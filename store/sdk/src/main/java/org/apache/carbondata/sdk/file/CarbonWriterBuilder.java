@@ -44,6 +44,8 @@ import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 
+import org.apache.hadoop.fs.s3a.Constants;
+
 /**
  * Biulder for {@link CarbonWriter}
  */
@@ -127,6 +129,73 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder isTransactionalTable(boolean isTransactionalTable) {
     Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
     this.isTransactionalTable = isTransactionalTable;
+    return this;
+  }
+
+  /**
+   * Set the access key for S3
+   *
+   * @param key   the string of access key for different S3 type,like: fs.s3a.access.key
+   * @param value the value of access key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder setAccessKey(String key, String value) {
+    FileFactory.getConfiguration().set(key, value);
+    return this;
+  }
+
+  /**
+   * Set the access key for S3.
+   *
+   * @param value the value of access key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder setAccessKey(String value) {
+    return setAccessKey(Constants.ACCESS_KEY, value);
+  }
+
+  /**
+   * Set the secret key for S3
+   *
+   * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
+   * @param value the value of secret key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder setSecretKey(String key, String value) {
+    FileFactory.getConfiguration().set(key, value);
+    return this;
+  }
+
+  /**
+   * Set the secret key for S3
+   *
+   * @param value the value of secret key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder setSecretKey(String value) {
+    return setSecretKey(Constants.SECRET_KEY, value);
+  }
+
+  /**
+   * Set the endpoint for S3
+   *
+   * @param key   the string of endpoint for different S3 type,like: fs.s3a.endpoint
+   * @param value the value of endpoint
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder setEndPoint(String key, String value) {
+    FileFactory.getConfiguration().set(key, value);
+    return this;
+  }
+
+  /**
+   * Set the endpoint for S3
+   *
+   * @param value the value of endpoint
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder setEndPoint(String value) {
+    FileFactory.getConfiguration().set(Constants.ENDPOINT, value);
     return this;
   }
 
