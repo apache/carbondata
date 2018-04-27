@@ -193,7 +193,13 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
       boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
     if (exp instanceof MatchExpression) {
-      return rawBlockletColumnChunks.getBitSetGroup();
+      BitSetGroup bitSetGroup = rawBlockletColumnChunks.getBitSetGroup();
+      if (bitSetGroup == null) {
+        // It means there are no datamap created on this table
+        throw new FilterUnsupportedException(String.format("%s is not supported on table %s",
+            exp.getFilterExpressionType().name(), tableIdentifier.getTableName()));
+      }
+      return bitSetGroup;
     }
     readColumnChunks(rawBlockletColumnChunks);
     // CHECKSTYLE:ON

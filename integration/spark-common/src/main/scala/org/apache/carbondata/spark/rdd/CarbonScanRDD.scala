@@ -452,7 +452,7 @@ class CarbonScanRDD[T: ClassTag](
             reader.close()
           } catch {
             case e: Exception =>
-              LOGGER.error(e)
+              LogServiceFactory.getLogService(this.getClass.getCanonicalName).error(e)
           }
           reader = null
         }
