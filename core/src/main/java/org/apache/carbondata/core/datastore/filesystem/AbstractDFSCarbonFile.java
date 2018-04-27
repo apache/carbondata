@@ -41,6 +41,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
@@ -526,7 +527,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   @Override
-  public CarbonFile[] locationAwareListFiles() throws IOException {
+  public CarbonFile[] locationAwareListFiles(PathFilter pathFilter) throws IOException {
     if (null != fileStatus && fileStatus.isDirectory()) {
       List<FileStatus> listStatus = new ArrayList<>();
       Path path = fileStatus.getPath();
@@ -534,7 +535,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
           path.getFileSystem(FileFactory.getConfiguration()).listLocatedStatus(path);
       while (iter.hasNext()) {
         LocatedFileStatus fileStatus = iter.next();
-        if (fileStatus.getLen() > 0) {
+        if (pathFilter.accept(fileStatus.getPath()) && fileStatus.getLen() > 0) {
           listStatus.add(fileStatus);
         }
       }

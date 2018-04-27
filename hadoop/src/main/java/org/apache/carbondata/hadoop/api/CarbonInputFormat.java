@@ -156,7 +156,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get the cached CarbonTable or create it by TableInfo in `configuration`
    */
-  protected abstract CarbonTable getOrCreateCarbonTable(Configuration configuration)
+  public abstract CarbonTable getOrCreateCarbonTable(Configuration configuration)
       throws IOException;
 
   public static void setTablePath(Configuration configuration, String tablePath) {
@@ -172,7 +172,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(ALTER_PARTITION_ID, partitionIds.toString());
   }
 
-  public static void setDataMapJob(Configuration configuration, DataMapJob dataMapJob)
+  public static void setDataMapJob(Configuration configuration, Object dataMapJob)
       throws IOException {
     if (dataMapJob != null) {
       String toString = ObjectSerializationUtil.convertObjectToString(dataMapJob);
@@ -466,13 +466,28 @@ m filterExpression
   private List<ExtendedBlocklet> executeDataMapJob(CarbonTable carbonTable,
       FilterResolverIntf resolver, List<Segment> segmentIds, DataMapExprWrapper dataMapExprWrapper,
       DataMapJob dataMapJob, List<PartitionSpec> partitionsToPrune) throws IOException {
-    DistributableDataMapFormat datamapDstr =
-        new DistributableDataMapFormat(carbonTable, dataMapExprWrapper, segmentIds,
-            partitionsToPrune, BlockletDataMapFactory.class.getName());
-    List<ExtendedBlocklet> prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
+    String className = "org.apache.carbondata.hadoop.api.DistributableDataMapFormat";
+    FileInputFormat dataMapFormat =
+        createDataMapJob(carbonTable, dataMapExprWrapper, segmentIds, partitionsToPrune, className);
+    List<ExtendedBlocklet> prunedBlocklets =
+        dataMapJob.execute((DistributableDataMapFormat) dataMapFormat, resolver);
     // Apply expression on the blocklets.
     prunedBlocklets = dataMapExprWrapper.pruneBlocklets(prunedBlocklets);
     return prunedBlocklets;
+  }
+
+
+  public static FileInputFormat createDataMapJob(CarbonTable carbonTable,
+      DataMapExprWrapper dataMapExprWrapper, List<Segment> segments,
+      List<PartitionSpec> partitionsToPrune, String clsName) {
+    try {
+      Constructor<?> cons = Class.forName(clsName).getDeclaredConstructors()[0];
+      return (FileInputFormat) cons
+          .newInstance(carbonTable, dataMapExprWrapper, segments, partitionsToPrune,
+              BlockletDataMapFactory.class.getName());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**

@@ -97,6 +97,11 @@ public class TableInfo implements Serializable, Writable {
 
   private List<RelationIdentifier> parentRelationIdentifiers;
 
+  /**
+   * flag to check whether any schema modification operation has happened after creation of table
+   */
+  private boolean isSchemaModified;
+
   public TableInfo() {
     dataMapSchemaList = new ArrayList<>();
     isTransactionalTable = true;
@@ -115,6 +120,18 @@ public class TableInfo implements Serializable, Writable {
   public void setFactTable(TableSchema factTable) {
     this.factTable = factTable;
     updateParentRelationIdentifier();
+    updateIsSchemaModified();
+  }
+
+  private void updateIsSchemaModified() {
+    if (null != factTable.getSchemaEvalution()) {
+      // If schema evolution entry list size is > 1 that means an alter operation is performed
+      // which has added the new schema entry in the schema evolution list.
+      // Currently apart from create table schema evolution entries
+      // are getting added only in the alter operations.
+      isSchemaModified =
+          factTable.getSchemaEvalution().getSchemaEvolutionEntryList().size() > 1 ? true : false;
+    }
   }
 
   private void updateParentRelationIdentifier() {
@@ -273,6 +290,7 @@ public class TableInfo implements Serializable, Writable {
         parentRelationIdentifiers.get(i).write(out);
       }
     }
+    out.writeBoolean(isSchemaModified);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
@@ -308,6 +326,7 @@ public class TableInfo implements Serializable, Writable {
         this.parentRelationIdentifiers.add(relationIdentifier);
       }
     }
+    this.isSchemaModified = in.readBoolean();
   }
 
   public AbsoluteTableIdentifier getOrCreateAbsoluteTableIdentifier() {
@@ -343,4 +362,9 @@ public class TableInfo implements Serializable, Writable {
   public void setTransactionalTable(boolean transactionalTable) {
     isTransactionalTable = transactionalTable;
   }
+
+  public boolean isSchemaModified() {
+    return isSchemaModified;
+  }
+
 }

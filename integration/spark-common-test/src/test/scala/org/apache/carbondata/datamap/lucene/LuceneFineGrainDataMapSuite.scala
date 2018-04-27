@@ -41,6 +41,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
         CarbonEnv.getDatabaseLocation("lucene", sqlContext.sparkSession))
+      .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP, "true")
     sql("use lucene")
     sql("DROP TABLE IF EXISTS normal_test")
     sql(

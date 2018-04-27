@@ -16,16 +16,24 @@
  */
 package org.apache.carbondata.core.indexstore.schema;
 
+import java.io.Serializable;
+
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * It just have 2 types right now, either fixed or variable.
  */
-public abstract class CarbonRowSchema {
+public abstract class CarbonRowSchema implements Serializable {
+
+  private static final long serialVersionUID = -8061282029097686495L;
 
   protected DataType dataType;
 
   public CarbonRowSchema(DataType dataType) {
+    this.dataType = dataType;
+  }
+
+  public void setDataType(DataType dataType) {
     this.dataType = dataType;
   }
 

@@ -14,27 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.api;
+
+package org.apache.carbondata.core.indexstore;
 
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.carbondata.core.cache.Cacheable;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 
 /**
- * Distributable datamap job to execute the #DistributableDataMapFormat in cluster. it prunes the
- * datamaps distributably and returns the final blocklet list
+ * A cacheable wrapper of datamaps
  */
-public interface DataMapJob extends Serializable {
+public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
 
-  void execute(CarbonTable carbonTable, FileInputFormat<Void, BlockletDataMapIndexWrapper> format);
+  private List<BlockletDataMap> dataMaps;
 
-  List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
-      FilterResolverIntf filter);
+  public BlockletDataMapIndexWrapper(List<BlockletDataMap> dataMaps) {
+    this.dataMaps = dataMaps;
+  }
 
+  @Override public long getFileTimeStamp() {
+    return 0;
+  }
+
+  @Override public int getAccessCount() {
+    return 0;
+  }
+
+  @Override public long getMemorySize() {
+    return 0;
+  }
+
+  public List<BlockletDataMap> getDataMaps() {
+    return dataMaps;
+  }
 }

@@ -59,6 +59,12 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     initThreadPoolSize();
   }
 
+  @Override
+  public void put(DictionaryColumnUniqueIdentifier key, Dictionary value) {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
+
   /**
    * This method will initialize the thread pool size to be used for creating the
    * max number of threads for a job
