@@ -21,6 +21,7 @@ import java.io.{File, PrintWriter}
 
 import scala.util.Random
 
+import org.apache.spark.SparkException
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -29,6 +30,7 @@ import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandExcept
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException
 
 class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
@@ -694,6 +696,22 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM datamap_test5 WHERE TEXT_MATCH('city:c020')"),
       sql(s"SELECT * FROM datamap_test5 WHERE city='c020'"))
 
+  }
+
+  test("test text_match on normal table") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql(
+      """
+        | CREATE TABLE table1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE table1 OPTIONS('header'='false')")
+    val msg = intercept[SparkException] {
+      sql("select * from table1 where TEXT_MATCH('name:n*')").show()
+    }
+    assert(msg.getMessage.contains("TEXT_MATCH is not supported on this table"))
+    sql("DROP TABLE table1")
   }
 
   override protected def afterAll(): Unit = {
