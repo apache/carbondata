@@ -533,7 +533,7 @@ public class CarbonTablePath {
     /**
      * Return the file name from file path
      */
-    private static String getFileName(String dataFilePath) {
+    public static String getFileName(String dataFilePath) {
       int endIndex = dataFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
       if (endIndex > -1) {
         return dataFilePath.substring(endIndex + 1, dataFilePath.length());

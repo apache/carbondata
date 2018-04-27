@@ -492,6 +492,35 @@ public class SegmentFileStore {
   }
 
   /**
+   * Gets all index files from this segment
+   * @return
+   */
+  public Map<String, String> getIndexOrMergeFiles() {
+    Map<String, String> indexFiles = new HashMap<>();
+    if (segmentFile != null) {
+      for (Map.Entry<String, FolderDetails> entry : getLocationMap().entrySet()) {
+        String location = entry.getKey();
+        if (entry.getValue().isRelative) {
+          location = tablePath + location;
+        }
+        if (entry.getValue().status.equals(SegmentStatus.SUCCESS.getMessage())) {
+          String mergeFileName = entry.getValue().getMergeFileName();
+          if (null != mergeFileName) {
+            indexFiles.put(location + CarbonCommonConstants.FILE_SEPARATOR + mergeFileName,
+                entry.getValue().mergeFileName);
+          } else {
+            for (String indexFile : entry.getValue().getFiles()) {
+              indexFiles.put(location + CarbonCommonConstants.FILE_SEPARATOR + indexFile,
+                  entry.getValue().mergeFileName);
+            }
+          }
+        }
+      }
+    }
+    return indexFiles;
+  }
+
+  /**
    * Gets all carbon index files from this segment
    * @return
    */

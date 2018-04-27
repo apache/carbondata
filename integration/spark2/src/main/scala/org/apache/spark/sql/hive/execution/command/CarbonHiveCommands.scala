@@ -115,6 +115,15 @@ object CarbonSetCommand {
           "\" carbon.datamap.visible.<database_name>.<table_name>.<database_name>" +
           " = <true/false> \" format")
       }
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
+      if (key.split("\\.").length == 6) {
+        sessionParams.addProperty(key.toLowerCase(), value)
+      }
+      else {
+        throw new MalformedCarbonCommandException(
+          "property should be in \" carbon.load.datamaps.parallel.<database_name>" +
+          ".<table_name>=<true/false> \" format.")
+      }
     }
   }
 

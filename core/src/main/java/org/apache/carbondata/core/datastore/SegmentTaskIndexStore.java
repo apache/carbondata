@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datastore.block.SegmentTaskIndex;
 import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.exception.IndexBuilderException;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -140,6 +141,12 @@ public class SegmentTaskIndexStore
    */
   @Override public void invalidate(TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier) {
     lruCache.remove(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
+  }
+
+  @Override
+  public void put(TableSegmentUniqueIdentifier key, SegmentTaskIndexWrapper value)
+      throws IOException, MemoryException {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 
   /**

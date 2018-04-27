@@ -1726,6 +1726,9 @@ public final class CarbonCommonConstants {
    */
   public static final String INDEX_COLUMNS = "INDEX_COLUMNS";
 
+  // Property to enable parallel datamap loading for a table
+  public static final String CARBON_LOAD_DATAMAPS_PARALLEL = "carbon.load.datamaps.parallel.";
+
   private CarbonCommonConstants() {
   }
 }

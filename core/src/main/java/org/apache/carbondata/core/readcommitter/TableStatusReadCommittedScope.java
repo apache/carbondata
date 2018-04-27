@@ -68,11 +68,11 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     if (segment.getSegmentFileName() == null) {
       String path =
           CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo());
-      indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(path);
+      indexFiles = new SegmentIndexFileStore().getMergeOrIndexFilesFromSegment(path);
     } else {
       SegmentFileStore fileStore =
           new SegmentFileStore(identifier.getTablePath(), segment.getSegmentFileName());
-      indexFiles = fileStore.getIndexFiles();
+      indexFiles = fileStore.getIndexOrMergeFiles();
     }
     return indexFiles;
   }

@@ -24,7 +24,6 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
 import static org.apache.carbondata.core.memory.CarbonUnsafe.getUnsafe;
@@ -32,9 +31,11 @@ import static org.apache.carbondata.core.memory.CarbonUnsafe.getUnsafe;
 /**
  * Store the data map row @{@link DataMapRow} data to unsafe.
  */
-public class UnsafeMemoryDMStore {
+public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
-  private MemoryBlock memoryBlock;
+  private static final long serialVersionUID = -5344592407101055335L;
+
+  private transient MemoryBlock memoryBlock;
 
   private static int capacity = 8 * 1024;
 
@@ -42,18 +43,12 @@ public class UnsafeMemoryDMStore {
 
   private int runningLength;
 
-  private boolean isMemoryFreed;
-
-  private CarbonRowSchema[] schema;
-
   private int[] pointers;
 
   private int rowCount;
 
-  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
-
   public UnsafeMemoryDMStore(CarbonRowSchema[] schema) throws MemoryException {
-    this.schema = schema;
+    super(schema);
     this.allocatedSize = capacity;
     this.memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, allocatedSize);
     this.pointers = new int[1000];
@@ -92,7 +87,7 @@ public class UnsafeMemoryDMStore {
    * @param indexRow
    * @return
    */
-  public void addIndexRowToUnsafe(DataMapRow indexRow) throws MemoryException {
+  public void addIndexRow(DataMapRow indexRow) throws MemoryException {
     // First calculate the required memory to keep the row in unsafe
     int rowSize = indexRow.getTotalSizeInBytes();
     // Check whether allocated memory is sufficient or not.
@@ -172,7 +167,7 @@ public class UnsafeMemoryDMStore {
     }
   }
 
-  public UnsafeDataMapRow getUnsafeRow(int index) {
+  public DataMapRow getDataMapRow(int index) {
     assert (index < rowCount);
     return new UnsafeDataMapRow(schema, memoryBlock, pointers[index]);
   }
@@ -203,10 +198,6 @@ public class UnsafeMemoryDMStore {
 
   public int getMemoryUsed() {
     return runningLength;
-  }
-
-  public CarbonRowSchema[] getSchema() {
-    return schema;
   }
 
   public int getRowCount() {

@@ -21,13 +21,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.CacheableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
@@ -38,15 +41,17 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
@@ -59,7 +64,7 @@ import org.apache.hadoop.fs.RemoteIterator;
  * Table map for blocklet
  */
 public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
-    implements BlockletDetailsFetcher, SegmentPropertiesFetcher {
+    implements BlockletDetailsFetcher, SegmentPropertiesFetcher, CacheableDataMap {
 
   private static final String NAME = "clustered.btree.blocklet";
 
@@ -69,9 +74,9 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   private AbsoluteTableIdentifier identifier;
 
   // segmentId -> list of index file
-  private Map<String, List<TableBlockIndexUniqueIdentifier>> segmentMap = new HashMap<>();
+  private Map<String, Set<TableBlockIndexUniqueIdentifier>> segmentMap = new HashMap<>();
 
-  private Cache<TableBlockIndexUniqueIdentifier, CoarseGrainDataMap> cache;
+  private Cache<TableBlockIndexUniqueIdentifier, BlockletDataMapIndexWrapper> cache;
 
   public BlockletDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     super(carbonTable, dataMapSchema);
@@ -91,24 +96,27 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   @Override public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
-    List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+    List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
+    Set<TableBlockIndexUniqueIdentifier> identifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
-    return cache.getAll(tableBlockIndexUniqueIdentifiers);
+    List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+        new ArrayList<>(identifiers.size());
+    tableBlockIndexUniqueIdentifiers.addAll(identifiers);
+    List<BlockletDataMapIndexWrapper> blockletDataMapIndexWrappers =
+        cache.getAll(tableBlockIndexUniqueIdentifiers);
+    for (BlockletDataMapIndexWrapper wrapper : blockletDataMapIndexWrappers) {
+      dataMaps.addAll(wrapper.getDataMaps());
+    }
+    return dataMaps;
   }
 
-  private List<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(Segment segment)
+  private Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(Segment segment)
       throws IOException {
-    List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+    Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segment.getSegmentNo());
     if (tableBlockIndexUniqueIdentifiers == null) {
-      tableBlockIndexUniqueIdentifiers = new ArrayList<>();
-      Map<String, String> indexFiles = segment.getCommittedIndexFile();
-      for (Map.Entry<String, String> indexFileEntry : indexFiles.entrySet()) {
-        Path indexFile = new Path(indexFileEntry.getKey());
-        tableBlockIndexUniqueIdentifiers.add(
-            new TableBlockIndexUniqueIdentifier(indexFile.getParent().toString(),
-                indexFile.getName(), indexFileEntry.getValue(), segment.getSegmentNo()));
-      }
+      tableBlockIndexUniqueIdentifiers =
+          BlockletDataMapUtil.getTableBlockUniqueIdentifiers(segment);
       segmentMap.put(segment.getSegmentNo(), tableBlockIndexUniqueIdentifiers);
     }
     return tableBlockIndexUniqueIdentifiers;
@@ -130,7 +138,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       }
       return detailedBlocklets;
     }
-    List<TableBlockIndexUniqueIdentifier> identifiers =
+    Set<TableBlockIndexUniqueIdentifier> identifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
     // Retrieve each blocklets detail information from blocklet datamap
     for (Blocklet blocklet : blocklets) {
@@ -145,17 +153,19 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     if (blocklet instanceof ExtendedBlocklet) {
       return (ExtendedBlocklet) blocklet;
     }
-    List<TableBlockIndexUniqueIdentifier> identifiers =
-        getTableBlockIndexUniqueIdentifiers(segment);
+    Set<TableBlockIndexUniqueIdentifier> identifiers = getTableBlockIndexUniqueIdentifiers(segment);
     return getExtendedBlocklet(identifiers, blocklet);
   }
 
-  private ExtendedBlocklet getExtendedBlocklet(List<TableBlockIndexUniqueIdentifier> identifiers,
+  private ExtendedBlocklet getExtendedBlocklet(Set<TableBlockIndexUniqueIdentifier> identifiers,
       Blocklet blocklet) throws IOException {
     for (TableBlockIndexUniqueIdentifier identifier : identifiers) {
-      if (identifier.getIndexFileName().startsWith(blocklet.getFilePath())) {
-        DataMap dataMap = cache.get(identifier);
-        return ((BlockletDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
+      BlockletDataMapIndexWrapper wrapper = cache.get(identifier);
+      List<BlockletDataMap> dataMaps = wrapper.getDataMaps();
+      for (DataMap dataMap : dataMaps) {
+        if (((BlockletDataMap) dataMap).getIndexFileName().startsWith(blocklet.getFilePath())) {
+          return ((BlockletDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
+        }
       }
     }
     throw new IOException("Blocklet with blockid " + blocklet.getBlockletId() + " not found ");
@@ -166,23 +176,19 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public List<DataMapDistributable> toDistributable(Segment segment) {
     List<DataMapDistributable> distributables = new ArrayList<>();
     try {
-      CarbonFile[] carbonIndexFiles;
-      if (segment.getSegmentFileName() == null) {
-        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(
-            CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo()));
-      } else {
-        SegmentFileStore fileStore =
-            new SegmentFileStore(identifier.getTablePath(), segment.getSegmentFileName());
-        Map<String, String> indexFiles = fileStore.getIndexFiles();
-        carbonIndexFiles = new CarbonFile[indexFiles.size()];
-        int i = 0;
-        for (String indexFile : indexFiles.keySet()) {
-          carbonIndexFiles[i++] = FileFactory.getCarbonFile(indexFile);
-        }
+      Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+          getTableBlockIndexUniqueIdentifiers(segment);
+      CarbonFile[] carbonIndexFiles = new CarbonFile[tableBlockIndexUniqueIdentifiers.size()];
+      int identifierCounter = 0;
+      for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier :
+          tableBlockIndexUniqueIdentifiers) {
+        String indexFilePath = tableBlockIndexUniqueIdentifier.getIndexFilePath();
+        String fileName = tableBlockIndexUniqueIdentifier.getIndexFileName();
+        carbonIndexFiles[identifierCounter++] = FileFactory
+            .getCarbonFile(indexFilePath + CarbonCommonConstants.FILE_SEPARATOR + fileName);
       }
       for (int i = 0; i < carbonIndexFiles.length; i++) {
         Path path = new Path(carbonIndexFiles[i].getPath());
-
         FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
         RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
         LocatedFileStatus fileStatus = iter.next();
@@ -205,13 +211,18 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   @Override
   public void clear(Segment segment) {
-    List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segment.getSegmentNo());
+    Set<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segment.getSegmentNo());
     if (blockIndexes != null) {
       for (TableBlockIndexUniqueIdentifier blockIndex : blockIndexes) {
-        DataMap dataMap = cache.getIfPresent(blockIndex);
-        if (dataMap != null) {
-          cache.invalidate(blockIndex);
-          dataMap.clear();
+        BlockletDataMapIndexWrapper wrapper = cache.getIfPresent(blockIndex);
+        if (null != wrapper) {
+          List<BlockletDataMap> dataMaps = wrapper.getDataMaps();
+          for (DataMap dataMap : dataMaps) {
+            if (dataMap != null) {
+              cache.invalidate(blockIndex);
+              dataMap.clear();
+            }
+          }
         }
       }
     }
@@ -246,9 +257,12 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
                 segmentNo));
       }
     }
-    List<CoarseGrainDataMap> dataMaps;
+    List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
     try {
-      dataMaps = cache.getAll(identifiers);
+      List<BlockletDataMapIndexWrapper> wrappers = cache.getAll(identifiers);
+      for (BlockletDataMapIndexWrapper wrapper : wrappers) {
+        dataMaps.addAll(wrapper.getDataMaps());
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -289,4 +303,29 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     return false;
   }
 
+  @Override public void cache(TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier,
+      BlockletDataMapIndexWrapper blockletDataMapIndexWrapper) throws IOException, MemoryException {
+    cache.put(tableBlockIndexUniqueIdentifier, blockletDataMapIndexWrapper);
+  }
+
+  @Override
+  public List<DataMapDistributable> getAllUncachedDistributables(
+      List<DataMapDistributable> distributables) throws IOException {
+    List<DataMapDistributable> distributablesToBeLoaded = new ArrayList<>(distributables.size());
+    for (DataMapDistributable distributable : distributables) {
+      Segment segment = distributable.getSegment();
+      Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+          getTableBlockIndexUniqueIdentifiers(segment);
+      // filter out the tableBlockIndexUniqueIdentifiers based on distributable
+      TableBlockIndexUniqueIdentifier validIdentifier = BlockletDataMapUtil
+          .filterIdentifiersBasedOnDistributable(tableBlockIndexUniqueIdentifiers,
+              (BlockletDataMapDistributable) distributable);
+      if (null == cache.getIfPresent(validIdentifier)) {
+        ((BlockletDataMapDistributable) distributable)
+            .setTableBlockIndexUniqueIdentifier(validIdentifier);
+        distributablesToBeLoaded.add(distributable);
+      }
+    }
+    return distributablesToBeLoaded;
+  }
 }

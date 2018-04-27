@@ -219,6 +219,11 @@ public class SessionParams implements Serializable, Cloneable {
             throw new InvalidConfigurationException(
                 String.format("Invalid configuration of %s, datamap does not exist", key));
           }
+        } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
+          isValid = CarbonUtil.validateBoolean(value);
+          if (!isValid) {
+            throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
+          }
         } else {
           throw new InvalidConfigurationException(
               "The key " + key + " not supported for dynamic configuration.");

@@ -16,13 +16,15 @@
  */
 package org.apache.carbondata.core.indexstore.row;
 
+import java.io.Serializable;
+
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 
 /**
  * It is just a normal row to store data. Implementation classes could be safe and unsafe.
  * TODO move this class a global row and use across loading after DataType is changed class
  */
-public abstract class DataMapRow {
+public abstract class DataMapRow implements Serializable {
 
   protected CarbonRowSchema[] schemas;
 
@@ -87,5 +89,14 @@ public abstract class DataMapRow {
 
   public int getColumnCount() {
     return schemas.length;
+  }
+
+  /**
+   * default implementation
+   *
+   * @return
+   */
+  public DataMapRow convertToSafeRow() {
+    return this;
   }
 }
