@@ -47,6 +47,10 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
   private ArrayBlockingQueue<RowBatch> queue = new ArrayBlockingQueue<>(10);
 
   public void write(Object[] row) throws InterruptedException {
+    if (close) {
+      // already might be closed forcefully
+      return;
+    }
     if (!loadBatch.addRow(row)) {
       loadBatch.readyRead();
       queue.put(loadBatch);
@@ -82,8 +86,18 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
     return readBatch.next();
   }
 
-  public void closeWriter() {
+  public void closeWriter(boolean isForceClose) {
+    if (close) {
+      // already might be closed forcefully
+      return;
+    }
     try {
+      if (isForceClose) {
+        // unblock the queue.put on the other thread and clear the queue.
+        queue.clear();
+        close = true;
+        return;
+      }
       loadBatch.readyRead();
       if (loadBatch.size > 0) {
         queue.put(loadBatch);

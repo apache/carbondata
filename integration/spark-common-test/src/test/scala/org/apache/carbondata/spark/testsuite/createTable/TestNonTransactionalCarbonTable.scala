@@ -43,7 +43,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
                             "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
   //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
-  writerPath = writerPath.replace("\\", "/");
+  writerPath = writerPath.replace("\\", "/")
 
   def buildTestDataSingleFile(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
@@ -74,7 +74,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   def buildTestDataWithBadRecordFail(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "FAIL").asJava
-    buildTestData(3, false, options)
+    buildTestData(15001, false, options)
   }
 
   def buildTestDataWithBadRecordIgnore(): Any = {
@@ -127,7 +127,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         }
       var i = 0
       while (i < rows) {
-        if (options != null){
+        if ((options != null) && (i < 3)) {
           // writing a bad record
           writer.write(Array[String]( "robot" + i, String.valueOf(i.toDouble / 2), "robot"))
         } else {
@@ -141,7 +141,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       }
       writer.close()
     } catch {
-      case ex: Exception => None
+      case ex: Exception => throw new RuntimeException(ex)
+
       case _ => None
     }
   }
@@ -636,4 +637,15 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
+
+  test("test huge data write with one batch having bad record") {
+
+    val exception =
+      intercept[RuntimeException] {
+      buildTestDataWithBadRecordFail()
+    }
+    assert(exception.getMessage()
+      .contains("Data load failed due to bad record"))
+
+  }
 }
