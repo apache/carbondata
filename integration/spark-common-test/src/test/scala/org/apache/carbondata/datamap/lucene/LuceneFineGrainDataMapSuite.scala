@@ -608,11 +608,11 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
         | - total blocklets: 1
         | - filter: TEXT_MATCH('name:bob')
         | - pruned by Main DataMap
-        |     skipped blocklets: 0
+        |    - skipped blocklets: 0
         | - pruned by FG DataMap
-        |     name: dm
-        |     provider: lucene
-        |     skipped blocklets: 1
+        |    - name: dm
+        |    - provider: lucene
+        |    - skipped blocklets: 1
         |""".stripMargin)(rows(0).getString(0))
 
     LuceneFineGrainDataMapSuite.deleteFile(file1)

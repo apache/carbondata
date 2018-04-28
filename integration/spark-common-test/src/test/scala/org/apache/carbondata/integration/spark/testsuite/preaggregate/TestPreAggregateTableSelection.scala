@@ -389,7 +389,7 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
         | - total blocklets: 1
         | - filter: none
         | - pruned by Main DataMap
-        |     skipped blocklets: 0
+        |    - skipped blocklets: 0
         |""".stripMargin)(rows(0).getString(0))
   }
 
@@ -403,7 +403,7 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
         | - total blocklets: 1
         | - filter: none
         | - pruned by Main DataMap
-        |     skipped blocklets: 0
+        |    - skipped blocklets: 0
         |""".stripMargin)(rows(0).getString(0))
   }
 
@@ -418,7 +418,7 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
         | - total blocklets: 1
         | - filter: (maintable_name <> null and maintable_name = a)
         | - pruned by Main DataMap
-        |     skipped blocklets: 1
+        |    - skipped blocklets: 1
         |""".stripMargin)(rows(0).getString(0))
 
   }
@@ -428,19 +428,20 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
                 "where t1.name = t2.name and t1.id < 3 group by t1.city"
     sql(query).show(false)
     val rows = sql(query).collect()
-    assertResult(
-      """== CarbonData Profiler ==
+    assert(rows(0).getString(0).contains(
+      """
         |Table Scan on maintable
         | - total blocklets: 1
         | - filter: ((id <> null and id < 3) and name <> null)
         | - pruned by Main DataMap
-        |     skipped blocklets: 0
+        |    - skipped blocklets: 0""".stripMargin))
+    assert(rows(0).getString(0).contains(
+      """
         |Table Scan on maintableavg
         | - total blocklets: 1
         | - filter: name <> null
         | - pruned by Main DataMap
-        |     skipped blocklets: 0
-        |""".stripMargin)(rows(0).getString(0))
+        |    - skipped blocklets: 0""".stripMargin))
 
   }
 

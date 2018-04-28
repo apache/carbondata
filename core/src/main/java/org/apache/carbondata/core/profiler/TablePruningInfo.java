@@ -71,15 +71,15 @@ public class TablePruningInfo {
       int skipBlocklets = totalBlocklets - numBlockletsAfterDefaultPruning;
       builder
           .append(" - pruned by Main DataMap").append("\n")
-          .append("     skipped blocklets: ").append(skipBlocklets).append("\n");
+          .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
     }
     if (cgDataMap != null) {
       int skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterCGPruning;
       builder
           .append(" - pruned by CG DataMap").append("\n")
-          .append("     name: ").append(cgDataMap.getDataMapName()).append("\n")
-          .append("     provider: ").append(cgDataMap.getProviderName()).append("\n")
-          .append("     skipped blocklets: ").append(skipBlocklets).append("\n");
+          .append("    - name: ").append(cgDataMap.getDataMapName()).append("\n")
+          .append("    - provider: ").append(cgDataMap.getProviderName()).append("\n")
+          .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
     }
     if (fgDataMap != null) {
       int skipBlocklets;
@@ -90,9 +90,9 @@ public class TablePruningInfo {
       }
       builder
           .append(" - pruned by FG DataMap").append("\n")
-          .append("     name: ").append(fgDataMap.getDataMapName()).append("\n")
-          .append("     provider: ").append(fgDataMap.getProviderName()).append("\n")
-          .append("     skipped blocklets: ").append(skipBlocklets).append("\n");
+          .append("    - name: ").append(fgDataMap.getDataMapName()).append("\n")
+          .append("    - provider: ").append(fgDataMap.getProviderName()).append("\n")
+          .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
     }
     return builder.toString();
   }
