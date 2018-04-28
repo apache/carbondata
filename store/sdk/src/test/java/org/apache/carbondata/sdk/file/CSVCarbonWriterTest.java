@@ -205,4 +205,45 @@ public class CSVCarbonWriterTest {
     FileUtils.deleteDirectory(new File(path));
   }
 
+
+  @Test(expected = IOException.class)
+  public void testWhenWriterthrowsError() throws IOException{
+    CarbonWriter carbonWriter = null;
+    String path = "./testWriteFiles";
+
+    FileUtils.deleteDirectory(new File(path));
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    try {
+      carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
+          outputPath(path).withSchema(new Schema(fields)).buildWriterForCSVInput();
+    } catch (InvalidLoadOptionException e) {
+      e.printStackTrace();
+      Assert.assertTrue(false);
+    }
+    carbonWriter.write("babu,1");
+    carbonWriter.close();
+
+  }
+  @Test
+  public void testWrongSchemaFieldsValidation() throws IOException{
+    CarbonWriter carbonWriter = null;
+    String path = "./testWriteFiles";
+
+    FileUtils.deleteDirectory(new File(path));
+    Field[] fields = new Field[3]; // supply 3 size fields but actual Field array value given is 2
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    try {
+      carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
+          outputPath(path).withSchema(new Schema(fields)).buildWriterForCSVInput();
+    } catch (InvalidLoadOptionException e) {
+      e.printStackTrace();
+      Assert.assertTrue(false);
+    }
+    carbonWriter.write(new String[]{"babu","1"});
+    carbonWriter.close();
+
+  }
 }
