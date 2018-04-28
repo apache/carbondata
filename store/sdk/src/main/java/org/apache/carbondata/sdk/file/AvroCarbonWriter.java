@@ -99,14 +99,15 @@ class AvroCarbonWriter extends CarbonWriter {
    */
   @Override
   public void write(Object object) throws IOException {
-    GenericData.Record record = (GenericData.Record) object;
-
-    // convert Avro record to CSV String[]
-    String[] csvRecord = avroToCsv(record);
-    writable.set(csvRecord);
     try {
+      GenericData.Record record = (GenericData.Record) object;
+
+      // convert Avro record to CSV String[]
+      String[] csvRecord = avroToCsv(record);
+      writable.set(csvRecord);
       recordWriter.write(NullWritable.get(), writable);
-    } catch (InterruptedException e) {
+    } catch (Exception e) {
+      close();
       throw new IOException(e);
     }
   }
