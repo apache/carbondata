@@ -196,8 +196,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       BitSetGroup bitSetGroup = rawBlockletColumnChunks.getBitSetGroup();
       if (bitSetGroup == null) {
         // It means there are no datamap created on this table
-        throw new FilterUnsupportedException(
-            exp.getFilterExpressionType().name() + " is not supported on this table");
+        throw new FilterUnsupportedException(String.format("%s is not supported on table %s",
+            exp.getFilterExpressionType().name(), tableIdentifier.getTableName()));
       }
       return bitSetGroup;
     }
