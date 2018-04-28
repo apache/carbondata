@@ -488,14 +488,18 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   - **SORT COLUMN BOUNDS:** Range bounds for sort columns.
 
+    Suppose the table is created with 'SORT_COLUMNS'='name,id' and the range for name is aaa~zzz, the value range for id is 0~1000. Then during data loading, we can specify the following option to enhance data loading performance.
     ```
-    OPTIONS('SORT_COLUMN_BOUNDS'='v11,v21,v31;v12,v22,v32;v13,v23,v33')
+    OPTIONS('SORT_COLUMN_BOUNDS'='f,250;l,500;r,750')
     ```
+    Each bound is separated by ';' and each field value in bound is separated by ','. In the example above, we provide 3 bounds to distribute records to 4 partitions. The values 'f','l','r' can evenly distribute the records. Inside carbondata, for a record we compare the value of sort columns with that of the bounds and decide which partition the record will be forwarded to.
+
     **NOTE:**
     * SORT_COLUMN_BOUNDS will be used only when the SORT_SCOPE is 'local_sort'.
-    * Each bound is separated by ';' and each field value in bound is separated by ','.
-    * Carbondata will use these bounds as ranges to process data concurrently.
+    * Carbondata will use these bounds as ranges to process data concurrently during the final sort percedure. The records will be sorted and written out inside each partition. Since the partition is sorted, all records will be sorted.
     * Since the actual order and literal order of the dictionary column are not necessarily the same, we do not recommend you to use this feature if the first sort column is 'dictionary_include'.
+    * The option works better if your CPU usage during loading is low. If your system is already CPU tense, better not to use this option. Besides, it depends on the user to specify the bounds. If user does not know the exactly bounds to make the data distributed evenly among the bounds, loading performance will still be better than before or at least the same as before.
+    * Users can find more information about this option in the description of PR1953.
 
   - **SINGLE_PASS:** Single Pass Loading enables single job to finish data loading with dictionary generation on the fly. It enhances performance in the scenarios where the subsequent data loading after initial load involves fewer incremental updates on the dictionary.
 
