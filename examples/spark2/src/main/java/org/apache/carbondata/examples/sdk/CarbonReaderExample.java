@@ -18,52 +18,59 @@
 package org.apache.carbondata.examples.sdk;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.sdk.file.*;
+import org.apache.carbondata.sdk.file.CarbonReader;
+import org.apache.carbondata.sdk.file.CarbonWriter;
+import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.sdk.file.Schema;
+
 
 /**
- * Example for testing CarbonReader
+ * Example fo CarbonReader with close method
+ * After readNextRow of CarbonReader, User should close the reader,
+ * otherwise main will continue run some time
  */
 public class CarbonReaderExample {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String path = "./testWriteFiles";
-        FileUtils.deleteDirectory(new File(path));
+        try {
+            FileUtils.deleteDirectory(new File(path));
 
-        Field[] fields = new Field[2];
-        fields[0] = new Field("name", DataTypes.STRING);
-        fields[1] = new Field("age", DataTypes.INT);
+            Field[] fields = new Field[2];
+            fields[0] = new Field("name", DataTypes.STRING);
+            fields[1] = new Field("age", DataTypes.INT);
 
-        CarbonWriterBuilder builder = CarbonWriter.builder()
-                .withSchema(new Schema(fields))
-                .isTransactionalTable(true)
-                .outputPath(path)
-                .persistSchemaFile(true);
+            CarbonWriter writer = CarbonWriter.builder()
+                    .withSchema(new Schema(fields))
+                    .isTransactionalTable(true)
+                    .outputPath(path)
+                    .persistSchemaFile(true)
+                    .buildWriterForCSVInput();
 
-        CarbonWriter writer = builder.buildWriterForCSVInput();
+            for (int i = 0; i < 10; i++) {
+                writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});
+            }
+            writer.close();
 
-        for (int i = 0; i < 10; i++) {
-            writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});
+            // Read data
+            CarbonReader reader = CarbonReader
+                    .builder(path, "_temp")
+                    .projection(new String[]{"name", "age"})
+                    .build();
+
+            System.out.println("\nData:");
+            while (reader.hasNext()) {
+                Object[] row = (Object[]) reader.readNextRow();
+                System.out.println(row[0] + " " + row[1]);
+            }
+            System.out.println("\nFinished");
+            reader.close();
+            FileUtils.deleteDirectory(new File(path));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        writer.close();
-
-        // Read data
-        CarbonReader reader = CarbonReader.builder(path, "_temp")
-                .projection(new String[]{"name", "age"}).build();
-
-        int i = 0;
-        System.out.println("\nData:");
-        while (reader.hasNext()) {
-            Object[] row = (Object[]) reader.readNextRow();
-            System.out.println(row[0] + " " + row[1]);
-        }
-        System.out.println("\nFinished");
-        reader.close();
-        FileUtils.deleteDirectory(new File(path));
     }
 }
