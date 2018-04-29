@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -191,7 +192,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * It sets unresolved filter expression.
    *
    * @param configuration
-   * @param filterExpression
+   * @para    DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
+m filterExpression
    */
   public static void setFilterPredicates(Configuration configuration, Expression filterExpression) {
     if (filterExpression == null) {
@@ -405,6 +407,13 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   private List<ExtendedBlocklet> getPrunedBlocklets(JobContext job, CarbonTable carbonTable,
       FilterResolverIntf resolver, List<Segment> segmentIds) throws IOException {
+    ExplainCollector.addPruningInfo(carbonTable.getTableName());
+    if (resolver != null) {
+      ExplainCollector.setFilterStatement(resolver.getFilterExpression().getStatement());
+    } else {
+      ExplainCollector.setFilterStatement("none");
+    }
+
     boolean distributedCG = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
             CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
@@ -415,6 +424,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         .getDefaultDataMap(getOrCreateCarbonTable(job.getConfiguration()), resolver);
     List<ExtendedBlocklet> prunedBlocklets =
         dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+
+    ExplainCollector.recordDefaultDataMapPruning(
+        dataMapExprWrapper.getDataMapSchema(), prunedBlocklets.size());
+
     // Get the available CG datamaps and prune further.
     DataMapExprWrapper cgDataMapExprWrapper = DataMapChooser.get()
         .chooseCGDataMap(getOrCreateCarbonTable(job.getConfiguration()), resolver);
@@ -429,17 +442,23 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       } else {
         prunedBlocklets = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
       }
+
+      ExplainCollector.recordCGDataMapPruning(
+          cgDataMapExprWrapper.getDataMapSchema(), prunedBlocklets.size());
     }
     // Now try to prune with FG DataMap.
     dataMapExprWrapper = DataMapChooser.get()
         .chooseFGDataMap(getOrCreateCarbonTable(job.getConfiguration()), resolver);
-    if (dataMapExprWrapper != null && dataMapExprWrapper.getDataMapType() == DataMapLevel.FG
+    if (dataMapExprWrapper != null && dataMapExprWrapper.getDataMapLevel() == DataMapLevel.FG
         && isFgDataMapPruningEnable(job.getConfiguration()) && dataMapJob != null) {
       // Prune segments from already pruned blocklets
       pruneSegments(segmentIds, prunedBlocklets);
       prunedBlocklets =
           executeDataMapJob(carbonTable, resolver, segmentIds, dataMapExprWrapper, dataMapJob,
               partitionsToPrune);
+
+      ExplainCollector.recordFGDataMapPruning(
+          dataMapExprWrapper.getDataMapSchema(), prunedBlocklets.size());
     }
     return prunedBlocklets;
   }

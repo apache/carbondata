@@ -57,6 +57,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
@@ -627,9 +628,10 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
       return new ArrayList<>();
     }
     List<Blocklet> blocklets = new ArrayList<>();
+    int numBlocklets = 0;
     if (filterExp == null) {
-      int rowCount = unsafeMemoryDMStore.getRowCount();
-      for (int i = 0; i < rowCount; i++) {
+      numBlocklets = unsafeMemoryDMStore.getRowCount();
+      for (int i = 0; i < numBlocklets; i++) {
         DataMapRow safeRow = unsafeMemoryDMStore.getUnsafeRow(i).convertToSafeRow();
         blocklets.add(createBlocklet(safeRow, safeRow.getShort(BLOCKLET_ID_INDEX)));
       }
@@ -637,10 +639,10 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
       // Remove B-tree jump logic as start and end key prepared is not
       // correct for old store scenarios
       int startIndex = 0;
-      int endIndex = unsafeMemoryDMStore.getRowCount();
+      numBlocklets = unsafeMemoryDMStore.getRowCount();
       FilterExecuter filterExecuter =
           FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
-      while (startIndex < endIndex) {
+      while (startIndex < numBlocklets) {
         DataMapRow safeRow = unsafeMemoryDMStore.getUnsafeRow(startIndex).convertToSafeRow();
         int blockletId = safeRow.getShort(BLOCKLET_ID_INDEX);
         String filePath = new String(safeRow.getByteArray(FILE_PATH_INDEX),
@@ -654,6 +656,7 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
         startIndex++;
       }
     }
+    ExplainCollector.addTotalBlocklets(numBlocklets);
     return blocklets;
   }
 

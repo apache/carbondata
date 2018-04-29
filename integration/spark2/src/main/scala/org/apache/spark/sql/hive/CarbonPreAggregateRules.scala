@@ -36,9 +36,11 @@ import org.apache.spark.sql.types._
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.preagg.{AggregateQueryPlan, AggregateTableSelector, QueryColumn}
+import org.apache.carbondata.core.profiler.ExplainCollector
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonUtil, ThreadLocalSessionInfo}
 
@@ -359,7 +361,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema && !isPlanUpdated =>
         val carbonTable = getCarbonTable(l)
-        if(isSpecificSegmentNotPresent(carbonTable)) {
+        if (isSpecificSegmentNotPresent(carbonTable)) {
           val list = scala.collection.mutable.HashSet.empty[QueryColumn]
           val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
           val isValidPlan = extractQueryColumnsFromAggExpression(
@@ -386,6 +388,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   carbonTable,
                   agg)
               isPlanUpdated = true
+              setExplain(aggDataMapSchema)
               val updateAggPlan =
                 Aggregate(
                 updatedGroupExp,
@@ -451,6 +454,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   carbonTable,
                   agg)
               isPlanUpdated = true
+              setExplain(aggDataMapSchema)
               val updateAggPlan =
                 Aggregate(
                 updatedGroupExp,
@@ -519,6 +523,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   carbonTable,
                   agg)
               isPlanUpdated = true
+              setExplain(aggDataMapSchema)
               val updateAggPlan =
                 Aggregate(
                 updatedGroupExp,
@@ -590,6 +595,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                   carbonTable,
                   agg)
               isPlanUpdated = true
+              setExplain(aggDataMapSchema)
               val updateAggPlan =
                 Aggregate(
                   updatedGroupExp,
@@ -624,10 +630,15 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
 
     }
     if(isPlanUpdated) {
-      CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
-        "true")
+      CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP, "true")
     }
     updatedPlan
+  }
+
+  // set datamap match information for EXPLAIN command
+  private def setExplain(dataMapSchema: AggregationDataMapSchema): Unit = {
+    ExplainCollector.recordMatchedOlapDataMap(
+      dataMapSchema.getProvider.getShortName, dataMapSchema.getDataMapName)
   }
 
   /**
@@ -1004,7 +1015,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     // if it does not match with any pre aggregate table return the same plan
     if (!selectedAggMaps.isEmpty) {
       // filter the selected child schema based on size to select the pre-aggregate tables
-      // that are nonEmpty
+      // that are enabled
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
       val relationBuffer = selectedAggMaps.asScala.map { selectedDataMapSchema =>
         val identifier = TableIdentifier(
@@ -1041,7 +1052,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             .apply(logicalPlan))
           case None => (null, null)
         }
-        // If the relationBuffer is nonEmpty then find the table with the minimum size.
+        // If the relationBuffer is enabled then find the table with the minimum size.
       }
     } else {
       (null, null)

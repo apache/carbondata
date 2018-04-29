@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 public class DataMapExprWrapperImpl implements DataMapExprWrapper {
@@ -83,7 +84,12 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
     return wrappers;
   }
 
-  @Override public DataMapLevel getDataMapType() {
+  @Override public DataMapLevel getDataMapLevel() {
     return dataMap.getDataMapFactory().getDataMapType();
   }
+
+  @Override public DataMapSchema getDataMapSchema() {
+    return dataMap.getDataMapSchema();
+  }
+
 }
