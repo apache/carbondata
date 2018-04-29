@@ -265,9 +265,8 @@ public final class DataMapStoreManager {
    * Return a new datamap instance and registered in the store manager.
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
-  // TODO: make it private
-  public TableDataMap createAndRegisterDataMap(CarbonTable table,
-      DataMapSchema dataMapSchema) throws MalformedDataMapCommandException, IOException {
+  private TableDataMap createAndRegisterDataMap(CarbonTable table, DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException, IOException {
     IndexDataMap indexDataMap;
     try {
       // try to create datamap by reflection to test whether it is a valid IndexDataMap class

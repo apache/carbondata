@@ -21,7 +21,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapRefreshRDD}
@@ -36,6 +36,8 @@ case class CarbonDataMapRefreshCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val schema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
+    DataMapRegistry.getDataMapByShortName(schema.getProviderName)
+
     val table = tableIdentifier match {
       case Some(identifier) =>
         CarbonEnv.getCarbonTable(identifier)(sparkSession)

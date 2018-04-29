@@ -137,8 +137,8 @@ public abstract class IndexDataMap<T extends DataMap> {
     Set<String> existingIndexColumn = new HashSet<>();
     if (datamaps.size() > 0) {
       for (TableDataMap datamap : datamaps) {
-          String columns = datamap.getDataMapSchema().getProperties().get(INDEX_COLUMNS);
-          existingIndexColumn.addAll(Arrays.asList(columns.split(",", -1)));
+        String columns = datamap.getDataMapSchema().getProperties().get(INDEX_COLUMNS);
+        existingIndexColumn.addAll(Arrays.asList(columns.split(",", -1)));
       }
 
       for (String column : indexColumns) {
