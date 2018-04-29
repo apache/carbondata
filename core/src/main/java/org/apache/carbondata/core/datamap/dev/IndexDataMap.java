@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -42,7 +43,7 @@ import org.apache.commons.lang.StringUtils;
  */
 public abstract class IndexDataMap<T extends DataMap> {
 
-  protected static final String INDEX_COLUMNS = "index_columns";
+  public static final String INDEX_COLUMNS = "INDEX_COLUMNS";
 
   /**
    * Initialization of Datamap factory with the carbonTable and datamap name
@@ -103,6 +104,24 @@ public abstract class IndexDataMap<T extends DataMap> {
    */
   public abstract void deleteDatamapData();
 
+  public List<String> getIndexedColumns(DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
+    String columnsStr = dataMapSchema.getProperties().get(INDEX_COLUMNS);
+    if (columnsStr == null) {
+      columnsStr = dataMapSchema.getProperties().get(INDEX_COLUMNS.toLowerCase());
+    }
+    if (columnsStr != null && !StringUtils.isBlank(columnsStr)) {
+      String[] columns = columnsStr.split(",", -1);
+      List<String> indexColumn = new ArrayList<>(columns.length);
+      for (String column : columns) {
+        indexColumn.add(column.trim().toLowerCase());
+      }
+      return indexColumn;
+    } else {
+      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is required");
+    }
+  }
+
   /**
    * Validate INDEX_COLUMNS property and return a array containing index column name
    * Following will be validated
@@ -111,45 +130,20 @@ public abstract class IndexDataMap<T extends DataMap> {
    * 3. INDEX_COLUMNS can't contains duplicate same columns
    * 4. INDEX_COLUMNS should be exists in table columns
    */
-  public List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
-      CarbonTable carbonTable) throws MalformedDataMapCommandException, IOException {
-    String columnsStr = dataMapSchema.getProperties().get(INDEX_COLUMNS);
-    if (columnsStr == null || StringUtils.isBlank(columnsStr)) {
-      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is required.");
-    }
-    String[] indexColumns = columnsStr.split(",", -1);
-    for (int i = 0; i < indexColumns.length; i++) {
-      indexColumns[i] = indexColumns[i].trim().toLowerCase();
-    }
-    for (int i = 0; i < indexColumns.length; i++) {
-      if (indexColumns[i].isEmpty()) {
+  public void validateIndexedColumns(DataMapSchema dataMapSchema,
+      CarbonTable carbonTable) throws MalformedDataMapCommandException {
+    List<String> indexColumns = getIndexedColumns(dataMapSchema);
+
+    for (int i = 0; i < indexColumns.size(); i++) {
+      if (indexColumns.get(i).isEmpty()) {
         throw new MalformedDataMapCommandException(INDEX_COLUMNS + " contains invalid column name");
       }
-      for (int j = i + 1; j < indexColumns.length; j++) {
-        if (indexColumns[i].equals(indexColumns[j])) {
-          throw new MalformedDataMapCommandException(String.format(
-              "%s has duplicate column '%s'", INDEX_COLUMNS, indexColumns[i]));
-        }
+      Set<String> unique = new HashSet<>(indexColumns);
+      if (unique.size() != indexColumns.size()) {
+        throw new MalformedDataMapCommandException(INDEX_COLUMNS + " has duplicate column");
       }
     }
 
-    List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
-    Set<String> existingIndexColumn = new HashSet<>();
-    if (datamaps.size() > 0) {
-      for (TableDataMap datamap : datamaps) {
-        String columns = datamap.getDataMapSchema().getProperties().get(INDEX_COLUMNS);
-        existingIndexColumn.addAll(Arrays.asList(columns.split(",", -1)));
-      }
-
-      for (String column : indexColumns) {
-        if (existingIndexColumn.contains(column)) {
-          throw new MalformedDataMapCommandException(
-              String.format("column '%s' already has datamap created", column));
-        }
-      }
-    }
-
-    List<String> indexedCarbonColumns = new ArrayList<>(indexColumns.length);
     for (String indexColumn : indexColumns) {
       CarbonColumn column = carbonTable.getColumnByName(carbonTable.getTableName(), indexColumn);
       if (null == column) {
@@ -157,9 +151,7 @@ public abstract class IndexDataMap<T extends DataMap> {
             "column '%s' does not exist in table. Please check create DataMap statement.",
             indexColumn));
       }
-      indexedCarbonColumns.add(column.getColName());
     }
-    return indexedCarbonColumns;
   }
 
 }

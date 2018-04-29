@@ -19,6 +19,7 @@ package org.apache.carbondata.datamap;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
@@ -27,19 +28,39 @@ import org.apache.carbondata.core.datamap.DataMapCatalog;
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.datamap.DataMapRegistry;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.IndexDataMap;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 
-@InterfaceAudience.Internal
-public class IndexDataMapProvider implements DataMapProvider {
+import org.apache.spark.sql.SparkSession;
 
-  IndexDataMapProvider() {
+/**
+ * Index type DataMap, all index datamap should implement this interface.
+ */
+@InterfaceAudience.Internal
+public class IndexDataMapProvider extends DataMapProvider {
+
+  private SparkSession sparkSession;
+  private IndexDataMap<? extends DataMap> indexDataMap;
+  private List<String> indexedColumns;
+
+  IndexDataMapProvider(CarbonTable table, DataMapSchema schema, SparkSession sparkSession)
+      throws MalformedDataMapCommandException {
+    super(table, schema);
+    this.sparkSession = sparkSession;
+    this.indexDataMap = createIndexDataMapFactory();
+    indexDataMap.validateIndexedColumns(schema, table);
+    this.indexedColumns = indexDataMap.getIndexedColumns(schema);
+  }
+
+  public List<String> getIndexedColumns() {
+    return indexedColumns;
   }
 
   @Override
-  public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement)
+  public void initMeta(String ctasSqlStatement)
       throws MalformedDataMapCommandException, IOException {
     if (mainTable == null) {
       throw new MalformedDataMapCommandException(
@@ -52,18 +73,17 @@ public class IndexDataMapProvider implements DataMapProvider {
     relationIdentifiers.add(relationIdentifier);
     dataMapSchema.setRelationIdentifier(relationIdentifier);
     dataMapSchema.setParentTables(relationIdentifiers);
-    IndexDataMap indexDataMap = createIndexDataMapFactory(dataMapSchema);
     DataMapStoreManager.getInstance().registerDataMap(mainTable, dataMapSchema, indexDataMap);
     DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema);
   }
 
   @Override
-  public void initData(CarbonTable mainTable) {
+  public void initData() {
     // Nothing is needed to do by default
   }
 
   @Override
-  public void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException {
+  public void freeMeta() throws IOException {
     if (mainTable == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
     }
@@ -71,7 +91,7 @@ public class IndexDataMapProvider implements DataMapProvider {
   }
 
   @Override
-  public void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+  public void freeData() {
     if (mainTable == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
     }
@@ -80,24 +100,22 @@ public class IndexDataMapProvider implements DataMapProvider {
   }
 
   @Override
-  public void rebuild(CarbonTable mainTable, DataMapSchema dataMapSchema) {
-    // create a RDD to rebuild the index
-
+  public void rebuild() {
+    // IndexDataMapRefresher.rebuildDataMap(sparkSession, mainTable, dataMapSchema);
   }
 
   @Override
-  public void incrementalBuild(CarbonTable mainTable, DataMapSchema dataMapSchema,
-      String[] segmentIds) {
+  public void incrementalBuild(String[] segmentIds) {
     throw new UnsupportedOperationException();
   }
 
-  private IndexDataMap createIndexDataMapFactory(DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
-    IndexDataMap indexDataMap;
+  private IndexDataMap<? extends DataMap> createIndexDataMapFactory() throws MalformedDataMapCommandException {
+    IndexDataMap<? extends DataMap> indexDataMap;
     try {
       // try to create DataMapClassProvider instance by taking providerName as class name
-      Class<? extends IndexDataMap> providerClass =
-          (Class<? extends IndexDataMap>) Class.forName(dataMapSchema.getProviderName());
+      Class<? extends IndexDataMap<? extends DataMap>> providerClass =
+          (Class<? extends IndexDataMap<? extends DataMap>>)
+              Class.forName(dataMapSchema.getProviderName());
       indexDataMap = providerClass.newInstance();
     } catch (ClassNotFoundException e) {
       // try to create DataMapClassProvider instance by taking providerName as short name

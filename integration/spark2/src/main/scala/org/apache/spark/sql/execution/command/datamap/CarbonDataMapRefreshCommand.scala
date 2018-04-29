@@ -23,8 +23,7 @@ import org.apache.spark.sql.execution.command.DataCommand
 
 import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
-import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapRefreshRDD}
+import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapRefresher}
 
 /**
  * Refresh the datamaps through sync with main table data. After sync with parent table's it enables
@@ -49,10 +48,10 @@ case class CarbonDataMapRefreshCommand(
     }
     // Sync the datamap with parent table
     if (schema.isIndexDataMap) {
-      IndexDataMapRefreshRDD.refreshDataMap(sparkSession, table, schema)
+      IndexDataMapRefresher.rebuildDataMap(sparkSession, table, schema)
     } else {
-      val provider = DataMapManager.get().getDataMapProvider(schema, sparkSession)
-      provider.rebuild(table, schema)
+      val provider = DataMapManager.get().getDataMapProvider(table, schema, sparkSession)
+      provider.rebuild()
     }
     // After sync success enable the datamap.
     DataMapStatusManager.enableDataMap(dataMapName)

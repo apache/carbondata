@@ -25,6 +25,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.IndexDataMap;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 
@@ -60,7 +61,7 @@ public class DataMapRegistry {
     return shortNameToClassName.get(shortName);
   }
 
-  public static IndexDataMap getDataMapByShortName(String providerName)
+  public static IndexDataMap<? extends DataMap> getDataMapByShortName(String providerName)
       throws MalformedDataMapCommandException {
     try {
       registerDataMap(
@@ -69,12 +70,12 @@ public class DataMapRegistry {
     } catch (UnsupportedOperationException ex) {
       throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
     }
-    IndexDataMap indexDataMap;
+    IndexDataMap<? extends DataMap> indexDataMap;
     String className = getDataMapClassName(providerName.toLowerCase());
     if (className != null) {
       try {
-        Class<? extends IndexDataMap> datamapClass =
-            (Class<? extends IndexDataMap>) Class.forName(className);
+        Class<? extends IndexDataMap<? extends DataMap>> datamapClass =
+            (Class<? extends IndexDataMap<? extends DataMap>>) Class.forName(className);
         indexDataMap = datamapClass.newInstance();
       } catch (ClassNotFoundException ex) {
         throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);

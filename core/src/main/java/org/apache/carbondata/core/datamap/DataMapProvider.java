@@ -51,36 +51,44 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  * @since 1.4.0
  */
 @InterfaceAudience.Internal
-public interface DataMapProvider {
+public abstract class DataMapProvider {
+
+  protected CarbonTable mainTable;
+  protected DataMapSchema dataMapSchema;
+
+  public DataMapProvider(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+    this.mainTable = mainTable;
+    this.dataMapSchema = dataMapSchema;
+  }
 
   /**
    * Initialize a datamap's metadata.
    * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
    * Implementation should initialize metadata for datamap, like creating table
    */
-  void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement)
-      throws MalformedDataMapCommandException, IOException;
+  public abstract void initMeta(String ctasSqlStatement) throws MalformedDataMapCommandException,
+      IOException;
 
   /**
    * Initialize a datamap's data.
    * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
    * Implementation should initialize data for datamap, like creating data folders
    */
-  void initData(CarbonTable mainTable);
+  public abstract void initData();
 
   /**
-   * Opposite operation of {@link #initMeta(CarbonTable, DataMapSchema, String)}.
+   * Opposite operation of {@link #initMeta(String)}.
    * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
    * Implementation should clean all meta for the datamap
    */
-  void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException;
+  public abstract void freeMeta() throws IOException;
 
   /**
-   * Opposite operation of {@link #initData(CarbonTable)}.
+   * Opposite operation of {@link #initData()}.
    * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
    * Implementation should clean all data for the datamap
    */
-  void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema);
+  public abstract void freeData();
 
   /**
    * Rebuild the datamap by loading all existing data from mainTable
@@ -88,19 +96,19 @@ public interface DataMapProvider {
    * 1. after datamap creation and if `autoRefreshDataMap` is set to true
    * 2. user manually trigger refresh datamap command
    */
-  void rebuild(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException;
+  public abstract void rebuild()
+      throws IOException;
 
   /**
    * Build the datamap incrementally by loading specified segment data
    * This is called when user manually trigger refresh datamap
    */
-  void incrementalBuild(CarbonTable mainTable, DataMapSchema dataMapSchema, String[] segmentIds)
-    throws IOException;
+  public abstract void incrementalBuild(String[] segmentIds) throws IOException;
 
   /**
    * Provide the datamap catalog instance or null if this datamap not required to rewrite
    * the query.
    */
-  DataMapCatalog createDataMapCatalog();
+  public abstract DataMapCatalog createDataMapCatalog();
 
 }

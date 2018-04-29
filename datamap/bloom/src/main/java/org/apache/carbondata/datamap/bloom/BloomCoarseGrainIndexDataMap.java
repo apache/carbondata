@@ -66,14 +66,14 @@ public class BloomCoarseGrainIndexDataMap extends IndexDataMap<CoarseGrainDataMa
 
   @Override
   public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
-      throws IOException, MalformedDataMapCommandException {
+      throws MalformedDataMapCommandException {
     Objects.requireNonNull(carbonTable);
     Objects.requireNonNull(dataMapSchema);
 
     this.carbonTable = carbonTable;
     this.dataMapName = dataMapSchema.getDataMapName();
 
-    List<String> indexedColumns = validateAndGetIndexedColumns(dataMapSchema, carbonTable);
+    List<String> indexedColumns = getIndexedColumns(dataMapSchema);
     this.bloomFilterSize = validateAndGetBloomFilterSize(dataMapSchema);
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
     // todo: support more optimize operations

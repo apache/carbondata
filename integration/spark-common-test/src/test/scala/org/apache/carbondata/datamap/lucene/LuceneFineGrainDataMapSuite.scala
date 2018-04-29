@@ -108,7 +108,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | DMProperties('INDEX_COLUMNS'='name,city,name')
       """.stripMargin))
 
-    assertResult("INDEX_COLUMNS has duplicate columns 'name'")(exception.getMessage)
+    assertResult("INDEX_COLUMNS has duplicate column")(exception.getMessage)
 
     // only support String DataType
     exception = intercept[MalformedDataMapCommandException](sql(

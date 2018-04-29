@@ -20,8 +20,11 @@ package org.apache.carbondata.datamap.lucene;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
@@ -29,7 +32,9 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.IndexDataMap;
@@ -89,7 +94,7 @@ abstract class LuceneIndexDataMapBase<T extends DataMap> extends IndexDataMap<T>
 
   @Override
   public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
-      throws IOException, MalformedDataMapCommandException {
+      throws MalformedDataMapCommandException {
     Objects.requireNonNull(carbonTable.getAbsoluteTableIdentifier());
     Objects.requireNonNull(dataMapSchema);
 
@@ -97,7 +102,7 @@ abstract class LuceneIndexDataMapBase<T extends DataMap> extends IndexDataMap<T>
     this.dataMapName = dataMapSchema.getDataMapName();
 
     // validate DataMapSchema and get index columns
-    List<String> indexedColumns =  validateAndGetIndexedColumns(dataMapSchema, carbonTable);
+    List<String> indexedColumns =  getIndexedColumns(dataMapSchema);
 
     // add optimizedOperations
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
@@ -215,9 +220,10 @@ abstract class LuceneIndexDataMapBase<T extends DataMap> extends IndexDataMap<T>
    * Currently only string and non-dictionary column is supported for Lucene DataMap
    */
   @Override
-  public List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
-      CarbonTable carbonTable) throws MalformedDataMapCommandException, IOException {
-    List<String> indexColumns = super.validateAndGetIndexedColumns(dataMapSchema, carbonTable);
+  public void validateIndexedColumns(DataMapSchema dataMapSchema,
+      CarbonTable carbonTable) throws MalformedDataMapCommandException {
+    super.validateIndexedColumns(dataMapSchema, carbonTable);
+    List<String> indexColumns = super.getIndexedColumns(dataMapSchema);
 
     for (String indexColumn : indexColumns) {
       CarbonColumn column = carbonTable.getColumnByName(carbonTable.getTableName(), indexColumn);
@@ -231,6 +237,5 @@ abstract class LuceneIndexDataMapBase<T extends DataMap> extends IndexDataMap<T>
             column.getColName()));
       }
     }
-    return indexColumns;
   }
 }

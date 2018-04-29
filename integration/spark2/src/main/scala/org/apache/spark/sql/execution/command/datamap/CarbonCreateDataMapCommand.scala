@@ -17,6 +17,7 @@
 package org.apache.spark.sql.execution.command.datamap
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -24,7 +25,8 @@ import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
+import org.apache.carbondata.core.datamap.dev.IndexDataMap
+import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager, TableDataMap}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -75,14 +77,34 @@ case class CarbonCreateDataMapCommand(
       throw new MalformedCarbonCommandException(s"Streaming table does not support creating " +
                                                 s"$dmProviderName datamap")
     }
+
     dataMapSchema = new DataMapSchema(dataMapName, dmProviderName)
     dataMapSchema.setProperties(new java.util.HashMap[String, String](
       dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
-    dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema, sparkSession)
-    dataMapProvider.initMeta(mainTable, dataMapSchema, queryString.orNull)
-    // TODO Currently this feature is only available for index datamaps
-    if (dataMapProvider.isInstanceOf[IndexDataMapProvider]) {
-      DataMapStatusManager.disableDataMap(dataMapName)
+    dataMapProvider = DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
+
+    // If it is index datamap, check whether the column has datamap created already
+    dataMapProvider match {
+      case provider: IndexDataMapProvider =>
+        val indexColumns = provider.getIndexedColumns
+        val datamaps = DataMapStoreManager.getInstance.getAllDataMap(mainTable).asScala
+        val existingIndexColumn = mutable.Set[String]()
+        datamaps.foreach { datamap =>
+          val columns = datamap.getDataMapSchema.getProperties.get(IndexDataMap.INDEX_COLUMNS)
+          columns.split(",", -1).foreach(existingIndexColumn.add)
+        }
+
+        indexColumns.asScala.foreach { column =>
+          if (existingIndexColumn.contains(column)) {
+            throw new MalformedDataMapCommandException(String.format(
+              "column '%s' already has datamap created", column))
+          }
+        }
+        dataMapProvider.initMeta(queryString.orNull)
+        // for index datamap,
+        DataMapStatusManager.disableDataMap(dataMapName)
+      case _ =>
+        dataMapProvider.initMeta(queryString.orNull)
     }
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     LOGGER.audit(s"DataMap $dataMapName successfully added")
@@ -91,10 +113,10 @@ case class CarbonCreateDataMapCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (dataMapProvider != null) {
-      dataMapProvider.initData(mainTable)
+      dataMapProvider.initData()
       if (mainTable != null && mainTable.isAutoRefreshDataMap) {
         if (!DataMapClassProvider.LUCENE.getShortName.equals(dataMapSchema.getProviderName)) {
-          dataMapProvider.rebuild(mainTable, dataMapSchema)
+          dataMapProvider.rebuild()
         }
       }
     }
@@ -103,7 +125,7 @@ case class CarbonCreateDataMapCommand(
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
     if (dataMapProvider != null) {
-      dataMapProvider.freeMeta(mainTable, dataMapSchema)
+      dataMapProvider.freeMeta()
     }
     Seq.empty
   }
