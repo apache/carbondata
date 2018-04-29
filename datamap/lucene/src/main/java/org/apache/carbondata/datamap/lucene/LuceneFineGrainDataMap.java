@@ -153,8 +153,19 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
    * Return Maximum records
    * @return
    */
-  private int getMaxDoc() {
-    return Integer.parseInt(MatchExpression.maxDoc);
+  private int getMaxDoc(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.TEXT_MATCH) {
+      int maxDoc = ((MatchExpression) expression).getMaxDoc();
+      if (maxDoc < 0) {
+        maxDoc = Integer.MAX_VALUE;
+      }
+      return maxDoc;
+    }
+
+    for (Expression child : expression.getChildren()) {
+      return getMaxDoc(child);
+    }
+    return Integer.MAX_VALUE;
   }
 
   /**
@@ -172,7 +183,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     String strQuery = getQueryString(filterExp.getFilterExpression());
     int maxDocs;
     try {
-      maxDocs = getMaxDoc();
+      maxDocs = getMaxDoc(filterExp.getFilterExpression());
     } catch (NumberFormatException e) {
       maxDocs = Integer.MAX_VALUE;
     }

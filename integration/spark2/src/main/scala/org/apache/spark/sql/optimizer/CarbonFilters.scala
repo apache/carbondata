@@ -20,6 +20,7 @@ package org.apache.spark.sql.optimizer
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
@@ -30,7 +31,6 @@ import org.apache.spark.sql.CarbonEndsWith
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.CarbonSessionCatalog
-import org.apache.spark.sql.sources.Filter
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
@@ -141,9 +141,9 @@ object CarbonFilters {
         case FalseExpr() =>
           Some(new FalseExpression(null))
         case TextMatch(queryString) =>
-          Some(new MatchExpression(queryString, null))
+          Some(new MatchExpression(queryString))
         case TextMatchLimit(queryString, maxDoc) =>
-          Some(new MatchExpression(queryString, maxDoc))
+          Some(new MatchExpression(queryString, Try(maxDoc.toInt).getOrElse(Integer.MAX_VALUE)))
         case _ => None
       }
     }
