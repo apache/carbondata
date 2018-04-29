@@ -31,7 +31,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndexDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -56,13 +56,13 @@ import org.apache.hadoop.fs.RemoteIterator;
 /**
  * Table map for blocklet
  */
-public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
+public class BlockletIndexDataMap extends CoarseGrainIndexDataMap
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher {
 
   private static final String NAME = "clustered.btree.blocklet";
 
   public static final DataMapSchema DATA_MAP_SCHEMA =
-      new DataMapSchema(NAME, BlockletDataMapFactory.class.getName());
+      new DataMapSchema(NAME, BlockletIndexDataMap.class.getName());
 
   private AbsoluteTableIdentifier identifier;
 
@@ -109,7 +109,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   /**
    * Get the blocklet detail information based on blockletid, blockid and segmentid. This method is
-   * exclusively for BlockletDataMapFactory as detail information is only available in this
+   * exclusively for BlockletIndexDataMap as detail information is only available in this
    * default datamap.
    */
   @Override

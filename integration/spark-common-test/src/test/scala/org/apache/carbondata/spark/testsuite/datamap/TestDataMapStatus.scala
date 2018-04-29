@@ -27,7 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.DataMapWriter
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainIndexDataMap}
 import org.apache.carbondata.core.datamap.status.{DataMapStatus, DataMapStatusManager}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.page.ColumnPage
@@ -55,7 +55,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap on table datamapstatustest using '${classOf[TestDataMap].getName}' as select id,sum(age) from datamapstatustest group by id""".stripMargin)
+      s"""create datamap statusdatamap on table datamapstatustest using '${classOf[TestIndexDataMap].getName}' as select id,sum(age) from datamapstatustest group by id""".stripMargin)
 
     val details = DataMapStatusManager.readDataMapStatusDetails()
 
@@ -73,7 +73,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap1 on table datamapstatustest1 using '${classOf[TestDataMap].getName}' as select id,sum(age) from datamapstatustest1 group by id""".stripMargin)
+      s"""create datamap statusdatamap1 on table datamapstatustest1 using '${classOf[TestIndexDataMap].getName}' as select id,sum(age) from datamapstatustest1 group by id""".stripMargin)
 
     var details = DataMapStatusManager.readDataMapStatusDetails()
 
@@ -96,7 +96,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap2 on table datamapstatustest2 using '${classOf[TestDataMap].getName}' as select id,sum(age) from datamapstatustest1 group by id""".stripMargin)
+      s"""create datamap statusdatamap2 on table datamapstatustest2 using '${classOf[TestIndexDataMap].getName}' as select id,sum(age) from datamapstatustest1 group by id""".stripMargin)
 
     var details = DataMapStatusManager.readDataMapStatusDetails()
 
@@ -128,14 +128,14 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     intercept[MalformedDataMapCommandException] {
       sql(
         s"""create datamap statusdatamap3 using '${
-          classOf[TestDataMap]
+          classOf[TestIndexDataMap]
             .getName
         }' as select id,sum(age) from datamapstatustest3 group by id""".stripMargin)
     }
 
     sql(
       s"""create datamap statusdatamap3 on table datamapstatustest3 using '${
-        classOf[TestDataMap]
+        classOf[TestIndexDataMap]
           .getName
       }' as select id,sum(age) from datamapstatustest3 group by id""".stripMargin)
 
@@ -175,7 +175,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
   }
 }
 
-class TestDataMap() extends CoarseGrainDataMapFactory {
+class TestIndexDataMap() extends CoarseGrainIndexDataMap {
 
   private var identifier: AbsoluteTableIdentifier = _
 

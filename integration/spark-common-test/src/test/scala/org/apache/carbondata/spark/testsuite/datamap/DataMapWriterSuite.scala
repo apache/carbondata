@@ -21,26 +21,23 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, SaveMode}
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.DataMapWriter
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainIndexDataMap}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
 
-class C2DataMapFactory() extends CoarseGrainDataMapFactory {
+class C2IndexDataMap() extends CoarseGrainIndexDataMap {
 
   var identifier: AbsoluteTableIdentifier = _
 
@@ -101,7 +98,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
   test("test write datamap 2 pages") {
     sql(s"CREATE TABLE carbon1(c1 STRING, c2 STRING, c3 INT) STORED BY 'org.apache.carbondata.format'")
     // register datamap writer
-    sql(s"CREATE DATAMAP test1 ON TABLE carbon1 USING '${classOf[C2DataMapFactory].getName}'")
+    sql(s"CREATE DATAMAP test1 ON TABLE carbon1 USING '${classOf[C2IndexDataMap].getName}'")
     val df = buildTestData(33000)
 
     // save dataframe to carbon file
@@ -127,7 +124,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
 
   test("test write datamap 2 blocklet") {
     sql(s"CREATE TABLE carbon2(c1 STRING, c2 STRING, c3 INT) STORED BY 'org.apache.carbondata.format'")
-    sql(s"CREATE DATAMAP test2 ON TABLE carbon2 USING '${classOf[C2DataMapFactory].getName}'")
+    sql(s"CREATE DATAMAP test2 ON TABLE carbon2 USING '${classOf[C2IndexDataMap].getName}'")
 
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "1")

@@ -45,7 +45,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='country')
+         | DMProperties('INDEX_COLUMNS'='country')
       """.stripMargin)
     checkExistence(sql("show datamap on table datamap_main"), true, "lucene_datamap")
     sql("drop datamap if exists lucene_datamap on table datamap_main")
@@ -64,11 +64,11 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
         s"""
            | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
            | USING 'lucene'
-           | DMProperties('TEXT_COLUMNS'='id')
+           | DMProperties('INDEX_COLUMNS'='id')
       """.stripMargin)
     }
     assert(exception_otherdataType.getMessage
-      .contains("TEXT_COLUMNS only supports String column. Unsupported column: id, " +
+      .contains("INDEX_COLUMNS only supports String column. Unsupported column: id, " +
                 "DataType: INT"))
   }
 
@@ -84,7 +84,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='country')
+         | DMProperties('INDEX_COLUMNS'='country')
       """.stripMargin)
     sql(s"LOAD DATA INPATH '$csvPath' INTO TABLE datamap_main")
 
@@ -105,7 +105,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='country,name,serialname')
+         | DMProperties('INDEX_COLUMNS'='country,name,serialname')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main")
     checkAnswer(sql("SELECT * FROM datamap_main WHERE TEXT_MATCH('country:ch*')"),
@@ -137,7 +137,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='country,name')
+         | DMProperties('INDEX_COLUMNS'='country,name')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main")
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main")
@@ -163,7 +163,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='country')
+         | DMProperties('INDEX_COLUMNS'='country')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main OPTIONS('header'='false'," +
         s"'BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE','SINGLE_PASS'='TRUE')")
@@ -183,7 +183,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='country,name')
+         | DMProperties('INDEX_COLUMNS'='country,name')
       """.stripMargin)
     sql("insert into datamap_main select 1,'abc','aa'")
     sql("insert into datamap_main select 2,'def','ab'")
@@ -210,11 +210,11 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
         s"""
            | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
            | USING 'lucene'
-           | DMProperties('TEXT_COLUMNS'='country')
+           | DMProperties('INDEX_COLUMNS'='country')
       """.stripMargin)
     }
     assert(exception_dicitionaryinclude.getMessage
-      .contains("TEXT_COLUMNS cannot contain dictionary column country"))
+      .contains("INDEX_COLUMNS cannot contain dictionary column country"))
     sql("drop datamap if exists lucene_datamap on table datamap_main")
   }
 

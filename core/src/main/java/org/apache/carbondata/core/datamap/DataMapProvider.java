@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.core.datamap.dev.IndexDataMap;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
@@ -45,9 +46,9 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  *   <li> preaggregate: one type of MVDataMap that do pre-aggregate of single table </li>
  *   <li> timeseries: one type of MVDataMap that do pre-aggregate based on time dimension
  *     of the table </li>
- *   <li> class name of {@link org.apache.carbondata.core.datamap.dev.DataMapFactory}
+ *   <li> class name of {@link IndexDataMap}
  * implementation: Developer can implement new type of DataMap by extending
- * {@link org.apache.carbondata.core.datamap.dev.DataMapFactory} </li>
+ * {@link IndexDataMap} </li>
  * </ol>
  *
  * @since 1.4.0

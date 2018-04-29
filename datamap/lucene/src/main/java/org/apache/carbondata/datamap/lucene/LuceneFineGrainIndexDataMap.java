@@ -33,7 +33,7 @@ import org.apache.carbondata.core.memory.MemoryException;
  * CG level of lucene DataMap
  */
 @InterfaceAudience.Internal
-public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<FineGrainDataMap> {
+public class LuceneFineGrainIndexDataMap extends LuceneIndexDataMapBase<FineGrainDataMap> {
 
   /**
    * Get the datamap for segmentid

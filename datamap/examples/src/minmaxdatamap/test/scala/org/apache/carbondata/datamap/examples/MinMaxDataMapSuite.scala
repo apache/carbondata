@@ -54,7 +54,7 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
         | CREATE DATAMAP $dataMapName ON TABLE $minMaxDMSampleTable
-        | USING '${classOf[MinMaxIndexDataMapFactory].getName}'
+        | USING '${classOf[MinMaxIndexIndexDataMap].getName}'
       """.stripMargin)
 
     sql(

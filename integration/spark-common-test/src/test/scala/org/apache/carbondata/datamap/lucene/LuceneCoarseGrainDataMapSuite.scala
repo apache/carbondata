@@ -55,7 +55,7 @@ class LuceneCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
         s"""
            | CREATE DATAMAP dm ON TABLE datamap_test
            | USING 'lucene'
-           | DMProperties('TEXT_COLUMNS'='name,city')
+           | DMProperties('INDEX_COLUMNS'='name,city')
       """.stripMargin)
 
      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")

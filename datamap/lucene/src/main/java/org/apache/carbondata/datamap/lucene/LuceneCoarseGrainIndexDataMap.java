@@ -35,9 +35,9 @@ import org.apache.carbondata.core.memory.MemoryException;
  * FG level of lucene DataMap
  */
 @InterfaceAudience.Internal
-public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<CoarseGrainDataMap> {
+public class LuceneCoarseGrainIndexDataMap extends LuceneIndexDataMapBase<CoarseGrainDataMap> {
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(LuceneCoarseGrainDataMapFactory.class.getName());
+      LogServiceFactory.getLogService(LuceneCoarseGrainIndexDataMap.class.getName());
 
   /**
    * Get the datamap for segmentid

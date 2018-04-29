@@ -18,7 +18,6 @@
 package org.apache.carbondata.datamap;
 
 import org.apache.carbondata.core.datamap.DataMapProvider;
-import org.apache.carbondata.core.datamap.IndexDataMapProvider;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;

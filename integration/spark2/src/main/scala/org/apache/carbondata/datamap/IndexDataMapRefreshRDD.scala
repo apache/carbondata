@@ -31,7 +31,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.{CarbonInputMetrics, Partition, SparkContext, TaskContext}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.{DataMapRegistry, Segment}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
@@ -39,7 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.TaskMetricsMap
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.datamap.lucene.{LuceneDataMapFactoryBase, LuceneDataMapWriter, LuceneIndexRefreshBuilder}
+import org.apache.carbondata.datamap.lucene.{LuceneDataMapWriter, LuceneIndexRefreshBuilder}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
@@ -58,8 +58,8 @@ object IndexDataMapRefreshRDD {
     val segmentStatusManager = new SegmentStatusManager(tableIdentifier)
     val validAndInvalidSegments = segmentStatusManager.getValidAndInvalidSegments()
     val validSegments = validAndInvalidSegments.getValidSegments
-    val indexedCarbonColumns =
-      LuceneDataMapFactoryBase.validateAndGetIndexedColumns(schema, carbonTable)
+    val indexDataMap = DataMapRegistry.getDataMapByShortName(schema.getProviderName)
+    val indexedCarbonColumns = indexDataMap.validateAndGetIndexedColumns(schema, carbonTable)
 
     // loop all segments to rebuild DataMap
     val tableInfo = carbonTable.getTableInfo

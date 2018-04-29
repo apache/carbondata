@@ -41,7 +41,7 @@ public class DataMapSchema implements Serializable, Writable {
 
   /**
    * There are two kind of DataMaps:
-   * 1. Index DataMap: provider name is class name of implementation class of DataMapFactory
+   * 1. Index DataMap: provider name is class name of implementation class of IndexDataMap
    * 2. OLAP DataMap: provider name is one of the {@link DataMapClassProvider#shortName}
    */
   protected String providerName;

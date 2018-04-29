@@ -28,7 +28,6 @@ import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.datamap.DataMapRegistry;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.dev.IndexDataMap;
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
@@ -36,7 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 @InterfaceAudience.Internal
 public class IndexDataMapProvider implements DataMapProvider {
 
-  public IndexDataMapProvider() {
+  IndexDataMapProvider() {
   }
 
   @Override
@@ -102,37 +101,10 @@ public class IndexDataMapProvider implements DataMapProvider {
       indexDataMap = providerClass.newInstance();
     } catch (ClassNotFoundException e) {
       // try to create DataMapClassProvider instance by taking providerName as short name
-      indexDataMap = getDataMapByShortName(dataMapSchema.getProviderName());
+      indexDataMap = DataMapRegistry.getDataMapByShortName(dataMapSchema.getProviderName());
     } catch (Throwable e) {
       throw new MetadataProcessException(
           "failed to create DataMapClassProvider '" + dataMapSchema.getProviderName() + "'", e);
-    }
-    return indexDataMap;
-  }
-
-  public static IndexDataMap getDataMapByShortName(String providerName)
-      throws MalformedDataMapCommandException {
-    try {
-      DataMapRegistry.registerDataMap(
-          DataMapClassProvider.getDataMapProviderOnName(providerName).getClassName(),
-          DataMapClassProvider.getDataMapProviderOnName(providerName).getShortName());
-    } catch (UnsupportedOperationException ex) {
-      throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
-    }
-    IndexDataMap indexDataMap;
-    String className = DataMapRegistry.getDataMapClassName(providerName.toLowerCase());
-    if (className != null) {
-      try {
-        Class<? extends IndexDataMap> datamapClass =
-            (Class<? extends IndexDataMap>) Class.forName(className);
-        indexDataMap = datamapClass.newInstance();
-      } catch (ClassNotFoundException ex) {
-        throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
-      } catch (Throwable ex) {
-        throw new MetadataProcessException("failed to create DataMap '" + providerName + "'", ex);
-      }
-    } else {
-      throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found");
     }
     return indexDataMap;
   }

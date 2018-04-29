@@ -70,55 +70,55 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
   }
 
-  test("validate TEXT_COLUMNS DataMap property") {
-    // require TEXT_COLUMNS
+  test("validate INDEX_COLUMNS DataMap property") {
+    // require INDEX_COLUMNS
     var exception = intercept[MalformedDataMapCommandException](sql(
       s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
          | USING 'lucene'
       """.stripMargin))
 
-    assertResult("Lucene DataMap require proper TEXT_COLUMNS property.")(exception.getMessage)
+    assertResult("INDEX_COLUMNS DMPROPERTY is required")(exception.getMessage)
 
     // illegal argumnet.
     exception = intercept[MalformedDataMapCommandException](sql(
       s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
          | USING 'lucene'
-         | DMProperties('text_COLUMNS'='name, ')
+         | DMProperties('INDEX_COLUMNS'='name, ')
       """.stripMargin))
 
-    assertResult("TEXT_COLUMNS contains illegal argument.")(exception.getMessage)
+    assertResult("INDEX_COLUMNS contains invalid column name")(exception.getMessage)
 
     // not exists
     exception = intercept[MalformedDataMapCommandException](sql(
       s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
          | USING 'lucene'
-         | DMProperties('text_COLUMNS'='city,school')
+         | DMProperties('INDEX_COLUMNS'='city,school')
     """.stripMargin))
 
-    assertResult("TEXT_COLUMNS: school does not exist in table. Please check create DataMap statement.")(exception.getMessage)
+    assertResult("column 'school' does not exist in table. Please check create DataMap statement.")(exception.getMessage)
 
     // duplicate columns
     exception = intercept[MalformedDataMapCommandException](sql(
       s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
          | USING 'lucene'
-         | DMProperties('text_COLUMNS'='name,city,name')
+         | DMProperties('INDEX_COLUMNS'='name,city,name')
       """.stripMargin))
 
-    assertResult("TEXT_COLUMNS has duplicate columns :name")(exception.getMessage)
+    assertResult("INDEX_COLUMNS has duplicate columns 'name'")(exception.getMessage)
 
     // only support String DataType
     exception = intercept[MalformedDataMapCommandException](sql(
     s"""
          | CREATE DATAMAP dm1 ON TABLE datamap_test
          | USING 'lucene'
-         | DMProperties('text_COLUMNS'='city,id')
+         | DMProperties('INDEX_COLUMNS'='city,id')
       """.stripMargin))
 
-    assertResult("TEXT_COLUMNS only supports String column. Unsupported column: id, DataType: INT")(exception.getMessage)
+    assertResult("Only String column is supported, column 'id' is INT type. ")(exception.getMessage)
   }
 
   test("test lucene fine grain data map") {
@@ -126,7 +126,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+         | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
@@ -146,7 +146,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm4 ON TABLE datamap_test4
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+         | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test4 OPTIONS('header'='false')")
@@ -172,8 +172,8 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP dm12 ON TABLE datamap_test1
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
-         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexDataMap'
+         | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test1 OPTIONS('header'='false')")
@@ -203,8 +203,8 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP dm122 ON TABLE datamap_test2
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
-         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexDataMap'
+         | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
 
     sql(
@@ -216,8 +216,8 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP dm123 ON TABLE datamap_test3
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
-         | DMProperties('TEXT_COLUMNS'='Name , cIty')
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexDataMap'
+         | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test2 OPTIONS('header'='false')")
@@ -243,13 +243,13 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
         s"""
            | CREATE DATAMAP dm ON TABLE datamap_test_table
            | USING 'lucene'
-           | DMProperties('TEXT_COLUMNS'='name')
+           | DMProperties('INDEX_COLUMNS'='name')
       """.stripMargin)
       sql(
         s"""
            | CREATE DATAMAP dm1 ON TABLE datamap_test_table
            | USING 'lucene'
-           | DMProperties('TEXT_COLUMNS'='name')
+           | DMProperties('INDEX_COLUMNS'='name')
       """.stripMargin)
     }
     assert(exception_duplicate_column.getMessage
@@ -269,7 +269,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n99*')"),
@@ -291,7 +291,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql(
@@ -312,7 +312,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql(
@@ -333,7 +333,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql(
@@ -357,7 +357,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
@@ -382,7 +382,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
@@ -408,7 +408,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
@@ -431,7 +431,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm2 ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
     val exception_add_column: Exception = intercept[MalformedCarbonCommandException] {
       sql("alter table dm2 add columns(city1 string)")
@@ -457,7 +457,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm2 ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
@@ -482,7 +482,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
           """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     //check NOT filter with TEXTMATCH term-search
@@ -506,7 +506,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm_lucene ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='c')
+         | DMProperties('INDEX_COLUMNS'='c')
       """.stripMargin)
     sql(
       "create datamap dm_pre on table datamap_main USING 'preaggregate' as select a,sum(b) " +
@@ -530,7 +530,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE source_table
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name,city')
+         | DMProperties('INDEX_COLUMNS'='name,city')
           """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE source_table OPTIONS('header'='false')")
     sql(
@@ -551,7 +551,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
@@ -565,7 +565,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
          | USING 'lucene'
-         | DMProperties('TEXT_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")

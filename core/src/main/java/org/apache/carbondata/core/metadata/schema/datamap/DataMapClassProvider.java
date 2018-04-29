@@ -29,7 +29,7 @@ package org.apache.carbondata.core.metadata.schema.datamap;
 public enum DataMapClassProvider {
   PREAGGREGATE("org.apache.carbondata.core.datamap.AggregateDataMap", "preaggregate"),
   TIMESERIES("org.apache.carbondata.core.datamap.TimeSeriesDataMap", "timeseries"),
-  LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory","lucene");
+  LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexDataMap","lucene");
 
   /**
    * Fully qualified class name of datamap
