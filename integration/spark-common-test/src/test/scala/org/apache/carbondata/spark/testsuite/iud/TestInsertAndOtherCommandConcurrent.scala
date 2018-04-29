@@ -29,7 +29,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.DataMapWriter
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainIndexDataMap}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.exception.ConcurrentOperationException
@@ -53,7 +53,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | create datamap test on table orders
-         | using '${classOf[WaitingDataMap].getName}'
+         | using '${classOf[WaitingIndexDataMap].getName}'
          | as select count(a) from hiveMetaStoreTable_1")
        """.stripMargin)
   }
@@ -109,7 +109,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     )
     while (!Global.overwriteRunning && count < 1000) {
       Thread.sleep(10)
-      // to avoid dead loop in case WaitingDataMap is not invoked
+      // to avoid dead loop in case WaitingIndexDataMap is not invoked
       count += 1
     }
     future
@@ -210,7 +210,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | create datamap dm_t1 on table t1
-         | using '${classOf[WaitingDataMap].getName}'
+         | using '${classOf[WaitingIndexDataMap].getName}'
          | as select count(a) from hiveMetaStoreTable_1")
        """.stripMargin)
     val future = runSqlAsync("insert into table t1 select * from orders_overwrite")
@@ -283,7 +283,7 @@ object Global {
   var overwriteRunning = false
 }
 
-class WaitingDataMap() extends CoarseGrainDataMapFactory {
+class WaitingIndexDataMap() extends CoarseGrainIndexDataMap {
 
   private var identifier: AbsoluteTableIdentifier = _
 

@@ -34,7 +34,7 @@ import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexDataMap;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -449,7 +449,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       DataMapJob dataMapJob, List<PartitionSpec> partitionsToPrune) throws IOException {
     DistributableDataMapFormat datamapDstr =
         new DistributableDataMapFormat(carbonTable, dataMapExprWrapper, segmentIds,
-            partitionsToPrune, BlockletDataMapFactory.class.getName());
+            partitionsToPrune, BlockletIndexDataMap.class.getName());
     List<ExtendedBlocklet> prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
     // Apply expression on the blocklets.
     prunedBlocklets = dataMapExprWrapper.pruneBlocklets(prunedBlocklets);

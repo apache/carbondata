@@ -21,11 +21,9 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
-import org.apache.carbondata.datamap.DataMapManager
-import org.apache.carbondata.datamap.lucene.LuceneDataMapRefreshRDD
+import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapRefresher}
 
 /**
  * Refresh the datamaps through sync with main table data. After sync with parent table's it enables
@@ -37,6 +35,8 @@ case class CarbonDataMapRefreshCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val schema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
+    DataMapRegistry.getDataMapByShortName(schema.getProviderName)
+
     val table = tableIdentifier match {
       case Some(identifier) =>
         CarbonEnv.getCarbonTable(identifier)(sparkSession)
@@ -47,11 +47,11 @@ case class CarbonDataMapRefreshCommand(
         )(sparkSession)
     }
     // Sync the datamap with parent table
-    if (DataMapClassProvider.LUCENE.getShortName.endsWith(schema.getProviderName)) {
-      LuceneDataMapRefreshRDD.refreshDataMap(sparkSession, table, schema)
+    if (schema.isIndexDataMap) {
+      IndexDataMapRefresher.rebuildDataMap(sparkSession, table, schema)
     } else {
-      val provider = DataMapManager.get().getDataMapProvider(schema, sparkSession)
-      provider.rebuild(table, schema)
+      val provider = DataMapManager.get().getDataMapProvider(table, schema, sparkSession)
+      provider.rebuild()
     }
     // After sync success enable the datamap.
     DataMapStatusManager.enableDataMap(dataMapName)

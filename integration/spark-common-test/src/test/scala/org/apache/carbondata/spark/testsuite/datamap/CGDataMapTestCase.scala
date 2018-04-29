@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapWriter}
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainIndexDataMap}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
@@ -49,7 +49,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class CGDataMapFactory extends CoarseGrainDataMapFactory {
+class CGIndexDataMap extends CoarseGrainIndexDataMap {
   var identifier: AbsoluteTableIdentifier = _
   var dataMapSchema: DataMapSchema = _
 
@@ -282,7 +282,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
 
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
-   * DataMapMeta returned in DataMapFactory.
+   * DataMapMeta returned in IndexDataMap.
    *
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
@@ -360,7 +360,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test_cg")
     // register datamap writer
     sql(s"create datamap cgdatamap on table datamap_test_cg " +
-        s"using '${classOf[CGDataMapFactory].getName}' " +
+        s"using '${classOf[CGIndexDataMap].getName}' " +
         s"DMPROPERTIES('indexcolumns'='name')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_cg OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test_cg where name='n502670'"),
@@ -377,8 +377,8 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
     // register datamap writer
-    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
+    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGIndexDataMap].getName}' DMPROPERTIES('indexcolumns'='name')")
+    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGIndexDataMap].getName}' DMPROPERTIES('indexcolumns'='city')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
@@ -396,8 +396,8 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
     // register datamap writer
-    sql(s"create datamap $dataMapName1 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"create datamap $dataMapName2 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
+    sql(s"create datamap $dataMapName1 on table $tableName using '${classOf[CGIndexDataMap].getName}' DMPROPERTIES('indexcolumns'='name')")
+    sql(s"create datamap $dataMapName2 on table $tableName using '${classOf[CGIndexDataMap].getName}' DMPROPERTIES('indexcolumns'='city')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
 
     // make datamap1 invisible
@@ -426,7 +426,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
 
-    val dataMapProvider = classOf[CGDataMapFactory].getName
+    val dataMapProvider = classOf[CGIndexDataMap].getName
     sql(s"create datamap test_cg_datamap on table datamap_store_test using '$dataMapProvider' as select  id, name from datamap_store_test")
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap")
@@ -443,7 +443,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
 
-    val dataMapProvider = classOf[CGDataMapFactory].getName
+    val dataMapProvider = classOf[CGIndexDataMap].getName
     sql(s"create datamap test_cg_datamap1 on table datamap_store_test1 using '$dataMapProvider' as select  id, name from datamap_store_test")
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap1")
@@ -464,7 +464,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
 
-    val dataMapProvider = classOf[CGDataMapFactory].getName
+    val dataMapProvider = classOf[CGIndexDataMap].getName
     sql(s"create datamap test_cg_datamap2 on table datamap_store_test2 using '$dataMapProvider' as select  id, name from datamap_store_test")
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation,"test_cg_datamap2")

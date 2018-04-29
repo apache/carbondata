@@ -30,8 +30,8 @@ import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.IndexDataMap;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.processing.store.TablePage;
@@ -61,7 +61,7 @@ public class DataMapWriterListener {
     }
     if (tableIndices != null) {
       for (TableDataMap tableDataMap : tableIndices) {
-        DataMapFactory factory = tableDataMap.getDataMapFactory();
+        IndexDataMap factory = tableDataMap.getIndexDataMap();
         register(factory, segmentId, dataWritePath);
       }
     }
@@ -70,7 +70,7 @@ public class DataMapWriterListener {
   /**
    * Register a DataMapWriter
    */
-  private void register(DataMapFactory factory, String segmentId, String dataWritePath) {
+  private void register(IndexDataMap factory, String segmentId, String dataWritePath) {
     assert (factory != null);
     assert (segmentId != null);
     DataMapMeta meta = factory.getMeta();

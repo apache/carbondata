@@ -30,10 +30,9 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndexDataMap;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -48,9 +47,9 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Min Max DataMap Factory
  */
-public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
+public class MinMaxIndexIndexDataMap extends CoarseGrainIndexDataMap {
   private static final LogService LOGGER = LogServiceFactory.getLogService(
-      MinMaxIndexDataMapFactory.class.getName());
+      MinMaxIndexIndexDataMap.class.getName());
   private DataMapMeta dataMapMeta;
   private String dataMapName;
   private AbsoluteTableIdentifier identifier;
