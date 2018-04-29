@@ -50,7 +50,7 @@ public class IndexDataMapProvider extends DataMapProvider {
       throws MalformedDataMapCommandException {
     super(table, schema);
     this.sparkSession = sparkSession;
-    this.indexDataMap = createIndexDataMapFactory();
+    this.indexDataMap = createIndexDataMap();
     indexDataMap.validateIndexedColumns(schema, table);
     this.indexedColumns = indexDataMap.getIndexedColumns(schema);
   }
@@ -109,7 +109,8 @@ public class IndexDataMapProvider extends DataMapProvider {
     throw new UnsupportedOperationException();
   }
 
-  private IndexDataMap<? extends DataMap> createIndexDataMapFactory() throws MalformedDataMapCommandException {
+  private IndexDataMap<? extends DataMap> createIndexDataMap()
+      throws MalformedDataMapCommandException {
     IndexDataMap<? extends DataMap> indexDataMap;
     try {
       // try to create DataMapClassProvider instance by taking providerName as class name
