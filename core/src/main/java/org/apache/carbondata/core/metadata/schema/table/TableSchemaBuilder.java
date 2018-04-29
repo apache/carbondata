@@ -103,7 +103,11 @@ public class TableSchemaBuilder {
     return schema;
   }
 
-  public TableSchemaBuilder addColumn(StructField field, boolean isSortColumn) {
+  public void setSortColumns(List<ColumnSchema> sortColumns) {
+    this.sortColumns = sortColumns;
+  }
+
+  public ColumnSchema addColumn(StructField field, boolean isSortColumn) {
     Objects.requireNonNull(field);
     checkRepeatColumnName(field);
     ColumnSchema newColumn = new ColumnSchema();
@@ -138,10 +142,7 @@ public class TableSchemaBuilder {
       newColumn.setPrecision(decimalType.getPrecision());
       newColumn.setScale(decimalType.getScale());
     }
-    if (isSortColumn) {
-      sortColumns.add(newColumn);
-      newColumn.setSortColumn(true);
-    } else {
+    if (!isSortColumn) {
       otherColumns.add(newColumn);
     }
     if (newColumn.isDimensionColumn()) {
@@ -156,7 +157,7 @@ public class TableSchemaBuilder {
         }
       }
     }
-    return this;
+    return newColumn;
   }
 
   /**

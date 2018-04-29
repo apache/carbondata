@@ -40,6 +40,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -378,6 +379,7 @@ public class CarbonWriterBuilder {
     } else {
       sortColumnsList = Arrays.asList(sortColumns);
     }
+    ColumnSchema[] sortColumnsSchemaList = new ColumnSchema[sortColumnsList.size()];
     for (Field field : schema.getFields()) {
       if (null != field) {
         if (field.getChildren() != null && field.getChildren().size() > 0) {
@@ -391,11 +393,18 @@ public class CarbonWriterBuilder {
           DataType complexType = DataTypes.createStructType(structFieldsArray);
           tableSchemaBuilder.addColumn(new StructField(field.getFieldName(), complexType), false);
         } else {
-          tableSchemaBuilder.addColumn(new StructField(field.getFieldName(), field.getDataType()),
-              sortColumnsList.contains(field.getFieldName()));
+          int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
+          ColumnSchema columnSchema = tableSchemaBuilder
+              .addColumn(new StructField(field.getFieldName(), field.getDataType()),
+                  isSortColumn > -1);
+          if (isSortColumn > -1) {
+            columnSchema.setSortColumn(true);
+            sortColumnsSchemaList[isSortColumn] = columnSchema;
+          }
         }
       }
     }
+    tableSchemaBuilder.setSortColumns(Arrays.asList(sortColumnsSchemaList));
     String tableName;
     String dbName;
     if (isTransactionalTable) {

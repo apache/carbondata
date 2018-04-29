@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.metadata.schema.table;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -37,7 +38,8 @@ public class TableSchemaBuilderSuite {
   @Test
   public void testBuilder() {
     TableSchemaBuilder builder = TableSchema.builder();
-    builder.addColumn(new StructField("a", DataTypes.INT), true);
+    ColumnSchema columnSchema = builder.addColumn(new StructField("a", DataTypes.INT), true);
+    builder.setSortColumns(Arrays.asList(columnSchema));
     builder.addColumn(new StructField("b", DataTypes.DOUBLE), false);
     TableSchema schema = builder.build();
     Assert.assertEquals(2, schema.getListOfColumns().size());
@@ -49,7 +51,8 @@ public class TableSchemaBuilderSuite {
   @Test(expected = IllegalArgumentException.class)
   public void testRepeatedColumn() {
     TableSchemaBuilder builder = TableSchema.builder();
-    builder.addColumn(new StructField("a", DataTypes.INT), true);
+    ColumnSchema columnSchema = builder.addColumn(new StructField("a", DataTypes.INT), true);
+    builder.setSortColumns(Arrays.asList(columnSchema));
     builder.addColumn(new StructField("a", DataTypes.DOUBLE), false);
     TableSchema schema = builder.build();
   }

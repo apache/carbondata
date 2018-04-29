@@ -94,9 +94,20 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildTestData(3, false, options)
   }
 
+  def buildTestDataWithSortColumns(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(3, false, null, List("age", "name"))
+  }
+
+  def buildTestData(rows: Int, persistSchema: Boolean, options: util.Map[String, String]): Any = {
+    buildTestData(rows, persistSchema, options, List("name"))
+  }
 
   // prepare sdk writer output
-  def buildTestData(rows: Int, persistSchema: Boolean, options: util.Map[String, String]): Any = {
+  def buildTestData(rows: Int,
+      persistSchema: Boolean,
+      options: util.Map[String, String],
+      sortColumns: List[String]): Any = {
     val schema = new StringBuilder()
       .append("[ \n")
       .append("   {\"name\":\"string\"},\n")
@@ -111,6 +122,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         if (persistSchema) {
           builder.persistSchemaFile(true)
           builder.withSchema(Schema.parseJson(schema))
+            .sortBy(sortColumns.toArray)
             .outputPath(writerPath)
             .isTransactionalTable(false)
             .uniqueIdentifier(System.currentTimeMillis)
@@ -119,12 +131,14 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
           if (options != null) {
             builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath)
               .isTransactionalTable(false)
+              .sortBy(sortColumns.toArray)
               .uniqueIdentifier(
                 System.currentTimeMillis).withBlockSize(2).withLoadOptions(options)
               .buildWriterForCSVInput()
           } else {
             builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath)
               .isTransactionalTable(false)
+              .sortBy(sortColumns.toArray)
               .uniqueIdentifier(
                 System.currentTimeMillis).withBlockSize(2)
               .buildWriterForCSVInput()
@@ -177,6 +191,25 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
+  }
+
+  test("test create external table with sort columns") {
+    buildTestDataWithSortColumns()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkExistence(sql("describe formatted sdkOutputTable"), true, "age,name")
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
   }
 
   test("test create External Table with Schema with partition, should ignore schema and partition")
