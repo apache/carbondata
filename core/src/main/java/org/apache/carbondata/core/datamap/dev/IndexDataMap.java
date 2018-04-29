@@ -18,13 +18,18 @@ package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -107,7 +112,7 @@ public abstract class IndexDataMap<T extends DataMap> {
    * 4. INDEX_COLUMNS should be exists in table columns
    */
   public List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
-      CarbonTable carbonTable) throws MalformedDataMapCommandException {
+      CarbonTable carbonTable) throws MalformedDataMapCommandException, IOException {
     String columnsStr = dataMapSchema.getProperties().get(INDEX_COLUMNS);
     if (columnsStr == null || StringUtils.isBlank(columnsStr)) {
       throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is required.");
@@ -127,6 +132,23 @@ public abstract class IndexDataMap<T extends DataMap> {
         }
       }
     }
+
+    List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+    Set<String> existingIndexColumn = new HashSet<>();
+    if (datamaps.size() > 0) {
+      for (TableDataMap datamap : datamaps) {
+          String columns = datamap.getDataMapSchema().getProperties().get(INDEX_COLUMNS);
+          existingIndexColumn.addAll(Arrays.asList(columns.split(",", -1)));
+      }
+
+      for (String column : indexColumns) {
+        if (existingIndexColumn.contains(column)) {
+          throw new MalformedDataMapCommandException(
+              String.format("column '%s' already has datamap created", column));
+        }
+      }
+    }
+
     List<String> indexedCarbonColumns = new ArrayList<>(indexColumns.length);
     for (String indexColumn : indexColumns) {
       CarbonColumn column = carbonTable.getColumnByName(carbonTable.getTableName(), indexColumn);

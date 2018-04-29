@@ -252,8 +252,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
            | DMProperties('INDEX_COLUMNS'='name')
       """.stripMargin)
     }
-    assert(exception_duplicate_column.getMessage
-      .contains("Create lucene datamap dm1 failed, datamap already exists on column(s) name"))
+    assertResult("column 'name' already has datamap created")(exception_duplicate_column.getMessage)
     sql("drop datamap if exists dm on table datamap_test_table")
   }
 

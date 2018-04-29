@@ -54,8 +54,8 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
-         | USING '${classOf[BloomCoarseGrainIndexDataMap].getName}'
-         | DMProperties('BLOOM_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 
     sql(
@@ -74,8 +74,6 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"select * from $bloomDMSampleTable limit 5").show(false)
 
     checkExistence(sql(s"show datamap on table $bloomDMSampleTable"), true, dataMapName)
-//    checkAnswer(sql(s"show datamap on table $bloomDMSampleTable"),
-//      Row(dataMapName, classOf[BloomCoarseGrainIndexDataMap].getName, "(NA)"))
     checkAnswer(sql(s"select * from $bloomDMSampleTable where id = 1"),
       sql(s"select * from $normalTable where id = 1"))
     checkAnswer(sql(s"select * from $bloomDMSampleTable where id = 999"),

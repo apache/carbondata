@@ -217,7 +217,7 @@ abstract class LuceneIndexDataMapBase<T extends DataMap> extends IndexDataMap<T>
    */
   @Override
   public List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
-      CarbonTable carbonTable) throws MalformedDataMapCommandException {
+      CarbonTable carbonTable) throws MalformedDataMapCommandException, IOException {
     List<String> indexColumns = super.validateAndGetIndexedColumns(dataMapSchema, carbonTable);
 
     for (String indexColumn : indexColumns) {
