@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap.lucene
+package org.apache.carbondata.datamap
 
 import java.text.SimpleDateFormat
 import java.util
@@ -24,29 +24,30 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{CarbonInputMetrics, Partition, SparkContext, TaskContext}
+import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.{CarbonInputMetrics, Partition, SparkContext, TaskContext}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.TaskMetricsMap
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
+import org.apache.carbondata.datamap.lucene.{LuceneDataMapFactoryBase, LuceneDataMapWriter, LuceneIndexRefreshBuilder}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
-import org.apache.carbondata.spark.{RefreshResult, RefreshResultImpl}
+import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
 import org.apache.carbondata.spark.rdd.{CarbonRDDWithTableInfo, CarbonSparkPartition}
 import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
+import org.apache.carbondata.spark.{RefreshResult, RefreshResultImpl}
 
-object LuceneDataMapRefreshRDD {
+object IndexDataMapRefreshRDD {
 
   def refreshDataMap(
       sparkSession: SparkSession,
@@ -56,20 +57,20 @@ object LuceneDataMapRefreshRDD {
     val tableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val segmentStatusManager = new SegmentStatusManager(tableIdentifier)
     val validAndInvalidSegments = segmentStatusManager.getValidAndInvalidSegments()
-    val validSegments = validAndInvalidSegments.getValidSegments()
+    val validSegments = validAndInvalidSegments.getValidSegments
     val indexedCarbonColumns =
       LuceneDataMapFactoryBase.validateAndGetIndexedColumns(schema, carbonTable)
 
     // loop all segments to rebuild DataMap
-    val tableInfo = carbonTable.getTableInfo()
+    val tableInfo = carbonTable.getTableInfo
     validSegments.asScala.foreach { segment =>
       val dataMapStorePath = LuceneDataMapWriter.genDataMapStorePath(
-        tableIdentifier.getTablePath(),
-        segment.getSegmentNo(),
+        tableIdentifier.getTablePath,
+        segment.getSegmentNo,
         schema.getDataMapName)
       // if lucene datamap folder is exists, not require to build lucene datamap again
       refreshOneSegment(sparkSession, tableInfo, dataMapStorePath, schema.getDataMapName,
-        indexedCarbonColumns, segment.getSegmentNo());
+        indexedCarbonColumns, segment.getSegmentNo);
     }
   }
 
@@ -84,7 +85,7 @@ object LuceneDataMapRefreshRDD {
     if (!FileFactory.isFileExist(dataMapStorePath)) {
       if (FileFactory.mkdirs(dataMapStorePath, FileFactory.getFileType(dataMapStorePath))) {
         try {
-          val status = new LuceneDataMapRefreshRDD[String, Boolean](
+          val status = new IndexDataMapRefreshRDD[String, Boolean](
             sparkSession.sparkContext,
             new RefreshResultImpl(),
             tableInfo,
@@ -99,7 +100,7 @@ object LuceneDataMapRefreshRDD {
               s"Task Failed to refresh datamap $dataMapName on segment_$segmentId")
           }
         } catch {
-          case ex =>
+          case ex: Throwable =>
             // process failure
             FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(dataMapStorePath))
             throw new Exception(
@@ -117,8 +118,8 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
   }
 
   override def readRow(data: Array[Object]): Array[Object] = {
-    for (i <- 0 until dataTypes.length) {
-      if (dataTypes(i) == DataTypes.STRING) {
+    dataTypes.zipWithIndex.foreach { case (dataType, i) =>
+      if (dataType == DataTypes.STRING) {
         data(i) = data(i).toString
       }
     }
@@ -129,7 +130,7 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
   }
 }
 
-class LuceneDataMapRefreshRDD[K, V](
+class IndexDataMapRefreshRDD[K, V](
     sc: SparkContext,
     result: RefreshResult[K, V],
     @transient tableInfo: TableInfo,

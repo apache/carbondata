@@ -37,7 +37,7 @@ import org.apache.carbondata.datamap.DataMapManager
 case class CarbonCreateDataMapCommand(
     dataMapName: String,
     tableIdentifier: Option[TableIdentifier],
-    dmClassName: String,
+    dmProviderName: String,
     dmProperties: Map[String, String],
     queryString: Option[String],
     ifNotExistsSet: Boolean = false)
@@ -68,39 +68,14 @@ case class CarbonCreateDataMapCommand(
       }
     }
 
-    dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
-    // TODO: move this if logic inside lucene module
-    if (dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.LUCENE.toString)) {
-      val datamaps = DataMapStoreManager.getInstance().getAllDataMap(mainTable).asScala
-      if (datamaps.nonEmpty) {
-        datamaps.foreach(datamap => {
-          val dmColumns = datamap.getDataMapSchema.getProperties.get("text_columns")
-          val existingColumns = dmProperties("text_columns")
-
-          def getAllSubString(columns: String): Set[String] = {
-            columns.inits.flatMap(_.tails).toSet
-          }
-
-          val existingClmSets = getAllSubString(existingColumns)
-          val dmColumnsSets = getAllSubString(dmColumns)
-          val duplicateDMColumn = existingClmSets.intersect(dmColumnsSets).maxBy(_.length)
-          if (!duplicateDMColumn.isEmpty) {
-            throw new MalformedDataMapCommandException(
-              s"Create lucene datamap $dataMapName failed, datamap already exists on column(s) " +
-              s"$duplicateDMColumn")
-          }
-        })
-      }
-    }
     if (mainTable != null &&
         mainTable.isStreamingTable &&
-        !(dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
-          || dataMapSchema.getProviderName
-            .equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
-      throw new MalformedCarbonCommandException(s"Streaming table does not support creating ${
-        dataMapSchema.getProviderName
-      } datamap")
+        !(dmProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
+          || dmProviderName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
+      throw new MalformedCarbonCommandException(s"Streaming table does not support creating " +
+                                                s"$dmProviderName datamap")
     }
+    dataMapSchema = new DataMapSchema(dataMapName, dmProviderName)
     dataMapSchema.setProperties(new java.util.HashMap[String, String](
       dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
     dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema, sparkSession)

@@ -24,8 +24,7 @@ import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
-import org.apache.carbondata.datamap.DataMapManager
-import org.apache.carbondata.datamap.lucene.LuceneDataMapRefreshRDD
+import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapRefreshRDD}
 
 /**
  * Refresh the datamaps through sync with main table data. After sync with parent table's it enables
@@ -47,8 +46,8 @@ case class CarbonDataMapRefreshCommand(
         )(sparkSession)
     }
     // Sync the datamap with parent table
-    if (DataMapClassProvider.LUCENE.getShortName.endsWith(schema.getProviderName)) {
-      LuceneDataMapRefreshRDD.refreshDataMap(sparkSession, table, schema)
+    if (schema.isIndexDataMap) {
+      IndexDataMapRefreshRDD.refreshDataMap(sparkSession, table, schema)
     } else {
       val provider = DataMapManager.get().getDataMapProvider(schema, sparkSession)
       provider.rebuild(table, schema)
