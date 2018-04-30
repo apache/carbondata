@@ -66,7 +66,7 @@ public class CarbonWriterBuilder {
   /**
    * prepares the builder with the schema provided
    * @param schema is instance of Schema
-   *        This method must be called when building CarbonWriterBuilder
+   * This method must be called when building CarbonWriterBuilder
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withSchema(Schema schema) {
@@ -78,7 +78,7 @@ public class CarbonWriterBuilder {
   /**
    * Sets the output path of the writer builder
    * @param path is the absolute path where output files are written
-   *             This method must be called when building CarbonWriterBuilder
+   * This method must be called when building CarbonWriterBuilder
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder outputPath(String path) {
@@ -90,8 +90,8 @@ public class CarbonWriterBuilder {
   /**
    * sets the list of columns that needs to be in sorted order
    * @param sortColumns is a string array of columns that needs to be sorted.
-   *                    If it is null or by default all dimensions are selected for sorting
-   *                    If it is empty array, no columns are sorted
+   * If it is null or by default all dimensions are selected for sorting
+   * If it is empty array, no columns are sorted
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
@@ -103,7 +103,7 @@ public class CarbonWriterBuilder {
    * sets the taskNo for the writer. SDKs concurrently running
    * will set taskNo in order to avoid conflicts in file's name during write.
    * @param taskNo is the TaskNo user wants to specify.
-   *               by default it is system time in nano seconds.
+   * by default it is system time in nano seconds.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder taskNo(String taskNo) {
@@ -116,7 +116,7 @@ public class CarbonWriterBuilder {
   /**
    * If set, create a schema file in metadata folder.
    * @param persist is a boolean value, If set to true, creates a schema file in metadata folder.
-   *                By default set to false. will not create metadata folder
+   * By default set to false. will not create metadata folder
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder persistSchemaFile(boolean persist) {
@@ -127,11 +127,11 @@ public class CarbonWriterBuilder {
   /**
    * If set false, writes the carbondata and carbonindex files in a flat folder structure
    * @param isTransactionalTable is a boolelan value
-   *             if set to false, then writes the carbondata and carbonindex files
-   *                                                            in a flat folder structure.
-   *             if set to true, then writes the carbondata and carbonindex files
-   *                                                            in segment folder structure..
-   *             By default set to false.
+   * if set to false, then writes the carbondata and carbonindex files
+   * in a flat folder structure.
+   * if set to true, then writes the carbondata and carbonindex files
+   * in segment folder structure..
+   * By default set to false.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder isTransactionalTable(boolean isTransactionalTable) {
@@ -210,7 +210,7 @@ public class CarbonWriterBuilder {
   /**
    * to set the timestamp in the carbondata and carbonindex index files
    * @param UUID is a timestamp to be used in the carbondata and carbonindex index files.
-   *             By default set to zero.
+   * By default set to zero.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder uniqueIdentifier(long UUID) {
@@ -222,28 +222,28 @@ public class CarbonWriterBuilder {
   /**
    * To support the load options for sdk writer
    * @param options key,value pair of load options.
-   *                supported keys values are
-   *                a. bad_records_logger_enable -- true (write into separate logs), false
-   *                b. bad_records_action -- FAIL, FORCE, IGNORE, REDIRECT
-   *                c. bad_record_path -- path
-   *                d. dateformat -- same as JAVA SimpleDateFormat
-   *                e. timestampformat -- same as JAVA SimpleDateFormat
-   *                f. complex_delimiter_level_1 -- value to Split the complexTypeData
-   *                g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
-   *                h. quotechar
-   *                i. escapechar
+   * supported keys values are
+   * a. bad_records_logger_enable -- true (write into separate logs), false
+   * b. bad_records_action -- FAIL, FORCE, IGNORE, REDIRECT
+   * c. bad_record_path -- path
+   * d. dateformat -- same as JAVA SimpleDateFormat
+   * e. timestampformat -- same as JAVA SimpleDateFormat
+   * f. complex_delimiter_level_1 -- value to Split the complexTypeData
+   * g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
+   * h. quotechar
+   * i. escapechar
    *
-   *                Default values are as follows.
+   * Default values are as follows.
    *
-   *                a. bad_records_logger_enable -- "false"
-   *                b. bad_records_action -- "FAIL"
-   *                c. bad_record_path -- ""
-   *                d. dateformat -- "" , uses from carbon.properties file
-   *                e. timestampformat -- "", uses from carbon.properties file
-   *                f. complex_delimiter_level_1 -- "$"
-   *                g. complex_delimiter_level_2 -- ":"
-   *                h. quotechar -- "\""
-   *                i. escapechar -- "\\"
+   * a. bad_records_logger_enable -- "false"
+   * b. bad_records_action -- "FAIL"
+   * c. bad_record_path -- ""
+   * d. dateformat -- "" , uses from carbon.properties file
+   * e. timestampformat -- "", uses from carbon.properties file
+   * f. complex_delimiter_level_1 -- "$"
+   * g. complex_delimiter_level_2 -- ":"
+   * h. quotechar -- "\""
+   * i. escapechar -- "\\"
    *
    * @return updated CarbonWriterBuilder
    */
@@ -280,7 +280,7 @@ public class CarbonWriterBuilder {
   /**
    * To set the carbondata file size in MB between 1MB-2048MB
    * @param blockSize is size in MB between 1MB to 2048 MB
-   *                  default value is 1024 MB
+   * default value is 1024 MB
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withBlockSize(int blockSize) {
@@ -294,7 +294,7 @@ public class CarbonWriterBuilder {
   /**
    * To set the blocklet size of carbondata file
    * @param blockletSize is blocklet size in MB
-   *                     default value is 64 MB
+   * default value is 64 MB
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withBlockletSize(int blockletSize) {
