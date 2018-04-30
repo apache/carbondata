@@ -28,6 +28,7 @@ import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
+import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -76,18 +77,9 @@ case class PreAggregateTableHelper(
       Seq()
     }
     // Generate child table partition columns in the same order as the parent table.
-    val partitionerFields = fieldRelationMap.collect {
-      case (field, dataMapField) if parentPartitionColumns
-        .exists(parentCol =>
-          /* For count(*) while Pre-Aggregate table creation,columnTableRelationList was null */
-          dataMapField.columnTableRelationList.getOrElse(Seq()).nonEmpty &&
-            parentCol.equals(dataMapField.columnTableRelationList.get.head.parentColumnName) &&
-          dataMapField.aggregateFunction.isEmpty) =>
-        (PartitionerField(field.name.get,
-          field.dataType,
-          field.columnComment), parentPartitionColumns
-          .indexOf(dataMapField.columnTableRelationList.get.head.parentColumnName))
-    }.toSeq.sortBy(_._2).map(_._1)
+    val partitionerFields =
+      PartitionUtils.getPartitionerFields(parentPartitionColumns, fieldRelationMap)
+
     dmProperties.foreach(t => tableProperties.put(t._1, t._2))
 
     val selectTable = PreAggregateUtil.getParentCarbonTable(df.logicalPlan)
