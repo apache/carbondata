@@ -334,11 +334,15 @@ public class CarbonWriterBuilder {
       // If sort columns are not specified, default set all dimensions to sort column.
       // When dimensions are default set to sort column,
       // Inverted index will be supported by default for sort columns.
+      //Null check for field to handle hole in field[] ex.
+      //  user passed size 4 but supplied only 2 fileds
       for (Field field : schema.getFields()) {
-        if (field.getDataType() == DataTypes.STRING ||
-            field.getDataType() == DataTypes.DATE ||
-            field.getDataType() == DataTypes.TIMESTAMP) {
-          sortColumnsList.add(field.getFieldName());
+        if (null != field) {
+          if (field.getDataType() == DataTypes.STRING ||
+              field.getDataType() == DataTypes.DATE ||
+              field.getDataType() == DataTypes.TIMESTAMP) {
+            sortColumnsList.add(field.getFieldName());
+          }
         }
       }
       sortColumns = new String[sortColumnsList.size()];
@@ -347,9 +351,11 @@ public class CarbonWriterBuilder {
       sortColumnsList = Arrays.asList(sortColumns);
     }
     for (Field field : schema.getFields()) {
-      tableSchemaBuilder.addColumn(
-          new StructField(field.getFieldName(), field.getDataType()),
-          sortColumnsList.contains(field.getFieldName()));
+      if (null != field) {
+        tableSchemaBuilder.addColumn(
+            new StructField(field.getFieldName(), field.getDataType()),
+            sortColumnsList.contains(field.getFieldName()));
+      }
     }
     String tableName;
     String dbName;
