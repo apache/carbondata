@@ -211,7 +211,7 @@ object CarbonDataRDDFactory {
                 compactionModel.isDDLTrigger,
                 CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
                   TableIdentifier(table.getTableName,
-                  Some(table.getDatabaseName))))
+                  Some(table.getDatabaseName))), None)
               // proceed for compaction
               try {
                 CompactionFactory.getCompactor(
@@ -734,7 +734,7 @@ object CarbonDataRDDFactory {
         isCompactionTriggerByDDl,
         CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
           TableIdentifier(carbonTable.getTableName,
-          Some(carbonTable.getDatabaseName))))
+            Some(carbonTable.getDatabaseName))), None)
       var storeLocation = ""
       val configuredStore = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
       if (null != configuredStore && configuredStore.nonEmpty) {

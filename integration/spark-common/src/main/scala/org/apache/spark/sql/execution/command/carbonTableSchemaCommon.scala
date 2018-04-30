@@ -126,7 +126,8 @@ case class AlterTableModel(
     segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
     compactionType: String,
     factTimeStamp: Option[Long],
-    var alterSql: String)
+    var alterSql: String,
+    customSegmentIds: Option[List[String]] = None)
 
 case class UpdateTableModel(
     isUpdate: Boolean,
@@ -138,7 +139,8 @@ case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,
     carbonTable: CarbonTable,
     isDDLTrigger: Boolean,
-    currentPartitions: Option[Seq[PartitionSpec]])
+    currentPartitions: Option[Seq[PartitionSpec]],
+    customSegmentIds: Option[List[String]])
 
 case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     carbonTable: CarbonTable,

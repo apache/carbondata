@@ -54,13 +54,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     )
     CarbonDataMergerUtil.sortSegments(sortedSegments)
 
-    var segList = carbonLoadModel.getLoadMetadataDetails
-    var loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-      carbonLoadModel,
-      compactionModel.compactionSize,
-      segList,
-      compactionModel.compactionType
-    )
+    var loadsToMerge = identifySegmentsToBeMerged()
+
     while (loadsToMerge.size() > 1 ||
            (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType &&
             loadsToMerge.size() > 0)) {
@@ -77,7 +72,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
 
       // scan again and determine if anything is there to merge again.
       carbonLoadModel.readAndSetLoadMetadataDetails()
-      segList = carbonLoadModel.getLoadMetadataDetails
+      var segList = carbonLoadModel.getLoadMetadataDetails
       // in case of major compaction we will scan only once and come out as it will keep
       // on doing major for the new loads also.
       // excluding the newly added segments.
@@ -87,15 +82,12 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           .filterOutNewlyAddedSegments(carbonLoadModel.getLoadMetadataDetails, lastSegment)
       }
 
-      if (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType) {
+      if (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType ||
+        CompactionType.CUSTOM == compactionModel.compactionType) {
         loadsToMerge.clear()
       } else if (segList.size > 0) {
-        loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-          carbonLoadModel,
-          compactionModel.compactionSize,
-          segList,
-          compactionModel.compactionType
-        )
+        loadsToMerge = identifySegmentsToBeMerged()
+
         if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
           carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
         }

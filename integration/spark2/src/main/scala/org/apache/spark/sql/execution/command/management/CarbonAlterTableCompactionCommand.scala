@@ -120,6 +120,18 @@ case class CarbonAlterTableCompactionCommand(
     } else if (compactionException.equalsIgnoreCase("false")) {
       Seq.empty
     } else {
+
+      if (compactionType != CompactionType.CUSTOM &&
+        alterTableModel.customSegmentIds.isDefined) {
+        throw new MalformedCarbonCommandException(
+          s"Custom segments not supported when doing ${compactionType.toString} compaction")
+      }
+      if (compactionType == CompactionType.CUSTOM &&
+        alterTableModel.customSegmentIds.isEmpty) {
+        throw new MalformedCarbonCommandException(
+          s"Segment ids should not be empty when doing ${compactionType.toString} compaction")
+      }
+
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(table.getTableName)
       val dataLoadSchema = new CarbonDataLoadSchema(table)
@@ -212,13 +224,20 @@ case class CarbonAlterTableCompactionCommand(
     carbonLoadModel.setFactTimeStamp(loadStartTime)
 
     val isCompactionTriggerByDDl = true
+    val segmentIds: Option[List[String]] = if (compactionType == CompactionType.CUSTOM &&
+      alterTableModel.customSegmentIds.isDefined) {
+      alterTableModel.customSegmentIds
+    } else {
+      None
+    }
     val compactionModel = CompactionModel(compactionSize,
       compactionType,
       carbonTable,
       isCompactionTriggerByDDl,
       CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
-        TableIdentifier(carbonTable.getTableName,
-        Some(carbonTable.getDatabaseName)))
+      TableIdentifier(carbonTable.getTableName,
+      Some(carbonTable.getDatabaseName))),
+      segmentIds
     )
 
     val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
