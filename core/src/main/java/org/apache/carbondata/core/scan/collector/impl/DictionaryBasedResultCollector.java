@@ -134,6 +134,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
           row[order[i]] =
               DataTypeUtil.getDataBasedOnDataType(scannedResult.getBlockletId(), DataTypes.STRING);
         }
+      } else if (complexDataTypeArray[i]) {
+        // Complex Type With No Dictionary Encoding.
+        row[order[i]] = comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal())
+            .getDataBasedOnDataType(ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
       } else {
         row[order[i]] = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(
             noDictionaryKeys[noDictionaryColumnIndex++],
@@ -146,7 +150,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       }
     } else if (complexDataTypeArray[i]) {
       row[order[i]] = comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal())
-          .getDataBasedOnDataTypeFromSurrogates(
+          .getDataBasedOnDataType(
               ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
       dictionaryColumnIndex++;
     } else {

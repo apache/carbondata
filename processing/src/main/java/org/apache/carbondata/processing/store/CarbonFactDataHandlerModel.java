@@ -199,7 +199,8 @@ public class CarbonFactDataHandlerModel {
 
     int dimensionCount = configuration.getDimensionCount();
     int noDictionaryCount = configuration.getNoDictionaryCount();
-    int complexDimensionCount = configuration.getComplexColumnCount();
+    int complexDimensionCount = configuration.getComplexDictionaryColumnCount() + configuration
+        .getComplexNonDictionaryColumnCount();
     int measureCount = configuration.getMeasureCount();
 
     int simpleDimsCount = dimensionCount - noDictionaryCount - complexDimensionCount;
@@ -210,8 +211,8 @@ public class CarbonFactDataHandlerModel {
     //To Set MDKey Index of each primitive type in complex type
     int surrIndex = simpleDimsCount;
     Iterator<Map.Entry<String, GenericDataType>> complexMap =
-        CarbonDataProcessorUtil.getComplexTypesMap(configuration.getDataFields()).entrySet()
-            .iterator();
+        CarbonDataProcessorUtil.getComplexTypesMap(configuration.getDataFields(), configuration)
+            .entrySet().iterator();
     Map<Integer, GenericDataType> complexIndexMap = new HashMap<>(complexDimensionCount);
     while (complexMap.hasNext()) {
       Map.Entry<String, GenericDataType> complexDataType = complexMap.next();
@@ -609,5 +610,6 @@ public class CarbonFactDataHandlerModel {
   public DataMapWriterListener getDataMapWriterlistener() {
     return dataMapWriterlistener;
   }
+
 }
 

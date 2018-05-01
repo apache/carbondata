@@ -17,13 +17,13 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
-import java.io.{File, FileFilter}
+import java.io.{File, FileFilter, IOException}
 import java.util
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.junit.Assert
+import org.junit.{Assert, Test}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -31,9 +31,14 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
-
+import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+
+import org.apache.commons.lang.CharEncoding
+import tech.allegro.schema.json2avro.converter.JsonAvroConverter
+
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 
 class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
@@ -637,7 +642,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
-
   test("test huge data write with one batch having bad record") {
 
     val exception =
@@ -647,5 +651,89 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Data load failed due to bad record"))
 
+  }
+
+
+  def buildAvroTestData(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    val newAvroSchema = "{" + " \"type\" : \"record\", " + "  \"name\" : \"userInfo\", " +
+                        "  \"namespace\" : \"my.example\", " +
+                        "  \"fields\" : [{\"name\" : \"username\", " +
+                        "  \"type\" : \"string\", " + "  \"default\" : \"NONE\"}, " +
+                        " {\"name\" : \"age\", " + " \"type\" : \"int\", " +
+                        " \"default\" : -1}, " + "{\"name\" : \"address\", " +
+                        "   \"type\" : { " + "  \"type\" : \"record\", " +
+                        "   \"name\" : \"mailing_address\", " + "  \"fields\" : [ {" +
+                        "        \"name\" : \"street\", " +
+                        "       \"type\" : \"string\", " +
+                        "       \"default\" : \"NONE\"}, { " + " \"name\" : \"city\", " +
+                        "  \"type\" : \"string\", " + "  \"default\" : \"NONE\"}, " +
+                        "                 ]}, " + " \"default\" : {} " + " } " + "}"
+    val mySchema = "{" + "  \"name\": \"address\", " + "   \"type\": \"record\", " +
+                   "    \"fields\": [  " +
+                   "  { \"name\": \"name\", \"type\": \"string\"}, " +
+                   "  { \"name\": \"age\", \"type\": \"int\"}, " + "  { " +
+                   "    \"name\": \"address\", " + "      \"type\": { " +
+                   "    \"type\" : \"record\", " + "        \"name\" : \"my_address\", " +
+                   "        \"fields\" : [ " +
+                   "    {\"name\": \"street\", \"type\": \"string\"}, " +
+                   "    {\"name\": \"city\", \"type\": \"string\"} " + "  ]} " + "  } " +
+                   "] " + "}"
+    val json = "{\"name\":\"bob\", \"age\":10, \"address\" : {\"street\":\"abc\", " +
+               "\"city\":\"bang\"}}"
+    // conversion to GenericData.Record
+    val nn = new org.apache.avro.Schema.Parser().parse(mySchema)
+    val converter = new JsonAvroConverter
+    val record = converter
+      .convertToGenericDataRecord(json.getBytes(CharEncoding.UTF_8), nn)
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.STRING)
+    // fields[1] = new Field("age", DataTypes.INT);
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("street", DataTypes.STRING))
+    fld.add(new StructField("city", DataTypes.STRING))
+    fields(2) = new Field("address", "struct", fld)
+    try {
+      val writer = CarbonWriter.builder.withSchema(new Schema(fields))
+        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput
+      var i = 0
+      while (i < rows) {
+        writer.write(record)
+        i = i + 1
+      }
+      writer.close()
+    }
+    catch {
+      case e: Exception => {
+        e.printStackTrace()
+        Assert.fail(e.getMessage)
+      }
+    }
+  }
+
+  def buildAvroTestDataSingleFile(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestData(3, null)
+  }
+
+  test("Read sdk writer Avro output ") {
+    buildAvroTestDataSingleFile()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("select * from sdkOutputTable").show(false)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("bob", "10", Row("abc","bang")),
+      Row("bob", "10", Row("abc","bang")),
+      Row("bob", "10", Row("abc","bang"))))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
   }
 }

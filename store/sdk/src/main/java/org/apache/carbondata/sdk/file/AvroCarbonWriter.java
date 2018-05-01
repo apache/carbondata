@@ -64,12 +64,12 @@ class AvroCarbonWriter extends CarbonWriter {
     this.writable = new ObjectArrayWritable();
   }
 
-  private String[] avroToCsv(GenericData.Record avroRecord) {
+  private Object[] avroToCsv(GenericData.Record avroRecord) {
     if (avroSchema == null) {
       avroSchema = avroRecord.getSchema();
     }
     List<Schema.Field> fields = avroSchema.getFields();
-    String[] csvField = new String[fields.size()];
+    Object [] csvField = new String[fields.size()];
     for (int i = 0; i < fields.size(); i++) {
       csvField[i] = avroFieldToString(fields.get(i), avroRecord.get(i));
     }
@@ -88,9 +88,25 @@ class AvroCarbonWriter extends CarbonWriter {
       case FLOAT:
         out.append(fieldValue.toString());
         break;
+      case RECORD:
+        List<Schema.Field> fields = fieldType.schema().getFields();
+        String delimiter = null;
+        for (int i = 0; i < fields.size(); i ++) {
+          if (i == 0) {
+            delimiter = "$";
+          } else {
+            delimiter = ":";
+          }
+          if (i != (fields.size() - 1)) {
+            out.append(avroFieldToString(fields.get(i), ((GenericData.Record) fieldValue).get(i)))
+                .append(delimiter);
+          } else {
+            out.append(avroFieldToString(fields.get(i), ((GenericData.Record) fieldValue).get(i)));
+          }
+        }
+        break;
       default:
         throw new UnsupportedOperationException();
-      // TODO: convert complex type
     }
     return out.toString();
   }
@@ -104,7 +120,7 @@ class AvroCarbonWriter extends CarbonWriter {
       GenericData.Record record = (GenericData.Record) object;
 
       // convert Avro record to CSV String[]
-      String[] csvRecord = avroToCsv(record);
+      Object[] csvRecord = avroToCsv(record);
       writable.set(csvRecord);
       recordWriter.write(NullWritable.get(), writable);
     } catch (Exception e) {
@@ -116,8 +132,7 @@ class AvroCarbonWriter extends CarbonWriter {
   /**
    * Flush and close the writer
    */
-  @Override
-  public void close() throws IOException {
+  @Override public void close() throws IOException {
     try {
       recordWriter.close(context);
     } catch (InterruptedException e) {

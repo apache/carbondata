@@ -87,7 +87,9 @@ public class CarbonDataLoadConfiguration {
 
   private int noDictionaryCount;
 
-  private int complexColumnCount;
+  private int complexDictionaryColumnCount;
+
+  private int complexNonDictionaryColumnCount;
 
   /**
    * schema updated time stamp to be used for restructure scenarios
@@ -128,13 +130,17 @@ public class CarbonDataLoadConfiguration {
       CarbonColumn column = dataField.getColumn();
       if (column.isDimension()) {
         dimensionCount++;
-        if (!dataField.hasDictionaryEncoding()) {
+        if (column.isComplex()) {
+          if (!dataField.hasDictionaryEncoding()) {
+            complexNonDictionaryColumnCount++;
+          } else {
+            complexDictionaryColumnCount++;
+          }
+        } else if (!dataField.hasDictionaryEncoding()) {
           noDictionaryCount++;
         }
       }
-      if (column.isComplex()) {
-        complexColumnCount++;
-      }
+
       if (column.isMeasure()) {
         measureCount++;
       }
@@ -153,8 +159,8 @@ public class CarbonDataLoadConfiguration {
     return noDictionaryCount;
   }
 
-  public int getComplexColumnCount() {
-    return complexColumnCount;
+  public int getComplexDictionaryColumnCount() {
+    return complexDictionaryColumnCount;
   }
 
   public int getMeasureCount() {
@@ -387,4 +393,9 @@ public class CarbonDataLoadConfiguration {
   public void setCarbonTransactionalTable(boolean carbonTransactionalTable) {
     this.carbonTransactionalTable = carbonTransactionalTable;
   }
+
+  public int getComplexNonDictionaryColumnCount() {
+    return complexNonDictionaryColumnCount;
+  }
+
 }
