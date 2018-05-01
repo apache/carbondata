@@ -155,13 +155,13 @@ public final class TableDataMap extends OperationEventListener {
     String writePath =
         identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + dataMapSchema
             .getDataMapName();
-    if (dataMapFactory.getDataMapType() == DataMapLevel.FG) {
+    if (dataMapFactory.getDataMapLevel() == DataMapLevel.FG) {
       FileFactory.mkdirs(writePath, FileFactory.getFileType(writePath));
     }
     for (Blocklet blocklet : blocklets) {
       ExtendedBlocklet detailedBlocklet = blockletDetailsFetcher
           .getExtendedBlocklet(blocklet, distributable.getSegment());
-      if (dataMapFactory.getDataMapType() == DataMapLevel.FG) {
+      if (dataMapFactory.getDataMapLevel() == DataMapLevel.FG) {
         String blockletwritePath =
             writePath + CarbonCommonConstants.FILE_SEPARATOR + System.nanoTime();
         detailedBlocklet.setDataMapWriterPath(blockletwritePath);

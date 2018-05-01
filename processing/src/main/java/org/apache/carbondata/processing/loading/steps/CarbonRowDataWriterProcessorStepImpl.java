@@ -153,7 +153,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     return null;
   }
 
-  private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) {
+  private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) throws IOException {
     String[] storeLocation = getStoreLocation(tableIdentifier);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
         configuration, storeLocation, 0, iteratorIndex);
@@ -301,7 +301,12 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     }
 
     @Override public void run() {
-      doExecute(this.iterator, iteratorIndex);
+      try {
+        doExecute(this.iterator, iteratorIndex);
+      } catch (IOException e) {
+        LOGGER.error(e);
+        throw new RuntimeException(e);
+      }
     }
   }
 }

@@ -34,7 +34,6 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactor
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
@@ -57,7 +56,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
 
   // this is an example for datamap, we can choose the columns and operations that
   // will be supported by this datamap. Furthermore, we can add cache-support for this datamap.
-  @Override public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+  @Override public void init(DataMapSchema dataMapSchema)
       throws IOException, MalformedDataMapCommandException {
     this.identifier = carbonTable.getAbsoluteTableIdentifier();
     this.dataMapName = dataMapSchema.getDataMapName();
@@ -87,10 +86,11 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * createWriter will return the MinMaxDataWriter.
    *
    * @param segment
+   * @param shardName
    * @return
    */
-  @Override public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
-    return new MinMaxDataWriter(identifier, dataMapName, segment, writeDirectoryPath);
+  @Override public DataMapWriter createWriter(Segment segment, String shardName) {
+    return new MinMaxDataWriter(identifier, dataMapName, segment, shardName);
   }
 
   /**

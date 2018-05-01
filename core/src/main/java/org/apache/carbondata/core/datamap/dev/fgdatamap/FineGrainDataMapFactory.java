@@ -20,6 +20,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
 /**
  *  Factory for {@link FineGrainDataMap}
@@ -35,10 +36,14 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
  */
 @InterfaceAudience.Developer("DataMap")
 @InterfaceStability.Evolving
-public abstract class FineGrainDataMapFactory
-    implements DataMapFactory<FineGrainDataMap> {
+public abstract class FineGrainDataMapFactory extends DataMapFactory<FineGrainDataMap> {
 
-  @Override public DataMapLevel getDataMapType() {
+  public FineGrainDataMapFactory(CarbonTable carbonTable) {
+    super(carbonTable);
+  }
+
+  @Override
+  public DataMapLevel getDataMapLevel() {
     return DataMapLevel.FG;
   }
 }

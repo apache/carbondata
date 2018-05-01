@@ -58,6 +58,10 @@ public class Segment implements Serializable {
    */
   private LoadMetadataDetails loadMetadataDetails;
 
+  public Segment(String segmentNo) {
+    this.segmentNo = segmentNo;
+  }
+
   /**
    * ReadCommittedScope will be null. So getCommittedIndexFile will not work and will throw
    * a NullPointerException. In case getCommittedIndexFile is need to be accessed then

@@ -25,23 +25,21 @@ import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.dev.DataMapModel
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
+import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapRefresher, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainDataMap, FineGrainDataMapFactory}
-import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapWriter}
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
+import org.apache.carbondata.core.datastore.row.CarbonRow
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
@@ -51,14 +49,14 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class FGDataMapFactory extends FineGrainDataMapFactory {
+class FGDataMapFactory(carbonTable: CarbonTable) extends FineGrainDataMapFactory(carbonTable) {
   var identifier: AbsoluteTableIdentifier = _
   var dataMapSchema: DataMapSchema = _
 
   /**
    * Initialization of Datamap factory with the identifier and datamap name
    */
-  override def init(carbonTable: CarbonTable, dataMapSchema: DataMapSchema): Unit = {
+  override def init(dataMapSchema: DataMapSchema): Unit = {
     this.identifier = carbonTable.getAbsoluteTableIdentifier
     this.dataMapSchema = dataMapSchema
   }
@@ -66,8 +64,8 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segment: Segment, dataWritePath: String): DataMapWriter = {
-    new FGDataMapWriter(identifier, segment, dataWritePath, dataMapSchema)
+  override def createWriter(segment: Segment, shardName: String): DataMapWriter = {
+    new FGDataMapWriter(carbonTable, segment, shardName, dataMapSchema)
   }
 
   /**
@@ -135,7 +133,7 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
    * Return metadata of this datamap
    */
   override def getMeta: DataMapMeta = {
-    new DataMapMeta(dataMapSchema.getProperties.get("indexcolumns").split(",").toList.asJava,
+    new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema),
       List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
   }
 
@@ -151,6 +149,11 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
    */
   override def willBecomeStale(operation: TableOperation): Boolean = {
     false
+  }
+
+  override def createRefresher(segment: Segment,
+      shardName: String): DataMapRefresher = {
+    ???
   }
 }
 
@@ -266,12 +269,16 @@ class FGDataMap extends FineGrainDataMap {
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
 }
 
-class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
-    segment: Segment, dataWriterPath: String, dataMapSchema: DataMapSchema)
-  extends DataMapWriter(identifier, segment, dataWriterPath) {
+class FGDataMapWriter(
+    carbonTable: CarbonTable,
+    segment: Segment,
+    shardName: String,
+    dataMapSchema: DataMapSchema)
+  extends DataMapWriter(carbonTable.getTablePath, "testdm", carbonTable.getIndexedColumns(dataMapSchema),
+    segment, shardName) {
 
-  var taskName: String = _
-  val fgwritepath = dataWriterPath + "/" + dataMapSchema.getDataMapName +"/"
+  var taskName: String = shardName
+  val fgwritepath = shardName + "/" + dataMapSchema.getDataMapName + "/"
   var stream: DataOutputStream = _
   val blockletList = new ArrayBuffer[(Array[Byte], Seq[Int], Seq[Int])]()
   val maxMin = new ArrayBuffer[(Int, (Array[Byte], Array[Byte]), Long, Int)]()
@@ -283,8 +290,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockId file name of the carbondata file
    */
-  override def onBlockStart(blockId: String, taskId: String): Unit = {
-    this.taskName = taskId
+  override def onBlockStart(blockId: String): Unit = {
     if (stream == null) {
       FileFactory.mkdirs(fgwritepath, FileFactory.getFileType(fgwritepath))
       stream = FileFactory
@@ -352,6 +358,8 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
     blockletList.clear()
   }
 
+  var list: ArrayBuffer[(Array[Byte], Int)] = _
+
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
    * DataMapMeta returned in DataMapFactory.
@@ -359,43 +367,41 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
    */
-  override def onPageAdded(blockletId: Int,
-      pageId: Int,
-      pages: Array[ColumnPage]): Unit = {
-    val size = pages(0).getPageSize
-    val list = new ArrayBuffer[(Array[Byte], Int)]()
-    var i = 0
-    while (i < size) {
-      val bytes = pages(0).getBytes(i)
-      val newBytes = new Array[Byte](bytes.length - 2)
-      System.arraycopy(bytes, 2, newBytes, 0, newBytes.length)
-      list += ((newBytes, i))
-      i = i + 1
-    }
-    // Sort based on the column data in order to create index.
-    val sorted = list
-      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l._1, r._1) <= 0)
-    var oldValue: (Array[Byte], Seq[Int], Seq[Int]) = null
-    var addedLast: Boolean = false
-    // Merge all same column values to single row.
-    sorted.foreach { f =>
-      if (oldValue != null) {
-        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(f._1, oldValue._1) == 0) {
-          oldValue = (oldValue._1, oldValue._2 ++ Seq(f._2), oldValue._3)
-          addedLast = false
-        } else {
-          blockletList += oldValue
-          oldValue = (f._1, Seq(f._2), Seq(pageId))
-          addedLast = true
+  override def addRow(blockletId: Int, pageId: Int, rowId: Int, row: CarbonRow): Unit = {
+    if (rowId == 0) {
+      if (pageId > 0) {
+        // Sort based on the column data in order to create index.
+        val sorted = list
+          .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l._1, r._1) <= 0)
+        var oldValue: (Array[Byte], Seq[Int], Seq[Int]) = null
+        var addedLast: Boolean = false
+        // Merge all same column values to single row.
+        sorted.foreach { f =>
+          if (oldValue != null) {
+            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(f._1, oldValue._1) == 0) {
+              oldValue = (oldValue._1, oldValue._2 ++ Seq(f._2), oldValue._3)
+              addedLast = false
+            } else {
+              blockletList += oldValue
+              oldValue = (f._1, Seq(f._2), Seq(pageId))
+              addedLast = true
+            }
+          } else {
+            oldValue = (f._1, Seq(f._2), Seq(pageId))
+            addedLast = false
+          }
         }
-      } else {
-        oldValue = (f._1, Seq(f._2), Seq(pageId))
-        addedLast = false
+        if (!addedLast && oldValue != null) {
+          blockletList += oldValue
+        }
       }
+      list = new ArrayBuffer[(Array[Byte], Int)]()
     }
-    if (!addedLast && oldValue != null) {
-      blockletList += oldValue
-    }
+
+    val bytes = row.getData()(0).asInstanceOf[Array[Byte]]
+    val newBytes = new Array[Byte](bytes.length - 2)
+    System.arraycopy(bytes, 2, newBytes, 0, newBytes.length)
+    list += ((newBytes, rowId))
   }
 
 

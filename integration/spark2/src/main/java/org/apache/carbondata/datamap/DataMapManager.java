@@ -17,8 +17,11 @@
 
 package org.apache.carbondata.datamap;
 
+import java.io.IOException;
+
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapProvider;
-import org.apache.carbondata.core.datamap.IndexDataMapProvider;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
@@ -42,15 +45,15 @@ public class DataMapManager {
   /**
    * Return a DataMapClassProvider instance for specified dataMapSchema.
    */
-  public DataMapProvider getDataMapProvider(DataMapSchema dataMapSchema,
-      SparkSession sparkSession) {
+  public DataMapProvider getDataMapProvider(CarbonTable mainTable, DataMapSchema dataMapSchema,
+      SparkSession sparkSession) throws MalformedDataMapCommandException, IOException {
     DataMapProvider provider;
     if (dataMapSchema.getProviderName().equalsIgnoreCase(PREAGGREGATE.toString())) {
-      provider = new PreAggregateDataMapProvider(sparkSession);
+      provider = new PreAggregateDataMapProvider(mainTable, dataMapSchema, sparkSession);
     } else if (dataMapSchema.getProviderName().equalsIgnoreCase(TIMESERIES.toString())) {
-      provider = new TimeseriesDataMapProvider(sparkSession);
+      provider = new TimeseriesDataMapProvider(mainTable, dataMapSchema, sparkSession);
     } else {
-      provider = new IndexDataMapProvider();
+      provider = new IndexDataMapProvider(mainTable, dataMapSchema, sparkSession);
     }
     return provider;
   }

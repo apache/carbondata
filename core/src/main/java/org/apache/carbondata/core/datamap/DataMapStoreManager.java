@@ -87,7 +87,7 @@ public final class DataMapStoreManager {
     List<TableDataMap> tableIndices = getAllVisibleDataMap(carbonTable);
     if (tableIndices != null) {
       for (TableDataMap dataMap : tableIndices) {
-        if (mapType == dataMap.getDataMapFactory().getDataMapType()) {
+        if (mapType == dataMap.getDataMapFactory().getDataMapLevel()) {
           dataMaps.add(dataMap);
         }
       }
@@ -262,22 +262,19 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * Return a new datamap instance for the given
-   * @param dataMapSchema
-   * @return
-   * @throws MalformedDataMapCommandException
+   * Return a new datamap instance and registered in the store manager.
+   * The datamap is created using datamap name, datamap factory class and table identifier.
    */
-  public DataMapFactory getDataMapFactoryClass(DataMapSchema dataMapSchema)
+  public DataMapFactory getDataMapFactoryClass(CarbonTable table, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     DataMapFactory dataMapFactory;
     try {
       // try to create datamap by reflection to test whether it is a valid DataMapFactory class
-      Class<? extends DataMapFactory> factoryClass =
-          (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getProviderName());
-      return factoryClass.newInstance();
+      return (DataMapFactory)
+          Class.forName(dataMapSchema.getProviderName()).getConstructors()[0].newInstance(table);
     } catch (ClassNotFoundException e) {
       // try to create DataMapClassProvider instance by taking providerName as short name
-      return IndexDataMapProvider.getDataMapFactoryByShortName(dataMapSchema.getProviderName());
+      return DataMapRegistry.getDataMapByShortName(table, dataMapSchema.getProviderName());
     } catch (Throwable e) {
       throw new MetadataProcessException(
           "failed to get DataMap factory for'" + dataMapSchema.getProviderName() + "'", e);
@@ -291,7 +288,7 @@ public final class DataMapStoreManager {
   // TODO: make it private
   public TableDataMap createAndRegisterDataMap(CarbonTable table,
       DataMapSchema dataMapSchema) throws MalformedDataMapCommandException, IOException {
-    DataMapFactory dataMapFactory  = getDataMapFactoryClass(dataMapSchema);
+    DataMapFactory dataMapFactory  = getDataMapFactoryClass(table, dataMapSchema);
     return registerDataMap(table, dataMapSchema, dataMapFactory);
   }
 
@@ -306,7 +303,7 @@ public final class DataMapStoreManager {
       tableIndices = new ArrayList<>();
     }
 
-    dataMapFactory.init(table, dataMapSchema);
+    dataMapFactory.init(dataMapSchema);
     BlockletDetailsFetcher blockletDetailsFetcher;
     SegmentPropertiesFetcher segmentPropertiesFetcher = null;
     if (dataMapFactory instanceof BlockletDetailsFetcher) {

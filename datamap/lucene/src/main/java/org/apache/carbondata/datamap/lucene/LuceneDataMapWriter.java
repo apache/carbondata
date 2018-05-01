@@ -28,11 +28,12 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -76,11 +77,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   private Analyzer analyzer = null;
 
-  private String dataMapName = null;
-
   private boolean isFineGrain = true;
-
-  private List<String> indexedCarbonColumns = null;
 
   public static final String BLOCKLETID_NAME = "blockletId";
 
@@ -90,69 +87,54 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   public static final String ROWID_NAME = "rowId";
 
-  LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String dataMapName, Segment segment,
-      String writeDirectoryPath, boolean isFineGrain, List<String> indexedCarbonColumns) {
-    super(identifier, segment, writeDirectoryPath);
-    this.dataMapName = dataMapName;
+  LuceneDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
+      Segment segment, String shardName, boolean isFineGrain) {
+    super(tablePath, dataMapName, indexColumns, segment, shardName);
     this.isFineGrain = isFineGrain;
-    this.indexedCarbonColumns = indexedCarbonColumns;
-  }
-
-  private String getIndexPath(String taskName) {
-    if (isFineGrain) {
-      return genDataMapStorePathOnTaskId(identifier.getTablePath(), segmentId, dataMapName,
-          taskName);
-    } else {
-      // TODO: where write data in coarse grain data map
-      return genDataMapStorePathOnTaskId(identifier.getTablePath(), segmentId, dataMapName,
-          taskName);
-    }
   }
 
   /**
    * Start of new block notification.
    */
-  public void onBlockStart(String blockId, String indexShardName) throws IOException {
-    if (this.indexShardName == null || !this.indexShardName.equals(indexShardName)) {
-      if (indexWriter != null) {
-        return;
+  public void onBlockStart(String blockId) throws IOException {
+    if (indexWriter != null) {
+      return;
+    }
+    // get index path, put index data into segment's path
+    Path indexPath = FileFactory.getPath(dataMapPath);
+    FileSystem fs = FileFactory.getFileSystem(indexPath);
+
+    // if index path not exists, create it
+    if (!fs.exists(indexPath)) {
+      if (!fs.mkdirs(indexPath)) {
+        throw new IOException("Failed to create directory " + dataMapPath);
       }
-      // get index path, put index data into segment's path
-      String strIndexPath = getIndexPath(indexShardName);
-      Path indexPath = FileFactory.getPath(strIndexPath);
-      FileSystem fs = FileFactory.getFileSystem(indexPath);
-
-      // if index path not exists, create it
-      if (!fs.exists(indexPath)) {
-        fs.mkdirs(indexPath);
-      }
-
-      if (null == analyzer) {
-        analyzer = new StandardAnalyzer();
-      }
-
-      // the indexWriter closes the FileSystem on closing the writer, so for a new configuration
-      // and disable the cache for the index writer, it will be closed on closing the writer
-      Configuration conf = new Configuration();
-      conf.set("fs.hdfs.impl.disable.cache", "true");
-
-      // create a index writer
-      Directory indexDir = new HdfsDirectory(indexPath, conf);
-
-      IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
-      if (CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
-              CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
-          .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
-        indexWriterConfig.setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED));
-      } else {
-        indexWriterConfig
-            .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
-      }
-
-      indexWriter = new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
     }
 
+    if (null == analyzer) {
+      analyzer = new StandardAnalyzer();
+    }
+
+    // the indexWriter closes the FileSystem on closing the writer, so for a new configuration
+    // and disable the cache for the index writer, it will be closed on closing the writer
+    Configuration conf = new Configuration();
+    conf.set("fs.hdfs.impl.disable.cache", "true");
+
+    // create a index writer
+    Directory indexDir = new HdfsDirectory(indexPath, conf);
+
+    IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
+    if (CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
+            CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
+        .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
+      indexWriterConfig.setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED));
+    } else {
+      indexWriterConfig
+          .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
+    }
+
+    indexWriter = new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
   }
 
   /**
@@ -162,18 +144,30 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   }
 
+  private RAMDirectory ramDir;
+  private IndexWriter ramIndexWriter;
+
   /**
    * Start of new blocklet notification.
    */
-  public void onBlockletStart(int blockletId) {
-
+  public void onBlockletStart(int blockletId) throws IOException {
+    // save index data into ram, write into disk after one page finished
+    ramDir = new RAMDirectory();
+    ramIndexWriter = new IndexWriter(ramDir, new IndexWriterConfig(analyzer));
   }
 
   /**
    * End of blocklet notification
    */
-  public void onBlockletEnd(int blockletId) {
+  public void onBlockletEnd(int blockletId) throws IOException {
+    // close ram writer
+    ramIndexWriter.close();
 
+    // add ram index data into disk
+    indexWriter.addIndexes(ramDir);
+
+    // delete this ram data
+    ramDir.close();
   }
 
   /**
@@ -182,72 +176,50 @@ public class LuceneDataMapWriter extends DataMapWriter {
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
    */
-  public void onPageAdded(int blockletId, int pageId, ColumnPage[] pages) throws IOException {
-    // save index data into ram, write into disk after one page finished
-    RAMDirectory ramDir = new RAMDirectory();
-    IndexWriter ramIndexWriter = new IndexWriter(ramDir, new IndexWriterConfig(analyzer));
+  public void addRow(int blockletId, int pageId, int rowId, CarbonRow row) throws IOException {
 
-    int columnsCount = pages.length;
-    if (columnsCount <= 0) {
-      LOGGER.warn("empty data");
-      ramIndexWriter.close();
-      ramDir.close();
-      return;
+    // create a new document
+    Document doc = new Document();
+    // add blocklet Id
+    doc.add(new IntPoint(BLOCKLETID_NAME, blockletId));
+    doc.add(new StoredField(BLOCKLETID_NAME, blockletId));
+    //doc.add(new NumericDocValuesField(BLOCKLETID_NAME,blockletId));
+
+    // add page id and row id in Fine Grain data map
+    if (isFineGrain) {
+      // add page Id
+      doc.add(new IntPoint(PAGEID_NAME, pageId));
+      doc.add(new StoredField(PAGEID_NAME, pageId));
+      //doc.add(new NumericDocValuesField(PAGEID_NAME,pageId));
+
+      // add row id
+      doc.add(new IntPoint(ROWID_NAME, rowId));
+      doc.add(new StoredField(ROWID_NAME, rowId));
+      //doc.add(new NumericDocValuesField(ROWID_NAME,rowId));
     }
 
-    int pageSize = pages[0].getPageSize();
-    for (int rowId = 0; rowId < pageSize; rowId++) {
-      // create a new document
-      Document doc = new Document();
-      // add blocklet Id
-      doc.add(new IntPoint(BLOCKLETID_NAME, new int[] { blockletId }));
-      doc.add(new StoredField(BLOCKLETID_NAME, blockletId));
-      //doc.add(new NumericDocValuesField(BLOCKLETID_NAME,blockletId));
-
-      // add page id and row id in Fine Grain data map
-      if (isFineGrain) {
-        // add page Id
-        doc.add(new IntPoint(PAGEID_NAME, new int[] { pageId }));
-        doc.add(new StoredField(PAGEID_NAME, pageId));
-        //doc.add(new NumericDocValuesField(PAGEID_NAME,pageId));
-
-        // add row id
-        doc.add(new IntPoint(ROWID_NAME, new int[] { rowId }));
-        doc.add(new StoredField(ROWID_NAME, rowId));
-        //doc.add(new NumericDocValuesField(ROWID_NAME,rowId));
+    // add indexed columns value into the document
+    Object[] rowData = row.getData();
+    for (int i = 0; i < rowData.length; i++) {
+      if (rowData[i] != null) {
+        addField(doc, rowData[i], indexColumns.get(i), Field.Store.NO);
       }
-
-      // add indexed columns value into the document
-      for (ColumnPage page : pages) {
-        if (!page.getNullBits().get(rowId)) {
-          addField(doc, page, rowId, Field.Store.NO);
-        }
-      }
-
-      // add this document
-      ramIndexWriter.addDocument(doc);
-
     }
-    // close ram writer
-    ramIndexWriter.close();
 
-    // add ram index data into disk
-    indexWriter.addIndexes(new Directory[] { ramDir });
-
-    // delete this ram data
-    ramDir.close();
+    // add this document
+    ramIndexWriter.addDocument(doc);
   }
 
-  private boolean addField(Document doc, ColumnPage page, int rowId, Field.Store store) {
+  private boolean addField(Document doc, Object data, CarbonColumn column, Field.Store store) {
     //get field name
-    String fieldName = page.getColumnSpec().getFieldName();
+    String fieldName = column.getColName();
 
     //get field type
-    DataType type = page.getColumnSpec().getSchemaDataType();
+    DataType type = column.getDataType();
 
     if (type == DataTypes.BYTE) {
       // byte type , use int range to deal with byte, lucene has no byte type
-      byte value = page.getByte(rowId);
+      byte value = (byte) data;
       IntRangeField field =
           new IntRangeField(fieldName, new int[] { Byte.MIN_VALUE }, new int[] { Byte.MAX_VALUE });
       field.setIntValue(value);
@@ -259,7 +231,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
       }
     } else if (type == DataTypes.SHORT) {
       // short type , use int range to deal with short type, lucene has no short type
-      short value = page.getShort(rowId);
+      short value = (short) data;
       IntRangeField field = new IntRangeField(fieldName, new int[] { Short.MIN_VALUE },
           new int[] { Short.MAX_VALUE });
       field.setShortValue(value);
@@ -271,8 +243,8 @@ public class LuceneDataMapWriter extends DataMapWriter {
       }
     } else if (type == DataTypes.INT) {
       // int type , use int point to deal with int type
-      int value = page.getInt(rowId);
-      doc.add(new IntPoint(fieldName, new int[] { value }));
+      int value = (int) data;
+      doc.add(new IntPoint(fieldName, value));
 
       // if need store it , add StoredField
       if (store == Field.Store.YES) {
@@ -280,27 +252,27 @@ public class LuceneDataMapWriter extends DataMapWriter {
       }
     } else if (type == DataTypes.LONG) {
       // long type , use long point to deal with long type
-      long value = page.getLong(rowId);
-      doc.add(new LongPoint(fieldName, new long[] { value }));
+      long value = (long) data;
+      doc.add(new LongPoint(fieldName, value));
 
       // if need store it , add StoredField
       if (store == Field.Store.YES) {
         doc.add(new StoredField(fieldName, value));
       }
     } else if (type == DataTypes.FLOAT) {
-      float value = page.getFloat(rowId);
-      doc.add(new FloatPoint(fieldName, new float[] { value }));
+      float value = (float) data;
+      doc.add(new FloatPoint(fieldName, value));
       if (store == Field.Store.YES) {
         doc.add(new FloatPoint(fieldName, value));
       }
     } else if (type == DataTypes.DOUBLE) {
-      double value = page.getDouble(rowId);
-      doc.add(new DoublePoint(fieldName, new double[] { value }));
+      double value = (double) data;
+      doc.add(new DoublePoint(fieldName, value));
       if (store == Field.Store.YES) {
         doc.add(new DoublePoint(fieldName, value));
       }
     } else if (type == DataTypes.STRING) {
-      byte[] value = page.getBytes(rowId);
+      byte[] value = (byte[]) data;
       // TODO: how to get string value
       String strValue = null;
       try {
@@ -310,11 +282,11 @@ public class LuceneDataMapWriter extends DataMapWriter {
       }
       doc.add(new TextField(fieldName, strValue, store));
     } else if (type == DataTypes.DATE) {
-      // TODO: how to get data value
+      throw new RuntimeException("unsupported data type " + type);
     } else if (type == DataTypes.TIMESTAMP) {
-      // TODO: how to get
+      throw new RuntimeException("unsupported data type " + type);
     } else if (type == DataTypes.BOOLEAN) {
-      boolean value = page.getBoolean(rowId);
+      boolean value = (boolean) data;
       IntRangeField field = new IntRangeField(fieldName, new int[] { 0 }, new int[] { 1 });
       field.setIntValue(value ? 1 : 0);
       doc.add(field);
@@ -339,23 +311,4 @@ public class LuceneDataMapWriter extends DataMapWriter {
     }
   }
 
-  /**
-   * Return store path for datamap
-   */
-  public static String genDataMapStorePath(String tablePath, String segmentId, String dataMapName) {
-    return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName;
-  }
-
-  /**
-   * Return store path for datamap based on the taskName,if three tasks get launched during loading,
-   * then three folders will be created based on the three task Ids and lucene index file will be
-   * written into those folders
-   *
-   * @return store path based on taskID
-   */
-  public static String genDataMapStorePathOnTaskId(String tablePath, String segmentId,
-      String dataMapName, String taskName) {
-    return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName
-        + File.separator + taskName;
-  }
 }

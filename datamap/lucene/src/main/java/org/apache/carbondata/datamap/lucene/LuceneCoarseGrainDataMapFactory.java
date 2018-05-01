@@ -28,9 +28,11 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
 /**
  * FG level of lucene DataMap
@@ -39,6 +41,10 @@ import org.apache.carbondata.core.memory.MemoryException;
 public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<CoarseGrainDataMap> {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LuceneCoarseGrainDataMapFactory.class.getName());
+
+  public LuceneCoarseGrainDataMapFactory(CarbonTable carbonTable) {
+    super(carbonTable);
+  }
 
   /**
    * Get the datamap for segmentid
@@ -49,7 +55,7 @@ public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<Co
     CoarseGrainDataMap dataMap = new LuceneCoarseGrainDataMap(analyzer);
     try {
       dataMap.init(new DataMapModel(
-          LuceneDataMapWriter.genDataMapStorePath(
+          DataMapWriter.getDefaultDataMapPath(
               tableIdentifier.getTablePath(), segment.getSegmentNo(), dataMapName)));
     } catch (MemoryException e) {
       LOGGER.error("failed to get lucene datamap , detail is {}" + e.getMessage());
@@ -69,7 +75,7 @@ public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<Co
   }
 
   @Override
-  public DataMapLevel getDataMapType() {
+  public DataMapLevel getDataMapLevel() {
     return DataMapLevel.CG;
   }
 

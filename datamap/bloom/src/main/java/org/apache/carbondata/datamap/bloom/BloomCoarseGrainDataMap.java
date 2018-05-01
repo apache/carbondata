@@ -62,7 +62,6 @@ import org.apache.hadoop.fs.PathFilter;
 public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BloomCoarseGrainDataMap.class.getName());
-  private String[] indexFilePath;
   private Set<String> indexedColumn;
   private List<BloomDMModel> bloomIndexList;
   private Multimap<String, List<BloomDMModel>> indexCol2BloomDMList;
@@ -88,18 +87,17 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         return path.getName().endsWith(BLOOM_INDEX_SUFFIX);
       }
     });
-    indexFilePath = new String[indexFileStatus.length];
     indexedColumn = new HashSet<String>();
     bloomIndexList = new ArrayList<BloomDMModel>();
     indexCol2BloomDMList = ArrayListMultimap.create();
     for (int i = 0; i < indexFileStatus.length; i++) {
-      indexFilePath[i] = indexFileStatus[i].getPath().toString();
       String indexfilename = indexFileStatus[i].getPath().getName();
       String indexCol =
           indexfilename.substring(0, indexfilename.length() - BLOOM_INDEX_SUFFIX.length());
       indexedColumn.add(indexCol);
-      bloomIndexList.addAll(readBloomIndex(indexFilePath[i]));
-      indexCol2BloomDMList.put(indexCol, readBloomIndex(indexFilePath[i]));
+      List<BloomDMModel> models = readBloomIndex(indexFileStatus[i].getPath().toString());
+      bloomIndexList.addAll(models);
+      indexCol2BloomDMList.put(indexCol, models);
     }
     LOGGER.info("find bloom index datamap for column: "
         + StringUtils.join(indexedColumn, ", "));

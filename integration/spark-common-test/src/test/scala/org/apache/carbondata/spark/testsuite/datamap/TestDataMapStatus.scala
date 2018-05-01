@@ -26,15 +26,13 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.DataMapWriter
+import org.apache.carbondata.core.datamap.dev.{DataMapRefresher, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datamap.status.{DataMapStatus, DataMapStatusManager}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
-import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
@@ -56,7 +54,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap on table datamapstatustest using '${classOf[TestDataMap].getName}' as select id,sum(age) from datamapstatustest group by id""".stripMargin)
+      s"""create datamap statusdatamap on table datamapstatustest using '${classOf[TestDataMapFactory].getName}' as select id,sum(age) from datamapstatustest group by id""".stripMargin)
 
     val details = DataMapStatusManager.readDataMapStatusDetails()
 
@@ -74,7 +72,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap1 on table datamapstatustest1 using '${classOf[TestDataMap].getName}' as select id,sum(age) from datamapstatustest1 group by id""".stripMargin)
+      s"""create datamap statusdatamap1 on table datamapstatustest1 using '${classOf[TestDataMapFactory].getName}' as select id,sum(age) from datamapstatustest1 group by id""".stripMargin)
 
     var details = DataMapStatusManager.readDataMapStatusDetails()
 
@@ -97,7 +95,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap2 on table datamapstatustest2 using '${classOf[TestDataMap].getName}' as select id,sum(age) from datamapstatustest1 group by id""".stripMargin)
+      s"""create datamap statusdatamap2 on table datamapstatustest2 using '${classOf[TestDataMapFactory].getName}' as select id,sum(age) from datamapstatustest1 group by id""".stripMargin)
 
     var details = DataMapStatusManager.readDataMapStatusDetails()
 
@@ -129,14 +127,14 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     intercept[MalformedDataMapCommandException] {
       sql(
         s"""create datamap statusdatamap3 using '${
-          classOf[TestDataMap]
+          classOf[TestDataMapFactory]
             .getName
         }' as select id,sum(age) from datamapstatustest3 group by id""".stripMargin)
     }
 
     sql(
       s"""create datamap statusdatamap3 on table datamapstatustest3 using '${
-        classOf[TestDataMap]
+        classOf[TestDataMapFactory]
           .getName
       }' as select id,sum(age) from datamapstatustest3 group by id""".stripMargin)
 
@@ -176,7 +174,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
   }
 }
 
-class TestDataMap() extends CoarseGrainDataMapFactory {
+class TestDataMapFactory(carbonTable: CarbonTable) extends CoarseGrainDataMapFactory(carbonTable) {
 
   private var identifier: AbsoluteTableIdentifier = _
 
@@ -194,9 +192,10 @@ class TestDataMap() extends CoarseGrainDataMapFactory {
     ???
   }
 
-  override def createWriter(segment: Segment, writeDirectoryPath: String): DataMapWriter = {
-    new DataMapWriter(identifier, segment, writeDirectoryPath) {
-      override def onPageAdded(blockletId: Int, pageId: Int, pages: Array[ColumnPage]): Unit = { }
+  override def createWriter(segment: Segment, shardName: String): DataMapWriter = {
+    new DataMapWriter(carbonTable.getTablePath, "testdm", carbonTable.getIndexedColumns(dataMapSchema),
+      segment, shardName) {
+      override def addRow(blockletId: Int, pageId: Int, rowId: Int, row: CarbonRow): Unit = { }
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
 
@@ -204,7 +203,7 @@ class TestDataMap() extends CoarseGrainDataMapFactory {
 
       override def onBlockletStart(blockletId: Int): Unit = { }
 
-      override def onBlockStart(blockId: String, taskId: String): Unit = {
+      override def onBlockStart(blockId: String): Unit = {
         // trigger the second SQL to execute
       }
 
@@ -214,12 +213,15 @@ class TestDataMap() extends CoarseGrainDataMapFactory {
     }
   }
 
-  override def getMeta: DataMapMeta = new DataMapMeta(List("id").asJava, Seq(ExpressionType.EQUALS).asJava)
+  override def getMeta: DataMapMeta = new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema),
+    Seq(ExpressionType.EQUALS).asJava)
 
   override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = ???
 
-  override def init(carbonTable: CarbonTable, dataMapSchema: DataMapSchema): Unit = {
+  var dataMapSchema: DataMapSchema = _
+  override def init(dataMapSchema: DataMapSchema): Unit = {
     this.identifier = carbonTable.getAbsoluteTableIdentifier
+    this.dataMapSchema = dataMapSchema
   }
 
   /**
@@ -234,5 +236,10 @@ class TestDataMap() extends CoarseGrainDataMapFactory {
    */
   override def willBecomeStale(operation: TableOperation): Boolean = {
     false
+  }
+
+  override def createRefresher(segment: Segment,
+      shardName: String): DataMapRefresher = {
+    ???
   }
 }

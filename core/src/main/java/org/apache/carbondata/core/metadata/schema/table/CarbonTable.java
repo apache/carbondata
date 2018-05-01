@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -973,8 +974,11 @@ public class CarbonTable implements Serializable {
       if (!datamaps.isEmpty()) {
         for (TableDataMap dataMap : datamaps) {
           DataMapFactory factoryClass =
-              DataMapStoreManager.getInstance().getDataMapFactoryClass(dataMap.getDataMapSchema());
-          return !factoryClass.willBecomeStale(operation);
+              DataMapStoreManager.getInstance().getDataMapFactoryClass(
+                  carbonTable, dataMap.getDataMapSchema());
+          if (factoryClass.willBecomeStale(operation)) {
+            return false;
+          }
         }
       }
     } catch (Exception e) {
@@ -986,4 +990,26 @@ public class CarbonTable implements Serializable {
     return true;
   }
 
+  /**
+   * Get all index columns specified by dataMapSchema
+   */
+  public List<CarbonColumn> getIndexedColumns(DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
+    String[] columns = DataMapFactory.getIndexColumns(dataMapSchema);
+    List<CarbonColumn> indexColumn = new ArrayList<>(columns.length);
+    for (String column : columns) {
+      CarbonColumn carbonColumn = getColumnByName(getTableName(), column.trim().toLowerCase());
+      if (carbonColumn == null) {
+        throw new MalformedDataMapCommandException(String.format(
+            "column '%s' does not exist in table. Please check create DataMap statement.",
+            column));
+      }
+      if (carbonColumn.getColName().isEmpty()) {
+        throw new MalformedDataMapCommandException(
+            DataMapFactory.INDEX_COLUMNS + " contains invalid column name");
+      }
+      indexColumn.add(carbonColumn);
+    }
+    return indexColumn;
+  }
 }

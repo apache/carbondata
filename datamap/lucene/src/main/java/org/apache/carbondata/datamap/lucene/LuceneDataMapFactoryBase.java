@@ -35,6 +35,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -51,7 +52,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
@@ -59,9 +59,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
  * Base implementation for CG and FG lucene DataMapFactory.
  */
 @InterfaceAudience.Internal
-abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFactory<T> {
-
-  static final String TEXT_COLUMNS = "text_columns";
+abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactory<T> {
 
   /**
    * Logger
@@ -93,21 +91,21 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    */
   List<String> indexedCarbonColumns = null;
 
-  CarbonTable carbonTable = null;
-
+  public LuceneDataMapFactoryBase(CarbonTable carbonTable) {
+    super(carbonTable);
+  }
 
   @Override
-  public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
-      throws IOException, MalformedDataMapCommandException {
+  public void init(DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
     Objects.requireNonNull(carbonTable.getAbsoluteTableIdentifier());
     Objects.requireNonNull(dataMapSchema);
 
-    this.carbonTable = carbonTable;
     this.tableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     this.dataMapName = dataMapSchema.getDataMapName();
 
     // validate DataMapSchema and get index columns
-    List<String> indexedColumns =  validateAndGetIndexedColumns(dataMapSchema, carbonTable);
+    List<CarbonColumn> indexedColumns =  carbonTable.getIndexedColumns(dataMapSchema);
 
     // add optimizedOperations
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
@@ -123,55 +121,6 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
     // get analyzer
     // TODO: how to get analyzer ?
     analyzer = new StandardAnalyzer();
-  }
-
-  /**
-   * validate Lucene DataMap
-   * 1. require TEXT_COLUMNS property
-   * 2. TEXT_COLUMNS can't contains illegal argument(empty, blank)
-   * 3. TEXT_COLUMNS can't contains duplicate same columns
-   * 4. TEXT_COLUMNS should be exists in table columns
-   * 5. TEXT_COLUMNS support only String DataType columns
-   */
-  public static List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
-      CarbonTable carbonTable) throws MalformedDataMapCommandException {
-    String textColumnsStr = dataMapSchema.getProperties().get(TEXT_COLUMNS);
-    if (textColumnsStr == null || StringUtils.isBlank(textColumnsStr)) {
-      throw new MalformedDataMapCommandException(
-          "Lucene DataMap require proper TEXT_COLUMNS property.");
-    }
-    String[] textColumns = textColumnsStr.split(",", -1);
-    for (int i = 0; i < textColumns.length; i++) {
-      textColumns[i] = textColumns[i].trim().toLowerCase();
-    }
-    for (int i = 0; i < textColumns.length; i++) {
-      if (textColumns[i].isEmpty()) {
-        throw new MalformedDataMapCommandException("TEXT_COLUMNS contains illegal argument.");
-      }
-      for (int j = i + 1; j < textColumns.length; j++) {
-        if (textColumns[i].equals(textColumns[j])) {
-          throw new MalformedDataMapCommandException(
-              "TEXT_COLUMNS has duplicate columns :" + textColumns[i]);
-        }
-      }
-    }
-    List<String> indexedCarbonColumns = new ArrayList<>(textColumns.length);
-    for (int i = 0; i < textColumns.length; i++) {
-      CarbonColumn column = carbonTable.getColumnByName(carbonTable.getTableName(), textColumns[i]);
-      if (null == column) {
-        throw new MalformedDataMapCommandException("TEXT_COLUMNS: " + textColumns[i]
-            + " does not exist in table. Please check create DataMap statement.");
-      } else if (column.getDataType() != DataTypes.STRING) {
-        throw new MalformedDataMapCommandException(
-            "TEXT_COLUMNS only supports String column. " + "Unsupported column: " + textColumns[i]
-                + ", DataType: " + column.getDataType());
-      } else if (column.getEncoder().contains(Encoding.DICTIONARY)) {
-        throw new MalformedDataMapCommandException(
-            "TEXT_COLUMNS cannot contain dictionary column " + column.getColName());
-      }
-      indexedCarbonColumns.add(column.getColName());
-    }
-    return indexedCarbonColumns;
   }
 
   /**
@@ -206,10 +155,16 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    * Return a new write for this datamap
    */
   @Override
-  public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
-    LOGGER.info("lucene data write to " + writeDirectoryPath);
-    return new LuceneDataMapWriter(tableIdentifier, dataMapName, segment, writeDirectoryPath, true,
-        indexedCarbonColumns);
+  public DataMapWriter createWriter(Segment segment, String shardName) {
+    LOGGER.info("lucene data write to " + shardName);
+    return new LuceneDataMapWriter(carbonTable.getTablePath(), dataMapName,
+        dataMapMeta.getIndexedColumns(), segment, shardName, true);
+  }
+
+  @Override
+  public DataMapRefresher createRefresher(Segment segment, String shardName) {
+    return new LuceneDataMapRefresher(carbonTable.getTablePath(), dataMapName,
+        segment, shardName, dataMapMeta.getIndexedColumns());
   }
 
   /**
@@ -301,5 +256,28 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
       }
     }
     return indexDirs.toArray(new CarbonFile[0]);
+  }
+
+  /**
+   * Further validate whether it is string column and dictionary column.
+   * Currently only string and non-dictionary column is supported for Lucene DataMap
+   */
+  @Override
+  public void validateIndexedColumns(DataMapSchema dataMapSchema,
+      CarbonTable carbonTable) throws MalformedDataMapCommandException {
+    super.validateIndexedColumns(dataMapSchema, carbonTable);
+    List<CarbonColumn> indexColumns = carbonTable.getIndexedColumns(dataMapSchema);
+
+    for (CarbonColumn column : indexColumns) {
+      if (column.getDataType() != DataTypes.STRING) {
+        throw new MalformedDataMapCommandException(String.format(
+            "Only String column is supported, column '%s' is %s type. ",
+            column.getColName(), column.getDataType()));
+      } else if (column.getEncoder().contains(Encoding.DICTIONARY)) {
+        throw new MalformedDataMapCommandException(String.format(
+            "Dictionary column is not supported, column '%s' is dictionary column",
+            column.getColName()));
+      }
+    }
   }
 }

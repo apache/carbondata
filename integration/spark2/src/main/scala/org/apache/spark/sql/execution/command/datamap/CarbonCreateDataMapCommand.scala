@@ -17,6 +17,7 @@
 package org.apache.spark.sql.execution.command.datamap
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -24,11 +25,12 @@ import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager, IndexDataMapProvider}
+import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
+import org.apache.carbondata.core.datamap.dev.DataMapFactory
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
-import org.apache.carbondata.datamap.DataMapManager
+import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapProvider}
 
 /**
  * Below command class will be used to create datamap on table
@@ -37,7 +39,7 @@ import org.apache.carbondata.datamap.DataMapManager
 case class CarbonCreateDataMapCommand(
     dataMapName: String,
     tableIdentifier: Option[TableIdentifier],
-    dmClassName: String,
+    dmProviderName: String,
     dmProperties: Map[String, String],
     queryString: Option[String],
     ifNotExistsSet: Boolean = false)
@@ -68,41 +70,39 @@ case class CarbonCreateDataMapCommand(
       }
     }
 
-    dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
-    // TODO: move this if logic inside lucene module
-    if (dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.LUCENE.getShortName) ||
-        dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.LUCENE.getClassName)) {
-      val datamaps = DataMapStoreManager.getInstance().getAllDataMap(mainTable).asScala
-      if (datamaps.nonEmpty) {
-        datamaps.foreach(datamap => {
-          val dmColumns = datamap.getDataMapSchema.getProperties.get("text_columns").trim
-            .toLowerCase.split(",").toSet
-          val existingColumns = dmProperties("text_columns").trim.toLowerCase().split(",").toSet
-          val duplicateDMColumn = dmColumns.intersect(existingColumns)
-          if (duplicateDMColumn.nonEmpty) {
-            throw new MalformedDataMapCommandException(
-              s"Create lucene datamap $dataMapName failed, datamap already exists on column(s) " +
-              s"$duplicateDMColumn")
-          }
-        })
-      }
-    }
     if (mainTable != null &&
         mainTable.isStreamingTable &&
-        !(dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
-          || dataMapSchema.getProviderName
-            .equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
-      throw new MalformedCarbonCommandException(s"Streaming table does not support creating ${
-        dataMapSchema.getProviderName
-      } datamap")
+        !(dmProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
+          || dmProviderName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
+      throw new MalformedCarbonCommandException(s"Streaming table does not support creating " +
+                                                s"$dmProviderName datamap")
     }
+
+    dataMapSchema = new DataMapSchema(dataMapName, dmProviderName)
     dataMapSchema.setProperties(new java.util.HashMap[String, String](
       dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
-    dataMapProvider = DataMapManager.get().getDataMapProvider(dataMapSchema, sparkSession)
-    dataMapProvider.initMeta(mainTable, dataMapSchema, queryString.orNull)
-    // TODO Currently this feature is only available for index datamaps
-    if (dataMapProvider.isInstanceOf[IndexDataMapProvider]) {
-      DataMapStatusManager.disableDataMap(dataMapName)
+    dataMapProvider = DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
+
+    // If it is index datamap, check whether the column has datamap created already
+    dataMapProvider match {
+      case provider: IndexDataMapProvider =>
+        val datamaps = DataMapStoreManager.getInstance.getAllDataMap(mainTable).asScala
+        val existingIndexColumn = mutable.Set[String]()
+        datamaps.foreach { datamap =>
+          DataMapFactory.getIndexColumns(datamap.getDataMapSchema)
+            .foreach(existingIndexColumn.add)
+        }
+
+        provider.getIndexedColumns.asScala.foreach { column =>
+          if (existingIndexColumn.contains(column.getColName)) {
+            throw new MalformedDataMapCommandException(String.format(
+              "column '%s' already has datamap created", column.getColName))
+          }
+        }
+        dataMapProvider.initMeta(queryString.orNull)
+        DataMapStatusManager.disableDataMap(dataMapName)
+      case _ =>
+        dataMapProvider.initMeta(queryString.orNull)
     }
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     LOGGER.audit(s"DataMap $dataMapName successfully added")
@@ -111,11 +111,11 @@ case class CarbonCreateDataMapCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (dataMapProvider != null) {
-      dataMapProvider.initData(mainTable)
-      if (mainTable != null && mainTable.isAutoRefreshDataMap) {
-        if (!DataMapClassProvider.LUCENE.getShortName.equals(dataMapSchema.getProviderName)) {
-          dataMapProvider.rebuild(mainTable, dataMapSchema)
-        }
+      dataMapProvider.initData()
+      if (mainTable != null &&
+          mainTable.isAutoRefreshDataMap &&
+          !dataMapSchema.isIndexDataMap) {
+        dataMapProvider.rebuild()
       }
     }
     Seq.empty
@@ -123,7 +123,7 @@ case class CarbonCreateDataMapCommand(
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
     if (dataMapProvider != null) {
-      dataMapProvider.freeMeta(mainTable, dataMapSchema)
+      dataMapProvider.freeMeta()
     }
     Seq.empty
   }

@@ -22,6 +22,9 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 import com.google.common.hash.BloomFilter;
 
+/**
+ * This class holds a bloom filter for one blocklet
+ */
 @InterfaceAudience.Internal
 public class BloomDMModel implements Serializable {
   private static final long serialVersionUID = 7281578747306832771L;

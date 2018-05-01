@@ -30,18 +30,19 @@ import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand;
 import scala.Some;
 
 @InterfaceAudience.Internal
-public class PreAggregateDataMapProvider implements DataMapProvider {
+public class PreAggregateDataMapProvider extends DataMapProvider {
   protected PreAggregateTableHelper helper;
   protected CarbonDropTableCommand dropTableCommand;
   protected SparkSession sparkSession;
 
-  public PreAggregateDataMapProvider(SparkSession sparkSession) {
+  PreAggregateDataMapProvider(CarbonTable table, DataMapSchema schema,
+      SparkSession sparkSession) {
+    super(table, schema);
     this.sparkSession = sparkSession;
   }
 
   @Override
-  public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement)
-      throws MalformedDataMapCommandException {
+  public void initMeta(String ctasSqlStatement) throws MalformedDataMapCommandException {
     validateDmProperty(dataMapSchema);
     helper = new PreAggregateTableHelper(
         mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getProviderName(),
@@ -62,12 +63,12 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
   }
 
   @Override
-  public void initData(CarbonTable mainTable) {
+  public void initData() {
     // Nothing is needed to do by default
   }
 
   @Override
-  public void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+  public void freeMeta() {
     dropTableCommand = new CarbonDropTableCommand(
         true,
         new Some<>(dataMapSchema.getRelationIdentifier().getDatabaseName()),
@@ -77,21 +78,20 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
   }
 
   @Override
-  public void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+  public void freeData() {
     if (dropTableCommand != null) {
       dropTableCommand.processData(sparkSession);
     }
   }
 
   @Override
-  public void rebuild(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+  public void rebuild() {
     if (helper != null) {
       helper.initData(sparkSession);
     }
   }
 
-  @Override public void incrementalBuild(CarbonTable mainTable, DataMapSchema dataMapSchema,
-      String[] segmentIds) {
+  @Override public void incrementalBuild(String[] segmentIds) {
     throw new UnsupportedOperationException();
   }
 

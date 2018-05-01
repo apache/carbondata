@@ -27,20 +27,19 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
-import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapRefresher, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, DiskBasedDMSchemaStorageProvider}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
@@ -50,14 +49,14 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class CGDataMapFactory extends CoarseGrainDataMapFactory {
+class CGDataMapFactory(carbonTable: CarbonTable) extends CoarseGrainDataMapFactory(carbonTable) {
   var identifier: AbsoluteTableIdentifier = _
   var dataMapSchema: DataMapSchema = _
 
   /**
    * Initialization of Datamap factory with the identifier and datamap name
    */
-  override def init(carbonTable: CarbonTable, dataMapSchema: DataMapSchema): Unit = {
+  override def init(dataMapSchema: DataMapSchema): Unit = {
     this.identifier = carbonTable.getAbsoluteTableIdentifier
     this.dataMapSchema = dataMapSchema
   }
@@ -66,7 +65,7 @@ class CGDataMapFactory extends CoarseGrainDataMapFactory {
    * Return a new write for this datamap
    */
   override def createWriter(segment: Segment, dataWritePath: String): DataMapWriter = {
-    new CGDataMapWriter(identifier, segment, dataWritePath, dataMapSchema)
+    new CGDataMapWriter(carbonTable, segment, dataWritePath, dataMapSchema)
   }
 
   /**
@@ -138,7 +137,7 @@ class CGDataMapFactory extends CoarseGrainDataMapFactory {
    * Return metadata of this datamap
    */
   override def getMeta: DataMapMeta = {
-    new DataMapMeta(dataMapSchema.getProperties.get("indexcolumns").split(",").toList.asJava,
+    new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema),
       List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
   }
 
@@ -153,6 +152,11 @@ class CGDataMapFactory extends CoarseGrainDataMapFactory {
    */
   override def willBecomeStale(feature: TableOperation): Boolean = {
     false
+  }
+
+  override def createRefresher(segment: Segment,
+      shardName: String): DataMapRefresher = {
+    ???
   }
 }
 
@@ -237,11 +241,13 @@ class CGDataMap extends CoarseGrainDataMap {
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
 }
 
-class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
+class CGDataMapWriter(
+    carbonTable: CarbonTable,
     segment: Segment,
     dataWritePath: String,
     dataMapSchema: DataMapSchema)
-  extends DataMapWriter(identifier, segment, dataWritePath) {
+  extends DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
+    carbonTable.getIndexedColumns(dataMapSchema), segment, dataWritePath) {
 
   var taskName: String = _
 
@@ -255,7 +261,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockId file name of the carbondata file
    */
-  override def onBlockStart(blockId: String, taskName: String): Unit = {
+  override def onBlockStart(blockId: String): Unit = {
     this.taskName = taskName
   }
 
@@ -272,7 +278,6 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * @param blockletId sequence number of blocklet in the block
    */
   override def onBlockletStart(blockletId: Int): Unit = {
-
   }
 
   /**
@@ -281,6 +286,11 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * @param blockletId sequence number of blocklet in the block
    */
   override def onBlockletEnd(blockletId: Int): Unit = {
+    val sort = list
+      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
+    blockletList += sort.head
+    blockletList += sort.last
+
     val sorted = blockletList
       .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
     maxMin +=
@@ -288,31 +298,33 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
     blockletList.clear()
   }
 
+  var list: ArrayBuffer[Array[Byte]] = _
+
+  var pageId: Int = 0
+
   /**
-   * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
+   * Add the column pages row to the datamap, order of pages is same as `index_columns` in
    * DataMapMeta returned in DataMapFactory.
    *
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
    */
-  override def onPageAdded(blockletId: Int,
-      pageId: Int,
-      pages: Array[ColumnPage]): Unit = {
-    val size = pages(0).getPageSize
-    val list = new ArrayBuffer[Array[Byte]]()
-    var i = 0
-    while (i < size) {
-      val bytes = pages(0).getBytes(i)
-      val newBytes = new Array[Byte](bytes.length - 2)
-      System.arraycopy(bytes, 2, newBytes, 0, newBytes.length)
-      list += newBytes
-      i = i + 1
+  override def addRow(blockletId: Int, pageId: Int, rowId: Int, row: CarbonRow): Unit = {
+    if (rowId == 0) {
+      if (list != null) {
+        val sort = list
+          .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
+        blockletList += sort.head
+        blockletList += sort.last
+      }
+      list = new ArrayBuffer[Array[Byte]]()
+      this.pageId = pageId
     }
-    // Sort based on the column data in order to create index.
-    val sorted = list
-      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
-    blockletList += sorted.head
-    blockletList += sorted.last
+
+    val data = row.getData
+    val newBytes = new Array[Byte](data.length - 2)
+    System.arraycopy(data, 2, newBytes, 0, newBytes.length)
+    list += newBytes
   }
 
 
@@ -369,7 +381,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     // register datamap writer
     sql(s"create datamap cgdatamap on table datamap_test_cg " +
         s"using '${classOf[CGDataMapFactory].getName}' " +
-        s"DMPROPERTIES('indexcolumns'='name')")
+        s"DMPROPERTIES('index_columns'='name')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_cg OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test_cg where name='n502670'"),
       sql("select * from normal_test where name='n502670'"))
@@ -385,8 +397,8 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
     // register datamap writer
-    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
+    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('index_columns'='name')")
+    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('index_columns'='city')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
@@ -404,8 +416,8 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
     // register datamap writer
-    sql(s"create datamap $dataMapName1 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"create datamap $dataMapName2 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
+    sql(s"create datamap $dataMapName1 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('index_columns'='name')")
+    sql(s"create datamap $dataMapName2 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('index_columns'='city')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
 
     // make datamap1 invisible

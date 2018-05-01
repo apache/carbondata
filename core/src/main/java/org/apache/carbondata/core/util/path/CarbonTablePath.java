@@ -330,6 +330,11 @@ public class CarbonTablePath {
         + bucketNumber + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
   }
 
+  public static String getShardName(Long taskNo, int bucketNumber, int batchNo,
+      String factUpdateTimeStamp) {
+    return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + factUpdateTimeStamp;
+  }
+
   /**
    * Below method will be used to get the carbon index filename
    *
@@ -391,6 +396,24 @@ public class CarbonTablePath {
       String newTableName) {
     Path parentPath = new Path(tablePath).getParent();
     return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + newTableName;
+  }
+
+  /**
+   * Return store path for datamap based on the taskNo,if three tasks get launched during loading,
+   * then three folders will be created based on the shard name and lucene index file will be
+   * written into those folders
+   *
+   * @return store path based on index shard name
+   */
+  public static String getDataMapStorePathOnShardName(String tablePath, String segmentId,
+      String dataMapName, String shardName) {
+    return new StringBuilder()
+        .append(getSegmentPath(tablePath, segmentId))
+        .append(File.separator)
+        .append(dataMapName)
+        .append(File.separator)
+        .append(shardName)
+        .toString();
   }
 
   /**
@@ -487,6 +510,13 @@ public class CarbonTablePath {
     }
 
     /**
+     * Return task id in the carbon data file name
+     */
+    public static long getTaskId(String carbonDataFileName) {
+      return Long.parseLong(getTaskNo(carbonDataFileName).split(BATCH_PREFIX)[0]);
+    }
+
+    /**
      * Return the taskId part from taskNo(include taskId + batchNo)
      */
     public static long getTaskIdFromTaskNo(String taskNo) {
@@ -494,7 +524,7 @@ public class CarbonTablePath {
     }
 
     /**
-     * Return the batch number from taskNo string
+     * Return the batch number from taskNo stringx
      */
     public static int getBatchNoFromTaskNo(String taskNo) {
       return Integer.parseInt(taskNo.split(BATCH_PREFIX)[1]);
