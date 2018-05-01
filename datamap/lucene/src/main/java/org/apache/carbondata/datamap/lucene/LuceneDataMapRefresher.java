@@ -18,14 +18,19 @@
 package org.apache.carbondata.datamap.lucene;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -48,15 +53,14 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.solr.store.hdfs.HdfsDirectory;
 
-public class LuceneIndexRefreshBuilder {
+public class LuceneDataMapRefresher implements DataMapRefresher {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LuceneDataMapWriter.class.getName());
 
-  private String strIndexPath;
+  private String dataMapPath;
 
-  private String[] indexColumns;
-  private DataType[] dataTypes;
+  private List<CarbonColumn> indexColumns;
 
   private int columnsCount;
 
@@ -66,22 +70,27 @@ public class LuceneIndexRefreshBuilder {
 
   private Analyzer analyzer = null;
 
-  public LuceneIndexRefreshBuilder(String strIndexPath, String[] indexColumns,
-      DataType[] dataTypes) {
-    this.strIndexPath = strIndexPath;
+  LuceneDataMapRefresher(String tablePath, String dataMapName,
+      Segment segment, String shardName, List<CarbonColumn> indexColumns) {
+    this.dataMapPath = CarbonTablePath.getDataMapStorePathOnShardName(
+        tablePath, segment.getSegmentNo(), dataMapName, shardName);
     this.indexColumns = indexColumns;
-    this.columnsCount = indexColumns.length;
-    this.dataTypes = dataTypes;
+    this.columnsCount = indexColumns.size();
   }
 
+  @Override
   public void initialize() throws IOException {
     // get index path, put index data into segment's path
-    Path indexPath = FileFactory.getPath(strIndexPath);
+    Path indexPath = FileFactory.getPath(dataMapPath);
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 
-    // if index path not exists, create it
-    if (!fs.exists(indexPath)) {
-      fs.mkdirs(indexPath);
+    // if index path exists, should delete it because we are
+    // rebuilding the whole datamap for all segments
+    if (fs.exists(indexPath)) {
+      fs.delete(indexPath, true);
+    }
+    if (!fs.mkdirs(indexPath)) {
+      LOGGER.error("Failed to create directory " + indexPath);
     }
 
     if (null == analyzer) {
@@ -108,9 +117,7 @@ public class LuceneIndexRefreshBuilder {
   private IndexWriter createPageIndexWriter() throws IOException {
     // save index data into ram, write into disk after one page finished
     RAMDirectory ramDir = new RAMDirectory();
-    IndexWriter ramIndexWriter = new IndexWriter(ramDir, new IndexWriterConfig(analyzer));
-
-    return ramIndexWriter;
+    return new IndexWriter(ramDir, new IndexWriterConfig(analyzer));
   }
 
   private void addPageIndex(IndexWriter pageIndexWriter) throws IOException {
@@ -121,18 +128,14 @@ public class LuceneIndexRefreshBuilder {
     pageIndexWriter.close();
 
     // add ram index data into disk
-    indexWriter.addIndexes(new Directory[] { directory });
+    indexWriter.addIndexes(directory);
 
     // delete this ram data
     directory.close();
   }
 
-  public void addDocument(Object[] values) throws IOException {
-
-    if (values.length != indexColumns.length + 3) {
-      throw new IOException("The column number (" + values.length + ") of the row  is incorrect.");
-    }
-    int rowId = (int) values[indexColumns.length + 2];
+  @Override
+  public void addRow(int blockletId, int pageId, int rowId, Object[] values) throws IOException {
     if (rowId == 0) {
       if (pageIndexWriter != null) {
         addPageIndex(pageIndexWriter);
@@ -144,29 +147,30 @@ public class LuceneIndexRefreshBuilder {
     Document doc = new Document();
 
     // add blocklet Id
-    doc.add(new IntPoint(LuceneDataMapWriter.BLOCKLETID_NAME,
-        new int[] { (int) values[columnsCount] }));
+    doc.add(new IntPoint(LuceneDataMapWriter.BLOCKLETID_NAME, (int) values[columnsCount]));
     doc.add(new StoredField(LuceneDataMapWriter.BLOCKLETID_NAME, (int) values[columnsCount]));
 
     // add page id
-    doc.add(new IntPoint(LuceneDataMapWriter.PAGEID_NAME,
-        new int[] { (int) values[columnsCount + 1] }));
+    doc.add(new IntPoint(LuceneDataMapWriter.PAGEID_NAME, (int) values[columnsCount + 1]));
     doc.add(new StoredField(LuceneDataMapWriter.PAGEID_NAME, (int) values[columnsCount + 1]));
 
     // add row id
-    doc.add(new IntPoint(LuceneDataMapWriter.ROWID_NAME, new int[] { rowId }));
+    doc.add(new IntPoint(LuceneDataMapWriter.ROWID_NAME, rowId));
     doc.add(new StoredField(LuceneDataMapWriter.ROWID_NAME, rowId));
 
     // add other fields
     for (int colIdx = 0; colIdx < columnsCount; colIdx++) {
-      addField(doc, indexColumns[colIdx], dataTypes[colIdx], values[colIdx]);
+      CarbonColumn column = indexColumns.get(colIdx);
+      addField(doc, column.getColName(), column.getDataType(), values[colIdx]);
     }
 
     pageIndexWriter.addDocument(doc);
   }
 
   private boolean addField(Document doc, String fieldName, DataType type, Object value) {
-    if (type == DataTypes.BYTE) {
+    if (type == DataTypes.STRING) {
+      doc.add(new TextField(fieldName, (String) value, Field.Store.NO));
+    } else if (type == DataTypes.BYTE) {
       // byte type , use int range to deal with byte, lucene has no byte type
       IntRangeField field =
           new IntRangeField(fieldName, new int[] { Byte.MIN_VALUE }, new int[] { Byte.MAX_VALUE });
@@ -180,16 +184,14 @@ public class LuceneIndexRefreshBuilder {
       doc.add(field);
     } else if (type == DataTypes.INT) {
       // int type , use int point to deal with int type
-      doc.add(new IntPoint(fieldName, new int[] { (int) value }));
+      doc.add(new IntPoint(fieldName, (int) value));
     } else if (type == DataTypes.LONG) {
       // long type , use long point to deal with long type
-      doc.add(new LongPoint(fieldName, new long[] { (long) value }));
+      doc.add(new LongPoint(fieldName, (long) value));
     } else if (type == DataTypes.FLOAT) {
-      doc.add(new FloatPoint(fieldName, new float[] { (float) value }));
+      doc.add(new FloatPoint(fieldName, (float) value));
     } else if (type == DataTypes.DOUBLE) {
-      doc.add(new DoublePoint(fieldName, new double[] { (double) value }));
-    } else if (type == DataTypes.STRING) {
-      doc.add(new TextField(fieldName, (String) value, Field.Store.NO));
+      doc.add(new DoublePoint(fieldName, (double) value));
     } else if (type == DataTypes.DATE) {
       // TODO: how to get data value
     } else if (type == DataTypes.TIMESTAMP) {
@@ -205,12 +207,14 @@ public class LuceneIndexRefreshBuilder {
     return true;
   }
 
+  @Override
   public void finish() throws IOException {
     if (indexWriter != null && pageIndexWriter != null) {
       addPageIndex(pageIndexWriter);
     }
   }
 
+  @Override
   public void close() throws IOException {
     if (indexWriter != null) {
       indexWriter.close();

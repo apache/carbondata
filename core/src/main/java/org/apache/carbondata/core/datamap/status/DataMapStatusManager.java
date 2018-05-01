@@ -51,7 +51,7 @@ public class DataMapStatusManager {
     return storageProvider.getDataMapStatusDetails();
   }
 
-  public static void disableDataMap(String dataMapName) throws Exception {
+  public static void disableDataMap(String dataMapName) throws IOException, NoSuchDataMapException {
     DataMapSchema dataMapSchema = getDataMapSchema(dataMapName);
     if (dataMapSchema != null) {
       List<DataMapSchema> list = new ArrayList<>();

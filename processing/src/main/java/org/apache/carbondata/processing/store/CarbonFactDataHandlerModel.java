@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -233,10 +232,8 @@ public class CarbonFactDataHandlerModel {
 
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(configuration.getSchemaUpdatedTimeStamp());
-    carbonFactDataHandlerModel.setDatabaseName(
-        identifier.getDatabaseName());
-    carbonFactDataHandlerModel
-        .setTableName(identifier.getTableName());
+    carbonFactDataHandlerModel.setDatabaseName(identifier.getDatabaseName());
+    carbonFactDataHandlerModel.setTableName(identifier.getTableName());
     carbonFactDataHandlerModel.setMeasureCount(measureCount);
     carbonFactDataHandlerModel.setStoreLocation(storeLocation);
     carbonFactDataHandlerModel.setDimLens(dimLens);
@@ -262,8 +259,14 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
 
     DataMapWriterListener listener = new DataMapWriterListener();
-    listener.registerAllWriter(configuration.getTableSpec().getCarbonTable(),
-        configuration.getSegmentId(), storeLocation[new Random().nextInt(storeLocation.length)]);
+    listener.registerAllWriter(
+        configuration.getTableSpec().getCarbonTable(),
+        configuration.getSegmentId(),
+        CarbonTablePath.getShardName(
+            carbonDataFileAttributes.getTaskId(),
+            bucketId,
+            0,
+            String.valueOf(carbonDataFileAttributes.getFactTimeStamp())));
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
 
@@ -328,7 +331,12 @@ public class CarbonFactDataHandlerModel {
     listener.registerAllWriter(
         loadModel.getCarbonDataLoadSchema().getCarbonTable(),
         loadModel.getSegmentId(),
-        tempStoreLocation[new Random().nextInt(tempStoreLocation.length)]);
+        CarbonTablePath.getShardName(
+            CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(loadModel.getTaskNo()),
+            carbonFactDataHandlerModel.getBucketId(),
+            carbonFactDataHandlerModel.getTaskExtension(),
+            String.valueOf(loadModel.getFactTimeStamp())));
+
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     return carbonFactDataHandlerModel;
   }

@@ -28,16 +28,14 @@ import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.DataMapWriter
+import org.apache.carbondata.core.datamap.dev.{DataMapRefresher, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, RelationIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -54,8 +52,8 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | create datamap test on table orders
-         | using '${classOf[WaitingDataMap].getName}'
-         | as select count(a) from hiveMetaStoreTable_1")
+         | using '${classOf[WaitingDataMapFactory].getName}'
+         | dmproperties('index_columns'='o_name')
        """.stripMargin)
   }
 
@@ -110,7 +108,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     )
     while (!Global.overwriteRunning && count < 1000) {
       Thread.sleep(10)
-      // to avoid dead loop in case WaitingDataMap is not invoked
+      // to avoid dead loop in case WaitingDataMapFactory is not invoked
       count += 1
     }
     future
@@ -211,8 +209,8 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | create datamap dm_t1 on table t1
-         | using '${classOf[WaitingDataMap].getName}'
-         | as select count(a) from hiveMetaStoreTable_1")
+         | using '${classOf[WaitingDataMapFactory].getName}'
+         | dmproperties('index_columns'='o_name')
        """.stripMargin)
     val future = runSqlAsync("insert into table t1 select * from orders_overwrite")
     sql("alter table t1 compact 'MAJOR'")
@@ -284,9 +282,11 @@ object Global {
   var overwriteRunning = false
 }
 
-class WaitingDataMap() extends CoarseGrainDataMapFactory {
+class WaitingDataMapFactory(
+    carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
 
-  private var identifier: AbsoluteTableIdentifier = _
+  private var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
   override def fireEvent(event: Event): Unit = ???
 
@@ -298,9 +298,10 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
 
   override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = ???
 
-  override def createWriter(segment: Segment, writeDirectoryPath: String): DataMapWriter = {
-    new DataMapWriter(identifier, segment, writeDirectoryPath) {
-      override def onPageAdded(blockletId: Int, pageId: Int, pages: Array[ColumnPage]): Unit = { }
+  override def createWriter(segment: Segment, shardName: String): DataMapWriter = {
+    new DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
+      carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
+      override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
 
@@ -308,7 +309,7 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
 
       override def onBlockletStart(blockletId: Int): Unit = { }
 
-      override def onBlockStart(blockId: String, taskId: String): Unit = {
+      override def onBlockStart(blockId: String): Unit = {
         // trigger the second SQL to execute
         Global.overwriteRunning = true
 
@@ -322,14 +323,9 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
     }
   }
 
-  override def getMeta: DataMapMeta = new DataMapMeta(List("o_country").asJava, Seq(ExpressionType.EQUALS).asJava)
+  override def getMeta: DataMapMeta = new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema), Seq(ExpressionType.EQUALS).asJava)
 
   override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = ???
-
-  override def init(carbonTable: CarbonTable,
-      dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = carbonTable.getAbsoluteTableIdentifier
-  }
 
   /**
    * delete datamap data if any
@@ -343,5 +339,10 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
    */
   override def willBecomeStale(operation: TableOperation): Boolean = {
     false
+  }
+
+  override def createRefresher(segment: Segment,
+      shardName: String): DataMapRefresher = {
+    ???
   }
 }

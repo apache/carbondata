@@ -33,15 +33,12 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -58,7 +55,6 @@ public class MinMaxDataWriter extends DataMapWriter {
 
   private Map<Integer, BlockletMinMax> blockMinMaxMap;
 
-  private String dataMapName;
   private int columnCnt;
   private DataType[] dataTypeArray;
   private String indexShardName;
@@ -71,30 +67,25 @@ public class MinMaxDataWriter extends DataMapWriter {
    */
   private Map<Integer, Integer> origin2MinMaxOrdinal = new HashMap<>();
 
-  public MinMaxDataWriter(AbsoluteTableIdentifier identifier, String dataMapName, Segment segment,
-      String dataWritePath) {
-    super(identifier, segment, dataWritePath);
-    this.dataMapName = dataMapName;
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        identifier.getDatabaseName(), identifier.getTableName());
-    List<CarbonColumn> cols = carbonTable.getCreateOrderColumn(identifier.getTableName());
-    this.columnCnt = cols.size();
-    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(identifier.getTableName());
-    for (int i = 0; i < dimensions.size(); i++) {
-      this.origin2MinMaxOrdinal.put(dimensions.get(i).getSchemaOrdinal(),
-          dimensions.get(i).getOrdinal());
+  public MinMaxDataWriter(CarbonTable carbonTable, DataMapSchema dataMapSchema, Segment segment,
+      String shardName, List<CarbonColumn> indexColumns) {
+    super(carbonTable.getTablePath(), dataMapSchema.getDataMapName(), indexColumns, segment,
+        shardName);
+    this.columnCnt = indexColumns.size();
+    for (CarbonColumn col : indexColumns) {
+      this.origin2MinMaxOrdinal.put(col.getSchemaOrdinal(), col.getOrdinal());
     }
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(identifier.getTableName());
-    for (int i = 0; i < measures.size(); i++) {
-      this.origin2MinMaxOrdinal.put(measures.get(i).getSchemaOrdinal(),
-          dimensions.size() + measures.get(i).getOrdinal());
+    if (this.dataTypeArray == null) {
+      this.dataTypeArray = new DataType[this.columnCnt];
+      for (int i = 0; i < this.columnCnt; i++) {
+        this.dataTypeArray[i] = indexColumns.get(i).getDataType();
+      }
     }
   }
 
-  @Override public void onBlockStart(String blockId, String indexShardName) {
+  @Override public void onBlockStart(String blockId) {
     if (blockMinMaxMap == null) {
       blockMinMaxMap = new HashMap<>();
-      this.indexShardName = indexShardName;
     }
   }
 
@@ -111,46 +102,15 @@ public class MinMaxDataWriter extends DataMapWriter {
   }
 
   @Override
-  public void onPageAdded(int blockletId, int pageId, ColumnPage[] pages) {
-    // Calculate Min and Max value within this page.
-
-    // As part of example we are extracting Min Max values Manually. The same can be done from
-    // retrieving the page statistics. For e.g.
-
-    // if (pageLevelMin == null && pageLevelMax == null) {
-    //    pageLevelMin[1] = CarbonUtil.getValueAsBytes(pages[0].getStatistics().getDataType(),
-    //        pages[0].getStatistics().getMin());
-    //    pageLevelMax[1] = CarbonUtil.getValueAsBytes(pages[0].getStatistics().getDataType(),
-    //        pages[0].getStatistics().getMax());
-    //  } else {
-    //    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(pageLevelMin[1], CarbonUtil
-    //        .getValueAsBytes(pages[0].getStatistics().getDataType(),
-    //            pages[0].getStatistics().getMin())) > 0) {
-    //      pageLevelMin[1] = CarbonUtil.getValueAsBytes(pages[0].getStatistics().getDataType(),
-    //          pages[0].getStatistics().getMin());
-    //    }
-    //    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(pageLevelMax[1], CarbonUtil
-    //        .getValueAsBytes(pages[0].getStatistics().getDataType(),
-    //            pages[0].getStatistics().getMax())) < 0) {
-    //      pageLevelMax[1] = CarbonUtil.getValueAsBytes(pages[0].getStatistics().getDataType(),
-    //          pages[0].getStatistics().getMax());
-    //    }
-
-    if (this.dataTypeArray == null) {
-      this.dataTypeArray = new DataType[this.columnCnt];
-      for (int i = 0; i < this.columnCnt; i++) {
-        this.dataTypeArray[i] = pages[i].getDataType();
-      }
-    }
-
+  public void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages) {
     // as an example, we don't use page-level min-max generated by native carbondata here, we get
     // the min-max by comparing each row
-    for (int rowId = 0; rowId < pages[0].getPageSize(); rowId++) {
+    for (int rowId = 0; rowId < pageSize; rowId++) {
       for (int colIdx = 0; colIdx < columnCnt; colIdx++) {
         Object originValue = pages[colIdx].getData(rowId);
+        DataType dataType = dataTypeArray[colIdx];
         // for string & bytes_array, data is prefixed with length, need to remove it
-        if (DataTypes.STRING == pages[colIdx].getDataType()
-            || DataTypes.BYTE_ARRAY == pages[colIdx].getDataType()) {
+        if (DataTypes.STRING == dataType || DataTypes.BYTE_ARRAY == dataType) {
           byte[] valueMin0 = (byte[]) pageLevelMin[colIdx];
           byte[] valueMax0 = (byte[]) pageLevelMax[colIdx];
           byte[] value1 = (byte[]) originValue;
@@ -164,10 +124,10 @@ public class MinMaxDataWriter extends DataMapWriter {
             pageLevelMax[colIdx] = new byte[value1.length - 2];
             System.arraycopy(value1, 2, (byte[]) pageLevelMax[colIdx], 0, value1.length - 2);
           }
-        } else if (DataTypes.INT == pages[colIdx].getDataType()) {
-          updateMinMax(colIdx, originValue, pages[colIdx].getDataType());
+        } else if (DataTypes.INT == dataType) {
+          updateMinMax(colIdx, originValue, dataType);
         } else {
-          throw new RuntimeException("Not implement yet");
+          throw new UnsupportedOperationException("Not implement yet");
         }
       }
     }
@@ -276,8 +236,7 @@ public class MinMaxDataWriter extends DataMapWriter {
    */
   public void writeMinMaxIndexFile(List<MinMaxIndexBlockDetails> minMaxIndexBlockDetails,
       String blockId) throws IOException {
-    String dataMapDir = genDataMapStorePath(this.writeDirectoryPath, this.dataMapName);
-    String filePath = dataMapDir + File.separator + blockId + ".minmaxindex";
+    String filePath = dataMapPath + File.separator + blockId + ".minmaxindex";
     BufferedWriter brWriter = null;
     DataOutputStream dataOutStream = null;
     try {

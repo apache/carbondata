@@ -29,7 +29,8 @@ package org.apache.carbondata.core.metadata.schema.datamap;
 public enum DataMapClassProvider {
   PREAGGREGATE("org.apache.carbondata.core.datamap.AggregateDataMap", "preaggregate"),
   TIMESERIES("org.apache.carbondata.core.datamap.TimeSeriesDataMap", "timeseries"),
-  LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory","lucene");
+  LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory","lucene"),
+  BLOOMFILTER("org.apache.carbondata.datamap.bloom.BloomCoarseGrainDataMapFactory", "bloomfilter");
 
   /**
    * Fully qualified class name of datamap
@@ -60,18 +61,6 @@ public enum DataMapClassProvider {
         dataMapClass.equalsIgnoreCase(shortName)));
   }
 
-  public static DataMapClassProvider getDataMapProvider(String dataMapClass) {
-    if (TIMESERIES.isEqual(dataMapClass)) {
-      return TIMESERIES;
-    } else if (PREAGGREGATE.isEqual(dataMapClass)) {
-      return PREAGGREGATE;
-    } else if (LUCENE.isEqual(dataMapClass)) {
-      return LUCENE;
-    } else {
-      throw new UnsupportedOperationException("Unknown datamap provider/class " + dataMapClass);
-    }
-  }
-
   public static DataMapClassProvider getDataMapProviderOnName(String dataMapShortname) {
     if (TIMESERIES.isEqual(dataMapShortname)) {
       return TIMESERIES;
@@ -79,6 +68,8 @@ public enum DataMapClassProvider {
       return PREAGGREGATE;
     } else if (LUCENE.isEqual(dataMapShortname)) {
       return LUCENE;
+    } else if (BLOOMFILTER.isEqual(dataMapShortname)) {
+      return BLOOMFILTER;
     } else {
       throw new UnsupportedOperationException("Unknown datamap provider" + dataMapShortname);
     }

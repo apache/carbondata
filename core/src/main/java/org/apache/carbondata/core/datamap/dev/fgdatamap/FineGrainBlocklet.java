@@ -41,8 +41,9 @@ public class FineGrainBlocklet extends Blocklet implements Serializable {
 
   private List<Page> pages;
 
-  public FineGrainBlocklet(String taskName, String blockletId, List<Page> pages) {
-    super(taskName, blockletId);
+  /** For FG, pass the shardName instead of file name */
+  public FineGrainBlocklet(String shardName, String blockletId, List<Page> pages) {
+    super(shardName, blockletId);
     this.pages = pages;
   }
 

@@ -22,17 +22,17 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
-import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapRefresher, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
@@ -40,7 +40,6 @@ import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, DiskBasedDMSchemaStorageProvider}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
@@ -50,23 +49,16 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class CGDataMapFactory extends CoarseGrainDataMapFactory {
-  var identifier: AbsoluteTableIdentifier = _
-  var dataMapSchema: DataMapSchema = _
-
-  /**
-   * Initialization of Datamap factory with the identifier and datamap name
-   */
-  override def init(carbonTable: CarbonTable, dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = carbonTable.getAbsoluteTableIdentifier
-    this.dataMapSchema = dataMapSchema
-  }
+class CGDataMapFactory(
+    carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
+  var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segment: Segment, dataWritePath: String): DataMapWriter = {
-    new CGDataMapWriter(identifier, segment, dataWritePath, dataMapSchema)
+  override def createWriter(segment: Segment, shardName: String): DataMapWriter = {
+    new CGDataMapWriter(carbonTable, segment, shardName, dataMapSchema)
   }
 
   /**
@@ -138,7 +130,7 @@ class CGDataMapFactory extends CoarseGrainDataMapFactory {
    * Return metadata of this datamap
    */
   override def getMeta: DataMapMeta = {
-    new DataMapMeta(dataMapSchema.getProperties.get("indexcolumns").split(",").toList.asJava,
+    new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema),
       List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
   }
 
@@ -154,6 +146,11 @@ class CGDataMapFactory extends CoarseGrainDataMapFactory {
   override def willBecomeStale(feature: TableOperation): Boolean = {
     false
   }
+
+  override def createRefresher(segment: Segment,
+      shardName: String): DataMapRefresher = {
+    ???
+  }
 }
 
 class CGDataMap extends CoarseGrainDataMap {
@@ -162,15 +159,17 @@ class CGDataMap extends CoarseGrainDataMap {
   var FileReader: FileReader = _
   var filePath: String = _
   val compressor = new SnappyCompressor
-  var taskName: String = _
+  var shardName: String = _
 
   /**
    * It is called to load the data map to memory or to initialize it.
    */
   override def init(dataMapModel: DataMapModel): Unit = {
-    this.filePath = dataMapModel.getFilePath
+    val indexPath = FileFactory.getPath(dataMapModel.getFilePath)
+    this.shardName = indexPath.getName
+
+    this.filePath = dataMapModel.getFilePath + "/testcg.datamap"
     val carbonFile = FileFactory.getCarbonFile(filePath)
-    taskName = carbonFile.getName
     val size = carbonFile.getSize
     FileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
     val footerLen = FileReader.readInt(filePath, size-4)
@@ -199,7 +198,7 @@ class CGDataMap extends CoarseGrainDataMap {
     }
     val meta = findMeta(value(0).getBytes)
     meta.map { f=>
-      new Blocklet(taskName, f._1 + "")
+      new Blocklet(shardName, f._1 + "")
     }.asJava
   }
 
@@ -237,15 +236,14 @@ class CGDataMap extends CoarseGrainDataMap {
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
 }
 
-class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
+class CGDataMapWriter(
+    carbonTable: CarbonTable,
     segment: Segment,
-    dataWritePath: String,
+    shardName: String,
     dataMapSchema: DataMapSchema)
-  extends DataMapWriter(identifier, segment, dataWritePath) {
+  extends DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
+    carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
 
-  var taskName: String = _
-
-  val cgwritepath = dataWritePath + "/" + dataMapSchema.getDataMapName +"/"
   val blockletList = new ArrayBuffer[Array[Byte]]()
   val maxMin = new ArrayBuffer[(Int, (Array[Byte], Array[Byte]))]()
   val compressor = new SnappyCompressor
@@ -255,8 +253,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockId file name of the carbondata file
    */
-  override def onBlockStart(blockId: String, taskName: String): Unit = {
-    this.taskName = taskName
+  override def onBlockStart(blockId: String): Unit = {
   }
 
   /**
@@ -272,7 +269,6 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * @param blockletId sequence number of blocklet in the block
    */
   override def onBlockletStart(blockletId: Int): Unit = {
-
   }
 
   /**
@@ -289,7 +285,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
   }
 
   /**
-   * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
+   * Add the column pages row to the datamap, order of pages is same as `index_columns` in
    * DataMapMeta returned in DataMapFactory.
    *
    * Implementation should copy the content of `pages` as needed, because `pages` memory
@@ -297,6 +293,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    */
   override def onPageAdded(blockletId: Int,
       pageId: Int,
+      pageSize: Int,
       pages: Array[ColumnPage]): Unit = {
     val size = pages(0).getPageSize
     val list = new ArrayBuffer[Array[Byte]]()
@@ -321,9 +318,10 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * class.
    */
   override def finish(): Unit = {
-    FileFactory.mkdirs(cgwritepath, FileFactory.getFileType(cgwritepath))
-    var stream: DataOutputStream = FileFactory
-      .getDataOutputStream(cgwritepath + "/"+taskName, FileFactory.getFileType(cgwritepath))
+    FileFactory.mkdirs(dataMapPath, FileFactory.getFileType(dataMapPath))
+    val file = dataMapPath + "/testcg.datamap"
+    val stream: DataOutputStream = FileFactory
+      .getDataOutputStream(file, FileFactory.getFileType(file))
     val out = new ByteOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)
@@ -332,7 +330,6 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
     stream.write(bytes)
     stream.writeInt(bytes.length)
     stream.close()
-    commitFile(cgwritepath + "/"+taskName)
   }
 
 
@@ -365,11 +362,9 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test_cg")
-    // register datamap writer
     sql(s"create datamap cgdatamap on table datamap_test_cg " +
         s"using '${classOf[CGDataMapFactory].getName}' " +
-        s"DMPROPERTIES('indexcolumns'='name')")
+        s"DMPROPERTIES('index_columns'='name')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_cg OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test_cg where name='n502670'"),
       sql("select * from normal_test where name='n502670'"))
@@ -385,8 +380,8 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
     // register datamap writer
-    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
+    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('index_columns'='name')")
+    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('index_columns'='city')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
@@ -404,8 +399,8 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
     // register datamap writer
-    sql(s"create datamap $dataMapName1 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='name')")
-    sql(s"create datamap $dataMapName2 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('indexcolumns'='city')")
+    sql(s"create datamap $dataMapName1 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('index_columns'='name')")
+    sql(s"create datamap $dataMapName2 on table $tableName using '${classOf[CGDataMapFactory].getName}' DMPROPERTIES('index_columns'='city')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
 
     // make datamap1 invisible
@@ -435,7 +430,12 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val dataMapProvider = classOf[CGDataMapFactory].getName
-    sql(s"create datamap test_cg_datamap on table datamap_store_test using '$dataMapProvider' as select  id, name from datamap_store_test")
+    sql(
+      s"""
+         |create datamap test_cg_datamap on table datamap_store_test
+         |using '$dataMapProvider'
+         |dmproperties('index_columns'='name')
+       """.stripMargin)
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap")
 
@@ -452,7 +452,12 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val dataMapProvider = classOf[CGDataMapFactory].getName
-    sql(s"create datamap test_cg_datamap1 on table datamap_store_test1 using '$dataMapProvider' as select  id, name from datamap_store_test")
+    sql(
+      s"""
+         |create datamap test_cg_datamap1 on table datamap_store_test1
+         |using '$dataMapProvider'
+         |dmproperties('index_columns'='name')
+       """.stripMargin)
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap1")
 
@@ -473,7 +478,12 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val dataMapProvider = classOf[CGDataMapFactory].getName
-    sql(s"create datamap test_cg_datamap2 on table datamap_store_test2 using '$dataMapProvider' as select  id, name from datamap_store_test")
+    sql(
+      s"""
+         |create datamap test_cg_datamap2 on table datamap_store_test2
+         |using '$dataMapProvider'
+         |dmproperties('index_columns'='name')
+       """.stripMargin)
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation,"test_cg_datamap2")
 

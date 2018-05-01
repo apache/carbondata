@@ -26,9 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
 import com.google.gson.Gson;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * It is the new schama of datamap and it has less fields compare to {{@link DataMapSchema}}
@@ -198,6 +201,24 @@ public class DataMapSchema implements Serializable, Writable {
       String key = in.readUTF();
       String value = in.readUTF();
       this.properties.put(key, value);
+    }
+  }
+
+  /**
+   * Return the list of column name
+   */
+  public String[] getIndexColumns()
+      throws MalformedDataMapCommandException {
+    String columns = getProperties().get(INDEX_COLUMNS);
+    if (columns == null) {
+      columns = getProperties().get(INDEX_COLUMNS.toLowerCase());
+    }
+    if (columns == null) {
+      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is required");
+    } else if (StringUtils.isBlank(columns)) {
+      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is blank");
+    } else {
+      return columns.split(",", -1);
     }
   }
 

@@ -279,6 +279,10 @@ public class DataMapChooser {
     return null;
   }
 
+  /**
+   * Return true if the input datamap contains the column that needed in
+   * specified expression
+   */
   private boolean contains(DataMapMeta mapMeta, List<ColumnExpression> columnExpressions,
       Set<ExpressionType> expressionTypes) {
     if (mapMeta.getOptimizedOperation().contains(ExpressionType.TEXT_MATCH) &&
@@ -291,8 +295,8 @@ public class DataMapChooser {
     }
     boolean contains = true;
     for (ColumnExpression expression : columnExpressions) {
-      if (!mapMeta.getIndexedColumns().contains(expression.getColumnName()) || !mapMeta
-          .getOptimizedOperation().containsAll(expressionTypes)) {
+      if (!mapMeta.getIndexedColumnNames().contains(expression.getColumnName()) ||
+          !mapMeta.getOptimizedOperation().containsAll(expressionTypes)) {
         contains = false;
         break;
       }

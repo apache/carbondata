@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap.lucene
+package org.apache.carbondata.datamap
 
+import java.io.{File, IOException}
 import java.text.SimpleDateFormat
 import java.util
 
@@ -26,12 +27,13 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{CarbonInputMetrics, Partition, SparkContext, TaskContext}
+import org.apache.spark.{CarbonInputMetrics, Partition, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.dev.DataMapRefresher
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
@@ -46,9 +48,15 @@ import org.apache.carbondata.spark.{RefreshResult, RefreshResultImpl}
 import org.apache.carbondata.spark.rdd.{CarbonRDDWithTableInfo, CarbonSparkPartition}
 import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 
-object LuceneDataMapRefreshRDD {
+/**
+ * Helper object to rebuild the index DataMap
+ */
+object IndexDataMapRefreshRDD {
 
-  def refreshDataMap(
+  /**
+   * Rebuild the datamap for all existing data in the table
+   */
+  def rebuildDataMap(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
       schema: DataMapSchema
@@ -56,39 +64,36 @@ object LuceneDataMapRefreshRDD {
     val tableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val segmentStatusManager = new SegmentStatusManager(tableIdentifier)
     val validAndInvalidSegments = segmentStatusManager.getValidAndInvalidSegments()
-    val validSegments = validAndInvalidSegments.getValidSegments()
-    val indexedCarbonColumns =
-      LuceneDataMapFactoryBase.validateAndGetIndexedColumns(schema, carbonTable)
+    val validSegments = validAndInvalidSegments.getValidSegments
+    val indexedCarbonColumns = carbonTable.getIndexedColumns(schema)
 
     // loop all segments to rebuild DataMap
-    val tableInfo = carbonTable.getTableInfo()
     validSegments.asScala.foreach { segment =>
-      val dataMapStorePath = LuceneDataMapWriter.genDataMapStorePath(
-        tableIdentifier.getTablePath(),
-        segment.getSegmentNo(),
-        schema.getDataMapName)
       // if lucene datamap folder is exists, not require to build lucene datamap again
-      refreshOneSegment(sparkSession, tableInfo, dataMapStorePath, schema.getDataMapName,
-        indexedCarbonColumns, segment.getSegmentNo());
+      refreshOneSegment(sparkSession, carbonTable, schema.getDataMapName,
+        indexedCarbonColumns, segment.getSegmentNo);
     }
   }
 
-  def refreshOneSegment(
+  private def refreshOneSegment(
       sparkSession: SparkSession,
-      tableInfo: TableInfo,
-      dataMapStorePath: String,
+      carbonTable: CarbonTable,
       dataMapName: String,
-      indexColumns: java.util.List[String],
+      indexColumns: java.util.List[CarbonColumn],
       segmentId: String): Unit = {
+
+    val dataMapStorePath =
+      CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId) +
+      File.separator +
+      dataMapName
 
     if (!FileFactory.isFileExist(dataMapStorePath)) {
       if (FileFactory.mkdirs(dataMapStorePath, FileFactory.getFileType(dataMapStorePath))) {
         try {
-          val status = new LuceneDataMapRefreshRDD[String, Boolean](
-            sparkSession.sparkContext,
+          val status = new IndexDataMapRefreshRDD[String, Boolean](
+            sparkSession,
             new RefreshResultImpl(),
-            tableInfo,
-            dataMapStorePath,
+            carbonTable.getTableInfo,
             dataMapName,
             indexColumns.asScala.toArray,
             segmentId
@@ -99,12 +104,14 @@ object LuceneDataMapRefreshRDD {
               s"Task Failed to refresh datamap $dataMapName on segment_$segmentId")
           }
         } catch {
-          case ex =>
+          case ex: Throwable =>
             // process failure
             FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(dataMapStorePath))
             throw new Exception(
               s"Failed to refresh datamap $dataMapName on segment_$segmentId", ex)
         }
+      } else {
+        throw new IOException(s"Failed to create directory $dataMapStorePath")
       }
     }
   }
@@ -117,8 +124,8 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
   }
 
   override def readRow(data: Array[Object]): Array[Object] = {
-    for (i <- 0 until dataTypes.length) {
-      if (dataTypes(i) == DataTypes.STRING) {
+    dataTypes.zipWithIndex.foreach { case (dataType, i) =>
+      if (dataType == DataTypes.STRING) {
         data(i) = data(i).toString
       }
     }
@@ -129,18 +136,18 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
   }
 }
 
-class LuceneDataMapRefreshRDD[K, V](
-    sc: SparkContext,
+class IndexDataMapRefreshRDD[K, V](
+    session: SparkSession,
     result: RefreshResult[K, V],
     @transient tableInfo: TableInfo,
-    dataMapStorePath: String,
     dataMapName: String,
-    indexColumns: Array[String],
+    indexColumns: Array[CarbonColumn],
     segmentId: String
-) extends CarbonRDDWithTableInfo[(K, V)](sc, Nil, tableInfo.serialize()) {
+) extends CarbonRDDWithTableInfo[(K, V)](
+  session.sparkContext, Nil, tableInfo.serialize()) {
 
+  private val dataMapSchema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
-
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new util.Date())
@@ -148,6 +155,9 @@ class LuceneDataMapRefreshRDD[K, V](
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    val dataMapFactory =
+      DataMapManager.get().getDataMapProvider(
+        CarbonTable.buildFromTableInfo(getTableInfo), dataMapSchema, session).getDataMapFactory
     var status = false
     val inputMetrics = new CarbonInputMetrics
     TaskMetricsMap.getInstance().registerThreadCallback()
@@ -158,39 +168,44 @@ class LuceneDataMapRefreshRDD[K, V](
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val format = createInputFormat(attemptContext)
 
-    val taskName = CarbonTablePath.getUniqueTaskName(inputSplit.getAllSplits.get(0).getBlockPath)
-
-    val tableInfo = getTableInfo
-    val identifier = tableInfo.getOrCreateAbsoluteTableIdentifier()
-
-    val columns = tableInfo.getFactTable.getListOfColumns.asScala
-    val dataTypes = indexColumns.map { columnName =>
-      columns.find(_.getColumnName.equals(columnName)).get.getDataType
-    }
-
-    val indexPath = LuceneDataMapWriter.genDataMapStorePathOnTaskId(identifier.getTablePath,
-      segmentId, dataMapName, taskName)
-
     val model = format.createQueryModel(inputSplit, attemptContext)
     // one query id per table
     model.setQueryId(queryId)
     model.setVectorReader(false)
     model.setForcedDetailRawQuery(false)
     model.setRequiredRowId(true)
+
     var reader: CarbonRecordReader[Array[Object]] = null
-    var indexBuilder: LuceneIndexRefreshBuilder = null
+    var refresher: DataMapRefresher = null
     try {
-      reader = new CarbonRecordReader(model, new OriginalReadSupport(dataTypes), inputMetrics)
+      reader = new CarbonRecordReader(
+        model, new OriginalReadSupport(indexColumns.map(_.getDataType)), inputMetrics)
       reader.initialize(inputSplit, attemptContext)
 
-      indexBuilder = new LuceneIndexRefreshBuilder(indexPath, indexColumns, dataTypes)
-      indexBuilder.initialize()
+      // we use task name as shard name to create the folder for this datamap
+      val shardName = CarbonTablePath.getShardName(inputSplit.getAllSplits.get(0).getBlockPath)
+      refresher = dataMapFactory.createRefresher(new Segment(segmentId), shardName)
+      refresher.initialize()
 
+      var blockletId = 0
+      var firstRow = true
       while (reader.nextKeyValue()) {
-        indexBuilder.addDocument(reader.getCurrentValue)
+        val rowWithPosition = reader.getCurrentValue
+        val size = rowWithPosition.length
+        val pageId = rowWithPosition(size - 2).asInstanceOf[Int]
+        val rowId = rowWithPosition(size - 1).asInstanceOf[Int]
+
+        if (!firstRow && pageId == 0 && rowId == 0) {
+          // new blocklet started, increase blockletId
+          blockletId = blockletId + 1
+        } else {
+          firstRow = false
+        }
+
+        refresher.addRow(blockletId, pageId, rowId, rowWithPosition)
       }
 
-      indexBuilder.finish()
+      refresher.finish()
 
       status = true
     } finally {
@@ -198,16 +213,16 @@ class LuceneDataMapRefreshRDD[K, V](
         try {
           reader.close()
         } catch {
-          case ex =>
+          case ex: Throwable =>
             LOGGER.error(ex, "Failed to close reader")
         }
       }
 
-      if (indexBuilder != null) {
+      if (refresher != null) {
         try {
-          indexBuilder.close()
+          refresher.close()
         } catch {
-          case ex =>
+          case ex: Throwable =>
             LOGGER.error(ex, "Failed to close index writer")
         }
       }
@@ -250,11 +265,14 @@ class LuceneDataMapRefreshRDD[K, V](
 
     CarbonInputFormat.setColumnProjection(
       conf,
-      new CarbonProjection(indexColumns))
+      new CarbonProjection(indexColumns.map(_.getColName)))
     format
   }
 
   override protected def getPartitions = {
+    if (!dataMapSchema.isIndexDataMap) {
+      throw new UnsupportedOperationException
+    }
     val conf = new Configuration()
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)

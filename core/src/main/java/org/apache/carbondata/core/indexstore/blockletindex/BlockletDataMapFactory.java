@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
@@ -72,15 +73,20 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   private Cache<TableBlockIndexUniqueIdentifier, CoarseGrainDataMap> cache;
 
-  @Override
-  public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+  public BlockletDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+    super(carbonTable, dataMapSchema);
     this.identifier = carbonTable.getAbsoluteTableIdentifier();
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
   }
 
   @Override
-  public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
+  public DataMapWriter createWriter(Segment segment, String shardName) {
+    throw new UnsupportedOperationException("not implemented");
+  }
+
+  @Override
+  public DataMapRefresher createRefresher(Segment segment, String shardName) {
     throw new UnsupportedOperationException("not implemented");
   }
 
@@ -147,7 +153,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   private ExtendedBlocklet getExtendedBlocklet(List<TableBlockIndexUniqueIdentifier> identifiers,
       Blocklet blocklet) throws IOException {
     for (TableBlockIndexUniqueIdentifier identifier : identifiers) {
-      if (identifier.getIndexFileName().startsWith(blocklet.getTaskName())) {
+      if (identifier.getIndexFileName().startsWith(blocklet.getFilePath())) {
         DataMap dataMap = cache.get(identifier);
         return ((BlockletDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
       }

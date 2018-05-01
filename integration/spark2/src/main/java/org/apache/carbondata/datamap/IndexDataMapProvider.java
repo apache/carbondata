@@ -15,29 +15,56 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap;
+package org.apache.carbondata.datamap;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.core.datamap.DataMapCatalog;
+import org.apache.carbondata.core.datamap.DataMapProvider;
+import org.apache.carbondata.core.datamap.DataMapRegistry;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
+import org.apache.spark.sql.SparkSession;
+
+/**
+ * Index type DataMap, all index datamap should implement this interface.
+ */
 @InterfaceAudience.Internal
-public class IndexDataMapProvider implements DataMapProvider {
+public class IndexDataMapProvider extends DataMapProvider {
 
-  public IndexDataMapProvider() {
+  private SparkSession sparkSession;
+  private DataMapFactory<? extends DataMap> dataMapFactory;
+  private List<CarbonColumn> indexedColumns;
+
+  IndexDataMapProvider(CarbonTable table, DataMapSchema schema, SparkSession sparkSession)
+      throws MalformedDataMapCommandException {
+    super(table, schema);
+    this.sparkSession = sparkSession;
+    this.dataMapFactory = createDataMapFactory();
+    dataMapFactory.validate();
+    this.indexedColumns = table.getIndexedColumns(schema);
+  }
+
+  public List<CarbonColumn> getIndexedColumns() {
+    return indexedColumns;
   }
 
   @Override
-  public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement)
+  public void initMeta(String ctasSqlStatement)
       throws MalformedDataMapCommandException, IOException {
+    CarbonTable mainTable = getMainTable();
+    DataMapSchema dataMapSchema = getDataMapSchema();
     if (mainTable == null) {
       throw new MalformedDataMapCommandException(
           "Parent table is required to create index datamap");
@@ -49,54 +76,57 @@ public class IndexDataMapProvider implements DataMapProvider {
     relationIdentifiers.add(relationIdentifier);
     dataMapSchema.setRelationIdentifier(relationIdentifier);
     dataMapSchema.setParentTables(relationIdentifiers);
-    DataMapFactory dataMapFactory = createIndexDataMapFactory(dataMapSchema);
     DataMapStoreManager.getInstance().registerDataMap(mainTable, dataMapSchema, dataMapFactory);
     DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema);
   }
 
   @Override
-  public void initData(CarbonTable mainTable) {
+  public void initData() {
     // Nothing is needed to do by default
   }
 
   @Override
-  public void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException {
-    if (mainTable == null) {
+  public void cleanMeta() throws IOException {
+    if (getMainTable() == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
     }
-    DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName());
+    DataMapStoreManager.getInstance().dropDataMapSchema(getDataMapSchema().getDataMapName());
   }
 
   @Override
-  public void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+  public void cleanData() {
+    CarbonTable mainTable = getMainTable();
     if (mainTable == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
     }
     DataMapStoreManager.getInstance().clearDataMap(
-        mainTable.getAbsoluteTableIdentifier(), dataMapSchema.getDataMapName());
+        mainTable.getAbsoluteTableIdentifier(), getDataMapSchema().getDataMapName());
   }
 
   @Override
-  public void rebuild(CarbonTable mainTable, DataMapSchema dataMapSchema) {
-    // Nothing is needed to do by default
+  public void rebuild() {
+    IndexDataMapRefreshRDD.rebuildDataMap(sparkSession, getMainTable(), getDataMapSchema());
   }
 
-  @Override public void incrementalBuild(CarbonTable mainTable, DataMapSchema dataMapSchema,
-      String[] segmentIds) {
+  @Override
+  public void incrementalBuild(String[] segmentIds) {
     throw new UnsupportedOperationException();
   }
 
-  private DataMapFactory createIndexDataMapFactory(DataMapSchema dataMapSchema)
+  private DataMapFactory<? extends DataMap> createDataMapFactory()
       throws MalformedDataMapCommandException {
-    DataMapFactory dataMapFactory;
+    CarbonTable mainTable = getMainTable();
+    DataMapSchema dataMapSchema = getDataMapSchema();
+    DataMapFactory<? extends DataMap> dataMapFactory;
     try {
       // try to create DataMapClassProvider instance by taking providerName as class name
-      Class<? extends DataMapFactory> providerClass =
-          (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getProviderName());
-      dataMapFactory = providerClass.newInstance();
+      dataMapFactory = (DataMapFactory<? extends DataMap>)
+          Class.forName(dataMapSchema.getProviderName()).getConstructors()[0]
+              .newInstance(mainTable, dataMapSchema);
     } catch (ClassNotFoundException e) {
       // try to create DataMapClassProvider instance by taking providerName as short name
-      dataMapFactory = getDataMapFactoryByShortName(dataMapSchema.getProviderName());
+      dataMapFactory =
+          DataMapRegistry.getDataMapFactoryByShortName(mainTable, dataMapSchema);
     } catch (Throwable e) {
       throw new MetadataProcessException(
           "failed to create DataMapClassProvider '" + dataMapSchema.getProviderName() + "'", e);
@@ -104,35 +134,14 @@ public class IndexDataMapProvider implements DataMapProvider {
     return dataMapFactory;
   }
 
-  public static DataMapFactory getDataMapFactoryByShortName(String providerName)
-      throws MalformedDataMapCommandException {
-    try {
-      DataMapRegistry.registerDataMap(
-          DataMapClassProvider.getDataMapProviderOnName(providerName).getClassName(),
-          DataMapClassProvider.getDataMapProviderOnName(providerName).getShortName());
-    } catch (UnsupportedOperationException ex) {
-      throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
-    }
-    DataMapFactory dataMapFactory;
-    String className = DataMapRegistry.getDataMapClassName(providerName.toLowerCase());
-    if (className != null) {
-      try {
-        Class<? extends DataMapFactory> datamapClass =
-            (Class<? extends DataMapFactory>) Class.forName(className);
-        dataMapFactory = datamapClass.newInstance();
-      } catch (ClassNotFoundException ex) {
-        throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
-      } catch (Throwable ex) {
-        throw new MetadataProcessException("failed to create DataMap '" + providerName + "'", ex);
-      }
-    } else {
-      throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found");
-    }
-    return dataMapFactory;
-  }
-
-  @Override public DataMapCatalog createDataMapCatalog() {
+  @Override
+  public DataMapCatalog createDataMapCatalog() {
     // TODO create abstract class and move the default implementation there.
     return null;
+  }
+
+  @Override
+  public DataMapFactory getDataMapFactory() {
+    return dataMapFactory;
   }
 }

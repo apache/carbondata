@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
@@ -51,25 +52,25 @@ import org.apache.commons.lang3.StringUtils;
 public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   private static final LogService LOGGER = LogServiceFactory.getLogService(
       MinMaxIndexDataMapFactory.class.getName());
+  private DataMapSchema dataMapSchema;
   private DataMapMeta dataMapMeta;
   private String dataMapName;
   private AbsoluteTableIdentifier identifier;
 
+  public MinMaxIndexDataMapFactory(CarbonTable carbonTable) {
+    super(carbonTable);
+  }
+
   // this is an example for datamap, we can choose the columns and operations that
   // will be supported by this datamap. Furthermore, we can add cache-support for this datamap.
-  @Override public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+  @Override public void init(DataMapSchema dataMapSchema)
       throws IOException, MalformedDataMapCommandException {
+    this.dataMapSchema = dataMapSchema;
     this.identifier = carbonTable.getAbsoluteTableIdentifier();
     this.dataMapName = dataMapSchema.getDataMapName();
 
     // columns that will be indexed
     List<CarbonColumn> allColumns = carbonTable.getCreateOrderColumn(identifier.getTableName());
-    List<String> minMaxCols = (List) CollectionUtils.collect(allColumns, new Transformer() {
-      @Override public Object transform(Object o) {
-        return ((CarbonColumn) o).getColName();
-      }
-    });
-    LOGGER.info("MinMaxDataMap support index columns: " + StringUtils.join(minMaxCols, ", "));
 
     // operations that will be supported on the indexed columns
     List<ExpressionType> optOperations = new ArrayList<>();
@@ -80,17 +81,24 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
     optOperations.add(ExpressionType.LESSTHAN_EQUALTO);
     optOperations.add(ExpressionType.NOT_EQUALS);
     LOGGER.error("MinMaxDataMap support operations: " + StringUtils.join(optOperations, ", "));
-    this.dataMapMeta = new DataMapMeta(minMaxCols, optOperations);
+    this.dataMapMeta = new DataMapMeta(allColumns, optOperations);
   }
 
   /**
    * createWriter will return the MinMaxDataWriter.
    *
    * @param segment
+   * @param shardName
    * @return
    */
-  @Override public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
-    return new MinMaxDataWriter(identifier, dataMapName, segment, writeDirectoryPath);
+  @Override public DataMapWriter createWriter(Segment segment, String shardName) {
+    return new MinMaxDataWriter(carbonTable, dataMapSchema, segment, shardName,
+        dataMapMeta.getIndexedColumns());
+  }
+
+  @Override public DataMapRefresher createRefresher(Segment segment, String shardName)
+      throws IOException {
+    return null;
   }
 
   /**

@@ -19,10 +19,8 @@ package org.apache.carbondata.datamap.bloom;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
@@ -34,6 +32,7 @@ import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -50,14 +49,13 @@ import org.apache.carbondata.events.Event;
 
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * This class is for Bloom Filter for blocklet level
+ */
 @InterfaceAudience.Internal
-public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrainDataMap> {
+public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDataMap> {
   private static final LogService LOGGER = LogServiceFactory.getLogService(
       BloomCoarseGrainDataMapFactory.class.getName());
-  /**
-   * property for indexed column
-   */
-  private static final String BLOOM_COLUMNS = "bloom_columns";
   /**
    * property for size of bloom filter
    */
@@ -67,21 +65,19 @@ public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrai
    * and all the indexed value is distinct.
    */
   private static final int DEFAULT_BLOOM_FILTER_SIZE = 32000 * 20;
-  private CarbonTable carbonTable;
   private DataMapMeta dataMapMeta;
   private String dataMapName;
   private int bloomFilterSize;
 
-  @Override
-  public void init(CarbonTable carbonTable, DataMapSchema dataMapSchema)
-      throws IOException, MalformedDataMapCommandException {
+  public BloomCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
+    super(carbonTable, dataMapSchema);
     Objects.requireNonNull(carbonTable);
     Objects.requireNonNull(dataMapSchema);
 
-    this.carbonTable = carbonTable;
     this.dataMapName = dataMapSchema.getDataMapName();
 
-    List<String> indexedColumns = validateAndGetIndexedColumns(dataMapSchema, carbonTable);
+    List<CarbonColumn> indexedColumns = carbonTable.getIndexedColumns(dataMapSchema);
     this.bloomFilterSize = validateAndGetBloomFilterSize(dataMapSchema);
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
     // todo: support more optimize operations
@@ -89,40 +85,6 @@ public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrai
     this.dataMapMeta = new DataMapMeta(this.dataMapName, indexedColumns, optimizedOperations);
     LOGGER.info(String.format("DataMap %s works for %s with bloom size %d",
         this.dataMapName, this.dataMapMeta, this.bloomFilterSize));
-  }
-
-  /**
-   * validate Lucene DataMap BLOOM_COLUMNS
-   * 1. require BLOOM_COLUMNS property
-   * 2. BLOOM_COLUMNS can't contains illegal argument(empty, blank)
-   * 3. BLOOM_COLUMNS can't contains duplicate same columns
-   * 4. BLOOM_COLUMNS should be exists in table columns
-   */
-  private List<String> validateAndGetIndexedColumns(DataMapSchema dmSchema,
-      CarbonTable carbonTable) throws MalformedDataMapCommandException {
-    String bloomColumnsStr = dmSchema.getProperties().get(BLOOM_COLUMNS);
-    if (StringUtils.isBlank(bloomColumnsStr)) {
-      throw new MalformedDataMapCommandException(
-          String.format("Bloom coarse datamap require proper %s property", BLOOM_COLUMNS));
-    }
-    String[] bloomColumns = StringUtils.split(bloomColumnsStr, ",", -1);
-    List<String> bloomColumnList = new ArrayList<String>(bloomColumns.length);
-    Set<String> bloomColumnSet = new HashSet<String>(bloomColumns.length);
-    for (String bloomCol : bloomColumns) {
-      CarbonColumn column = carbonTable.getColumnByName(carbonTable.getTableName(),
-          bloomCol.trim().toLowerCase());
-      if (null == column) {
-        throw new MalformedDataMapCommandException(
-            String.format("%s: %s does not exist in table. Please check create datamap statement",
-                BLOOM_COLUMNS, bloomCol));
-      }
-      if (!bloomColumnSet.add(column.getColName())) {
-        throw new MalformedDataMapCommandException(String.format("%s has duplicate column: %s",
-            BLOOM_COLUMNS, bloomCol));
-      }
-      bloomColumnList.add(column.getColName());
-    }
-    return bloomColumnList;
   }
 
   /**
@@ -157,21 +119,26 @@ public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrai
   }
 
   @Override
-  public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
+  public DataMapWriter createWriter(Segment segment, String shardName) throws IOException {
     LOGGER.info(
         String.format("Data of BloomCoarseGranDataMap %s for table %s will be written to %s",
-            this.dataMapName, this.carbonTable.getTableName() , writeDirectoryPath));
-    return new BloomDataMapWriter(this.carbonTable.getAbsoluteTableIdentifier(),
-        this.dataMapMeta, this.bloomFilterSize, segment, writeDirectoryPath);
+            this.dataMapName, getCarbonTable().getTableName() , shardName));
+    return new BloomDataMapWriter(getCarbonTable().getTablePath(), this.dataMapName,
+        this.dataMapMeta.getIndexedColumns(), segment, shardName, this.bloomFilterSize);
+  }
+
+  @Override
+  public DataMapRefresher createRefresher(Segment segment, String shardName) throws IOException {
+    return new BloomDataMapRefresher(getCarbonTable().getTablePath(), this.dataMapName,
+        this.dataMapMeta.getIndexedColumns(), segment, shardName, this.bloomFilterSize);
   }
 
   @Override
   public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<CoarseGrainDataMap>(1);
     try {
-      String dataMapStorePath = BloomDataMapWriter.genDataMapStorePath(
-          CarbonTablePath.getSegmentPath(carbonTable.getTablePath(), segment.getSegmentNo()),
-          dataMapName);
+      String dataMapStorePath = DataMapWriter.getDefaultDataMapPath(
+          getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
       CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dataMapStorePath).listFiles();
       for (CarbonFile carbonFile : carbonFiles) {
         BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
@@ -212,13 +179,14 @@ public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrai
 
   @Override
   public void deleteDatamapData() {
-    SegmentStatusManager ssm = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
+    SegmentStatusManager ssm =
+        new SegmentStatusManager(getCarbonTable().getAbsoluteTableIdentifier());
     try {
       List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
       for (Segment segment : validSegments) {
         String segmentId = segment.getSegmentNo();
         String datamapPath = CarbonTablePath.getSegmentPath(
-            carbonTable.getAbsoluteTableIdentifier().getTablePath(), segmentId)
+            getCarbonTable().getAbsoluteTableIdentifier().getTablePath(), segmentId)
             + File.separator + dataMapName;
         if (FileFactory.isFileExist(datamapPath)) {
           CarbonFile file = FileFactory.getCarbonFile(datamapPath,
@@ -241,7 +209,7 @@ public class BloomCoarseGrainDataMapFactory implements DataMapFactory<CoarseGrai
   }
 
   @Override
-  public DataMapLevel getDataMapType() {
+  public DataMapLevel getDataMapLevel() {
     return DataMapLevel.CG;
   }
 }

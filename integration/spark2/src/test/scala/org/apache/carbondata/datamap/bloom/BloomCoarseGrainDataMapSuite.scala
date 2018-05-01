@@ -25,6 +25,8 @@ import scala.util.Random
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.util.CarbonProperties
+
 class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   val inputFile = s"$resourcesPath/bloom_datamap_input.csv"
   val normalTable = "carbon_normal"
@@ -33,12 +35,38 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   val lineNum = 500000
 
   override protected def beforeAll(): Unit = {
+    new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     createFile(inputFile, line = lineNum, start = 0)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  test("test bloom datamap") {
+  private def checkQuery = {
+    checkAnswer(
+      sql(s"select * from $bloomDMSampleTable where id = 1"),
+      sql(s"select * from $normalTable where id = 1"))
+    checkAnswer(
+      sql(s"select * from $bloomDMSampleTable where id = 999"),
+      sql(s"select * from $normalTable where id = 999"))
+    checkAnswer(
+      sql(s"select * from $bloomDMSampleTable where city = 'city_1'"),
+      sql(s"select * from $normalTable where city = 'city_1'"))
+    checkAnswer(
+      sql(s"select * from $bloomDMSampleTable where city = 'city_999'"),
+      sql(s"select * from $normalTable where city = 'city_999'"))
+    checkAnswer(
+      sql(s"select count(distinct id), count(distinct name), count(distinct city)," +
+          s" count(distinct s1), count(distinct s2) from $bloomDMSampleTable"),
+      sql(s"select count(distinct id), count(distinct name), count(distinct city)," +
+          s" count(distinct s1), count(distinct s2) from $normalTable"))
+    checkAnswer(
+      sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +
+          s" from $bloomDMSampleTable"),
+      sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +
+          s" from $normalTable"))
+  }
+
+  test("test create bloom datamap on table with existing data") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -54,44 +82,72 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
-         | USING '${classOf[BloomCoarseGrainDataMapFactory].getName}'
-         | DMProperties('BLOOM_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 
+    // load two segments
+    (1 to 2).foreach { i =>
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $normalTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $bloomDMSampleTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+    }
+
+    sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable").show(false)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
+    checkQuery
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
+
+  test("test create bloom datamap and refresh datamap") {
     sql(
       s"""
-         | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $normalTable
-         | OPTIONS('header'='false')
-       """.stripMargin)
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
     sql(
       s"""
-         | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $bloomDMSampleTable
-         | OPTIONS('header'='false')
-       """.stripMargin)
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
 
-    sql(s"show datamap on table $bloomDMSampleTable").show(false)
-    sql(s"select * from $bloomDMSampleTable where city = 'city_5'").show(false)
-    sql(s"select * from $bloomDMSampleTable limit 5").show(false)
+    // load two segments
+    (1 to 2).foreach { i =>
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $normalTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $bloomDMSampleTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+    }
 
-    checkExistence(sql(s"show datamap on table $bloomDMSampleTable"), true, dataMapName)
-//    checkAnswer(sql(s"show datamap on table $bloomDMSampleTable"),
-//      Row(dataMapName, classOf[BloomCoarseGrainDataMapFactory].getName, "(NA)"))
-    checkAnswer(sql(s"select * from $bloomDMSampleTable where id = 1"),
-      sql(s"select * from $normalTable where id = 1"))
-    checkAnswer(sql(s"select * from $bloomDMSampleTable where id = 999"),
-      sql(s"select * from $normalTable where id = 999"))
-    checkAnswer(sql(s"select * from $bloomDMSampleTable where city = 'city_1'"),
-      sql(s"select * from $normalTable where city = 'city_1'"))
-    checkAnswer(sql(s"select * from $bloomDMSampleTable where city = 'city_999'"),
-      sql(s"select * from $normalTable where city = 'city_999'"))
-    checkAnswer(sql(s"select count(distinct id), count(distinct name), count(distinct city)," +
-                    s" count(distinct s1), count(distinct s2) from $bloomDMSampleTable"),
-      sql(s"select count(distinct id), count(distinct name), count(distinct city)," +
-          s" count(distinct s1), count(distinct s2) from $normalTable"))
-    checkAnswer(sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +
-                    s" from $bloomDMSampleTable"),
-      sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +
-          s" from $normalTable"))
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    sql(s"REFRESH DATAMAP $dataMapName ON TABLE $bloomDMSampleTable")
+    sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable").show(false)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
+    checkQuery
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
   // todo: will add more tests on bloom datamap, such as exception, delete datamap, show profiler
