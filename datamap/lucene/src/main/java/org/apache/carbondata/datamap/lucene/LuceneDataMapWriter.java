@@ -200,6 +200,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
     // add indexed columns value into the document
     Object[] rowData = row.getData();
+    List<CarbonColumn> indexColumns = getIndexColumns();
     for (int i = 0; i < rowData.length; i++) {
       if (rowData[i] != null) {
         addField(doc, rowData[i], indexColumns.get(i), Field.Store.NO);

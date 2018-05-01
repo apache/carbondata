@@ -86,11 +86,6 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
    */
   AbsoluteTableIdentifier tableIdentifier = null;
 
-  /**
-   * indexed carbon columns for lucene
-   */
-  List<String> indexedCarbonColumns = null;
-
   public LuceneDataMapFactoryBase(CarbonTable carbonTable) {
     super(carbonTable);
   }

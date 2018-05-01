@@ -63,6 +63,8 @@ public class IndexDataMapProvider extends DataMapProvider {
   @Override
   public void initMeta(String ctasSqlStatement)
       throws MalformedDataMapCommandException, IOException {
+    CarbonTable mainTable = getMainTable();
+    DataMapSchema dataMapSchema = getDataMapSchema();
     if (mainTable == null) {
       throw new MalformedDataMapCommandException(
           "Parent table is required to create index datamap");
@@ -85,24 +87,25 @@ public class IndexDataMapProvider extends DataMapProvider {
 
   @Override
   public void freeMeta() throws IOException {
-    if (mainTable == null) {
+    if (getMainTable() == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
     }
-    DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName());
+    DataMapStoreManager.getInstance().dropDataMapSchema(getDataMapSchema().getDataMapName());
   }
 
   @Override
   public void freeData() {
+    CarbonTable mainTable = getMainTable();
     if (mainTable == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
     }
     DataMapStoreManager.getInstance().clearDataMap(
-        mainTable.getAbsoluteTableIdentifier(), dataMapSchema.getDataMapName());
+        mainTable.getAbsoluteTableIdentifier(), getDataMapSchema().getDataMapName());
   }
 
   @Override
   public void rebuild() {
-    IndexDataMapRefreshRDD.rebuildDataMap(sparkSession, mainTable, dataMapSchema);
+    IndexDataMapRefreshRDD.rebuildDataMap(sparkSession, getMainTable(), getDataMapSchema());
   }
 
   @Override
@@ -112,6 +115,8 @@ public class IndexDataMapProvider extends DataMapProvider {
 
   private DataMapFactory<? extends DataMap> createIndexDataMap()
       throws MalformedDataMapCommandException {
+    CarbonTable mainTable = getMainTable();
+    DataMapSchema dataMapSchema = getDataMapSchema();
     DataMapFactory<? extends DataMap> dataMapFactory;
     try {
       // try to create DataMapClassProvider instance by taking providerName as class name

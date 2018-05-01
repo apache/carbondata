@@ -43,9 +43,10 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
 
   @Override
   public void initMeta(String ctasSqlStatement) throws MalformedDataMapCommandException {
+    DataMapSchema dataMapSchema = getDataMapSchema();
     validateDmProperty(dataMapSchema);
     helper = new PreAggregateTableHelper(
-        mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getProviderName(),
+        getMainTable(), dataMapSchema.getDataMapName(), dataMapSchema.getProviderName(),
         dataMapSchema.getProperties(), ctasSqlStatement, null, false);
     helper.initMeta(sparkSession);
   }
@@ -69,6 +70,7 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
 
   @Override
   public void freeMeta() {
+    DataMapSchema dataMapSchema = getDataMapSchema();
     dropTableCommand = new CarbonDropTableCommand(
         true,
         new Some<>(dataMapSchema.getRelationIdentifier().getDatabaseName()),

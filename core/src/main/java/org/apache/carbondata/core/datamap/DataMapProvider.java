@@ -54,12 +54,20 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 @InterfaceAudience.Internal
 public abstract class DataMapProvider {
 
-  protected CarbonTable mainTable;
-  protected DataMapSchema dataMapSchema;
+  private CarbonTable mainTable;
+  private DataMapSchema dataMapSchema;
 
   public DataMapProvider(CarbonTable mainTable, DataMapSchema dataMapSchema) {
     this.mainTable = mainTable;
     this.dataMapSchema = dataMapSchema;
+  }
+
+  protected final CarbonTable getMainTable() {
+    return mainTable;
+  }
+
+  protected final DataMapSchema getDataMapSchema() {
+    return dataMapSchema;
   }
 
   /**

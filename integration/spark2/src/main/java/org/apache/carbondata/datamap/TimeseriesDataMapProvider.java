@@ -39,6 +39,8 @@ public class TimeseriesDataMapProvider extends PreAggregateDataMapProvider {
 
   @Override
   public void initMeta(String ctasSqlStatement) {
+    DataMapSchema dataMapSchema = getDataMapSchema();
+    CarbonTable mainTable = getMainTable();
     Map<String, String> dmProperties = dataMapSchema.getProperties();
     String dmProviderName = dataMapSchema.getProviderName();
     TimeSeriesUtil.validateTimeSeriesGranularity(dmProperties, dmProviderName);

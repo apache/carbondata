@@ -84,6 +84,7 @@ public class BloomDataMapWriter extends DataMapWriter {
 
   protected void resetBloomFilters() {
     indexBloomFilters.clear();
+    List<CarbonColumn> indexColumns = getIndexColumns();
     for (int i = 0; i < indexColumns.size(); i++) {
       indexBloomFilters.add(BloomFilter.create(Funnels.byteArrayFunnel(),
           bloomFilterSize, 0.00001d));
@@ -103,6 +104,7 @@ public class BloomDataMapWriter extends DataMapWriter {
 
   protected void addRow(Object[] rowData) {
     // for each indexed column, add the data to bloom filter
+    List<CarbonColumn> indexColumns = getIndexColumns();
     for (int i = 0; i < indexColumns.size(); i++) {
       DataType dataType = indexColumns.get(i).getDataType();
       byte[] indexValue;
@@ -133,6 +135,7 @@ public class BloomDataMapWriter extends DataMapWriter {
         throw new IOException("Failed to create directory " + dataMapPath);
       }
     }
+    List<CarbonColumn> indexColumns = getIndexColumns();
     for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
       String dmFile = dataMapPath + CarbonCommonConstants.FILE_SEPARATOR +
           indexColumns.get(indexColId).getColName() + BloomCoarseGrainDataMap.BLOOM_INDEX_SUFFIX;
@@ -155,6 +158,7 @@ public class BloomDataMapWriter extends DataMapWriter {
   }
 
   protected void writeBloomDataMapFile() {
+    List<CarbonColumn> indexColumns = getIndexColumns();
     try {
       for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
         BloomDMModel model =
@@ -187,6 +191,7 @@ public class BloomDataMapWriter extends DataMapWriter {
   }
 
   protected void releaseResouce() {
+    List<CarbonColumn> indexColumns = getIndexColumns();
     for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
       CarbonUtil.closeStreams(
           currentDataOutStreams.get(indexColId), currentObjectOutStreams.get(indexColId));

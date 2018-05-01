@@ -47,7 +47,7 @@ public abstract class DataMapWriter {
 
   protected String dataMapPath;
 
-  protected List<CarbonColumn> indexColumns;
+  private List<CarbonColumn> indexColumns;
 
   public DataMapWriter(CarbonTable carbonTable, DataMapSchema dataMapSchema, Segment segment,
       String shardName) throws MalformedDataMapCommandException {
@@ -62,6 +62,10 @@ public abstract class DataMapWriter {
     this.dataMapPath = CarbonTablePath.getDataMapStorePathOnShardName(
         tablePath, segmentId, dataMapName, shardName);
     this.indexColumns = indexColumns;
+  }
+
+  protected final List<CarbonColumn> getIndexColumns() {
+    return indexColumns;
   }
 
   /**
