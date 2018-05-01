@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, Coa
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.exception.ConcurrentOperationException
+import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
@@ -335,5 +336,12 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
    */
   override def deleteDatamapData(): Unit = {
 
+  }
+
+  /**
+   * defines the features scopes for the datamap
+   */
+  override def willBecomeStale(operation: TableOperation): Boolean = {
+    false
   }
 }

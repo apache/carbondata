@@ -36,6 +36,7 @@ import org.apache.carbondata.core.datastore.compression.SnappyCompressor
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
+import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -143,6 +144,13 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
    */
   override def deleteDatamapData(): Unit = {
     ???
+  }
+
+  /**
+   * defines the features scopes for the datamap
+   */
+  override def willBecomeStale(operation: TableOperation): Boolean = {
+    false
   }
 }
 

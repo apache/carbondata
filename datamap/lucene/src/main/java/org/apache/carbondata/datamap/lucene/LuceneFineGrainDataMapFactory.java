@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
+import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
 
 /**
@@ -77,4 +78,26 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
     return DataMapLevel.FG;
   }
 
+  @Override public boolean willBecomeStale(TableOperation operation) {
+    switch (operation) {
+      case ALTER_RENAME:
+        return true;
+      case ALTER_DROP:
+        return true;
+      case ALTER_ADD_COLUMN:
+        return true;
+      case ALTER_CHANGE_DATATYPE:
+        return true;
+      case STREAMING:
+        return true;
+      case DELETE:
+        return true;
+      case UPDATE:
+        return true;
+      case PARTITION:
+        return true;
+      default:
+        return false;
+    }
+  }
 }

@@ -31,6 +31,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
+import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -79,6 +80,10 @@ private[sql] case class CarbonAlterTableRenameCommand(
       .asInstanceOf[CarbonRelation].carbonTable
     if (!oldCarbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
+    }
+
+    if (!oldCarbonTable.canAllow(oldCarbonTable, TableOperation.ALTER_RENAME)) {
+      throw new MalformedCarbonCommandException("alter rename is not supported for index datamap")
     }
 
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
