@@ -18,8 +18,8 @@
 package org.apache.spark.rpc
 
 import java.io.IOException
-import java.net.InetAddress
-import java.util.{List => JList, Map => JMap, Objects, Random, UUID}
+import java.net.{BindException, InetAddress}
+import java.util.{Objects, Random, UUID, List => JList, Map => JMap}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -30,6 +30,7 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.rpc.Worker.LOG
 import org.apache.spark.{SecurityManager, SerializableWritable, SparkConf}
 import org.apache.spark.rpc.netty.NettyRpcEnvFactory
 import org.apache.spark.search._
@@ -49,11 +50,11 @@ import org.apache.carbondata.store.worker.Status
 
 /**
  * Master of CarbonSearch.
- * It listens to [[Master.port]] to wait for worker to register.
+ * It provides a Registry service for worker to register.
  * And it provides search API to fire RPC call to workers.
  */
 @InterfaceAudience.Internal
-class Master(sparkConf: SparkConf, port: Int) {
+class Master(sparkConf: SparkConf) {
   private val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   // worker host address map to EndpointRef
@@ -64,22 +65,40 @@ class Master(sparkConf: SparkConf, port: Int) {
 
   private val scheduler: Scheduler = new Scheduler
 
-  def this(sparkConf: SparkConf) = {
-    this(sparkConf, CarbonProperties.getSearchMasterPort)
-  }
-
   /** start service and listen on port passed in constructor */
   def startService(): Unit = {
     if (rpcEnv == null) {
       new Thread(new Runnable {
         override def run(): Unit = {
           val hostAddress = InetAddress.getLocalHost.getHostAddress
-          val config = RpcEnvConfig(
-            sparkConf, "registry-service", hostAddress, "", CarbonProperties.getSearchMasterPort,
-            new SecurityManager(sparkConf), clientMode = false)
-          rpcEnv = new NettyRpcEnvFactory().create(config)
+          var port = CarbonProperties.getSearchMasterPort
+          var rpcEnv: RpcEnv = null
+          var exception: BindException = null
+          var numTry = 100  // we will try to create service at worse case 100 times
+          do {
+            try {
+              LOG.info(s"starting registry-service on $hostAddress:$port")
+              val config = RpcEnvConfig(
+                sparkConf, "registry-service", hostAddress, "", port,
+                new SecurityManager(sparkConf), clientMode = false)
+              rpcEnv = new NettyRpcEnvFactory().create(config)
+              numTry = 0
+            } catch {
+              case e: BindException =>
+                // port is occupied, increase the port number and try again
+                exception = e
+                LOG.error(s"start registry-service failed: ${e.getMessage}")
+                port = port + 1
+                numTry = numTry - 1
+            }
+          } while (numTry > 0)
+          if (rpcEnv == null) {
+            // we have tried many times, but still failed to find an available port
+            throw exception
+          }
           val registryEndpoint: RpcEndpoint = new Registry(rpcEnv, Master.this)
           rpcEnv.setupEndpoint("registry-service", registryEndpoint)
+          LOG.info("registry-service started")
           rpcEnv.awaitTermination()
         }
       }).start()

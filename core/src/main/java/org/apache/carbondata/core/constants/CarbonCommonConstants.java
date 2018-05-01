@@ -1659,7 +1659,9 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_MODE_SCAN_THREAD = "carbon.search.scan.thread";
 
   /**
-   * In search mode, Master will listen on this port for worker registration
+   * In search mode, Master will listen on this port for worker registration.
+   * If Master failed to start service with this port, it will try to increment the port number
+   * and try to bind again, until it is success
    */
   @CarbonProperty
   @InterfaceStability.Unstable
