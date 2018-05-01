@@ -15,19 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap;
+package org.apache.carbondata.core.datamap.dev;
+
+import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 /**
- * Property that can be specified when creating DataMap
+ * DataMapBuilder is used to implement REBUILD DATAMAP command, it reads all existing
+ * data in main table and load them into the DataMap. All existing index data will be deleted
+ * if there are existing data in the datamap.
  */
-@InterfaceAudience.Internal
-public class DataMapProperty {
+@InterfaceAudience.Developer("DataMap")
+public interface DataMapBuilder {
+  void initialize() throws IOException;
 
-  /**
-   * Used to specify the store location of the datamap
-   */
-  public static final String PARTITIONING = "partitioning";
-  public static final String PATH = "path";
+  void addRow(int blockletId, int pageId, int rowId, Object[] values) throws IOException;
+
+  void finish() throws IOException;
+
+  void close() throws IOException;
 }

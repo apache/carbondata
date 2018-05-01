@@ -79,26 +79,9 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * It gives all visible datamaps of type @mapType except the default datamap.
-   */
-  public List<TableDataMap> getAllVisibleDataMap(CarbonTable carbonTable, DataMapLevel mapType)
-      throws IOException {
-    List<TableDataMap> dataMaps = new ArrayList<>();
-    List<TableDataMap> tableIndices = getAllVisibleDataMap(carbonTable);
-    if (tableIndices != null) {
-      for (TableDataMap dataMap : tableIndices) {
-        if (mapType == dataMap.getDataMapFactory().getDataMapLevel()) {
-          dataMaps.add(dataMap);
-        }
-      }
-    }
-    return dataMaps;
-  }
-
-  /**
    * It only gives the visible datamaps
    */
-  private List<TableDataMap> getAllVisibleDataMap(CarbonTable carbonTable) throws IOException {
+  List<TableDataMap> getAllVisibleDataMap(CarbonTable carbonTable) throws IOException {
     CarbonSessionInfo sessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
     List<TableDataMap> allDataMaps = getAllDataMap(carbonTable);
     Iterator<TableDataMap> dataMapIterator = allDataMaps.iterator();

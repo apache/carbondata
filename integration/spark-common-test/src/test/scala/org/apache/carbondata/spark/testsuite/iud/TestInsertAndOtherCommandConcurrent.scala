@@ -28,7 +28,7 @@ import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.{DataMapRefresher, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.page.ColumnPage
@@ -53,6 +53,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       s"""
          | create datamap test on table orders
          | using '${classOf[WaitingDataMapFactory].getName}'
+         | with deferred rebuild
          | dmproperties('index_columns'='o_name')
        """.stripMargin)
   }
@@ -210,6 +211,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       s"""
          | create datamap dm_t1 on table t1
          | using '${classOf[WaitingDataMapFactory].getName}'
+         | with deferred rebuild
          | dmproperties('index_columns'='o_name')
        """.stripMargin)
     val future = runSqlAsync("insert into table t1 select * from orders_overwrite")
@@ -341,8 +343,8 @@ class WaitingDataMapFactory(
     false
   }
 
-  override def createRefresher(segment: Segment,
-      shardName: String): DataMapRefresher = {
+  override def createBuilder(segment: Segment,
+      shardName: String): DataMapBuilder = {
     ???
   }
 }

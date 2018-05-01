@@ -21,12 +21,11 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.DataMapChooser;
-import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -104,8 +103,10 @@ public class SearchRequestHandler {
     LOG.info(String.format("[SearchId:%d] %s, number of block: %d",
         request.searchId(), queryModel.toString(), mbSplit.getAllSplits().size()));
 
-    // If there is FGDataMap, prune the split by applying FGDataMap
-    queryModel = tryPruneByFGDataMap(request.searchId(), table, queryModel, mbSplit);
+    // If there is DataMap selected in Master, prune the split by it
+    if (request.dataMap() != null) {
+      queryModel = prune(request.searchId(), table, queryModel, mbSplit, request.dataMap().get());
+    }
 
     // In search mode, reader will read multiple blocks by using a thread pool
     CarbonRecordReader<CarbonRow> reader =
@@ -135,35 +136,32 @@ public class SearchRequestHandler {
    * If there is FGDataMap defined for this table and filter condition in the query,
    * prune the splits by the DataMap and set the pruned split into the QueryModel and return
    */
-  private QueryModel tryPruneByFGDataMap(int queryId,
-      CarbonTable table, QueryModel queryModel, CarbonMultiBlockSplit mbSplit) throws IOException {
-    DataMapExprWrapper wrapper =
-        DataMapChooser.get().choose(table, queryModel.getFilterExpressionResolverTree());
-
-    if (wrapper.getDataMapLevel() == DataMapLevel.FG) {
-      List<Segment> segments = new LinkedList<>();
-      for (CarbonInputSplit split : mbSplit.getAllSplits()) {
-        segments.add(Segment.toSegment(
-            split.getSegmentId(), new LatestFilesReadCommittedScope(table.getTablePath())));
-      }
-      List<ExtendedBlocklet> prunnedBlocklets = wrapper.prune(segments, null);
-
-      List<String> pathToRead = new LinkedList<>();
-      for (ExtendedBlocklet prunnedBlocklet : prunnedBlocklets) {
-        pathToRead.add(prunnedBlocklet.getPath());
-      }
-
-      List<TableBlockInfo> blocks = queryModel.getTableBlockInfos();
-      List<TableBlockInfo> blockToRead = new LinkedList<>();
-      for (TableBlockInfo block : blocks) {
-        if (pathToRead.contains(block.getFilePath())) {
-          blockToRead.add(block);
-        }
-      }
-      LOG.info(String.format("[SearchId:%d] pruned using FG DataMap, pruned blocks: %d",
-          queryId, blockToRead.size()));
-      queryModel.setTableBlockInfos(blockToRead);
+  private QueryModel prune(int queryId, CarbonTable table, QueryModel queryModel,
+      CarbonMultiBlockSplit mbSplit, DataMapExprWrapper datamap) throws IOException {
+    Objects.requireNonNull(datamap);
+    List<Segment> segments = new LinkedList<>();
+    for (CarbonInputSplit split : mbSplit.getAllSplits()) {
+      segments.add(
+          Segment.toSegment(split.getSegmentId(),
+              new LatestFilesReadCommittedScope(table.getTablePath())));
     }
+    List<ExtendedBlocklet> prunnedBlocklets = datamap.prune(segments, null);
+
+    List<String> pathToRead = new LinkedList<>();
+    for (ExtendedBlocklet prunnedBlocklet : prunnedBlocklets) {
+      pathToRead.add(prunnedBlocklet.getPath());
+    }
+
+    List<TableBlockInfo> blocks = queryModel.getTableBlockInfos();
+    List<TableBlockInfo> blockToRead = new LinkedList<>();
+    for (TableBlockInfo block : blocks) {
+      if (pathToRead.contains(block.getFilePath())) {
+        blockToRead.add(block);
+      }
+    }
+    LOG.info(String.format("[SearchId:%d] pruned using FG DataMap, pruned blocks: %d", queryId,
+        blockToRead.size()));
+    queryModel.setTableBlockInfos(blockToRead);
     return queryModel;
   }
 

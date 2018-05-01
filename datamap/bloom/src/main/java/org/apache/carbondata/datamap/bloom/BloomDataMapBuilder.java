@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
+import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -33,9 +33,9 @@ import org.apache.carbondata.core.util.CarbonUtil;
  * Implementation for BloomFilter DataMap to rebuild the datamap for main table with existing data
  */
 @InterfaceAudience.Internal
-public class BloomDataMapRefresher extends BloomDataMapWriter implements DataMapRefresher {
+public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBuilder {
 
-  BloomDataMapRefresher(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
+  BloomDataMapBuilder(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp)
       throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName,

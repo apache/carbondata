@@ -21,14 +21,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
@@ -42,8 +41,6 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Transformer;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -52,25 +49,18 @@ import org.apache.commons.lang3.StringUtils;
 public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   private static final LogService LOGGER = LogServiceFactory.getLogService(
       MinMaxIndexDataMapFactory.class.getName());
-  private DataMapSchema dataMapSchema;
   private DataMapMeta dataMapMeta;
   private String dataMapName;
   private AbsoluteTableIdentifier identifier;
 
-  public MinMaxIndexDataMapFactory(CarbonTable carbonTable) {
-    super(carbonTable);
-  }
+  public MinMaxIndexDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+    super(carbonTable, dataMapSchema);
 
-  // this is an example for datamap, we can choose the columns and operations that
-  // will be supported by this datamap. Furthermore, we can add cache-support for this datamap.
-  @Override public void init(DataMapSchema dataMapSchema)
-      throws IOException, MalformedDataMapCommandException {
-    this.dataMapSchema = dataMapSchema;
-    this.identifier = carbonTable.getAbsoluteTableIdentifier();
-    this.dataMapName = dataMapSchema.getDataMapName();
+    // this is an example for datamap, we can choose the columns and operations that
+    // will be supported by this datamap. Furthermore, we can add cache-support for this datamap.
 
     // columns that will be indexed
-    List<CarbonColumn> allColumns = carbonTable.getCreateOrderColumn(identifier.getTableName());
+    List<CarbonColumn> allColumns = getCarbonTable().getCreateOrderColumn(identifier.getTableName());
 
     // operations that will be supported on the indexed columns
     List<ExpressionType> optOperations = new ArrayList<>();
@@ -91,12 +81,14 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * @param shardName
    * @return
    */
-  @Override public DataMapWriter createWriter(Segment segment, String shardName) {
-    return new MinMaxDataWriter(carbonTable, dataMapSchema, segment, shardName,
+  @Override
+  public DataMapWriter createWriter(Segment segment, String shardName) {
+    return new MinMaxDataWriter(getCarbonTable(), getDataMapSchema(), segment, shardName,
         dataMapMeta.getIndexedColumns());
   }
 
-  @Override public DataMapRefresher createRefresher(Segment segment, String shardName)
+  @Override
+  public DataMapBuilder createBuilder(Segment segment, String shardName)
       throws IOException {
     return null;
   }

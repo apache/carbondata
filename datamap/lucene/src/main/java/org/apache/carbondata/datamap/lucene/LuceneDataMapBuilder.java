@@ -24,7 +24,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
+import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -53,7 +53,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.solr.store.hdfs.HdfsDirectory;
 
-public class LuceneDataMapRefresher implements DataMapRefresher {
+public class LuceneDataMapBuilder implements DataMapBuilder {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LuceneDataMapWriter.class.getName());
@@ -70,7 +70,7 @@ public class LuceneDataMapRefresher implements DataMapRefresher {
 
   private Analyzer analyzer = null;
 
-  LuceneDataMapRefresher(String tablePath, String dataMapName,
+  LuceneDataMapBuilder(String tablePath, String dataMapName,
       Segment segment, String shardName, List<CarbonColumn> indexColumns) {
     this.dataMapPath = CarbonTablePath.getDataMapStorePathOnShardName(
         tablePath, segment.getSegmentNo(), dataMapName, shardName);

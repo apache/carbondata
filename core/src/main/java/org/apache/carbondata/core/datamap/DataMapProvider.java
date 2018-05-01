@@ -104,13 +104,12 @@ public abstract class DataMapProvider {
    * Rebuild the datamap by loading all existing data from mainTable
    * This is called when refreshing the datamap when
    * 1. after datamap creation and if `autoRefreshDataMap` is set to true
-   * 2. user manually trigger refresh datamap command
+   * 2. user manually trigger REBUILD DATAMAP command
    */
   public abstract void rebuild() throws IOException, NoSuchDataMapException;
 
   /**
    * Build the datamap incrementally by loading specified segment data
-   * This is called when user manually trigger refresh datamap
    */
   public abstract void incrementalBuild(String[] segmentIds) throws IOException;
 

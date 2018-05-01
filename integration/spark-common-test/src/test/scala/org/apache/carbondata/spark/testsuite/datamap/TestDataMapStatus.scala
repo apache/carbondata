@@ -26,7 +26,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.{DataMapRefresher, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datamap.status.{DataMapStatus, DataMapStatusManager}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
@@ -94,8 +94,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamapstatustest1")
   }
 
-  // enable it in PR2255
-  ignore("datamap status with refresh datamap") {
+  test("datamap status with REBUILD DATAMAP") {
     sql("DROP TABLE IF EXISTS datamapstatustest2")
     sql(
       """
@@ -119,7 +118,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     assert(details.length == 1)
     assert(details.exists(p => p.getDataMapName.equals("statusdatamap2") && p.getStatus == DataMapStatus.DISABLED))
 
-    sql(s"refresh datamap statusdatamap2 on table datamapstatustest2")
+    sql(s"REBUILD DATAMAP statusdatamap2 on table datamapstatustest2")
 
     details = DataMapStatusManager.readDataMapStatusDetails()
     assert(details.length == 1)
@@ -128,8 +127,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamapstatustest2")
   }
 
-  // enable it in PR2255
-  ignore("datamap create without on table test") {
+  test("datamap create without on table test") {
     sql("DROP TABLE IF EXISTS datamapstatustest3")
     sql(
       """
@@ -162,7 +160,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     assert(details.length == 1)
     assert(details.exists(p => p.getDataMapName.equals("statusdatamap3") && p.getStatus == DataMapStatus.DISABLED))
 
-    sql(s"refresh datamap statusdatamap3")
+    sql(s"REBUILD DATAMAP statusdatamap3")
 
     details = DataMapStatusManager.readDataMapStatusDetails()
     assert(details.length == 1)
@@ -245,8 +243,8 @@ class TestDataMapFactory(
     false
   }
 
-  override def createRefresher(segment: Segment,
-      shardName: String): DataMapRefresher = {
+  override def createBuilder(segment: Segment,
+      shardName: String): DataMapBuilder = {
     ???
   }
 }
