@@ -19,7 +19,7 @@ package org.apache.spark.rpc
 
 import java.io.IOException
 import java.net.{BindException, InetAddress}
-import java.util.{Objects, Random, UUID, List => JList, Map => JMap}
+import java.util.{List => JList, Map => JMap, Objects, Random, UUID}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -30,7 +30,6 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.rpc.Worker.LOG
 import org.apache.spark.{SecurityManager, SerializableWritable, SparkConf}
 import org.apache.spark.rpc.netty.NettyRpcEnvFactory
 import org.apache.spark.search._
