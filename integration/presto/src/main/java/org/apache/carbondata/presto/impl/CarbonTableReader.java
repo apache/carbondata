@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -79,6 +80,9 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.thrift.TBase;
 
 import static java.util.Objects.requireNonNull;
+import static org.apache.hadoop.fs.s3a.Constants.ACCESS_KEY;
+import static org.apache.hadoop.fs.s3a.Constants.ENDPOINT;
+import static org.apache.hadoop.fs.s3a.Constants.SECRET_KEY;
 
 /**
  * CarbonTableReader will be a facade of these utils
@@ -98,7 +102,7 @@ public class CarbonTableReader {
       return CarbonTablePath.isCarbonDataFile(path.getName());
     }
   };
-  private CarbonTableConfig config;
+  public CarbonTableConfig config;
   /**
    * The names of the tables under the schema (this.carbonFileList).
    */
@@ -132,6 +136,7 @@ public class CarbonTableReader {
     this.config = requireNonNull(config, "CarbonTableConfig is null");
     this.carbonCache = new AtomicReference(new HashMap());
     tableList = new ConcurrentSet<>();
+    setS3Properties();
   }
 
   /**
@@ -506,5 +511,21 @@ public class CarbonTableReader {
     return format;
   }
 
+  private void setS3Properties(){
+  FileFactory.getConfiguration()
+      .set(ACCESS_KEY, Objects.toString(config.getS3A_AcesssKey(),""));
+    FileFactory.getConfiguration()
+        .set(SECRET_KEY, Objects.toString(config.getS3A_SecretKey()));
+    FileFactory.getConfiguration().set(CarbonCommonConstants.S3_ACCESS_KEY,
+      Objects.toString(config.getS3_AcesssKey(),""));
+    FileFactory.getConfiguration().set(CarbonCommonConstants.S3_SECRET_KEY,
+      Objects.toString(config.getS3_SecretKey()));
+    FileFactory.getConfiguration().set(CarbonCommonConstants.S3N_ACCESS_KEY,
+      Objects.toString(config.getS3N_AcesssKey(),""));
+    FileFactory.getConfiguration().set(CarbonCommonConstants.S3N_SECRET_KEY,
+      Objects.toString(config.getS3N_SecretKey(),""));
+    FileFactory.getConfiguration().set(ENDPOINT,
+      Objects.toString(config.getS3EndPoint(),""));
+}
 
 }

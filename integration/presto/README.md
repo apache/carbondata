@@ -82,6 +82,34 @@ Please follow the below steps to query carbondata in presto
   For example, if you have a schema named 'default' stored in hdfs://namenode:9000/test/carbondata/,
   Then set carbondata-store=hdfs://namenode:9000/test/carbondata
   
+#### Connecting to carbondata store on s3
+ * In case you want to query carbonstore on S3 using S3A api put following additional properties inside $PRESTO_HOME$/etc/catalog/carbondata.properties 
+   ```
+    Required properties
+
+    fs.s3a.access.key={value}
+    fs.s3a.secret.key={value}
+    
+    Optional properties
+    
+    fs.s3a.endpoint={value}
+   ```
+ * In case you want to query carbonstore on s3 using S3 api put following additional properties inside $PRESTO_HOME$/etc/catalog/carbondata.properties 
+    ```
+      fs.s3.awsAccessKeyId={value}
+      fs.s3.awsSecretAccessKey={value}
+    ```
+  * In case You want to query carbonstore on s3 using S3N api put following additional properties inside $PRESTO_HOME$/etc/catalog/carbondata.properties 
+    ```
+        fs.s3n.awsAccessKeyId={value}
+        fs.s3n.awsSecretAccessKey={value}
+     ```
+     
+    Replace the schema-store-path with the absolute path of the parent directory of the schema.
+    For example, if you have a schema named 'default' stored in a bucket s3a://s3-carbon/store,
+    Then set carbondata-store=s3a://s3-carbon/store
+    
+####  Unsafe Properties    
   enable.unsafe.in.query.processing property by default is true in CarbonData system, the carbon.unsafe.working.memory.in.mb 
   property defines the limit for Unsafe Memory usage in Mega Bytes, the default value is 512 MB.
   If your tables are big you can increase the unsafe memory, or disable unsafe via setting enable.unsafe.in.query.processing=false.
