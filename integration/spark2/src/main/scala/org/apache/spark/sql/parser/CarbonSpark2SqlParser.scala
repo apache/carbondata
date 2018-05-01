@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRefreshCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
+import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRebuildCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableDropPartitionCommand, CarbonAlterTableSplitPartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
@@ -147,19 +147,23 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * The syntax of datamap creation is as follows.
-   * CREATE DATAMAP IF NOT EXISTS datamapName ON TABLE tableName USING 'DataMapProviderName'
+   * CREATE DATAMAP IF NOT EXISTS datamapName [ON TABLE tableName]
+   * USING 'DataMapProviderName'
+   * [WITH DEFERRED REBUILD]
    * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
    */
   protected lazy val createDataMap: Parser[LogicalPlan] =
     CREATE ~> DATAMAP ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
     opt(ontable) ~
-    (USING ~> stringLit) ~ (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
+    (USING ~> stringLit) ~
+    opt(WITH ~> DEFERRED ~> REBUILD) ~
+    (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
     (AS ~> restInput).? <~ opt(";") ^^ {
-      case ifnotexists ~ dmname ~ tableIdent ~ dmProviderName ~ dmprops ~ query =>
+      case ifnotexists ~ dmname ~ tableIdent ~ dmProviderName ~ deferred ~ dmprops ~ query =>
 
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
         CarbonCreateDataMapCommand(dmname, tableIdent, dmProviderName, map, query,
-          ifnotexists.isDefined)
+          ifnotexists.isDefined, deferred.isDefined)
     }
 
   protected lazy val ontable: Parser[TableIdentifier] =
@@ -190,12 +194,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * The syntax of show datamap is used to show datamaps on the table
-   * REFRESH DATAMAP datamapname [ON TABLE] tableName
+   * REBUILD DATAMAP datamapname [ON TABLE] tableName
    */
   protected lazy val refreshDataMap: Parser[LogicalPlan] =
-    REFRESH ~> DATAMAP ~> ident ~ opt(ontable) <~ opt(";") ^^ {
+    REBUILD ~> DATAMAP ~> ident ~ opt(ontable) <~ opt(";") ^^ {
       case datamap ~ tableIdent =>
-        CarbonDataMapRefreshCommand(datamap, tableIdent)
+        CarbonDataMapRebuildCommand(datamap, tableIdent)
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =

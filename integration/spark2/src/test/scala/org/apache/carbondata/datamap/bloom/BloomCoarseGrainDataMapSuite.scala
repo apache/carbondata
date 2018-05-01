@@ -22,44 +22,56 @@ import java.util.UUID
 
 import scala.util.Random
 
+import org.apache.spark.sql.{CarbonSession, DataFrame}
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
-class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
-  val inputFile = s"$resourcesPath/bloom_datamap_input.csv"
+class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+  val bigFile = s"$resourcesPath/bloom_datamap_input_big.csv"
+  val smallFile = s"$resourcesPath/bloom_datamap_input_small.csv"
   val normalTable = "carbon_normal"
   val bloomDMSampleTable = "carbon_bloom"
   val dataMapName = "bloom_dm"
-  val lineNum = 500000
 
   override protected def beforeAll(): Unit = {
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
-    createFile(inputFile, line = lineNum, start = 0)
+    createFile(bigFile, line = 500000)
+    createFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  private def checkQuery = {
+  override def afterEach(): Unit = {
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
+
+  private def checkSqlHitDataMap(sqlText: String, dataMapName: String, shouldHit: Boolean): DataFrame = {
+    if (shouldHit) {
+      assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isDataMapHit(sqlText, dataMapName))
+    } else {
+      assert(!sqlContext.sparkSession.asInstanceOf[CarbonSession].isDataMapHit(sqlText, dataMapName))
+    }
+    sql(sqlText)
+  }
+
+  private def checkQuery(dataMapName: String, shouldHit: Boolean = true) = {
     checkAnswer(
-      sql(s"select * from $bloomDMSampleTable where id = 1"),
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where id = 1", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id = 1"))
     checkAnswer(
-      sql(s"select * from $bloomDMSampleTable where id = 999"),
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where id = 999", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id = 999"))
     checkAnswer(
-      sql(s"select * from $bloomDMSampleTable where city = 'city_1'"),
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where city = 'city_1'", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_1'"))
     checkAnswer(
-      sql(s"select * from $bloomDMSampleTable where city = 'city_999'"),
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where city = 'city_999'", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999'"))
-    checkAnswer(
-      sql(s"select count(distinct id), count(distinct name), count(distinct city)," +
-          s" count(distinct s1), count(distinct s2) from $bloomDMSampleTable"),
-      sql(s"select count(distinct id), count(distinct name), count(distinct city)," +
-          s" count(distinct s1), count(distinct s2) from $normalTable"))
-    checkAnswer(
+     checkAnswer(
       sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +
           s" from $bloomDMSampleTable"),
       sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +
@@ -86,28 +98,34 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 
+    var map = DataMapStatusManager.readDataMapStatusMap()
+    assert(map.get(dataMapName).isEnabled)
+
     // load two segments
     (1 to 2).foreach { i =>
       sql(
         s"""
-           | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $normalTable
+           | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $normalTable
            | OPTIONS('header'='false')
          """.stripMargin)
       sql(
         s"""
-           | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $bloomDMSampleTable
+           | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $bloomDMSampleTable
            | OPTIONS('header'='false')
          """.stripMargin)
     }
 
+    map = DataMapStatusManager.readDataMapStatusMap()
+    assert(map.get(dataMapName).isEnabled)
+
     sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable").show(false)
     checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
-    checkQuery
+    checkQuery(dataMapName)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  test("test create bloom datamap and refresh datamap") {
+  test("test create bloom datamap and REBUILD DATAMAP") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -125,12 +143,12 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     (1 to 2).foreach { i =>
       sql(
         s"""
-           | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $normalTable
+           | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $normalTable
            | OPTIONS('header'='false')
          """.stripMargin)
       sql(
         s"""
-           | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $bloomDMSampleTable
+           | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $bloomDMSampleTable
            | OPTIONS('header'='false')
          """.stripMargin)
     }
@@ -142,18 +160,135 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    sql(s"REFRESH DATAMAP $dataMapName ON TABLE $bloomDMSampleTable")
     sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable").show(false)
     checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
-    checkQuery
+    checkQuery(dataMapName)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  // todo: will add more tests on bloom datamap, such as exception, delete datamap, show profiler
+  test("test create bloom datamap with DEFERRED REBUILD, query hit datamap") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $normalTable
+         | OPTIONS('header'='false')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $bloomDMSampleTable
+         | OPTIONS('header'='false')
+       """.stripMargin)
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | WITH DEFERRED REBUILD
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    var map = DataMapStatusManager.readDataMapStatusMap()
+    assert(!map.get(dataMapName).isEnabled)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $normalTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $bloomDMSampleTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+
+    map = DataMapStatusManager.readDataMapStatusMap()
+    assert(!map.get(dataMapName).isEnabled)
+
+    // once we rebuild, it should be enabled
+    sql(s"REBUILD DATAMAP $dataMapName ON TABLE $bloomDMSampleTable")
+    map = DataMapStatusManager.readDataMapStatusMap()
+    assert(map.get(dataMapName).isEnabled)
+
+    sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable").show(false)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
+    checkQuery(dataMapName)
+
+    // once we load again, datamap should be disabled, since it is lazy
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $normalTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $bloomDMSampleTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+    map = DataMapStatusManager.readDataMapStatusMap()
+    assert(!map.get(dataMapName).isEnabled)
+    checkQuery(dataMapName, shouldHit = false)
+
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
+
+  test("test create bloom datamap with DEFERRED REBUILD, query not hit datamap") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $normalTable
+         | OPTIONS('header'='false')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $bloomDMSampleTable
+         | OPTIONS('header'='false')
+       """.stripMargin)
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | WITH DEFERRED REBUILD
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
+
+    // datamap is not loaded, so it should not hit
+    checkQuery(dataMapName, shouldHit = false)
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
 
   override protected def afterAll(): Unit = {
-    deleteFile(inputFile)
+    deleteFile(bigFile)
+    deleteFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }

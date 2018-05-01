@@ -28,8 +28,6 @@ import org.apache.carbondata.spark.util.DataGenerator
  * Test Suite for search mode
  */
 
-// TODO: Need to Fix
-@Ignore
 class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
 
   val numRows = 500 * 1000

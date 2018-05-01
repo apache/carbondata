@@ -15,22 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap.dev;
-
-import java.io.IOException;
+package org.apache.carbondata.core.metadata.schema.datamap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 /**
- * Interface to rebuild the datamap for main table with existing data
+ * Property that can be specified when creating DataMap
  */
-@InterfaceAudience.Developer("DataMap")
-public interface DataMapRefresher {
-  void initialize() throws IOException;
+@InterfaceAudience.Internal
+public class DataMapProperty {
 
-  void addRow(int blockletId, int pageId, int rowId, Object[] values) throws IOException;
+  /**
+   * Used to specify the store location of the datamap
+   */
+  public static final String PARTITIONING = "partitioning";
+  public static final String PATH = "path";
 
-  void finish() throws IOException;
-
-  void close() throws IOException;
+  /**
+   * For datamap created with 'WITH DEFERRED REBUILD' syntax, we will add this
+   * property internally
+   */
+  public static final String DEFERRED_REBUILD = "_internal.deferred.rebuild";
 }

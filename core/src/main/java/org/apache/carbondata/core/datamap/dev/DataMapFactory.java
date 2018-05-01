@@ -61,10 +61,11 @@ public abstract class DataMapFactory<T extends DataMap> {
       throws IOException;
 
   /**
-   * Create a new Refresher for this datamap, to rebuild the specified
+   * Create a new DataMapBuilder for this datamap, to rebuild the specified
    * segment and shard data in the main table.
+   * TODO: refactor to unify with DataMapWriter
    */
-  public abstract DataMapRefresher createRefresher(Segment segment, String shardName)
+  public abstract DataMapBuilder createBuilder(Segment segment, String shardName)
       throws IOException;
 
   /**

@@ -105,7 +105,7 @@ public class IndexDataMapProvider extends DataMapProvider {
 
   @Override
   public void rebuild() {
-    IndexDataMapRefreshRDD.rebuildDataMap(sparkSession, getMainTable(), getDataMapSchema());
+    IndexDataMapRebuildRDD.rebuildDataMap(sparkSession, getMainTable(), getDataMapSchema());
   }
 
   @Override

@@ -51,6 +51,10 @@ public class DataMapStatusDetail implements Serializable {
     return status;
   }
 
+  public boolean isEnabled() {
+    return status == DataMapStatus.ENABLED;
+  }
+
   public void setStatus(DataMapStatus status) {
     this.status = status;
   }

@@ -848,11 +848,11 @@ object CarbonDataRDDFactory {
       val errorMessage = s"Dataload failed due to failure in table status updation for" +
                          s" ${carbonLoadModel.getTableName}"
       LOGGER.audit("Data load is failed for " +
-                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                   s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
       LOGGER.error("Dataload failed due to failure in table status updation.")
       throw new Exception(errorMessage)
     } else {
-      DataMapStatusManager.disableDataMapsOfTable(carbonTable)
+      DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
     }
     done
   }

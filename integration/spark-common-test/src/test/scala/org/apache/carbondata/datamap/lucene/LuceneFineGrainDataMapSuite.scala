@@ -30,7 +30,7 @@ import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandExcept
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 
 class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
@@ -62,14 +62,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
 
-    sql("DROP TABLE IF EXISTS datamap_test4")
-
-    sql(
-      """
-        | CREATE TABLE datamap_test4(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
-      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
   }
 
   test("validate INDEX_COLUMNS DataMap property") {
@@ -132,37 +125,37 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
 
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test where name='n10'"))
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM datamap_test WHERE city='c020'"))
 
     sql("drop datamap dm on table datamap_test")
   }
 
-  test("test lucene refresh data map") {
-
+  test("test lucene rebuild data map") {
+    sql("DROP TABLE IF EXISTS datamap_test4")
+    sql(
+      """
+        | CREATE TABLE datamap_test4(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+      """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test4 OPTIONS('header'='false')")
-
-    //sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test4 OPTIONS('header'='false')")
 
     sql(
       s"""
          | CREATE DATAMAP dm4 ON TABLE datamap_test4
          | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='Name , cIty')
+         | WITH DEFERRED REBUILD
+         | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
 
-    //sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test4 OPTIONS('header'='false')")
+    sql("REBUILD DATAMAP dm4 ON TABLE datamap_test4")
 
-    sql("refresh datamap dm4 ON TABLE datamap_test4")
-
-    checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test4 where name='n10'"))
+    checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test where name='n10'"))
     checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM datamap_test4 WHERE city='c020'"))
 
-    sql("drop datamap dm4 on table datamap_test4")
-
+    sql("drop table datamap_test4")
   }
-
 
   test("test lucene fine grain data map drop") {
     sql("DROP TABLE IF EXISTS datamap_test1")
@@ -549,6 +542,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test lucene fine grain data map with text-match limit") {
+
     sql(
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
@@ -556,7 +550,6 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
 
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select count(*) from datamap_test where TEXT_MATCH_WITH_LIMIT('name:n10*',10)"),Seq(Row(10)))
     checkAnswer(sql("select count(*) from datamap_test where TEXT_MATCH_WITH_LIMIT('name:n10*',50)"),Seq(Row(50)))
     sql("drop datamap dm on table datamap_test")
@@ -570,17 +563,16 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
 
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
-    sql("DROP TABLE IF EXISTS tabl1")
     sql(
       """
         | CREATE TABLE table1(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    sql("INSERT OVERWRITE TABLE table1 select *from datamap_test where TEXT_MATCH('name:n*')")
+    sql("INSERT OVERWRITE TABLE table1 select * from datamap_test where TEXT_MATCH('name:n*')")
     checkAnswer(sql("select count(*) from table1"),Seq(Row(10000)))
     sql("drop datamap dm on table datamap_test")
+    sql("drop table table1")
   }
 
   test("explain query with lucene datamap") {
@@ -698,7 +690,31 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       sql(s"select * from datamap_test5 where name='n10'"))
     checkAnswer(sql("SELECT * FROM datamap_test5 WHERE TEXT_MATCH('city:c020')"),
       sql(s"SELECT * FROM datamap_test5 WHERE city='c020'"))
+    sql("DROP TABLE IF EXISTS datamap_test5")
+  }
 
+  test("test lucene fine grain datamap rebuild") {
+    sql("DROP TABLE IF EXISTS datamap_test5")
+    sql(
+      """
+        | CREATE TABLE datamap_test5(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm ON TABLE datamap_test5
+         | USING 'lucene'
+         | WITH DEFERRED REBUILD
+         | DMProperties('INDEX_COLUMNS'='city')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test5 OPTIONS('header'='false')")
+    val map = DataMapStatusManager.readDataMapStatusMap()
+    assert(!map.get("dm").isEnabled)
+    sql("REBUILD DATAMAP dm ON TABLE datamap_test5")
+    checkAnswer(sql("SELECT * FROM datamap_test5 WHERE TEXT_MATCH('city:c020')"),
+      sql(s"SELECT * FROM datamap_test5 WHERE city='c020'"))
+    sql("DROP TABLE IF EXISTS datamap_test5")
   }
 
   test("test text_match on normal table") {
