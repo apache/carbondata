@@ -333,6 +333,23 @@ public class CarbonWriterBuilder {
     return new AvroCarbonWriter(loadModel);
   }
 
+  private void setCsvHeader(CarbonLoadModel model) {
+    Field[] fields = schema.getFields();
+    StringBuilder builder = new StringBuilder();
+    String[] columns = new String[fields.length];
+    int i = 0;
+    for (Field field : fields) {
+      if (null != field) {
+        builder.append(field.getFieldName());
+        builder.append(",");
+        columns[i++] = field.getFieldName();
+      }
+    }
+    String header = builder.toString();
+    model.setCsvHeader(header.substring(0, header.length() - 1));
+    model.setCsvHeaderColumns(columns);
+  }
+
   private CarbonLoadModel createLoadModel() throws IOException, InvalidLoadOptionException {
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
@@ -368,7 +385,7 @@ public class CarbonWriterBuilder {
       for (Field field : schema.getFields()) {
         if (null != field) {
           if (field.getDataType() == DataTypes.STRING ||
-              field.getDataType() == DataTypes.DATE ||
+              field.getDataType() == DataTypes.DATE  ||
               field.getDataType() == DataTypes.TIMESTAMP) {
             sortColumnsList.add(field.getFieldName());
           }
@@ -380,30 +397,9 @@ public class CarbonWriterBuilder {
       sortColumnsList = Arrays.asList(sortColumns);
     }
     ColumnSchema[] sortColumnsSchemaList = new ColumnSchema[sortColumnsList.size()];
-    for (Field field : schema.getFields()) {
-      if (null != field) {
-        if (field.getChildren() != null && field.getChildren().size() > 0) {
-          // Loop through the inner columns and for a StructData
-          List<StructField> structFieldsArray =
-              new ArrayList<StructField>(field.getChildren().size());
-          String parentName = field.getFieldName();
-          for (StructField childFld : field.getChildren()) {
-            structFieldsArray.add(new StructField(childFld.getFieldName(), childFld.getDataType()));
-          }
-          DataType complexType = DataTypes.createStructType(structFieldsArray);
-          tableSchemaBuilder.addColumn(new StructField(field.getFieldName(), complexType), false);
-        } else {
-          int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
-          ColumnSchema columnSchema = tableSchemaBuilder
-              .addColumn(new StructField(field.getFieldName(), field.getDataType()),
-                  isSortColumn > -1);
-          if (isSortColumn > -1) {
-            columnSchema.setSortColumn(true);
-            sortColumnsSchemaList[isSortColumn] = columnSchema;
-          }
-        }
-      }
-    }
+    Field[] fields = schema.getFields();
+    buildTableSchema(fields, tableSchemaBuilder, sortColumnsList, sortColumnsSchemaList);
+
     tableSchemaBuilder.setSortColumns(Arrays.asList(sortColumnsSchemaList));
     String tableName;
     String dbName;
@@ -416,14 +412,54 @@ public class CarbonWriterBuilder {
     }
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
-    CarbonTable table = CarbonTable.builder()
-        .tableName(schema.getTableName())
-        .databaseName(dbName)
-        .tablePath(path)
-        .tableSchema(schema)
-        .isTransactionalTable(isTransactionalTable)
-        .build();
+    CarbonTable table =
+        CarbonTable.builder().tableName(schema.getTableName()).databaseName(dbName).tablePath(path)
+            .tableSchema(schema).isTransactionalTable(isTransactionalTable).build();
     return table;
+  }
+
+  private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
+      List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList) {
+    for (Field field : fields) {
+      if (null != field) {
+        int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
+        if (isSortColumn > -1) {
+          // unsupported types for ("array", "struct", "double", "float", "decimal")
+          if (field.getDataType() == DataTypes.DOUBLE || field.getDataType() == DataTypes.FLOAT
+              || DataTypes.isDecimal(field.getDataType()) || field.getDataType().isComplexType()) {
+            throw new RuntimeException(
+                " sort columns not supported for " + "array, struct, double, float, decimal ");
+          }
+        }
+
+        if (field.getChildren() != null && field.getChildren().size() > 0) {
+          if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+            // Loop through the inner columns and for a StructData
+            DataType complexType =
+                DataTypes.createArrayType(field.getChildren().get(0).getDataType());
+            tableSchemaBuilder.addColumn(new StructField(field.getFieldName(), complexType), false);
+          } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
+            // Loop through the inner columns and for a StructData
+            List<StructField> structFieldsArray =
+                new ArrayList<StructField>(field.getChildren().size());
+            for (StructField childFld : field.getChildren()) {
+              structFieldsArray
+                  .add(new StructField(childFld.getFieldName(), childFld.getDataType()));
+            }
+            DataType complexType = DataTypes.createStructType(structFieldsArray);
+            tableSchemaBuilder.addColumn(new StructField(field.getFieldName(), complexType), false);
+          }
+        } else {
+          ColumnSchema columnSchema = tableSchemaBuilder
+              .addColumn(new StructField(field.getFieldName(), field.getDataType()),
+                  isSortColumn > -1);
+          columnSchema.setSortColumn(true);
+          if (isSortColumn > -1) {
+            sortColumnsSchemaList[isSortColumn] = columnSchema;
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -465,6 +501,8 @@ public class CarbonWriterBuilder {
       options = new HashMap<>();
     }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
-    return builder.build(options, UUID, taskNo);
+    CarbonLoadModel build = builder.build(options, UUID, taskNo);
+    setCsvHeader(build);
+    return build;
   }
 }

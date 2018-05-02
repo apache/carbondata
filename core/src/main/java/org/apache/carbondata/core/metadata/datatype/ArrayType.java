@@ -30,4 +30,8 @@ public class ArrayType extends DataType {
   public boolean isComplexType() {
     return true;
   }
+
+  public DataType getElementType() {
+    return elementType;
+  }
 }

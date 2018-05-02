@@ -97,32 +97,16 @@ private[spark] object SparkTypeConverter {
   def getStructChildren(table: CarbonTable, dimName: String): String = {
     table.getChildren(dimName).asScala.map(childDim => {
       childDim.getDataType.getName.toLowerCase match {
-        case "array" => if (table.isTransactionalTable) {s"${
+        case "array" => s"${
           childDim.getColName.substring(dimName.length + 1)
-        }:array<${ getArrayChildren(table, childDim.getColName) }>" } else {
-          // For non Transactional table the Childrends of Struct Columns
-          // are not appended with their parent.
-          s"${
-            childDim.getColName
-          }:array<${ getArrayChildren(table, childDim.getColName) }>"
-        }
-        case "struct" => if (table.isTransactionalTable) { s"${
+        }:array<${ getArrayChildren(table, childDim.getColName) }>"
+        case "struct" => s"${
           childDim.getColName.substring(dimName.length + 1)
         }:struct<${ table.getChildren(childDim.getColName)
           .asScala.map(f => s"${ recursiveMethod(table, childDim.getColName, f) }").mkString(",")
-        }>"} else {
-          s"${
-            childDim.getColName
-          }:struct<${ table.getChildren(childDim.getColName)
-            .asScala.map(f => s"${ recursiveMethod(table, childDim.getColName, f) }").mkString(",")
-          }>"
-        }
-        case dType => if (table.isTransactionalTable) {
-          s"${ childDim.getColName
+        }>"
+        case dType => s"${ childDim.getColName
           .substring(dimName.length() + 1) }:${ addDecimalScaleAndPrecision(childDim, dType) }"
-        } else {
-          s"${ childDim.getColName}:${ addDecimalScaleAndPrecision(childDim, dType) }"
-        }
       }
     }).mkString(",")
   }
@@ -139,31 +123,13 @@ private[spark] object SparkTypeConverter {
   private def recursiveMethod(
       table: CarbonTable, dimName: String, childDim: CarbonDimension) = {
     childDim.getDataType.getName.toLowerCase match {
-      case "array" => if (table.isTransactionalTable) {
-        s"${
-          childDim.getColName.substring(dimName.length + 1)
-        }:array<${ getArrayChildren(table, childDim.getColName) }>"
-      } else {
-        // For non Transactional table the Childrends of Struct Columns
-        // are not appended with their parent.
-        s"${
-          childDim.getColName
-        }:array<${ getArrayChildren(table, childDim.getColName) }>"
-      }
-      case "struct" => if (table.isTransactionalTable) {
-        s"${
-          childDim.getColName.substring(dimName.length + 1)
-        }:struct<${ getStructChildren(table, childDim.getColName) }>"
-      } else {
-        s"${
-          childDim.getColName
-        }:struct<${ getStructChildren(table, childDim.getColName) }>"
-      }
-      case dType => if (table.isTransactionalTable) {
-        s"${ childDim.getColName.substring(dimName.length + 1) }:${ dType }"
-      } else {
-        s"${ childDim.getColName }:${ dType }"
-      }
+      case "array" => s"${
+        childDim.getColName.substring(dimName.length + 1)
+      }:array<${ getArrayChildren(table, childDim.getColName) }>"
+      case "struct" => s"${
+        childDim.getColName.substring(dimName.length + 1)
+      }:struct<${ getStructChildren(table, childDim.getColName) }>"
+      case dType => s"${ childDim.getColName.substring(dimName.length + 1) }:${ dType }"
     }
   }
 }
