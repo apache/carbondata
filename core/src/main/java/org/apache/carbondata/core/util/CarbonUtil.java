@@ -2401,13 +2401,13 @@ public final class CarbonUtil {
       bytes[0] = (byte) value;
       return bytes;
     } else if (dataType == DataTypes.SHORT) {
-      b = ByteBuffer.allocate(8);
-      b.putLong((short) value);
+      b = ByteBuffer.allocate(2);
+      b.putShort((short) value);
       b.flip();
       return b.array();
     } else if (dataType == DataTypes.INT) {
-      b = ByteBuffer.allocate(8);
-      b.putLong((int) value);
+      b = ByteBuffer.allocate(4);
+      b.putInt((int) value);
       b.flip();
       return b.array();
     } else if (dataType == DataTypes.LONG) {
