@@ -89,8 +89,7 @@ case class CarbonCreateDataMapCommand(
         val datamaps = DataMapStoreManager.getInstance.getAllDataMap(mainTable).asScala
         val existingIndexColumn = mutable.Set[String]()
         datamaps.foreach { datamap =>
-          DataMapFactory.getIndexColumns(datamap.getDataMapSchema)
-            .foreach(existingIndexColumn.add)
+          datamap.getDataMapSchema.getIndexColumns.foreach(existingIndexColumn.add)
         }
 
         provider.getIndexedColumns.asScala.foreach { column =>

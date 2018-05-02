@@ -995,7 +995,7 @@ public class CarbonTable implements Serializable {
    */
   public List<CarbonColumn> getIndexedColumns(DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
-    String[] columns = DataMapFactory.getIndexColumns(dataMapSchema);
+    String[] columns = dataMapSchema.getIndexColumns();
     List<CarbonColumn> indexColumn = new ArrayList<>(columns.length);
     for (String column : columns) {
       CarbonColumn carbonColumn = getColumnByName(getTableName(), column.trim().toLowerCase());

@@ -33,8 +33,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.events.Event;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
-import org.apache.commons.lang.StringUtils;
-
 /**
  * Interface for datamap of index type, it is responsible for creating the datamap.
  */
@@ -122,8 +120,7 @@ public abstract class DataMapFactory<T extends DataMap> {
    * 3. INDEX_COLUMNS can't contains duplicate same columns
    * 4. INDEX_COLUMNS should be exists in table columns
    */
-  public void validateIndexedColumns(DataMapSchema dataMapSchema,
-      CarbonTable carbonTable) throws MalformedDataMapCommandException {
+  public void validate() throws MalformedDataMapCommandException {
     List<CarbonColumn> indexColumns = carbonTable.getIndexedColumns(dataMapSchema);
     Set<String> unique = new HashSet<>();
     for (CarbonColumn indexColumn : indexColumns) {
@@ -131,21 +128,6 @@ public abstract class DataMapFactory<T extends DataMap> {
     }
     if (unique.size() != indexColumns.size()) {
       throw new MalformedDataMapCommandException(INDEX_COLUMNS + " has duplicate column");
-    }
-  }
-
-  public static String[] getIndexColumns(DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
-    String columns = dataMapSchema.getProperties().get(INDEX_COLUMNS);
-    if (columns == null) {
-      columns = dataMapSchema.getProperties().get(INDEX_COLUMNS.toLowerCase());
-    }
-    if (columns == null) {
-      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is required");
-    } else if (StringUtils.isBlank(columns)) {
-      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is blank");
-    } else {
-      return columns.split(",", -1);
     }
   }
 

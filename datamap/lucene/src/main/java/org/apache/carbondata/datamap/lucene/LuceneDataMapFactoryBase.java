@@ -254,9 +254,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
    * Currently only string and non-dictionary column is supported for Lucene DataMap
    */
   @Override
-  public void validateIndexedColumns(DataMapSchema dataMapSchema,
-      CarbonTable carbonTable) throws MalformedDataMapCommandException {
-    super.validateIndexedColumns(dataMapSchema, carbonTable);
+  public void validate() throws MalformedDataMapCommandException {
+    super.validate();
     List<CarbonColumn> indexColumns = carbonTable.getIndexedColumns(dataMapSchema);
 
     for (CarbonColumn column : indexColumns) {
