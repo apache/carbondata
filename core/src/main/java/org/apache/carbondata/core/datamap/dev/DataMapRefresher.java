@@ -21,6 +21,9 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
+/**
+ * Interface to rebuild the datamap for main table with existing data
+ */
 @InterfaceAudience.Developer("DataMap")
 public interface DataMapRefresher {
   void initialize() throws IOException;

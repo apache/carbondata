@@ -35,7 +35,6 @@ import org.apache.carbondata.core.datastore.compression.SnappyCompressor
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, DiskBasedDMSchemaStorageProvider}
@@ -49,17 +48,10 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class CGDataMapFactory(carbonTable: CarbonTable) extends CoarseGrainDataMapFactory(carbonTable) {
-  var identifier: AbsoluteTableIdentifier = _
-  var dataMapSchema: DataMapSchema = _
-
-  /**
-   * Initialization of Datamap factory with the identifier and datamap name
-   */
-  override def init(dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = carbonTable.getAbsoluteTableIdentifier
-    this.dataMapSchema = dataMapSchema
-  }
+class CGDataMapFactory(
+    carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
+  var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
   /**
    * Return a new write for this datamap
@@ -286,21 +278,12 @@ class CGDataMapWriter(
    * @param blockletId sequence number of blocklet in the block
    */
   override def onBlockletEnd(blockletId: Int): Unit = {
-    val sort = list
-      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
-    blockletList += sort.head
-    blockletList += sort.last
-
     val sorted = blockletList
       .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
     maxMin +=
     ((blockletId, (sorted.last, sorted.head)))
     blockletList.clear()
   }
-
-  var list: ArrayBuffer[Array[Byte]] = _
-
-  var pageId: Int = 0
 
   /**
    * Add the column pages row to the datamap, order of pages is same as `index_columns` in
@@ -309,22 +292,25 @@ class CGDataMapWriter(
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
    */
-  override def addRow(blockletId: Int, pageId: Int, rowId: Int, row: CarbonRow): Unit = {
-    if (rowId == 0) {
-      if (list != null) {
-        val sort = list
-          .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
-        blockletList += sort.head
-        blockletList += sort.last
-      }
-      list = new ArrayBuffer[Array[Byte]]()
-      this.pageId = pageId
+  override def onPageAdded(blockletId: Int,
+      pageId: Int,
+      pageSize: Int,
+      pages: Array[ColumnPage]): Unit = {
+    val size = pages(0).getPageSize
+    val list = new ArrayBuffer[Array[Byte]]()
+    var i = 0
+    while (i < size) {
+      val bytes = pages(0).getBytes(i)
+      val newBytes = new Array[Byte](bytes.length - 2)
+      System.arraycopy(bytes, 2, newBytes, 0, newBytes.length)
+      list += newBytes
+      i = i + 1
     }
-
-    val data = row.getData
-    val newBytes = new Array[Byte](data.length - 2)
-    System.arraycopy(data, 2, newBytes, 0, newBytes.length)
-    list += newBytes
+    // Sort based on the column data in order to create index.
+    val sorted = list
+      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
+    blockletList += sorted.head
+    blockletList += sorted.last
   }
 
 

@@ -90,14 +90,14 @@ public abstract class DataMapProvider {
    * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
    * Implementation should clean all meta for the datamap
    */
-  public abstract void freeMeta() throws IOException;
+  public abstract void cleanMeta() throws IOException;
 
   /**
    * Opposite operation of {@link #initData()}.
    * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
    * Implementation should clean all data for the datamap
    */
-  public abstract void freeData();
+  public abstract void cleanData();
 
   /**
    * Rebuild the datamap by loading all existing data from mainTable

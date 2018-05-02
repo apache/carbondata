@@ -123,7 +123,7 @@ case class CarbonDropDataMapCommand(
               dataMapProvider =
                 DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
             }
-            dataMapProvider.freeMeta()
+            dataMapProvider.cleanMeta()
 
             // fires the event after dropping datamap from main table schema
             val dropDataMapPostEvent =
@@ -171,7 +171,7 @@ case class CarbonDropDataMapCommand(
         dataMapProvider =
           DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
         DataMapStatusManager.dropDataMap(dataMapSchema.getDataMapName)
-        dataMapProvider.freeMeta()
+        dataMapProvider.cleanMeta()
       }
     } catch {
       case e: Exception =>
@@ -184,7 +184,7 @@ case class CarbonDropDataMapCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     // delete the table folder
     if (dataMapProvider != null) {
-      dataMapProvider.freeData()
+      dataMapProvider.cleanData()
     }
     Seq.empty
   }

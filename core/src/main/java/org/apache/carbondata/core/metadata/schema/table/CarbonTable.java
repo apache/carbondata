@@ -1006,7 +1006,7 @@ public class CarbonTable implements Serializable {
       }
       if (carbonColumn.getColName().isEmpty()) {
         throw new MalformedDataMapCommandException(
-            DataMapFactory.INDEX_COLUMNS + " contains invalid column name");
+            CarbonCommonConstants.INDEX_COLUMNS + " contains invalid column name");
       }
       indexColumn.add(carbonColumn);
     }

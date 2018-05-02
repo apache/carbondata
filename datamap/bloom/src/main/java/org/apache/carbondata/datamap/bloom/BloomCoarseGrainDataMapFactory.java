@@ -69,13 +69,9 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   private String dataMapName;
   private int bloomFilterSize;
 
-  public BloomCoarseGrainDataMapFactory(CarbonTable carbonTable) {
-    super(carbonTable);
-  }
-
-  @Override
-  public void init(DataMapSchema dataMapSchema)
+  public BloomCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
+    super(carbonTable, dataMapSchema);
     Objects.requireNonNull(carbonTable);
     Objects.requireNonNull(dataMapSchema);
 

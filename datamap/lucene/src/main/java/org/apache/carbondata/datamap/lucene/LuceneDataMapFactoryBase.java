@@ -86,13 +86,9 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
    */
   AbsoluteTableIdentifier tableIdentifier = null;
 
-  public LuceneDataMapFactoryBase(CarbonTable carbonTable) {
-    super(carbonTable);
-  }
-
-  @Override
-  public void init(DataMapSchema dataMapSchema)
+  public LuceneDataMapFactoryBase(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
+    super(carbonTable, dataMapSchema);
     Objects.requireNonNull(carbonTable.getAbsoluteTableIdentifier());
     Objects.requireNonNull(dataMapSchema);
 

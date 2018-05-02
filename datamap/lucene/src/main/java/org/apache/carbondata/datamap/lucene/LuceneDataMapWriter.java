@@ -28,7 +28,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -173,39 +173,42 @@ public class LuceneDataMapWriter extends DataMapWriter {
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
    */
-  public void addRow(int blockletId, int pageId, int rowId, CarbonRow row) throws IOException {
+  public void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages)
+      throws IOException {
+    for (int rowId = 0; rowId < pageSize; rowId++) {
+      // create a new document
+      Document doc = new Document();
+      // add blocklet Id
+      doc.add(new IntPoint(BLOCKLETID_NAME, blockletId));
+      doc.add(new StoredField(BLOCKLETID_NAME, blockletId));
+      //doc.add(new NumericDocValuesField(BLOCKLETID_NAME,blockletId));
 
-    // create a new document
-    Document doc = new Document();
-    // add blocklet Id
-    doc.add(new IntPoint(BLOCKLETID_NAME, blockletId));
-    doc.add(new StoredField(BLOCKLETID_NAME, blockletId));
-    //doc.add(new NumericDocValuesField(BLOCKLETID_NAME,blockletId));
+      // add page id and row id in Fine Grain data map
+      if (isFineGrain) {
+        // add page Id
+        doc.add(new IntPoint(PAGEID_NAME, pageId));
+        doc.add(new StoredField(PAGEID_NAME, pageId));
+        //doc.add(new NumericDocValuesField(PAGEID_NAME,pageId));
 
-    // add page id and row id in Fine Grain data map
-    if (isFineGrain) {
-      // add page Id
-      doc.add(new IntPoint(PAGEID_NAME, pageId));
-      doc.add(new StoredField(PAGEID_NAME, pageId));
-      //doc.add(new NumericDocValuesField(PAGEID_NAME,pageId));
-
-      // add row id
-      doc.add(new IntPoint(ROWID_NAME, rowId));
-      doc.add(new StoredField(ROWID_NAME, rowId));
-      //doc.add(new NumericDocValuesField(ROWID_NAME,rowId));
-    }
-
-    // add indexed columns value into the document
-    Object[] rowData = row.getData();
-    List<CarbonColumn> indexColumns = getIndexColumns();
-    for (int i = 0; i < rowData.length; i++) {
-      if (rowData[i] != null) {
-        addField(doc, rowData[i], indexColumns.get(i), Field.Store.NO);
+        // add row id
+        doc.add(new IntPoint(ROWID_NAME, rowId));
+        doc.add(new StoredField(ROWID_NAME, rowId));
+        //doc.add(new NumericDocValuesField(ROWID_NAME,rowId));
       }
+
+      // add indexed columns value into the document
+      List<CarbonColumn> indexColumns = getIndexColumns();
+      for (int i = 0; i < pages.length; i++) {
+        // add to lucene only if value is not null
+        if (!pages[i].getNullBits().get(rowId)) {
+          addField(doc, pages[i].getData(rowId), indexColumns.get(i), Field.Store.NO);
+        }
+      }
+
+      // add this document
+      ramIndexWriter.addDocument(doc);
     }
 
-    // add this document
-    ramIndexWriter.addDocument(doc);
   }
 
   private boolean addField(Document doc, Object data, CarbonColumn column, Field.Store store) {

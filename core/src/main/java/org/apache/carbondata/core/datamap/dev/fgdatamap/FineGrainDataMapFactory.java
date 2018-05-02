@@ -21,6 +21,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
  *  Factory for {@link FineGrainDataMap}
@@ -38,8 +39,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 @InterfaceStability.Evolving
 public abstract class FineGrainDataMapFactory extends DataMapFactory<FineGrainDataMap> {
 
-  public FineGrainDataMapFactory(CarbonTable carbonTable) {
-    super(carbonTable);
+  public FineGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+    super(carbonTable, dataMapSchema);
   }
 
   @Override

@@ -51,7 +51,7 @@ public class IndexDataMapProvider extends DataMapProvider {
       throws MalformedDataMapCommandException {
     super(table, schema);
     this.sparkSession = sparkSession;
-    this.dataMapFactory = createIndexDataMap();
+    this.dataMapFactory = createDataMapFactory();
     dataMapFactory.validateIndexedColumns(schema, table);
     this.indexedColumns = table.getIndexedColumns(schema);
   }
@@ -86,7 +86,7 @@ public class IndexDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void freeMeta() throws IOException {
+  public void cleanMeta() throws IOException {
     if (getMainTable() == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
     }
@@ -94,7 +94,7 @@ public class IndexDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void freeData() {
+  public void cleanData() {
     CarbonTable mainTable = getMainTable();
     if (mainTable == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
@@ -113,7 +113,7 @@ public class IndexDataMapProvider extends DataMapProvider {
     throw new UnsupportedOperationException();
   }
 
-  private DataMapFactory<? extends DataMap> createIndexDataMap()
+  private DataMapFactory<? extends DataMap> createDataMapFactory()
       throws MalformedDataMapCommandException {
     CarbonTable mainTable = getMainTable();
     DataMapSchema dataMapSchema = getDataMapSchema();
@@ -122,11 +122,11 @@ public class IndexDataMapProvider extends DataMapProvider {
       // try to create DataMapClassProvider instance by taking providerName as class name
       dataMapFactory = (DataMapFactory<? extends DataMap>)
           Class.forName(dataMapSchema.getProviderName()).getConstructors()[0]
-              .newInstance(mainTable);
+              .newInstance(mainTable, dataMapSchema);
     } catch (ClassNotFoundException e) {
       // try to create DataMapClassProvider instance by taking providerName as short name
       dataMapFactory =
-          DataMapRegistry.getDataMapByShortName(mainTable, dataMapSchema.getProviderName());
+          DataMapRegistry.getDataMapFactoryByShortName(mainTable, dataMapSchema);
     } catch (Throwable e) {
       throw new MetadataProcessException(
           "failed to create DataMapClassProvider '" + dataMapSchema.getProviderName() + "'", e);

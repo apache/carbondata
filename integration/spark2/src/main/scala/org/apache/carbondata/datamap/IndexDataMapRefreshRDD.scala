@@ -69,7 +69,6 @@ object IndexDataMapRefreshRDD {
     val indexedCarbonColumns = carbonTable.getIndexedColumns(schema)
 
     // loop all segments to rebuild DataMap
-    val tableInfo = carbonTable.getTableInfo
     validSegments.asScala.foreach { segment =>
       // if lucene datamap folder is exists, not require to build lucene datamap again
       refreshOneSegment(sparkSession, carbonTable, schema.getDataMapName,
@@ -177,9 +176,8 @@ class IndexDataMapRefreshRDD[K, V](
     model.setVectorReader(false)
     model.setForcedDetailRawQuery(false)
     model.setRequiredRowId(true)
-    val indexDataMap = DataMapRegistry.getDataMapByShortName(
-        CarbonTable.buildFromTableInfo(tableInfo), dataMapSchema.getProviderName)
-    indexDataMap.init(dataMapSchema)
+    val dataMapFactory = DataMapRegistry.getDataMapFactoryByShortName(
+        CarbonTable.buildFromTableInfo(tableInfo), dataMapSchema)
     var reader: CarbonRecordReader[Array[Object]] = null
     var refresher: DataMapRefresher = null
     try {
@@ -189,7 +187,7 @@ class IndexDataMapRefreshRDD[K, V](
 
       // we use task name as shard name to create the folder for this datamap
       val shardName = CarbonTablePath.getUniqueTaskName(inputSplit.getAllSplits.get(0).getBlockPath)
-      refresher = indexDataMap.createRefresher(new Segment(segmentId), shardName)
+      refresher = dataMapFactory.createRefresher(new Segment(segmentId), shardName)
       refresher.initialize()
 
       var blockletId = 0

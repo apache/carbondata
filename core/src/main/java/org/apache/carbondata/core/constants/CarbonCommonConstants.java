@@ -1711,6 +1711,12 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_LUCENE_COMPRESSION_MODE_DEFAULT = "speed";
 
+  /**
+   * DMPROPERTY for Index DataMap, like lucene, bloomfilter DataMap,
+   * to indicate a list of column name to be indexed
+   */
+  public static final String INDEX_COLUMNS = "INDEX_COLUMNS";
+
   private CarbonCommonConstants() {
   }
 }

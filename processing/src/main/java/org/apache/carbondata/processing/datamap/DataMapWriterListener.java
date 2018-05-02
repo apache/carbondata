@@ -33,7 +33,6 @@ import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.store.TablePage;
@@ -85,8 +84,8 @@ public class DataMapWriterListener {
     try {
       writer = factory.createWriter(new Segment(segmentId), taskNo);
     } catch (IOException e) {
-      LOG.error(e);
-      throw new RuntimeException(e);
+      LOG.error("Failed to create DataMapWriter: " + e.getMessage());
+      throw new DataMapWriterException(e);
     }
     if (writers != null) {
       writers.add(writer);
@@ -147,16 +146,8 @@ public class DataMapWriterListener {
       List<DataMapWriter> writers = entry.getValue();
       int pageSize = pages[0].getPageSize();
 
-      // add every row in the page to writer
-      for (int rowId = 0; rowId < pageSize; rowId++) {
-        Object[] rowData = new Object[indexedColumns.size()];
-        for (int k = 0; k < rowData.length; k++) {
-          rowData[k] = pages[k].getData(rowId);
-        }
-        CarbonRow row = new CarbonRow(rowData);
-        for (DataMapWriter writer : writers) {
-          writer.addRow(blockletId, pageId, rowId, row);
-        }
+      for (DataMapWriter writer : writers) {
+        writer.onPageAdded(blockletId, pageId, pageSize, pages);
       }
     }
   }

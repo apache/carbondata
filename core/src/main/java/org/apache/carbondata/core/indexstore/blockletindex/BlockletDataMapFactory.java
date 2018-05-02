@@ -73,12 +73,8 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   private Cache<TableBlockIndexUniqueIdentifier, CoarseGrainDataMap> cache;
 
-  public BlockletDataMapFactory(CarbonTable carbonTable) {
-    super(carbonTable);
-  }
-
-  @Override
-  public void init(DataMapSchema dataMapSchema) {
+  public BlockletDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+    super(carbonTable, dataMapSchema);
     this.identifier = carbonTable.getAbsoluteTableIdentifier();
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);

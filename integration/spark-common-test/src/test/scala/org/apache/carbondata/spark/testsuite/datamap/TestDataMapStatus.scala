@@ -30,6 +30,7 @@ import org.apache.carbondata.core.datamap.dev.{DataMapRefresher, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datamap.status.{DataMapStatus, DataMapStatusManager}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
+import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -174,9 +175,11 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
   }
 }
 
-class TestDataMapFactory(carbonTable: CarbonTable) extends CoarseGrainDataMapFactory(carbonTable) {
+class TestDataMapFactory(
+    carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
 
-  private var identifier: AbsoluteTableIdentifier = _
+  private var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
   override def fireEvent(event: Event): Unit = ???
 
@@ -195,7 +198,7 @@ class TestDataMapFactory(carbonTable: CarbonTable) extends CoarseGrainDataMapFac
   override def createWriter(segment: Segment, shardName: String): DataMapWriter = {
     new DataMapWriter(carbonTable.getTablePath, "testdm", carbonTable.getIndexedColumns(dataMapSchema),
       segment, shardName) {
-      override def addRow(blockletId: Int, pageId: Int, rowId: Int, row: CarbonRow): Unit = { }
+      override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
 
@@ -217,12 +220,6 @@ class TestDataMapFactory(carbonTable: CarbonTable) extends CoarseGrainDataMapFac
     Seq(ExpressionType.EQUALS).asJava)
 
   override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = ???
-
-  var dataMapSchema: DataMapSchema = _
-  override def init(dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = carbonTable.getAbsoluteTableIdentifier
-    this.dataMapSchema = dataMapSchema
-  }
 
   /**
    * delete datamap data if any

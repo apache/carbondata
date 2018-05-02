@@ -22,12 +22,9 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -48,12 +45,6 @@ public abstract class DataMapWriter {
   protected String dataMapPath;
 
   private List<CarbonColumn> indexColumns;
-
-  public DataMapWriter(CarbonTable carbonTable, DataMapSchema dataMapSchema, Segment segment,
-      String shardName) throws MalformedDataMapCommandException {
-    this(carbonTable.getTablePath(), dataMapSchema.getDataMapName(),
-        carbonTable.getIndexedColumns(dataMapSchema), segment, shardName);
-  }
 
   public DataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName) {
@@ -95,12 +86,12 @@ public abstract class DataMapWriter {
   public abstract void onBlockletEnd(int blockletId) throws IOException;
 
   /**
-   * Add row data to the datamap, order of field is same as `indexColumns` in
+   * Add columnar page data to the datamap, order of field is same as `indexColumns` in
    * DataMapMeta returned in DataMapFactory.
-   * Implementation should copy the content of `row` as needed, because its memory
+   * Implementation should copy the content of it as needed, because its memory
    * may be freed after this method returns, in case of unsafe memory
    */
-  public abstract void addRow(int blockletId, int pageId, int rowId, CarbonRow row)
+  public abstract void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages)
       throws IOException;
 
   /**

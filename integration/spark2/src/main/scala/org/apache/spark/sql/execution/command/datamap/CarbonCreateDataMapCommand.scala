@@ -123,7 +123,7 @@ case class CarbonCreateDataMapCommand(
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
     if (dataMapProvider != null) {
-      dataMapProvider.freeMeta()
+      dataMapProvider.cleanMeta()
     }
     Seq.empty
   }

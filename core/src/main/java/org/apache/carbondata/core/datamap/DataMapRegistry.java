@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
  * Developer can register a datamap implementation with a short name.
@@ -62,8 +63,9 @@ public class DataMapRegistry {
     return shortNameToClassName.get(shortName);
   }
 
-  public static DataMapFactory<? extends DataMap> getDataMapByShortName(
-      CarbonTable table, String providerName) throws MalformedDataMapCommandException {
+  public static DataMapFactory<? extends DataMap> getDataMapFactoryByShortName(
+      CarbonTable table, DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
+    String providerName = dataMapSchema.getProviderName();
     try {
       registerDataMap(
           DataMapClassProvider.getDataMapProviderOnName(providerName).getClassName(),
@@ -76,7 +78,7 @@ public class DataMapRegistry {
     if (className != null) {
       try {
         dataMapFactory = (DataMapFactory<? extends DataMap>)
-            Class.forName(className).getConstructors()[0].newInstance(table);
+            Class.forName(className).getConstructors()[0].newInstance(table, dataMapSchema);
       } catch (ClassNotFoundException ex) {
         throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
       } catch (Throwable ex) {

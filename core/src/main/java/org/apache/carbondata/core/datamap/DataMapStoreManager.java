@@ -267,14 +267,14 @@ public final class DataMapStoreManager {
    */
   public DataMapFactory getDataMapFactoryClass(CarbonTable table, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
-    DataMapFactory dataMapFactory;
     try {
       // try to create datamap by reflection to test whether it is a valid DataMapFactory class
       return (DataMapFactory)
-          Class.forName(dataMapSchema.getProviderName()).getConstructors()[0].newInstance(table);
+          Class.forName(dataMapSchema.getProviderName()).getConstructors()[0]
+              .newInstance(table, dataMapSchema);
     } catch (ClassNotFoundException e) {
       // try to create DataMapClassProvider instance by taking providerName as short name
-      return DataMapRegistry.getDataMapByShortName(table, dataMapSchema.getProviderName());
+      return DataMapRegistry.getDataMapFactoryByShortName(table, dataMapSchema);
     } catch (Throwable e) {
       throw new MetadataProcessException(
           "failed to get DataMap factory for'" + dataMapSchema.getProviderName() + "'", e);
@@ -287,14 +287,13 @@ public final class DataMapStoreManager {
    */
   // TODO: make it private
   public TableDataMap createAndRegisterDataMap(CarbonTable table,
-      DataMapSchema dataMapSchema) throws MalformedDataMapCommandException, IOException {
+      DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
     DataMapFactory dataMapFactory  = getDataMapFactoryClass(table, dataMapSchema);
     return registerDataMap(table, dataMapSchema, dataMapFactory);
   }
 
   public TableDataMap registerDataMap(CarbonTable table,
-      DataMapSchema dataMapSchema,  DataMapFactory dataMapFactory)
-      throws IOException, MalformedDataMapCommandException {
+      DataMapSchema dataMapSchema,  DataMapFactory dataMapFactory) {
     String tableUniqueName = table.getCarbonTableIdentifier().getTableUniqueName();
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(table);
@@ -303,7 +302,6 @@ public final class DataMapStoreManager {
       tableIndices = new ArrayList<>();
     }
 
-    dataMapFactory.init(dataMapSchema);
     BlockletDetailsFetcher blockletDetailsFetcher;
     SegmentPropertiesFetcher segmentPropertiesFetcher = null;
     if (dataMapFactory instanceof BlockletDetailsFetcher) {

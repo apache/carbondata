@@ -31,7 +31,6 @@ import org.apache.carbondata.core.datamap.dev.{DataMapRefresher, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -39,15 +38,11 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
 
-class C2DataMapFactory(carbonTable: CarbonTable) extends CoarseGrainDataMapFactory(carbonTable) {
+class C2DataMapFactory(
+    carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
 
-  var identifier: AbsoluteTableIdentifier = _
-  var dataMapSchema: DataMapSchema = _
-
-  override def init(dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = carbonTable.getAbsoluteTableIdentifier
-    this.dataMapSchema = dataMapSchema
-  }
+  var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
   override def fireEvent(event: Event): Unit = ???
 
@@ -114,7 +109,12 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
   test("test write datamap 2 pages") {
     sql(s"CREATE TABLE carbon1(c1 STRING, c2 STRING, c3 INT) STORED BY 'org.apache.carbondata.format'")
     // register datamap writer
-    sql(s"CREATE DATAMAP test1 ON TABLE carbon1 USING '${classOf[C2DataMapFactory].getName}'")
+    sql(
+      s"""
+         | CREATE DATAMAP test1 ON TABLE carbon1
+         | USING '${classOf[C2DataMapFactory].getName}'
+         | DMPROPERTIES('index_columns'='c2')
+       """.stripMargin)
     val df = buildTestData(33000)
 
     // save dataframe to carbon file
@@ -140,8 +140,12 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
 
   test("test write datamap 2 blocklet") {
     sql(s"CREATE TABLE carbon2(c1 STRING, c2 STRING, c3 INT) STORED BY 'org.apache.carbondata.format'")
-    sql(s"CREATE DATAMAP test2 ON TABLE carbon2 USING '${classOf[C2DataMapFactory].getName}'")
-
+    sql(
+      s"""
+         | CREATE DATAMAP test2 ON TABLE carbon2
+         | USING '${classOf[C2DataMapFactory].getName}'
+         | DMPROPERTIES('index_columns'='c2')
+       """.stripMargin)
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "1")
     CarbonProperties.getInstance()
@@ -195,15 +199,17 @@ object DataMapWriterSuite {
       shardName: String) =
     new DataMapWriter(identifier.getTablePath, dataMapName, Seq().asJava, segment, shardName) {
 
-    override def addRow(blockletId: Int, pageId: Int, rowId: Int, row: CarbonRow): Unit = {
-      if (rowId == 0) {
+      override def onPageAdded(
+          blockletId: Int,
+          pageId: Int,
+          pageSize: Int,
+          pages: Array[ColumnPage]): Unit = {
+        assert(pages.length == 1)
+        assert(pages(0).getDataType == DataTypes.STRING)
+        val bytes: Array[Byte] = pages(0).getByteArrayPage()(0)
+        assert(bytes.sameElements(Seq(0, 1, 'b'.toByte)))
         callbackSeq :+= s"add page data: blocklet $blockletId, page $pageId"
       }
-      assert(row.getData().length == 1)
-      assert(row.getData()(0).isInstanceOf[Array[Byte]])
-      val bytes: Array[Byte] = row.getData()(0).asInstanceOf[Array[Byte]]
-      assert(bytes.sameElements(Seq(0, 1, 'b'.toByte)))
-    }
 
     override def onBlockletEnd(blockletId: Int): Unit = {
       callbackSeq :+= s"blocklet end: $blockletId"

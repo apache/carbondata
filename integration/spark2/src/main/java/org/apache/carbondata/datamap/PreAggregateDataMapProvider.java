@@ -69,7 +69,7 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void freeMeta() {
+  public void cleanMeta() {
     DataMapSchema dataMapSchema = getDataMapSchema();
     dropTableCommand = new CarbonDropTableCommand(
         true,
@@ -80,7 +80,7 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void freeData() {
+  public void cleanData() {
     if (dropTableCommand != null) {
       dropTableCommand.processData(sparkSession);
     }

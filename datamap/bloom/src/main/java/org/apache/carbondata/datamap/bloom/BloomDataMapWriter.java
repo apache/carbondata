@@ -29,7 +29,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -54,7 +54,7 @@ public class BloomDataMapWriter extends DataMapWriter {
   private List<String> currentDMFiles;
   private List<DataOutputStream> currentDataOutStreams;
   private List<ObjectOutputStream> currentObjectOutStreams;
-  private List<BloomFilter<byte[]>> indexBloomFilters;
+  protected List<BloomFilter<byte[]>> indexBloomFilters;
 
   BloomDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, int bloomFilterSize) throws IOException {
@@ -97,27 +97,26 @@ public class BloomDataMapWriter extends DataMapWriter {
   }
 
   @Override
-  public void addRow(int blockletId, int pageId, int rowId, CarbonRow row) {
-    addRow(row.getData());
-  }
-
-  protected void addRow(Object[] rowData) {
-    // for each indexed column, add the data to bloom filter
+  public void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages) {
     List<CarbonColumn> indexColumns = getIndexColumns();
-    for (int i = 0; i < indexColumns.size(); i++) {
-      DataType dataType = indexColumns.get(i).getDataType();
-      byte[] indexValue;
-      if (DataTypes.STRING == dataType) {
-        indexValue = getStringData(rowData[i]);
-      } else if (DataTypes.BYTE_ARRAY == dataType) {
-        byte[] originValue = (byte[]) rowData[i];
-        // String and byte array is LV encoded, L is short type
-        indexValue = new byte[originValue.length - 2];
-        System.arraycopy(originValue, 2, indexValue, 0, originValue.length - 2);
-      } else {
-        indexValue = CarbonUtil.getValueAsBytes(dataType, rowData[i]);
+    for (int rowId = 0; rowId < pageSize; rowId++) {
+      // for each indexed column, add the data to bloom filter
+      for (int i = 0; i < indexColumns.size(); i++) {
+        Object data = pages[i].getData(rowId);
+        DataType dataType = indexColumns.get(i).getDataType();
+        byte[] indexValue;
+        if (DataTypes.STRING == dataType) {
+          indexValue = getStringData(data);
+        } else if (DataTypes.BYTE_ARRAY == dataType) {
+          byte[] originValue = (byte[]) data;
+          // String and byte array is LV encoded, L is short type
+          indexValue = new byte[originValue.length - 2];
+          System.arraycopy(originValue, 2, indexValue, 0, originValue.length - 2);
+        } else {
+          indexValue = CarbonUtil.getValueAsBytes(dataType, data);
+        }
+        indexBloomFilters.get(i).put(indexValue);
       }
-      indexBloomFilters.get(i).put(indexValue);
     }
   }
 

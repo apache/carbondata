@@ -31,6 +31,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.events.Event;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -39,25 +40,24 @@ import org.apache.commons.lang.StringUtils;
  */
 public abstract class DataMapFactory<T extends DataMap> {
 
-  public static final String INDEX_COLUMNS = "INDEX_COLUMNS";
   protected CarbonTable carbonTable;
+  protected DataMapSchema dataMapSchema;
 
-  public DataMapFactory(CarbonTable carbonTable) {
+  public DataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     this.carbonTable = carbonTable;
+    this.dataMapSchema = dataMapSchema;
   }
 
   /**
-   * Initialization of Datamap factory with the carbonTable and datamap name
-   */
-  public abstract void init(DataMapSchema dataMapSchema)
-      throws IOException, MalformedDataMapCommandException;
-
-  /**
-   * Return a new write for this datamap
+   * Create a new write for this datamap, to write new data into the specified segment and shard
    */
   public abstract DataMapWriter createWriter(Segment segment, String shardName)
       throws IOException;
 
+  /**
+   * Create a new Refresher for this datamap, to rebuild the specified
+   * segment and shard data in the main table.
+   */
   public abstract DataMapRefresher createRefresher(Segment segment, String shardName)
       throws IOException;
 

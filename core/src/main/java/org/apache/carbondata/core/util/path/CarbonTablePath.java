@@ -524,7 +524,7 @@ public class CarbonTablePath {
     }
 
     /**
-     * Return the batch number from taskNo stringx
+     * Return the batch number from taskNo string
      */
     public static int getBatchNoFromTaskNo(String taskNo) {
       return Integer.parseInt(taskNo.split(BATCH_PREFIX)[1]);

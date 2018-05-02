@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
@@ -33,6 +34,7 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
  * FG level of lucene DataMap
@@ -42,8 +44,9 @@ public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<Co
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LuceneCoarseGrainDataMapFactory.class.getName());
 
-  public LuceneCoarseGrainDataMapFactory(CarbonTable carbonTable) {
-    super(carbonTable);
+  public LuceneCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
+    super(carbonTable, dataMapSchema);
   }
 
   /**

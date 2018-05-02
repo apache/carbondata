@@ -34,8 +34,6 @@ import org.apache.carbondata.core.datastore.compression.SnappyCompressor
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
-import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
@@ -49,17 +47,10 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class FGDataMapFactory(carbonTable: CarbonTable) extends FineGrainDataMapFactory(carbonTable) {
-  var identifier: AbsoluteTableIdentifier = _
-  var dataMapSchema: DataMapSchema = _
-
-  /**
-   * Initialization of Datamap factory with the identifier and datamap name
-   */
-  override def init(dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = carbonTable.getAbsoluteTableIdentifier
-    this.dataMapSchema = dataMapSchema
-  }
+class FGDataMapFactory(
+    carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends FineGrainDataMapFactory(carbonTable, dataMapSchema) {
+  var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
   /**
    * Return a new write for this datamap
@@ -358,8 +349,6 @@ class FGDataMapWriter(
     blockletList.clear()
   }
 
-  var list: ArrayBuffer[(Array[Byte], Int)] = _
-
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
    * DataMapMeta returned in DataMapFactory.
@@ -367,41 +356,44 @@ class FGDataMapWriter(
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
    */
-  override def addRow(blockletId: Int, pageId: Int, rowId: Int, row: CarbonRow): Unit = {
-    if (rowId == 0) {
-      if (pageId > 0) {
-        // Sort based on the column data in order to create index.
-        val sorted = list
-          .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l._1, r._1) <= 0)
-        var oldValue: (Array[Byte], Seq[Int], Seq[Int]) = null
-        var addedLast: Boolean = false
-        // Merge all same column values to single row.
-        sorted.foreach { f =>
-          if (oldValue != null) {
-            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(f._1, oldValue._1) == 0) {
-              oldValue = (oldValue._1, oldValue._2 ++ Seq(f._2), oldValue._3)
-              addedLast = false
-            } else {
-              blockletList += oldValue
-              oldValue = (f._1, Seq(f._2), Seq(pageId))
-              addedLast = true
-            }
-          } else {
-            oldValue = (f._1, Seq(f._2), Seq(pageId))
-            addedLast = false
-          }
-        }
-        if (!addedLast && oldValue != null) {
-          blockletList += oldValue
-        }
-      }
-      list = new ArrayBuffer[(Array[Byte], Int)]()
+  override def onPageAdded(blockletId: Int,
+      pageId: Int,
+      pageSize: Int,
+      pages: Array[ColumnPage]): Unit = {
+    val size = pages(0).getPageSize
+    val list = new ArrayBuffer[(Array[Byte], Int)]()
+    var i = 0
+    while (i < size) {
+      val bytes = pages(0).getBytes(i)
+      val newBytes = new Array[Byte](bytes.length - 2)
+      System.arraycopy(bytes, 2, newBytes, 0, newBytes.length)
+      list += ((newBytes, i))
+      i = i + 1
     }
-
-    val bytes = row.getData()(0).asInstanceOf[Array[Byte]]
-    val newBytes = new Array[Byte](bytes.length - 2)
-    System.arraycopy(bytes, 2, newBytes, 0, newBytes.length)
-    list += ((newBytes, rowId))
+    // Sort based on the column data in order to create index.
+    val sorted = list
+      .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l._1, r._1) <= 0)
+    var oldValue: (Array[Byte], Seq[Int], Seq[Int]) = null
+    var addedLast: Boolean = false
+    // Merge all same column values to single row.
+    sorted.foreach { f =>
+      if (oldValue != null) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(f._1, oldValue._1) == 0) {
+          oldValue = (oldValue._1, oldValue._2 ++ Seq(f._2), oldValue._3)
+          addedLast = false
+        } else {
+          blockletList += oldValue
+          oldValue = (f._1, Seq(f._2), Seq(pageId))
+          addedLast = true
+        }
+      } else {
+        oldValue = (f._1, Seq(f._2), Seq(pageId))
+        addedLast = false
+      }
+    }
+    if (!addedLast && oldValue != null) {
+      blockletList += oldValue
+    }
   }
 
 
