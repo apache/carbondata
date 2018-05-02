@@ -34,11 +34,16 @@ public class TestUtil {
   }
 
   static void writeFilesAndVerify(Schema schema, String path, String[] sortColumns) {
-    writeFilesAndVerify(100, schema, path, sortColumns, false, -1, -1);
+    writeFilesAndVerify(100, schema, path, sortColumns, false, -1, -1, true);
   }
 
   public static void writeFilesAndVerify(Schema schema, String path, boolean persistSchema) {
-    writeFilesAndVerify(100, schema, path, null, persistSchema, -1, -1);
+    writeFilesAndVerify(100, schema, path, null, persistSchema, -1, -1, true);
+  }
+
+  public static void writeFilesAndVerify(Schema schema, String path, boolean persistSchema,
+      boolean isTransactionalTable) {
+    writeFilesAndVerify(100, schema, path, null, persistSchema, -1, -1, isTransactionalTable);
   }
 
   /**
@@ -50,13 +55,14 @@ public class TestUtil {
    * @param persistSchema true if want to persist schema file
    * @param blockletSize blockletSize in the file, -1 for default size
    * @param blockSize blockSize in the file, -1 for default size
+   * @param isTransactionalTable set to true if this is written for Transactional Table.
    */
   static void writeFilesAndVerify(int rows, Schema schema, String path, String[] sortColumns,
-      boolean persistSchema, int blockletSize, int blockSize) {
+      boolean persistSchema, int blockletSize, int blockSize, boolean isTransactionalTable) {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .withSchema(schema)
-          .isTransactionalTable(true)
+          .isTransactionalTable(isTransactionalTable)
           .outputPath(path);
       if (sortColumns != null) {
         builder = builder.sortBy(sortColumns);
@@ -85,8 +91,14 @@ public class TestUtil {
       Assert.fail(l.getMessage());
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
+    File segmentFolder = null;
+    if (isTransactionalTable) {
+      segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+      Assert.assertTrue(segmentFolder.exists());
+    } else {
+      segmentFolder = new File(path);
+      Assert.assertTrue(segmentFolder.exists());
+    }
 
     File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {

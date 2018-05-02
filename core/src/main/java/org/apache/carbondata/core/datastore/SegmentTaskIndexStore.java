@@ -90,7 +90,7 @@ public class SegmentTaskIndexStore
       segmentTaskIndexWrapper =
           loadAndGetTaskIdToSegmentsMap(
               tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos(),
-              CarbonTable.buildFromTablePath("name", "path"),
+              CarbonTable.buildFromTablePath("name", "path", false),
               tableSegmentUniqueIdentifier);
     } catch (IndexBuilderException e) {
       throw new IOException(e.getMessage(), e);

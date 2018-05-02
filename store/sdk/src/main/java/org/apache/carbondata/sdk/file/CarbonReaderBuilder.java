@@ -48,6 +48,7 @@ public class CarbonReaderBuilder {
   private String[] projectionColumns;
   private Expression filterExpression;
   private String tableName;
+  private boolean isTransactionalTable = true;
 
   CarbonReaderBuilder(String tablePath, String tableName) {
     this.tablePath = tablePath;
@@ -57,6 +58,12 @@ public class CarbonReaderBuilder {
   public CarbonReaderBuilder projection(String[] projectionColumnNames) {
     Objects.requireNonNull(projectionColumnNames);
     this.projectionColumns = projectionColumnNames;
+    return this;
+  }
+
+  public CarbonReaderBuilder isTransactionalTable(boolean isTransactionalTable) {
+    Objects.requireNonNull(isTransactionalTable);
+    this.isTransactionalTable = isTransactionalTable;
     return this;
   }
 
@@ -134,7 +141,7 @@ public class CarbonReaderBuilder {
   }
 
   public <T> CarbonReader<T> build() throws IOException, InterruptedException {
-    CarbonTable table = CarbonTable.buildFromTablePath(tableName, tablePath);
+    CarbonTable table = CarbonTable.buildFromTablePath(tableName, tablePath, isTransactionalTable);
 
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     final Job job = new Job(new Configuration());

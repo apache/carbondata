@@ -42,6 +42,7 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.SingleTableProvider;
 import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -116,8 +117,13 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       // get all valid segments and set them into the configuration
       // check for externalTable segment (Segment_null)
       // process and resolve the expression
-      ReadCommittedScope readCommittedScope = new LatestFilesReadCommittedScope(
-          identifier.getTablePath() + "/Fact/Part0/Segment_null/");
+      ReadCommittedScope readCommittedScope = null;
+      if (carbonTable.isTransactionalTable()) {
+        readCommittedScope = new LatestFilesReadCommittedScope(
+            identifier.getTablePath() + "/Fact/Part0/Segment_null/");
+      } else {
+        readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath());
+      }
       Expression filter = getFilterPredicates(job.getConfiguration());
       TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // this will be null in case of corrupt schema file.
@@ -126,13 +132,31 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
 
       FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter, tableProvider);
 
-      String segmentDir = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null");
+      String segmentDir = null;
+      if (carbonTable.isTransactionalTable()) {
+        segmentDir = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null");
+      } else {
+        segmentDir = identifier.getTablePath();
+      }
       FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
       if (FileFactory.isFileExist(segmentDir, fileType)) {
         // if external table Segments are found, add it to the List
         List<Segment> externalTableSegments = new ArrayList<Segment>();
-        Segment seg = new Segment("null", null, readCommittedScope);
-        externalTableSegments.add(seg);
+        Segment seg;
+        if (carbonTable.isTransactionalTable()) {
+          // SDK some cases write into the Segment Path instead of Table Path i.e. inside
+          // the "Fact/Part0/Segment_null". The segment in this case is named as "null".
+          // The table is denoted by default as a transactional table and goes through
+          // the path of CarbonFileInputFormat. The above scenario is handled in the below code.
+          seg = new Segment("null", null, readCommittedScope);
+          externalTableSegments.add(seg);
+        } else {
+          LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
+          for (LoadMetadataDetails load : loadMetadataDetails) {
+            seg = new Segment(load.getLoadName(), null, readCommittedScope);
+            externalTableSegments.add(seg);
+          }
+        }
 
         Map<String, String> indexFiles =
             new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir);
