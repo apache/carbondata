@@ -17,7 +17,6 @@
 package org.apache.carbondata.datamap.bloom;
 
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
