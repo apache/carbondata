@@ -244,10 +244,17 @@ public class CarbonTable implements Serializable {
     return buildFromTableInfo(tableInfo);
   }
 
-  public static CarbonTable buildFromTablePath(
-      String tableName, String tablePath) throws IOException {
-    return SchemaReader.readCarbonTableFromStore(
-        AbsoluteTableIdentifier.from(tablePath, tableName, "default"));
+  public static CarbonTable buildFromTablePath(String tableName, String tablePath,
+      boolean isTransactionalTable) throws IOException {
+    if (isTransactionalTable) {
+      return SchemaReader
+          .readCarbonTableFromStore(AbsoluteTableIdentifier.from(tablePath, "default", tableName));
+    } else {
+      // Infer the schema from the Carbondata file.
+      TableInfo tableInfoInfer =
+          SchemaReader.inferSchema(AbsoluteTableIdentifier.from(tablePath, "null", "null"), false);
+      return CarbonTable.buildFromTableInfo(tableInfoInfer);
+    }
   }
 
   /**

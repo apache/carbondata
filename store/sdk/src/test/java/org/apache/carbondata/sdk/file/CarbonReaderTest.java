@@ -125,4 +125,43 @@ public class CarbonReaderTest {
 
     FileUtils.deleteDirectory(new File(path));
   }
+
+
+  @Test
+  public void testWriteAndReadFilesNonTransactional() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    // Write to a Non Transactional Table
+    TestUtil.writeFilesAndVerify(new Schema(fields), path, true, false);
+
+    CarbonReader reader = CarbonReader.builder(path, "_temp")
+        .projection(new String[]{"name", "age"})
+        .isTransactionalTable(false)
+        .build();
+
+    // expected output after sorting
+    String[] name = new String[100];
+    int[] age = new int[100];
+    for (int i = 0; i < 100; i++) {
+      name[i] = "robot" + (i / 10);
+      age[i] = (i % 10) * 10 + i / 10;
+    }
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      // Default sort column is applied for dimensions. So, need  to validate accordingly
+      Assert.assertEquals(name[i], row[0]);
+      Assert.assertEquals(age[i], row[1]);
+      i++;
+    }
+    Assert.assertEquals(i, 100);
+
+    FileUtils.deleteDirectory(new File(path));
+  }
 }

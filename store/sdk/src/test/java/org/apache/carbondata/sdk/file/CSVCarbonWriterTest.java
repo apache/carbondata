@@ -19,14 +19,11 @@ package org.apache.carbondata.sdk.file;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 
-import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.io.FileUtils;
@@ -137,7 +134,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 1, 100);
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 1, 100, false);
 
     // TODO: implement reader to verify the number of blocklet in the file
 
@@ -153,7 +150,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 2, 2);
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 2, 2, true);
 
     File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
     File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
