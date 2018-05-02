@@ -122,14 +122,14 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   public DataMapWriter createWriter(Segment segment, String shardName) throws IOException {
     LOGGER.info(
         String.format("Data of BloomCoarseGranDataMap %s for table %s will be written to %s",
-            this.dataMapName, this.carbonTable.getTableName() , shardName));
-    return new BloomDataMapWriter(carbonTable.getTablePath(), this.dataMapName,
+            this.dataMapName, getCarbonTable().getTableName() , shardName));
+    return new BloomDataMapWriter(getCarbonTable().getTablePath(), this.dataMapName,
         this.dataMapMeta.getIndexedColumns(), segment, shardName, this.bloomFilterSize);
   }
 
   @Override
   public DataMapRefresher createRefresher(Segment segment, String shardName) throws IOException {
-    return new BloomDataMapRefresher(this.carbonTable.getTablePath(), this.dataMapName,
+    return new BloomDataMapRefresher(getCarbonTable().getTablePath(), this.dataMapName,
         this.dataMapMeta.getIndexedColumns(), segment, shardName, this.bloomFilterSize);
   }
 
@@ -138,7 +138,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<CoarseGrainDataMap> dataMaps = new ArrayList<CoarseGrainDataMap>(1);
     try {
       String dataMapStorePath = DataMapWriter.getDefaultDataMapPath(
-          carbonTable.getTablePath(), segment.getSegmentNo(), dataMapName);
+          getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
       CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dataMapStorePath).listFiles();
       for (CarbonFile carbonFile : carbonFiles) {
         BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
@@ -179,13 +179,14 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
 
   @Override
   public void deleteDatamapData() {
-    SegmentStatusManager ssm = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
+    SegmentStatusManager ssm =
+        new SegmentStatusManager(getCarbonTable().getAbsoluteTableIdentifier());
     try {
       List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
       for (Segment segment : validSegments) {
         String segmentId = segment.getSegmentNo();
         String datamapPath = CarbonTablePath.getSegmentPath(
-            carbonTable.getAbsoluteTableIdentifier().getTablePath(), segmentId)
+            getCarbonTable().getAbsoluteTableIdentifier().getTablePath(), segmentId)
             + File.separator + dataMapName;
         if (FileFactory.isFileExist(datamapPath)) {
           CarbonFile file = FileFactory.getCarbonFile(datamapPath,

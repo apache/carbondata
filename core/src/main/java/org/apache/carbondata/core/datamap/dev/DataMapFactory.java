@@ -38,12 +38,20 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_C
  */
 public abstract class DataMapFactory<T extends DataMap> {
 
-  protected CarbonTable carbonTable;
-  protected DataMapSchema dataMapSchema;
+  private CarbonTable carbonTable;
+  private DataMapSchema dataMapSchema;
 
   public DataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     this.carbonTable = carbonTable;
     this.dataMapSchema = dataMapSchema;
+  }
+
+  public CarbonTable getCarbonTable() {
+    return carbonTable;
+  }
+
+  public DataMapSchema getDataMapSchema() {
+    return dataMapSchema;
   }
 
   /**

@@ -148,13 +148,13 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   @Override
   public DataMapWriter createWriter(Segment segment, String shardName) {
     LOGGER.info("lucene data write to " + shardName);
-    return new LuceneDataMapWriter(carbonTable.getTablePath(), dataMapName,
+    return new LuceneDataMapWriter(getCarbonTable().getTablePath(), dataMapName,
         dataMapMeta.getIndexedColumns(), segment, shardName, true);
   }
 
   @Override
   public DataMapRefresher createRefresher(Segment segment, String shardName) {
-    return new LuceneDataMapRefresher(carbonTable.getTablePath(), dataMapName,
+    return new LuceneDataMapRefresher(getCarbonTable().getTablePath(), dataMapName,
         segment, shardName, dataMapMeta.getIndexedColumns());
   }
 
@@ -226,7 +226,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     try {
       // there can be multiple lucene datamaps present on a table, so get all datamaps and form
       // the path till the index file directories in all datamaps folders present in each segment
-      dataMaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+      dataMaps = DataMapStoreManager.getInstance().getAllDataMap(getCarbonTable());
     } catch (IOException ex) {
       LOGGER.error("failed to get datamaps");
     }
@@ -256,7 +256,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   @Override
   public void validate() throws MalformedDataMapCommandException {
     super.validate();
-    List<CarbonColumn> indexColumns = carbonTable.getIndexedColumns(dataMapSchema);
+    List<CarbonColumn> indexColumns = getCarbonTable().getIndexedColumns(getDataMapSchema());
 
     for (CarbonColumn column : indexColumns) {
       if (column.getDataType() != DataTypes.STRING) {
