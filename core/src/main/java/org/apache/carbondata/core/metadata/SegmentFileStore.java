@@ -700,16 +700,31 @@ public class SegmentFileStore {
     FileFactory.deleteFile(segmentFilePath, FileFactory.getFileType(segmentFilePath));
   }
 
+  /**
+   * If partition specs are available, then check the location map for any index file path which is
+   * not present in the partitionSpecs. If found then delete that index file.
+   * If the partition directory is empty, then delete the directory also.
+   * If partition specs are null, then directly delete parent directory in locationMap.
+   */
   private static void deletePhysicalPartition(List<PartitionSpec> partitionSpecs,
       Map<String, List<String>> locationMap) throws IOException {
     for (Map.Entry<String, List<String>> entry : locationMap.entrySet()) {
-      Path location = new Path(entry.getKey()).getParent();
       if (partitionSpecs != null) {
+        Path location = new Path(entry.getKey());
         boolean exists = pathExistsInPartitionSpec(partitionSpecs, location);
         if (!exists) {
           FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location.toString()));
+          for (String carbonDataFile : entry.getValue()) {
+            FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(carbonDataFile));
+          }
+        }
+        CarbonFile path = FileFactory.getCarbonFile(location.getParent().toString());
+        if (path.listFiles().length == 0) {
+          FileFactory.deleteAllCarbonFilesOfDir(
+              FileFactory.getCarbonFile(location.getParent().toString()));
         }
       } else {
+        Path location = new Path(entry.getKey()).getParent();
         // delete the segment folder
         CarbonFile segmentPath = FileFactory.getCarbonFile(location.toString());
         if (null != segmentPath) {
