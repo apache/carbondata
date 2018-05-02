@@ -18,6 +18,7 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -69,16 +70,16 @@ class AvroCarbonWriter extends CarbonWriter {
       avroSchema = avroRecord.getSchema();
     }
     List<Schema.Field> fields = avroSchema.getFields();
-    Object [] csvField = new String[fields.size()];
+    Object [] csvField = new Object[fields.size()];
     for (int i = 0; i < fields.size(); i++) {
-      csvField[i] = avroFieldToString(fields.get(i), avroRecord.get(i));
+      csvField[i] = avroFieldToObject(fields.get(i), avroRecord.get(i));
     }
     return csvField;
   }
 
-  private String avroFieldToString(Schema.Field fieldType, Object fieldValue) {
+  private String avroFieldToObject(Schema.Field avroField, Object fieldValue) {
     StringBuilder out = new StringBuilder();
-    Schema.Type type = fieldType.schema().getType();
+    Schema.Type type = avroField.schema().getType();
     switch (type) {
       case BOOLEAN:
       case INT:
@@ -89,7 +90,7 @@ class AvroCarbonWriter extends CarbonWriter {
         out.append(fieldValue.toString());
         break;
       case RECORD:
-        List<Schema.Field> fields = fieldType.schema().getFields();
+        List<Schema.Field> fields = avroField.schema().getFields();
         String delimiter = null;
         for (int i = 0; i < fields.size(); i ++) {
           if (i == 0) {
@@ -98,13 +99,29 @@ class AvroCarbonWriter extends CarbonWriter {
             delimiter = ":";
           }
           if (i != (fields.size() - 1)) {
-            out.append(avroFieldToString(fields.get(i), ((GenericData.Record) fieldValue).get(i)))
+            out.append(avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i)))
                 .append(delimiter);
           } else {
-            out.append(avroFieldToString(fields.get(i), ((GenericData.Record) fieldValue).get(i)));
+            out.append(avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i)));
           }
         }
         break;
+      case ARRAY:
+        int size = ((ArrayList) fieldValue).size();
+        String delimiterArray = "$";
+        for (int i = 0; i < size; i++) {
+          if (i != size - 1) {
+            out.append(avroFieldToObject(
+                new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
+                ((ArrayList) fieldValue).get(i))).append(delimiterArray);
+          } else {
+            out.append(avroFieldToObject(
+                new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
+                ((ArrayList) fieldValue).get(i)));
+          }
+        }
+        break;
+
       default:
         throw new UnsupportedOperationException();
     }

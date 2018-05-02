@@ -104,7 +104,7 @@ public class Field {
     } else if (type.equalsIgnoreCase("double")) {
       this.type = DataTypes.DOUBLE;
     } else if (type.equalsIgnoreCase("array")) {
-      this.type = DataTypes.createStructType(fields);
+      this.type = DataTypes.createArrayType(fields.get(0).getDataType());
     } else if (type.equalsIgnoreCase("struct")) {
       this.type = DataTypes.createStructType(fields);
     }
