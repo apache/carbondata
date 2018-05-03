@@ -430,7 +430,12 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val dataMapProvider = classOf[CGDataMapFactory].getName
-    sql(s"create datamap test_cg_datamap on table datamap_store_test using '$dataMapProvider' as select  id, name from datamap_store_test")
+    sql(
+      s"""
+         |create datamap test_cg_datamap on table datamap_store_test
+         |using '$dataMapProvider'
+         |dmproperties('index_columns'='name')
+       """.stripMargin)
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap")
 
@@ -447,7 +452,12 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val dataMapProvider = classOf[CGDataMapFactory].getName
-    sql(s"create datamap test_cg_datamap1 on table datamap_store_test1 using '$dataMapProvider' as select  id, name from datamap_store_test")
+    sql(
+      s"""
+         |create datamap test_cg_datamap1 on table datamap_store_test1
+         |using '$dataMapProvider'
+         |dmproperties('index_columns'='name')
+       """.stripMargin)
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap1")
 
@@ -468,7 +478,12 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val dataMapProvider = classOf[CGDataMapFactory].getName
-    sql(s"create datamap test_cg_datamap2 on table datamap_store_test2 using '$dataMapProvider' as select  id, name from datamap_store_test")
+    sql(
+      s"""
+         |create datamap test_cg_datamap2 on table datamap_store_test2
+         |using '$dataMapProvider'
+         |dmproperties('index_columns'='name')
+       """.stripMargin)
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation,"test_cg_datamap2")
 
