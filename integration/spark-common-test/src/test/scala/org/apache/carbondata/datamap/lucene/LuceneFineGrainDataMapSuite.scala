@@ -407,7 +407,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test_table
          | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | DMProperties('INDEX_COLUMNS'='name,city')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
@@ -415,7 +415,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
       sql("select * from datamap_test_table where name='n10'"))
-    sql("drop datamap if exists dm on table datamap_test_table")
+    sql("DROP TABLE IF EXISTS datamap_test_table")
   }
 
   test("test lucene fine grain data map with ALTER ADD and DROP Table COLUMN on Lucene DataMap") {

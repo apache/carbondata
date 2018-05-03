@@ -87,7 +87,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
    */
   private Analyzer analyzer;
 
-  private String shardName;
+  private String filePath;
 
   LuceneFineGrainDataMap(Analyzer analyzer) {
     this.analyzer = analyzer;
@@ -102,7 +102,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
     LOGGER.info("Lucene index read path " + indexPath.toString());
 
-    this.shardName = indexPath.getName();
+    this.filePath = indexPath.getName();
 
     // get file system , use hdfs file system , realized in solr project
     FileSystem fs = FileFactory.getFileSystem(indexPath);
@@ -277,7 +277,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       }
 
       // add a FineGrainBlocklet
-      blocklets.add(new FineGrainBlocklet(shardName, blockletId, pages));
+      blocklets.add(new FineGrainBlocklet(filePath, blockletId, pages));
     }
 
     return blocklets;

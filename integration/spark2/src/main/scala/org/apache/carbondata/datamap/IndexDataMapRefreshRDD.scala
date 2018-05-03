@@ -186,7 +186,7 @@ class IndexDataMapRefreshRDD[K, V](
       reader.initialize(inputSplit, attemptContext)
 
       // we use task name as shard name to create the folder for this datamap
-      val shardName = CarbonTablePath.getUniqueTaskName(inputSplit.getAllSplits.get(0).getBlockPath)
+      val shardName = CarbonTablePath.getShardName(inputSplit.getAllSplits.get(0).getBlockPath)
       refresher = dataMapFactory.createRefresher(new Segment(segmentId), shardName)
       refresher.initialize()
 

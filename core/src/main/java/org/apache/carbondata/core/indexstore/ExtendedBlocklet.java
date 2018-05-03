@@ -33,8 +33,8 @@ public class ExtendedBlocklet extends Blocklet {
 
   private String dataMapUniqueId;
 
-  public ExtendedBlocklet(String shardName, String blockletId) {
-    super(shardName, blockletId);
+  public ExtendedBlocklet(String filePath, String blockletId) {
+    super(filePath, blockletId);
   }
 
   public BlockletDetailInfo getDetailInfo() {
@@ -66,7 +66,7 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   public String getPath() {
-    return getShardName();
+    return getFilePath();
   }
 
   public String getDataMapWriterPath() {
