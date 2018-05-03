@@ -66,8 +66,6 @@ class Master(sparkConf: SparkConf) {
 
   /** start service and listen on port passed in constructor */
   def startService(): Unit = {
-    var started: Boolean = false
-    var count: Int = 0
     if (rpcEnv == null) {
       new Thread(new Runnable {
         override def run(): Unit = {
@@ -99,20 +97,9 @@ class Master(sparkConf: SparkConf) {
           val registryEndpoint: RpcEndpoint = new Registry(rpcEnv, Master.this)
           rpcEnv.setupEndpoint("registry-service", registryEndpoint)
           LOG.info("registry-service started")
-          started = true
           rpcEnv.awaitTermination()
         }
       }).start()
-
-      // wait until registry-service is started
-      while (!started && count < 100) {
-        Thread.sleep(100)
-        count = count + 1
-      }
-      if (count == 100) {
-        LOG.error("Failed to start Master")
-        throw new RuntimeException("Failed to start Master, timed out")
-      }
     }
   }
 
