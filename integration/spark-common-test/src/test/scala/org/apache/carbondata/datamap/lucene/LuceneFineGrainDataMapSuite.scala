@@ -423,7 +423,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
       """
-        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)LuceneFineGrainDataMapSuite
         | STORED BY 'carbondata'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
@@ -710,7 +710,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     val msg = intercept[SparkException] {
       sql("select * from table1 where TEXT_MATCH('name:n*')").show()
     }
-    assert(msg.getMessage.contains("TEXT_MATCH is not supported on this table"))
+    assert(msg.getCause.getMessage.contains("TEXT_MATCH is not supported on table"))
     sql("DROP TABLE table1")
   }
 
