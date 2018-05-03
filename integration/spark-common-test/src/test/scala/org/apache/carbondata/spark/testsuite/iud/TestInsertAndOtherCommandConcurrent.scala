@@ -53,7 +53,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       s"""
          | create datamap test on table orders
          | using '${classOf[WaitingDataMapFactory].getName}'
-         | as select count(a) from hiveMetaStoreTable_1")
+         | dmproperties('index_columns'='o_name')
        """.stripMargin)
   }
 
@@ -210,7 +210,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       s"""
          | create datamap dm_t1 on table t1
          | using '${classOf[WaitingDataMapFactory].getName}'
-         | as select count(a) from hiveMetaStoreTable_1")
+         | dmproperties('index_columns'='o_name')
        """.stripMargin)
     val future = runSqlAsync("insert into table t1 select * from orders_overwrite")
     sql("alter table t1 compact 'MAJOR'")
