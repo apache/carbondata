@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 
 /**
  * This class is going to save the the Index files which are taken snapshot
@@ -36,12 +37,19 @@ public class ReadCommittedIndexFileSnapShot implements Serializable {
    * Segment Numbers are mapped with list of Index Files.
    */
   private Map<String, List<String>> segmentIndexFileMap;
+  private Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap;
 
-  public ReadCommittedIndexFileSnapShot(Map<String, List<String>> segmentIndexFileMap) {
+  public ReadCommittedIndexFileSnapShot(Map<String, List<String>> segmentIndexFileMap,
+      Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap) {
     this.segmentIndexFileMap = segmentIndexFileMap;
+    this.segmentTimestampUpdaterMap = segmentTimestampUpdaterMap;
   }
 
   public Map<String, List<String>> getSegmentIndexFileMap() {
     return segmentIndexFileMap;
+  }
+
+  public Map<String, SegmentRefreshInfo> getSegmentTimestampUpdaterMap() {
+    return segmentTimestampUpdaterMap;
   }
 }

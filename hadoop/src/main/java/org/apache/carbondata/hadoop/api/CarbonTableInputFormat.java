@@ -230,13 +230,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
             readCommittedScope);
     // Clean the updated segments from memory if the update happens on segments
     List<Segment> toBeCleanedSegments = new ArrayList<>();
-    for (SegmentUpdateDetails segmentUpdateDetail : updateStatusManager
-        .getUpdateStatusDetails()) {
+    for (Segment filteredSegment : filteredSegmentToAccess) {
       boolean refreshNeeded =
           DataMapStoreManager.getInstance().getTableSegmentRefresher(carbonTable)
-              .isRefreshNeeded(segmentUpdateDetail.getSegmentName(), updateStatusManager);
+              .isRefreshNeeded(filteredSegment,
+                  updateStatusManager.getInvalidTimestampRange(filteredSegment.getSegmentNo()));
       if (refreshNeeded) {
-        toBeCleanedSegments.add(new Segment(segmentUpdateDetail.getSegmentName(), null));
+        toBeCleanedSegments.add(filteredSegment);
       }
     }
     // Clean segments if refresh is needed
@@ -246,6 +246,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         toBeCleanedSegments.add(segment);
       }
     }
+
+
     if (toBeCleanedSegments.size() > 0) {
       DataMapStoreManager.getInstance()
           .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),

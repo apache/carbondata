@@ -198,6 +198,40 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  // prepare sdk writer output
+  def buildTestDataWithSameUUID(rows: Int,
+      persistSchema: Boolean,
+      options: util.Map[String, String],
+      sortColumns: List[String]): Any = {
+    val schema = new StringBuilder()
+      .append("[ \n")
+      .append("   {\"name\":\"string\"},\n")
+      .append("   {\"age\":\"int\"},\n")
+      .append("   {\"height\":\"double\"}\n")
+      .append("]")
+      .toString()
+
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath)
+          .isTransactionalTable(false)
+          .sortBy(sortColumns.toArray)
+          .uniqueIdentifier(
+            123).withBlockSize(2)
+          .buildWriterForCSVInput()
+      var i = 0
+      while (i < rows) {
+        writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+        i += 1
+      }
+      writer.close()
+    } catch {
+      case ex: Exception => throw new RuntimeException(ex)
+
+      case _ => None
+    }
+  }
 
   def cleanTestData() = {
     FileUtils.deleteDirectory(new File(writerPath))
@@ -224,6 +258,44 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
+  }
+
+  test(
+    "Read two sdk writer outputs before and after deleting the existing files and creating new " +
+    "files with same schema and UUID") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestDataWithSameUUID(3, false, null, List("name"))
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+    new File(writerPath).listFiles().map(x => LOGGER.audit(x.getName +" : "+x.lastModified()))
+    FileUtils.deleteDirectory(new File(writerPath))
+    // Thread.sleep is required because it is possible sometime deletion
+    // and creation of new file can happen at same timestamp.
+    Thread.sleep(1000)
+    assert(!new File(writerPath).exists())
+    buildTestDataWithSameUUID(4, false, null, List("name"))
+    new File(writerPath).listFiles().map(x => LOGGER.audit(x.getName +" : "+x.lastModified()))
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0),
+      Row("robot3", 3, 1.5)))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
   }
 
   test("test create external table with sort columns") {
@@ -638,14 +710,78 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("robot1", 1, 0.5),
       Row("robot2", 2, 1.0)))
 
+    buildTestDataWithSameUUID(3, false, null, List("name"))
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0),
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0),
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    buildTestDataWithSameUUID(3, false, null, List("name"))
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0),
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0),
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0),
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
     //test filter query
     checkAnswer(sql("select * from sdkOutputTable where age = 1"), Seq(
+      Row("robot1", 1, 0.5),
+      Row("robot1", 1, 0.5),
       Row("robot1", 1, 0.5),
       Row("robot1", 1, 0.5)))
 
     // test the default sort column behavior in Nontransactional table
     checkExistence(sql("describe formatted sdkOutputTable"), true,
       "SORT_COLUMNS                        name")
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+  test(
+    "Read two sdk writer outputs before and after deleting the existing files and creating new " +
+    "files with same schema") {
+    buildTestDataSingleFile()
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(4, false, null)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0),
+      Row("robot3", 3, 1.5)))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
