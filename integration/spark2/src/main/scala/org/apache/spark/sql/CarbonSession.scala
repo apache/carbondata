@@ -177,7 +177,7 @@ class CarbonSession(@transient val sc: SparkContext,
     }
   }
 
-  private var carbonStore: SparkCarbonStore = _
+  @transient private var carbonStore: SparkCarbonStore = _
 
   def startSearchMode(): Unit = {
     CarbonProperties.enableSearchMode(true)
