@@ -154,7 +154,6 @@ public class StructDataType implements GenericDataType<StructObject> {
       throws IOException, DictionaryGenerationException {
     dataOutputStream.writeInt(children.size());
     if (input == null) {
-      dataOutputStream.writeInt(children.size());
       for (int i = 0; i < children.size(); i++) {
         children.get(i).writeByteArray(null, dataOutputStream);
       }
@@ -267,7 +266,10 @@ public class StructDataType implements GenericDataType<StructObject> {
 
     for (int i = 0; i < childElement; i++) {
       if (children.get(i) instanceof PrimitiveDataType) {
-        ((PrimitiveDataType) children.get(i)).setKeySize(inputArray.getInt());
+        PrimitiveDataType child = ((PrimitiveDataType) children.get(i));
+        if (child.getIsColumnDictionary()) {
+          child.setKeySize(inputArray.getInt());
+        }
       }
       children.get(i).getColumnarDataForComplexType(columnsArray, inputArray);
     }

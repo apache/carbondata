@@ -27,6 +27,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.util.CarbonException
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
@@ -386,23 +387,34 @@ object TableNewProcessor {
 
 class TableNewProcessor(cm: TableModel) {
 
-  def getAllChildren(fieldChildren: Option[List[Field]]): Seq[ColumnSchema] = {
+  def getAllChildren(fieldChildren: Option[List[Field]],
+      useDictionaryEncoding: Boolean): Seq[ColumnSchema] = {
     var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
     fieldChildren.foreach(fields => {
       fields.foreach(field => {
+        if (!useDictionaryEncoding &&
+            (field.dataType.get.equalsIgnoreCase("double") ||
+             field.dataType.get.equalsIgnoreCase("date") ||
+             field.dataType.get.equalsIgnoreCase("decimal"))) {
+          throw new MalformedCarbonCommandException(s"DICTIONARY_EXCLUDE is unsupported for ${
+            field.dataType.get} data type column: ${ field.column }")
+        }
         val encoders = new java.util.ArrayList[Encoding]()
-        encoders.add(Encoding.DICTIONARY)
+        if (useDictionaryEncoding) {
+          encoders.add(Encoding.DICTIONARY)
+        }
         val columnSchema: ColumnSchema = getColumnSchema(
           DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
           field.name.getOrElse(field.column),
           encoders,
           true,
           field,
-          cm.dataMapRelation)
+          cm.dataMapRelation,
+          useDictionaryEncoding = useDictionaryEncoding)
         allColumns ++= Seq(columnSchema)
         if (field.children.get != null) {
           columnSchema.setNumberOfChild(field.children.get.size)
-          allColumns ++= getAllChildren(field.children)
+          allColumns ++= getAllChildren(field.children, useDictionaryEncoding)
         }
       })
     })
@@ -415,7 +427,8 @@ class TableNewProcessor(cm: TableModel) {
       encoders: java.util.List[Encoding],
       isDimensionCol: Boolean,
       field: Field,
-      map: Option[scala.collection.mutable.LinkedHashMap[Field, DataMapField]]) : ColumnSchema = {
+      map: Option[scala.collection.mutable.LinkedHashMap[Field, DataMapField]],
+      useDictionaryEncoding: Boolean = true) : ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
@@ -428,7 +441,8 @@ class TableNewProcessor(cm: TableModel) {
     if (dataType == DataTypes.DATE) {
         encoders.add(Encoding.DIRECT_DICTIONARY)
       }
-    if (dataType == DataTypes.TIMESTAMP && !highCardinalityDims.contains(colName)) {
+      if (dataType == DataTypes.TIMESTAMP &&
+          !highCardinalityDims.contains(colName) && useDictionaryEncoding) {
         encoders.add(Encoding.DIRECT_DICTIONARY)
       }
     }
@@ -506,6 +520,9 @@ class TableNewProcessor(cm: TableModel) {
       index = index + 1
     }
 
+    val dictionaryIncludeCols = cm.tableProperties
+      .getOrElse(CarbonCommonConstants.DICTIONARY_INCLUDE, "")
+
     cm.dimCols.foreach { field =>
       val sortField = cm.sortKeyDims.get.find(field.column equals _)
       if (sortField.isEmpty) {
@@ -529,8 +546,12 @@ class TableNewProcessor(cm: TableModel) {
         allColumns :+= columnSchema
         index = index + 1
         if (field.children.isDefined && field.children.get != null) {
+          val includeDictionaryEncoding = dictionaryIncludeCols.contains(field.column)
+          if (!includeDictionaryEncoding) {
+            columnSchema.getEncodingList.remove(Encoding.DICTIONARY)
+          }
           columnSchema.setNumberOfChild(field.children.get.size)
-          allColumns ++= getAllChildren(field.children)
+          allColumns ++= getAllChildren(field.children, includeDictionaryEncoding)
         }
       }
     }
