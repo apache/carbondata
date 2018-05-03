@@ -154,7 +154,7 @@ class FGDataMap extends FineGrainDataMap {
   var FileReader: FileReader = _
   var filePath: String = _
   val compressor = new SnappyCompressor
-  var taskName:String = _
+  var shardName:String = _
 
   /**
    * It is called to load the data map to memory or to initialize it.
@@ -162,7 +162,7 @@ class FGDataMap extends FineGrainDataMap {
   override def init(dataMapModel: DataMapModel): Unit = {
     this.filePath = dataMapModel.getFilePath
     val carbonFile = FileFactory.getCarbonFile(filePath)
-    taskName = carbonFile.getName
+    shardName = carbonFile.getName
     val size = carbonFile.getSize
     FileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
     val footerLen = FileReader.readInt(filePath, size - 4)
@@ -221,7 +221,7 @@ class FGDataMap extends FineGrainDataMap {
         pg.setRowId(f._2(p._2).toArray)
         pg
       }
-      Some(new FineGrainBlocklet(taskName, meta._1.toString, pages.toList.asJava))
+      Some(new FineGrainBlocklet(shardName, meta._1.toString, pages.toList.asJava))
     } else {
       None
     }

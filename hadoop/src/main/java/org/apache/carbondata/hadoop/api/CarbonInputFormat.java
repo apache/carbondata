@@ -491,7 +491,7 @@ m filterExpression
         if (blocklet.getSegmentId().equals(segment.getSegmentNo())) {
           found = true;
           // Set the pruned index file to the segment for further pruning.
-          String uniqueTaskName = CarbonTablePath.getUniqueTaskName(blocklet.getTaskName());
+          String uniqueTaskName = CarbonTablePath.getUniqueTaskName(blocklet.getShardName());
           segment.setFilteredIndexShardName(uniqueTaskName);
         }
       }

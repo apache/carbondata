@@ -28,14 +28,14 @@ import org.apache.carbondata.core.metadata.schema.table.Writable;
  */
 public class Blocklet implements Writable,Serializable {
 
-  /** file path of this blocklet */
-  private String taskName;
+  /** shard name of this blocklet, normally it is the task name when writing this blocklet */
+  private String shardName;
 
   /** id to identify the blocklet inside the block (it is a sequential number) */
   private String blockletId;
 
-  public Blocklet(String taskName, String blockletId) {
-    this.taskName = taskName;
+  public Blocklet(String shardName, String blockletId) {
+    this.shardName = shardName;
     this.blockletId = blockletId;
   }
 
@@ -47,17 +47,17 @@ public class Blocklet implements Writable,Serializable {
     return blockletId;
   }
 
-  public String getTaskName() {
-    return taskName;
+  public String getShardName() {
+    return shardName;
   }
 
   @Override public void write(DataOutput out) throws IOException {
-    out.writeUTF(taskName);
+    out.writeUTF(shardName);
     out.writeUTF(blockletId);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
-    taskName = in.readUTF();
+    shardName = in.readUTF();
     blockletId = in.readUTF();
   }
 
@@ -67,7 +67,7 @@ public class Blocklet implements Writable,Serializable {
 
     Blocklet blocklet = (Blocklet) o;
 
-    if (taskName != null ? !taskName.equals(blocklet.taskName) : blocklet.taskName != null) {
+    if (shardName != null ? !shardName.equals(blocklet.shardName) : blocklet.shardName != null) {
       return false;
     }
     return blockletId != null ?
@@ -76,7 +76,7 @@ public class Blocklet implements Writable,Serializable {
   }
 
   @Override public int hashCode() {
-    int result = taskName != null ? taskName.hashCode() : 0;
+    int result = shardName != null ? shardName.hashCode() : 0;
     result = 31 * result + (blockletId != null ? blockletId.hashCode() : 0);
     return result;
   }

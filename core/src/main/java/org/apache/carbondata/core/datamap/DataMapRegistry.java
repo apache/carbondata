@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datamap;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,8 +82,11 @@ public class DataMapRegistry {
             Class.forName(className).getConstructors()[0].newInstance(table, dataMapSchema);
       } catch (ClassNotFoundException ex) {
         throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
-      } catch (Throwable ex) {
-        throw new MetadataProcessException("failed to create DataMap '" + providerName + "'", ex);
+      } catch (InvocationTargetException ex) {
+        throw new MalformedDataMapCommandException(ex.getTargetException().getMessage());
+      } catch (InstantiationException | IllegalAccessException | IllegalArgumentException ex) {
+        throw new MetadataProcessException(
+            "failed to create DataMap '" + providerName + "': " + ex.getMessage(), ex);
       }
     } else {
       throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found");

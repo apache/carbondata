@@ -77,7 +77,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | USING 'lucene'
       """.stripMargin))
 
-    assertResult("INDEX_COLUMNS DMPROPERTY is required")(exception.getMessage)
+    assert(exception.getMessage.contains("INDEX_COLUMNS DMPROPERTY is required"))
 
     // illegal argumnet.
     exception = intercept[MalformedDataMapCommandException](sql(
@@ -121,6 +121,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test lucene fine grain data map") {
+    sql("drop datamap if exists dm on table datamap_test")
     sql(
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
@@ -567,6 +568,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
+    sql("DROP TABLE IF EXISTS tabl1")
     sql(
       """
         | CREATE TABLE table1(id INT, name STRING, city STRING, age INT)

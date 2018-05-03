@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.datamap;
 
-import java.io.IOException;
-
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -46,7 +44,7 @@ public class DataMapManager {
    * Return a DataMapClassProvider instance for specified dataMapSchema.
    */
   public DataMapProvider getDataMapProvider(CarbonTable mainTable, DataMapSchema dataMapSchema,
-      SparkSession sparkSession) throws MalformedDataMapCommandException, IOException {
+      SparkSession sparkSession) throws MalformedDataMapCommandException {
     DataMapProvider provider;
     if (dataMapSchema.getProviderName().equalsIgnoreCase(PREAGGREGATE.toString())) {
       provider = new PreAggregateDataMapProvider(mainTable, dataMapSchema, sparkSession);

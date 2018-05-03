@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -56,8 +57,8 @@ class CGDataMapFactory(
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segment: Segment, dataWritePath: String): DataMapWriter = {
-    new CGDataMapWriter(carbonTable, segment, dataWritePath, dataMapSchema)
+  override def createWriter(segment: Segment, shardName: String): DataMapWriter = {
+    new CGDataMapWriter(carbonTable, segment, shardName, dataMapSchema)
   }
 
   /**
@@ -158,15 +159,17 @@ class CGDataMap extends CoarseGrainDataMap {
   var FileReader: FileReader = _
   var filePath: String = _
   val compressor = new SnappyCompressor
-  var taskName: String = _
+  var shardName: String = _
 
   /**
    * It is called to load the data map to memory or to initialize it.
    */
   override def init(dataMapModel: DataMapModel): Unit = {
-    this.filePath = dataMapModel.getFilePath
+    val indexPath = FileFactory.getPath(dataMapModel.getFilePath)
+    this.shardName = indexPath.getName
+
+    this.filePath = dataMapModel.getFilePath + "/testcg.datamap"
     val carbonFile = FileFactory.getCarbonFile(filePath)
-    taskName = carbonFile.getName
     val size = carbonFile.getSize
     FileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
     val footerLen = FileReader.readInt(filePath, size-4)
@@ -195,7 +198,7 @@ class CGDataMap extends CoarseGrainDataMap {
     }
     val meta = findMeta(value(0).getBytes)
     meta.map { f=>
-      new Blocklet(taskName, f._1 + "")
+      new Blocklet(shardName, f._1 + "")
     }.asJava
   }
 
@@ -236,14 +239,11 @@ class CGDataMap extends CoarseGrainDataMap {
 class CGDataMapWriter(
     carbonTable: CarbonTable,
     segment: Segment,
-    dataWritePath: String,
+    shardName: String,
     dataMapSchema: DataMapSchema)
   extends DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
-    carbonTable.getIndexedColumns(dataMapSchema), segment, dataWritePath) {
+    carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
 
-  var taskName: String = _
-
-  val cgwritepath = dataWritePath + "/" + dataMapSchema.getDataMapName +"/"
   val blockletList = new ArrayBuffer[Array[Byte]]()
   val maxMin = new ArrayBuffer[(Int, (Array[Byte], Array[Byte]))]()
   val compressor = new SnappyCompressor
@@ -254,7 +254,6 @@ class CGDataMapWriter(
    * @param blockId file name of the carbondata file
    */
   override def onBlockStart(blockId: String): Unit = {
-    this.taskName = taskName
   }
 
   /**
@@ -319,9 +318,10 @@ class CGDataMapWriter(
    * class.
    */
   override def finish(): Unit = {
-    FileFactory.mkdirs(cgwritepath, FileFactory.getFileType(cgwritepath))
-    var stream: DataOutputStream = FileFactory
-      .getDataOutputStream(cgwritepath + "/"+taskName, FileFactory.getFileType(cgwritepath))
+    FileFactory.mkdirs(dataMapPath, FileFactory.getFileType(dataMapPath))
+    val file = dataMapPath + "/testcg.datamap"
+    val stream: DataOutputStream = FileFactory
+      .getDataOutputStream(file, FileFactory.getFileType(file))
     val out = new ByteOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)
@@ -330,7 +330,6 @@ class CGDataMapWriter(
     stream.write(bytes)
     stream.writeInt(bytes.length)
     stream.close()
-    commitFile(cgwritepath + "/"+taskName)
   }
 
 
@@ -363,8 +362,6 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test_cg")
-    // register datamap writer
     sql(s"create datamap cgdatamap on table datamap_test_cg " +
         s"using '${classOf[CGDataMapFactory].getName}' " +
         s"DMPROPERTIES('index_columns'='name')")

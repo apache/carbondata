@@ -26,7 +26,6 @@ import org.apache.spark.sql.execution.command._
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
-import org.apache.carbondata.core.datamap.dev.DataMapFactory
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -81,6 +80,7 @@ case class CarbonCreateDataMapCommand(
     dataMapSchema = new DataMapSchema(dataMapName, dmProviderName)
     dataMapSchema.setProperties(new java.util.HashMap[String, String](
       dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
+
     dataMapProvider = DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
 
     // If it is index datamap, check whether the column has datamap created already

@@ -153,7 +153,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   private ExtendedBlocklet getExtendedBlocklet(List<TableBlockIndexUniqueIdentifier> identifiers,
       Blocklet blocklet) throws IOException {
     for (TableBlockIndexUniqueIdentifier identifier : identifiers) {
-      if (identifier.getIndexFileName().startsWith(blocklet.getTaskName())) {
+      if (identifier.getIndexFileName().startsWith(blocklet.getShardName())) {
         DataMap dataMap = cache.get(identifier);
         return ((BlockletDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
       }
