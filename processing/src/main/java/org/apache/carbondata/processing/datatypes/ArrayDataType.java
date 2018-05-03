@@ -236,7 +236,10 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     columnsArray.get(this.outputArrayIndex).add(b.array());
 
     if (children instanceof PrimitiveDataType) {
-      ((PrimitiveDataType) children).setKeySize(inputArray.getInt());
+      PrimitiveDataType child = ((PrimitiveDataType) children);
+      if (child.getIsColumnDictionary()) {
+        child.setKeySize(inputArray.getInt());
+      }
     }
     for (int i = 0; i < dataLength; i++) {
       children.getColumnarDataForComplexType(columnsArray, inputArray);

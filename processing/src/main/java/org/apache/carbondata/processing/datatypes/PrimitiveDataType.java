@@ -336,8 +336,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private void updateNullValue(DataOutputStream dataOutputStream) throws IOException {
     if (this.carbonDimension.getDataType() == DataTypes.STRING) {
+      dataOutputStream.writeInt(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
       dataOutputStream.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
     } else {
+      dataOutputStream.writeInt(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
       dataOutputStream.write(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
     }
   }
@@ -393,12 +395,17 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   /*
    * split column and return metadata and primitive column
    */
-  @Override
-  public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
+  @Override public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
       ByteBuffer inputArray) {
-    byte[] key = new byte[keySize];
-    inputArray.get(key);
-    columnsArray.get(outputArrayIndex).add(key);
+    if (!isDictionary) {
+      byte[] key = new byte[inputArray.getInt()];
+      inputArray.get(key);
+      columnsArray.get(outputArrayIndex).add(key);
+    } else {
+      byte[] key = new byte[keySize];
+      inputArray.get(key);
+      columnsArray.get(outputArrayIndex).add(key);
+    }
     dataCounter++;
   }
 
