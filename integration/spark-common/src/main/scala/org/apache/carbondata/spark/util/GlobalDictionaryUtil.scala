@@ -824,9 +824,11 @@ object GlobalDictionaryUtil {
   def trimErrorMessage(input: String): String = {
     var errorMessage: String = null
     if (input != null && input.contains("TextParsingException:")) {
-      if (input.split("Hint").length > 0 &&
+      if (input.split("Hint").length > 1 &&
           input.split("Hint")(0).split("TextParsingException: ").length > 1) {
         errorMessage = input.split("Hint")(0).split("TextParsingException: ")(1)
+      } else if (input.split("Parser Configuration:").length > 1) {
+        errorMessage = input.split("Parser Configuration:")(0)
       }
     } else if (input != null && input.contains("Exception:")) {
       errorMessage = input.split("Exception: ")(1).split("\n")(0)
