@@ -22,7 +22,8 @@ import java.util.concurrent.{Executors, ExecutorService}
 
 import org.apache.spark.sql.{CarbonSession, SparkSession}
 
-import org.apache.carbondata.examples.util.ExampleUtils
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * An example that demonstrate how to run queries in search mode,
@@ -32,16 +33,46 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object SearchModeExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createCarbonSession("SearchModeExample")
+    import org.apache.spark.sql.CarbonSession._
+    val master = Option(System.getProperty("spark.master"))
+      .orElse(sys.env.get("MASTER"))
+      .orElse(Option("local[8]"))
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "")
+
+    val filePath = if (args.length > 0) {
+      args(0)
+    } else {
+      val rootPath = new File(this.getClass.getResource("/").getPath
+        + "../../../..").getCanonicalPath
+      s"$rootPath/examples/spark2/src/main/resources/data.csv"
+    }
+    val storePath = if (args.length > 1) {
+      args(1)
+    } else {
+      val rootPath = new File(this.getClass.getResource("/").getPath
+        + "../../../..").getCanonicalPath
+      s"$rootPath/examples/spark2/target/store"
+    }
+
+    val spark = SparkSession
+      .builder()
+      .master(master.get)
+      .appName("SearchModeExample")
+      .config("spark.sql.crossJoin.enabled", "true")
+      .getOrCreateCarbonSession(storePath)
+
     spark.sparkContext.setLogLevel("ERROR")
-    exampleBody(spark)
+    exampleBody(spark, filePath)
+    println("Finished!")
     spark.close()
   }
 
-  def exampleBody(spark : SparkSession): Unit = {
-
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+  def exampleBody(spark: SparkSession, path: String): Unit = {
 
     spark.sql("DROP TABLE IF EXISTS carbonsession_table")
 
@@ -63,8 +94,6 @@ object SearchModeExample {
          | STORED BY 'carbondata'
          | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
-
-    val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
 
     spark.sql(
       s"""
