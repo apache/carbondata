@@ -65,10 +65,6 @@ object PreAggregateDataMapExample {
        LOAD DATA LOCAL INPATH '$testData' into table mainTable
        """)
 
-    spark.sql("""
-       select * from mainTable
-       """)
-
     spark.sql(s"""
        LOAD DATA LOCAL INPATH '$testData' into table mainTable_other
        """)
@@ -152,16 +148,20 @@ object PreAggregateDataMapExample {
 
     // 2.compare the performance : with pre-aggregate VS main table
 
-    // build test data, if set the data is larger than 100M, it will take 10+ mins.
+    // build the test data, please increase the data for more obvious comparison.
+    // if set the data is larger than 100M, it will take 10+ mins.
+
     import spark.implicits._
 
     import scala.util.Random
     val r = new Random()
-    val df = spark.sparkContext.parallelize(1 to 10 * 1000 * 1000)
+    val df = spark.sparkContext.parallelize(1 to 10 * 10 * 1000)
       .map(x => ("No." + r.nextInt(100000), "name" + x % 8, "city" + x % 50, x % 60))
       .toDF("ID", "name", "city", "age")
 
     // Create table with pre-aggregate
+    spark.sql("DROP TABLE IF EXISTS personTable")
+    spark.sql("DROP TABLE IF EXISTS personTableWithoutAgg")
     df.write.format("carbondata")
       .option("tableName", "personTable")
       .option("compress", "true")
