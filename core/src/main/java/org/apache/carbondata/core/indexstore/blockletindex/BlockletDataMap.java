@@ -705,6 +705,11 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Serializable 
     return prune(filterExp, this.segmentProperties);
   }
 
+  @Override
+  public void finish() {
+
+  }
+
   private boolean isCorrectUUID(String[] fileDetails, PartitionSpec spec) {
     boolean needToScan = false;
     if (spec.getUuid() != null) {

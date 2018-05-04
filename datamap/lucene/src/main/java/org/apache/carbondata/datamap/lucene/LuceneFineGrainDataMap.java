@@ -92,6 +92,8 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
   private boolean storeBlockletWise;
 
+  private IndexReader indexReader;
+
   LuceneFineGrainDataMap(Analyzer analyzer, DataMapSchema schema) {
     this.analyzer = analyzer;
     writeCacheSize = LuceneDataMapFactoryBase.validateAndGetWriteCacheSize(schema);
@@ -148,7 +150,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     // open this index path , use HDFS default configuration
     Directory indexDir = new HdfsDirectory(indexPath, FileFactory.getConfiguration());
 
-    IndexReader indexReader = DirectoryReader.open(indexDir);
+    this.indexReader = DirectoryReader.open(indexDir);
     if (indexReader == null) {
       throw new RuntimeException("failed to create index reader object");
     }
@@ -247,7 +249,6 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       // take the min of total documents available in the reader and limit if set by the user
       maxDocs = Math.min(maxDocs, indexSearcher.getIndexReader().maxDoc());
       // execute index search
-      // initialize to null, else ScoreDoc objects will get accumulated in memory
       TopDocs result = null;
       // the number of documents to be queried in one search. It will always be minimum of
       // search result and maxDocs
@@ -423,4 +424,20 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
   }
 
+  @Override
+  public void finish() {
+    if (null != indexReader) {
+      try {
+        int referenceCount = indexReader.getRefCount();
+        if (referenceCount > 0) {
+          indexReader.decRef();
+          if (null != indexSearcherMap) {
+            indexSearcherMap.clear();
+          }
+        }
+      } catch (IOException e) {
+        LOGGER.error(e, "Ignoring the exception, Error while closing the lucene index reader");
+      }
+    }
+  }
 }
