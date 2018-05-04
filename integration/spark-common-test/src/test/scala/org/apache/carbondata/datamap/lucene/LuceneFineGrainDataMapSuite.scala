@@ -423,7 +423,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
       """
-        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)LuceneFineGrainDataMapSuite
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
