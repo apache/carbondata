@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class StructField implements Serializable {
 
@@ -27,9 +28,19 @@ public class StructField implements Serializable {
 
   private DataType dataType;
 
+  private List<StructField> children;
+
   public StructField(String fieldName, DataType dataType) {
     this.fieldName = fieldName;
     this.dataType = dataType;
+    this.children = null;
+  }
+
+
+  public StructField(String fieldName, DataType dataType, List<StructField> children) {
+    this.fieldName = fieldName;
+    this.dataType = dataType;
+    this.children = children;
   }
 
   public DataType getDataType() {
@@ -38,5 +49,9 @@ public class StructField implements Serializable {
 
   public String getFieldName() {
     return fieldName;
+  }
+
+  public List<StructField> getChildren() {
+    return children;
   }
 }

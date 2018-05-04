@@ -142,6 +142,7 @@ public class TableSchemaBuilder {
     if (!isComplexChild) {
       newColumn.setSchemaOrdinal(ordinal++);
     } else {
+      // child column should not be counted for schema ordinal
       newColumn.setSchemaOrdinal(-1);
     }
     newColumn.setColumnar(true);
@@ -181,13 +182,13 @@ public class TableSchemaBuilder {
       newColumn.setUseInvertedIndex(true);
     }
     if (field.getDataType().isComplexType()) {
+      String parentFieldName = newColumn.getColumnName();
       if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
-        addColumn(new StructField("val", ((ArrayType) field.getDataType()).getElementType()),
-            field.getFieldName(), false, true);
+        addColumn(new StructField("val",
+            ((ArrayType) field.getDataType()).getElementType()), field.getFieldName(), false, true);
       } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")
           && ((StructType) field.getDataType()).getFields().size() > 0) {
         // This field has children.
-        String parentFieldName = field.getFieldName();
         List<StructField> fields = ((StructType) field.getDataType()).getFields();
         for (int i = 0; i < fields.size(); i++) {
           addColumn(fields.get(i), parentFieldName, false, true);

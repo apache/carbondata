@@ -72,12 +72,12 @@ class AvroCarbonWriter extends CarbonWriter {
     List<Schema.Field> fields = avroSchema.getFields();
     Object [] csvField = new Object[fields.size()];
     for (int i = 0; i < fields.size(); i++) {
-      csvField[i] = avroFieldToObject(fields.get(i), avroRecord.get(i));
+      csvField[i] = avroFieldToObject(fields.get(i), avroRecord.get(i), 0);
     }
     return csvField;
   }
 
-  private String avroFieldToObject(Schema.Field avroField, Object fieldValue) {
+  private String avroFieldToObject(Schema.Field avroField, Object fieldValue, int delimiterLevel) {
     StringBuilder out = new StringBuilder();
     Schema.Type type = avroField.schema().getType();
     switch (type) {
@@ -92,32 +92,41 @@ class AvroCarbonWriter extends CarbonWriter {
       case RECORD:
         List<Schema.Field> fields = avroField.schema().getFields();
         String delimiter = null;
-        for (int i = 0; i < fields.size(); i ++) {
-          if (i == 0) {
+        delimiterLevel ++;
+        for (int i = 0; i < fields.size(); i++) {
+          if (delimiterLevel == 1) {
             delimiter = "$";
-          } else {
+          } else if (delimiterLevel > 1) {
             delimiter = ":";
           }
           if (i != (fields.size() - 1)) {
-            out.append(avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i)))
-                .append(delimiter);
+            out.append(avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i),
+                delimiterLevel)).append(delimiter);
           } else {
-            out.append(avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i)));
+            out.append(avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i),
+                delimiterLevel));
           }
         }
         break;
       case ARRAY:
         int size = ((ArrayList) fieldValue).size();
-        String delimiterArray = "$";
+        String delimiterArray = null;
+        delimiterLevel ++;
+        if (delimiterLevel == 1) {
+          delimiterArray = "$";
+        } else if (delimiterLevel > 1) {
+          delimiterArray = ":";
+        }
+
         for (int i = 0; i < size; i++) {
           if (i != size - 1) {
             out.append(avroFieldToObject(
                 new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
-                ((ArrayList) fieldValue).get(i))).append(delimiterArray);
+                ((ArrayList) fieldValue).get(i), delimiterLevel)).append(delimiterArray);
           } else {
             out.append(avroFieldToObject(
                 new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
-                ((ArrayList) fieldValue).get(i)));
+                ((ArrayList) fieldValue).get(i), delimiterLevel));
           }
         }
         break;
