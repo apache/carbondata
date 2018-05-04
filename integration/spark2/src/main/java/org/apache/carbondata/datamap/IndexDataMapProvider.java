@@ -139,4 +139,9 @@ public class IndexDataMapProvider extends DataMapProvider {
     // TODO create abstract class and move the default implementation there.
     return null;
   }
+
+  @Override
+  public DataMapFactory getDataMapFactory() {
+    return dataMapFactory;
+  }
 }

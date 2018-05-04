@@ -21,6 +21,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapCatalog;
 import org.apache.carbondata.core.datamap.DataMapProvider;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
@@ -100,5 +101,10 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   @Override public DataMapCatalog createDataMapCatalog() {
     // TODO manage pre-agg also with catalog.
     return null;
+  }
+
+  @Override
+  public DataMapFactory getDataMapFactory() {
+    throw new UnsupportedOperationException();
   }
 }

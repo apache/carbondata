@@ -27,12 +27,12 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{CarbonInputMetrics, Partition, SparkContext, TaskContext}
+import org.apache.spark.{CarbonInputMetrics, Partition, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.dev.DataMapRefresher
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
@@ -41,7 +41,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.TaskMetricsMap
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.datamap.lucene.LuceneDataMapWriter
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
@@ -92,7 +91,7 @@ object IndexDataMapRefreshRDD {
       if (FileFactory.mkdirs(dataMapStorePath, FileFactory.getFileType(dataMapStorePath))) {
         try {
           val status = new IndexDataMapRefreshRDD[String, Boolean](
-            sparkSession.sparkContext,
+            sparkSession,
             new RefreshResultImpl(),
             carbonTable.getTableInfo,
             dataMapName,
@@ -138,16 +137,17 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
 }
 
 class IndexDataMapRefreshRDD[K, V](
-    sc: SparkContext,
+    session: SparkSession,
     result: RefreshResult[K, V],
     @transient tableInfo: TableInfo,
     dataMapName: String,
     indexColumns: Array[CarbonColumn],
     segmentId: String
-) extends CarbonRDDWithTableInfo[(K, V)](sc, Nil, tableInfo.serialize()) {
+) extends CarbonRDDWithTableInfo[(K, V)](
+  session.sparkContext, Nil, tableInfo.serialize()) {
 
+  private val dataMapSchema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
-
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new util.Date())
@@ -155,10 +155,9 @@ class IndexDataMapRefreshRDD[K, V](
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val dataMapSchema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
-    if (!dataMapSchema.isIndexDataMap) {
-      throw new UnsupportedOperationException
-    }
+    val dataMapFactory =
+      DataMapManager.get().getDataMapProvider(
+        CarbonTable.buildFromTableInfo(getTableInfo), dataMapSchema, session).getDataMapFactory
     var status = false
     val inputMetrics = new CarbonInputMetrics
     TaskMetricsMap.getInstance().registerThreadCallback()
@@ -169,15 +168,13 @@ class IndexDataMapRefreshRDD[K, V](
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val format = createInputFormat(attemptContext)
 
-    val tableInfo = getTableInfo
     val model = format.createQueryModel(inputSplit, attemptContext)
     // one query id per table
     model.setQueryId(queryId)
     model.setVectorReader(false)
     model.setForcedDetailRawQuery(false)
     model.setRequiredRowId(true)
-    val dataMapFactory = DataMapRegistry.getDataMapFactoryByShortName(
-        CarbonTable.buildFromTableInfo(tableInfo), dataMapSchema)
+
     var reader: CarbonRecordReader[Array[Object]] = null
     var refresher: DataMapRefresher = null
     try {
@@ -273,6 +270,9 @@ class IndexDataMapRefreshRDD[K, V](
   }
 
   override protected def getPartitions = {
+    if (!dataMapSchema.isIndexDataMap) {
+      throw new UnsupportedOperationException
+    }
     val conf = new Configuration()
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
