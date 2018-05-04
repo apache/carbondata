@@ -230,4 +230,9 @@ public class LuceneCoarseGrainDataMap extends CoarseGrainDataMap {
   public void clear() {
 
   }
+
+  @Override
+  public void finish() {
+
+  }
 }

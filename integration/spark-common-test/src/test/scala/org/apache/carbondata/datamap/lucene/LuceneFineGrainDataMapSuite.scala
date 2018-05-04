@@ -117,7 +117,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test lucene fine grain data map") {
-    sql("drop datamap if exists dm on table datamap_test")
+//    sql("drop datamap if exists dm on table datamap_test")
     sql(
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
@@ -799,6 +799,21 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists dm_text on table datamap_test_table")
   }
 
+  test("test lucene indexing english stop words") {
+    sql("drop table if exists table_stop")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS, "false")
+    sql("create table table_stop(suggestion string,goal string) stored by 'carbondata'")
+    sql(
+      "create datamap stop_dm on table table_stop using 'lucene' DMPROPERTIES('index_columns'='suggestion')")
+    sql("insert into table_stop select 'The is the stop word','abcde'")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS, "true")
+    sql("insert into table_stop select 'The is one more stop word','defg'")
+    assert(
+      sql("select * from table_stop where text_match('suggestion:*is*')").collect().length == 1)
+  }
+
   override protected def afterAll(): Unit = {
     LuceneFineGrainDataMapSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
@@ -813,11 +828,15 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test5")
     sql("DROP TABLE IF EXISTS datamap_test7")
     sql("DROP TABLE IF EXISTS datamap_main")
+    sql("DROP TABLE IF EXISTS table_stop")
     sql("use default")
     sql("drop database if exists lucene cascade")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
-          CarbonProperties.getStorePath)
+        CarbonProperties.getStorePath)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
+        CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
   }
 }
 

@@ -71,6 +71,9 @@ class DataMapPruneRDD(sc: SparkContext,
     val inputSplit = split.asInstanceOf[DataMapRDDPartition].inputSplit
     val reader = dataMapFormat.createRecordReader(inputSplit, attemptContext)
     reader.initialize(inputSplit, attemptContext)
+    context.addTaskCompletionListener(_ => {
+      reader.close()
+    })
     val iter = new Iterator[ExtendedBlocklet] {
 
       private var havePair = false

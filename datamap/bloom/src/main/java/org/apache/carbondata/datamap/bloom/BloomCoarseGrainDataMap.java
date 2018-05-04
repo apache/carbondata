@@ -205,4 +205,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       return sb.toString();
     }
   }
+
+  @Override
+  public void finish() {
+
+  }
 }
