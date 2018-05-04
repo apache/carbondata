@@ -123,7 +123,7 @@ class Master(sparkConf: SparkConf) {
         LOG.info("Search mode master started")
       }
     } else {
-      LOG.info("Search mode master has already existed before.")
+      LOG.info("Search mode master has already started")
     }
   }
 
