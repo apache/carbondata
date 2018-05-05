@@ -135,7 +135,7 @@ public class SearchRequestHandler {
    * If there is FGDataMap defined for this table and filter condition in the query,
    * prune the splits by the DataMap and set the pruned split into the QueryModel and return
    */
-  private QueryModel uceneDataMap_TC002tryPruneByFGDataMap(int queryId,
+  private QueryModel tryPruneByFGDataMap(int queryId,
       CarbonTable table, QueryModel queryModel, CarbonMultiBlockSplit mbSplit) throws IOException {
     DataMapExprWrapper wrapper =
         DataMapChooser.get().choose(table, queryModel.getFilterExpressionResolverTree());
