@@ -68,8 +68,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     }
     assert(exception_otherdataType.getMessage
-      .contains("INDEX_COLUMNS only supports String column. Unsupported column: id, " +
-                "DataType: INT"))
+      .contains("Only String column is supported, column 'id' is INT type."))
   }
 
   //Create Lucene DataMap With DMProperties on MainTable and Load Data and Query
@@ -214,7 +213,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     }
     assert(exception_dicitionaryinclude.getMessage
-      .contains("INDEX_COLUMNS cannot contain dictionary column country"))
+      .contains("Dictionary column is not supported, column 'country' is dictionary column"))
     sql("drop datamap if exists lucene_datamap on table datamap_main")
   }
 
