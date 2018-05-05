@@ -122,6 +122,11 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   @Override public void takeCarbonIndexFileSnapShot() throws IOException {
     // Read the current file Path get the list of indexes from the path.
     CarbonFile file = FileFactory.getCarbonFile(carbonFilePath);
+    if (file == null) {
+      // For nonTransactional table, files can be removed at any point of time.
+      // So cannot assume files will be present
+      throw new IOException("No files are present in the table location :"+ carbonFilePath);
+    }
     Map<String, List<String>> indexFileStore = new HashMap<>();
     if (file.isDirectory()) {
       CarbonFile[] carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(carbonFilePath);

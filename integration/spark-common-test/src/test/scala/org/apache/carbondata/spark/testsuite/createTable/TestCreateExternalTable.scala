@@ -53,6 +53,8 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
     checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
 
+    checkExistence(sql("describe formatted source"), true, storeLocation+"/origin")
+
     val carbonTable = CarbonEnv.getCarbonTable(None, "source")(sqlContext.sparkSession)
     assert(carbonTable.isExternalTable)
     
