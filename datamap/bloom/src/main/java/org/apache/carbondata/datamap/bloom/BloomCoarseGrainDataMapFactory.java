@@ -19,6 +19,7 @@ package org.apache.carbondata.datamap.bloom;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,13 +30,16 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -196,12 +200,64 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   @Override
   public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
-    return null;
+    List<CoarseGrainDataMap> coarseGrainDataMaps = new ArrayList<>();
+    BloomCoarseGrainDataMap bloomCoarseGrainDataMap = new BloomCoarseGrainDataMap();
+    String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
+    bloomCoarseGrainDataMap.init(new DataMapModel(indexPath));
+    coarseGrainDataMaps.add(bloomCoarseGrainDataMap);
+    return coarseGrainDataMaps;
+  }
+
+  /**
+   * returns all the directories of lucene index files for query
+   * Note: copied from luceneDataMapFactory, will extract to a common interface
+   */
+  private CarbonFile[] getAllIndexDirs(String tablePath, String segmentId) {
+    List<CarbonFile> indexDirs = new ArrayList<>();
+    List<TableDataMap> dataMaps;
+    try {
+      // there can be multiple bloom datamaps present on a table, so get all datamaps and form
+      // the path till the index file directories in all datamaps folders present in each segment
+      dataMaps = DataMapStoreManager.getInstance().getAllDataMap(getCarbonTable());
+    } catch (IOException ex) {
+      LOGGER.error(ex, String.format("failed to get datamaps for tablePath %s, segmentId %s",
+          tablePath, segmentId));
+      throw new RuntimeException(ex);
+    }
+    if (dataMaps.size() > 0) {
+      for (TableDataMap dataMap : dataMaps) {
+        List<CarbonFile> indexFiles;
+        String dmPath = CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator
+            + dataMap.getDataMapSchema().getDataMapName();
+        FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
+        final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
+        indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
+          @Override
+          public boolean accept(CarbonFile file) {
+            return file.isDirectory();
+          }
+        }));
+        indexDirs.addAll(indexFiles);
+      }
+    }
+    return indexDirs.toArray(new CarbonFile[0]);
   }
 
   @Override
   public List<DataMapDistributable> toDistributable(Segment segment) {
-    return null;
+    List<DataMapDistributable> dataMapDistributableList = new ArrayList<>();
+    CarbonFile[] indexDirs =
+        getAllIndexDirs(getCarbonTable().getTablePath(), segment.getSegmentNo());
+    for (CarbonFile indexDir : indexDirs) {
+      // Filter out the tasks which are filtered through CG datamap.
+      if (!segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
+        continue;
+      }
+      DataMapDistributable bloomDataMapDistributable = new BloomDataMapDistributable(
+          indexDir.getAbsolutePath());
+      dataMapDistributableList.add(bloomDataMapDistributable);
+    }
+    return dataMapDistributableList;
   }
 
   @Override
