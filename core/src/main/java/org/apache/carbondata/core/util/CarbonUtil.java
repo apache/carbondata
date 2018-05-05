@@ -73,6 +73,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
+import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.reader.ThriftReader.TBaseCreator;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
@@ -2354,23 +2355,11 @@ public final class CarbonUtil {
     }
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath);
     List<ColumnSchema> columnSchemaList = carbonHeaderReader.readSchema();
-    TableSchema tableSchema = new TableSchema();
-    tableSchema.setTableName(tableName);
-    tableSchema.setBucketingInfo(null);
-    tableSchema.setSchemaEvalution(null);
-    tableSchema.setTableId(UUID.randomUUID().toString());
-    tableSchema.setListOfColumns(columnSchemaList);
+    // only columnSchema is the valid entry, reset all dummy entries.
+    TableSchema tableSchema = getDummyTableSchema(tableName,columnSchemaList);
 
     ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
         new ThriftWrapperSchemaConverterImpl();
-    SchemaEvolutionEntry schemaEvolutionEntry = new SchemaEvolutionEntry();
-    schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis());
-    SchemaEvolution schemaEvol = new SchemaEvolution();
-    List<SchemaEvolutionEntry> schEntryList = new ArrayList<>();
-    schEntryList.add(schemaEvolutionEntry);
-    schemaEvol.setSchemaEvolutionEntryList(schEntryList);
-    tableSchema.setSchemaEvalution(schemaEvol);
-
     org.apache.carbondata.format.TableSchema thriftFactTable =
         thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
     org.apache.carbondata.format.TableInfo tableInfo =
@@ -2381,6 +2370,57 @@ public final class CarbonUtil {
     return tableInfo;
   }
 
+  /**
+   * This method will infer the schema file from a given index file path
+   * @param indexFilePath
+   * @param tableName
+   * @return
+   * @throws IOException
+   */
+  public static org.apache.carbondata.format.TableInfo inferSchemaFromIndexFile(
+      String indexFilePath, String tableName) throws IOException {
+    CarbonIndexFileReader indexFileReader = new CarbonIndexFileReader();
+    indexFileReader.openThriftReader(indexFilePath);
+    org.apache.carbondata.format.IndexHeader readIndexHeader = indexFileReader.readIndexHeader();
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    List<org.apache.carbondata.format.ColumnSchema> table_columns =
+        readIndexHeader.getTable_columns();
+    for (int i = 0; i < table_columns.size(); i++) {
+      columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+    }
+    // only columnSchema is the valid entry, reset all dummy entries.
+    TableSchema tableSchema = getDummyTableSchema(tableName, columnSchemaList);
+
+    ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
+        new ThriftWrapperSchemaConverterImpl();
+    org.apache.carbondata.format.TableSchema thriftFactTable =
+        thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
+    org.apache.carbondata.format.TableInfo tableInfo =
+        new org.apache.carbondata.format.TableInfo(thriftFactTable,
+            new ArrayList<org.apache.carbondata.format.TableSchema>());
+
+    tableInfo.setDataMapSchemas(null);
+    return tableInfo;
+  }
+
+  private static TableSchema getDummyTableSchema(String tableName,
+      List<ColumnSchema> columnSchemaList) {
+    TableSchema tableSchema = new TableSchema();
+    tableSchema.setTableName(tableName);
+    tableSchema.setBucketingInfo(null);
+    tableSchema.setSchemaEvalution(null);
+    tableSchema.setTableId(UUID.randomUUID().toString());
+    tableSchema.setListOfColumns(columnSchemaList);
+
+    SchemaEvolutionEntry schemaEvolutionEntry = new SchemaEvolutionEntry();
+    schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis());
+    SchemaEvolution schemaEvol = new SchemaEvolution();
+    List<SchemaEvolutionEntry> schEntryList = new ArrayList<>();
+    schEntryList.add(schemaEvolutionEntry);
+    schemaEvol.setSchemaEvolutionEntryList(schEntryList);
+    tableSchema.setSchemaEvalution(schemaEvol);
+    return tableSchema;
+  }
 
   public static void dropDatabaseDirectory(String databasePath)
       throws IOException, InterruptedException {

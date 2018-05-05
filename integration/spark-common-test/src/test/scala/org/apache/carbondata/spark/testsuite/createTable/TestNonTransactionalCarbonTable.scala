@@ -172,6 +172,35 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  // prepare sdk writer output with other schema
+  def buildTestDataOtherDataType(rows: Int, sortColumns: Array[String]): Any = {
+    val fields: Array[Field] = new Array[Field](3)
+    // same column name, but name as boolean type
+    fields(0) = new Field("name", DataTypes.BOOLEAN)
+    fields(1) = new Field("age", DataTypes.INT)
+    fields(2) = new Field("height", DataTypes.DOUBLE)
+
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.withSchema(new Schema(fields)).outputPath(writerPath)
+          .isTransactionalTable(false)
+          .uniqueIdentifier(System.currentTimeMillis()).withBlockSize(2).sortBy(sortColumns)
+          .buildWriterForCSVInput()
+
+      var i = 0
+      while (i < rows) {
+        writer.write(Array[String]("true", String.valueOf(i), String.valueOf(i.toDouble / 2)))
+        i += 1
+      }
+      writer.close()
+    } catch {
+      case ex: Exception => throw new RuntimeException(ex)
+      case _ => None
+    }
+  }
+
+
   def cleanTestData() = {
     FileUtils.deleteDirectory(new File(writerPath))
   }
@@ -717,6 +746,72 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Data load failed due to bad record"))
 
+  }
+
+
+  test("Read sdk two writer output with same column name but different sort columns") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestDataOtherDataType(3, Array[String]("name"))
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(true, 0, 0.0),
+      Row(true, 1, 0.5),
+      Row(true, 2, 1.0)))
+
+
+    buildTestDataOtherDataType(3, Array[String]("age"))
+    // put other sdk writer output to same path,
+    // which has same column names but different sort column
+    val exception =
+    intercept[IOException] {
+      sql("select * from sdkOutputTable").show(false)
+    }
+    assert(exception.getMessage()
+      .contains("All the files doesn't have same schema"))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+
+  test("Read sdk two writer output with same column name but different data type ") {
+    buildTestDataSingleFile()
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("robot0", 0, 0.0),
+      Row("robot1", 1, 0.5),
+      Row("robot2", 2, 1.0)))
+
+    // put other sdk writer output to same path,
+    // which has same column names but different data type
+    buildTestDataOtherDataType(3, null)
+
+    val exception =
+      intercept[IOException] {
+        sql("select * from sdkOutputTable").show(false)
+      }
+    assert(exception.getMessage()
+      .contains("All the files doesn't have same schema"))
+
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
   }
 
   private def WriteFilesWithAvroWriter(rows: Int, mySchema: String, json: String): Unit = {
