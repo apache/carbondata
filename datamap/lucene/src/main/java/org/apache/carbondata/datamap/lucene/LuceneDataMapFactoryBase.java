@@ -62,6 +62,29 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactory<T> {
 
   /**
+   * Size of the cache to maintain in Lucene writer, if specified then it tries to aggregate the
+   * unique data till the cache limit and flush to Lucene.
+   * It is best suitable for low cardinality dimensions.
+   */
+  static final String FLUSH_CACHE = "flush_cache";
+
+  /**
+   * By default it does not use any cache.
+   */
+  static final String FLUSH_CACHE_DEFAULT_SIZE = "-1";
+
+  /**
+   * when made as true then store the data in blocklet wise in lucene , it means new folder will be
+   * created for each blocklet thus it eliminates storing on blockletid in lucene.
+   * And also it makes lucene small chuns of data
+   */
+  static final String SPLIT_BLOCKLET = "split_blocklet";
+
+  /**
+   * By default it is false
+   */
+  static final String SPLIT_BLOCKLET_DEFAULT = "true";
+  /**
    * Logger
    */
   final LogService LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
@@ -86,6 +109,12 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
    */
   AbsoluteTableIdentifier tableIdentifier = null;
 
+  List<CarbonColumn> indexedCarbonColumns = null;
+
+  int flushCacheSize;
+
+  boolean storeBlockletWise;
+
   public LuceneDataMapFactoryBase(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     super(carbonTable, dataMapSchema);
@@ -96,7 +125,9 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     this.dataMapName = dataMapSchema.getDataMapName();
 
     // validate DataMapSchema and get index columns
-    List<CarbonColumn> indexedColumns =  carbonTable.getIndexedColumns(dataMapSchema);
+    indexedCarbonColumns =  carbonTable.getIndexedColumns(dataMapSchema);;
+    flushCacheSize = validateAndGetWriteCacheSize(dataMapSchema);
+    storeBlockletWise = validateAndGetStoreBlockletWise(dataMapSchema);
 
     // add optimizedOperations
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
@@ -107,13 +138,39 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     // optimizedOperations.add(ExpressionType.LESSTHAN_EQUALTO);
     // optimizedOperations.add(ExpressionType.NOT);
     optimizedOperations.add(ExpressionType.TEXT_MATCH);
-    this.dataMapMeta = new DataMapMeta(indexedColumns, optimizedOperations);
-
+    this.dataMapMeta = new DataMapMeta(indexedCarbonColumns, optimizedOperations);
     // get analyzer
     // TODO: how to get analyzer ?
     analyzer = new StandardAnalyzer();
   }
 
+  public static int validateAndGetWriteCacheSize(DataMapSchema schema) {
+    String cacheStr = schema.getProperties().get(FLUSH_CACHE);
+    if (cacheStr == null) {
+      cacheStr = FLUSH_CACHE_DEFAULT_SIZE;
+    }
+    int cacheSize;
+    try {
+      cacheSize = Integer.parseInt(cacheStr);
+    } catch (NumberFormatException e) {
+      cacheSize = -1;
+    }
+    return cacheSize;
+  }
+
+  public static boolean validateAndGetStoreBlockletWise(DataMapSchema schema) {
+    String splitBlockletStr = schema.getProperties().get(SPLIT_BLOCKLET);
+    if (splitBlockletStr == null) {
+      splitBlockletStr = SPLIT_BLOCKLET_DEFAULT;
+    }
+    boolean splitBlockletWise;
+    try {
+      splitBlockletWise = Boolean.parseBoolean(splitBlockletStr);
+    } catch (NumberFormatException e) {
+      splitBlockletWise = true;
+    }
+    return splitBlockletWise;
+  }
   /**
    * this method will delete the datamap folders during drop datamap
    * @throws MalformedDataMapCommandException
@@ -149,13 +206,14 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   public DataMapWriter createWriter(Segment segment, String shardName) {
     LOGGER.info("lucene data write to " + shardName);
     return new LuceneDataMapWriter(getCarbonTable().getTablePath(), dataMapName,
-        dataMapMeta.getIndexedColumns(), segment, shardName, true);
+        dataMapMeta.getIndexedColumns(), segment, shardName, flushCacheSize,
+        storeBlockletWise);
   }
 
   @Override
   public DataMapBuilder createBuilder(Segment segment, String shardName) {
     return new LuceneDataMapBuilder(getCarbonTable().getTablePath(), dataMapName,
-        segment, shardName, dataMapMeta.getIndexedColumns());
+        segment, shardName, dataMapMeta.getIndexedColumns(), flushCacheSize, storeBlockletWise);
   }
 
   /**
