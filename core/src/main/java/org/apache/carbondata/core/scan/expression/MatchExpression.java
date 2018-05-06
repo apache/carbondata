@@ -29,15 +29,20 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 @InterfaceAudience.Internal
 public class MatchExpression extends Expression {
   private String queryString;
-  public static String maxDoc;
+  private int maxDoc;
 
-  public MatchExpression(String queryString, String maxDoc) {
+  public MatchExpression(String queryString) {
     this.queryString = queryString;
-    setMaxDoc(maxDoc);
+    this.maxDoc = -1;
   }
 
-  private void setMaxDoc(String maxDoc) {
-    MatchExpression.maxDoc = maxDoc;
+  public MatchExpression(String queryString, int maxDoc) {
+    this.queryString = queryString;
+    this.maxDoc = maxDoc;
+  }
+
+  public int getMaxDoc() {
+    return maxDoc;
   }
 
   @Override
