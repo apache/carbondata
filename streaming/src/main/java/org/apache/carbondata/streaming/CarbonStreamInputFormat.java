@@ -97,16 +97,18 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
             CarbonUtil.hasEncoding(child.getEncoder(), Encoding.DIRECT_DICTIONARY);
         boolean isDictionary =
             CarbonUtil.hasEncoding(child.getEncoder(), Encoding.DICTIONARY);
-
-        String dictionaryPath = carbontable.getTableInfo().getFactTable().getTableProperties()
-            .get(CarbonCommonConstants.DICTIONARY_PATH);
-        DictionaryColumnUniqueIdentifier dictionarIdentifier =
-            new DictionaryColumnUniqueIdentifier(carbontable.getAbsoluteTableIdentifier(),
-                child.getColumnIdentifier(), child.getDataType(), dictionaryPath);
-
+        Dictionary dictionary = null;
+        if (isDictionary) {
+          String dictionaryPath = carbontable.getTableInfo().getFactTable().getTableProperties()
+              .get(CarbonCommonConstants.DICTIONARY_PATH);
+          DictionaryColumnUniqueIdentifier dictionarIdentifier =
+              new DictionaryColumnUniqueIdentifier(carbontable.getAbsoluteTableIdentifier(),
+                  child.getColumnIdentifier(), child.getDataType(), dictionaryPath);
+          dictionary = cache.get(dictionarIdentifier);
+        }
         queryType =
             new PrimitiveQueryType(child.getColName(), dimension.getColName(), ++parentBlockIndex,
-                child.getDataType(), 4, cache.get(dictionarIdentifier),
+                child.getDataType(), 4, dictionary,
                 isDirectDictionary);
       }
       parentQueryType.addChildren(queryType);

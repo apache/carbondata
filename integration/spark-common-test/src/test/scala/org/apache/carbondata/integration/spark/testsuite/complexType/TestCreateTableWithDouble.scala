@@ -46,7 +46,7 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
     try {
       sql("CREATE TABLE doubleComplex (Id int, number double, name string, " +
         "gamePoint array<double>, mac struct<num:double>) " +
-        "STORED BY 'org.apache.carbondata.format'")
+        "STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include' = 'gamePoint,mac')")
       sql(s"LOAD DATA LOCAL INPATH '$dataPath' INTO TABLE doubleComplex")
       countNum = sql(s"SELECT COUNT(*) FROM doubleComplex").collect
       doubleField = sql("SELECT number FROM doubleComplex SORT BY Id").collect
@@ -65,7 +65,7 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
       sql("CREATE TABLE doubleComplex2 (Id int, number double, name string, " +
         "gamePoint array<double>, mac struct<num:double>) " +
         "STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_INCLUDE'='number')")
+        "TBLPROPERTIES('DICTIONARY_INCLUDE'='number,gamePoint,mac')")
       sql(s"LOAD DATA LOCAL INPATH '$dataPath' INTO TABLE doubleComplex2")
       countNum = sql(s"SELECT COUNT(*) FROM doubleComplex2").collect
       doubleField = sql(s"SELECT number FROM doubleComplex2 SORT BY Id").collect
