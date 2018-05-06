@@ -61,6 +61,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 @InterfaceAudience.Internal
 abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactory<T> {
 
+  static final String FLUSH_CACHE = "flush_cache";
   /**
    * Logger
    */
@@ -86,6 +87,10 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
    */
   AbsoluteTableIdentifier tableIdentifier = null;
 
+  List<CarbonColumn> indexedCarbonColumns = null;
+
+  int flushCacheSize;
+
   public LuceneDataMapFactoryBase(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     super(carbonTable, dataMapSchema);
@@ -96,7 +101,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     this.dataMapName = dataMapSchema.getDataMapName();
 
     // validate DataMapSchema and get index columns
-    List<CarbonColumn> indexedColumns =  carbonTable.getIndexedColumns(dataMapSchema);
+    indexedCarbonColumns =  carbonTable.getIndexedColumns(dataMapSchema);;
+    flushCacheSize = validateAndGetWriteCacheSize(dataMapSchema);
 
     // add optimizedOperations
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
@@ -107,11 +113,24 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     // optimizedOperations.add(ExpressionType.LESSTHAN_EQUALTO);
     // optimizedOperations.add(ExpressionType.NOT);
     optimizedOperations.add(ExpressionType.TEXT_MATCH);
-    this.dataMapMeta = new DataMapMeta(indexedColumns, optimizedOperations);
-
+    this.dataMapMeta = new DataMapMeta(indexedCarbonColumns, optimizedOperations);
     // get analyzer
     // TODO: how to get analyzer ?
     analyzer = new StandardAnalyzer();
+  }
+
+  public static int validateAndGetWriteCacheSize(DataMapSchema schema) {
+    String cacheStr = schema.getProperties().get(FLUSH_CACHE);
+    if (cacheStr == null) {
+      cacheStr = "1000";
+    }
+    int cacheSize;
+    try {
+      cacheSize = Integer.parseInt(cacheStr);
+    } catch (NumberFormatException e) {
+      cacheSize = 1000;
+    }
+    return cacheSize;
   }
 
   /**
@@ -149,7 +168,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   public DataMapWriter createWriter(Segment segment, String shardName) {
     LOGGER.info("lucene data write to " + shardName);
     return new LuceneDataMapWriter(getCarbonTable().getTablePath(), dataMapName,
-        dataMapMeta.getIndexedColumns(), segment, shardName, true);
+        dataMapMeta.getIndexedColumns(), segment, shardName, true, flushCacheSize);
   }
 
   @Override

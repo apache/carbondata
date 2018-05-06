@@ -17,9 +17,15 @@
 
 package org.apache.carbondata.datamap.lucene;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
@@ -27,6 +33,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -53,14 +61,13 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.RAMDirectory;
 import org.apache.solr.store.hdfs.HdfsDirectory;
+import org.roaringbitmap.RoaringBitmap;
 
 /**
  * Implementation to write lucene index while loading
  */
-@InterfaceAudience.Internal
-public class LuceneDataMapWriter extends DataMapWriter {
+@InterfaceAudience.Internal public class LuceneDataMapWriter extends DataMapWriter {
   /**
    * logger
    */
@@ -84,10 +91,20 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   public static final String ROWID_NAME = "rowId";
 
+  private Map<LuceneColumns, Map<Integer, RoaringBitmap>> map = new HashMap<>();
+
+  private Compressor compressor = CompressorFactory.getInstance().getCompressor();
+
+  private int cacheSize;
+
+  private ByteBuffer intBuffer = ByteBuffer.allocate(4);
+
+
   LuceneDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, boolean isFineGrain) {
+      Segment segment, String shardName, boolean isFineGrain, int flushSize) {
     super(tablePath, dataMapName, indexColumns, segment, shardName);
     this.isFineGrain = isFineGrain;
+    this.cacheSize = flushSize;
   }
 
   /**
@@ -131,40 +148,25 @@ public class LuceneDataMapWriter extends DataMapWriter {
           .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
     }
 
-    indexWriter = new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
+    indexWriter = new IndexWriter(indexDir, indexWriterConfig);
   }
 
   /**
    * End of block notification
    */
   public void onBlockEnd(String blockId) throws IOException {
-
   }
-
-  private RAMDirectory ramDir;
-  private IndexWriter ramIndexWriter;
 
   /**
    * Start of new blocklet notification.
    */
   public void onBlockletStart(int blockletId) throws IOException {
-    // save index data into ram, write into disk after one page finished
-    ramDir = new RAMDirectory();
-    ramIndexWriter = new IndexWriter(ramDir, new IndexWriterConfig(analyzer));
   }
 
   /**
    * End of blocklet notification
    */
   public void onBlockletEnd(int blockletId) throws IOException {
-    // close ram writer
-    ramIndexWriter.close();
-
-    // add ram index data into disk
-    indexWriter.addIndexes(ramDir);
-
-    // delete this ram data
-    ramDir.close();
   }
 
   /**
@@ -175,52 +177,31 @@ public class LuceneDataMapWriter extends DataMapWriter {
    */
   public void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages)
       throws IOException {
-    for (int rowId = 0; rowId < pageSize; rowId++) {
-      // create a new document
-      Document doc = new Document();
-      // add blocklet Id
-      doc.add(new IntPoint(BLOCKLETID_NAME, blockletId));
-      doc.add(new StoredField(BLOCKLETID_NAME, blockletId));
-      //doc.add(new NumericDocValuesField(BLOCKLETID_NAME,blockletId));
-
-      // add page id and row id in Fine Grain data map
-      if (isFineGrain) {
-        // add page Id
-        doc.add(new IntPoint(PAGEID_NAME, pageId));
-        doc.add(new StoredField(PAGEID_NAME, pageId));
-        //doc.add(new NumericDocValuesField(PAGEID_NAME,pageId));
-
-        // add row id
-        doc.add(new IntPoint(ROWID_NAME, rowId));
-        doc.add(new StoredField(ROWID_NAME, rowId));
-        //doc.add(new NumericDocValuesField(ROWID_NAME,rowId));
-      }
-
-      // add indexed columns value into the document
-      List<CarbonColumn> indexColumns = getIndexColumns();
-      for (int i = 0; i < pages.length; i++) {
-        // add to lucene only if value is not null
-        if (!pages[i].getNullBits().get(rowId)) {
-          addField(doc, pages[i].getData(rowId), indexColumns.get(i), Field.Store.NO);
-        }
-      }
-
-      // add this document
-      ramIndexWriter.addDocument(doc);
+    // save index data into ram, write into disk after one page finished
+    int columnsCount = pages.length;
+    if (columnsCount <= 0) {
+      LOGGER.warn("empty data");
+      return;
     }
-
+    for (int rowId = 0; rowId < pageSize; rowId++) {
+      // add indexed columns value into the document
+      LuceneColumns columns = new LuceneColumns(getIndexColumns().size());
+      int i = 0;
+      for (ColumnPage page : pages) {
+        if (!page.getNullBits().get(rowId)) {
+          columns.keys[i++] = getValue(page, rowId);
+        }
+        addToCache(columns, rowId, pageId, blockletId);
+      }
+      flushCacheIfCan();
+    }
   }
 
-  private boolean addField(Document doc, Object data, CarbonColumn column, Field.Store store) {
+  private boolean addField(Document doc, Object key, String fieldName, Field.Store store) {
     //get field name
-    String fieldName = column.getColName();
-
-    //get field type
-    DataType type = column.getDataType();
-
-    if (type == DataTypes.BYTE) {
+    if (key instanceof Byte) {
       // byte type , use int range to deal with byte, lucene has no byte type
-      byte value = (byte) data;
+      byte value = (Byte) key;
       IntRangeField field =
           new IntRangeField(fieldName, new int[] { Byte.MIN_VALUE }, new int[] { Byte.MAX_VALUE });
       field.setIntValue(value);
@@ -230,9 +211,9 @@ public class LuceneDataMapWriter extends DataMapWriter {
       if (store == Field.Store.YES) {
         doc.add(new StoredField(fieldName, (int) value));
       }
-    } else if (type == DataTypes.SHORT) {
+    } else if (key instanceof Short) {
       // short type , use int range to deal with short type, lucene has no short type
-      short value = (short) data;
+      short value = (Short) key;
       IntRangeField field = new IntRangeField(fieldName, new int[] { Short.MIN_VALUE },
           new int[] { Short.MAX_VALUE });
       field.setShortValue(value);
@@ -242,62 +223,139 @@ public class LuceneDataMapWriter extends DataMapWriter {
       if (store == Field.Store.YES) {
         doc.add(new StoredField(fieldName, (int) value));
       }
-    } else if (type == DataTypes.INT) {
+    } else if (key instanceof Integer) {
       // int type , use int point to deal with int type
-      int value = (int) data;
-      doc.add(new IntPoint(fieldName, value));
+      int value = (Integer) key;
+      doc.add(new IntPoint(fieldName, new int[] { value }));
 
       // if need store it , add StoredField
       if (store == Field.Store.YES) {
         doc.add(new StoredField(fieldName, value));
       }
-    } else if (type == DataTypes.LONG) {
+    } else if (key instanceof Long) {
       // long type , use long point to deal with long type
-      long value = (long) data;
-      doc.add(new LongPoint(fieldName, value));
+      long value = (Long) key;
+      doc.add(new LongPoint(fieldName, new long[] { value }));
 
       // if need store it , add StoredField
       if (store == Field.Store.YES) {
         doc.add(new StoredField(fieldName, value));
       }
-    } else if (type == DataTypes.FLOAT) {
-      float value = (float) data;
-      doc.add(new FloatPoint(fieldName, value));
+    } else if (key instanceof Float) {
+      float value = (Float) key;
+      doc.add(new FloatPoint(fieldName, new float[] { value }));
       if (store == Field.Store.YES) {
         doc.add(new FloatPoint(fieldName, value));
       }
-    } else if (type == DataTypes.DOUBLE) {
-      double value = (double) data;
-      doc.add(new DoublePoint(fieldName, value));
+    } else if (key instanceof Double) {
+      double value = (Double) key;
+      doc.add(new DoublePoint(fieldName, new double[] { value }));
       if (store == Field.Store.YES) {
         doc.add(new DoublePoint(fieldName, value));
       }
-    } else if (type == DataTypes.STRING) {
-      byte[] value = (byte[]) data;
-      String strValue = null;
-      try {
-        strValue = new String(value, 2, value.length - 2, "UTF-8");
-      } catch (UnsupportedEncodingException e) {
-        throw new RuntimeException(e);
-      }
+    } else if (key instanceof String) {
+      String strValue = (String) key;
       doc.add(new TextField(fieldName, strValue, store));
-    } else if (type == DataTypes.DATE) {
-      throw new RuntimeException("unsupported data type " + type);
-    } else if (type == DataTypes.TIMESTAMP) {
-      throw new RuntimeException("unsupported data type " + type);
-    } else if (type == DataTypes.BOOLEAN) {
-      boolean value = (boolean) data;
+    } else if (key instanceof Boolean) {
+      boolean value = (Boolean) key;
       IntRangeField field = new IntRangeField(fieldName, new int[] { 0 }, new int[] { 1 });
       field.setIntValue(value ? 1 : 0);
       doc.add(field);
       if (store == Field.Store.YES) {
         doc.add(new StoredField(fieldName, value ? 1 : 0));
       }
+    }
+    return true;
+  }
+
+  private Object getValue(ColumnPage page, int rowId) {
+
+    //get field type
+    DataType type = page.getColumnSpec().getSchemaDataType();
+    Object value = null;
+    if (type == DataTypes.BYTE) {
+      // byte type , use int range to deal with byte, lucene has no byte type
+      value = page.getByte(rowId);
+    } else if (type == DataTypes.SHORT) {
+      // short type , use int range to deal with short type, lucene has no short type
+      value = page.getShort(rowId);
+    } else if (type == DataTypes.INT) {
+      // int type , use int point to deal with int type
+      value = page.getInt(rowId);
+    } else if (type == DataTypes.LONG) {
+      // long type , use long point to deal with long type
+      value = page.getLong(rowId);
+    } else if (type == DataTypes.FLOAT) {
+      value = page.getFloat(rowId);
+    } else if (type == DataTypes.DOUBLE) {
+      value = page.getDouble(rowId);
+    } else if (type == DataTypes.STRING) {
+      byte[] bytes = page.getBytes(rowId);
+      try {
+        value = new String(bytes, 2, bytes.length - 2, "UTF-8");
+      } catch (UnsupportedEncodingException e) {
+        throw new RuntimeException(e);
+      }
+    } else if (type == DataTypes.DATE) {
+      throw new RuntimeException("unsupported data type " + type);
+    } else if (type == DataTypes.TIMESTAMP) {
+      throw new RuntimeException("unsupported data type " + type);
+    } else if (type == DataTypes.BOOLEAN) {
+      value = page.getBoolean(rowId);
     } else {
       LOGGER.error("unsupport data type " + type);
       throw new RuntimeException("unsupported data type " + type);
     }
-    return true;
+    return value;
+  }
+
+  private void addToCache(LuceneColumns key, int rowId, int pageId, int blockletId) {
+    Map<Integer, RoaringBitmap> setMap = map.get(key);
+    if (setMap == null) {
+      setMap = new HashMap<>();
+      map.put(key, setMap);
+    }
+    intBuffer.clear();
+    intBuffer.putShort((short) blockletId);
+    intBuffer.putShort((short) pageId);
+    intBuffer.rewind();
+    int combinKey = intBuffer.getInt();
+    RoaringBitmap bitSet = setMap.get(combinKey);
+    if (bitSet == null) {
+      bitSet = new RoaringBitmap();
+      setMap.put(combinKey, bitSet);
+    }
+    bitSet.add(rowId);
+  }
+
+  private void flushCacheIfCan() throws IOException {
+    if (map.size() > cacheSize) {
+      flushCache();
+    }
+  }
+
+  private void flushCache() throws IOException {
+    for (Map.Entry<LuceneColumns, Map<Integer, RoaringBitmap>> entry : map.entrySet()) {
+      Document document = new Document();
+      LuceneColumns key = entry.getKey();
+      for (int i = 0; i < key.getKeys().length; i++) {
+        addField(document, key.getKeys()[i], getIndexColumns().get(i).getColName(),
+            Field.Store.NO);
+      }
+      Map<Integer, RoaringBitmap> value = entry.getValue();
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      DataOutputStream outputStream = new DataOutputStream(stream);
+      outputStream.writeInt(value.size());
+      for (Map.Entry<Integer, RoaringBitmap> pageData : value.entrySet()) {
+        outputStream.writeInt(pageData.getKey());
+        pageData.getValue().serialize(outputStream);
+      }
+      outputStream.close();
+      document.add(new StoredField(PAGEID_NAME, compressor.compressByte(stream.toByteArray())));
+
+      indexWriter.addDocument(document);
+    }
+    map.clear();
   }
 
   /**
@@ -305,10 +363,34 @@ public class LuceneDataMapWriter extends DataMapWriter {
    * class.
    */
   public void finish() throws IOException {
+    flushCache();
     // finished a file , close this index writer
     if (indexWriter != null) {
       indexWriter.close();
     }
   }
 
+  private static class LuceneColumns {
+
+    private Object[] keys;
+
+    public LuceneColumns(int size) {
+      keys = new Object[size];
+    }
+
+    public Object[] getKeys() {
+      return keys;
+    }
+
+    @Override public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      LuceneColumns that = (LuceneColumns) o;
+      return Arrays.equals(keys, that.keys);
+    }
+
+    @Override public int hashCode() {
+      return Arrays.hashCode(keys);
+    }
+  }
 }

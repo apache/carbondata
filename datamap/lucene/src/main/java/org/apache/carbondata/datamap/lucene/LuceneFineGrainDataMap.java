@@ -17,10 +17,14 @@
 
 package org.apache.carbondata.datamap.lucene;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +36,8 @@ import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -55,7 +61,9 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.BytesRef;
 import org.apache.solr.store.hdfs.HdfsDirectory;
+import org.roaringbitmap.RoaringBitmap;
 
 @InterfaceAudience.Internal
 public class LuceneFineGrainDataMap extends FineGrainDataMap {
@@ -88,6 +96,8 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
   private Analyzer analyzer;
 
   private String filePath;
+
+  private Compressor compressor = CompressorFactory.getInstance().getCompressor();
 
   LuceneFineGrainDataMap(Analyzer analyzer) {
     this.analyzer = analyzer;
@@ -225,6 +235,8 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       throw new IOException(errorMessage);
     }
 
+    ByteBuffer intBuffer = ByteBuffer.allocate(4);
+
     // temporary data, delete duplicated data
     // Map<BlockId, Map<BlockletId, Map<PageId, Set<RowId>>>>
     Map<String, Map<Integer, Set<Integer>>> mapBlocks = new HashMap<>();
@@ -236,25 +248,36 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       // get all fields
       List<IndexableField> fieldsInDoc = doc.getFields();
 
-      // get the blocklet id Map<BlockletId, Map<PageId, Set<RowId>>>
-      String blockletId = fieldsInDoc.get(BLOCKLETID_ID).stringValue();
-      Map<Integer, Set<Integer>> mapPageIds = mapBlocks.get(blockletId);
-      if (mapPageIds == null) {
-        mapPageIds = new HashMap<>();
-        mapBlocks.put(blockletId, mapPageIds);
-      }
+      BytesRef bytesRef = fieldsInDoc.get(0).binaryValue();
+      DataInputStream stream =
+          new DataInputStream(new ByteArrayInputStream(compressor.unCompressByte(bytesRef.bytes)));
+      int size = stream.readInt();
+      for (int i = 0; i < size; i++) {
+        int combineKey = stream.readInt();
+        intBuffer.clear();
+        intBuffer.putInt(combineKey);
+        intBuffer.rewind();
+        String blockletId = String.valueOf(intBuffer.getShort());
+        Number pageId = intBuffer.getShort();
+        RoaringBitmap bitmap = new RoaringBitmap();
+        bitmap.deserialize(stream);
+        Iterator<Integer> iterator = bitmap.iterator();
 
-      // get the page id Map<PageId, Set<RowId>>
-      Number pageId = fieldsInDoc.get(PAGEID_ID).numericValue();
-      Set<Integer> setRowId = mapPageIds.get(pageId.intValue());
-      if (setRowId == null) {
-        setRowId = new HashSet<>();
-        mapPageIds.put(pageId.intValue(), setRowId);
-      }
+        Map<Integer, Set<Integer>> mapPageIds = mapBlocks.get(blockletId);
+        if (mapPageIds == null) {
+          mapPageIds = new HashMap<>();
+          mapBlocks.put(blockletId, mapPageIds);
+        }
+        Set<Integer> setRowId = mapPageIds.get(pageId.intValue());
+        if (setRowId == null) {
+          setRowId = new HashSet<>();
+          mapPageIds.put(pageId.intValue(), setRowId);
+        }
 
-      // get the row id Set<RowId>
-      Number rowId = fieldsInDoc.get(ROWID_ID).numericValue();
-      setRowId.add(rowId.intValue());
+        while (iterator.hasNext()) {
+          setRowId.add(iterator.next());
+        }
+      }
     }
 
     // result blocklets
