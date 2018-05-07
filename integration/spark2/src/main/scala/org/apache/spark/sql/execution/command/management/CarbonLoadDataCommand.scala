@@ -756,13 +756,15 @@ case class CarbonLoadDataCommand(
     }
     try {
       carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
+      val compactedSegments = new util.ArrayList[String]()
       // Trigger auto compaction
       CarbonDataRDDFactory.handleSegmentMerging(
         sparkSession.sqlContext,
         carbonLoadModel,
         table,
+        compactedSegments,
         operationContext)
-
+      carbonLoadModel.setMergedSegmentIds(compactedSegments)
     } catch {
       case e: Exception =>
         throw new Exception(

@@ -18,10 +18,12 @@
 package org.apache.carbondata.processing.loading.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -206,6 +208,8 @@ public class CarbonLoadModel implements Serializable {
    * Flder path to where data should be written for this load.
    */
   private String dataWritePath;
+
+  private List<String> mergedSegmentIds;
 
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
@@ -842,4 +846,16 @@ public class CarbonLoadModel implements Serializable {
   public void setCarbonTransactionalTable(boolean carbonTransactionalTable) {
     this.carbonTransactionalTable = carbonTransactionalTable;
   }
+
+  public void setMergedSegmentIds(List<String> mergedSegmentIds) {
+    this.mergedSegmentIds = mergedSegmentIds;
+  }
+
+  public List<String> getMergedSegmentIds() {
+    if (null == mergedSegmentIds) {
+      mergedSegmentIds = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    }
+    return mergedSegmentIds;
+  }
+
 }

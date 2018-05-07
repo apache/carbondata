@@ -161,12 +161,11 @@ case class AlterTableCompactionPreEvent(sparkSession: SparkSession,
  * @param sparkSession
  * @param carbonTable
  * @param carbonMergerMapping
- * @param mergedLoadName
  */
 case class AlterTableCompactionPostEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     carbonMergerMapping: CarbonMergerMapping,
-    mergedLoadName: String) extends Event with AlterTableCompactionEventInfo
+    compactedLoads: java.util.List[String]) extends Event with AlterTableCompactionEventInfo
 /**
  * Compaction Event for handling pre update status file opeartions, lister has to implement this
  * event before updating the table status file

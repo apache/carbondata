@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.io.{File, IOException}
+import java.util
 
 import scala.collection.JavaConverters._
 
@@ -148,12 +149,14 @@ case class CarbonAlterTableCompactionCommand(
       val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
         AlterTableCompactionPreEvent(sparkSession, table, null, null)
       OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
+      val compactedSegments: java.util.List[String] = new util.ArrayList[String]()
       try {
         alterTableForCompaction(
           sparkSession.sqlContext,
           alterTableModel,
           carbonLoadModel,
           storeLocation,
+          compactedSegments,
           operationContext)
       } catch {
         case e: Exception =>
@@ -167,7 +170,7 @@ case class CarbonAlterTableCompactionCommand(
       }
       // trigger event for compaction
       val alterTableCompactionPostEvent: AlterTableCompactionPostEvent =
-        AlterTableCompactionPostEvent(sparkSession, table, null, null)
+        AlterTableCompactionPostEvent(sparkSession, table, null, compactedSegments)
       OperationListenerBus.getInstance.fireEvent(alterTableCompactionPostEvent, operationContext)
       Seq.empty
     }
@@ -177,6 +180,7 @@ case class CarbonAlterTableCompactionCommand(
       alterTableModel: AlterTableModel,
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String,
+      compactedSegments: java.util.List[String],
       operationContext: OperationContext): Unit = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
     val compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
@@ -257,6 +261,7 @@ case class CarbonAlterTableCompactionCommand(
         storeLocation,
         compactionType,
         carbonTable,
+        compactedSegments,
         compactionModel,
         operationContext
       )
@@ -276,6 +281,7 @@ case class CarbonAlterTableCompactionCommand(
             storeLocation,
             compactionModel,
             lock,
+            compactedSegments,
             operationContext
           )
         } catch {
