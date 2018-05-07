@@ -201,8 +201,10 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * It directly writes data directly to nosort processor bypassing all other processors.
+   * For this method there will be no data conversion step. It writes data which is directly
+   * pushed into.
    */
-  private boolean isPartitionLoad;
+  private boolean isLoadWithoutCoverterStep;
 
   /**
    * Flder path to where data should be written for this load.
@@ -435,7 +437,7 @@ public class CarbonLoadModel implements Serializable {
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.isAggLoadRequest = isAggLoadRequest;
     copy.badRecordsLocation = badRecordsLocation;
-    copy.isPartitionLoad = isPartitionLoad;
+    copy.isLoadWithoutCoverterStep = isLoadWithoutCoverterStep;
     copy.sortColumnsBoundsStr = sortColumnsBoundsStr;
     return copy;
   }
@@ -814,12 +816,12 @@ public class CarbonLoadModel implements Serializable {
   }
 
 
-  public boolean isPartitionLoad() {
-    return isPartitionLoad;
+  public boolean isLoadWithoutCoverterStep() {
+    return isLoadWithoutCoverterStep;
   }
 
-  public void setPartitionLoad(boolean partitionLoad) {
-    isPartitionLoad = partitionLoad;
+  public void setLoadWithoutCoverterStep(boolean loadWithoutCoverterStep) {
+    isLoadWithoutCoverterStep = loadWithoutCoverterStep;
   }
 
   public String getDataWritePath() {

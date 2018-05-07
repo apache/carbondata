@@ -16,10 +16,14 @@
  */
 package org.apache.carbondata.processing.loading.steps;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
@@ -29,17 +33,21 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.loading.converter.impl.FieldEncoderFactory;
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * It reads data from record reader and sends data to next step.
  */
-public class InputProcessorStepForPartitionImpl extends AbstractDataLoadProcessorStep {
+public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProcessorStep {
 
   private CarbonIterator<Object[]>[] inputIterators;
 
@@ -49,7 +57,9 @@ public class InputProcessorStepForPartitionImpl extends AbstractDataLoadProcesso
 
   private int[] orderOfData;
 
-  public InputProcessorStepForPartitionImpl(CarbonDataLoadConfiguration configuration,
+  private Map<Integer, GenericDataType> dataFieldsWithComplexDataType;
+
+  public InputProcessorStepWithNoConverterImpl(CarbonDataLoadConfiguration configuration,
       CarbonIterator<Object[]>[] inputIterators) {
     super(configuration, null);
     this.inputIterators = inputIterators;
@@ -68,6 +78,10 @@ public class InputProcessorStepForPartitionImpl extends AbstractDataLoadProcesso
     configuration.setCardinalityFinder(rowConverter);
     noDictionaryMapping =
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
+
+    dataFieldsWithComplexDataType = new HashMap<>();
+    convertComplexDataType(dataFieldsWithComplexDataType);
+
     dataTypes = new DataType[configuration.getDataFields().length];
     for (int i = 0; i < dataTypes.length; i++) {
       if (configuration.getDataFields()[i].getColumn().hasEncoding(Encoding.DICTIONARY)) {
@@ -77,6 +91,26 @@ public class InputProcessorStepForPartitionImpl extends AbstractDataLoadProcesso
       }
     }
     orderOfData = arrangeData(configuration.getDataFields(), configuration.getHeader());
+  }
+
+  private void convertComplexDataType(Map<Integer, GenericDataType> dataFieldsWithComplexDataType) {
+    DataField[] srcDataField = configuration.getDataFields();
+    FieldEncoderFactory fieldConverterFactory = FieldEncoderFactory.getInstance();
+    String nullFormat =
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
+            .toString();
+    boolean isEmptyBadRecord = Boolean.parseBoolean(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
+            .toString());
+    for (int i = 0; i < srcDataField.length; i++) {
+      if (srcDataField[i].getColumn().isComplex()) {
+        // create a ComplexDataType
+        dataFieldsWithComplexDataType.put(srcDataField[i].getColumn().getOrdinal(),
+            fieldConverterFactory
+                .createComplexDataType(srcDataField[i], null, configuration.getTableIdentifier(),
+                    null, false, null, i, nullFormat, isEmptyBadRecord));
+      }
+    }
   }
 
   private int[] arrangeData(DataField[] dataFields, String[] header) {
@@ -99,7 +133,8 @@ public class InputProcessorStepForPartitionImpl extends AbstractDataLoadProcesso
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
           new InputProcessorIterator(readerIterators[i], batchSize, configuration.isPreFetch(),
-              rowCounter, orderOfData, noDictionaryMapping, dataTypes);
+              rowCounter, orderOfData, noDictionaryMapping, dataTypes,
+              configuration.getDataFields(), dataFieldsWithComplexDataType);
     }
     return outIterators;
   }
@@ -168,11 +203,16 @@ public class InputProcessorStepForPartitionImpl extends AbstractDataLoadProcesso
 
     private DataType[] dataTypes;
 
+    private DataField[] dataFields;
+
     private int[] orderOfData;
+
+    private Map<Integer, GenericDataType> dataFieldsWithComplexDataType;
 
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
         boolean preFetch, AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
-        DataType[] dataTypes) {
+        DataType[] dataTypes, DataField[] dataFields,
+        Map<Integer, GenericDataType> dataFieldsWithComplexDataType) {
       this.inputIterators = inputIterators;
       this.batchSize = batchSize;
       this.counter = 0;
@@ -183,7 +223,9 @@ public class InputProcessorStepForPartitionImpl extends AbstractDataLoadProcesso
       this.firstTime = true;
       this.noDictionaryMapping = noDictionaryMapping;
       this.dataTypes = dataTypes;
+      this.dataFields = dataFields;
       this.orderOfData = orderOfData;
+      this.dataFieldsWithComplexDataType = dataFieldsWithComplexDataType;
     }
 
     @Override public boolean hasNext() {
@@ -220,29 +262,42 @@ public class InputProcessorStepForPartitionImpl extends AbstractDataLoadProcesso
       CarbonRowBatch carbonRowBatch = new CarbonRowBatch(batchSize);
       int count = 0;
       while (internalHasNext() && count < batchSize) {
-        carbonRowBatch.addRow(new CarbonRow(convertToNoDictionaryToBytes(currentIterator.next())));
+        carbonRowBatch.addRow(
+            new CarbonRow(convertToNoDictionaryToBytes(currentIterator.next(), dataFields)));
         count++;
       }
       rowCounter.getAndAdd(carbonRowBatch.getSize());
       return carbonRowBatch;
     }
 
-    private Object[] convertToNoDictionaryToBytes(Object[] data) {
+    private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
       Object[] newData = new Object[data.length];
-      for (int i = 0; i < noDictionaryMapping.length; i++) {
-        if (noDictionaryMapping[i]) {
+      for (int i = 0; i < data.length; i++) {
+        if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
           newData[i] = DataTypeUtil
               .getBytesDataDataTypeForNoDictionaryColumn(data[orderOfData[i]], dataTypes[i]);
         } else {
-          newData[i] = data[orderOfData[i]];
+          // if this is a complex column then recursively comver the data into Byte Array.
+          if (dataTypes[i].isComplexType()) {
+            ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
+            DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
+            try {
+              GenericDataType complextType =
+                  dataFieldsWithComplexDataType.get(dataFields[i].getColumn().getOrdinal());
+
+              complextType.writeByteArray(data[orderOfData[i]], dataOutputStream);
+
+              dataOutputStream.close();
+              newData[i] = byteArray.toByteArray();
+            } catch (Exception e) {
+              throw new CarbonDataLoadingException("Loading Exception", e);
+            }
+          } else {
+            newData[i] = data[orderOfData[i]];
+          }
         }
       }
-      if (newData.length > noDictionaryMapping.length) {
-        for (int i = noDictionaryMapping.length; i < newData.length; i++) {
-          newData[i] = data[orderOfData[i]];
-        }
-      }
-      //      System.out.println(Arrays.toString(data));
+      // System.out.println(Arrays.toString(data));
       return newData;
     }
 

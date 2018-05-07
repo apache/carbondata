@@ -26,6 +26,8 @@ import java.util.UUID;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
+import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
+import org.apache.carbondata.processing.loading.complexobjects.StructObject;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.avro.Schema;
@@ -70,15 +72,15 @@ class AvroCarbonWriter extends CarbonWriter {
       avroSchema = avroRecord.getSchema();
     }
     List<Schema.Field> fields = avroSchema.getFields();
-    Object [] csvField = new Object[fields.size()];
+    Object[] csvField = new Object[fields.size()];
     for (int i = 0; i < fields.size(); i++) {
-      csvField[i] = avroFieldToObject(fields.get(i), avroRecord.get(i), 0);
+      csvField[i] = avroFieldToObject(fields.get(i), avroRecord.get(i));
     }
     return csvField;
   }
 
-  private String avroFieldToObject(Schema.Field avroField, Object fieldValue, int delimiterLevel) {
-    StringBuilder out = new StringBuilder();
+  private Object avroFieldToObject(Schema.Field avroField, Object fieldValue) {
+    Object out = new Object();
     Schema.Type type = avroField.schema().getType();
     switch (type) {
       case BOOLEAN:
@@ -86,55 +88,39 @@ class AvroCarbonWriter extends CarbonWriter {
       case LONG:
       case DOUBLE:
       case STRING:
+        out = fieldValue;
+        break;
       case FLOAT:
-        out.append(fieldValue.toString());
+        Float f = (Float) fieldValue;
+        out = f.doubleValue();
         break;
       case RECORD:
         List<Schema.Field> fields = avroField.schema().getFields();
-        String delimiter = null;
-        delimiterLevel ++;
+
+        Object[] structChildObjects = new Object[fields.size()];
         for (int i = 0; i < fields.size(); i++) {
-          if (delimiterLevel == 1) {
-            delimiter = "$";
-          } else if (delimiterLevel > 1) {
-            delimiter = ":";
-          }
-          if (i != (fields.size() - 1)) {
-            out.append(avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i),
-                delimiterLevel)).append(delimiter);
-          } else {
-            out.append(avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i),
-                delimiterLevel));
-          }
+          structChildObjects[i] =
+              avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i));
         }
+        StructObject structObject = new StructObject(structChildObjects);
+        out = structObject;
         break;
       case ARRAY:
         int size = ((ArrayList) fieldValue).size();
-        String delimiterArray = null;
-        delimiterLevel ++;
-        if (delimiterLevel == 1) {
-          delimiterArray = "$";
-        } else if (delimiterLevel > 1) {
-          delimiterArray = ":";
-        }
-
+        Object[] arrayChildObjects = new Object[size];
         for (int i = 0; i < size; i++) {
-          if (i != size - 1) {
-            out.append(avroFieldToObject(
-                new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
-                ((ArrayList) fieldValue).get(i), delimiterLevel)).append(delimiterArray);
-          } else {
-            out.append(avroFieldToObject(
-                new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
-                ((ArrayList) fieldValue).get(i), delimiterLevel));
-          }
+          arrayChildObjects[i] = (avroFieldToObject(
+              new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
+              ((ArrayList) fieldValue).get(i)));
         }
+        ArrayObject arrayObject = new ArrayObject(arrayChildObjects);
+        out = arrayObject;
         break;
 
       default:
         throw new UnsupportedOperationException();
     }
-    return out.toString();
+    return out;
   }
 
   /**

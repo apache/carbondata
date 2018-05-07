@@ -678,8 +678,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     val exception =
       intercept[RuntimeException] {
-      buildTestDataWithBadRecordFail()
-    }
+        buildTestDataWithBadRecordFail()
+      }
     assert(exception.getMessage()
       .contains("Data load failed due to bad record"))
 
@@ -780,7 +780,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
                      |      }
                      |      ]
                      |  }
-                     """.stripMargin
+                   """.stripMargin
 
     val json: String = """ {"name": "bob","age": 10,"address": ["abc", "defg"]} """
 
@@ -835,8 +835,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     val json =
       """ {"name":"bob", "age":10,
-          |"address" : {"street":"abc", "city":"bang"},
-          |"doorNum" : [1,2,3,4]}""".stripMargin
+        |"address" : {"street":"abc", "city":"bang"},
+        |"doorNum" : [1,2,3,4]}""".stripMargin
 
     val fields = new Array[Field](4)
     fields(0) = new Field("name", DataTypes.STRING)
