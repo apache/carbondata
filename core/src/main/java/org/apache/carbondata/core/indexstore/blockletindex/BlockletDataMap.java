@@ -685,7 +685,11 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Cacheable {
       }
     }
     // Prune with filters if the partitions are existed in this datamap
-    return prune(filterExp, segmentProperties);
+    // changed segmentProperties to this.segmentProperties to make sure the pruning with its own
+    // segmentProperties.
+    // Its a temporary fix. The Interface DataMap.prune(FilterResolverIntf filterExp,
+    // SegmentProperties segmentProperties, List<PartitionSpec> partitions) should be corrected
+    return prune(filterExp, this.segmentProperties);
   }
 
   private boolean isCorrectUUID(String[] fileDetails, PartitionSpec spec) {
