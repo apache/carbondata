@@ -99,8 +99,7 @@ object DataFrameComplexTypeExample {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(
-         | 'sort_columns'='name',
-         | 'dictionary_exclude'='val')
+         | 'sort_columns'='name')
          | """.stripMargin)
 
 
