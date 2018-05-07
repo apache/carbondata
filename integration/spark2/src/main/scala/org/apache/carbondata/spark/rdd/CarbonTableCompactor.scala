@@ -45,6 +45,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     executor: ExecutorService,
     sqlContext: SQLContext,
     storeLocation: String,
+    compactedSegments: List[String],
     operationContext: OperationContext)
   extends Compactor(carbonLoadModel, compactionModel, executor, sqlContext, storeLocation) {
 
@@ -63,7 +64,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       deletePartialLoadsInCompaction()
 
       try {
-        scanSegmentsAndSubmitJob(loadsToMerge)
+        scanSegmentsAndSubmitJob(loadsToMerge, compactedSegments)
       } catch {
         case e: Exception =>
           LOGGER.error(e, s"Exception in compaction thread ${ e.getMessage }")
@@ -101,7 +102,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
   /**
    * This will submit the loads to be merged into the executor.
    */
-  def scanSegmentsAndSubmitJob(loadsToMerge: util.List[LoadMetadataDetails]): Unit = {
+  def scanSegmentsAndSubmitJob(loadsToMerge: util.List[LoadMetadataDetails],
+      compactedSegments: List[String]): Unit = {
     loadsToMerge.asScala.foreach { seg =>
       LOGGER.info("loads identified for merge is " + seg.getLoadName)
     }
@@ -111,7 +113,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       loadsToMerge,
       sqlContext,
       compactionModel.compactionType,
-      compactionModel.currentPartitions)
+      compactionModel.currentPartitions,
+      compactedSegments)
     triggerCompaction(compactionCallableModel)
   }
 
@@ -125,6 +128,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     val tablePath = carbonLoadModel.getTablePath
     val startTime = System.nanoTime()
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
+    val mergedLoads = compactionCallableModel.compactedSegments
+    mergedLoads.add(mergedLoadName)
     var finalMergeStatus = false
     val databaseName: String = carbonLoadModel.getDatabaseName
     val factTableName = carbonLoadModel.getTableName
