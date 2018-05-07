@@ -38,6 +38,8 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
     CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+        "force")
     sql("drop table if exists complexcarbontable")
     sql("drop table if exists complexhivetable")
     sql("drop table if exists complex_filter")

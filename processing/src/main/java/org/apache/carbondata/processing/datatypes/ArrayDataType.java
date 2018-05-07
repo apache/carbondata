@@ -27,7 +27,7 @@ import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
-
+import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 
 /**
  * Array DataType stateless object used in data loading
@@ -151,17 +151,16 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     return true;
   }
 
-  @Override
-  public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream)
-      throws IOException, DictionaryGenerationException {
+  @Override public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream,
+      BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
     if (input == null) {
       dataOutputStream.writeInt(1);
-      children.writeByteArray(null, dataOutputStream);
+      children.writeByteArray(null, dataOutputStream, logHolder);
     } else {
       Object[] data = input.getData();
       dataOutputStream.writeInt(data.length);
       for (Object eachInput : data) {
-        children.writeByteArray(eachInput, dataOutputStream);
+        children.writeByteArray(eachInput, dataOutputStream, logHolder);
       }
     }
   }

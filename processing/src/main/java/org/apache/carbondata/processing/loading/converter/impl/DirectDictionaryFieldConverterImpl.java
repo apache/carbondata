@@ -54,7 +54,6 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
       this.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
           .getDirectDictionaryGenerator(dataField.getColumn().getDataType(),
               dataField.getTimestampFormat());
-
     } else {
       this.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
           .getDirectDictionaryGenerator(dataField.getColumn().getDataType());

@@ -79,7 +79,20 @@ public class CarbonLoadModelBuilder {
 
     // we have provided 'fileheader', so it hadoopConf can be null
     build(options, optionsFinal, model, null);
-
+    String timestampFormat = options.get("timestampformat");
+    if (timestampFormat == null) {
+      timestampFormat = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    }
+    String dateFormat = options.get("dateFormat");
+    if (dateFormat == null) {
+      dateFormat = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+    }
+    model.setDateFormat(dateFormat);
+    model.setTimestampformat(timestampFormat);
     model.setUseOnePass(Boolean.parseBoolean(Maps.getOrDefault(options, "onepass", "false")));
     model.setDictionaryServerHost(Maps.getOrDefault(options, "dicthost", null));
     try {

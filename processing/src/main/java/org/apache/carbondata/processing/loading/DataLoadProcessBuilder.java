@@ -237,6 +237,15 @@ public final class DataLoadProcessBuilder {
       }
       if (column.isComplex()) {
         complexDataFields.add(dataField);
+        List<CarbonDimension> childDimensions =
+            ((CarbonDimension) dataField.getColumn()).getListOfChildDimensions();
+        for (CarbonDimension childDimension : childDimensions) {
+          if (childDimension.getDataType() == DataTypes.DATE) {
+            childDimension.setDateFormat(loadModel.getDateFormat());
+          } else if (childDimension.getDataType() == DataTypes.TIMESTAMP) {
+            childDimension.setTimestampFormat(loadModel.getTimestampformat());
+          }
+        }
       } else {
         dataFields.add(dataField);
       }

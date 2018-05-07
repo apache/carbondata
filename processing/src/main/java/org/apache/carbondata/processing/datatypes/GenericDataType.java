@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 
 /**
  * Generic DataType interface which will be used while data loading for complex types like Array &
@@ -58,7 +59,7 @@ public interface GenericDataType<T> {
    * @param dataOutputStream
    * @throws IOException
    */
-  void writeByteArray(T input, DataOutputStream dataOutputStream)
+  void writeByteArray(T input, DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
       throws IOException, DictionaryGenerationException;
 
   /**

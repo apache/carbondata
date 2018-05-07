@@ -44,7 +44,7 @@ public class ComplexFieldConverterImpl extends AbstractDictionaryFieldConverterI
     ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
     DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
     try {
-      genericDataType.writeByteArray(object, dataOutputStream);
+      genericDataType.writeByteArray(object, dataOutputStream, logHolder);
       dataOutputStream.close();
       row.update(byteArray.toByteArray(), index);
     } catch (Exception e) {
