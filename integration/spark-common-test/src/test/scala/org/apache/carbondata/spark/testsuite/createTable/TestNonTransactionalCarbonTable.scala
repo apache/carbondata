@@ -17,13 +17,13 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
-import java.io.{File, FileFilter, IOException}
+import java.io.{File, FileFilter}
 import java.util
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.junit.{Assert, Test}
+import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -35,6 +35,7 @@ import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.avro
 import org.apache.commons.lang.CharEncoding
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
@@ -254,7 +255,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     sql("create table if not exists t1 (name string, age int, height double) STORED BY 'org.apache.carbondata.format'")
     sql (s"""insert into t1 values ("aaaaa", 12, 20)""").show(200,false)
-    sql("select * from t1").show(200,false)
     sql("insert into sdkOutputTable select * from t1").show(200,false)
 
     checkAnswer(sql(s"""select * from sdkOutputTable where age = 12"""),
@@ -545,7 +545,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
            |'$writerPath' """.stripMargin)
 
-      sql("select * from sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
       .contains("Operation not allowed: Invalid table path provided:"))
@@ -687,49 +686,20 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  def buildAvroTestData(rows: Int, options: util.Map[String, String]): Any = {
-    FileUtils.deleteDirectory(new File(writerPath))
-    val newAvroSchema = "{" + " \"type\" : \"record\", " + "  \"name\" : \"userInfo\", " +
-                        "  \"namespace\" : \"my.example\", " +
-                        "  \"fields\" : [{\"name\" : \"username\", " +
-                        "  \"type\" : \"string\", " + "  \"default\" : \"NONE\"}, " +
-                        " {\"name\" : \"age\", " + " \"type\" : \"int\", " +
-                        " \"default\" : -1}, " + "{\"name\" : \"address\", " +
-                        "   \"type\" : { " + "  \"type\" : \"record\", " +
-                        "   \"name\" : \"mailing_address\", " + "  \"fields\" : [ {" +
-                        "        \"name\" : \"street\", " +
-                        "       \"type\" : \"string\", " +
-                        "       \"default\" : \"NONE\"}, { " + " \"name\" : \"city\", " +
-                        "  \"type\" : \"string\", " + "  \"default\" : \"NONE\"}, " +
-                        "                 ]}, " + " \"default\" : {} " + " } " + "}"
-    val mySchema = "{" + "  \"name\": \"address\", " + "   \"type\": \"record\", " +
-                   "    \"fields\": [  " +
-                   "  { \"name\": \"name\", \"type\": \"string\"}, " +
-                   "  { \"name\": \"age\", \"type\": \"int\"}, " + "  { " +
-                   "    \"name\": \"address\", " + "      \"type\": { " +
-                   "    \"type\" : \"record\", " + "        \"name\" : \"my_address\", " +
-                   "        \"fields\" : [ " +
-                   "    {\"name\": \"street\", \"type\": \"string\"}, " +
-                   "    {\"name\": \"city\", \"type\": \"string\"} " + "  ]} " + "  } " +
-                   "] " + "}"
-    val json = "{\"name\":\"bob\", \"age\":10, \"address\" : {\"street\":\"abc\", " +
-               "\"city\":\"bang\"}}"
+  private def WriteFilesWithAvroWriter(rows: Int,
+      mySchema: String,
+      json: String,
+      fields: Array[Field]) = {
     // conversion to GenericData.Record
-    val nn = new org.apache.avro.Schema.Parser().parse(mySchema)
+    val nn = new avro.Schema.Parser().parse(mySchema)
     val converter = new JsonAvroConverter
     val record = converter
       .convertToGenericDataRecord(json.getBytes(CharEncoding.UTF_8), nn)
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.STRING)
-    // fields[1] = new Field("age", DataTypes.INT);
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("street", DataTypes.STRING))
-    fld.add(new StructField("city", DataTypes.STRING))
-    fields(2) = new Field("address", "struct", fld)
+
     try {
       val writer = CarbonWriter.builder.withSchema(new Schema(fields))
-        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput
+        .outputPath(writerPath).isTransactionalTable(false)
+        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput
       var i = 0
       while (i < rows) {
         writer.write(record)
@@ -745,13 +715,373 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  def buildAvroTestDataSingleFile(): Any = {
+  // struct type test
+  def buildAvroTestDataStruct(rows: Int, options: util.Map[String, String]): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildAvroTestData(3, null)
+    val mySchema =
+      """
+        |{"name": "address",
+        | "type": "record",
+        | "fields": [
+        |  { "name": "name", "type": "string"},
+        |  { "name": "age", "type": "int"},
+        |  { "name": "address",  "type": {
+        |    "type" : "record",  "name" : "my_address",
+        |        "fields" : [
+        |    {"name": "street", "type": "string"},
+        |    {"name": "city", "type": "string"}]}}
+        |]}
+      """.stripMargin
+
+    val json = """ {"name":"bob", "age":10, "address" : {"street":"abc", "city":"bang"}} """
+
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("street", DataTypes.STRING))
+    fld.add(new StructField("city", DataTypes.STRING))
+    fields(2) = new Field("address", "struct", fld)
+
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
   }
 
-  test("Read sdk writer Avro output ") {
-    buildAvroTestDataSingleFile()
+  def buildAvroTestDataStructType(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataStruct(3, null)
+  }
+
+  // array type test
+  def buildAvroTestDataArrayType(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema = """ {
+                     |      "name": "address",
+                     |      "type": "record",
+                     |      "fields": [
+                     |      {
+                     |      "name": "name",
+                     |      "type": "string"
+                     |      },
+                     |      {
+                     |      "name": "age",
+                     |      "type": "int"
+                     |      },
+                     |      {
+                     |      "name": "address",
+                     |      "type": {
+                     |      "type": "array",
+                     |      "items": {
+                     |      "name": "street",
+                     |      "type": "string"
+                     |      }
+                     |      }
+                     |      }
+                     |      ]
+                     |  }
+                     """.stripMargin
+
+    val json: String = """ {"name": "bob","age": 10,"address": ["abc", "defg"]} """
+
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+    // fields[1] = new Field("age", DataTypes.INT);
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("street", DataTypes.STRING))
+    fields(2) = new Field("address", "array", fld)
+
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  def buildAvroTestDataSingleFileArrayType(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataArrayType(3, null)
+  }
+
+  // struct with array type test
+  def buildAvroTestDataStructWithArrayType(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema = """
+                     {
+                     |     "name": "address",
+                     |     "type": "record",
+                     |     "fields": [
+                     |     { "name": "name", "type": "string"},
+                     |     { "name": "age", "type": "int"},
+                     |     {
+                     |     "name": "address",
+                     |     "type": {
+                     |     "type" : "record",
+                     |     "name" : "my_address",
+                     |     "fields" : [
+                     |     {"name": "street", "type": "string"},
+                     |     {"name": "city", "type": "string"}
+                     |     ]}
+                     |     },
+                     |     {"name" :"doorNum",
+                     |     "type" : {
+                     |     "type" :"array",
+                     |     "items":{
+                     |     "name" :"EachdoorNums",
+                     |     "type" : "int",
+                     |     "default":-1
+                     |     }}
+                     |     }]}
+                     """.stripMargin
+
+    val json =
+      """ {"name":"bob", "age":10,
+          |"address" : {"street":"abc", "city":"bang"},
+          |"doorNum" : [1,2,3,4]}""".stripMargin
+
+    val fields = new Array[Field](4)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("street", DataTypes.STRING))
+    fld.add(new StructField("city", DataTypes.STRING))
+    fields(2) = new Field("address", "struct", fld)
+    val fld1 = new util.ArrayList[StructField]
+    fld1.add(new StructField("eachDoorNum", DataTypes.INT))
+    fields(3) = new Field("doorNum", "array", fld1)
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  def buildAvroTestDataBothStructArrayType(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataStructWithArrayType(3, null)
+  }
+
+
+  // ArrayOfStruct test
+  def buildAvroTestDataArrayOfStruct(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema = """ {
+                     |	"name": "address",
+                     |	"type": "record",
+                     |	"fields": [
+                     |		{
+                     |			"name": "name",
+                     |			"type": "string"
+                     |		},
+                     |		{
+                     |			"name": "age",
+                     |			"type": "int"
+                     |		},
+                     |		{
+                     |			"name": "doorNum",
+                     |			"type": {
+                     |				"type": "array",
+                     |				"items": {
+                     |					"type": "record",
+                     |					"name": "my_address",
+                     |					"fields": [
+                     |						{
+                     |							"name": "street",
+                     |							"type": "string"
+                     |						},
+                     |						{
+                     |							"name": "city",
+                     |							"type": "string"
+                     |						}
+                     |					]
+                     |				}
+                     |			}
+                     |		}
+                     |	]
+                     |} """.stripMargin
+    val json =
+      """ {"name":"bob","age":10,"doorNum" :
+        |[{"street":"abc","city":"city1"},
+        |{"street":"def","city":"city2"},
+        |{"street":"ghi","city":"city3"},
+        |{"street":"jkl","city":"city4"}]} """.stripMargin
+
+
+
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("street", DataTypes.STRING))
+    fld.add(new StructField("city", DataTypes.STRING))
+
+    val fld2 = new util.ArrayList[StructField]
+    fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
+    fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
+
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  def buildAvroTestDataArrayOfStructType(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataArrayOfStruct(3, null)
+  }
+
+
+  // StructOfArray test
+  def buildAvroTestDataStructOfArray(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema = """ {
+                     |	"name": "address",
+                     |	"type": "record",
+                     |	"fields": [
+                     |		{
+                     |			"name": "name",
+                     |			"type": "string"
+                     |		},
+                     |		{
+                     |			"name": "age",
+                     |			"type": "int"
+                     |		},
+                     |		{
+                     |			"name": "address",
+                     |			"type": {
+                     |				"type": "record",
+                     |				"name": "my_address",
+                     |				"fields": [
+                     |					{
+                     |						"name": "street",
+                     |						"type": "string"
+                     |					},
+                     |					{
+                     |						"name": "city",
+                     |						"type": "string"
+                     |					},
+                     |					{
+                     |						"name": "doorNum",
+                     |						"type": {
+                     |							"type": "array",
+                     |							"items": {
+                     |								"name": "EachdoorNums",
+                     |								"type": "int",
+                     |								"default": -1
+                     |							}
+                     |						}
+                     |					}
+                     |				]
+                     |			}
+                     |		}
+                     |	]
+                     |} """.stripMargin
+
+    val json = """ {
+                 |	"name": "bob",
+                 |	"age": 10,
+                 |	"address": {
+                 |		"street": "abc",
+                 |		"city": "bang",
+                 |		"doorNum": [
+                 |			1,
+                 |			2,
+                 |			3,
+                 |			4
+                 |		]
+                 |	}
+                 |} """.stripMargin
+
+
+
+
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+
+    val fld1 = new util.ArrayList[StructField]
+    fld1.add(new StructField("eachDoorNum", DataTypes.INT))
+
+    val fld2 = new util.ArrayList[StructField]
+    fld2.add(new StructField("street", DataTypes.STRING))
+    fld2.add(new StructField("city", DataTypes.STRING))
+    fld2.add(new StructField("doorNum", DataTypes.createArrayType(DataTypes.INT), fld1))
+
+    fields(2) = new Field("address","struct",fld2)
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  def buildAvroTestDataStructOfArrayType(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataStructOfArray(3, null)
+  }
+
+
+  test("Read sdk writer Avro output Record Type") {
+    buildAvroTestDataStructType()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("bob", 10, Row("abc","bang")),
+      Row("bob", 10, Row("abc","bang")),
+      Row("bob", 10, Row("abc","bang"))))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).listFiles().length > 0)
+  }
+
+  test("Read sdk writer Avro output Array Type") {
+    buildAvroTestDataSingleFileArrayType()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("select * from sdkOutputTable").show(200,false)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("bob", 10, new mutable.WrappedArray.ofRef[String](Array("abc", "defg"))),
+      Row("bob", 10, new mutable.WrappedArray.ofRef[String](Array("abc", "defg"))),
+      Row("bob", 10, new mutable.WrappedArray.ofRef[String](Array("abc", "defg")))))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+  }
+
+  test("Read sdk writer Avro output with both Array and Struct Type") {
+    buildAvroTestDataBothStructArrayType()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    /*
+    *-+----+---+----------+------------+
+    |name|age|address   |doorNum     |
+    +----+---+----------+------------+
+    |bob |10 |[abc,bang]|[1, 2, 3, 4]|
+    |bob |10 |[abc,bang]|[1, 2, 3, 4]|
+    |bob |10 |[abc,bang]|[1, 2, 3, 4]|
+    +----+---+----------+------------+
+    * */
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("bob", 10, Row("abc","bang"), mutable.WrappedArray.newBuilder[Int].+=(1,2,3,4)),
+      Row("bob", 10, Row("abc","bang"), mutable.WrappedArray.newBuilder[Int].+=(1,2,3,4)),
+      Row("bob", 10, Row("abc","bang"), mutable.WrappedArray.newBuilder[Int].+=(1,2,3,4))))
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+  }
+
+
+  test("Read sdk writer Avro output with Array of struct") {
+    buildAvroTestDataArrayOfStructType()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
@@ -760,13 +1090,44 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     sql("select * from sdkOutputTable").show(false)
 
-    checkAnswer(sql("select * from sdkOutputTable"), Seq(
-      Row("bob", "10", Row("abc","bang")),
-      Row("bob", "10", Row("abc","bang")),
-      Row("bob", "10", Row("abc","bang"))))
+    // TODO: Add a validation
+    /*
+    +----+---+----------------------------------------------------+
+    |name|age|doorNum                                             |
+    +----+---+----------------------------------------------------+
+    |bob |10 |[[abc,city1], [def,city2], [ghi,city3], [jkl,city4]]|
+    |bob |10 |[[abc,city1], [def,city2], [ghi,city3], [jkl,city4]]|
+    |bob |10 |[[abc,city1], [def,city2], [ghi,city3], [jkl,city4]]|
+    +----+---+----------------------------------------------------+ */
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(writerPath).exists())
   }
+
+
+  // Struct of array
+  test("Read sdk writer Avro output with struct of Array") {
+    buildAvroTestDataStructOfArrayType()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("select * from sdkOutputTable").show(false)
+
+    // TODO: Add a validation
+    /*
+    +----+---+-------------------------------------------------------+
+    |name|age|address                                                |
+    +----+---+-------------------------------------------------------+
+    |bob |10 |[abc,bang,WrappedArray(1, 2, 3, 4)]                    |
+    |bob |10 |[abc,bang,WrappedArray(1, 2, 3, 4)]                    |
+    |bob |10 |[abc,bang,WrappedArray(1, 2, 3, 4)]                    |
+    +----+---+-------------------------------------------------------+*/
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+  }
+
 }

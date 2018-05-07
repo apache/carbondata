@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
@@ -46,7 +47,11 @@ public class TableSchemaBuilder {
 
   private List<ColumnSchema> sortColumns = new LinkedList<>();
 
-  private List<ColumnSchema> otherColumns = new LinkedList<>();
+  private List<ColumnSchema> dimension = new LinkedList<>();
+
+  private List<ColumnSchema> complex = new LinkedList<>();
+
+  private List<ColumnSchema> measures = new LinkedList<>();
 
   private int blockSize;
 
@@ -86,7 +91,9 @@ public class TableSchemaBuilder {
     schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
     schema.setSchemaEvalution(schemaEvol);
     List<ColumnSchema> allColumns = new LinkedList<>(sortColumns);
-    allColumns.addAll(otherColumns);
+    allColumns.addAll(dimension);
+    allColumns.addAll(complex);
+    allColumns.addAll(measures);
     schema.setListOfColumns(allColumns);
 
     Map<String, String> property = new HashMap<>();
@@ -108,21 +115,36 @@ public class TableSchemaBuilder {
   }
 
   public ColumnSchema addColumn(StructField field, boolean isSortColumn) {
+    return addColumn(field, null, isSortColumn, false);
+  }
+
+  private ColumnSchema addColumn(StructField field, String parentName, boolean isSortColumn,
+      boolean isComplexChild) {
     Objects.requireNonNull(field);
     checkRepeatColumnName(field);
     ColumnSchema newColumn = new ColumnSchema();
-    newColumn.setColumnName(field.getFieldName());
+    if (parentName != null) {
+      newColumn.setColumnName(parentName + "." + field.getFieldName());
+    } else {
+      newColumn.setColumnName(field.getFieldName());
+    }
     newColumn.setDataType(field.getDataType());
     if (isSortColumn ||
         field.getDataType() == DataTypes.STRING ||
         field.getDataType() == DataTypes.DATE ||
         field.getDataType() == DataTypes.TIMESTAMP ||
-        DataTypes.isStructType(field.getDataType())) {
+        field.getDataType().isComplexType() ||
+        (isComplexChild))  {
       newColumn.setDimensionColumn(true);
     } else {
       newColumn.setDimensionColumn(false);
     }
-    newColumn.setSchemaOrdinal(ordinal++);
+    if (!isComplexChild) {
+      newColumn.setSchemaOrdinal(ordinal++);
+    } else {
+      // child column should not be counted for schema ordinal
+      newColumn.setSchemaOrdinal(-1);
+    }
     newColumn.setColumnar(true);
 
     // For NonTransactionalTable, multiple sdk writer output with same column name can be placed in
@@ -135,7 +157,11 @@ public class TableSchemaBuilder {
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
     newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn));
     if (field.getDataType().isComplexType()) {
-      newColumn.setNumberOfChild(((StructType) field.getDataType()).getFields().size());
+      if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+        newColumn.setNumberOfChild(1);
+      } else {
+        newColumn.setNumberOfChild(((StructType) field.getDataType()).getFields().size());
+      }
     }
     if (DataTypes.isDecimal(field.getDataType())) {
       DecimalType decimalType = (DecimalType) field.getDataType();
@@ -143,17 +169,29 @@ public class TableSchemaBuilder {
       newColumn.setScale(decimalType.getScale());
     }
     if (!isSortColumn) {
-      otherColumns.add(newColumn);
+      if (!newColumn.isDimensionColumn()) {
+        measures.add(newColumn);
+      } else if (DataTypes.isStructType(field.getDataType()) ||
+          DataTypes.isArrayType(field.getDataType()) || isComplexChild) {
+        complex.add(newColumn);
+      } else {
+        dimension.add(newColumn);
+      }
     }
     if (newColumn.isDimensionColumn()) {
       newColumn.setUseInvertedIndex(true);
     }
     if (field.getDataType().isComplexType()) {
-      if (((StructType) field.getDataType()).getFields().size() > 0) {
+      String parentFieldName = newColumn.getColumnName();
+      if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+        addColumn(new StructField("val",
+            ((ArrayType) field.getDataType()).getElementType()), field.getFieldName(), false, true);
+      } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")
+          && ((StructType) field.getDataType()).getFields().size() > 0) {
         // This field has children.
         List<StructField> fields = ((StructType) field.getDataType()).getFields();
-        for (int i = 0; i < fields.size(); i ++) {
-          addColumn(fields.get(i), false);
+        for (int i = 0; i < fields.size(); i++) {
+          addColumn(fields.get(i), parentFieldName, false, true);
         }
       }
     }
@@ -169,7 +207,19 @@ public class TableSchemaBuilder {
         throw new IllegalArgumentException("column name already exists");
       }
     }
-    for (ColumnSchema column : otherColumns) {
+    for (ColumnSchema column : dimension) {
+      if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
+        throw new IllegalArgumentException("column name already exists");
+      }
+    }
+
+    for (ColumnSchema column : complex) {
+      if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
+        throw new IllegalArgumentException("column name already exists");
+      }
+    }
+
+    for (ColumnSchema column : measures) {
       if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
         throw new IllegalArgumentException("column name already exists");
       }
