@@ -88,6 +88,7 @@ object CarbonDataRDDFactory {
       storeLocation: String,
       compactionType: CompactionType,
       carbonTable: CarbonTable,
+      compactedSegments: java.util.List[String],
       compactionModel: CompactionModel,
       operationContext: OperationContext): Unit = {
     // taking system level lock at the mdt file location
@@ -111,6 +112,7 @@ object CarbonDataRDDFactory {
           storeLocation,
           compactionModel,
           lock,
+          compactedSegments,
           operationContext
         )
       } catch {
@@ -148,6 +150,7 @@ object CarbonDataRDDFactory {
       storeLocation: String,
       compactionModel: CompactionModel,
       compactionLock: ICarbonLock,
+      compactedSegments: java.util.List[String],
       operationContext: OperationContext): Unit = {
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
@@ -165,6 +168,7 @@ object CarbonDataRDDFactory {
           executor,
           sqlContext,
           storeLocation,
+          compactedSegments,
           operationContext)
         try {
           // compaction status of the table which is triggered by the user.
@@ -220,6 +224,7 @@ object CarbonDataRDDFactory {
                   executor,
                   sqlContext,
                   storeLocation,
+                  compactedSegments,
                   operationContext).executeCompaction()
               } catch {
                 case e: Exception =>
@@ -567,7 +572,13 @@ object CarbonDataRDDFactory {
         if (carbonTable.isHivePartitionTable) {
           carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
         }
-        handleSegmentMerging(sqlContext, carbonLoadModel, carbonTable, operationContext)
+        val compactedSegments = new util.ArrayList[String]()
+        handleSegmentMerging(sqlContext,
+          carbonLoadModel,
+          carbonTable,
+          compactedSegments,
+          operationContext)
+        carbonLoadModel.setMergedSegmentIds(compactedSegments)
       } catch {
         case e: Exception =>
           throw new Exception(
@@ -727,6 +738,7 @@ object CarbonDataRDDFactory {
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       carbonTable: CarbonTable,
+      compactedSegments: java.util.List[String],
       operationContext: OperationContext): Unit = {
     LOGGER.info(s"compaction need status is" +
                 s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable) }")
@@ -765,6 +777,7 @@ object CarbonDataRDDFactory {
           storeLocation,
           CompactionType.MINOR,
           carbonTable,
+          compactedSegments,
           compactionModel,
           operationContext
         )
@@ -781,6 +794,7 @@ object CarbonDataRDDFactory {
               storeLocation,
               compactionModel,
               lock,
+              compactedSegments,
               operationContext
             )
           } catch {

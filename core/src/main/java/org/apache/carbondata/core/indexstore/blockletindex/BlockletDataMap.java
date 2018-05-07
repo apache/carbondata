@@ -932,7 +932,7 @@ public class BlockletDataMap extends CoarseGrainDataMap implements Serializable 
     return dataMapRow;
   }
 
-  private byte[] getColumnSchemaBinary() {
+  public byte[] getColumnSchemaBinary() {
     DataMapRow unsafeRow = summaryDMStore.getDataMapRow(0);
     return unsafeRow.getByteArray(SCHEMA);
   }
