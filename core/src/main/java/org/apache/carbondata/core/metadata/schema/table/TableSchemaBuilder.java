@@ -184,7 +184,8 @@ public class TableSchemaBuilder {
     if (field.getDataType().isComplexType()) {
       String parentFieldName = newColumn.getColumnName();
       if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
-        addColumn(new StructField("val",
+        String colName = getColNameForArray(parentFieldName);
+        addColumn(new StructField(colName,
             ((ArrayType) field.getDataType()).getElementType()), field.getFieldName(), false, true);
       } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")
           && ((StructType) field.getDataType()).getFields().size() > 0) {
@@ -196,6 +197,20 @@ public class TableSchemaBuilder {
       }
     }
     return newColumn;
+  }
+
+  private String getColNameForArray(String parentFieldName) {
+    if (!parentFieldName.contains(".val")) {
+      return "val";
+    } else {
+      String[] splits = parentFieldName.split("val");
+      if (splits.length == 1) {
+        return "val" + 1;
+      } else {
+        return "val" + (Integer.parseInt(parentFieldName
+            .substring(parentFieldName.lastIndexOf("val") + 3, parentFieldName.length())) + 1);
+      }
+    }
   }
 
   /**

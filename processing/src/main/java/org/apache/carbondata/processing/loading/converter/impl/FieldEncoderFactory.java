@@ -128,7 +128,7 @@ public class FieldEncoderFactory {
   /**
    * Create parser for the carbon column.
    */
-  private static GenericDataType createComplexDataType(DataField dataField,
+  public static GenericDataType createComplexDataType(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       AbsoluteTableIdentifier absoluteTableIdentifier, DictionaryClient client, Boolean useOnePass,
       Map<Object, Integer> localCache, int index, String nullFormat, Boolean isEmptyBadRecords) {

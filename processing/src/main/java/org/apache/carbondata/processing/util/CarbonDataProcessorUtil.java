@@ -240,6 +240,35 @@ public final class CarbonDataProcessorUtil {
         .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
   }
 
+  public static void getComplexNoDictionaryMapping(DataField[] dataFields,
+      List<Integer> complexNoDictionary) {
+
+    // save the Ordinal Number in the List.
+    for (DataField field : dataFields) {
+      if (field.getColumn().isComplex()) {
+        // get the childs.
+        getComplexNoDictionaryMapping(
+            ((CarbonDimension) field.getColumn()).getListOfChildDimensions(), complexNoDictionary);
+      }
+    }
+  }
+
+  public static void getComplexNoDictionaryMapping(List<CarbonDimension> carbonDimensions,
+      List<Integer> complexNoDictionary) {
+    for (CarbonDimension carbonDimension : carbonDimensions) {
+      if (carbonDimension.isComplex()) {
+        getComplexNoDictionaryMapping(carbonDimension.getListOfChildDimensions(),
+            complexNoDictionary);
+      } else {
+        // This is primitive type. Check the encoding for NoDictionary.
+        if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
+          complexNoDictionary.add(carbonDimension.getOrdinal());
+        }
+      }
+    }
+  }
+
+
   /**
    * Preparing the boolean [] to map whether the dimension use inverted index or not.
    */

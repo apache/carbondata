@@ -44,8 +44,8 @@ import org.apache.carbondata.processing.loading.steps.CarbonRowDataWriterProcess
 import org.apache.carbondata.processing.loading.steps.DataConverterProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.DataWriterBatchProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.InputProcessorStepForPartitionImpl;
 import org.apache.carbondata.processing.loading.steps.InputProcessorStepImpl;
+import org.apache.carbondata.processing.loading.steps.InputProcessorStepWithNoConverterImpl;
 import org.apache.carbondata.processing.loading.steps.SortProcessorStepImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -62,8 +62,8 @@ public final class DataLoadProcessBuilder {
       CarbonIterator[] inputIterators) throws Exception {
     CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
-    if (loadModel.isPartitionLoad()) {
-      return buildInternalForPartitionLoad(inputIterators, configuration, sortScope);
+    if (loadModel.isLoadWithoutCoverterStep()) {
+      return buildInternalWithNoConverter(inputIterators, configuration, sortScope);
     } else if (!configuration.isSortTable() ||
         sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
       return buildInternalForNoSort(inputIterators, configuration);
@@ -106,14 +106,14 @@ public final class DataLoadProcessBuilder {
   }
 
   /**
-   * Build pipe line for partition load
+   * Build pipe line for Load without Conversion Step.
    */
-  private AbstractDataLoadProcessorStep buildInternalForPartitionLoad(
+  private AbstractDataLoadProcessorStep buildInternalWithNoConverter(
       CarbonIterator[] inputIterators, CarbonDataLoadConfiguration configuration,
       SortScopeOptions.SortScope sortScope) {
     // Wraps with dummy processor.
     AbstractDataLoadProcessorStep inputProcessorStep =
-        new InputProcessorStepForPartitionImpl(configuration, inputIterators);
+        new InputProcessorStepWithNoConverterImpl(configuration, inputIterators);
     if (sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT)) {
       AbstractDataLoadProcessorStep sortProcessorStep =
           new SortProcessorStepImpl(configuration, inputProcessorStep);
