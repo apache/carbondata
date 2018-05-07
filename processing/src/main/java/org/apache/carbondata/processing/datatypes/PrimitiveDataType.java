@@ -48,10 +48,12 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.dictionary.DictionaryServerClientDictionary;
 import org.apache.carbondata.processing.loading.dictionary.DirectDictionary;
 import org.apache.carbondata.processing.loading.dictionary.PreCreatedDictionary;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * Primitive DataType stateless object used in data loading
@@ -265,19 +267,29 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     return isDictionary;
   }
 
-  @Override public void writeByteArray(Object input, DataOutputStream dataOutputStream)
-      throws IOException, DictionaryGenerationException {
-
+  @Override public void writeByteArray(Object input, DataOutputStream dataOutputStream,
+      BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
     String parsedValue =
         input == null ? null : DataTypeUtil.parseValue(input.toString(), carbonDimension);
+    String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
     if (this.isDictionary) {
       Integer surrogateKey;
       if (null == parsedValue) {
         surrogateKey = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+        if (null == message) {
+          message = CarbonDataProcessorUtil
+              .prepareFailureReason(carbonDimension.getColName(), carbonDimension.getDataType());
+          logHolder.getColumnMessageMap().put(carbonDimension.getColName(), message);
+          logHolder.setReason(message);
+        }
       } else {
         surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
         if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
           surrogateKey = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+          message = CarbonDataProcessorUtil
+              .prepareFailureReason(carbonDimension.getColName(), carbonDimension.getDataType());
+          logHolder.getColumnMessageMap().put(carbonDimension.getColName(), message);
+          logHolder.setReason(message);
         }
       }
       dataOutputStream.writeInt(surrogateKey);
@@ -285,15 +297,15 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       // Transform into ByteArray for No Dictionary.
       // TODO have to refactor and place all the cases present in NonDictionaryFieldConverterImpl
       if (null == parsedValue && this.carbonDimension.getDataType() != DataTypes.STRING) {
-        updateNullValue(dataOutputStream);
+        updateNullValue(dataOutputStream, logHolder);
       } else if (null == parsedValue || parsedValue.equals(nullformat)) {
-        updateNullValue(dataOutputStream);
+        updateNullValue(dataOutputStream, logHolder);
       } else {
         String dateFormat = null;
         if (this.carbonDimension.getDataType() == DataTypes.DATE) {
-          dateFormat = this.carbonDimension.getDateFormat();
+          dateFormat = carbonDimension.getDateFormat();
         } else if (this.carbonDimension.getDataType() == DataTypes.TIMESTAMP) {
-          dateFormat = this.carbonDimension.getTimestampFormat();
+          dateFormat = carbonDimension.getTimestampFormat();
         }
 
         try {
@@ -318,9 +330,12 @@ public class PrimitiveDataType implements GenericDataType<Object> {
               updateValueToByteStream(dataOutputStream,
                   parsedValue.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
             } else {
-              updateNullValue(dataOutputStream);
+              updateNullValue(dataOutputStream, logHolder);
             }
           }
+        } catch (NumberFormatException e) {
+          // Update logHolder for bad record and put null in dataOutputStream.
+          updateNullValue(dataOutputStream, logHolder);
         } catch (CarbonDataLoadingException e) {
           throw e;
         } catch (Throwable ex) {
@@ -338,13 +353,21 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     dataOutputStream.write(value);
   }
 
-  private void updateNullValue(DataOutputStream dataOutputStream) throws IOException {
+  private void updateNullValue(DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
+      throws IOException {
     if (this.carbonDimension.getDataType() == DataTypes.STRING) {
       dataOutputStream.writeInt(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
       dataOutputStream.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
     } else {
       dataOutputStream.writeInt(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
       dataOutputStream.write(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
+    }
+    String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
+    if (null == message) {
+      message = CarbonDataProcessorUtil
+          .prepareFailureReason(carbonDimension.getColName(), carbonDimension.getDataType());
+      logHolder.getColumnMessageMap().put(carbonDimension.getColName(), message);
+      logHolder.setReason(message);
     }
   }
 

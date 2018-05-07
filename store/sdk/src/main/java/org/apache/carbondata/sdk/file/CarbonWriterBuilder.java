@@ -431,6 +431,20 @@ public class CarbonWriterBuilder {
     // to child of complex array type in the order val1, val2 so that each array type child is
     // differentiated to any level
     AtomicInteger valIndex = new AtomicInteger(0);
+    // Check if any of the columns specified in sort columns are missing from schema.
+    for (String sortColumn: sortColumnsList) {
+      boolean exists = false;
+      for (Field field : fields) {
+        if (field.getFieldName().equalsIgnoreCase(sortColumn)) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        throw new RuntimeException(
+            "column: " + sortColumn + " specified in sort columns does not exist in schema");
+      }
+    }
     for (Field field : fields) {
       if (null != field) {
         int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
@@ -442,9 +456,9 @@ public class CarbonWriterBuilder {
                 " sort columns not supported for " + "array, struct, double, float, decimal ");
           }
         }
-
         if (field.getChildren() != null && field.getChildren().size() > 0) {
           if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+            checkForUnsupportedDataTypes(field.getChildren().get(0).getDataType());
             // Loop through the inner columns and for a StructData
             DataType complexType =
                 DataTypes.createArrayType(field.getChildren().get(0).getDataType());
@@ -455,6 +469,7 @@ public class CarbonWriterBuilder {
             List<StructField> structFieldsArray =
                 new ArrayList<StructField>(field.getChildren().size());
             for (StructField childFld : field.getChildren()) {
+              checkForUnsupportedDataTypes(childFld.getDataType());
               structFieldsArray
                   .add(new StructField(childFld.getFieldName(), childFld.getDataType()));
             }
@@ -472,6 +487,13 @@ public class CarbonWriterBuilder {
           }
         }
       }
+    }
+  }
+
+  private void checkForUnsupportedDataTypes(DataType dataType) {
+    if (dataType == DataTypes.DOUBLE || dataType == DataTypes.DATE || DataTypes
+        .isDecimal(dataType)) {
+      throw new RuntimeException("Unsupported data type: " + dataType.getName());
     }
   }
 

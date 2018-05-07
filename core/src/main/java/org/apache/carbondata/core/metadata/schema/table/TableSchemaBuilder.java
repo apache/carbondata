@@ -122,7 +122,13 @@ public class TableSchemaBuilder {
   private ColumnSchema addColumn(StructField field, String parentName, AtomicInteger valIndex,
       boolean isSortColumn, boolean isComplexChild) {
     Objects.requireNonNull(field);
-    checkRepeatColumnName(field);
+    if (isComplexChild) {
+      // if field is complex then append parent name to the child field to check
+      // if any other field with same name exists
+      checkRepeatColumnName(field, parentName);
+    } else {
+      checkRepeatColumnName(field);
+    }
     ColumnSchema newColumn = new ColumnSchema();
     if (parentName != null) {
       newColumn.setColumnName(parentName + "." + field.getFieldName());
@@ -156,7 +162,7 @@ public class TableSchemaBuilder {
     // SO, this will not have any impact.
     newColumn.setColumnUniqueId(field.getFieldName());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
-    newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn));
+    newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn, isComplexChild));
     if (field.getDataType().isComplexType()) {
       if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
         newColumn.setNumberOfChild(1);
@@ -209,6 +215,12 @@ public class TableSchemaBuilder {
   /**
    * Throw exception if {@param field} name is repeated
    */
+  private void checkRepeatColumnName(StructField field, String parentName) {
+    checkRepeatColumnName(
+        new StructField(parentName + "." + field.getFieldName(), field.getDataType(),
+            field.getChildren()));
+  }
+
   private void checkRepeatColumnName(StructField field) {
     for (ColumnSchema column : sortColumns) {
       if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
@@ -234,9 +246,10 @@ public class TableSchemaBuilder {
     }
   }
 
-  private List<Encoding> createEncoding(DataType dataType, boolean isSortColumn) {
+  private List<Encoding> createEncoding(DataType dataType, boolean isSortColumn,
+      boolean isComplexChild) {
     List<Encoding> encodings = new LinkedList<>();
-    if (dataType == DataTypes.TIMESTAMP || dataType == DataTypes.DATE) {
+    if (dataType == DataTypes.DATE && !isComplexChild) {
       encodings.add(Encoding.DIRECT_DICTIONARY);
       encodings.add(Encoding.DICTIONARY);
     }

@@ -27,6 +27,7 @@ import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.processing.loading.complexobjects.StructObject;
+import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 
 /**
  * Struct DataType stateless object used in data loading
@@ -150,22 +151,22 @@ public class StructDataType implements GenericDataType<StructObject> {
     return true;
   }
 
-  @Override public void writeByteArray(StructObject input, DataOutputStream dataOutputStream)
-      throws IOException, DictionaryGenerationException {
+  @Override public void writeByteArray(StructObject input, DataOutputStream dataOutputStream,
+      BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
     dataOutputStream.writeInt(children.size());
     if (input == null) {
       for (int i = 0; i < children.size(); i++) {
-        children.get(i).writeByteArray(null, dataOutputStream);
+        children.get(i).writeByteArray(null, dataOutputStream, logHolder);
       }
     } else {
       Object[] data = input.getData();
       for (int i = 0; i < data.length && i < children.size(); i++) {
-        children.get(i).writeByteArray(data[i], dataOutputStream);
+        children.get(i).writeByteArray(data[i], dataOutputStream, logHolder);
       }
 
       // For other children elements which dont have data, write empty
       for (int i = data.length; i < children.size(); i++) {
-        children.get(i).writeByteArray(null, dataOutputStream);
+        children.get(i).writeByteArray(null, dataOutputStream, logHolder);
       }
     }
   }
