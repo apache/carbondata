@@ -735,7 +735,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     val json = """ {"name":"bob", "age":10, "address" : {"street":"abc", "city":"bang"}} """
 
-
     val fields = new Array[Field](3)
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
@@ -902,9 +901,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         |{"street":"ghi","city":"city3"},
         |{"street":"jkl","city":"city4"}]} """.stripMargin
 
-
-
-
     val fields = new Array[Field](3)
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
@@ -988,20 +984,16 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
                  |	}
                  |} """.stripMargin
 
-
-
-
-
     val fields = new Array[Field](3)
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
 
-    val fld1 = new util.ArrayList[StructField]
-    fld1.add(new StructField("eachDoorNum", DataTypes.INT))
-
     val fld2 = new util.ArrayList[StructField]
     fld2.add(new StructField("street", DataTypes.STRING))
     fld2.add(new StructField("city", DataTypes.STRING))
+
+    val fld1 = new util.ArrayList[StructField]
+    fld1.add(new StructField("eachDoorNum", DataTypes.INT))
     fld2.add(new StructField("doorNum", DataTypes.createArrayType(DataTypes.INT), fld1))
 
     fields(2) = new Field("address","struct",fld2)
@@ -1050,7 +1042,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(writerPath).exists())
+    assert(new File(writerPath).listFiles().length > 0)
+    cleanTestData()
   }
 
   test("Read sdk writer Avro output with both Array and Struct Type") {
@@ -1077,6 +1070,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("bob", 10, Row("abc","bang"), mutable.WrappedArray.newBuilder[Int].+=(1,2,3,4))))
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
+    cleanTestData()
   }
 
 
@@ -1102,6 +1096,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
+    cleanTestData()
   }
 
 
@@ -1128,6 +1123,497 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
+    cleanTestData()
   }
+
+  // test multi level -- 3 levels [array of struct of array of int]
+  def buildAvroTestDataMultiLevel3(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema = """ {
+                     |	"name": "address",
+                     |	"type": "record",
+                     |	"fields": [
+                     |		{
+                     |			"name": "name",
+                     |			"type": "string"
+                     |		},
+                     |		{
+                     |			"name": "age",
+                     |			"type": "int"
+                     |		},
+                     |		{
+                     |			"name": "doorNum",
+                     |			"type": {
+                     |				"type": "array",
+                     |				"items": {
+                     |					"type": "record",
+                     |					"name": "my_address",
+                     |					"fields": [
+                     |						{
+                     |							"name": "street",
+                     |							"type": "string"
+                     |						},
+                     |						{
+                     |							"name": "city",
+                     |							"type": "string"
+                     |						},
+                     |						{
+                     |							"name": "FloorNum",
+                     |							"type": {
+                     |								"type": "array",
+                     |								"items": {
+                     |									"name": "floor",
+                     |									"type": "int"
+                     |								}
+                     |							}
+                     |						}
+                     |					]
+                     |				}
+                     |			}
+                     |		}
+                     |	]
+                     |} """.stripMargin
+    val json =
+      """ {
+        |	"name": "bob",
+        |	"age": 10,
+        |	"doorNum": [
+        |		{
+        |			"street": "abc",
+        |			"city": "city1",
+        |			"FloorNum": [0,1,2]
+        |		},
+        |		{
+        |			"street": "def",
+        |			"city": "city2",
+        |			"FloorNum": [3,4,5]
+        |		},
+        |		{
+        |			"street": "ghi",
+        |			"city": "city3",
+        |			"FloorNum": [6,7,8]
+        |		},
+        |		{
+        |			"street": "jkl",
+        |			"city": "city4",
+        |			"FloorNum": [9,10,11]
+        |		}
+        |	]
+        |} """.stripMargin
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("street", DataTypes.STRING))
+    fld.add(new StructField("city", DataTypes.STRING))
+    fld.add(new StructField("FloorNum", DataTypes.createArrayType(DataTypes.INT)))
+
+    val fld2 = new util.ArrayList[StructField]
+    fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
+    fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
+
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  def buildAvroTestDataMultiLevel3Type(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataMultiLevel3(3, null)
+  }
+
+  // test multi level -- 3 levels [array of struct of array of int]
+  test("test multi level support : array of struct of array of int") {
+    buildAvroTestDataMultiLevel3Type()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("select * from sdkOutputTable").show(false)
+
+    // TODO: Add a validation
+    /*
+    +----+---+-----------------------------------------------------------------------------------+
+    |name|age|doorNum
+                                                               |
+    +----+---+-----------------------------------------------------------------------------------+
+    |bob |10 |[[abc,city1,WrappedArray(0, 1, 2)], [def,city2,WrappedArray(3, 4, 5)], [ghi,city3,
+    WrappedArray(6, 7, 8)], [jkl,city4,WrappedArray(9, 10, 11)]]|
+    |bob |10 |[[abc,city1,WrappedArray(0, 1, 2)], [def,city2,WrappedArray(3, 4, 5)], [ghi,city3,
+    WrappedArray(6, 7, 8)], [jkl,city4,WrappedArray(9, 10, 11)]]|
+    |bob |10 |[[abc,city1,WrappedArray(0, 1, 2)], [def,city2,WrappedArray(3, 4, 5)], [ghi,city3,
+    WrappedArray(6, 7, 8)], [jkl,city4,WrappedArray(9, 10, 11)]]|
+    +----+---+-----------------------------------------------------------------------------------+*/
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    cleanTestData()
+  }
+
+
+  // test multi level -- 3 levels [array of struct of struct of string, int]
+  def buildAvroTestDataMultiLevel3_1(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema = """ {
+                     |	"name": "address",
+                     |	"type": "record",
+                     |	"fields": [
+                     |		{
+                     |			"name": "name",
+                     |			"type": "string"
+                     |		},
+                     |		{
+                     |			"name": "age",
+                     |			"type": "int"
+                     |		},
+                     |		{
+                     |			"name": "doorNum",
+                     |			"type": {
+                     |				"type": "array",
+                     |				"items": {
+                     |					"type": "record",
+                     |					"name": "my_address",
+                     |					"fields": [
+                     |						{
+                     |							"name": "street",
+                     |							"type": "string"
+                     |						},
+                     |						{
+                     |							"name": "city",
+                     |							"type": "string"
+                     |						},
+                     |						{
+                     |							"name": "FloorNum",
+                     |                			"type": {
+                     |                				"type": "record",
+                     |                				"name": "Floor",
+                     |                				"fields": [
+                     |                					{
+                     |                						"name": "wing",
+                     |                						"type": "string"
+                     |                					},
+                     |                					{
+                     |                						"name": "number",
+                     |                						"type": "int"
+                     |                					}
+                     |                				]
+                     |                			}
+                     |						}
+                     |					]
+                     |				}
+                     |			}
+                     |		}
+                     |	]
+                     |} """.stripMargin
+
+
+    val json =
+      """  {
+        |	"name": "bob",
+        |	"age": 10,
+        |	"doorNum": [
+        |		{
+        |			"street": "abc",
+        |			"city": "city1",
+        |			"FloorNum": {"wing" : "a", "number" : 1}
+        |		},
+        |		{
+        |			"street": "def",
+        |			"city": "city2",
+        |			"FloorNum": {"wing" : "b", "number" : 0}
+        |		},
+        |		{
+        |			"street": "ghi",
+        |			"city": "city3",
+        |			"FloorNum": {"wing" : "a", "number" : 2}
+        |		}
+        |	]
+        |}  """.stripMargin
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("street", DataTypes.STRING))
+    fld.add(new StructField("city", DataTypes.STRING))
+
+    val subFld = new util.ArrayList[StructField]
+    subFld.add(new StructField("wing", DataTypes.STRING))
+    subFld.add(new StructField("number", DataTypes.INT))
+    fld.add(new StructField("FloorNum", DataTypes.createStructType(subFld)))
+
+    // array of struct of struct
+    val fld2 = new util.ArrayList[StructField]
+    fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
+    fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
+
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  def buildAvroTestDataMultiLevel3_1Type(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataMultiLevel3_1(3, null)
+  }
+
+  // test multi level -- 3 levels [array of struct of struct of string, int]
+  test("test multi level support : array of struct of struct") {
+    buildAvroTestDataMultiLevel3_1Type()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("select * from sdkOutputTable").show(false)
+
+    // TODO: Add a validation
+    /*
+    +----+---+---------------------------------------------------------+
+    |name|age|doorNum                                                  |
+    +----+---+---------------------------------------------------------+
+    |bob |10 |[[abc,city1,[a,1]], [def,city2,[b,0]], [ghi,city3,[a,2]]]|
+    |bob |10 |[[abc,city1,[a,1]], [def,city2,[b,0]], [ghi,city3,[a,2]]]|
+    |bob |10 |[[abc,city1,[a,1]], [def,city2,[b,0]], [ghi,city3,[a,2]]]|
+    +----+---+---------------------------------------------------------+
+    */
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    cleanTestData()
+  }
+
+  // test multi level -- 3 levels [array of array of array of int]
+  def buildAvroTestDataMultiLevel3_2(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema = """ {
+                     |	"name": "address",
+                     |	"type": "record",
+                     |	"fields": [
+                     |		{
+                     |			"name": "name",
+                     |			"type": "string"
+                     |		},
+                     |		{
+                     |			"name": "age",
+                     |			"type": "int"
+                     |		},
+                     |		{
+                     |			"name": "BuildNum",
+                     |			"type": {
+                     |				"type": "array",
+                     |				"items": {
+                     |					"name": "FloorNum",
+                     |					"type": "array",
+                     |					"items": {
+                     |						"name": "doorNum",
+                     |						"type": "array",
+                     |						"items": {
+                     |							"name": "EachdoorNums",
+                     |							"type": "int",
+                     |							"default": -1
+                     |						}
+                     |					}
+                     |				}
+                     |			}
+                     |		}
+                     |	]
+                     |} """.stripMargin
+
+    val json =
+      """   {
+        |        	"name": "bob",
+        |        	"age": 10,
+        |        	"BuildNum": [[[1,2,3],[4,5,6]],[[10,20,30],[40,50,60]]]
+        |        }   """.stripMargin
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+
+    val subFld = new util.ArrayList[StructField]
+    subFld.add(new StructField("EachDoorNum", DataTypes.INT))
+
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("DoorNum", DataTypes.createArrayType(DataTypes.INT), subFld))
+    // array of struct of struct
+    val doorNum = new util.ArrayList[StructField]
+    doorNum.add(new StructField("FloorNum",
+      DataTypes.createArrayType(DataTypes.createArrayType(DataTypes.INT)), fld))
+    fields(2) = new Field("BuildNum", "array", doorNum)
+
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  def buildAvroTestDataMultiLevel3_2Type(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataMultiLevel3_2(3, null)
+  }
+
+  // test multi level -- 3 levels [array of array of array of int]
+  test("test multi level support : array of array of array of int") {
+    buildAvroTestDataMultiLevel3_2Type()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("select * from sdkOutputTable").show(false)
+
+    // TODO: Add a validation
+    /*
+    +----+---+---------------------------------------------------------------------------+
+    |name|age|BuildNum
+                                               |
+    +----+---+---------------------------------------------------------------------------+
+    |bob |10 |[WrappedArray(WrappedArray(1, 2, 3), WrappedArray(4, 5, 6)), WrappedArray
+    (WrappedArray(10, 20, 30), WrappedArray(40, 50, 60))]|
+    |bob |10 |[WrappedArray(WrappedArray(1, 2, 3), WrappedArray(4, 5, 6)), WrappedArray
+    (WrappedArray(10, 20, 30), WrappedArray(40, 50, 60))]|
+    |bob |10 |[WrappedArray(WrappedArray(1, 2, 3), WrappedArray(4, 5, 6)), WrappedArray
+    (WrappedArray(10, 20, 30), WrappedArray(40, 50, 60))]|
+    +----+---+---------------------------------------------------------------------------+
+   */
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    cleanTestData()
+  }
+
+
+
+  // test multi level -- 4 levels [array of array of array of struct]
+  def buildAvroTestDataMultiLevel4(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema =  """ {
+                      |	"name": "address",
+                      |	"type": "record",
+                      |	"fields": [
+                      |		{
+                      |			"name": "name",
+                      |			"type": "string"
+                      |		},
+                      |		{
+                      |			"name": "age",
+                      |			"type": "int"
+                      |		},
+                      |		{
+                      |			"name": "BuildNum",
+                      |			"type": {
+                      |				"type": "array",
+                      |				"items": {
+                      |					"name": "FloorNum",
+                      |					"type": "array",
+                      |					"items": {
+                      |						"name": "doorNum",
+                      |						"type": "array",
+                      |						"items": {
+                      |							"name": "my_address",
+                      |							"type": "record",
+                      |							"fields": [
+                      |								{
+                      |									"name": "street",
+                      |									"type": "string"
+                      |								},
+                      |								{
+                      |									"name": "city",
+                      |									"type": "string"
+                      |								}
+                      |							]
+                      |						}
+                      |					}
+                      |				}
+                      |			}
+                      |		}
+                      |	]
+                      |} """.stripMargin
+
+    val json =
+      """ {
+        |	"name": "bob",
+        |	"age": 10,
+        |	"BuildNum": [
+        |		[
+        |			[
+        |				{"street":"abc", "city":"city1"},
+        |				{"street":"def", "city":"city2"},
+        |				{"street":"cfg", "city":"city3"}
+        |			],
+        |			[
+        |				 {"street":"abc1", "city":"city3"},
+        |				 {"street":"def1", "city":"city4"},
+        |				 {"street":"cfg1", "city":"city5"}
+        |			]
+        |		],
+        |		[
+        |			[
+        |				 {"street":"abc2", "city":"cityx"},
+        |				 {"street":"abc3", "city":"cityy"},
+        |				 {"street":"abc4", "city":"cityz"}
+        |			],
+        |			[
+        |				 {"street":"a1bc", "city":"cityA"},
+        |				 {"street":"a1bc", "city":"cityB"},
+        |				 {"street":"a1bc", "city":"cityc"}
+        |			]
+        |		]
+        |	]
+        |} """.stripMargin
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+
+    val subFld = new util.ArrayList[StructField]
+    subFld.add(new StructField("EachDoorNum", DataTypes.INT))
+
+    val address = new util.ArrayList[StructField]
+    address.add(new StructField("street", DataTypes.STRING))
+    address.add(new StructField("city", DataTypes.STRING))
+
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("DoorNum",
+        DataTypes.createArrayType(DataTypes.createStructType(address)),
+        subFld))
+    // array of struct of struct
+    val doorNum = new util.ArrayList[StructField]
+    doorNum.add(new StructField("FloorNum",
+      DataTypes.createArrayType(
+        DataTypes.createArrayType(DataTypes.createStructType(address))), fld))
+    fields(2) = new Field("BuildNum", "array", doorNum)
+
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  def buildAvroTestDataMultiLevel4Type(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataMultiLevel4(3, null)
+  }
+
+  // test multi level -- 4 levels [array of array of array of struct]
+  test("test multi level support : array of array of array of struct") {
+    buildAvroTestDataMultiLevel4Type()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("select * from sdkOutputTable").show(false)
+
+    // TODO: Add a validation
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    cleanTestData()
+  }
+
 
 }

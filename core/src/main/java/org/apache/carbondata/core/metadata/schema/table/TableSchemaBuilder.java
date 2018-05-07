@@ -200,7 +200,7 @@ public class TableSchemaBuilder {
   }
 
   private String getColNameForArray(String parentFieldName) {
-    if (!parentFieldName.contains(".val")) {
+    if (!parentFieldName.endsWith(".val")) {
       return "val";
     } else {
       String[] splits = parentFieldName.split("val");
