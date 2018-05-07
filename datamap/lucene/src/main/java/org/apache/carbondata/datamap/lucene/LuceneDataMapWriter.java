@@ -17,8 +17,7 @@
 
 package org.apache.carbondata.datamap.lucene;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -33,8 +32,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
-import org.apache.carbondata.core.datastore.compression.Compressor;
-import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -61,7 +58,9 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.RAMDirectory;
 import org.apache.solr.store.hdfs.HdfsDirectory;
+import org.roaringbitmap.IntIterator;
 import org.roaringbitmap.RoaringBitmap;
 
 /**
@@ -91,30 +90,61 @@ import org.roaringbitmap.RoaringBitmap;
 
   public static final String ROWID_NAME = "rowId";
 
-  private Map<LuceneColumns, Map<Integer, RoaringBitmap>> map = new HashMap<>();
-
-  private Compressor compressor = CompressorFactory.getInstance().getCompressor();
+  private Map<LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache = new HashMap<>();
 
   private int cacheSize;
 
   private ByteBuffer intBuffer = ByteBuffer.allocate(4);
 
+  private boolean storeBlockletWise;
 
   LuceneDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, boolean isFineGrain, int flushSize) {
+      Segment segment, String shardName, boolean isFineGrain, int flushSize,
+      boolean storeBlockletWise) {
     super(tablePath, dataMapName, indexColumns, segment, shardName);
     this.isFineGrain = isFineGrain;
     this.cacheSize = flushSize;
+    this.storeBlockletWise = storeBlockletWise;
   }
 
   /**
    * Start of new block notification.
    */
   public void onBlockStart(String blockId) throws IOException {
+
+  }
+
+  /**
+   * End of block notification
+   */
+  public void onBlockEnd(String blockId) throws IOException {
+
+  }
+
+  private RAMDirectory ramDir;
+  private IndexWriter ramIndexWriter;
+
+  /**
+   * Start of new blocklet notification.
+   */
+  public void onBlockletStart(int blockletId) throws IOException {
+    if (null == analyzer) {
+      analyzer = new StandardAnalyzer();
+    }
+    // save index data into ram, write into disk after one page finished
+    ramDir = new RAMDirectory();
+    ramIndexWriter = new IndexWriter(ramDir, new IndexWriterConfig(analyzer));
+
     if (indexWriter != null) {
       return;
     }
     // get index path, put index data into segment's path
+    String dataMapPath;
+    if (storeBlockletWise) {
+      dataMapPath = this.dataMapPath + File.separator + blockletId;
+    } else {
+      dataMapPath = this.dataMapPath;
+    }
     Path indexPath = FileFactory.getPath(dataMapPath);
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 
@@ -123,10 +153,6 @@ import org.roaringbitmap.RoaringBitmap;
       if (!fs.mkdirs(indexPath)) {
         throw new IOException("Failed to create directory " + dataMapPath);
       }
-    }
-
-    if (null == analyzer) {
-      analyzer = new StandardAnalyzer();
     }
 
     // the indexWriter closes the FileSystem on closing the writer, so for a new configuration
@@ -152,21 +178,23 @@ import org.roaringbitmap.RoaringBitmap;
   }
 
   /**
-   * End of block notification
-   */
-  public void onBlockEnd(String blockId) throws IOException {
-  }
-
-  /**
-   * Start of new blocklet notification.
-   */
-  public void onBlockletStart(int blockletId) throws IOException {
-  }
-
-  /**
    * End of blocklet notification
    */
   public void onBlockletEnd(int blockletId) throws IOException {
+    // close ram writer
+    ramIndexWriter.close();
+
+    // add ram index data into disk
+    indexWriter.addIndexes(ramDir);
+
+    // delete this ram data
+    ramDir.close();
+
+    if (storeBlockletWise) {
+      flushCache(cache, getIndexColumns(), indexWriter, storeBlockletWise);
+      indexWriter.close();
+      indexWriter = null;
+    }
   }
 
   /**
@@ -185,19 +213,26 @@ import org.roaringbitmap.RoaringBitmap;
     }
     for (int rowId = 0; rowId < pageSize; rowId++) {
       // add indexed columns value into the document
-      LuceneColumns columns = new LuceneColumns(getIndexColumns().size());
+      LuceneColumnKeys columns = new LuceneColumnKeys(getIndexColumns().size());
       int i = 0;
       for (ColumnPage page : pages) {
         if (!page.getNullBits().get(rowId)) {
-          columns.keys[i++] = getValue(page, rowId);
+          columns.colValues[i++] = getValue(page, rowId);
         }
-        addToCache(columns, rowId, pageId, blockletId);
       }
+      if (cacheSize > 0) {
+        addToCache(columns, rowId, pageId, blockletId, cache, intBuffer, storeBlockletWise);
+      } else {
+        addData(columns, rowId, pageId, blockletId, intBuffer, ramIndexWriter, getIndexColumns(),
+            storeBlockletWise);
+      }
+    }
+    if (cacheSize > 0) {
       flushCacheIfCan();
     }
   }
 
-  private boolean addField(Document doc, Object key, String fieldName, Field.Store store) {
+  private static boolean addField(Document doc, Object key, String fieldName, Field.Store store) {
     //get field name
     if (key instanceof Byte) {
       // byte type , use int range to deal with byte, lucene has no byte type
@@ -309,17 +344,24 @@ import org.roaringbitmap.RoaringBitmap;
     return value;
   }
 
-  private void addToCache(LuceneColumns key, int rowId, int pageId, int blockletId) {
-    Map<Integer, RoaringBitmap> setMap = map.get(key);
+  public static void addToCache(LuceneColumnKeys key, int rowId, int pageId, int blockletId,
+      Map<LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache, ByteBuffer intBuffer,
+      boolean storeBlockletWise) {
+    Map<Integer, RoaringBitmap> setMap = cache.get(key);
     if (setMap == null) {
       setMap = new HashMap<>();
-      map.put(key, setMap);
+      cache.put(key, setMap);
     }
-    intBuffer.clear();
-    intBuffer.putShort((short) blockletId);
-    intBuffer.putShort((short) pageId);
-    intBuffer.rewind();
-    int combinKey = intBuffer.getInt();
+    int combinKey;
+    if (!storeBlockletWise) {
+      intBuffer.clear();
+      intBuffer.putShort((short) blockletId);
+      intBuffer.putShort((short) pageId);
+      intBuffer.rewind();
+      combinKey = intBuffer.getInt();
+    } else {
+      combinKey = pageId;
+    }
     RoaringBitmap bitSet = setMap.get(combinKey);
     if (bitSet == null) {
       bitSet = new RoaringBitmap();
@@ -328,34 +370,68 @@ import org.roaringbitmap.RoaringBitmap;
     bitSet.add(rowId);
   }
 
+  public static void addData(LuceneColumnKeys key, int rowId, int pageId, int blockletId,
+      ByteBuffer intBuffer, IndexWriter indexWriter, List<CarbonColumn> indexCols,
+      boolean storeBlockletWise) throws IOException {
+
+    Document document = new Document();
+    for (int i = 0; i < key.getColValues().length; i++) {
+      addField(document, key.getColValues()[i], indexCols.get(i).getColName(), Field.Store.NO);
+    }
+    intBuffer.clear();
+    if (storeBlockletWise) {
+      // No need to store blocklet id to it.
+      intBuffer.putShort((short) pageId);
+      intBuffer.putShort((short) rowId);
+      intBuffer.rewind();
+      document.add(new StoredField(ROWID_NAME, intBuffer.getInt()));
+    } else {
+      intBuffer.putShort((short) blockletId);
+      intBuffer.putShort((short) pageId);
+      intBuffer.rewind();
+      document.add(new StoredField(PAGEID_NAME, intBuffer.getInt()));
+      document.add(new StoredField(ROWID_NAME, (short) rowId));
+    }
+    indexWriter.addDocument(document);
+  }
+
   private void flushCacheIfCan() throws IOException {
-    if (map.size() > cacheSize) {
-      flushCache();
+    if (cache.size() > cacheSize) {
+      flushCache(cache, getIndexColumns(), indexWriter, storeBlockletWise);
     }
   }
 
-  private void flushCache() throws IOException {
-    for (Map.Entry<LuceneColumns, Map<Integer, RoaringBitmap>> entry : map.entrySet()) {
+  public static void flushCache(Map<LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache,
+      List<CarbonColumn> indexCols, IndexWriter indexWriter, boolean storeBlockletWise)
+      throws IOException {
+    for (Map.Entry<LuceneColumnKeys, Map<Integer, RoaringBitmap>> entry : cache.entrySet()) {
       Document document = new Document();
-      LuceneColumns key = entry.getKey();
-      for (int i = 0; i < key.getKeys().length; i++) {
-        addField(document, key.getKeys()[i], getIndexColumns().get(i).getColName(),
-            Field.Store.NO);
+      LuceneColumnKeys key = entry.getKey();
+      for (int i = 0; i < key.getColValues().length; i++) {
+        addField(document, key.getColValues()[i], indexCols.get(i).getColName(), Field.Store.NO);
       }
       Map<Integer, RoaringBitmap> value = entry.getValue();
-      ByteArrayOutputStream stream = new ByteArrayOutputStream();
-      DataOutputStream outputStream = new DataOutputStream(stream);
-      outputStream.writeInt(value.size());
+      int count = 0;
       for (Map.Entry<Integer, RoaringBitmap> pageData : value.entrySet()) {
-        outputStream.writeInt(pageData.getKey());
-        pageData.getValue().serialize(outputStream);
+        RoaringBitmap bitMap = pageData.getValue();
+        int cardinality = bitMap.getCardinality();
+        // Each row is short and pageid is stored in int
+        ByteBuffer byteBuffer = ByteBuffer.allocate(cardinality * 2 + 4);
+        if (!storeBlockletWise) {
+          byteBuffer.putInt(pageData.getKey());
+        } else {
+          byteBuffer.putShort(pageData.getKey().shortValue());
+        }
+        IntIterator intIterator = bitMap.getIntIterator();
+        while (intIterator.hasNext()) {
+          byteBuffer.putShort((short) intIterator.next());
+        }
+        document.add(new StoredField(PAGEID_NAME + count, byteBuffer.array()));
+        count++;
       }
-      outputStream.close();
-      document.add(new StoredField(PAGEID_NAME, compressor.compressByte(stream.toByteArray())));
-
       indexWriter.addDocument(document);
     }
-    map.clear();
+    cache.clear();
   }
 
   /**
@@ -363,34 +439,34 @@ import org.roaringbitmap.RoaringBitmap;
    * class.
    */
   public void finish() throws IOException {
-    flushCache();
+    flushCache(cache, getIndexColumns(), indexWriter, storeBlockletWise);
     // finished a file , close this index writer
     if (indexWriter != null) {
       indexWriter.close();
     }
   }
 
-  private static class LuceneColumns {
+  public static class LuceneColumnKeys {
 
-    private Object[] keys;
+    private Object[] colValues;
 
-    public LuceneColumns(int size) {
-      keys = new Object[size];
+    public LuceneColumnKeys(int size) {
+      colValues = new Object[size];
     }
 
-    public Object[] getKeys() {
-      return keys;
+    public Object[] getColValues() {
+      return colValues;
     }
 
     @Override public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
-      LuceneColumns that = (LuceneColumns) o;
-      return Arrays.equals(keys, that.keys);
+      LuceneColumnKeys that = (LuceneColumnKeys) o;
+      return Arrays.equals(colValues, that.colValues);
     }
 
     @Override public int hashCode() {
-      return Arrays.hashCode(keys);
+      return Arrays.hashCode(colValues);
     }
   }
 }

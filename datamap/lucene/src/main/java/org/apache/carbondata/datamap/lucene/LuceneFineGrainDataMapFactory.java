@@ -50,7 +50,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
    */
   @Override public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();
-    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer);
+    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
     try {
       dataMap.init(new DataMapModel(
           DataMapWriter.getDefaultDataMapPath(
@@ -70,7 +70,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
   public List<FineGrainDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();
-    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer);
+    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
     String indexPath = ((LuceneDataMapDistributable) distributable).getIndexPath();
     try {
       dataMap.init(new DataMapModel(indexPath));
