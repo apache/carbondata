@@ -50,6 +50,7 @@ public class BloomDataMapWriter extends DataMapWriter {
   private static final LogService LOG = LogServiceFactory.getLogService(
       BloomDataMapWriter.class.getCanonicalName());
   private int bloomFilterSize;
+  private double bloomFilterFpp;
   protected int currentBlockletId;
   private List<String> currentDMFiles;
   private List<DataOutputStream> currentDataOutStreams;
@@ -57,9 +58,11 @@ public class BloomDataMapWriter extends DataMapWriter {
   protected List<BloomFilter<byte[]>> indexBloomFilters;
 
   BloomDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, int bloomFilterSize) throws IOException {
+      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp)
+      throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName);
     this.bloomFilterSize = bloomFilterSize;
+    this.bloomFilterFpp = bloomFilterFpp;
 
     currentDMFiles = new ArrayList<String>(indexColumns.size());
     currentDataOutStreams = new ArrayList<DataOutputStream>(indexColumns.size());
@@ -86,7 +89,7 @@ public class BloomDataMapWriter extends DataMapWriter {
     List<CarbonColumn> indexColumns = getIndexColumns();
     for (int i = 0; i < indexColumns.size(); i++) {
       indexBloomFilters.add(BloomFilter.create(Funnels.byteArrayFunnel(),
-          bloomFilterSize, 0.00001d));
+          bloomFilterSize, bloomFilterFpp));
     }
   }
 
