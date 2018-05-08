@@ -525,6 +525,49 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
     sql("drop table if exists updatetime_8")
   }
 
+  test("Test data updation after compaction on Partition with Pre-Aggregate tables") {
+    sql("drop table if exists partitionallcompaction")
+    sql(
+      "create table partitionallcompaction(empno int,empname String,designation String," +
+      "workgroupcategory int,workgroupcategoryname String,deptno int,projectjoindate timestamp," +
+      "projectenddate date,attendance int,utilization int,salary int) partitioned by (deptname " +
+      "String,doj timestamp,projectcode int) stored  by 'carbondata' tblproperties" +
+      "('sort_scope'='global_sort')")
+    sql(
+      "create datamap sensor_1 on table partitionallcompaction using 'preaggregate' as select " +
+      "sum(salary),doj, deptname,projectcode from partitionallcompaction group by doj," +
+      "deptname,projectcode")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='Learning', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"') """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='configManagement', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='network', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='protocol', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='security', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql("ALTER TABLE partitionallcompaction COMPACT 'MINOR'").collect()
+    checkAnswer(sql("select count(empno) from partitionallcompaction where empno=14"),
+      Seq(Row(5)))
+  }
+
   test("Test data updation in Aggregate query after compaction on Partitioned table with Pre-Aggregate table") {
     sql("drop table if exists updatetime_8")
     sql("create table updatetime_8" +
