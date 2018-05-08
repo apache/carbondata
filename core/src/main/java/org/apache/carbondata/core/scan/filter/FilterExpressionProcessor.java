@@ -78,10 +78,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return a filter resolver tree
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
+      AbsoluteTableIdentifier tableIdentifier)
       throws FilterUnsupportedException, IOException {
     if (null != expressionTree && null != tableIdentifier) {
-      return getFilterResolvertree(expressionTree, tableIdentifier, tableProvider);
+      return getFilterResolvertree(expressionTree, tableIdentifier);
     }
     return null;
   }
@@ -225,11 +225,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return FilterResolverIntf type.
    */
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
+      AbsoluteTableIdentifier tableIdentifier)
       throws FilterUnsupportedException, IOException {
     FilterResolverIntf filterEvaluatorTree =
         createFilterResolverTree(expressionTree, tableIdentifier);
-    traverseAndResolveTree(filterEvaluatorTree, tableIdentifier, tableProvider);
+    traverseAndResolveTree(filterEvaluatorTree, tableIdentifier);
     return filterEvaluatorTree;
   }
 
@@ -243,14 +243,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param tableIdentifier
    */
   private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
-      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
+      AbsoluteTableIdentifier tableIdentifier)
       throws FilterUnsupportedException, IOException {
     if (null == filterResolverTree) {
       return;
     }
-    traverseAndResolveTree(filterResolverTree.getLeft(), tableIdentifier, tableProvider);
-    filterResolverTree.resolve(tableIdentifier, tableProvider);
-    traverseAndResolveTree(filterResolverTree.getRight(), tableIdentifier, tableProvider);
+    traverseAndResolveTree(filterResolverTree.getLeft(), tableIdentifier);
+    filterResolverTree.resolve(tableIdentifier);
+    traverseAndResolveTree(filterResolverTree.getRight(), tableIdentifier);
   }
 
   /**

@@ -39,8 +39,6 @@ import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.SingleTableProvider;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
@@ -125,12 +123,11 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath());
       }
       Expression filter = getFilterPredicates(job.getConfiguration());
-      TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // this will be null in case of corrupt schema file.
       PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
       carbonTable.processFilterExpression(filter, null, null);
 
-      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter, tableProvider);
+      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter);
 
       String segmentDir = null;
       if (carbonTable.isTransactionalTable()) {
