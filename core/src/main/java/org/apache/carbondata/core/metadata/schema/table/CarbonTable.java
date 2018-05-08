@@ -49,7 +49,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -916,12 +915,11 @@ public class CarbonTable implements Serializable {
   /**
    * Resolve the filter expression.
    */
-  public FilterResolverIntf resolveFilter(Expression filterExpression,
-      TableProvider tableProvider) {
+  public FilterResolverIntf resolveFilter(Expression filterExpression) {
     try {
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
       return filterExpressionProcessor.getFilterResolver(
-          filterExpression, getAbsoluteTableIdentifier(), tableProvider);
+          filterExpression, getAbsoluteTableIdentifier());
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }

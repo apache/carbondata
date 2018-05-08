@@ -24,7 +24,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.SingleTableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
@@ -113,8 +112,7 @@ public class QueryModelBuilder {
     table.processFilterExpression(filterExpression, isFilterDimensions, isFilterMeasures);
     queryModel.setIsFilterDimensions(isFilterDimensions);
     queryModel.setIsFilterMeasures(isFilterMeasures);
-    FilterResolverIntf filterIntf =
-        table.resolveFilter(filterExpression, new SingleTableProvider(table));
+    FilterResolverIntf filterIntf = table.resolveFilter(filterExpression);
     queryModel.setFilterExpressionResolverTree(filterIntf);
     return queryModel;
   }

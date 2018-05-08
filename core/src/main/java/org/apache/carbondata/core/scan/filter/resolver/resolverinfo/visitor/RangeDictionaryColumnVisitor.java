@@ -48,8 +48,7 @@ public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor
       ColumnFilterInfo resolvedFilterObject = null;
       resolvedFilterObject = FilterUtil
           .getFilterListForAllValues(metadata.getTableIdentifier(), metadata.getExpression(),
-              metadata.getColumnExpression(), metadata.isIncludeFilter(),
-              metadata.getTableProvider(), true);
+              metadata.getColumnExpression(), metadata.isIncludeFilter(), true);
 
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
         // Adding default surrogate key of null member inorder to not display the same while
