@@ -257,7 +257,7 @@ public class CSVCarbonWriterTest {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .withSchema(new Schema(fields))
-          .isTransactionalTable(true).taskNo("5")
+          .isTransactionalTable(true).taskNo(5)
           .outputPath(path);
 
       CarbonWriter writer = builder.buildWriterForCSVInput();
