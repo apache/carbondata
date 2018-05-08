@@ -19,8 +19,10 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.sql.Timestamp
 import java.io.{File, FileFilter, IOException}
-import java.io.{File, FileFilter}
 import java.util
+import java.util.concurrent.TimeUnit
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
@@ -35,6 +37,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 
 import org.apache.avro
 import org.apache.commons.lang.CharEncoding
@@ -261,6 +265,43 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
+  }
+
+  test("concurrently insert operation"){
+    cleanTestData()
+    buildTestDataSingleFile()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("drop table if exists t1")
+    sql("create table if not exists t1 (name string, age int, height double) STORED BY 'org.apache.carbondata.format'")
+    var i =0;
+    while (i<50){
+      sql (s"""insert into t1 values ("aaaaa", 12, 20)""").show(200,false)
+      i = i+1;
+    }
+    checkAnswer(sql("select count(*) from t1"),Seq(Row(50)))
+    val one = Future {
+      sql("insert into sdkOutputTable select * from t1 ")
+    }
+    val two = Future {
+      sql("insert into sdkOutputTable select * from t1 ")
+    }
+
+    Await.result(Future.sequence(Seq(one, two)), Duration(300, TimeUnit.SECONDS))
+
+    checkAnswer(sql("select count(*) from sdkOutputTable"),Seq(Row(103)))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
   }
 
   test(

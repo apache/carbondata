@@ -109,8 +109,8 @@ public class CarbonWriterBuilder {
    * by default it is system time in nano seconds.
    * @return updated CarbonWriterBuilder
    */
-  public CarbonWriterBuilder taskNo(String taskNo) {
-    this.taskNo = taskNo;
+  public CarbonWriterBuilder taskNo(long taskNo) {
+    this.taskNo = String.valueOf(taskNo);
     return this;
   }
 
