@@ -172,7 +172,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
    */
   private CarbonFile[] getAllIndexDirs(String tablePath, String segmentId) {
     List<CarbonFile> indexDirs = new ArrayList<>();
-    List<TableDataMap> dataMaps = new ArrayList<>();
+    List<TableDataMap> dataMaps;
     try {
       // there can be multiple bloom datamaps present on a table, so get all datamaps and form
       // the path till the index file directories in all datamaps folders present in each segment
@@ -212,7 +212,6 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
         continue;
       }
       DataMapDistributable bloomDataMapDistributable = new BloomDataMapDistributable(
-          CarbonTablePath.getSegmentPath(getCarbonTable().getTablePath(), segment.getSegmentNo()),
           indexDir.getAbsolutePath());
       dataMapDistributableList.add(bloomDataMapDistributable);
     }

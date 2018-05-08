@@ -22,9 +22,12 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 
 @InterfaceAudience.Internal
 class BloomDataMapDistributable extends DataMapDistributable {
+  /**
+   * parent folder of the bloomindex file
+   */
   private String indexPath;
 
-  BloomDataMapDistributable(String dataPath, String indexPath) {
+  BloomDataMapDistributable(String indexPath) {
     this.indexPath = indexPath;
   }
 
