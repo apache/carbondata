@@ -110,14 +110,13 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM datamap_main WHERE TEXT_MATCH('country:ch*')"),
       sql("select * from datamap_main where country like 'ch%'"))
     checkAnswer(sql(
-      "SELECT * FROM datamap_main WHERE TEXT_MATCH('country:ch*') AND TEXT_MATCH('name:aa*')"),
+      "SELECT * FROM datamap_main WHERE TEXT_MATCH('country:ch* AND name:aa*')"),
       sql("select * from datamap_main where country like 'ch%' and name like 'aa%'"))
     checkAnswer(sql(
-      "SELECT * FROM datamap_main WHERE TEXT_MATCH('country:u* or name:aa*')"),
+      "SELECT * FROM datamap_main WHERE TEXT_MATCH('country:u* OR name:aa*')"),
       sql("select * from datamap_main where country like 'u%'or name like 'aa%'"))
     checkAnswer(sql(
-      "SELECT * FROM datamap_main WHERE TEXT_MATCH('country:u*') OR TEXT_MATCH('name:aaa1*') AND " +
-      "TEXT_MATCH('name:aaa2*')"),
+      "SELECT * FROM datamap_main WHERE TEXT_MATCH('country:u* OR (name:aaa1* AND name:aaa2*)')"),
       sql(
         "select * from datamap_main where country like 'u%' OR name like 'aaa1%' AND name like " +
         "'aaa2%'"))

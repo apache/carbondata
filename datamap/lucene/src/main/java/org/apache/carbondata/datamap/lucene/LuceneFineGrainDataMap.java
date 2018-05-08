@@ -205,8 +205,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     queryParser.setAllowLeadingWildcard(true);
     Query query;
     try {
-      // always send lowercase string to lucene as it is case sensitive
-      query = queryParser.parse(strQuery.toLowerCase());
+      query = queryParser.parse(strQuery);
     } catch (ParseException e) {
       String errorMessage = String.format(
           "failed to filter block with query %s, detail is %s", strQuery, e.getMessage());

@@ -274,7 +274,6 @@ public class LuceneDataMapWriter extends DataMapWriter {
       }
     } else if (type == DataTypes.STRING) {
       byte[] value = (byte[]) data;
-      // TODO: how to get string value
       String strValue = null;
       try {
         strValue = new String(value, 2, value.length - 2, "UTF-8");
