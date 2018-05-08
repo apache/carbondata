@@ -22,26 +22,13 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 
 @InterfaceAudience.Internal
 class BloomDataMapDistributable extends DataMapDistributable {
-
-  // TODO: seems no one use this?
-  private String dataPath;
-
   private String indexPath;
 
   BloomDataMapDistributable(String dataPath, String indexPath) {
-    this.dataPath = dataPath;
     this.indexPath = indexPath;
-  }
-
-  public String getDataPath() {
-    return dataPath;
   }
 
   public String getIndexPath() {
     return indexPath;
-  }
-
-  public void setIndexPath(String indexPath) {
-    this.indexPath = indexPath;
   }
 }

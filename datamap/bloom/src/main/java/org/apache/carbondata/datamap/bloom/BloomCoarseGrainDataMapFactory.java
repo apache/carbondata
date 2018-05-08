@@ -161,12 +161,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<CoarseGrainDataMap> coarseGrainDataMaps = new ArrayList<>();
     BloomCoarseGrainDataMap bloomCoarseGrainDataMap = new BloomCoarseGrainDataMap();
     String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
-    try {
-      bloomCoarseGrainDataMap.init(new DataMapModel(indexPath));
-    } catch (IOException e) {
-      LOGGER.error(e, "Failed to get bloom datamap");
-      return coarseGrainDataMaps;
-    }
+    bloomCoarseGrainDataMap.init(new DataMapModel(indexPath));
     coarseGrainDataMaps.add(bloomCoarseGrainDataMap);
     return coarseGrainDataMaps;
   }
@@ -183,7 +178,9 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       // the path till the index file directories in all datamaps folders present in each segment
       dataMaps = DataMapStoreManager.getInstance().getAllDataMap(getCarbonTable());
     } catch (IOException ex) {
-      LOGGER.error("failed to get datamaps");
+      LOGGER.error(ex, String.format("failed to get datamaps for tablePath %s, segmentId %s",
+          tablePath, segmentId));
+      throw new RuntimeException(ex);
     }
     if (dataMaps.size() > 0) {
       for (TableDataMap dataMap : dataMaps) {
