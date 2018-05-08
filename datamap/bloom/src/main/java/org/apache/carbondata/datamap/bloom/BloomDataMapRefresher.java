@@ -36,8 +36,10 @@ import org.apache.carbondata.core.util.CarbonUtil;
 public class BloomDataMapRefresher extends BloomDataMapWriter implements DataMapRefresher {
 
   BloomDataMapRefresher(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, int bloomFilterSize) throws IOException {
-    super(tablePath, dataMapName, indexColumns, segment, shardName, bloomFilterSize);
+      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp)
+      throws IOException {
+    super(tablePath, dataMapName, indexColumns, segment, shardName,
+        bloomFilterSize, bloomFilterFpp);
   }
 
   @Override
