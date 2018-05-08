@@ -31,15 +31,13 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
+import org.apache.carbondata.sdk.file.{AvroCarbonWriter, CarbonWriter, Field, Schema}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.avro
 import org.apache.commons.lang.CharEncoding
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
-
-import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 
 class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
@@ -351,8 +349,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
-
-
   test("read non transactional table, files written from sdk Writer Output)") {
     buildTestDataSingleFile()
     assert(new File(writerPath).exists())
@@ -531,7 +527,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
-
   test("Read sdk writer output file without any file should fail") {
     buildTestDataSingleFile()
     deleteFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
@@ -685,11 +680,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   }
 
-
-  private def WriteFilesWithAvroWriter(rows: Int,
-      mySchema: String,
-      json: String,
-      fields: Array[Field]) = {
+  private def WriteFilesWithAvroWriter(rows: Int, mySchema: String, json: String): Unit = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
     val converter = new JsonAvroConverter
@@ -697,7 +688,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .convertToGenericDataRecord(json.getBytes(CharEncoding.UTF_8), nn)
 
     try {
-      val writer = CarbonWriter.builder.withSchema(new Schema(fields))
+      val writer = CarbonWriter.builder
+        .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
         .outputPath(writerPath).isTransactionalTable(false)
         .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput
       var i = 0
@@ -734,16 +726,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       """.stripMargin
 
     val json = """ {"name":"bob", "age":10, "address" : {"street":"abc", "city":"bang"}} """
-
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("street", DataTypes.STRING))
-    fld.add(new StructField("city", DataTypes.STRING))
-    fields(2) = new Field("address", "struct", fld)
-
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataStructType(): Any = {
@@ -782,17 +765,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
                    """.stripMargin
 
     val json: String = """ {"name": "bob","age": 10,"address": ["abc", "defg"]} """
-
-
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-    // fields[1] = new Field("age", DataTypes.INT);
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("street", DataTypes.STRING))
-    fields(2) = new Field("address", "array", fld)
-
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataSingleFileArrayType(): Any = {
@@ -836,25 +809,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       """ {"name":"bob", "age":10,
         |"address" : {"street":"abc", "city":"bang"},
         |"doorNum" : [1,2,3,4]}""".stripMargin
-
-    val fields = new Array[Field](4)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("street", DataTypes.STRING))
-    fld.add(new StructField("city", DataTypes.STRING))
-    fields(2) = new Field("address", "struct", fld)
-    val fld1 = new util.ArrayList[StructField]
-    fld1.add(new StructField("eachDoorNum", DataTypes.INT))
-    fields(3) = new Field("doorNum", "array", fld1)
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataBothStructArrayType(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     buildAvroTestDataStructWithArrayType(3, null)
   }
-
 
   // ArrayOfStruct test
   def buildAvroTestDataArrayOfStruct(rows: Int, options: util.Map[String, String]): Any = {
@@ -900,27 +861,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         |{"street":"def","city":"city2"},
         |{"street":"ghi","city":"city3"},
         |{"street":"jkl","city":"city4"}]} """.stripMargin
-
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("street", DataTypes.STRING))
-    fld.add(new StructField("city", DataTypes.STRING))
-
-    val fld2 = new util.ArrayList[StructField]
-    fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
-    fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
-
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataArrayOfStructType(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     buildAvroTestDataArrayOfStruct(3, null)
   }
-
 
   // StructOfArray test
   def buildAvroTestDataStructOfArray(rows: Int, options: util.Map[String, String]): Any = {
@@ -983,28 +930,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
                  |		]
                  |	}
                  |} """.stripMargin
-
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-
-    val fld2 = new util.ArrayList[StructField]
-    fld2.add(new StructField("street", DataTypes.STRING))
-    fld2.add(new StructField("city", DataTypes.STRING))
-
-    val fld1 = new util.ArrayList[StructField]
-    fld1.add(new StructField("eachDoorNum", DataTypes.INT))
-    fld2.add(new StructField("doorNum", DataTypes.createArrayType(DataTypes.INT), fld1))
-
-    fields(2) = new Field("address","struct",fld2)
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataStructOfArrayType(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     buildAvroTestDataStructOfArray(3, null)
   }
-
 
   test("Read sdk writer Avro output Record Type") {
     buildAvroTestDataStructType()
@@ -1013,7 +945,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
-
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("bob", 10, Row("abc","bang")),
@@ -1073,7 +1004,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
-
   test("Read sdk writer Avro output with Array of struct") {
     buildAvroTestDataArrayOfStructType()
     assert(new File(writerPath).exists())
@@ -1098,7 +1028,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     // drop table should not delete the files
     cleanTestData()
   }
-
 
   // Struct of array
   test("Read sdk writer Avro output with struct of Array") {
@@ -1201,21 +1130,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         |		}
         |	]
         |} """.stripMargin
-
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("street", DataTypes.STRING))
-    fld.add(new StructField("city", DataTypes.STRING))
-    fld.add(new StructField("FloorNum", DataTypes.createArrayType(DataTypes.INT)))
-
-    val fld2 = new util.ArrayList[StructField]
-    fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
-    fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
-
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataMultiLevel3Type(): Any = {
@@ -1252,7 +1167,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     // drop table should not delete the files
     cleanTestData()
   }
-
 
   // test multi level -- 3 levels [array of struct of struct of string, int]
   def buildAvroTestDataMultiLevel3_1(rows: Int, options: util.Map[String, String]): Any = {
@@ -1333,26 +1247,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         |		}
         |	]
         |}  """.stripMargin
-
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("street", DataTypes.STRING))
-    fld.add(new StructField("city", DataTypes.STRING))
-
-    val subFld = new util.ArrayList[StructField]
-    subFld.add(new StructField("wing", DataTypes.STRING))
-    subFld.add(new StructField("number", DataTypes.INT))
-    fld.add(new StructField("FloorNum", DataTypes.createStructType(subFld)))
-
-    // array of struct of struct
-    val fld2 = new util.ArrayList[StructField]
-    fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
-    fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
-
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataMultiLevel3_1Type(): Any = {
@@ -1432,22 +1327,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         |        	"BuildNum": [[[1,2,3],[4,5,6]],[[10,20,30],[40,50,60]]]
         |        }   """.stripMargin
 
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-
-    val subFld = new util.ArrayList[StructField]
-    subFld.add(new StructField("EachDoorNum", DataTypes.INT))
-
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("DoorNum", DataTypes.createArrayType(DataTypes.INT), subFld))
-    // array of struct of struct
-    val doorNum = new util.ArrayList[StructField]
-    doorNum.add(new StructField("FloorNum",
-      DataTypes.createArrayType(DataTypes.createArrayType(DataTypes.INT)), fld))
-    fields(2) = new Field("BuildNum", "array", doorNum)
-
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataMultiLevel3_2Type(): Any = {
@@ -1485,8 +1365,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     // drop table should not delete the files
     cleanTestData()
   }
-
-
 
   // test multi level -- 4 levels [array of array of array of struct]
   def buildAvroTestDataMultiLevel4(rows: Int, options: util.Map[String, String]): Any = {
@@ -1566,30 +1444,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         |		]
         |	]
         |} """.stripMargin
-
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-
-    val subFld = new util.ArrayList[StructField]
-    subFld.add(new StructField("EachDoorNum", DataTypes.INT))
-
-    val address = new util.ArrayList[StructField]
-    address.add(new StructField("street", DataTypes.STRING))
-    address.add(new StructField("city", DataTypes.STRING))
-
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("DoorNum",
-        DataTypes.createArrayType(DataTypes.createStructType(address)),
-        subFld))
-    // array of struct of struct
-    val doorNum = new util.ArrayList[StructField]
-    doorNum.add(new StructField("FloorNum",
-      DataTypes.createArrayType(
-        DataTypes.createArrayType(DataTypes.createStructType(address))), fld))
-    fields(2) = new Field("BuildNum", "array", doorNum)
-
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataMultiLevel4Type(): Any = {
@@ -1614,6 +1469,5 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     // drop table should not delete the files
     cleanTestData()
   }
-
 
 }
