@@ -290,7 +290,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql(
-      "SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n0*') AND TEXT_MATCH(' city:c0*')"),
+      "SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n0* AND city:c0*')"),
       sql("select * from datamap_test_table where name like 'n0%' and city like 'c0%'"))
     sql("drop datamap if exists dm on table datamap_test_table")
   }
@@ -311,7 +311,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql(
-      "SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n1*') or TEXT_MATCH('city:c01*')"),
+      "SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n1* OR city:c01*')"),
       sql("select * from datamap_test_table where name like 'n1%' or city like 'c01%'"))
     sql("drop datamap if exists dm on table datamap_test_table")
   }
@@ -332,8 +332,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql(
-      "SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n1*') OR TEXT_MATCH ('city:c01*') " +
-      "AND TEXT_MATCH('city:C02*')"),
+      "SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n1* OR (city:c01* AND city:c02*)')"),
       sql(
         "select * from datamap_test_table where name like 'n1%' OR city like 'c01%' and city like" +
         " 'c02%'"))
@@ -488,7 +487,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       sql("select *from datamap_test_table where name like'n1%' AND not name like 'n2%'"))
     //check NOT filter with TEXTMATCH wildcard-search using AND on different columns
     checkAnswer(sql(
-      "select *from datamap_test_table where TEXT_MATCH('name:n1*')AND TEXT_MATCH('city:c01* NOT " +
+      "select *from datamap_test_table where TEXT_MATCH('name:n1* AND city:c01* NOT " +
       "c02*')"),
       sql("select *from datamap_test_table where name like'n1%' AND not city='c02%'"))
     sql("drop datamap if exists dm on table datamap_test_table")
@@ -716,7 +715,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       sql(s"SELECT * FROM datamap_test5 WHERE city='c020'"))
     sql("DROP TABLE IF EXISTS datamap_test5")
   }
-
+  
   test("test text_match on normal table") {
     sql("DROP TABLE IF EXISTS table1")
     sql(
