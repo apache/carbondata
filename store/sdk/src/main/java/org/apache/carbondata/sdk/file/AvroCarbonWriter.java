@@ -142,13 +142,15 @@ public class AvroCarbonWriter extends CarbonWriter {
     Field[] carbonField = new Field[avroSchema.getFields().size()];
     int i = 0;
     for (Schema.Field avroField : avroSchema.getFields()) {
-      carbonField[i] = prepareFields(avroField.name(), avroField.schema());
+      carbonField[i] = prepareFields(avroField);
       i++;
     }
     return new org.apache.carbondata.sdk.file.Schema(carbonField);
   }
 
-  private static Field prepareFields(String FieldName, Schema childSchema) {
+  private static Field prepareFields(Schema.Field avroField) {
+    String FieldName = avroField.name();
+    Schema childSchema = avroField.schema();
     Schema.Type type = childSchema.getType();
     switch (type) {
       case BOOLEAN:
