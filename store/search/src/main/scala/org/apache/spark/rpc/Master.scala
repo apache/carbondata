@@ -215,13 +215,12 @@ class Master(sparkConf: SparkConf) {
     // prune data and get a mapping of worker hostname to list of blocks,
     // then add these blocks to the SearchRequest and fire the RPC call
     val nodeBlockMapping: JMap[String, JList[Distributable]] = pruneBlock(table, columns, filter)
-    val fgDataMap = chooseFGDataMap(table, filter)
     val tuple = nodeBlockMapping.asScala.map { case (splitAddress, blocks) =>
       // Build a SearchRequest
       val split = new SerializableWritable[CarbonMultiBlockSplit](
         new CarbonMultiBlockSplit(blocks, splitAddress))
       val request =
-        SearchRequest(queryId, split, table.getTableInfo, columns, filter, localLimit, fgDataMap)
+        SearchRequest(queryId, split, table.getTableInfo, columns, filter, localLimit)
 
       // Find an Endpoind and send the request to it
       // This RPC is non-blocking so that we do not need to wait before send to next worker
@@ -252,14 +251,6 @@ class Master(sparkConf: SparkConf) {
       }
     }
     output.toArray
-  }
-
-  private def chooseFGDataMap(
-      table: CarbonTable,
-      filter: Expression): Option[DataMapExprWrapper] = {
-    val chooser = new DataMapChooser(table)
-    val filterInterface = table.resolveFilter(filter)
-    Option(chooser.chooseFGDataMap(filterInterface))
   }
 
   /**

@@ -37,7 +37,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
- * FG level of lucene DataMap
+ * CG level of lucene DataMap
  */
 @InterfaceAudience.Internal
 public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<CoarseGrainDataMap> {

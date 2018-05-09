@@ -19,7 +19,8 @@ package org.apache.carbondata.spark.testsuite.detailquery
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonSession, Row, SaveMode}
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.DataGenerator
@@ -98,6 +99,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
   test("aggregate query with datamap and fallback to SparkSQL") {
     sql("create datamap preagg on table main using 'preaggregate' as select city, count(*) from main group by city ")
     checkSearchAnswer("select city, count(*) from main group by city")
+    sql("drop datamap preagg on table main").show()
   }
 
   test("set search mode") {
