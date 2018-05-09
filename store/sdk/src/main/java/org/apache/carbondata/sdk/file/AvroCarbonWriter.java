@@ -75,15 +75,18 @@ public class AvroCarbonWriter extends CarbonWriter {
       avroSchema = avroRecord.getSchema();
     }
     List<Schema.Field> fields = avroSchema.getFields();
-    Object[] csvField = new Object[fields.size()];
+    List<Object> csvFields = new ArrayList<>();
     for (int i = 0; i < fields.size(); i++) {
-      csvField[i] = avroFieldToObject(fields.get(i), avroRecord.get(i));
+      Object field = avroFieldToObject(fields.get(i), avroRecord.get(i));
+      if (field != null) {
+        csvFields.add(field);
+      }
     }
-    return csvField;
+    return csvFields.toArray();
   }
 
   private Object avroFieldToObject(Schema.Field avroField, Object fieldValue) {
-    Object out = new Object();
+    Object out;
     Schema.Type type = avroField.schema().getType();
     switch (type) {
       case BOOLEAN:
@@ -102,24 +105,45 @@ public class AvroCarbonWriter extends CarbonWriter {
 
         Object[] structChildObjects = new Object[fields.size()];
         for (int i = 0; i < fields.size(); i++) {
-          structChildObjects[i] =
+          Object childObject =
               avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i));
+          if (childObject != null) {
+            structChildObjects[i] = childObject;
+          }
         }
         StructObject structObject = new StructObject(structChildObjects);
         out = structObject;
         break;
       case ARRAY:
-        int size = ((ArrayList) fieldValue).size();
-        Object[] arrayChildObjects = new Object[size];
-        for (int i = 0; i < size; i++) {
-          arrayChildObjects[i] = (avroFieldToObject(
-              new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
-              ((ArrayList) fieldValue).get(i)));
+        Object[] arrayChildObjects;
+        if (fieldValue instanceof GenericData.Array) {
+          int size = ((GenericData.Array) fieldValue).size();
+          arrayChildObjects = new Object[size];
+          for (int i = 0; i < size; i++) {
+            Object childObject = avroFieldToObject(
+                new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
+                ((GenericData.Array) fieldValue).get(i));
+            if (childObject != null) {
+              arrayChildObjects[i] = childObject;
+            }
+          }
+        } else {
+          int size = ((ArrayList) fieldValue).size();
+          arrayChildObjects = new Object[size];
+          for (int i = 0; i < size; i++) {
+            Object childObject = avroFieldToObject(
+                new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
+                ((ArrayList) fieldValue).get(i));
+            if (childObject != null) {
+              arrayChildObjects[i] = childObject;
+            }
+          }
         }
-        ArrayObject arrayObject = new ArrayObject(arrayChildObjects);
-        out = arrayObject;
+        out = new ArrayObject(arrayChildObjects);
         break;
-
+      case NULL:
+        out = null;
+        break;
       default:
         throw new UnsupportedOperationException(
             "carbon not support " + type.toString() + " avro type yet");
@@ -142,7 +166,10 @@ public class AvroCarbonWriter extends CarbonWriter {
     Field[] carbonField = new Field[avroSchema.getFields().size()];
     int i = 0;
     for (Schema.Field avroField : avroSchema.getFields()) {
-      carbonField[i] = prepareFields(avroField);
+      Field field = prepareFields(avroField);
+      if (field != null) {
+        carbonField[i] = field;
+      }
       i++;
     }
     return new org.apache.carbondata.sdk.file.Schema(carbonField);
@@ -169,15 +196,25 @@ public class AvroCarbonWriter extends CarbonWriter {
         // recursively get the sub fields
         ArrayList<StructField> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
-          structSubFields.add(prepareSubFields(avroSubField.name(), avroSubField.schema()));
+          StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
+          if (structField != null) {
+            structSubFields.add(structField);
+          }
         }
         return new Field(FieldName, "struct", structSubFields);
       case ARRAY:
         // recursively get the sub fields
         ArrayList<StructField> arraySubField = new ArrayList<>();
         // array will have only one sub field.
-        arraySubField.add(prepareSubFields("val", childSchema.getElementType()));
-        return new Field(FieldName, "array", arraySubField);
+        StructField structField = prepareSubFields("val", childSchema.getElementType());
+        if (structField != null) {
+          arraySubField.add(structField);
+          return new Field(FieldName, "array", arraySubField);
+        } else {
+          return null;
+        }
+      case NULL:
+        return null;
       default:
         throw new UnsupportedOperationException(
             "carbon not support " + type.toString() + " avro type yet");
@@ -203,14 +240,23 @@ public class AvroCarbonWriter extends CarbonWriter {
         // recursively get the sub fields
         ArrayList<StructField> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
-          structSubFields.add(prepareSubFields(avroSubField.name(), avroSubField.schema()));
+          StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
+          if (structField != null) {
+            structSubFields.add(structField);
+          }
         }
         return (new StructField(FieldName, DataTypes.createStructType(structSubFields)));
       case ARRAY:
         // recursively get the sub fields
         // array will have only one sub field.
-        return (new StructField(FieldName, DataTypes.createArrayType(
-            getMappingDataTypeForArrayRecord(childSchema.getElementType()))));
+        DataType subType = getMappingDataTypeForArrayRecord(childSchema.getElementType());
+        if (subType != null) {
+          return (new StructField(FieldName, DataTypes.createArrayType(subType)));
+        } else {
+          return null;
+        }
+      case NULL:
+        return null;
       default:
         throw new UnsupportedOperationException(
             "carbon not support " + type.toString() + " avro type yet");
@@ -235,13 +281,22 @@ public class AvroCarbonWriter extends CarbonWriter {
         // recursively get the sub fields
         ArrayList<StructField> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
-          structSubFields.add(prepareSubFields(avroSubField.name(), avroSubField.schema()));
+          StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
+          if (structField != null) {
+            structSubFields.add(structField);
+          }
         }
         return DataTypes.createStructType(structSubFields);
       case ARRAY:
         // array will have only one sub field.
-        return DataTypes.createArrayType(
-            getMappingDataTypeForArrayRecord(childSchema.getElementType()));
+        DataType subType = getMappingDataTypeForArrayRecord(childSchema.getElementType());
+        if (subType != null) {
+          return DataTypes.createArrayType(subType);
+        } else {
+          return null;
+        }
+      case NULL:
+        return null;
       default:
         throw new UnsupportedOperationException(
             "carbon not support " + childSchema.getType().toString() + " avro type yet");
