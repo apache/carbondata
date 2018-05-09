@@ -198,7 +198,7 @@ public class AvroCarbonWriter extends CarbonWriter {
       case STRING:
         return new StructField(FieldName, DataTypes.STRING);
       case FLOAT:
-        return new StructField(FieldName, DataTypes.FLOAT);
+        return new StructField(FieldName, DataTypes.DOUBLE);
       case RECORD:
         // recursively get the sub fields
         ArrayList<StructField> structSubFields = new ArrayList<>();
@@ -230,7 +230,7 @@ public class AvroCarbonWriter extends CarbonWriter {
       case STRING:
         return DataTypes.STRING;
       case FLOAT:
-        return DataTypes.FLOAT;
+        return DataTypes.DOUBLE;
       case RECORD:
         // recursively get the sub fields
         ArrayList<StructField> structSubFields = new ArrayList<>();
