@@ -65,9 +65,18 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
    * and all the indexed value is distinct.
    */
   private static final int DEFAULT_BLOOM_FILTER_SIZE = 32000 * 20;
+  /**
+   * property for fpp(false-positive-probability) of bloom filter
+   */
+  private static final String BLOOM_FPP = "bloom_fpp";
+  /**
+   * default value for fpp of bloom filter
+   */
+  private static final double DEFAULT_BLOOM_FILTER_FPP = 0.00001d;
   private DataMapMeta dataMapMeta;
   private String dataMapName;
   private int bloomFilterSize;
+  private double bloomFilterFpp;
 
   public BloomCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
@@ -79,6 +88,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
 
     List<CarbonColumn> indexedColumns = carbonTable.getIndexedColumns(dataMapSchema);
     this.bloomFilterSize = validateAndGetBloomFilterSize(dataMapSchema);
+    this.bloomFilterFpp = validateAndGetBloomFilterFpp(dataMapSchema);
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
     // todo: support more optimize operations
     optimizedOperations.add(ExpressionType.EQUALS);
@@ -118,19 +128,51 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     return bloomFilterSize;
   }
 
+  /**
+   * validate bloom DataMap BLOOM_FPP
+   * 1. BLOOM_FPP property is optional, 0.00001 will be the default value.
+   * 2. BLOOM_FPP should be (0, 1)
+   */
+  private double validateAndGetBloomFilterFpp(DataMapSchema dmSchema)
+      throws MalformedDataMapCommandException {
+    String bloomFilterFppStr = dmSchema.getProperties().get(BLOOM_FPP);
+    if (StringUtils.isBlank(bloomFilterFppStr)) {
+      LOGGER.warn(
+          String.format("Bloom filter FPP is not configured for datamap %s, use default value %f",
+              dataMapName, DEFAULT_BLOOM_FILTER_FPP));
+      return DEFAULT_BLOOM_FILTER_FPP;
+    }
+    double bloomFilterFpp;
+    try {
+      bloomFilterFpp = Double.parseDouble(bloomFilterFppStr);
+    } catch (NumberFormatException e) {
+      throw new MalformedDataMapCommandException(
+          String.format("Invalid value of bloom filter fpp '%s', it should be an numeric",
+              bloomFilterFppStr));
+    }
+    if (bloomFilterFpp < 0 || bloomFilterFpp - 1 >= 0) {
+      throw new MalformedDataMapCommandException(
+          String.format("Invalid value of bloom filter fpp '%s', it should be in range 0~1",
+              bloomFilterFppStr));
+    }
+    return bloomFilterFpp;
+  }
+
   @Override
   public DataMapWriter createWriter(Segment segment, String shardName) throws IOException {
     LOGGER.info(
         String.format("Data of BloomCoarseGranDataMap %s for table %s will be written to %s",
             this.dataMapName, getCarbonTable().getTableName() , shardName));
     return new BloomDataMapWriter(getCarbonTable().getTablePath(), this.dataMapName,
-        this.dataMapMeta.getIndexedColumns(), segment, shardName, this.bloomFilterSize);
+        this.dataMapMeta.getIndexedColumns(), segment, shardName,
+        this.bloomFilterSize, this.bloomFilterFpp);
   }
 
   @Override
   public DataMapRefresher createRefresher(Segment segment, String shardName) throws IOException {
     return new BloomDataMapRefresher(getCarbonTable().getTablePath(), this.dataMapName,
-        this.dataMapMeta.getIndexedColumns(), segment, shardName, this.bloomFilterSize);
+        this.dataMapMeta.getIndexedColumns(), segment, shardName,
+        this.bloomFilterSize, this.bloomFilterFpp);
   }
 
   @Override
