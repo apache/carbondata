@@ -372,7 +372,7 @@ m filterExpression
     List<ExtendedBlocklet> prunedBlocklets =
         getPrunedBlocklets(job, carbonTable, resolver, segmentIds);
 
-    List<CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();
+    List<CarbonInputSplit> resultFilteredBlocks = new ArrayList<>();
     int partitionIndex = 0;
     List<Integer> partitionIdList = new ArrayList<>();
     if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
@@ -401,7 +401,7 @@ m filterExpression
         if (matchedPartitions == null || matchedPartitions.get(partitionIndex)) {
           CarbonInputSplit inputSplit = convertToCarbonInputSplit(blocklet);
           if (inputSplit != null) {
-            resultFilterredBlocks.add(inputSplit);
+            resultFilteredBlocks.add(inputSplit);
           }
         }
       }
@@ -409,7 +409,7 @@ m filterExpression
     statistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
     recorder.recordStatisticsForDriver(statistic, job.getConfiguration().get("query.id"));
-    return resultFilterredBlocks;
+    return resultFilteredBlocks;
   }
 
   /**

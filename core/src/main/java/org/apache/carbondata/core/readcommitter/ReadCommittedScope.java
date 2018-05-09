@@ -45,7 +45,7 @@ public interface ReadCommittedScope extends Serializable {
    */
   public Map<String, String> getCommittedIndexFile(Segment segment) throws IOException ;
 
-  public SegmentRefreshInfo getCommitedSegmentRefreshInfo(
+  public SegmentRefreshInfo getCommittedSegmentRefreshInfo(
       Segment segment, UpdateVO updateVo) throws IOException;
 
   public void takeCarbonIndexFileSnapShot() throws IOException;

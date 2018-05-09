@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -50,6 +51,13 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
   public List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune)
       throws IOException {
     return dataMap.prune(segments, expression, partitionsToPrune);
+  }
+
+  public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
+      List<PartitionSpec> partitionsToPrune)
+      throws IOException {
+    List<DataMap> dataMaps = dataMap.getTableDataMaps(distributable);
+    return dataMap.prune(dataMaps, distributable, expression, partitionsToPrune);
   }
 
   @Override public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)

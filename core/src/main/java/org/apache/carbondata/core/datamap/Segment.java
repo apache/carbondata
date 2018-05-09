@@ -115,7 +115,7 @@ public class Segment implements Serializable {
 
   public SegmentRefreshInfo getSegmentRefreshInfo(UpdateVO updateVo)
       throws IOException {
-    return readCommittedScope.getCommitedSegmentRefreshInfo(this, updateVo);
+    return readCommittedScope.getCommittedSegmentRefreshInfo(this, updateVo);
   }
 
   public String getSegmentNo() {

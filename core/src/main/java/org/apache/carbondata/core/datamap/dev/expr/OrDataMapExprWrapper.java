@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
@@ -52,6 +53,18 @@ public class OrDataMapExprWrapper implements DataMapExprWrapper {
       throws IOException {
     List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune);
     List<ExtendedBlocklet> rightPrune = right.prune(segments, partitionsToPrune);
+    Set<ExtendedBlocklet> andBlocklets = new HashSet<>();
+    andBlocklets.addAll(leftPrune);
+    andBlocklets.addAll(rightPrune);
+    return new ArrayList<>(andBlocklets);
+  }
+
+  @Override
+  public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
+      List<PartitionSpec> partitionsToPrune)
+          throws IOException {
+    List<ExtendedBlocklet> leftPrune = left.prune(distributable, partitionsToPrune);
+    List<ExtendedBlocklet> rightPrune = right.prune(distributable, partitionsToPrune);
     Set<ExtendedBlocklet> andBlocklets = new HashSet<>();
     andBlocklets.addAll(leftPrune);
     andBlocklets.addAll(rightPrune);
