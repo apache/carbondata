@@ -58,8 +58,6 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.SingleTableProvider;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -178,7 +176,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         queryProperties.complexFilterDimension, queryProperties.filterMeasures);
 
     CarbonTable carbonTable = queryModel.getTable();
-    TableProvider tableProvider = new SingleTableProvider(carbonTable);
 
     queryStatistic = new QueryStatistic();
     // dictionary column unique column id to dictionary mapping
@@ -187,8 +184,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         QueryUtil.getDimensionDictionaryDetail(
             queryModel.getProjectionDimensions(),
             queryProperties.complexFilterDimension,
-            queryModel.getAbsoluteTableIdentifier(),
-            tableProvider);
+            carbonTable);
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);

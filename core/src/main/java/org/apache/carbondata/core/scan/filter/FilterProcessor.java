@@ -38,7 +38,7 @@ public interface FilterProcessor {
    * @throws FilterUnsupportedException
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
+      AbsoluteTableIdentifier tableIdentifier)
       throws FilterUnsupportedException, IOException;
 
   /**

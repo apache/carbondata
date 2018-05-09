@@ -54,6 +54,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -535,8 +536,7 @@ public final class FilterUtil {
    * @throws QueryExecutionException
    */
   public static ColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
-      ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter,
-      TableProvider tableProvider)
+      ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
       throws QueryExecutionException, FilterUnsupportedException, IOException {
     Dictionary forwardDictionary = null;
     ColumnFilterInfo filterInfo = null;
@@ -545,8 +545,7 @@ public final class FilterUtil {
     try {
       // Reading the dictionary value from cache.
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
-              tableProvider);
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
       sortFilterModelMembers(columnExpression, evaluateResultList);
       getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
       filterInfo =
@@ -566,7 +565,6 @@ public final class FilterUtil {
    *
    * @param forwardDictionary
    * @param isIncludeFilter
-   * @param filterInfo
    * @param surrogates
    * @return
    */
@@ -704,14 +702,12 @@ public final class FilterUtil {
    */
   public static ColumnFilterInfo getFilterListForAllValues(AbsoluteTableIdentifier tableIdentifier,
       Expression expression, final ColumnExpression columnExpression, boolean isIncludeFilter,
-      TableProvider tableProvider, boolean isExprEvalReqd)
-      throws FilterUnsupportedException, IOException {
+      boolean isExprEvalReqd) throws FilterUnsupportedException, IOException {
     Dictionary forwardDictionary = null;
     List<Integer> surrogates = new ArrayList<Integer>(20);
     try {
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
-              tableProvider);
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
       if (isExprEvalReqd && !isIncludeFilter) {
         surrogates.add(CarbonCommonConstants.DICT_VALUE_NULL);
       }
@@ -1238,35 +1234,25 @@ public final class FilterUtil {
   }
 
   /**
-   * @param tableIdentifier
+   * @param dictionarySourceAbsoluteTableIdentifier
    * @param carbonDimension
-   * @return
-   */
-  public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension carbonDimension) throws IOException {
-    return getForwardDictionaryCache(tableIdentifier, carbonDimension, null);
-  }
-
-  /**
-   * @param carbonDimension
-   * @param tableProvider
    * @return
    */
   public static Dictionary getForwardDictionaryCache(
       AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
-      CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
+      CarbonDimension carbonDimension) throws IOException {
     String dictionaryPath = null;
     ColumnIdentifier columnIdentifier = carbonDimension.getColumnIdentifier();
-    if (null != tableProvider) {
-      CarbonTable carbonTable = tableProvider
-          .getCarbonTable(dictionarySourceAbsoluteTableIdentifier.getCarbonTableIdentifier());
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(dictionarySourceAbsoluteTableIdentifier.getDatabaseName(),
+            dictionarySourceAbsoluteTableIdentifier.getTableName());
+    if (null != carbonTable) {
       dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
           .get(CarbonCommonConstants.DICTIONARY_PATH);
-      if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations() &&
-          carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
-        dictionarySourceAbsoluteTableIdentifier =
-            QueryUtil.getTableIdentifierForColumn(carbonDimension,
-                carbonTable.getAbsoluteTableIdentifier());
+      if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations()
+          && carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
+        dictionarySourceAbsoluteTableIdentifier = QueryUtil
+            .getTableIdentifierForColumn(carbonDimension, carbonTable.getAbsoluteTableIdentifier());
         columnIdentifier = new ColumnIdentifier(
             carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
             carbonDimension.getColumnProperties(), carbonDimension.getDataType());

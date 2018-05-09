@@ -51,8 +51,6 @@ import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
-import org.apache.carbondata.core.scan.filter.SingleTableProvider;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -224,7 +222,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     // process and resolve the expression
     Expression filter = getFilterPredicates(job.getConfiguration());
-    TableProvider tableProvider = new SingleTableProvider(carbonTable);
     // this will be null in case of corrupt schema file.
     PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
     carbonTable.processFilterExpression(filter, null, null);
@@ -242,7 +239,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       }
     }
 
-    FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter, tableProvider);
+    FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter);
 
     // do block filtering and get split
     List<InputSplit> splits =
@@ -440,7 +437,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
       carbonTable.processFilterExpression(filter, null, null);
 
-      TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // prune partitions for filter query on partition table
       String partitionIds = job.getConfiguration().get(ALTER_PARTITION_ID);
       // matchedPartitions records partitionIndex, not partitionId
@@ -457,7 +453,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         }
       }
 
-      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter, tableProvider);
+      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter);
       // do block filtering and get split
       List<InputSplit> splits = getSplits(job, filterInterface, segmentList, matchedPartitions,
           partitionInfo, oldPartitionIdList, new SegmentUpdateStatusManager(carbonTable));
