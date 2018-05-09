@@ -28,6 +28,8 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -135,7 +137,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param parentname
    * @param columnId
    * @param carbonDimension
-   * @param cache
    * @param absoluteTableIdentifier
    * @param client
    * @param useOnePass
@@ -144,9 +145,9 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param isEmptyBadRecords
    */
   public PrimitiveDataType(CarbonColumn carbonColumn, String parentname, String columnId,
-      CarbonDimension carbonDimension, Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-      AbsoluteTableIdentifier absoluteTableIdentifier, DictionaryClient client, Boolean useOnePass,
-      Map<Object, Integer> localCache, String nullFormat, Boolean isEmptyBadRecords) {
+      CarbonDimension carbonDimension, AbsoluteTableIdentifier absoluteTableIdentifier,
+      DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
+      String nullFormat, Boolean isEmptyBadRecords) {
     this.name = carbonColumn.getColName();
     this.parentname = parentname;
     this.columnId = columnId;
@@ -163,6 +164,9 @@ public class PrimitiveDataType implements GenericDataType<Object> {
         dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(carbonDimension.getDataType()));
       } else if (carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
+        CacheProvider cacheProvider = CacheProvider.getInstance();
+        Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache =
+            cacheProvider.createCache(CacheType.REVERSE_DICTIONARY);
         Dictionary dictionary = null;
         if (useOnePass) {
           if (CarbonUtil.isFileExistsForGivenColumn(identifier)) {
