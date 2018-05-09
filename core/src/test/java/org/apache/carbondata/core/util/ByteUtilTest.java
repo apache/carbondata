@@ -113,6 +113,12 @@ public class ByteUtilTest extends TestCase {
         prepareBuffers();
         assertFalse(UnsafeComparer.INSTANCE.compareTo(buff1, buff2) < 0);
     }
+    @Test
+    public void testIntConversion() {
+        byte[] data = new byte[4];
+        ByteUtil.setInt(data, 0, 968);
+        assertEquals(ByteUtil.toInt(data, 0), 968);
+    }
 
     @Test
     public void testEqualToCase() {
