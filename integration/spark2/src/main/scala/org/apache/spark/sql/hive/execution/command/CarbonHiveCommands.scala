@@ -68,10 +68,10 @@ case class CarbonSetCommand(command: SetCommand)
   override val output: Seq[Attribute] = command.output
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    val sessionParms = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams
+    val sessionParams = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams
     command.kv match {
       case Some((key, Some(value))) =>
-        CarbonSetCommand.validateAndSetValue(sessionParms, key, value)
+        CarbonSetCommand.validateAndSetValue(sessionParams, key, value)
 
         // handle search mode start/stop for ThriftServer usage
         if (key.equalsIgnoreCase(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE)) {

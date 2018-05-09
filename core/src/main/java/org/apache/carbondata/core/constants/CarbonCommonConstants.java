@@ -1658,6 +1658,18 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_MODE_ENABLE_DEFAULT = "false";
 
   /**
+   * It's timeout threshold of carbon search query
+   */
+  @CarbonProperty
+  @InterfaceStability.Unstable
+  public static final String CARBON_SEARCH_QUERY_TIMEOUT = "carbon.search.query.timeout";
+
+  /**
+   * Default value is 10 seconds
+   */
+  public static final String CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT = "10s";
+
+  /**
    * The size of thread pool used for reading files in Work for search mode. By default,
    * it is number of cores in Worker
    */
