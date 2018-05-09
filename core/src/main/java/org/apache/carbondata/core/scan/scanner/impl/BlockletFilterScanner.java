@@ -173,6 +173,10 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     // apply filter on actual data, for each page
     BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(rawBlockletColumnChunks,
         useBitSetPipeLine);
+    // if bitSetGroup is nul, then new BitSetGroup object, which can avoid NPE
+    if (null == bitSetGroup) {
+      bitSetGroup = new BitSetGroup(0);
+    }
     // if filter result is empty then return with empty result
     if (bitSetGroup.isEmpty()) {
       CarbonUtil.freeMemory(rawBlockletColumnChunks.getDimensionRawColumnChunks(),

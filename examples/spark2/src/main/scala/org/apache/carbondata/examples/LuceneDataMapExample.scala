@@ -61,8 +61,6 @@ object LuceneDataMapExample {
          | DMProperties('INDEX_COLUMNS'='id , name')
       """.stripMargin)
 
-    spark.sql("refresh datamap dm ON TABLE personTable")
-
     // 1. Compare the performance:
 
     def time(code: => Unit): Double = {

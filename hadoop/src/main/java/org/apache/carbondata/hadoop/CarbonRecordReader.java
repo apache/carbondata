@@ -78,8 +78,10 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     } else {
       throw new RuntimeException("unsupported input split type: " + inputSplit);
     }
-    List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
-    queryModel.setTableBlockInfos(tableBlockInfoList);
+    if (queryModel.getTableBlockInfos().isEmpty()) {
+      List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
+      queryModel.setTableBlockInfos(tableBlockInfoList);
+    }
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
     try {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));

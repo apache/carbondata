@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
@@ -50,6 +51,21 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
       throws IOException {
     List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune);
     List<ExtendedBlocklet> rightPrune = right.prune(segments, partitionsToPrune);
+    List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
+    for (ExtendedBlocklet blocklet : leftPrune) {
+      if (rightPrune.contains(blocklet)) {
+        andBlocklets.add(blocklet);
+      }
+    }
+    return andBlocklets;
+  }
+
+  @Override
+  public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
+      List<PartitionSpec> partitionsToPrune)
+          throws IOException {
+    List<ExtendedBlocklet> leftPrune = left.prune(distributable, partitionsToPrune);
+    List<ExtendedBlocklet> rightPrune = right.prune(distributable, partitionsToPrune);
     List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
     for (ExtendedBlocklet blocklet : leftPrune) {
       if (rightPrune.contains(blocklet)) {

@@ -142,7 +142,7 @@ class Master(sparkConf: SparkConf) {
       (address, schedulable.ref.ask[ShutdownResponse](ShutdownRequest("user")))
     }
     futures.foreach { case (address, future) =>
-      ThreadUtils.awaitResult(future, Duration.apply("10s"))
+      ThreadUtils.awaitResult(future, Duration.apply("100s"))
       future.value match {
         case Some(result) =>
           result match {
@@ -232,8 +232,8 @@ class Master(sparkConf: SparkConf) {
 
       // if we have enough data already, we do not need to collect more result
       if (rowCount < globalLimit) {
-        // wait for worker for 10s
-        ThreadUtils.awaitResult(future, Duration.apply("10s"))
+        // wait for worker for 100s
+        ThreadUtils.awaitResult(future, Duration.apply("100s"))
         LOG.info(s"[SearchId:$queryId] receive search response from worker " +
                  s"${worker.address}:${worker.port}")
         try {

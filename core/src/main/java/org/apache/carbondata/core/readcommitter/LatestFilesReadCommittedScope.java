@@ -17,10 +17,7 @@
 package org.apache.carbondata.core.readcommitter;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -43,10 +40,27 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 public class LatestFilesReadCommittedScope implements ReadCommittedScope {
 
   private String carbonFilePath;
+  private String segmentId;
   private ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot;
   private LoadMetadataDetails[] loadMetadataDetails;
 
-  public LatestFilesReadCommittedScope(String path)  {
+  /**
+   * a new constructor of this class, which supports obtain lucene index in search mode
+   *
+   * @param path      carbon file path
+   * @param segmentId segment id
+   */
+  public LatestFilesReadCommittedScope(String path, String segmentId) {
+    this.carbonFilePath = path;
+    this.segmentId = segmentId;
+    try {
+      takeCarbonIndexFileSnapShot();
+    } catch (IOException ex) {
+      throw new RuntimeException("Error while taking index snapshot", ex);
+    }
+  }
+
+  public LatestFilesReadCommittedScope(String path) {
     this.carbonFilePath = path;
     try {
       takeCarbonIndexFileSnapShot();
@@ -101,13 +115,16 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
       segName = segment.getSegmentFileName();
     }
     List<String> index = snapShot.get(segName);
+    if (null == index) {
+      index = new LinkedList<>();
+    }
     for (String indexPath : index) {
       indexFileStore.put(indexPath, null);
     }
     return indexFileStore;
   }
 
-  @Override public SegmentRefreshInfo getCommitedSegmentRefreshInfo(
+  @Override public SegmentRefreshInfo getCommittedSegmentRefreshInfo(
       Segment segment, UpdateVO updateVo) throws IOException {
     Map<String, SegmentRefreshInfo> snapShot =
         readCommittedIndexFileSnapShot.getSegmentTimestampUpdaterMap();
@@ -152,8 +169,14 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     }
     Map<String, List<String>> indexFileStore = new HashMap<>();
     Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap = new HashMap<>();
+    CarbonFile[] carbonIndexFiles = null;
     if (file.isDirectory()) {
-      CarbonFile[] carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(carbonFilePath);
+      if (segmentId == null) {
+        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(carbonFilePath);
+      } else {
+        String segmentPath = CarbonTablePath.getSegmentPath(carbonFilePath, segmentId);
+        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);
+      }
       for (int i = 0; i < carbonIndexFiles.length; i++) {
         // TODO. If Required to support merge index, then this code has to be modified.
         // TODO. Nested File Paths.

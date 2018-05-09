@@ -29,6 +29,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandExcept
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
@@ -235,7 +236,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     }
     for (CarbonFile indexDir : indexDirs) {
       // Filter out the tasks which are filtered through CG datamap.
-      if (!segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
+      if (getDataMapLevel() != DataMapLevel.FG &&
+              !segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
         continue;
       }
       DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(

@@ -52,6 +52,12 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
     return dataMap.prune(segments, expression, partitionsToPrune);
   }
 
+  public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
+      List<PartitionSpec> partitionsToPrune)
+          throws IOException {
+    return dataMap.prune(distributable, expression, partitionsToPrune);
+  }
+
   @Override public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)
       throws IOException {
     List<ExtendedBlocklet> blockletList = new ArrayList<>();

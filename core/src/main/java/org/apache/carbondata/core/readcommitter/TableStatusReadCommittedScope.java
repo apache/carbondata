@@ -79,7 +79,7 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     return indexFiles;
   }
 
-  public SegmentRefreshInfo getCommitedSegmentRefreshInfo(Segment segment, UpdateVO updateVo)
+  public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo)
       throws IOException {
     SegmentRefreshInfo segmentRefreshInfo;
     if (updateVo != null) {

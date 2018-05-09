@@ -382,6 +382,8 @@ object CarbonFilters {
             CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
         new AndExpression(l, r)
       case StringTrim(child) => transformExpression(child)
+      case s: ScalaUDF =>
+        new MatchExpression(s.children.head.toString())
       case _ =>
         new SparkUnknownExpression(expr.transform {
           case AttributeReference(name, dataType, _, _) =>
