@@ -43,7 +43,6 @@ import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
-import org.apache.carbondata.core.scan.filter.SingleTableProvider
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
 import org.apache.carbondata.hadoop.api.CarbonInputFormat
@@ -235,8 +234,7 @@ class Master(sparkConf: SparkConf) {
       table: CarbonTable,
       filter: Expression): Option[DataMapExprWrapper] = {
     val chooser = new DataMapChooser(table)
-    // TODO: remove TableProvider class
-    val filterInterface = table.resolveFilter(filter, new SingleTableProvider(table))
+    val filterInterface = table.resolveFilter(filter)
     Option(chooser.chooseFGDataMap(filterInterface))
   }
 
