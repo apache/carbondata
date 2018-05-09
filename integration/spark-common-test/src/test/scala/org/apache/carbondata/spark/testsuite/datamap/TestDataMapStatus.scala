@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.datamap
 
+import java.io.File
 import java.util
 
 import scala.collection.JavaConverters._
@@ -26,14 +27,12 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
 import org.apache.carbondata.core.datamap.status.{DataMapStatus, DataMapStatusManager}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.datastore.row.CarbonRow
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
@@ -44,10 +43,11 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
   val testData = s"$resourcesPath/sample.csv"
 
   override def beforeAll: Unit = {
+    new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     drop
   }
 
-  test("datamap status disable for new datamap") {
+  test("datamap status enable for new datamap") {
     sql("DROP TABLE IF EXISTS datamapstatustest")
     sql(
       """
@@ -64,11 +64,33 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
 
     assert(details.length == 1)
 
+    assert(details.exists(p => p.getDataMapName.equals("statusdatamap") && p.getStatus == DataMapStatus.ENABLED))
+    sql("DROP TABLE IF EXISTS datamapstatustest")
+  }
+
+  test("datamap status disable for new datamap with deferred rebuild") {
+    sql("DROP TABLE IF EXISTS datamapstatustest")
+    sql(
+      """
+        | CREATE TABLE datamapstatustest(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      s"""create datamap statusdatamap on table datamapstatustest
+         |using '${classOf[TestDataMapFactory].getName}'
+         |with deferred rebuild
+         |dmproperties('index_columns'='name')
+         | """.stripMargin)
+
+    val details = DataMapStatusManager.readDataMapStatusDetails()
+
+    assert(details.length == 1)
+
     assert(details.exists(p => p.getDataMapName.equals("statusdatamap") && p.getStatus == DataMapStatus.DISABLED))
     sql("DROP TABLE IF EXISTS datamapstatustest")
   }
 
-  test("datamap status disable after new load") {
+  test("datamap status disable after new load  with deferred rebuild") {
     sql("DROP TABLE IF EXISTS datamapstatustest1")
     sql(
       """
@@ -78,6 +100,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""create datamap statusdatamap1 on table datamapstatustest1
          |using '${classOf[TestDataMapFactory].getName}'
+         |with deferred rebuild
          |dmproperties('index_columns'='name')
          | """.stripMargin)
 
@@ -104,6 +127,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""create datamap statusdatamap2 on table datamapstatustest2
          |using '${classOf[TestDataMapFactory].getName}'
+         |with deferred rebuild
          |dmproperties('index_columns'='name')
          | """.stripMargin)
 
@@ -142,10 +166,20 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
            | """.stripMargin)
 
     }
+    sql("DROP TABLE IF EXISTS datamapstatustest3")
+  }
 
+  test("rebuild datamap status") {
+    sql("DROP TABLE IF EXISTS datamapstatustest3")
+    sql(
+      """
+        | CREATE TABLE datamapstatustest3(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
     sql(
       s"""create datamap statusdatamap3 on table datamapstatustest3
          |using '${classOf[TestDataMapFactory].getName}'
+         |with deferred rebuild
          |dmproperties('index_columns'='name')
          | """.stripMargin)
 
@@ -245,6 +279,17 @@ class TestDataMapFactory(
 
   override def createBuilder(segment: Segment,
       shardName: String): DataMapBuilder = {
-    ???
+    return new DataMapBuilder {
+      override def initialize(): Unit = { }
+
+      override def addRow(blockletId: Int,
+          pageId: Int,
+          rowId: Int,
+          values: Array[AnyRef]): Unit = { }
+
+      override def finish(): Unit = { }
+
+      override def close(): Unit = { }
+    }
   }
 }

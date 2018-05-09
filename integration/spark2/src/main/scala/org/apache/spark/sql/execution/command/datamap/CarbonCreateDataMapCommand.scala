@@ -87,6 +87,10 @@ case class CarbonCreateDataMapCommand(
     javaMap.put(DataMapProperty.DEFERRED_REBUILD, deferredRebuild.toString)
     dataMapSchema.setProperties(javaMap)
 
+    if (dataMapSchema.isIndexDataMap && mainTable == null) {
+      throw new MalformedDataMapCommandException(
+        "For this datamap, main table is required. Use `CREATE DATAMAP ... ON TABLE ...` ")
+    }
     dataMapProvider = DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
 
     // If it is index datamap, check whether the column has datamap created already
