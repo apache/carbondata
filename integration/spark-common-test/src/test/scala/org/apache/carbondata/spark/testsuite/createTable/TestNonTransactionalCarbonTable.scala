@@ -32,8 +32,6 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.sdk.file.AvroCarbonWriter
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -43,7 +41,7 @@ import org.apache.commons.lang.CharEncoding
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
-import org.apache.carbondata.sdk.file.{CarbonWriter, CarbonWriterBuilder, Field, Schema}
+import org.apache.carbondata.sdk.file.{AvroCarbonWriter, CarbonWriter, CarbonWriterBuilder, Field, Schema}
 
 
 class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
@@ -51,7 +49,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   var writerPath = new File(this.getClass.getResource("/").getPath
                             +
                             "../." +
-                            "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
+                            "./target/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
   //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
   writerPath = writerPath.replace("\\", "/")
@@ -1793,6 +1791,47 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       writer.write(record)
       writer.close()
     }.getMessage.toLowerCase.contains("column: name specified in sort columns"))
+  }
+
+  test("test if load is passing with NULL type") {
+    val schema1 =
+      """{
+        |	"namespace": "com.apache.schema",
+        |	"type": "record",
+        |	"name": "StudentActivity",
+        |	"fields": [
+        |		{
+        |			"name": "id",
+        |			"type": "null"
+        |		},
+        |		{
+        |			"name": "course_details",
+        |			"type": {
+        |				"name": "course_details",
+        |				"type": "record",
+        |				"fields": [
+        |					{
+        |						"name": "course_struct_course_time",
+        |						"type": "string"
+        |					}
+        |				]
+        |			}
+        |		}
+        |	]
+        |}""".stripMargin
+
+    val json1 =
+      """{"id": 101,"course_details": { "course_struct_course_time":"2014-01-05"  }}""".stripMargin
+
+    val nn = new org.apache.avro.Schema.Parser().parse(schema1)
+    val converter = new JsonAvroConverter
+    val record = converter
+      .convertToGenericDataRecord(json1.getBytes(CharEncoding.UTF_8), nn)
+
+    val writer = CarbonWriter.builder.withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(schema1))
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput
+    writer.write(record)
+    writer.close()
   }
 
   test("test if data load is success with a struct having timestamp column  ") {
