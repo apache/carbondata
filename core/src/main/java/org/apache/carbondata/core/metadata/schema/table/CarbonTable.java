@@ -473,12 +473,12 @@ public class CarbonTable implements Serializable {
   /**
    * Return the segment path of the specified segmentId
    */
-  public String getSemgentPath(String segmentId) {
+  public String getSegmentPath(String segmentId) {
     return CarbonTablePath.getSegmentPath(getTablePath(), segmentId);
   }
 
   /**
-   * @return storepath
+   * @return store path
    */
   public String getTablePath() {
     return tableInfo.getOrCreateAbsoluteTableIdentifier().getTablePath();

@@ -26,6 +26,7 @@ import java.util.Objects;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.DataMapChooser;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -37,6 +38,7 @@ import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.scan.executor.impl.SearchModeDetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.impl.SearchModeVectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
@@ -81,6 +83,19 @@ public class SearchRequestHandler {
     return new ShutdownResponse(Status.SUCCESS.ordinal(), "");
   }
 
+  private DataMapExprWrapper chooseFGDataMap(
+          CarbonTable table,
+          FilterResolverIntf filterInterface) {
+    DataMapChooser chooser = null;
+    try {
+      chooser = new DataMapChooser(table);
+      return chooser.chooseFGDataMap(filterInterface);
+    } catch (IOException e) {
+      LOG.audit(e.getMessage());
+      return null;
+    }
+  }
+
   /**
    * Builds {@link QueryModel} and read data from files
    */
@@ -102,10 +117,12 @@ public class SearchRequestHandler {
 
     LOG.info(String.format("[SearchId:%d] %s, number of block: %d",
         request.searchId(), queryModel.toString(), mbSplit.getAllSplits().size()));
+    DataMapExprWrapper fgDataMap = chooseFGDataMap(table,
+            queryModel.getFilterExpressionResolverTree());
 
     // If there is DataMap selected in Master, prune the split by it
-    if (request.dataMap() != null) {
-      queryModel = prune(request.searchId(), table, queryModel, mbSplit, request.dataMap().get());
+    if (fgDataMap != null) {
+      queryModel = prune(request.searchId(), table, queryModel, mbSplit, fgDataMap);
     }
 
     // In search mode, reader will read multiple blocks by using a thread pool

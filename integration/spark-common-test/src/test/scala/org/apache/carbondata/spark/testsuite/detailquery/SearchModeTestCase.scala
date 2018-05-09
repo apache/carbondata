@@ -98,6 +98,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
   test("aggregate query with datamap and fallback to SparkSQL") {
     sql("create datamap preagg on table main using 'preaggregate' as select city, count(*) from main group by city ")
     checkSearchAnswer("select city, count(*) from main group by city")
+    sql("drop datamap preagg on table main").show()
   }
 
   test("set search mode") {
