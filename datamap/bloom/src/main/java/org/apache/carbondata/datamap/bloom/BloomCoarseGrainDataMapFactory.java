@@ -33,9 +33,9 @@ import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.DataMapRefresher;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -173,8 +173,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override
-  public DataMapRefresher createRefresher(Segment segment, String shardName) throws IOException {
-    return new BloomDataMapRefresher(getCarbonTable().getTablePath(), this.dataMapName,
+  public DataMapBuilder createBuilder(Segment segment, String shardName) throws IOException {
+    return new BloomDataMapBuilder(getCarbonTable().getTablePath(), this.dataMapName,
         this.dataMapMeta.getIndexedColumns(), segment, shardName,
         this.bloomFilterSize, this.bloomFilterFpp);
   }

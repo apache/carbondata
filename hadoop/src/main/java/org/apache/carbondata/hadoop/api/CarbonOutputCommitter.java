@@ -168,7 +168,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       } else {
         CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
       }
-      DataMapStatusManager.disableDataMapsOfTable(carbonTable);
+      DataMapStatusManager.disableAllLazyDataMaps(carbonTable);
       if (operationContext != null) {
         LoadEvents.LoadTablePostStatusUpdateEvent postStatusUpdateEvent =
             new LoadEvents.LoadTablePostStatusUpdateEvent(loadModel);

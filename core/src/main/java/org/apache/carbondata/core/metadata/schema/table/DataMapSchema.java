@@ -28,6 +28,8 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
+
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
 import com.google.gson.Gson;
@@ -157,7 +159,16 @@ public class DataMapSchema implements Serializable, Writable {
     }
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  /**
+   * Return true if this datamap is lazy (created with DEFERRED REBUILD syntax)
+   */
+  public boolean isLazy() {
+    String deferredRebuild = getProperties().get(DataMapProperty.DEFERRED_REBUILD);
+    return deferredRebuild != null && deferredRebuild.equalsIgnoreCase("true");
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
     out.writeUTF(dataMapName);
     out.writeUTF(providerName);
     boolean isRelationIdentifierExists = null != relationIdentifier;
@@ -181,7 +192,8 @@ public class DataMapSchema implements Serializable, Writable {
     }
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     this.dataMapName = in.readUTF();
     this.providerName = in.readUTF();
     boolean isRelationIdnentifierExists = in.readBoolean();

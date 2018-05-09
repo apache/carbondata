@@ -21,6 +21,7 @@ import org.apache.spark.SerializableWritable
 import org.apache.spark.rpc.{RpcCallContext, RpcEndpoint, RpcEnv}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
@@ -37,11 +38,11 @@ class Searcher(override val rpcEnv: RpcEnv) extends RpcEndpoint {
   }
 
   override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
-    case req@SearchRequest(_, _, _, _, _, _) =>
+    case req: SearchRequest =>
       val response = new SearchRequestHandler().handleSearch(req)
       context.reply(response)
 
-    case req@ShutdownRequest(_) =>
+    case req: ShutdownRequest =>
       val response = new SearchRequestHandler().handleShutdown(req)
       context.reply(response)
 
@@ -59,7 +60,8 @@ case class SearchRequest(
     tableInfo: TableInfo,
     projectColumns: Array[String],
     filterExpression: Expression,
-    limit: Long)
+    limit: Long,
+    dataMap: Option[DataMapExprWrapper])
 
 // Search result sent from worker to master
 case class SearchResult(

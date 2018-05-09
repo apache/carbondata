@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql.execution.command.datamap
 
+import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -27,7 +29,7 @@ import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandExcept
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
+import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapProvider}
 
@@ -41,7 +43,8 @@ case class CarbonCreateDataMapCommand(
     dmProviderName: String,
     dmProperties: Map[String, String],
     queryString: Option[String],
-    ifNotExistsSet: Boolean = false)
+    ifNotExistsSet: Boolean = false,
+    deferredRebuild: Boolean = false)
   extends AtomicRunnableCommand {
 
   private var dataMapProvider: DataMapProvider = _
@@ -78,9 +81,16 @@ case class CarbonCreateDataMapCommand(
     }
 
     dataMapSchema = new DataMapSchema(dataMapName, dmProviderName)
-    dataMapSchema.setProperties(new java.util.HashMap[String, String](
-      dmProperties.map(x => (x._1.trim, x._2.trim)).asJava))
 
+    val property = dmProperties.map(x => (x._1.trim, x._2.trim)).asJava
+    val javaMap = new java.util.HashMap[String, String](property)
+    javaMap.put(DataMapProperty.DEFERRED_REBUILD, deferredRebuild.toString)
+    dataMapSchema.setProperties(javaMap)
+
+    if (dataMapSchema.isIndexDataMap && mainTable == null) {
+      throw new MalformedDataMapCommandException(
+        "For this datamap, main table is required. Use `CREATE DATAMAP ... ON TABLE ...` ")
+    }
     dataMapProvider = DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
 
     // If it is index datamap, check whether the column has datamap created already
@@ -101,6 +111,10 @@ case class CarbonCreateDataMapCommand(
         dataMapProvider.initMeta(queryString.orNull)
         DataMapStatusManager.disableDataMap(dataMapName)
       case _ =>
+        if (deferredRebuild) {
+          throw new MalformedDataMapCommandException(
+            "DEFERRED REBUILD is not supported on this DataMap")
+        }
         dataMapProvider.initMeta(queryString.orNull)
     }
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -111,10 +125,11 @@ case class CarbonCreateDataMapCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (dataMapProvider != null) {
       dataMapProvider.initData()
-      if (mainTable != null &&
-          mainTable.isAutoRefreshDataMap &&
-          !dataMapSchema.isIndexDataMap) {
+      if (mainTable != null && !deferredRebuild) {
         dataMapProvider.rebuild()
+        if (dataMapSchema.isIndexDataMap) {
+          DataMapStatusManager.enableDataMap(dataMapName)
+        }
       }
     }
     Seq.empty

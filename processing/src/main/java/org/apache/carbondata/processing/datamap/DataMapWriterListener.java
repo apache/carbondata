@@ -61,8 +61,12 @@ public class DataMapWriterListener {
     }
     if (tableIndices != null) {
       for (TableDataMap tableDataMap : tableIndices) {
-        DataMapFactory factory = tableDataMap.getDataMapFactory();
-        register(factory, segmentId, taskNo);
+        // register it only if it is not lazy datamap, for lazy datamap, user
+        // will rebuild the datamap manually
+        if (!tableDataMap.getDataMapSchema().isLazy()) {
+          DataMapFactory factory = tableDataMap.getDataMapFactory();
+          register(factory, segmentId, taskNo);
+        }
       }
     }
   }

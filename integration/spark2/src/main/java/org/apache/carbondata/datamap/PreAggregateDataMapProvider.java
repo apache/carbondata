@@ -17,11 +17,15 @@
 
 package org.apache.carbondata.datamap;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapCatalog;
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
@@ -55,9 +59,11 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   private void validateDmProperty(DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     if (!dataMapSchema.getProperties().isEmpty()) {
-      if (dataMapSchema.getProperties().size() > 2 || (
-              !dataMapSchema.getProperties().containsKey(DataMapProperty.PATH) &&
-                      !dataMapSchema.getProperties().containsKey(DataMapProperty.PARTITIONING))) {
+      Map<String, String> properties = new HashMap<>(dataMapSchema.getProperties());
+      properties.remove(DataMapProperty.DEFERRED_REBUILD);
+      properties.remove(DataMapProperty.PATH);
+      properties.remove(DataMapProperty.PARTITIONING);
+      if (properties.size() > 0) {
         throw new MalformedDataMapCommandException(
                 "Only 'path' and 'partitioning' dmproperties are allowed for this datamap");
       }

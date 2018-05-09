@@ -231,8 +231,9 @@ class SparkCarbonFileFormat extends FileFormat
 
         val tab = model.getTable
         DataMapStoreManager.getInstance().clearDataMaps(identifier)
-        val dataMapExprWrapper = DataMapChooser.get
-          .choose(tab, model.getFilterExpressionResolverTree)
+
+        val dataMapExprWrapper = new DataMapChooser(tab).choose(
+          model.getFilterExpressionResolverTree)
 
         // TODO : handle the partition for CarbonFileLevelFormat
         val prunedBlocklets = dataMapExprWrapper.prune(segments, null)

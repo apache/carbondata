@@ -33,7 +33,8 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
-import org.apache.carbondata.core.datamap.dev.DataMapRefresher
+import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.dev.DataMapBuilder
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
@@ -51,7 +52,7 @@ import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 /**
  * Helper object to rebuild the index DataMap
  */
-object IndexDataMapRefreshRDD {
+object IndexDataMapRebuildRDD {
 
   /**
    * Rebuild the datamap for all existing data in the table
@@ -90,7 +91,7 @@ object IndexDataMapRefreshRDD {
     if (!FileFactory.isFileExist(dataMapStorePath)) {
       if (FileFactory.mkdirs(dataMapStorePath, FileFactory.getFileType(dataMapStorePath))) {
         try {
-          val status = new IndexDataMapRefreshRDD[String, Boolean](
+          val status = new IndexDataMapRebuildRDD[String, Boolean](
             sparkSession,
             new RefreshResultImpl(),
             carbonTable.getTableInfo,
@@ -101,7 +102,7 @@ object IndexDataMapRefreshRDD {
 
           status.find(_._2 == false).foreach { task =>
             throw new Exception(
-              s"Task Failed to refresh datamap $dataMapName on segment_$segmentId")
+              s"Task Failed to rebuild datamap $dataMapName on segment_$segmentId")
           }
         } catch {
           case ex: Throwable =>
@@ -136,7 +137,7 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
   }
 }
 
-class IndexDataMapRefreshRDD[K, V](
+class IndexDataMapRebuildRDD[K, V](
     session: SparkSession,
     result: RefreshResult[K, V],
     @transient tableInfo: TableInfo,
@@ -176,7 +177,7 @@ class IndexDataMapRefreshRDD[K, V](
     model.setRequiredRowId(true)
 
     var reader: CarbonRecordReader[Array[Object]] = null
-    var refresher: DataMapRefresher = null
+    var refresher: DataMapBuilder = null
     try {
       reader = new CarbonRecordReader(
         model, new OriginalReadSupport(indexColumns.map(_.getDataType)), inputMetrics)
@@ -184,7 +185,7 @@ class IndexDataMapRefreshRDD[K, V](
 
       // we use task name as shard name to create the folder for this datamap
       val shardName = CarbonTablePath.getShardName(inputSplit.getAllSplits.get(0).getBlockPath)
-      refresher = dataMapFactory.createRefresher(new Segment(segmentId), shardName)
+      refresher = dataMapFactory.createBuilder(new Segment(segmentId), shardName)
       refresher.initialize()
 
       var blockletId = 0

@@ -23,13 +23,13 @@ import org.apache.spark.sql.execution.command.DataCommand
 
 import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapRefreshRDD}
+import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapRebuildRDD}
 
 /**
- * Refresh the datamaps through sync with main table data. After sync with parent table's it enables
+ * Rebuild the datamaps through sync with main table data. After sync with parent table's it enables
  * the datamap.
  */
-case class CarbonDataMapRefreshCommand(
+case class CarbonDataMapRebuildCommand(
     dataMapName: String,
     tableIdentifier: Option[TableIdentifier]) extends DataCommand {
 
@@ -48,7 +48,7 @@ case class CarbonDataMapRefreshCommand(
     val provider = DataMapManager.get().getDataMapProvider(table, schema, sparkSession)
     provider.rebuild()
 
-    // After sync success enable the datamap.
+    // After rebuild successfully enable the datamap.
     DataMapStatusManager.enableDataMap(dataMapName)
     Seq.empty
   }

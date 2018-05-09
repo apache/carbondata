@@ -38,12 +38,15 @@ import org.apache.spark.util.ThreadUtils
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datamap.DataMapChooser
+import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
+import org.apache.carbondata.hadoop.api.CarbonInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.store.worker.Status
@@ -212,11 +215,13 @@ class Master(sparkConf: SparkConf) {
     // prune data and get a mapping of worker hostname to list of blocks,
     // then add these blocks to the SearchRequest and fire the RPC call
     val nodeBlockMapping: JMap[String, JList[Distributable]] = pruneBlock(table, columns, filter)
+    val fgDataMap = chooseFGDataMap(table, filter)
     val tuple = nodeBlockMapping.asScala.map { case (splitAddress, blocks) =>
       // Build a SearchRequest
       val split = new SerializableWritable[CarbonMultiBlockSplit](
         new CarbonMultiBlockSplit(blocks, splitAddress))
-      val request = SearchRequest(queryId, split, table.getTableInfo, columns, filter, localLimit)
+      val request =
+        SearchRequest(queryId, split, table.getTableInfo, columns, filter, localLimit, fgDataMap)
 
       // Find an Endpoind and send the request to it
       // This RPC is non-blocking so that we do not need to wait before send to next worker
@@ -249,6 +254,14 @@ class Master(sparkConf: SparkConf) {
     output.toArray
   }
 
+  private def chooseFGDataMap(
+      table: CarbonTable,
+      filter: Expression): Option[DataMapExprWrapper] = {
+    val chooser = new DataMapChooser(table)
+    val filterInterface = table.resolveFilter(filter)
+    Option(chooser.chooseFGDataMap(filterInterface))
+  }
+
   /**
    * Prune data by using CarbonInputFormat.getSplit
    * Return a mapping of host address to list of block
@@ -261,6 +274,9 @@ class Master(sparkConf: SparkConf) {
     val job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonTableInputFormat(
       job, table, columns, filter, null, null)
+
+    // We will do FG pruning in reader side, so don't do it here
+    CarbonInputFormat.setFgDataMapPruning(job.getConfiguration, false)
     val splits = format.getSplits(job)
     val distributables = splits.asScala.map { split =>
       split.asInstanceOf[Distributable]

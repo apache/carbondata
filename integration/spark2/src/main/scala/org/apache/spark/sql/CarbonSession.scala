@@ -36,6 +36,7 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.profiler.{Profiler, SQLStart}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
+import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.scan.expression.LiteralExpression
@@ -108,6 +109,16 @@ class CarbonSession(@transient val sc: SparkContext,
         }
       }
     )
+  }
+
+  /**
+   * Return true if the specified sql statement will hit the datamap
+   * This API is for test purpose only
+   */
+  @InterfaceAudience.Developer(Array("DataMap"))
+  def isDataMapHit(sqlStatement: String, dataMapName: String): Boolean = {
+    val message = sql(s"EXPLAIN $sqlStatement").collect()
+    message(0).getString(0).contains(dataMapName)
   }
 
   def isSearchModeEnabled: Boolean = carbonStore != null
