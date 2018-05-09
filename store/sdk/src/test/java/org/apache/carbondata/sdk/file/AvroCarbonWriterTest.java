@@ -21,30 +21,20 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.datatype.ArrayType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.StructField;
-import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.CharEncoding;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Test;
 
-import scala.Array;
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 import org.apache.avro.Schema;
 
-import static org.apache.hadoop.yarn.webapp.hamlet.HamletSpec.InputType.file;
 
 public class AvroCarbonWriterTest {
   private String path = "./AvroCarbonWriterSuiteWriteFiles";
@@ -70,13 +60,9 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = converter.convertToGenericDataRecord(
         json.getBytes(CharEncoding.UTF_8), new Schema.Parser().parse(avroSchema));
 
-    Field[] fields = new Field[2];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.STRING);
-
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
+          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema))
           .outputPath(path)
           .isTransactionalTable(true)
           .buildWriterForAvroInput();
@@ -145,19 +131,9 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = converter.convertToGenericDataRecord(
         json.getBytes(CharEncoding.UTF_8), new Schema.Parser().parse(avroSchema));
 
-    Field[] fields = new Field[6];
-    // fields[0] = new Field("mynull", DataTypes.NULL);
-    fields[0] = new Field("myboolean", DataTypes.BOOLEAN);
-    fields[1] = new Field("myint", DataTypes.INT);
-    fields[2] = new Field("mylong", DataTypes.LONG);
-    fields[3] = new Field("myfloat", DataTypes.DOUBLE);
-    fields[4] = new Field("mydouble", DataTypes.DOUBLE);
-    fields[5] = new Field("mystring", DataTypes.STRING);
-
-
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
+          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema))
           .outputPath(path)
           .isTransactionalTable(true)
           .buildWriterForAvroInput();
@@ -250,18 +226,9 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = converter.convertToGenericDataRecord(
         json.getBytes(CharEncoding.UTF_8), nn);
 
-    Field[] fields = new Field[3];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("name1", DataTypes.STRING);
-    // fields[1] = new Field("age", DataTypes.INT);
-    List fld = new ArrayList<StructField>();
-    fld.add(new StructField("street", DataTypes.STRING));
-    fld.add(new StructField("city", DataTypes.STRING));
-    fields[2] = new Field("address", "struct", fld);
-
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
+          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
           .outputPath(path)
           .isTransactionalTable(true)
           .buildWriterForAvroInput();
@@ -323,18 +290,9 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = converter.convertToGenericDataRecord(
         json.getBytes(CharEncoding.UTF_8), nn);
 
-    Field[] fields = new Field[3];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("name1", DataTypes.STRING);
-    // fields[1] = new Field("age", DataTypes.INT);
-    List fld = new ArrayList<StructField>();
-    fld.add(new StructField("street", DataTypes.STRING));
-    fld.add(new StructField("city", DataTypes.STRING));
-    fields[2] = new Field("address", "struct", fld);
-
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
+          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
           .outputPath(path)
           .isTransactionalTable(true)
           .buildWriterForAvroInput();
@@ -365,17 +323,6 @@ public class AvroCarbonWriterTest {
 
   private void WriteAvroComplexData(String mySchema, String json, String[] sortColumns)
       throws UnsupportedEncodingException, IOException, InvalidLoadOptionException {
-    Field[] fields = new Field[4];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("name1", DataTypes.STRING);
-    // fields[1] = new Field("age", DataTypes.INT);
-    List fld = new ArrayList<StructField>();
-    fld.add(new StructField("street", DataTypes.STRING));
-    fld.add(new StructField("city", DataTypes.STRING));
-    fields[2] = new Field("address", "struct", fld);
-    List fld1 = new ArrayList<StructField>();
-    fld1.add(new StructField("eachDoorNum", DataTypes.INT));
-    fields[3] = new Field("doorNum","array",fld1);
 
     // conversion to GenericData.Record
     Schema nn = new Schema.Parser().parse(mySchema);
@@ -385,7 +332,7 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
+          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
           .outputPath(path)
           .isTransactionalTable(true).sortBy(sortColumns)
           .buildWriterForAvroInput();
