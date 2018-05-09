@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.spark.sql.execution.datasources
 
 import java.net.URI
 
@@ -34,6 +34,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.datasources.text.TextOutputWriter
 import org.apache.spark.sql.optimizer.CarbonFilters
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.sources.{DataSourceRegister, Filter}
 import org.apache.spark.sql.types.{AtomicType, StructField, StructType}
 
