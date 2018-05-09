@@ -516,6 +516,11 @@
                 <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/store/search/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/store/search/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
@@ -572,6 +577,11 @@
                 <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/store/search/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/store/search/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
