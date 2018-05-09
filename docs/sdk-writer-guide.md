@@ -281,7 +281,8 @@ public CarbonWriter buildWriterForAvroInput() throws IOException, InvalidLoadOpt
 /**
 * Write an object to the file, the format of the object depends on the implementation
 * If AvroCarbonWriter, object is of type org.apache.avro.generic.GenericData.Record 
-* If CSVCarbonWriter, object is of type String[] 
+* If CSVCarbonWriter, object is of type String[]
+* Note: This API is not thread safe
 * @param object
 * @throws IOException
 */
