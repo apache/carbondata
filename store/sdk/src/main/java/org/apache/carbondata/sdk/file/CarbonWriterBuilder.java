@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -426,6 +427,10 @@ public class CarbonWriterBuilder {
 
   private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
       List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList) {
+    // a counter which will be used in case of complex array type. This valIndex will be assigned
+    // to child of complex array type in the order val1, val2 so that each array type child is
+    // differentiated to any level
+    AtomicInteger valIndex = new AtomicInteger(0);
     for (Field field : fields) {
       if (null != field) {
         int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
@@ -443,7 +448,8 @@ public class CarbonWriterBuilder {
             // Loop through the inner columns and for a StructData
             DataType complexType =
                 DataTypes.createArrayType(field.getChildren().get(0).getDataType());
-            tableSchemaBuilder.addColumn(new StructField(field.getFieldName(), complexType), false);
+            tableSchemaBuilder
+                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false);
           } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
             // Loop through the inner columns and for a StructData
             List<StructField> structFieldsArray =
@@ -453,12 +459,13 @@ public class CarbonWriterBuilder {
                   .add(new StructField(childFld.getFieldName(), childFld.getDataType()));
             }
             DataType complexType = DataTypes.createStructType(structFieldsArray);
-            tableSchemaBuilder.addColumn(new StructField(field.getFieldName(), complexType), false);
+            tableSchemaBuilder
+                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false);
           }
         } else {
           ColumnSchema columnSchema = tableSchemaBuilder
               .addColumn(new StructField(field.getFieldName(), field.getDataType()),
-                  isSortColumn > -1);
+                  valIndex, isSortColumn > -1);
           columnSchema.setSortColumn(true);
           if (isSortColumn > -1) {
             sortColumnsSchemaList[isSortColumn] = columnSchema;
