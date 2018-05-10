@@ -98,9 +98,9 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildTestData(3, false, options)
   }
 
-  def buildTestDataWithSortColumns(): Any = {
+  def buildTestDataWithSortColumns(sortColumns: List[String]): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(3, false, null, List("age", "name"))
+    buildTestData(3, false, null, sortColumns)
   }
 
   def buildTestData(rows: Int, persistSchema: Boolean, options: util.Map[String, String]): Any = {
@@ -302,7 +302,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create external table with sort columns") {
-    buildTestDataWithSortColumns()
+    buildTestDataWithSortColumns(List("age","name"))
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
@@ -315,6 +315,28 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("describe formatted sdkOutputTable"), true, "age,name")
 
     checkExistence(sql("describe formatted sdkOutputTable"), true, writerPath)
+
+    buildTestDataWithSortColumns(List("age"))
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkExistence(sql("describe formatted sdkOutputTable"), true, "age")
+
+    buildTestDataSingleFile()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkExistence(sql("describe formatted sdkOutputTable"), true, "name")
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
