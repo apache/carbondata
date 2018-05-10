@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
@@ -114,12 +115,12 @@ public class TableSchemaBuilder {
     this.sortColumns = sortColumns;
   }
 
-  public ColumnSchema addColumn(StructField field, boolean isSortColumn) {
-    return addColumn(field, null, isSortColumn, false);
+  public ColumnSchema addColumn(StructField field, AtomicInteger valIndex, boolean isSortColumn) {
+    return addColumn(field, null, valIndex, isSortColumn, false);
   }
 
-  private ColumnSchema addColumn(StructField field, String parentName, boolean isSortColumn,
-      boolean isComplexChild) {
+  private ColumnSchema addColumn(StructField field, String parentName, AtomicInteger valIndex,
+      boolean isSortColumn, boolean isComplexChild) {
     Objects.requireNonNull(field);
     checkRepeatColumnName(field);
     ColumnSchema newColumn = new ColumnSchema();
@@ -184,33 +185,25 @@ public class TableSchemaBuilder {
     if (field.getDataType().isComplexType()) {
       String parentFieldName = newColumn.getColumnName();
       if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
-        String colName = getColNameForArray(parentFieldName);
-        addColumn(new StructField(colName,
-            ((ArrayType) field.getDataType()).getElementType()), field.getFieldName(), false, true);
+        String colName = getColNameForArray(valIndex);
+        addColumn(new StructField(colName, ((ArrayType) field.getDataType()).getElementType()),
+            field.getFieldName(), valIndex, false, true);
       } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")
           && ((StructType) field.getDataType()).getFields().size() > 0) {
         // This field has children.
         List<StructField> fields = ((StructType) field.getDataType()).getFields();
         for (int i = 0; i < fields.size(); i++) {
-          addColumn(fields.get(i), parentFieldName, false, true);
+          addColumn(fields.get(i), parentFieldName, valIndex, false, true);
         }
       }
     }
     return newColumn;
   }
 
-  private String getColNameForArray(String parentFieldName) {
-    if (!parentFieldName.endsWith(".val")) {
-      return "val";
-    } else {
-      String[] splits = parentFieldName.split("val");
-      if (splits.length == 1) {
-        return "val" + 1;
-      } else {
-        return "val" + (Integer.parseInt(parentFieldName
-            .substring(parentFieldName.lastIndexOf("val") + 3, parentFieldName.length())) + 1);
-      }
-    }
+  private String getColNameForArray(AtomicInteger valIndex) {
+    String colName = "val" + valIndex.get();
+    valIndex.incrementAndGet();
+    return colName;
   }
 
   /**
