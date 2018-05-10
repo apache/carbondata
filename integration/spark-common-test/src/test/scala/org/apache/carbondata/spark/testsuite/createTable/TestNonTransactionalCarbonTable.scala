@@ -1331,6 +1331,90 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildAvroTestDataStructOfArray(3, null)
   }
 
+  // ArrayOfStruct test
+  def buildAvroTestDataArrayOfStructWithNoSortCol(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema = """ {
+                     |	"name": "address",
+                     |	"type": "record",
+                     |	"fields": [
+                     |		{
+                     |			"name": "exp",
+                     |			"type": "int"
+                     |		},
+                     |		{
+                     |			"name": "age",
+                     |			"type": "int"
+                     |		},
+                     |		{
+                     |			"name": "doorNum",
+                     |			"type": {
+                     |				"type": "array",
+                     |				"items": {
+                     |					"type": "record",
+                     |					"name": "my_address",
+                     |					"fields": [
+                     |						{
+                     |							"name": "street",
+                     |							"type": "string"
+                     |						},
+                     |						{
+                     |							"name": "city",
+                     |							"type": "string"
+                     |						}
+                     |					]
+                     |				}
+                     |			}
+                     |		}
+                     |	]
+                     |} """.stripMargin
+    val json =
+      """ {"exp":5,"age":10,"doorNum" :
+        |[{"street":"abc","city":"city1"},
+        |{"street":"def","city":"city2"},
+        |{"street":"ghi","city":"city3"},
+        |{"street":"jkl","city":"city4"}]} """.stripMargin
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("exp", DataTypes.INT)
+    fields(1) = new Field("age", DataTypes.INT)
+
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("street", DataTypes.STRING))
+    fld.add(new StructField("city", DataTypes.STRING))
+
+    val fld2 = new util.ArrayList[StructField]
+    fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
+    fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
+
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  test("Read sdk writer Avro output Record Type with no sort columns") {
+    buildAvroTestDataArrayOfStructWithNoSortCol(3,null)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("desc formatted sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable").show(false)
+
+    /*
+    +---+---+----------------------------------------------------+
+    |exp|age|doorNum                                             |
+    +---+---+----------------------------------------------------+
+    |5  |10 |[[abc,city1], [def,city2], [ghi,city3], [jkl,city4]]|
+    |5  |10 |[[abc,city1], [def,city2], [ghi,city3], [jkl,city4]]|
+    |5  |10 |[[abc,city1], [def,city2], [ghi,city3], [jkl,city4]]|
+    +---+---+----------------------------------------------------+
+    */
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).listFiles().length > 0)
+  }
 
   test("Read sdk writer Avro output Record Type") {
     buildAvroTestDataStructType()
