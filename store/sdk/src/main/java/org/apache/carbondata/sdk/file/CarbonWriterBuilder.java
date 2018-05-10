@@ -414,8 +414,8 @@ public class CarbonWriterBuilder {
       tableName = "_tempTable";
       dbName = "_tempDB";
     } else {
-      dbName = null;
-      tableName = null;
+      dbName = "";
+      tableName = "_tempTable_" + String.valueOf(UUID);
     }
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
