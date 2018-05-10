@@ -19,7 +19,6 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.sql.Timestamp
 import java.io.{File, FileFilter, IOException}
-import java.io.{File, FileFilter}
 import java.util
 
 import org.apache.commons.io.FileUtils
@@ -33,8 +32,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.sdk.file.{CarbonWriter, CarbonWriterBuilder, Field, Schema}
-import org.apache.carbondata.sdk.file.{AvroCarbonWriter, CarbonWriter, Field, Schema}
+import org.apache.carbondata.sdk.file.AvroCarbonWriter
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -42,7 +40,7 @@ import org.apache.avro
 import org.apache.commons.lang.CharEncoding
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
-import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.sdk.file.{CarbonWriter, CarbonWriterBuilder, Field, Schema}
 
 
@@ -240,6 +238,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
 
     checkExistence(sql("describe formatted sdkOutputTable"), true, "age,name")
+
+    checkExistence(sql("describe formatted sdkOutputTable"), true, writerPath)
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files

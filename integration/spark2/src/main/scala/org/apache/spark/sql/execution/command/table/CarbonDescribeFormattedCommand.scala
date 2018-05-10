@@ -86,10 +86,10 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("Database Name", relation.carbonTable.getDatabaseName, "")
     )
     results ++= Seq(("Table Name", relation.carbonTable.getTableName, ""))
-    if (carbonTable.isTransactionalTable) {
+    if (!carbonTable.isExternalTable) {
       results ++= Seq(("CARBON Store Path ", CarbonProperties.getStorePath, ""))
     } else {
-      // for NonTransactional table should show files path.
+      // for external table should show files path.
       results ++= Seq(("CARBON Store Path ", carbonTable.getTablePath, ""))
     }
 
