@@ -343,6 +343,36 @@ public class ColumnSchema implements Serializable, Writable {
   }
 
   /**
+   * method to compare columnSchema,
+   * other parameters along with just column name and column data type
+   * @param obj
+   * @return
+   */
+  public boolean equalsWithStrictCheck(Object obj) {
+    if (!this.equals(obj)) {
+      return false;
+    }
+    ColumnSchema other = (ColumnSchema) obj;
+    if (!columnUniqueId.equals(other.columnUniqueId) ||
+        (isDimensionColumn != other.isDimensionColumn) ||
+        (scale != other.scale) ||
+        (precision != other.precision) ||
+        (isSortColumn != other.isSortColumn)) {
+      return false;
+    }
+    if (encodingList.size() != other.encodingList.size()) {
+      return false;
+    }
+    for (int i = 0; i < encodingList.size(); i++) {
+      if (encodingList.get(i).compareTo(other.encodingList.get(i)) != 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
    * @return the dataType
    */
   public DataType getDataType() {
