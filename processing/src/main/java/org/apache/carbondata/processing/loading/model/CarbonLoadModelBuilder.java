@@ -80,10 +80,6 @@ public class CarbonLoadModelBuilder {
     // we have provided 'fileheader', so it hadoopConf can be null
     build(options, optionsFinal, model, null);
 
-
-    // set default values
-    model.setTimestampformat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-    model.setDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
     model.setUseOnePass(Boolean.parseBoolean(Maps.getOrDefault(options, "onepass", "false")));
     model.setDictionaryServerHost(Maps.getOrDefault(options, "dicthost", null));
     try {

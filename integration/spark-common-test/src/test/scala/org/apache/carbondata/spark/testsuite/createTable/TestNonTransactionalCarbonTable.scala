@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
+import java.sql.Timestamp
+import java.io.{File, FileFilter, IOException}
 import java.io.{File, FileFilter}
 import java.util
 
@@ -31,6 +33,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.sdk.file.{CarbonWriter, CarbonWriterBuilder, Field, Schema}
 import org.apache.carbondata.sdk.file.{AvroCarbonWriter, CarbonWriter, Field, Schema}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -38,6 +41,10 @@ import scala.collection.mutable
 import org.apache.avro
 import org.apache.commons.lang.CharEncoding
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
+
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
+import org.apache.carbondata.sdk.file.{CarbonWriter, CarbonWriterBuilder, Field, Schema}
+
 
 class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
@@ -667,6 +674,38 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(new File(writerPath).exists())
 
     cleanTestData()
+  }
+
+  test("test custom  format for date and timestamp in sdk") {
+
+    cleanTestData()
+    var options = Map("dateformat" -> "dd-MM-yyyy" ,"timestampformat" -> "dd-MM-yyyy HH:mm:ss").asJava
+
+    val fields: Array[Field] = new Array[Field](4)
+    fields(0) = new Field("stringField", DataTypes.STRING)
+    fields(1) = new Field("intField", DataTypes.INT)
+    fields(2) = new Field("mydate", DataTypes.DATE)
+    fields(3) = new Field("mytime", DataTypes.TIMESTAMP)
+
+    val builder: CarbonWriterBuilder = CarbonWriter.builder.withSchema(new Schema(fields))
+      .outputPath(writerPath).isTransactionalTable(false).withLoadOptions(options)
+
+    val writer: CarbonWriter = builder.buildWriterForCSVInput
+    writer.write(Array("babu","1","02-01-2002","02-01-2002 01:01:00"));
+    writer.close()
+
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("babu", 1, java.sql.Date.valueOf("2002-01-02"),Timestamp.valueOf("2002-01-02 01:01:00.0"))))
+    sql("DROP TABLE sdkOutputTable")
+    cleanTestData()
+
   }
 
   test("test huge data write with one batch having bad record") {
