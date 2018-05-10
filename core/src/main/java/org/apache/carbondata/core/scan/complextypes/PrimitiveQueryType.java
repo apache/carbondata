@@ -22,13 +22,16 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.Bits;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class PrimitiveQueryType extends ComplexQueryType implements GenericQueryType {
@@ -46,6 +49,8 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   private boolean isDictionary;
 
+  private DirectDictionaryGenerator directDictGenForDate;
+
   public PrimitiveQueryType(String name, String parentname, int blockIndex,
       DataType dataType, int keySize,
       Dictionary dictionary, boolean isDirectDictionary) {
@@ -57,6 +62,8 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     this.parentname = parentname;
     this.isDirectDictionary = isDirectDictionary;
     this.isDictionary = (dictionary != null && isDirectDictionary == false);
+    this.directDictGenForDate =
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
   }
 
   @Override public void addChildren(GenericQueryType children) {
@@ -116,7 +123,16 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       int size = dataBuffer.getInt();
       byte[] value = new byte[size];
       dataBuffer.get(value, 0, size);
-      actualData = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType);
+      if (dataType == DataTypes.DATE) {
+        if (value.length == 0) {
+          actualData = null;
+        } else {
+          actualData = this.directDictGenForDate.getValueFromSurrogate(
+              ByteUtil.toInt(value, 0, CarbonCommonConstants.INT_SIZE_IN_BYTE));
+        }
+      } else {
+        actualData = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType);
+      }
     } else {
       // Dictionary Column
       byte[] data = new byte[keySize];

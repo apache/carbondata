@@ -46,6 +46,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
@@ -108,6 +109,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private String nullformat;
 
+  private boolean isDirectDictionary;
 
   private PrimitiveDataType(int outputArrayIndex, int dataCounter) {
     this.outputArrayIndex = outputArrayIndex;
@@ -162,9 +164,11 @@ public class PrimitiveDataType implements GenericDataType<Object> {
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
             carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
     try {
-      if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
+          || carbonColumn.getDataType() == DataTypes.DATE) {
         dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(carbonDimension.getDataType()));
+        isDirectDictionary = true;
       } else if (carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
         CacheProvider cacheProvider = CacheProvider.getInstance();
         Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache =
@@ -307,15 +311,24 @@ public class PrimitiveDataType implements GenericDataType<Object> {
         } else if (this.carbonDimension.getDataType() == DataTypes.TIMESTAMP) {
           dateFormat = carbonDimension.getTimestampFormat();
         }
-
         try {
           if (!this.carbonDimension.getUseActualData()) {
-            byte[] value = DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(parsedValue,
-                this.carbonDimension.getDataType(), dateFormat);
-            if (this.carbonDimension.getDataType() == DataTypes.STRING
-                && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-              throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-                  + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+            byte[] value = null;
+            if (isDirectDictionary) {
+              int surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
+              if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+                value = new byte[0];
+              } else {
+                value = ByteUtil.toBytes(surrogateKey);
+              }
+            } else {
+              value = DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(parsedValue,
+                  this.carbonDimension.getDataType(), dateFormat);
+              if (this.carbonDimension.getDataType() == DataTypes.STRING
+                  && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+                throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+                    + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+              }
             }
             updateValueToByteStream(dataOutputStream, value);
           } else {

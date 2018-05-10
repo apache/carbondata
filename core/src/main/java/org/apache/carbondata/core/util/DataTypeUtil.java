@@ -331,6 +331,10 @@ public final class DataTypeUtil {
       return ByteUtil.toBytes(Integer.parseInt(dimensionValue));
     } else if (actualDataType == DataTypes.LONG) {
       return ByteUtil.toBytes(Long.parseLong(dimensionValue));
+    } else if (actualDataType == DataTypes.DOUBLE) {
+      return ByteUtil.toBytes(Double.parseDouble(dimensionValue));
+    } else if (DataTypes.isDecimal(actualDataType)) {
+      return bigDecimalToByte(new BigDecimal(dimensionValue));
     } else if (actualDataType == DataTypes.TIMESTAMP) {
       Date dateToStr = null;
       DateFormat dateFormatter = null;
@@ -362,6 +366,10 @@ public final class DataTypeUtil {
       return Integer.parseInt(dimensionValue);
     } else if (actualDataType == DataTypes.LONG) {
       return Long.parseLong(dimensionValue);
+    } else if (actualDataType == DataTypes.DOUBLE) {
+      return Double.parseDouble(dimensionValue);
+    } else if (DataTypes.isDecimal(actualDataType)) {
+      return new BigDecimal(dimensionValue);
     } else if (actualDataType == DataTypes.TIMESTAMP) {
       Date dateToStr = null;
       DateFormat dateFormatter = null;
@@ -449,6 +457,16 @@ public final class DataTypeUtil {
           return null;
         }
         return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length) * 1000L;
+      } else if (actualDataType == DataTypes.DOUBLE) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
+        return ByteUtil.toDouble(dataInBytes, 0, dataInBytes.length);
+      } else if (DataTypes.isDecimal(actualDataType)) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
+        return converter.convertFromBigDecimalToDecimal(byteToBigDecimal(dataInBytes));
       } else {
         return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
       }
