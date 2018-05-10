@@ -445,6 +445,7 @@ public class CarbonWriterBuilder {
             "column: " + sortColumn + " specified in sort columns does not exist in schema");
       }
     }
+    int i = 0;
     for (Field field : fields) {
       if (null != field) {
         int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
@@ -481,9 +482,14 @@ public class CarbonWriterBuilder {
           ColumnSchema columnSchema = tableSchemaBuilder
               .addColumn(new StructField(field.getFieldName(), field.getDataType()),
                   valIndex, isSortColumn > -1);
-          columnSchema.setSortColumn(true);
           if (isSortColumn > -1) {
+            columnSchema.setSortColumn(true);
             sortColumnsSchemaList[isSortColumn] = columnSchema;
+          } else if (sortColumnsList.isEmpty() && columnSchema.isDimensionColumn()
+              && columnSchema.getNumberOfChild() < 1) {
+            columnSchema.setSortColumn(true);
+            sortColumnsSchemaList[i] = columnSchema;
+            i++;
           }
         }
       }
