@@ -545,6 +545,14 @@ public final class ByteUtil {
     return b;
   }
 
+  public static byte[] toBytes(double val) {
+    return toBytes(Double.doubleToLongBits(val));
+  }
+
+  public static double toDouble(byte[] value, int offset, int length) {
+    return Double.longBitsToDouble(toLong(value, offset, length));
+  }
+
   /**
    * byte[] => long
    */

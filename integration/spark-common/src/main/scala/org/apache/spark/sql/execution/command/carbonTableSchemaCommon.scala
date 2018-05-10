@@ -393,13 +393,6 @@ class TableNewProcessor(cm: TableModel) {
     var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
     fieldChildren.foreach(fields => {
       fields.foreach(field => {
-        if (!useDictionaryEncoding &&
-            (field.dataType.get.equalsIgnoreCase("double") ||
-             field.dataType.get.equalsIgnoreCase("date") ||
-             field.dataType.get.equalsIgnoreCase("decimal"))) {
-          throw new MalformedCarbonCommandException(s"DICTIONARY_EXCLUDE is unsupported for ${
-            field.dataType.get} data type column: ${ field.column }")
-        }
         val encoders = new java.util.ArrayList[Encoding]()
         if (useDictionaryEncoding) {
           encoders.add(Encoding.DICTIONARY)
@@ -439,7 +432,7 @@ class TableNewProcessor(cm: TableModel) {
       if (highCardinalityDims.contains(colName)) {
         encoders.remove(Encoding.DICTIONARY)
       }
-    if (dataType == DataTypes.DATE) {
+    if (dataType == DataTypes.DATE && useDictionaryEncoding) {
         encoders.add(Encoding.DIRECT_DICTIONARY)
       }
       if (dataType == DataTypes.TIMESTAMP &&
