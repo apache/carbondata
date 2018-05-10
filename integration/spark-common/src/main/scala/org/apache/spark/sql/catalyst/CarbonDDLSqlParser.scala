@@ -1147,6 +1147,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
         field.columnComment)
+      case "boolean" => Field(field.column, Some("Boolean"), field.name, Some(null), field.parent,
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.columnComment)
       // checking if the nested data type contains the child type as decimal(10,0),
       // if it is present then extracting the precision and scale. resetting the data type
       // with Decimal.
@@ -1214,6 +1217,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case "Decimal" => Field(parentName + "." + field.column, Some("Decimal"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName,
         field.storeType, field.schemaOrdinal, field.precision, field.scale)
+      case "Boolean" => Field(parentName + "." + field.column, Some("Boolean"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case _ => field
     }
   }

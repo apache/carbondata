@@ -19,6 +19,7 @@ package org.apache.carbondata.core.metadata.schema.table;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
@@ -32,15 +33,16 @@ public class TableSchemaBuilderSuite {
   @Test(expected = NullPointerException.class)
   public void testNullField() {
     TableSchemaBuilder builder = TableSchema.builder();
-    builder.addColumn(null, true);
+    builder.addColumn(null, new AtomicInteger(0), true);
   }
 
   @Test
   public void testBuilder() {
     TableSchemaBuilder builder = TableSchema.builder();
-    ColumnSchema columnSchema = builder.addColumn(new StructField("a", DataTypes.INT), true);
+    ColumnSchema columnSchema =
+        builder.addColumn(new StructField("a", DataTypes.INT), new AtomicInteger(0), true);
     builder.setSortColumns(Arrays.asList(columnSchema));
-    builder.addColumn(new StructField("b", DataTypes.DOUBLE), false);
+    builder.addColumn(new StructField("b", DataTypes.DOUBLE), new AtomicInteger(0), false);
     TableSchema schema = builder.build();
     Assert.assertEquals(2, schema.getListOfColumns().size());
     List<ColumnSchema> columns = schema.getListOfColumns();
@@ -51,9 +53,10 @@ public class TableSchemaBuilderSuite {
   @Test(expected = IllegalArgumentException.class)
   public void testRepeatedColumn() {
     TableSchemaBuilder builder = TableSchema.builder();
-    ColumnSchema columnSchema = builder.addColumn(new StructField("a", DataTypes.INT), true);
+    ColumnSchema columnSchema =
+        builder.addColumn(new StructField("a", DataTypes.INT), new AtomicInteger(0), true);
     builder.setSortColumns(Arrays.asList(columnSchema));
-    builder.addColumn(new StructField("a", DataTypes.DOUBLE), false);
+    builder.addColumn(new StructField("a", DataTypes.DOUBLE), new AtomicInteger(0), false);
     TableSchema schema = builder.build();
   }
 }
