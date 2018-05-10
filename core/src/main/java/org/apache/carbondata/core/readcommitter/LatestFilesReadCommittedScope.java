@@ -125,7 +125,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     if (file == null) {
       // For nonTransactional table, files can be removed at any point of time.
       // So cannot assume files will be present
-      throw new IOException("No files are present in the table location");
+      throw new IOException("No files are present in the table location :"+ carbonFilePath);
     }
     Map<String, List<String>> indexFileStore = new HashMap<>();
     if (file.isDirectory()) {
