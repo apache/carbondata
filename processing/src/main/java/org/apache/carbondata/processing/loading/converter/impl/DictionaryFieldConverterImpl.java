@@ -24,6 +24,8 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -64,15 +66,17 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
   private boolean isEmptyBadRecord;
 
   public DictionaryFieldConverterImpl(DataField dataField,
-      Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       AbsoluteTableIdentifier absoluteTableIdentifier, String nullFormat, int index,
-      DictionaryClient client, boolean useOnePass,
-      Map<Object, Integer> localCache, boolean isEmptyBadRecord,
-      DictionaryColumnUniqueIdentifier identifier) throws IOException {
+      DictionaryClient client, boolean useOnePass, Map<Object, Integer> localCache,
+      boolean isEmptyBadRecord, DictionaryColumnUniqueIdentifier identifier) throws IOException {
     this.index = index;
     this.carbonDimension = (CarbonDimension) dataField.getColumn();
     this.nullFormat = nullFormat;
     this.isEmptyBadRecord = isEmptyBadRecord;
+
+    CacheProvider cacheProvider = CacheProvider.getInstance();
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache =
+        cacheProvider.createCache(CacheType.REVERSE_DICTIONARY);
 
     // if use one pass, use DictionaryServerClientDictionary
     if (useOnePass) {
