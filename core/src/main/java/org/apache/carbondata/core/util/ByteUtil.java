@@ -517,8 +517,8 @@ public final class ByteUtil {
   }
 
   public static int toInt(byte[] bytes, int offset) {
-    return (((int)bytes[offset]) << 24) + (((int)bytes[offset + 1]) << 16) +
-        (((int)bytes[offset + 2]) << 8) + bytes[offset + 3];
+    return (((int)bytes[offset] & 0xff) << 24) + (((int)bytes[offset + 1] & 0xff) << 16) +
+        (((int)bytes[offset + 2] & 0xff) << 8) + ((int)bytes[offset + 3] & 0xff);
   }
 
   public static void setInt(byte[] data, int offset, int value) {
