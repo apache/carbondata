@@ -17,13 +17,9 @@
 
 package org.apache.carbondata.datamap.bloom;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -45,13 +41,8 @@ import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
 
 /**
  * BloomDataCoarseGrainMap is constructed in blocklet level. For each indexed column,
@@ -62,15 +53,16 @@ import org.apache.hadoop.fs.PathFilter;
 public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BloomCoarseGrainDataMap.class.getName());
+  public static final String BLOOM_INDEX_SUFFIX = ".bloomindex";
   private Set<String> indexedColumn;
   private List<BloomDMModel> bloomIndexList;
-  private Multimap<String, List<BloomDMModel>> indexCol2BloomDMList;
-  public static final String BLOOM_INDEX_SUFFIX = ".bloomindex";
   private String shardName;
+  private BloomDataMapCache bloomDataMapCache;
+  private Path indexPath;
 
   @Override
   public void init(DataMapModel dataMapModel) throws IOException {
-    Path indexPath = FileFactory.getPath(dataMapModel.getFilePath());
+    this.indexPath = FileFactory.getPath(dataMapModel.getFilePath());
     this.shardName = indexPath.getName();
     FileSystem fs = FileFactory.getFileSystem(indexPath);
     if (!fs.exists(indexPath)) {
@@ -81,52 +73,11 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       throw new IOException(
           String.format("Path %s for Bloom index dataMap must be a directory", indexPath));
     }
-
-    FileStatus[] indexFileStatus = fs.listStatus(indexPath, new PathFilter() {
-      @Override public boolean accept(Path path) {
-        return path.getName().endsWith(BLOOM_INDEX_SUFFIX);
-      }
-    });
-    indexedColumn = new HashSet<String>();
-    bloomIndexList = new ArrayList<BloomDMModel>();
-    indexCol2BloomDMList = ArrayListMultimap.create();
-    for (int i = 0; i < indexFileStatus.length; i++) {
-      String indexfilename = indexFileStatus[i].getPath().getName();
-      String indexCol =
-          indexfilename.substring(0, indexfilename.length() - BLOOM_INDEX_SUFFIX.length());
-      indexedColumn.add(indexCol);
-      List<BloomDMModel> models = readBloomIndex(indexFileStatus[i].getPath().toString());
-      bloomIndexList.addAll(models);
-      indexCol2BloomDMList.put(indexCol, models);
-    }
-    LOGGER.info("find bloom index datamap for column: "
-        + StringUtils.join(indexedColumn, ", "));
+    this.bloomDataMapCache = BloomDataMapCache.getInstance();
   }
 
-  private List<BloomDMModel> readBloomIndex(String indexFile) throws IOException {
-    LOGGER.info("read bloom index from file: " + indexFile);
-    List<BloomDMModel> bloomDMModelList = new ArrayList<BloomDMModel>();
-    DataInputStream dataInStream = null;
-    ObjectInputStream objectInStream = null;
-    try {
-      dataInStream = FileFactory.getDataInputStream(indexFile, FileFactory.getFileType(indexFile));
-      objectInStream = new ObjectInputStream(dataInStream);
-      try {
-        BloomDMModel model = null;
-        while ((model = (BloomDMModel) objectInStream.readObject()) != null) {
-          LOGGER.info("read bloom index: " + model);
-          bloomDMModelList.add(model);
-        }
-      } catch (EOFException e) {
-        LOGGER.info("read " + bloomDMModelList.size() + " bloom indices from " + indexFile);
-      }
-      return bloomDMModelList;
-    } catch (ClassNotFoundException e) {
-      LOGGER.error("Error occrus while reading bloom index");
-      throw new RuntimeException("Error occrus while reading bloom index", e);
-    } finally {
-      CarbonUtil.closeStreams(objectInStream, dataInStream);
-    }
+  public void setIndexedColumn(Set<String> indexedColumn) {
+    this.indexedColumn = indexedColumn;
   }
 
   @Override
@@ -139,26 +90,22 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
 
     List<BloomQueryModel> bloomQueryModels = getQueryValue(filterExp.getFilterExpression());
-
     for (BloomQueryModel bloomQueryModel : bloomQueryModels) {
-      LOGGER.info("prune blocklet for query: " + bloomQueryModel);
-      for (List<BloomDMModel> bloomDMModels : indexCol2BloomDMList.get(
-          bloomQueryModel.columnName)) {
-        for (BloomDMModel bloomDMModel : bloomDMModels) {
-          boolean scanRequired = bloomDMModel.getBloomFilter().mightContain(
-              convertValueToBytes(bloomQueryModel.dataType, bloomQueryModel.filterValue));
-          if (scanRequired) {
-            LOGGER.info(String.format(
-                "BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
-                String.valueOf(bloomDMModel.getBlockletNo())));
-            Blocklet blocklet =
-                new Blocklet(shardName, String.valueOf(bloomDMModel.getBlockletNo()));
-            hitBlocklets.add(blocklet);
-          } else {
-            LOGGER.info(String.format(
-                "BloomCoarseGrainDataMap: Skip scan -> blocklet#%s",
-                String.valueOf(bloomDMModel.getBlockletNo())));
-          }
+      LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
+      BloomDataMapCache.CacheKey cacheKey = new BloomDataMapCache.CacheKey(
+          this.indexPath.toString(), bloomQueryModel.columnName);
+      List<BloomDMModel> bloomDMModels = this.bloomDataMapCache.getBloomDMModelByKey(cacheKey);
+      for (BloomDMModel bloomDMModel : bloomDMModels) {
+        boolean scanRequired = bloomDMModel.getBloomFilter().mightContain(
+            convertValueToBytes(bloomQueryModel.dataType, bloomQueryModel.filterValue));
+        if (scanRequired) {
+          LOGGER.debug(String.format("BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
+              String.valueOf(bloomDMModel.getBlockletNo())));
+          Blocklet blocklet = new Blocklet(shardName, String.valueOf(bloomDMModel.getBlockletNo()));
+          hitBlocklets.add(blocklet);
+        } else {
+          LOGGER.debug(String.format("BloomCoarseGrainDataMap: Skip scan -> blocklet#%s",
+              String.valueOf(bloomDMModel.getBlockletNo())));
         }
       }
     }
