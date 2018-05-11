@@ -74,6 +74,10 @@ public final class TableDataMap extends OperationEventListener {
     this.segmentPropertiesFetcher = segmentPropertiesFetcher;
   }
 
+  public BlockletDetailsFetcher getBlockletDetailsFetcher() {
+    return blockletDetailsFetcher;
+  }
+
   /**
    * Pass the valid segments and prune the datamap using filter expression
    *
@@ -122,8 +126,9 @@ public final class TableDataMap extends OperationEventListener {
   public List<DataMapDistributable> toDistributable(List<Segment> segments) throws IOException {
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (Segment segment : segments) {
-      List<DataMapDistributable> list = dataMapFactory.toDistributable(segment);
-      for (DataMapDistributable distributable: list) {
+      List<DataMapDistributable> list =
+          dataMapFactory.toDistributable(segment);
+      for (DataMapDistributable distributable : list) {
         distributable.setDataMapSchema(dataMapSchema);
         distributable.setSegment(segment);
         distributable.setTablePath(identifier.getTablePath());

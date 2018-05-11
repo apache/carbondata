@@ -166,6 +166,15 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     List<DataMapDistributable> lstDataMapDistribute = new ArrayList<>();
     CarbonFile[] indexDirs =
         getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo());
+    if (segment.getFilteredIndexShardNames().size() == 0) {
+      for (CarbonFile indexDir : indexDirs) {
+        DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
+            CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()),
+            indexDir.getAbsolutePath());
+        lstDataMapDistribute.add(luceneDataMapDistributable);
+      }
+      return lstDataMapDistribute;
+    }
     for (CarbonFile indexDir : indexDirs) {
       // Filter out the tasks which are filtered through CG datamap.
       if (!segment.getFilteredIndexShardNames().contains(indexDir.getName())) {

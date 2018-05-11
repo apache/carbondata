@@ -231,6 +231,11 @@ public class CarbonTable implements Serializable {
     }
   }
 
+  public static CarbonTable buildFromTablePath(String tableName, String dbName, String tablePath)
+      throws IOException {
+    return SchemaReader
+        .readCarbonTableFromStore(AbsoluteTableIdentifier.from(tablePath, dbName, tableName));
+  }
   /**
    * @param tableInfo
    */

@@ -26,6 +26,8 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
+import org.apache.carbondata.core.datamap.DataMapJob;
+import org.apache.carbondata.core.datamap.DataMapUtil;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -38,7 +40,6 @@ import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
-import org.apache.carbondata.hadoop.api.DataMapJob;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -119,7 +120,7 @@ public class CarbonInputFormatUtil {
     CarbonInputFormat.setFilterPredicates(conf, filterExpression);
     CarbonInputFormat.setColumnProjection(conf, columnProjection);
     if (dataMapJob != null) {
-      CarbonInputFormat.setDataMapJob(conf, dataMapJob);
+      DataMapUtil.setDataMapJob(conf, dataMapJob);
     } else {
       setDataMapJobIfConfigured(conf);
     }
@@ -164,22 +165,7 @@ public class CarbonInputFormatUtil {
    */
   public static void setDataMapJobIfConfigured(Configuration conf) throws IOException {
     String className = "org.apache.carbondata.spark.rdd.SparkDataMapJob";
-    CarbonTableInputFormat.setDataMapJob(conf, createDataMapJob(className));
-  }
-
-  /**
-   * Creates instance for the DataMap Job class
-   *
-   * @param className
-   * @return
-   */
-  public static Object createDataMapJob(String className) {
-    try {
-      return Class.forName(className).getDeclaredConstructors()[0].newInstance();
-    } catch (Exception e) {
-      LOGGER.error(e);
-      return null;
-    }
+    DataMapUtil.setDataMapJob(conf, DataMapUtil.createDataMapJob(className));
   }
 
   public static String createJobTrackerID(java.util.Date date) {
