@@ -55,7 +55,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   private Set<DataMapSchema> dataMapSchemas = new HashSet<>();
 
   public DiskBasedDMSchemaStorageProvider(String storePath) {
-    this.storePath = storePath;
+    this.storePath = CarbonUtil.checkAndAppendHDFSUrl(storePath);
     this.mdtFilePath = storePath + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
   }
 
