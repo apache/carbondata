@@ -252,6 +252,14 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<DataMapDistributable> dataMapDistributableList = new ArrayList<>();
     CarbonFile[] indexDirs =
         getAllIndexDirs(getCarbonTable().getTablePath(), segment.getSegmentNo());
+    if (segment.getFilteredIndexShardNames().size() == 0) {
+      for (CarbonFile indexDir : indexDirs) {
+        DataMapDistributable bloomDataMapDistributable = new BloomDataMapDistributable(
+            indexDir.getAbsolutePath());
+        dataMapDistributableList.add(bloomDataMapDistributable);
+      }
+      return dataMapDistributableList;
+    }
     for (CarbonFile indexDir : indexDirs) {
       // Filter out the tasks which are filtered through CG datamap.
       if (!segment.getFilteredIndexShardNames().contains(indexDir.getName())) {

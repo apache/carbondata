@@ -261,7 +261,9 @@ class TestDataMapFactory(
   override def getMeta: DataMapMeta = new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema),
     Seq(ExpressionType.EQUALS).asJava)
 
-  override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = ???
+  override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = {
+    util.Collections.emptyList()
+  }
 
   /**
    * delete datamap data if any

@@ -74,7 +74,8 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
     return null;
   }
 
-  @Override public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
+  @Override
+  public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
       throws IOException {
     List<DataMapDistributable> dataMapDistributables = dataMap.toDistributable(segments);
     List<DataMapDistributableWrapper> wrappers = new ArrayList<>();

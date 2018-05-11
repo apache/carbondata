@@ -87,7 +87,8 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
     return null;
   }
 
-  @Override public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
+  @Override
+  public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
       throws IOException {
     List<DataMapDistributableWrapper> wrappers = new ArrayList<>();
     wrappers.addAll(left.toDistributable(segments));

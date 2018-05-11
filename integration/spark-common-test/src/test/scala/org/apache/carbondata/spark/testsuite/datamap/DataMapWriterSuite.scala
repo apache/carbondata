@@ -66,7 +66,7 @@ class C2DataMapFactory(
    * @return
    */
   override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = {
-    ???
+    util.Collections.emptyList()
   }
 
   /**

@@ -14,24 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.api;
+package org.apache.carbondata.core.datamap;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -54,18 +52,27 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   private List<Segment> validSegments;
 
-  private String className;
+  private List<Segment> invalidSegments;
 
   private List<PartitionSpec> partitions;
 
-  DistributableDataMapFormat(CarbonTable table,
-      DataMapExprWrapper dataMapExprWrapper, List<Segment> validSegments,
-      List<PartitionSpec> partitions, String className) {
+  private  DataMapDistributableWrapper distributable;
+
+  private boolean isJobToClearDataMaps = false;
+
+  DistributableDataMapFormat(CarbonTable table, DataMapExprWrapper dataMapExprWrapper,
+      List<Segment> validSegments, List<Segment> invalidSegments, List<PartitionSpec> partitions,
+      boolean isJobToClearDataMaps) {
     this.table = table;
     this.dataMapExprWrapper = dataMapExprWrapper;
     this.validSegments = validSegments;
-    this.className = className;
+    this.invalidSegments = invalidSegments;
     this.partitions = partitions;
+    this.isJobToClearDataMaps = isJobToClearDataMaps;
+  }
+
+  public boolean isJobToClearDataMaps() {
+    return isJobToClearDataMaps;
   }
 
   public static void setFilterExp(Configuration configuration, FilterResolverIntf filterExp)
@@ -103,10 +110,21 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
       @Override public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
           throws IOException, InterruptedException {
-        DataMapDistributableWrapper distributable = (DataMapDistributableWrapper) inputSplit;
-        TableDataMap dataMap = DataMapStoreManager.getInstance()
+        distributable = (DataMapDistributableWrapper) inputSplit;
+        // clear the segmentMap and from cache in executor when there are invalid segments
+        if (invalidSegments.size() > 0) {
+          DataMapStoreManager.getInstance().clearInvalidSegments(table, invalidSegments);
+        }
+        TableDataMap tableDataMap = DataMapStoreManager.getInstance()
             .getDataMap(table, distributable.getDistributable().getDataMapSchema());
-        List<ExtendedBlocklet> blocklets = dataMap.prune(distributable.getDistributable(),
+        if (isJobToClearDataMaps) {
+          // if job is to clear datamaps just clear datamaps from cache and return
+          DataMapStoreManager.getInstance()
+              .clearDataMaps(table.getCarbonTableIdentifier().getTableUniqueName());
+          blockletIterator = Collections.emptyIterator();
+          return;
+        }
+        List<ExtendedBlocklet> blocklets = tableDataMap.prune(distributable.getDistributable(),
             dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);
         for (ExtendedBlocklet blocklet : blocklets) {
           blocklet.setDataMapUniqueId(distributable.getUniqueId());
