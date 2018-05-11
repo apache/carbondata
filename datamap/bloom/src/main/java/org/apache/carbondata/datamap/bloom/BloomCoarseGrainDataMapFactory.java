@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -189,6 +190,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       for (CarbonFile carbonFile : carbonFiles) {
         BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
         bloomDM.init(new DataMapModel(carbonFile.getAbsolutePath()));
+        bloomDM.setIndexedColumn(new HashSet<String>(dataMapMeta.getIndexedColumnNames()));
         dataMaps.add(bloomDM);
       }
     } catch (Exception e) {
@@ -204,6 +206,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     BloomCoarseGrainDataMap bloomCoarseGrainDataMap = new BloomCoarseGrainDataMap();
     String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
     bloomCoarseGrainDataMap.init(new DataMapModel(indexPath));
+    bloomCoarseGrainDataMap.setIndexedColumn(
+        new HashSet<String>(dataMapMeta.getIndexedColumnNames()));
     coarseGrainDataMaps.add(bloomCoarseGrainDataMap);
     return coarseGrainDataMaps;
   }

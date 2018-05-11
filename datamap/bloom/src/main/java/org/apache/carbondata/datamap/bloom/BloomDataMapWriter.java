@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -138,8 +137,8 @@ public class BloomDataMapWriter extends DataMapWriter {
     }
     List<CarbonColumn> indexColumns = getIndexColumns();
     for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
-      String dmFile = dataMapPath + CarbonCommonConstants.FILE_SEPARATOR +
-          indexColumns.get(indexColId).getColName() + BloomCoarseGrainDataMap.BLOOM_INDEX_SUFFIX;
+      String dmFile = BloomCoarseGrainDataMap.getBloomIndexFile(dataMapPath,
+          indexColumns.get(indexColId).getColName());
       DataOutputStream dataOutStream = null;
       ObjectOutputStream objectOutStream = null;
       try {
