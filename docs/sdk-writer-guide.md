@@ -52,6 +52,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.sdk.file.AvroCarbonWriter;
 import org.apache.carbondata.sdk.file.CarbonWriter;
 import org.apache.carbondata.sdk.file.Field;
 
@@ -75,25 +76,24 @@ public class TestSdkAvro {
             "   \"type\" : \"record\"," +
             "   \"name\" : \"Acme\"," +
             "   \"fields\" : ["
-            + "{ \"name\" : \"name\", \"type\" : \"string\" },"
+            + "{ \"name\" : \"fname\", \"type\" : \"string\" },"
             + "{ \"name\" : \"age\", \"type\" : \"int\" }]" +
             "}";
 
-    String json = "{\"name\":\"bob\", \"age\":10}";
+    String json = "{\"fname\":\"bob\", \"age\":10}";
 
     // conversion to GenericData.Record
     JsonAvroConverter converter = new JsonAvroConverter();
     GenericData.Record record = converter.convertToGenericDataRecord(
         json.getBytes(CharEncoding.UTF_8), new org.apache.avro.Schema.Parser().parse(avroSchema));
 
-    // for sdk schema
-    Field[] fields = new Field[2];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.STRING);
+    // prepare carbon schema from avro schema 
+    org.apache.carbondata.sdk.file.Schema carbonSchema =
+            AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
+          .withSchema(carbonSchema)
           .outputPath(path)
           .buildWriterForAvroInput();
 
@@ -345,4 +345,15 @@ public Schema(Field[] fields);
 * @return Schema
 */
 public static Schema parseJson(String json);
+```
+
+### Class org.apache.carbondata.sdk.file.AvroCarbonWriter
+```
+/**
+* converts avro schema to carbon schema, required by carbonWriter
+*
+* @param avroSchemaString json formatted avro schema as string
+* @return carbon sdk schema
+*/
+public static org.apache.carbondata.sdk.file.Schema getCarbonSchemaFromAvroSchema(String avroSchemaString);
 ```
