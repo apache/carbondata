@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -49,6 +50,7 @@ import com.google.common.cache.RemovalNotification;
  * The size of cache can be configurable through CarbonProperties and the cache will be expired if
  * no one access it in the past 2 hours.
  */
+@InterfaceAudience.Internal
 public class BloomDataMapCache implements Serializable {
   private static final LogService LOGGER = LogServiceFactory.getLogService(
       BloomDataMapCache.class.getName());
