@@ -21,11 +21,14 @@ import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandExcept
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
+import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES;
 
 import org.apache.spark.sql.SparkSession;
+
 
 public class DataMapManager {
 
@@ -50,6 +53,12 @@ public class DataMapManager {
       provider = new PreAggregateDataMapProvider(mainTable, dataMapSchema, sparkSession);
     } else if (dataMapSchema.getProviderName().equalsIgnoreCase(TIMESERIES.toString())) {
       provider = new TimeseriesDataMapProvider(mainTable, dataMapSchema, sparkSession);
+    } else if (dataMapSchema.getProviderName().equalsIgnoreCase(MV.toString())) {
+      provider = (DataMapProvider) CarbonScalaUtil.createDataMapProvider(
+          "org.apache.carbondata.mv.datamap.MVDataMapProvider",
+              sparkSession,
+              mainTable,
+              dataMapSchema);
     } else {
       provider = new IndexDataMapProvider(mainTable, dataMapSchema, sparkSession);
     }

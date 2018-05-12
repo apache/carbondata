@@ -15,16 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.util
+package org.apache.carbondata.mv.plans.util
 
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.internal.SessionState
+import java.util.concurrent.atomic.AtomicLong
 
-object SparkSQLUtil {
-  def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
+class SQLBuild private (
+    nextSubqueryId: AtomicLong,
+    subqueryPrefix: String) {
+  self =>
 
-  def execute(logicalPlan: LogicalPlan, sparkSession: SparkSession): DataFrame = {
-    Dataset.ofRows(sparkSession, logicalPlan)
-  }
+  def this(subqueryPrefix: String) =
+    this(new AtomicLong(0), subqueryPrefix)
+
+  def newSubqueryName(): String = s"${subqueryPrefix}${nextSubqueryId.getAndIncrement()}"
 }
