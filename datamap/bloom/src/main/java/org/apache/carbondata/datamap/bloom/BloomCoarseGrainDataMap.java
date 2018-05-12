@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.datamap.bloom;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -175,12 +176,20 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     bloomIndexList = null;
   }
 
+  /**
+   * get bloom index file
+   * @param shardPath path for the shard
+   * @param colName index column name
+   */
+  public static String getBloomIndexFile(String shardPath, String colName) {
+    return shardPath.concat(File.separator).concat(colName).concat(BLOOM_INDEX_SUFFIX);
+  }
   static class BloomQueryModel {
     private String columnName;
     private DataType dataType;
     private Object filterValue;
 
-    public BloomQueryModel(String columnName, DataType dataType, Object filterValue) {
+    private BloomQueryModel(String columnName, DataType dataType, Object filterValue) {
       this.columnName = columnName;
       this.dataType = dataType;
       this.filterValue = filterValue;

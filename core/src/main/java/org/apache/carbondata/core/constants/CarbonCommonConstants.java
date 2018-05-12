@@ -1729,6 +1729,19 @@ public final class CarbonCommonConstants {
   // Property to enable parallel datamap loading for a table
   public static final String CARBON_LOAD_DATAMAPS_PARALLEL = "carbon.load.datamaps.parallel.";
 
+  /**
+   * Cache size in MB for bloom filter datamap. It is an integer and should be greater than 0
+   * and it will be used during query.
+   */
+  @CarbonProperty
+  public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE =
+      "carbon.query.datamap.bloom.cache.size";
+
+  /**
+   * default value in size for cache size of bloom filter datamap.
+   */
+  public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL = "512";
+
   private CarbonCommonConstants() {
   }
 }

@@ -18,7 +18,6 @@ package org.apache.carbondata.datamap.bloom;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -29,7 +28,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.common.cache.CacheBuilder;
@@ -39,11 +40,19 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 
+/**
+ * This class is used to add cache for bloomfilter datamap to accelerate query through it.
+ * The cache is implemented using guava cache and is a singleton which will be shared by all the
+ * bloomfilter datamaps.
+ * As for the cache, the key is a bloomindex file for a shard and the value is the bloomfilters
+ * for the blocklets in this shard.
+ * The size of cache can be configurable through CarbonProperties and the cache will be expired if
+ * no one access it in the past 2 hours.
+ */
 public class BloomDataMapCache implements Serializable {
   private static final LogService LOGGER = LogServiceFactory.getLogService(
       BloomDataMapCache.class.getName());
   private static final long serialVersionUID = 20160822L;
-  private static final long DEFAULT_CACHE_SIZE = 512 * 1024 * 1024;
   private static final int DEFAULT_CACHE_EXPIRED_HOURS = 2;
   private LoadingCache<CacheKey, List<BloomDMModel>> bloomDMCache = null;
 
@@ -52,7 +61,7 @@ public class BloomDataMapCache implements Serializable {
         new RemovalListener<CacheKey, List<BloomDMModel>>() {
       @Override
       public void onRemoval(RemovalNotification<CacheKey, List<BloomDMModel>> notification) {
-        LOGGER.error(
+        LOGGER.info(
             String.format("Remove bloom datamap entry %s from cache due to %s",
                 notification.getKey(), notification.getCause()));
       }
@@ -61,21 +70,24 @@ public class BloomDataMapCache implements Serializable {
         new CacheLoader<CacheKey, List<BloomDMModel>>() {
       @Override
       public List<BloomDMModel> load(CacheKey key) throws Exception {
-        LOGGER.error(String.format("Load bloom datamap entry %s to cache", key));
+        LOGGER.info(String.format("Load bloom datamap entry %s to cache", key));
         return loadBloomDataMapModel(key);
       }
     };
 
+    int cacheSizeInBytes = validateAndGetCacheSize()
+        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
     this.bloomDMCache = CacheBuilder.newBuilder()
         .recordStats()
-        .maximumSize(DEFAULT_CACHE_SIZE)
+        .maximumSize(cacheSizeInBytes)
         .expireAfterAccess(DEFAULT_CACHE_EXPIRED_HOURS, TimeUnit.HOURS)
         .removalListener(listener)
         .build(cacheLoader);
   }
 
   private static class SingletonHolder {
-    public static final BloomDataMapCache INSTANCE = new BloomDataMapCache();
+    private static final BloomDataMapCache INSTANCE = new BloomDataMapCache();
   }
 
   /**
@@ -90,6 +102,28 @@ public class BloomDataMapCache implements Serializable {
    */
   protected Object readResolve() {
     return getInstance();
+  }
+
+  private int validateAndGetCacheSize() {
+    String cacheSizeStr = CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE,
+        CarbonCommonConstants.CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL);
+    int cacheSize;
+    try {
+      cacheSize = Integer.parseInt(cacheSizeStr);
+      if (cacheSize <= 0) {
+        throw new NumberFormatException("Value should be greater than 0: " + cacheSize);
+      }
+    } catch (NumberFormatException ex) {
+      LOGGER.error(String.format(
+          "The value '%s' for '%s' is invalid, it must be an Integer that greater than 0."
+              + " Use default value '%s' instead.", cacheSizeStr,
+          CarbonCommonConstants.CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE,
+          CarbonCommonConstants.CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL));
+      cacheSize = Integer.parseInt(
+          CarbonCommonConstants.CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL);
+    }
+    return cacheSize;
   }
 
   /**
@@ -127,8 +161,7 @@ public class BloomDataMapCache implements Serializable {
    * get bloom index file name from cachekey
    */
   private String getIndexFileFromCacheKey(CacheKey cacheKey) {
-    return cacheKey.shardPath.concat(File.separator).concat(cacheKey.indexColumn)
-        .concat(BloomCoarseGrainDataMap.BLOOM_INDEX_SUFFIX);
+    return BloomCoarseGrainDataMap.getBloomIndexFile(cacheKey.shardPath, cacheKey.indexColumn);
   }
 
   /**
@@ -157,8 +190,8 @@ public class BloomDataMapCache implements Serializable {
    * clear this cache
    */
   private void clear() {
-    LOGGER.error(String.format("Current meta cache statistic: %s", getCacheStatus()));
-    LOGGER.error("Trigger invalid all the cache for bloom datamap");
+    LOGGER.info(String.format("Current meta cache statistic: %s", getCacheStatus()));
+    LOGGER.info("Trigger invalid all the cache for bloom datamap");
     this.bloomDMCache.invalidateAll();
   }
 
@@ -166,7 +199,7 @@ public class BloomDataMapCache implements Serializable {
     private String shardPath;
     private String indexColumn;
 
-    public CacheKey(String shardPath, String indexColumn) {
+    CacheKey(String shardPath, String indexColumn) {
       this.shardPath = shardPath;
       this.indexColumn = indexColumn;
     }
