@@ -176,7 +176,14 @@ case class CarbonDropDataMapCommand(
         }
       }
     } else {
-      dropDataMapFromSystemFolder(sparkSession)
+      try {
+        dropDataMapFromSystemFolder(sparkSession)
+      } catch {
+        case e: Exception =>
+          if (!ifExistsSet) {
+            throw e
+          }
+      }
     }
 
       Seq.empty

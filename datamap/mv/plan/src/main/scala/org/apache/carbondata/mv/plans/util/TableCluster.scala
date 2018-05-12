@@ -15,16 +15,41 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.util
+package org.apache.carbondata.mv.plans.util
 
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.internal.SessionState
+import com.fasterxml.jackson.annotation.{JsonCreator, JsonProperty, JsonRawValue}
+import com.google.common.base.Objects
 
-object SparkSQLUtil {
-  def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
+class TableCluster @JsonCreator()(@JsonProperty("fact") @JsonRawValue fact: Set[String],
+    @JsonProperty("dimension") @JsonRawValue dimension: Set[String]) {
 
-  def execute(logicalPlan: LogicalPlan, sparkSession: SparkSession): DataFrame = {
-    Dataset.ofRows(sparkSession, logicalPlan)
+  //  @JsonProperty
+  def getFact(): Set[String] = {
+    fact
   }
+
+  //
+  //  @JsonProperty
+  def getDimension(): Set[String] = {
+    dimension
+  }
+
+  @Override
+  override def toString: String = {
+    Objects.toStringHelper(this)
+      .add("fact", fact)
+      .add("dimension", dimension)
+      .toString
+  }
+
+  /*
+  @Override
+  def toString = {
+    MoreObjects.toStringHelper(this)
+    .add("fact", fact)
+    .add("dimension", dimension)
+    .toString
+  }
+  *
+  */
 }

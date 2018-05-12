@@ -15,16 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.util
+package org.apache.carbondata.mv.plans.modular
 
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.internal.SessionState
+import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.sql.catalyst.plans.JoinType
 
-object SparkSQLUtil {
-  def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
-
-  def execute(logicalPlan: LogicalPlan, sparkSession: SparkSession): DataFrame = {
-    Dataset.ofRows(sparkSession, logicalPlan)
-  }
-}
+@DeveloperApi
+case class JoinEdge(left: Int, right: Int, joinType: JoinType)

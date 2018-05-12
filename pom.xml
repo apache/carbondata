@@ -636,6 +636,12 @@
         <script.exetension>.bat</script.exetension>
       </properties>
     </profile>
+    <profile>
+      <id>mv</id>
+      <modules>
+        <module>datamap/mv/plan</module>
+      </modules>
+    </profile>
   </profiles>
 
 </project>
