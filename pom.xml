@@ -640,6 +640,7 @@
       <id>mv</id>
       <modules>
         <module>datamap/mv/plan</module>
+        <module>datamap/mv/core</module>
       </modules>
     </profile>
   </profiles>

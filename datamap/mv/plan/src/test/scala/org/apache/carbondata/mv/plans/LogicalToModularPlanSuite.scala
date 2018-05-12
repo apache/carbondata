@@ -122,7 +122,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
     comparePlans(modularized, correctAnswer)
   }
   
-  test("joins: conjunctive predicates #1 with alias") {
+  ignore("joins: conjunctive predicates #1 with alias") {
     val left = testRelation0.where('a === 1).subquery('x)
     val right = testRelation1.subquery('y)
     val originalQuery =
@@ -136,7 +136,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
     comparePlans(modularized, correctAnswer)
   }
   
-  test("joins: conjunctive predicates #2 with alias") {
+  ignore("joins: conjunctive predicates #2 with alias") {
     val lleft = testRelation0.where('a >= 3).subquery('z)
     val left = testRelation0.where('a === 1).subquery('x)
     val right = testRelation0.subquery('y)
@@ -154,7 +154,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
     comparePlans(modularized, correctAnswer)
   }
   
-  test("SPJGH query") {
+  ignore("SPJGH query") {
     val left = testRelation0.where('b >= 1).subquery('x)
     val right = testRelation2.where('d >= 2).subquery('y)
     
@@ -172,7 +172,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
     comparePlans(modularized, correctAnswer)
   }
   
-  test("non-SPJGH query") {
+  ignore("non-SPJGH query") {
     val mqoAnswer = try testRelation0.where('b > 2).select('a).orderBy('a.asc).analyze.modularize catch {
       case e: Exception =>
         s"""
