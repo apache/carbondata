@@ -81,8 +81,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
       int pageNumber, DataOutputStream dataOutputStream) throws IOException {
     byte[] input = copyBlockDataChunk(dimensionColumnDataChunks, rowNumber, pageNumber);
     ByteBuffer byteArray = ByteBuffer.wrap(input);
-    int childElement = byteArray.getInt();
-    dataOutputStream.writeInt(childElement);
+    int childElement = byteArray.getShort();
+    dataOutputStream.writeShort(childElement);
     if (childElement > 0) {
       for (int i = 0; i < childElement; i++) {
         children.get(i)
@@ -102,13 +102,11 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
   }
 
   @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
-    int childLength = dataBuffer.getInt();
+    int childLength = dataBuffer.getShort();
     Object[] fields = new Object[childLength];
     for (int i = 0; i < childLength; i++) {
       fields[i] =  children.get(i).getDataBasedOnDataType(dataBuffer);
     }
-
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
   }
-
 }

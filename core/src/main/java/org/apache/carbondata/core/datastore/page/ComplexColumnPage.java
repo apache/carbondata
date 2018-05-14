@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.core.datastore.ColumnType;
 
 // Represent a complex column page, e.g. Array, Struct type column
 public class ComplexColumnPage {
@@ -34,17 +35,20 @@ public class ComplexColumnPage {
   private List<ArrayList<byte[]>> complexColumnData;
 
   // depth is the number of column after complex type is expanded. It is from 1 to N
-  private final int depth;
-
   private final int pageSize;
 
-  public ComplexColumnPage(int pageSize, int depth) {
+  private int depth;
+
+  private List<ColumnType> complexColumnType;
+
+  public ComplexColumnPage(int pageSize, List<ColumnType> complexColumnType) {
     this.pageSize = pageSize;
-    this.depth = depth;
+    this.depth = complexColumnType.size();
     complexColumnData = new ArrayList<>(depth);
     for (int i = 0; i < depth; i++) {
       complexColumnData.add(new ArrayList<byte[]>());
     }
+    this.complexColumnType = complexColumnType;
   }
 
   public void putComplexData(int rowId, int depth, List<byte[]> value) {
@@ -78,5 +82,9 @@ public class ComplexColumnPage {
 
   public int getPageSize() {
     return pageSize;
+  }
+
+  public ColumnType getComplexColumnType(int isDepth) {
+    return complexColumnType.get(isDepth);
   }
 }

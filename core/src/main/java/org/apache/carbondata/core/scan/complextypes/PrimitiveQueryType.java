@@ -96,7 +96,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       int pageNumber, DataOutputStream dataOutputStream) throws IOException {
     byte[] currentVal = copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber);
     if (!this.isDictionary) {
-      dataOutputStream.writeInt(currentVal.length);
+      dataOutputStream.writeShort(currentVal.length);
     }
     dataOutputStream.write(currentVal);
   }
@@ -120,7 +120,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       actualData = directDictionaryGenerator.getValueFromSurrogate(surrgateValue);
     } else if (!isDictionary) {
       // No Dictionary Columns
-      int size = dataBuffer.getInt();
+      int size = dataBuffer.getShort();
       byte[] value = new byte[size];
       dataBuffer.get(value, 0, size);
       if (dataType == DataTypes.DATE) {

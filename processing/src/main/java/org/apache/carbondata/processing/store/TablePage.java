@@ -50,7 +50,6 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 
-
 /**
  * Represent a page data for all columns, we store its data in columnar layout, so that
  * all processing apply to TablePage can be done in vectorized fashion.
@@ -205,8 +204,9 @@ public class TablePage {
 
     // initialize the page if first row
     if (rowId == 0) {
-      int depthInComplexColumn = complexDataType.getColsCount();
-      complexDimensionPages[index] = new ComplexColumnPage(pageSize, depthInComplexColumn);
+      List<ColumnType> complexColumnType = new ArrayList<>();
+      complexDataType.getChildrenType(complexColumnType);
+      complexDimensionPages[index] = new ComplexColumnPage(pageSize, complexColumnType);
     }
 
     int depthInComplexColumn = complexDimensionPages[index].getDepth();

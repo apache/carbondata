@@ -17,9 +17,11 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
-import java.io.{File}
+import java.io.File
 import java.util
+import java.util.ArrayList
 
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.avro
 import org.apache.commons.io.FileUtils
@@ -28,6 +30,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -195,8 +198,8 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
 
     val fld = new util.ArrayList[StructField]
     fld.add(new StructField("DoorNum",
-        DataTypes.createArrayType(DataTypes.createStructType(address)),
-        subFld))
+      DataTypes.createArrayType(DataTypes.createStructType(address)),
+      subFld))
     // array of struct of struct
     val doorNum = new util.ArrayList[StructField]
     doorNum.add(new StructField("FloorNum",
@@ -216,6 +219,73 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
   test("test multi level support : array of array of array of struct") {
     buildAvroTestDataMultiLevel4Type()
     assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("select * from sdkOutputTable").show(false)
+
+    // TODO: Add a validation
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    cleanTestData()
+  }
+
+  test("test multi level support : array of array of array of with Double data type") {
+    cleanTestData()
+    val mySchema =  """ {
+                      |	"name": "address",
+                      |	"type": "record",
+                      |	"fields": [
+                      |		{
+                      |			"name": "name",
+                      |			"type": "string"
+                      |		},
+                      |		{
+                      |			"name": "age",
+                      |			"type": "int"
+                      |		},
+                      |		{
+                      |   "name" :"my_address",
+                      |   "type" :{
+                      |							"name": "my_address",
+                      |							"type": "record",
+                      |							"fields": [
+                      |               {
+                      |									"name": "Temperaturetest",
+                      |									"type": "double"
+                      |								}
+                      |							]
+                      |       }
+                      |			}
+                      |	]
+                      |} """.stripMargin
+
+    val jsonvalue=
+      """{
+        |"name" :"babu",
+        |"age" :12,
+        |"my_address" :{ "Temperaturetest" :123 }
+        |}
+      """.stripMargin
+    val pschema= org.apache.avro.Schema.parse(mySchema)
+
+    val records=new JsonAvroConverter().convertToGenericDataRecord(jsonvalue.getBytes(CharEncoding.UTF_8),pschema)
+
+    val fieds = new Array[Field](3)
+    fieds(0)=new Field("name",DataTypes.STRING);
+    fieds(1)=new Field("age",DataTypes.INT)
+
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("Temperature", DataTypes.DOUBLE))
+    fieds(2) = new Field("my_address", "struct", fld)
+
+
+    val writer=CarbonWriter.builder().withSchema(new Schema(fieds)).outputPath(writerPath).buildWriterForAvroInput()
+    writer.write(records)
+    writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION

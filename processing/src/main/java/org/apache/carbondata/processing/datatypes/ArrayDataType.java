@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -285,5 +286,11 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   @Override
   public GenericDataType<ArrayObject> deepCopy() {
     return new ArrayDataType(this.outputArrayIndex, this.dataCounter, this.children.deepCopy());
+  }
+
+  @Override
+  public void getChildrenType(List<ColumnType> type) {
+    type.add(ColumnType.COMPLEX_ARRAY);
+    children.getChildrenType(type);
   }
 }
