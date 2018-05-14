@@ -141,15 +141,16 @@ public abstract class ColumnPageEncoder {
     Iterator<byte[][]> iterator = input.iterator();
     while (iterator.hasNext()) {
       byte[][] subColumnPage = iterator.next();
-      encodedPages[index++] = encodeChildColumn(subColumnPage);
+      encodedPages[index] = encodeChildColumn(subColumnPage, input.getComplexColumnType(index));
+      index++;
     }
     return encodedPages;
   }
 
-  private static EncodedColumnPage encodeChildColumn(byte[][] data)
+  private static EncodedColumnPage encodeChildColumn(byte[][] data, ColumnType complexDataType)
       throws IOException, MemoryException {
-    TableSpec.ColumnSpec spec = TableSpec.ColumnSpec.newInstance("complex_inner_column",
-        DataTypes.BYTE_ARRAY, ColumnType.COMPLEX);
+    TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
+        .newInstance("complex_inner_column", DataTypes.BYTE_ARRAY, complexDataType);
     ColumnPage page = ColumnPage.wrapByteArrayPage(spec, data);
     ColumnPageEncoder encoder = new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);
     return encoder.encode(page);

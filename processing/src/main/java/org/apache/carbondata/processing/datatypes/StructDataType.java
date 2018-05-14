@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -153,7 +154,7 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   @Override public void writeByteArray(StructObject input, DataOutputStream dataOutputStream,
       BadRecordLogHolder logHolder) throws IOException, DictionaryGenerationException {
-    dataOutputStream.writeInt(children.size());
+    dataOutputStream.writeShort(children.size());
     if (input == null) {
       for (int i = 0; i < children.size(); i++) {
         children.get(i).writeByteArray(null, dataOutputStream, logHolder);
@@ -191,9 +192,8 @@ public class StructDataType implements GenericDataType<StructObject> {
   @Override public void parseComplexValue(ByteBuffer byteArrayInput,
       DataOutputStream dataOutputStream, KeyGenerator[] generator)
       throws IOException, KeyGenException {
-    int childElement = byteArrayInput.getInt();
-    dataOutputStream.writeInt(childElement);
-
+    short childElement = byteArrayInput.getShort();
+    dataOutputStream.writeShort(childElement);
     for (int i = 0; i < childElement; i++) {
       if (children.get(i) instanceof PrimitiveDataType) {
         if (children.get(i).getIsColumnDictionary()) {
@@ -254,17 +254,10 @@ public class StructDataType implements GenericDataType<StructObject> {
   @Override
   public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
       ByteBuffer inputArray) {
-
-    ByteBuffer b = ByteBuffer.allocate(8);
-    int childElement = inputArray.getInt();
-    b.putInt(childElement);
-    if (childElement == 0) {
-      b.putInt(0);
-    } else {
-      b.putInt(children.get(0).getDataCounter());
-    }
+    ByteBuffer b = ByteBuffer.allocate(2);
+    int childElement = inputArray.getShort();
+    b.putShort((short)childElement);
     columnsArray.get(this.outputArrayIndex).add(b.array());
-
     for (int i = 0; i < childElement; i++) {
       if (children.get(i) instanceof PrimitiveDataType) {
         PrimitiveDataType child = ((PrimitiveDataType) children.get(i));
@@ -301,7 +294,7 @@ public class StructDataType implements GenericDataType<StructObject> {
    */
   @Override
   public void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize) {
-    blockKeySizeWithComplex.add(8);
+    blockKeySizeWithComplex.add(2);
     for (int i = 0; i < children.size(); i++) {
       children.get(i).fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
     }
@@ -326,5 +319,12 @@ public class StructDataType implements GenericDataType<StructObject> {
       childrenClone.add(child.deepCopy());
     }
     return new StructDataType(childrenClone, this.outputArrayIndex, this.dataCounter);
+  }
+
+  public void getChildrenType(List<ColumnType> type) {
+    type.add(ColumnType.COMPLEX_STRUCT);
+    for (int i = 0; i < children.size(); i++) {
+      children.get(i).getChildrenType(type);
+    }
   }
 }

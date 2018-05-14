@@ -33,6 +33,7 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
@@ -362,17 +363,17 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private void updateValueToByteStream(DataOutputStream dataOutputStream, byte[] value)
       throws IOException {
-    dataOutputStream.writeInt(value.length);
+    dataOutputStream.writeShort(value.length);
     dataOutputStream.write(value);
   }
 
   private void updateNullValue(DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
       throws IOException {
     if (this.carbonDimension.getDataType() == DataTypes.STRING) {
-      dataOutputStream.writeInt(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+      dataOutputStream.writeShort(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
       dataOutputStream.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
     } else {
-      dataOutputStream.writeInt(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
+      dataOutputStream.writeShort(CarbonCommonConstants.EMPTY_BYTE_ARRAY.length);
       dataOutputStream.write(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
     }
     String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
@@ -396,8 +397,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       KeyGenerator[] generator)
       throws IOException, KeyGenException {
     if (!this.isDictionary) {
-      int sizeOfData = byteArrayInput.getInt();
-      dataOutputStream.writeInt(sizeOfData);
+      int sizeOfData = byteArrayInput.getShort();
+      dataOutputStream.writeShort(sizeOfData);
       byte[] bb = new byte[sizeOfData];
       byteArrayInput.get(bb, 0, sizeOfData);
       dataOutputStream.write(bb);
@@ -438,7 +439,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   @Override public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
       ByteBuffer inputArray) {
     if (!isDictionary) {
-      byte[] key = new byte[inputArray.getInt()];
+      byte[] key = new byte[inputArray.getShort()];
       inputArray.get(key);
       columnsArray.get(outputArrayIndex).add(key);
     } else {
@@ -505,5 +506,9 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     dataType.setSurrogateIndex(this.index);
 
     return dataType;
+  }
+
+  public void getChildrenType(List<ColumnType> type) {
+    type.add(ColumnType.COMPLEX_PRIMITIVE);
   }
 }

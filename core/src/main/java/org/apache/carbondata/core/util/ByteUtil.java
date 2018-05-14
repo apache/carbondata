@@ -521,11 +521,20 @@ public final class ByteUtil {
         (((int)bytes[offset + 2] & 0xff) << 8) + ((int)bytes[offset + 3] & 0xff);
   }
 
+  public static int toShort(byte[] bytes, int offset) {
+    return (((int)bytes[offset] & 0xff) << 8) + ((int)bytes[offset + 1] & 0xff);
+  }
+
   public static void setInt(byte[] data, int offset, int value) {
     data[offset] = (byte) (value >> 24);
     data[offset + 1] = (byte) (value >> 16);
     data[offset + 2] = (byte) (value >> 8);
     data[offset + 3] = (byte) value;
+  }
+
+  public static void setShort(byte[] data, int offset, int value) {
+    data[offset] = (byte) (value >> 8);
+    data[offset + 1] = (byte) value;
   }
 
   /**

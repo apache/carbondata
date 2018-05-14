@@ -31,7 +31,13 @@ public enum ColumnType {
   COMPLEX,
 
   // measure column, numerical data type
-  MEASURE;
+  MEASURE,
+
+  COMPLEX_STRUCT,
+
+  COMPLEX_ARRAY,
+
+  COMPLEX_PRIMITIVE;
 
   public static ColumnType valueOf(int ordinal) {
     if (ordinal == GLOBAL_DICTIONARY.ordinal()) {
@@ -44,6 +50,12 @@ public enum ColumnType {
       return COMPLEX;
     } else if (ordinal == MEASURE.ordinal()) {
       return MEASURE;
+    } else if (ordinal == COMPLEX_STRUCT.ordinal()) {
+      return COMPLEX_STRUCT;
+    } else if (ordinal == COMPLEX_ARRAY.ordinal()) {
+      return COMPLEX_ARRAY;
+    } else if (ordinal == COMPLEX_PRIMITIVE.ordinal()) {
+      return COMPLEX_PRIMITIVE;
     } else {
       throw new RuntimeException("create ColumnType with invalid ordinal: " + ordinal);
     }

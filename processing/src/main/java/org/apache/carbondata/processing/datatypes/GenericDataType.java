@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -155,4 +156,7 @@ public interface GenericDataType<T> {
    * clone self for multithread access (for complex type processing in table page)
    */
   GenericDataType<T> deepCopy();
+
+  void getChildrenType(List<ColumnType> type);
+
 }

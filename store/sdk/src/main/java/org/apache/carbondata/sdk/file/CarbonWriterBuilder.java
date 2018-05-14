@@ -458,7 +458,6 @@ public class CarbonWriterBuilder {
         }
         if (field.getChildren() != null && field.getChildren().size() > 0) {
           if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
-            checkForUnsupportedDataTypes(field.getChildren().get(0).getDataType());
             // Loop through the inner columns and for a StructData
             DataType complexType =
                 DataTypes.createArrayType(field.getChildren().get(0).getDataType());
@@ -469,7 +468,6 @@ public class CarbonWriterBuilder {
             List<StructField> structFieldsArray =
                 new ArrayList<StructField>(field.getChildren().size());
             for (StructField childFld : field.getChildren()) {
-              checkForUnsupportedDataTypes(childFld.getDataType());
               structFieldsArray
                   .add(new StructField(childFld.getFieldName(), childFld.getDataType()));
             }
@@ -487,13 +485,6 @@ public class CarbonWriterBuilder {
           }
         }
       }
-    }
-  }
-
-  private void checkForUnsupportedDataTypes(DataType dataType) {
-    if (dataType == DataTypes.DOUBLE || dataType == DataTypes.DATE || DataTypes
-        .isDecimal(dataType)) {
-      throw new RuntimeException("Unsupported data type: " + dataType.getName());
     }
   }
 

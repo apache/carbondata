@@ -44,6 +44,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   // base offset of memoryBlock
   private long baseOffset;
 
+  private int eachRowSize;
+
   private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   private static final int byteBits = DataTypes.BYTE.getSizeBits();
@@ -74,6 +76,19 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       baseOffset = memoryBlock.getBaseOffset();
     } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.STRING) {
       throw new UnsupportedOperationException("invalid data type: " + dataType);
+    }
+  }
+
+  UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      int eachRowSize)
+      throws MemoryException {
+    this(columnSpec, dataType, pageSize);
+    this.eachRowSize = eachRowSize;
+    if (dataType == DataTypes.BYTE_ARRAY) {
+      memoryBlock =
+          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) pageSize * eachRowSize);
+      baseAddress = memoryBlock.getBaseObject();
+      baseOffset = memoryBlock.getBaseOffset();
     }
   }
 
@@ -118,7 +133,10 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    // copy the data to memory
+    CarbonUnsafe.getUnsafe()
+        .copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
+            baseOffset + (long)(rowId * eachRowSize), bytes.length);
   }
 
   @Override
@@ -183,7 +201,14 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getBytes(int rowId) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    // creating a row
+    byte[] data = new byte[eachRowSize];
+    //copy the row from memory block based on offset
+    // offset position will be index * each column value length
+    CarbonUnsafe.getUnsafe().copyMemory(memoryBlock.getBaseObject(),
+        baseOffset + ((long)rowId * eachRowSize), data,
+        CarbonUnsafe.BYTE_ARRAY_OFFSET, eachRowSize);
+    return data;
   }
 
   @Override public byte[] getDecimalPage() {
@@ -266,6 +291,15 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public byte[] getLVFlattenedBytePage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+  @Override
+  public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
+  public byte[] getComplexParentFlattenedBytePage() {
+    throw new UnsupportedOperationException("internal error");
   }
 
   @Override
