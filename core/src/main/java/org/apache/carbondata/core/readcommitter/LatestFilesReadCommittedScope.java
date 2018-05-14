@@ -28,7 +28,9 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -43,7 +45,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   private ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot;
   private LoadMetadataDetails[] loadMetadataDetails;
 
-  public LatestFilesReadCommittedScope(String path) {
+  public LatestFilesReadCommittedScope(String path)  {
     this.carbonFilePath = path;
     try {
       takeCarbonIndexFileSnapShot();
@@ -104,6 +106,20 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     return indexFileStore;
   }
 
+  @Override public SegmentRefreshInfo getCommitedSegmentRefreshInfo(
+      Segment segment, UpdateVO updateVo) throws IOException {
+    Map<String, SegmentRefreshInfo> snapShot =
+        readCommittedIndexFileSnapShot.getSegmentTimestampUpdaterMap();
+    String segName;
+    if (segment.getSegmentNo() != null) {
+      segName = segment.getSegmentNo();
+    } else {
+      segName = segment.getSegmentFileName();
+    }
+    SegmentRefreshInfo segmentRefreshInfo = snapShot.get(segName);
+    return segmentRefreshInfo;
+  }
+
   private String getSegmentID(String carbonIndexFileName, String indexFilePath) {
     if (indexFilePath.contains("/Fact/Part0/Segment_")) {
       // This is CarbonFile case where the Index files are present inside the Segment Folder
@@ -128,6 +144,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
       throw new IOException("No files are present in the table location :" + carbonFilePath);
     }
     Map<String, List<String>> indexFileStore = new HashMap<>();
+    Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap = new HashMap<>();
     if (file.isDirectory()) {
       CarbonFile[] carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(carbonFilePath);
       for (int i = 0; i < carbonIndexFiles.length; i++) {
@@ -139,18 +156,29 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
               getSegmentID(carbonIndexFiles[i].getName(), carbonIndexFiles[i].getAbsolutePath());
           // TODO. During Partition table handling, place Segment File Name.
           List<String> indexList;
+          SegmentRefreshInfo segmentRefreshInfo;
           if (indexFileStore.get(segId) == null) {
             indexList = new ArrayList<>(1);
+            segmentRefreshInfo =
+                new SegmentRefreshInfo(carbonIndexFiles[i].getLastModifiedTime(), 0);
+            segmentTimestampUpdaterMap.put(segId, segmentRefreshInfo);
           } else {
             // Entry is already present.
             indexList = indexFileStore.get(segId);
+            segmentRefreshInfo = segmentTimestampUpdaterMap.get(segId);
           }
           indexList.add(carbonIndexFiles[i].getAbsolutePath());
+          if (segmentRefreshInfo.getSegmentUpdatedTimestamp() < carbonIndexFiles[i]
+              .getLastModifiedTime()) {
+            segmentRefreshInfo
+                .setSegmentUpdatedTimestamp(carbonIndexFiles[i].getLastModifiedTime());
+          }
           indexFileStore.put(segId, indexList);
+          segmentRefreshInfo.setCountOfFileInSegment(indexList.size());
         }
       }
       ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot =
-          new ReadCommittedIndexFileSnapShot(indexFileStore);
+          new ReadCommittedIndexFileSnapShot(indexFileStore, segmentTimestampUpdaterMap);
       this.readCommittedIndexFileSnapShot = readCommittedIndexFileSnapShot;
       prepareLoadMetadata();
     } else {

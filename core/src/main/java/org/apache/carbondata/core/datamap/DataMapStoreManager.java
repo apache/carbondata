@@ -43,6 +43,7 @@ import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorage
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
@@ -454,7 +455,7 @@ public final class DataMapStoreManager {
 
     // This map stores the latest segment refresh time.So in case of update/delete we check the
     // time against this map.
-    private Map<String, Long> segmentRefreshTime = new HashMap<>();
+    private Map<String, SegmentRefreshInfo> segmentRefreshTime = new HashMap<>();
 
     // This map keeps the manual refresh entries from users. It is mainly used for partition
     // altering.
@@ -465,23 +466,25 @@ public final class DataMapStoreManager {
       SegmentUpdateDetails[] updateStatusDetails = statusManager.getUpdateStatusDetails();
       for (SegmentUpdateDetails updateDetails : updateStatusDetails) {
         UpdateVO updateVO = statusManager.getInvalidTimestampRange(updateDetails.getSegmentName());
-        segmentRefreshTime.put(updateVO.getSegmentId(), updateVO.getCreatedOrUpdatedTimeStamp());
+        segmentRefreshTime.put(updateVO.getSegmentId(),
+            new SegmentRefreshInfo(updateVO.getCreatedOrUpdatedTimeStamp(), 0));
       }
     }
 
-    public boolean isRefreshNeeded(String segmentId, SegmentUpdateStatusManager statusManager) {
-      UpdateVO updateVO = statusManager.getInvalidTimestampRange(segmentId);
+    public boolean isRefreshNeeded(Segment seg, UpdateVO updateVo) throws IOException {
+      SegmentRefreshInfo segmentRefreshInfo =
+          seg.getSegmentRefreshInfo(updateVo);
+      String segmentId = seg.getSegmentNo();
       if (segmentRefreshTime.get(segmentId) == null) {
-        segmentRefreshTime.put(segmentId, updateVO.getCreatedOrUpdatedTimeStamp());
+        segmentRefreshTime.put(segmentId, segmentRefreshInfo);
         return true;
       }
       if (manualSegmentRefresh.get(segmentId) != null && manualSegmentRefresh.get(segmentId)) {
         manualSegmentRefresh.put(segmentId, false);
         return true;
       }
-      Long updateTimestamp = updateVO.getLatestUpdateTimestamp();
-      boolean isRefresh =
-          updateTimestamp != null && (updateTimestamp > segmentRefreshTime.get(segmentId));
+
+      boolean isRefresh = segmentRefreshInfo.compare(segmentRefreshTime.get(segmentId));
       if (isRefresh) {
         segmentRefreshTime.remove(segmentId);
       }
