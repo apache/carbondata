@@ -162,7 +162,7 @@ public class CarbonReaderTest {
       i++;
     }
     Assert.assertEquals(i, 100);
-
+    reader.close();
     FileUtils.deleteDirectory(new File(path));
   }
 }
