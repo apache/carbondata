@@ -64,11 +64,11 @@
   ```
   coordinator=true
   node-scheduler.include-coordinator=false
-  http-server.http.port=8080
+  http-server.http.port=8086
   query.max-memory=50GB
   query.max-memory-per-node=2GB
   discovery-server.enabled=true
-  discovery.uri=<coordinator_ip>:8080
+  discovery.uri=<coordinator_ip>:8086
   ```
 The options `node-scheduler.include-coordinator=false` and `coordinator=true` indicate that the node is the coordinator and tells the coordinator not to do any of the computation work itself and to use the workers.
 
@@ -84,10 +84,10 @@ Then, `query.max-memory=<30GB * number of nodes>`.
 
   ```
   coordinator=false
-  http-server.http.port=8080
+  http-server.http.port=8086
   query.max-memory=50GB
   query.max-memory-per-node=2GB
-  discovery.uri=<coordinator_ip>:8080
+  discovery.uri=<coordinator_ip>:8086
   ```
 
 **Note**: `jvm.config` and `node.properties` files are same for all the nodes (worker + coordinator). All the nodes should have different `node.id`.
@@ -123,7 +123,7 @@ To run it in foreground.
 To connect to carbondata catalog use the following command:
 
 ```
-./presto --server <coordinator_ip>:8080 --catalog carbondata --schema <schema_name>
+./presto --server <coordinator_ip>:8086 --catalog carbondata --schema <schema_name>
 ```
 Execute the following command to ensure the workers are connected.
 
