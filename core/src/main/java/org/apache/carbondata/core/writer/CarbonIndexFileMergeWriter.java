@@ -67,7 +67,7 @@ public class CarbonIndexFileMergeWriter {
    */
   private String mergeCarbonIndexFilesOfSegment(String segmentId,
       String tablePath, List<String> indexFileNamesTobeAdded,
-      boolean readFileFooterFromCarbonDataFile) throws IOException {
+      boolean readFileFooterFromCarbonDataFile, String uuid) throws IOException {
     Segment segment = Segment.getSegment(segmentId, tablePath);
     String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     CarbonFile[] indexFiles;
@@ -85,7 +85,7 @@ public class CarbonIndexFileMergeWriter {
             readFileFooterFromCarbonDataFile, segmentPath, indexFiles, segmentId);
       } else {
         return writeMergeIndexFileBasedOnSegmentFile(
-            segmentId, indexFileNamesTobeAdded, sfs, indexFiles);
+            segmentId, indexFileNamesTobeAdded, sfs, indexFiles, uuid);
       }
     }
     return null;
@@ -111,10 +111,9 @@ public class CarbonIndexFileMergeWriter {
     return null;
   }
 
-  private String writeMergeIndexFileBasedOnSegmentFile(
-      String segmentId,
-      List<String> indexFileNamesTobeAdded,
-      SegmentFileStore segmentFileStore, CarbonFile[] indexFiles) throws IOException {
+  private String writeMergeIndexFileBasedOnSegmentFile(String segmentId,
+      List<String> indexFileNamesTobeAdded, SegmentFileStore segmentFileStore,
+      CarbonFile[] indexFiles, String uuid) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     fileStore
         .readAllIIndexOfSegment(segmentFileStore.getSegmentFile(), segmentFileStore.getTablePath(),
@@ -147,11 +146,8 @@ public class CarbonIndexFileMergeWriter {
         }
       }
     }
-
-    String uniqueId = String.valueOf(System.currentTimeMillis());
-    String newSegmentFileName =
-        SegmentFileStore.genSegmentFileName(segmentId, String.valueOf(uniqueId))
-            + CarbonTablePath.SEGMENT_EXT;
+    String newSegmentFileName = SegmentFileStore.genSegmentFileName(segmentId, uuid)
+        + CarbonTablePath.SEGMENT_EXT;
     String path = CarbonTablePath.getSegmentFilesLocation(table.getTablePath())
         + CarbonCommonConstants.FILE_SEPARATOR + newSegmentFileName;
     SegmentFileStore.writeSegmentFile(segmentFileStore.getSegmentFile(), path);
@@ -162,7 +158,7 @@ public class CarbonIndexFileMergeWriter {
       file.delete();
     }
 
-    return uniqueId;
+    return uuid;
   }
 
   private String writeMergeIndexFile(List<String> indexFileNamesTobeAdded, String segmentPath,
@@ -196,23 +192,11 @@ public class CarbonIndexFileMergeWriter {
    * Merge all the carbonindex files of segment to a  merged file
    *
    * @param segmentId
-   * @param indexFileNamesTobeAdded
    * @throws IOException
    */
-  public String mergeCarbonIndexFilesOfSegment(String segmentId,
-      String tablePath, List<String> indexFileNamesTobeAdded) throws IOException {
-    return mergeCarbonIndexFilesOfSegment(segmentId, tablePath, indexFileNamesTobeAdded, false);
-  }
-
-  /**
-   * Merge all the carbonindex files of segment to a  merged file
-   *
-   * @param segmentId
-   * @throws IOException
-   */
-  public String mergeCarbonIndexFilesOfSegment(String segmentId,
+  public String mergeCarbonIndexFilesOfSegment(String segmentId, String uuid,
       String tablePath) throws IOException {
-    return mergeCarbonIndexFilesOfSegment(segmentId, tablePath, null, false);
+    return mergeCarbonIndexFilesOfSegment(segmentId, tablePath, null, false, uuid);
   }
 
   /**
@@ -223,9 +207,9 @@ public class CarbonIndexFileMergeWriter {
    * @throws IOException
    */
   public String mergeCarbonIndexFilesOfSegment(String segmentId,
-      String tablePath, boolean readFileFooterFromCarbonDataFile) throws IOException {
+      String tablePath, boolean readFileFooterFromCarbonDataFile, String uuid) throws IOException {
     return mergeCarbonIndexFilesOfSegment(segmentId, tablePath, null,
-        readFileFooterFromCarbonDataFile);
+        readFileFooterFromCarbonDataFile, uuid);
   }
 
   private boolean isCarbonIndexFilePresent(CarbonFile[] indexFiles) {

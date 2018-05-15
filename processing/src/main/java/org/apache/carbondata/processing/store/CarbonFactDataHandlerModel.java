@@ -328,8 +328,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
 
-    carbonFactDataHandlerModel.tableSpec =
-        new TableSpec(loadModel.getCarbonDataLoadSchema().getCarbonTable());
+    carbonFactDataHandlerModel.tableSpec = new TableSpec(carbonTable);
     DataMapWriterListener listener = new DataMapWriterListener();
     listener.registerAllWriter(
         carbonTable,
