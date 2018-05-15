@@ -255,34 +255,6 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     return page;
   }
 
-  private static ColumnPage getComplexParentBytesColumnPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedBytes, DataType dataType)
-      throws MemoryException {
-    // extract length and data, set them to rowOffset and unsafe memory correspondingly
-    int rowId = 0;
-    List<Integer> rowOffset = new ArrayList<>();
-    List<Integer> rowLength = new ArrayList<>();
-    int length;
-    int offset;
-    int lvEncodedOffset = 0;
-
-    // extract Length field in input and calculate total length
-    for (offset = 0; lvEncodedOffset < lvEncodedBytes.length; offset += length) {
-      length = ByteUtil.toShort(lvEncodedBytes, lvEncodedOffset);
-      rowOffset.add(offset);
-      rowLength.add(length);
-      lvEncodedOffset += 2 + length;
-      rowId++;
-    }
-    rowOffset.add(offset);
-
-    VarLengthColumnPageBase page =
-        getVarLengthColumnPage(columnSpec, lvEncodedBytes, dataType, 2, rowId, rowOffset,
-            rowLength, offset);
-
-    return page;
-  }
-
   @Override
   public void putByte(int rowId, byte value) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);

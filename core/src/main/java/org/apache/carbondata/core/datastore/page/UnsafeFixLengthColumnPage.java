@@ -134,9 +134,10 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public void putBytes(int rowId, byte[] bytes) {
     // copy the data to memory
+    long offset = (long)rowId * eachRowSize;
     CarbonUnsafe.getUnsafe()
         .copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
-            baseOffset + (long)(rowId * eachRowSize), bytes.length);
+            baseOffset + offset, bytes.length);
   }
 
   @Override
