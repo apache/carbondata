@@ -426,7 +426,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
     val carbonTable: CarbonTable = CarbonMetadata.getInstance
       .getCarbonTable("streaming1", "stream_table_with_mi")
     new CarbonIndexFileMergeWriter(carbonTable)
-      .mergeCarbonIndexFilesOfSegment("1", carbonTable.getTablePath, false)
+      .mergeCarbonIndexFilesOfSegment("1", carbonTable.getTablePath, false, String.valueOf(System.currentTimeMillis()))
     // non-filter
     val result = sql("select * from streaming1.stream_table_with_mi order by id, name").collect()
     assert(result != null)

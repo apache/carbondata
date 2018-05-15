@@ -1167,16 +1167,18 @@ public final class CarbonLoaderUtil {
 
   /**
    * Merge index files with in the segment of partitioned table
-   * @param segmentId
+   *
    * @param table
+   * @param segmentId
+   * @param uuid
    * @return
    * @throws IOException
    */
-  public static String mergeIndexFilesinPartitionedSegment(String segmentId, CarbonTable table)
-      throws IOException {
+  public static String mergeIndexFilesinPartitionedSegment(CarbonTable table, String segmentId,
+      String uuid) throws IOException {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
-        .mergeCarbonIndexFilesOfSegment(segmentId, tablePath);
+        .mergeCarbonIndexFilesOfSegment(segmentId, uuid, tablePath);
   }
 
   private static void deleteFiles(List<String> filesToBeDeleted) throws IOException {
