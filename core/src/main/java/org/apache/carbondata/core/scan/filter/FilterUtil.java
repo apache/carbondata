@@ -77,12 +77,10 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.executer.AndFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.DimColumnExecuterFilterInfo;
-import org.apache.carbondata.core.scan.filter.executer.ExcludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.ExcludeFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.FalseFilterExecutor;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
-import org.apache.carbondata.core.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.IncludeFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.MeasureColumnExecuterFilterInfo;
 import org.apache.carbondata.core.scan.filter.executer.OrFilterExecuterImpl;
@@ -232,30 +230,24 @@ public final class FilterUtil {
             msrColResolvedFilterInfo, true);
       }
     }
-    if (null != dimColResolvedFilterInfo) {
-      CarbonDimension dimension = dimColResolvedFilterInfo.getDimension();
-      if (dimension.hasEncoding(Encoding.IMPLICIT)) {
-        return new ImplicitIncludeFilterExecutorImpl(dimColResolvedFilterInfo);
-      } else if (dimension.isColumnar()) {
-        CarbonDimension dimensionFromCurrentBlock =
-            segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
-        if (null != dimensionFromCurrentBlock) {
-          // update dimension and column index according to the dimension position in current block
-          DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
-              dimColResolvedFilterInfo.getCopyObject();
-          dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
-          dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-          return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
-              segmentProperties, false);
-        } else {
-          return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
-              msrColResolvedFilterInfo, false);
-        }
-      } else {
-        return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
-      }
+    CarbonDimension dimension = dimColResolvedFilterInfo.getDimension();
+    if (dimension.hasEncoding(Encoding.IMPLICIT)) {
+      return new ImplicitIncludeFilterExecutorImpl(dimColResolvedFilterInfo);
     } else {
-      return new IncludeColGroupFilterExecuterImpl(null, segmentProperties);
+      CarbonDimension dimensionFromCurrentBlock =
+          segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
+      if (null != dimensionFromCurrentBlock) {
+        // update dimension and column index according to the dimension position in current block
+        DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
+            dimColResolvedFilterInfo.getCopyObject();
+        dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
+        dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
+        return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+            segmentProperties, false);
+      } else {
+        return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
+            msrColResolvedFilterInfo, false);
+      }
     }
   }
 
@@ -288,24 +280,19 @@ public final class FilterUtil {
             msrColResolvedFilterInfo, true);
       }
     }
-    if ((null != dimColResolvedFilterInfo) && (dimColResolvedFilterInfo.getDimension()
-        .isColumnar())) {
-      CarbonDimension dimensionFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
-      if (null != dimensionFromCurrentBlock) {
-        // update dimension and column index according to the dimension position in current block
-        DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
-            dimColResolvedFilterInfo.getCopyObject();
-        dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
-        dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-        return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
-            segmentProperties, false);
-      } else {
-        return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            msrColResolvedFilterInfo, false);
-      }
+    CarbonDimension dimensionFromCurrentBlock =
+        segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
+    if (null != dimensionFromCurrentBlock) {
+      // update dimension and column index according to the dimension position in current block
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
+          dimColResolvedFilterInfo.getCopyObject();
+      dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
+      dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
+      return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+          segmentProperties, false);
     } else {
-      return new ExcludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+      return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
+          msrColResolvedFilterInfo, false);
     }
   }
 
@@ -581,17 +568,15 @@ public final class FilterUtil {
     }
     Collections.sort(surrogates);
     ColumnFilterInfo columnFilterInfo = null;
-    if (surrogates.size() > 0) {
-      columnFilterInfo = new ColumnFilterInfo();
-      if (isExcludeFilterNeedsToApply) {
-        columnFilterInfo.setOptimized(true);
-      }
-      columnFilterInfo.setIncludeFilter(isIncludeFilter);
-      if (!isIncludeFilter) {
-        columnFilterInfo.setExcludeFilterList(surrogates);
-      } else {
-        columnFilterInfo.setFilterList(surrogates);
-      }
+    columnFilterInfo = new ColumnFilterInfo();
+    if (isExcludeFilterNeedsToApply) {
+      columnFilterInfo.setOptimized(true);
+    }
+    columnFilterInfo.setIncludeFilter(isIncludeFilter);
+    if (!isIncludeFilter) {
+      columnFilterInfo.setExcludeFilterList(surrogates);
+    } else {
+      columnFilterInfo.setFilterList(surrogates);
     }
     return columnFilterInfo;
   }

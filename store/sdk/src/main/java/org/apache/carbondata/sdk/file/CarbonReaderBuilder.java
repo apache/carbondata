@@ -165,6 +165,7 @@ public class CarbonReaderBuilder {
           new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
       RecordReader reader = format.createRecordReader(split, attempt);
       reader.initialize(split, attempt);
+      reader.close();
       readers.add(reader);
     }
 

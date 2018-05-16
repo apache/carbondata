@@ -115,23 +115,26 @@ public class CarbonLocalInputSplit {
 
   }
 
-  public static  CarbonInputSplit convertSplit(CarbonLocalInputSplit carbonLocalInputSplit) {
+  public static CarbonInputSplit convertSplit(CarbonLocalInputSplit carbonLocalInputSplit) {
     CarbonInputSplit inputSplit = new CarbonInputSplit(carbonLocalInputSplit.getSegmentId(), "0",
         new Path(carbonLocalInputSplit.getPath()), carbonLocalInputSplit.getStart(),
         carbonLocalInputSplit.getLength(), carbonLocalInputSplit.getLocations()
         .toArray(new String[carbonLocalInputSplit.getLocations().size()]),
-        carbonLocalInputSplit.getNumberOfBlocklets(), ColumnarFormatVersion.valueOf(carbonLocalInputSplit.getVersion()),
+        carbonLocalInputSplit.getNumberOfBlocklets(),
+        ColumnarFormatVersion.valueOf(carbonLocalInputSplit.getVersion()),
         carbonLocalInputSplit.getDeleteDeltaFiles());
     Gson gson = new Gson();
-    BlockletDetailInfo blockletDetailInfo = gson.fromJson(carbonLocalInputSplit.detailInfo, BlockletDetailInfo.class);
-    try {
-      blockletDetailInfo.readColumnSchema(blockletDetailInfo.getColumnSchemaBinary());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    BlockletDetailInfo blockletDetailInfo =
+        gson.fromJson(carbonLocalInputSplit.detailInfo, BlockletDetailInfo.class);
+
+    if (null != blockletDetailInfo) {
+      try {
+        blockletDetailInfo.readColumnSchema(blockletDetailInfo.getColumnSchemaBinary());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      inputSplit.setDetailInfo(blockletDetailInfo);
     }
-    inputSplit.setDetailInfo(blockletDetailInfo);
     return inputSplit;
   }
-
-
 }

@@ -17,12 +17,8 @@
 
 package org.apache.carbondata.hadoop.api;
 
-import java.util.List;
-
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
@@ -33,10 +29,5 @@ public abstract class AbstractDataMapJob implements DataMapJob {
 
   @Override public void execute(CarbonTable carbonTable,
       FileInputFormat<Void, BlockletDataMapIndexWrapper> format) {
-  }
-
-  @Override public List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
-      FilterResolverIntf resolverIntf) {
-    return null;
   }
 }

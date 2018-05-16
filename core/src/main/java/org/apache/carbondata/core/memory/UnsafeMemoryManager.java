@@ -152,14 +152,15 @@ public class UnsafeMemoryManager {
     return memoryUsed > totalMemory;
   }
 
-  public long getUsableMemory() {
+  public synchronized long getUsableMemory() {
     return totalMemory;
   }
 
   /**
    * It tries to allocate memory of `size` bytes, keep retry until it allocates successfully.
    */
-  public static MemoryBlock allocateMemoryWithRetry(long taskId, long size) throws MemoryException {
+  public static MemoryBlock allocateMemoryWithRetry(long taskId, long size)
+      throws MemoryException {
     MemoryBlock baseBlock = null;
     int tries = 0;
     while (tries < 300) {
@@ -177,8 +178,7 @@ public class UnsafeMemoryManager {
       tries++;
     }
     if (baseBlock == null) {
-      LOGGER.error(" Memory Used : " + INSTANCE.memoryUsed + " Tasks running : "
-          + taskIdToMemoryBlockMap.keySet());
+      INSTANCE.printCurrentMemoryUsage();
       throw new MemoryException("Not enough memory");
     }
     return baseBlock;
@@ -186,5 +186,10 @@ public class UnsafeMemoryManager {
 
   public static boolean isOffHeap() {
     return offHeap;
+  }
+
+  private synchronized void printCurrentMemoryUsage() {
+    LOGGER.error(
+        " Memory Used : " + memoryUsed + " Tasks running : " + taskIdToMemoryBlockMap.keySet());
   }
 }

@@ -274,9 +274,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
           int count = dataInputStream.available();
           // create buffer
           byte[] byteStreamBuffer = new byte[count];
-          dataInputStream.read(byteStreamBuffer);
+          int bytesRead = dataInputStream.read(byteStreamBuffer);
           stream = fileSystem.create(pt, true, bufferSize);
-          stream.write(byteStreamBuffer);
+          stream.write(byteStreamBuffer, 0, bytesRead);
         } else {
           stream = fileSystem.append(pt, bufferSize);
         }

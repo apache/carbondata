@@ -112,7 +112,7 @@ public class TimeSeriesUDF {
   /**
    * Below method will be used to initialize the thread local
    */
-  private synchronized void initialize() {
+  private void initialize() {
     if (calanderThreadLocal.get() == null) {
       calanderThreadLocal.set(new GregorianCalendar());
     }

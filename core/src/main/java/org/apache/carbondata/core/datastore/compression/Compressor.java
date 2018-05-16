@@ -45,7 +45,7 @@ public interface Compressor {
 
   byte[] compressLong(long[] unCompInput);
 
-  long[] unCompressLong(byte[] compInput);
+  long[] uncompresslong(byte[] compinput);
 
   long[] unCompressLong(byte[] compInput, int offset, int length);
 

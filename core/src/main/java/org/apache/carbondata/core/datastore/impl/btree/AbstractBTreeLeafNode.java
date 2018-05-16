@@ -202,7 +202,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
       int[][] columnIndexRange) throws IOException {
     // No required here as leaf which will will be use this class will implement its own get
     // measure chunks
-    return null;
+    throw new UnsupportedOperationException("Unsupported operation");
   }
 
   /**
