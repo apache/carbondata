@@ -506,11 +506,19 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
    val actualResult = PrestoServer.executeQuery("SHOW SCHEMAS")
     assert(actualResult.equals(List(Map("Schema" -> "information_schema"), Map("Schema" -> "testdb"))))
   }
+  test("test the show tables"){
+  val actualResult = PrestoServer.executeQuery("SHOW TABLES")
+  assert(actualResult.equals(List(Map("Table" -> "testtable"))))
+ }
 
   private def cleanUp(): Unit = {
     FileFactory.deleteFile(s"$storePath/Fact", FileType.LOCAL)
     FileFactory
       .createDirectoryAndSetPermission(s"$storePath/_system",
         new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory
+      .createDirectoryAndSetPermission(s"$storePath/.DS_Store",
+        new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createNewFile(s"$storePath/testdb/.DS_STORE",FileType.LOCAL)
   }
 }

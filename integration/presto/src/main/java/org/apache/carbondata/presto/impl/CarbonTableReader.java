@@ -214,7 +214,7 @@ public class CarbonTableReader {
   }
 
   private void getName(CarbonFile carbonFile){
-  if(!carbonFile.getName().equals("_system")){
+  if(!carbonFile.getName().equalsIgnoreCase("_system") && !carbonFile.getName().equalsIgnoreCase(".ds_store")){
     schemaNames.add(carbonFile.getName());
   }
   }
