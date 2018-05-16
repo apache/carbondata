@@ -85,9 +85,14 @@ Please follow the below steps to query carbondata in presto
 #### Connecting to carbondata store on s3
  * In case you want to query carbonstore on S3 using S3A api put following additional properties inside $PRESTO_HOME$/etc/catalog/carbondata.properties 
    ```
+    Required properties
+
     fs.s3a.access.key={value}
     fs.s3a.secret.key={value}
-    Optional: fs.s3a.endpoint={value}
+    
+    Optional properties
+    
+    fs.s3a.endpoint={value}
    ```
  * In case you want to query carbonstore on s3 using S3 api put following additional properties inside $PRESTO_HOME$/etc/catalog/carbondata.properties 
     ```
