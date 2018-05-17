@@ -33,9 +33,9 @@ These SDK writer output contains just a carbondata and carbonindex files. No met
  
      Schema schema = new Schema(fields);
  
-     CarbonWriterBuilder builder = CarbonWriter.builder().withSchema(schema).outputPath(path);
+     CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
  
-     CarbonWriter writer = builder.buildWriterForCSVInput();
+     CarbonWriter writer = builder.buildWriterForCSVInput(schema);
  
      int rows = 5;
      for (int i = 0; i < rows; i++) {
@@ -87,15 +87,10 @@ public class TestSdkAvro {
     GenericData.Record record = converter.convertToGenericDataRecord(
         json.getBytes(CharEncoding.UTF_8), new org.apache.avro.Schema.Parser().parse(avroSchema));
 
-    // prepare carbon schema from avro schema 
-    org.apache.carbondata.sdk.file.Schema carbonSchema =
-            AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
-
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(carbonSchema)
           .outputPath(path)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(new org.apache.avro.Schema.Parser().parse(avroSchema));
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -128,16 +123,6 @@ Each of SQL data types are mapped into data types of SDK. Following are the mapp
 ## API List
 
 ### Class org.apache.carbondata.sdk.file.CarbonWriterBuilder
-```
-/**
-* prepares the builder with the schema provided
-* @param schema is instance of Schema
-*        This method must be called when building CarbonWriterBuilder
-* @return updated CarbonWriterBuilder
-*/
-public CarbonWriterBuilder withSchema(Schema schema);
-```
-
 ```
 /**
 * Sets the output path of the writer builder
@@ -259,6 +244,7 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
 ```
 /**
 * Build a {@link CarbonWriter}, which accepts row in CSV format object
+* @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
 * @return CSVCarbonWriter
 * @throws IOException
 * @throws InvalidLoadOptionException
@@ -269,6 +255,7 @@ public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOpti
 ```  
 /**
 * Build a {@link CarbonWriter}, which accepts Avro format object
+* @param avroSchema avro Schema object {org.apache.avro.Schema}
 * @return AvroCarbonWriter 
 * @throws IOException
 * @throws InvalidLoadOptionException

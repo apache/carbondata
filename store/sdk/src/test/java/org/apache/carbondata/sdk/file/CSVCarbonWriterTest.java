@@ -98,11 +98,10 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .withSchema(new Schema(fields))
           .isTransactionalTable(true)
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput();
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -225,7 +224,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
     try {
       carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
-          outputPath(path).withSchema(new Schema(fields)).buildWriterForCSVInput();
+          outputPath(path).buildWriterForCSVInput(new Schema(fields));
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -245,7 +244,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
     try {
       carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
-          outputPath(path).withSchema(new Schema(fields)).buildWriterForCSVInput();
+          outputPath(path).buildWriterForCSVInput(new Schema(fields));
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -268,11 +267,10 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .withSchema(new Schema(fields))
           .isTransactionalTable(true).taskNo(5)
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput();
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
 
       for (int i = 0; i < 2; i++) {
         String[] row = new String[]{

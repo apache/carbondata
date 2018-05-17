@@ -68,9 +68,9 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)
-          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
         } else {
-          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
         }
 
       var i = 0

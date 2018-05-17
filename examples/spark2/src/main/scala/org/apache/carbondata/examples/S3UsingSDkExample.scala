@@ -49,15 +49,15 @@ object S3UsingSDKExample {
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)
-          builder.withSchema(new Schema(fields)).outputPath(writerPath).isTransactionalTable(true)
+          builder.outputPath(writerPath).isTransactionalTable(true)
             .uniqueIdentifier(
               System.currentTimeMillis)
-            .buildWriterForCSVInput()
+            .buildWriterForCSVInput(new Schema(fields))
         } else {
-          builder.withSchema(new Schema(fields)).outputPath(writerPath).isTransactionalTable(true)
+          builder.outputPath(writerPath).isTransactionalTable(true)
             .uniqueIdentifier(
               System.currentTimeMillis).withBlockSize(2)
-            .buildWriterForCSVInput()
+            .buildWriterForCSVInput(new Schema(fields))
         }
       var i = 0
       var row = num

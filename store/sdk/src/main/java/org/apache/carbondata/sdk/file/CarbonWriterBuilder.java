@@ -67,18 +67,6 @@ public class CarbonWriterBuilder {
   private String taskNo;
 
   /**
-   * prepares the builder with the schema provided
-   * @param schema is instance of Schema
-   * This method must be called when building CarbonWriterBuilder
-   * @return updated CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder withSchema(Schema schema) {
-    Objects.requireNonNull(schema, "schema should not be null");
-    this.schema = schema;
-    return this;
-  }
-
-  /**
    * Sets the output path of the writer builder
    * @param path is the absolute path where output files are written
    * This method must be called when building CarbonWriterBuilder
@@ -310,24 +298,30 @@ public class CarbonWriterBuilder {
 
   /**
    * Build a {@link CarbonWriter}, which accepts row in CSV format
+   * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
    * @return CSVCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOptionException {
+  public CarbonWriter buildWriterForCSVInput(Schema schema)
+      throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
+    this.schema = schema;
     CarbonLoadModel loadModel = createLoadModel();
     return new CSVCarbonWriter(loadModel);
   }
 
   /**
    * Build a {@link CarbonWriter}, which accepts Avro object
+   * @param avroSchema avro Schema object {org.apache.avro.Schema}
    * @return AvroCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public CarbonWriter buildWriterForAvroInput() throws IOException, InvalidLoadOptionException {
+  public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema avroSchema)
+      throws IOException, InvalidLoadOptionException {
+    this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
     CarbonLoadModel loadModel = createLoadModel();

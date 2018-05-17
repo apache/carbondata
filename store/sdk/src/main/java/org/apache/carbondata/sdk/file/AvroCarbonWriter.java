@@ -156,15 +156,11 @@ public class AvroCarbonWriter extends CarbonWriter {
   /**
    * converts avro schema to carbon schema required by carbonWriter
    *
-   * @param avroSchemaString json formatted avro schema as string
+   * @param avroSchema avro schema
    * @return carbon sdk schema
    */
   public static org.apache.carbondata.sdk.file.Schema getCarbonSchemaFromAvroSchema(
-      String avroSchemaString) {
-    if (avroSchemaString == null) {
-      throw new UnsupportedOperationException("avro schema string cannot be null");
-    }
-    Schema avroSchema = new Schema.Parser().parse(avroSchemaString);
+      Schema avroSchema) {
     Field[] carbonField = new Field[avroSchema.getFields().size()];
     int i = 0;
     for (Schema.Field avroField : avroSchema.getFields()) {

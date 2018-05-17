@@ -66,7 +66,6 @@ public class SDKS3Example {
         fields[0] = new Field("name", DataTypes.STRING);
         fields[1] = new Field("age", DataTypes.INT);
         CarbonWriterBuilder builder = CarbonWriter.builder()
-                .withSchema(new Schema(fields))
                 .setAccessKey(args[0])
                 .setSecretKey(args[1])
                 .setEndPoint(args[2])
@@ -74,7 +73,7 @@ public class SDKS3Example {
                 .persistSchemaFile(persistSchema)
                 .isTransactionalTable(transactionalTable);
 
-        CarbonWriter writer = builder.buildWriterForCSVInput();
+        CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
 
         for (int i = 0; i < num; i++) {
             writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});

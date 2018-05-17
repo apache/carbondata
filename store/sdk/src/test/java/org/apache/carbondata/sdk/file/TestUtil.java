@@ -63,7 +63,6 @@ public class TestUtil {
       boolean persistSchema, int blockletSize, int blockSize, boolean isTransactionalTable) {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .withSchema(schema)
           .isTransactionalTable(isTransactionalTable)
           .outputPath(path);
       if (sortColumns != null) {
@@ -79,7 +78,7 @@ public class TestUtil {
         builder = builder.withBlockSize(blockSize);
       }
 
-      CarbonWriter writer = builder.buildWriterForCSVInput();
+      CarbonWriter writer = builder.buildWriterForCSVInput(schema);
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), String.valueOf((double) i / 2)});
