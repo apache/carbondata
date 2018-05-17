@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.file;
+package org.apache.carbondata.core.metadata.datatype;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.Field;
 
 /**
  * A field represent one column
@@ -32,9 +32,9 @@ import org.apache.carbondata.core.metadata.datatype.StructField;
 @InterfaceStability.Unstable
 public class Field {
 
-  private String name;
-  private DataType type;
-  private List<StructField> children;
+  protected String name;
+  protected DataType type;
+  protected List<Field> children;
   private String parent;
   private String storeType = "columnnar";
   private int schemaOrdinal = -1;
@@ -42,6 +42,8 @@ public class Field {
   private int scale = 0;
   private String rawSchema = "";
   private String columnComment = "";
+  public Field() {
+  }
 
   /**
    * Field Constructor
@@ -80,7 +82,7 @@ public class Field {
     }
   }
 
-  public Field(String name, String type, List<StructField> fields) {
+  public Field(String name, String type, List<Field> fields) {
     this.name = name;
     this.children = fields;
     if (type.equalsIgnoreCase("string")) {
@@ -115,7 +117,7 @@ public class Field {
 
 
 
-  public Field(String name, DataType type, List<StructField> fields) {
+  public Field(String name, DataType type, List<Field> fields) {
     this.name = name;
     this.type = type;
     this.children = fields;
@@ -134,11 +136,11 @@ public class Field {
     return type;
   }
 
-  public List<StructField> getChildren() {
+  public List<Field> getChildren() {
     return children;
   }
 
-  public void setChildren(List<StructField> children) {
+  public void setChildren(List<Field> children) {
     this.children = children;
   }
 

@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.datatype.Field;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;

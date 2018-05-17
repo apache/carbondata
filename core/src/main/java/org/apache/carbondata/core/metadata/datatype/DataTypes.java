@@ -151,7 +151,7 @@ public class DataTypes {
   /**
    * create struct type with specified fields
    */
-  public static StructType createStructType(List<StructField> fields) {
+  public static StructType createStructType(List<Field> fields) {
     return new StructType(fields);
   }
 
@@ -159,7 +159,7 @@ public class DataTypes {
    * create a struct type object with no field
    */
   public static StructType createDefaultStructType() {
-    return new StructType(new ArrayList<StructField>());
+    return new StructType(new ArrayList<Field>());
   }
 
   public static boolean isStructType(DataType dataType) {

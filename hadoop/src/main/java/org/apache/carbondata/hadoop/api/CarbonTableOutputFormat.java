@@ -27,7 +27,7 @@ import java.util.concurrent.Future;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
-import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -368,11 +368,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     if (inputSchema == null || inputSchema.getFields().size() == 0) {
       throw new UnsupportedOperationException("Input schema must be set");
     }
-    List<StructField> fields = inputSchema.getFields();
+    List<Field> fields = inputSchema.getFields();
     StringBuilder builder = new StringBuilder();
     String[] columns = new String[fields.size()];
     int i = 0;
-    for (StructField field : fields) {
+    for (Field field : fields) {
       builder.append(field.getFieldName());
       builder.append(",");
       columns[i++] = field.getFieldName();

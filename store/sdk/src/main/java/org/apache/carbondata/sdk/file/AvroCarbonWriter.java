@@ -26,6 +26,7 @@ import java.util.UUID;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
@@ -86,7 +87,7 @@ public class AvroCarbonWriter extends CarbonWriter {
   }
 
   private Object avroFieldToObject(Schema.Field avroField, Object fieldValue) {
-    Object out;
+    Object out = null;
     Schema.Type type = avroField.schema().getType();
     switch (type) {
       case BOOLEAN:
@@ -104,16 +105,18 @@ public class AvroCarbonWriter extends CarbonWriter {
       case RECORD:
         List<Schema.Field> fields = avroField.schema().getFields();
 
-        Object[] structChildObjects = new Object[fields.size()];
+        List<Object> structChildObjects = new ArrayList<>();
         for (int i = 0; i < fields.size(); i++) {
           Object childObject =
               avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i));
           if (childObject != null) {
-            structChildObjects[i] = childObject;
+            structChildObjects.add(childObject);
           }
         }
-        StructObject structObject = new StructObject(structChildObjects);
-        out = structObject;
+        if (structChildObjects.size() > 0) {
+          StructObject structObject = new StructObject(structChildObjects.toArray());
+          out = structObject;
+        }
         break;
       case ARRAY:
         Object[] arrayChildObjects;
@@ -141,10 +144,11 @@ public class AvroCarbonWriter extends CarbonWriter {
             }
           }
         }
-        out = new ArrayObject(arrayChildObjects);
+        if (arrayChildObjects.length > 0) {
+          out = new ArrayObject(arrayChildObjects);
+        }
         break;
       case NULL:
-        out = null;
         break;
       default:
         throw new UnsupportedOperationException(
@@ -165,16 +169,14 @@ public class AvroCarbonWriter extends CarbonWriter {
       throw new UnsupportedOperationException("avro schema string cannot be null");
     }
     Schema avroSchema = new Schema.Parser().parse(avroSchemaString);
-    Field[] carbonField = new Field[avroSchema.getFields().size()];
-    int i = 0;
+    List<Field> carbonField = new ArrayList<>();
     for (Schema.Field avroField : avroSchema.getFields()) {
       Field field = prepareFields(avroField);
       if (field != null) {
-        carbonField[i] = field;
+        carbonField.add(field);
       }
-      i++;
     }
-    return new org.apache.carbondata.sdk.file.Schema(carbonField);
+    return new org.apache.carbondata.sdk.file.Schema(carbonField.toArray(new Field[0]));
   }
 
   private static Field prepareFields(Schema.Field avroField) {
@@ -196,17 +198,21 @@ public class AvroCarbonWriter extends CarbonWriter {
         return new Field(FieldName, DataTypes.DOUBLE);
       case RECORD:
         // recursively get the sub fields
-        ArrayList<StructField> structSubFields = new ArrayList<>();
+        ArrayList<Field> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
           StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
           }
         }
-        return new Field(FieldName, "struct", structSubFields);
+        if (structSubFields.size() > 0) {
+          return new Field(FieldName, "struct", structSubFields);
+        } else {
+          return null;
+        }
       case ARRAY:
         // recursively get the sub fields
-        ArrayList<StructField> arraySubField = new ArrayList<>();
+        ArrayList<Field> arraySubField = new ArrayList<>();
         // array will have only one sub field.
         StructField structField = prepareSubFields("val", childSchema.getElementType());
         if (structField != null) {
@@ -240,7 +246,7 @@ public class AvroCarbonWriter extends CarbonWriter {
         return new StructField(FieldName, DataTypes.DOUBLE);
       case RECORD:
         // recursively get the sub fields
-        ArrayList<StructField> structSubFields = new ArrayList<>();
+        ArrayList<Field> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
           StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
@@ -281,7 +287,7 @@ public class AvroCarbonWriter extends CarbonWriter {
         return DataTypes.DOUBLE;
       case RECORD:
         // recursively get the sub fields
-        ArrayList<StructField> structSubFields = new ArrayList<>();
+        ArrayList<Field> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
           StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {

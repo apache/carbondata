@@ -44,8 +44,8 @@ import org.apache.avro
 import org.apache.commons.lang.CharEncoding
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
-import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
-import org.apache.carbondata.sdk.file.{AvroCarbonWriter, CarbonWriter, CarbonWriterBuilder, Field, Schema}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field, StructField}
+import org.apache.carbondata.sdk.file.{AvroCarbonWriter, CarbonWriter, CarbonWriterBuilder, Schema}
 
 
 class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
@@ -1025,7 +1025,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     try {
       val writer = CarbonWriter.builder.withSchema(new Schema(fields))
         .outputPath(writerPath).isTransactionalTable(false)
-        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput
+        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
       var i = 0
       while (i < rows) {
         writer.write(record)
@@ -1064,7 +1064,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val fields = new Array[Field](3)
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.DOUBLE)
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("street", DataTypes.STRING))
     fld.add(new StructField("city", DataTypes.STRING))
     fields(2) = new Field("address", "struct", fld)
@@ -1114,7 +1114,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
     // fields[1] = new Field("age", DataTypes.INT);
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("street", DataTypes.STRING))
     fields(2) = new Field("address", "array", fld)
 
@@ -1166,11 +1166,11 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val fields = new Array[Field](4)
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("street", DataTypes.STRING))
     fld.add(new StructField("city", DataTypes.STRING))
     fields(2) = new Field("address", "struct", fld)
-    val fld1 = new util.ArrayList[StructField]
+    val fld1 = new util.ArrayList[Field]
     fld1.add(new StructField("eachDoorNum", DataTypes.INT))
     fields(3) = new Field("doorNum", "array", fld1)
     WriteFilesWithAvroWriter(rows, mySchema, json, fields)
@@ -1231,11 +1231,11 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
 
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("street", DataTypes.STRING))
     fld.add(new StructField("city", DataTypes.STRING))
 
-    val fld2 = new util.ArrayList[StructField]
+    val fld2 = new util.ArrayList[Field]
     fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
     fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
 
@@ -1314,11 +1314,11 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
 
-    val fld2 = new util.ArrayList[StructField]
+    val fld2 = new util.ArrayList[Field]
     fld2.add(new StructField("street", DataTypes.STRING))
     fld2.add(new StructField("city", DataTypes.STRING))
 
-    val fld1 = new util.ArrayList[StructField]
+    val fld1 = new util.ArrayList[Field]
     fld1.add(new StructField("eachDoorNum", DataTypes.INT))
     fld2.add(new StructField("doorNum", DataTypes.createArrayType(DataTypes.INT), fld1))
 
@@ -1406,7 +1406,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
     // fields[1] = new Field("age", DataTypes.INT);
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("street", DataTypes.STRING))
     fields(2) = new Field("address", "array", fld)
 
@@ -1600,12 +1600,12 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
 
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("street", DataTypes.STRING))
     fld.add(new StructField("city", DataTypes.STRING))
     fld.add(new StructField("FloorNum", DataTypes.createArrayType(DataTypes.INT)))
 
-    val fld2 = new util.ArrayList[StructField]
+    val fld2 = new util.ArrayList[Field]
     fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
     fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
 
@@ -1732,17 +1732,17 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
 
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("street", DataTypes.STRING))
     fld.add(new StructField("city", DataTypes.STRING))
 
-    val subFld = new util.ArrayList[StructField]
+    val subFld = new util.ArrayList[Field]
     subFld.add(new StructField("wing", DataTypes.STRING))
     subFld.add(new StructField("number", DataTypes.INT))
     fld.add(new StructField("FloorNum", DataTypes.createStructType(subFld)))
 
     // array of struct of struct
-    val fld2 = new util.ArrayList[StructField]
+    val fld2 = new util.ArrayList[Field]
     fld2.add(new StructField("my_address", DataTypes.createStructType(fld), fld))
     fields(2) = new Field("doorNum", DataTypes.createArrayType(fld2.get(0).getDataType), fld2)
 
@@ -1830,13 +1830,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
 
-    val subFld = new util.ArrayList[StructField]
+    val subFld = new util.ArrayList[Field]
     subFld.add(new StructField("EachDoorNum", DataTypes.INT))
 
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("DoorNum", DataTypes.createArrayType(DataTypes.INT), subFld))
     // array of struct of struct
-    val doorNum = new util.ArrayList[StructField]
+    val doorNum = new util.ArrayList[Field]
     doorNum.add(new StructField("FloorNum",
       DataTypes.createArrayType(DataTypes.createArrayType(DataTypes.INT)), fld))
     fields(2) = new Field("BuildNum", "array", doorNum)
@@ -1965,19 +1965,19 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
 
-    val subFld = new util.ArrayList[StructField]
+    val subFld = new util.ArrayList[Field]
     subFld.add(new StructField("EachDoorNum", DataTypes.INT))
 
-    val address = new util.ArrayList[StructField]
+    val address = new util.ArrayList[Field]
     address.add(new StructField("street", DataTypes.STRING))
     address.add(new StructField("city", DataTypes.STRING))
 
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("DoorNum",
         DataTypes.createArrayType(DataTypes.createStructType(address)),
         subFld))
     // array of struct of struct
-    val doorNum = new util.ArrayList[StructField]
+    val doorNum = new util.ArrayList[Field]
     doorNum.add(new StructField("FloorNum",
       DataTypes.createArrayType(
         DataTypes.createArrayType(DataTypes.createStructType(address))), fld))
@@ -2048,13 +2048,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     val fields = new Array[Field](2)
     fields(0) = new Field("id", DataTypes.INT)
-    val fld_s = new java.util.ArrayList[StructField]
+    val fld_s = new java.util.ArrayList[Field]
     fld_s.add(new StructField("course_struct_course_time", DataTypes.STRING))
     fields(1) = new Field("course_details", "struct", fld_s)
 
     assert(intercept[RuntimeException] {
       val writer = CarbonWriter.builder.withSchema(new Schema(fields)).sortBy(Array("name", "id"))
-        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput
+        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
       writer.write(record)
       writer.close()
     }.getMessage.toLowerCase.contains("column: name specified in sort columns"))
@@ -2096,12 +2096,12 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .convertToGenericDataRecord(json1.getBytes(CharEncoding.UTF_8), nn)
 
     val writer = CarbonWriter.builder.withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(schema1))
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
     writer.write(record)
     writer.close()
   }
 
-  test("test if data load is success with a struct having timestamp column  ") {
+  test("test if exception is thrown if null avro type is mapped to carbon schema") {
     val schema1 =
       """{
         |	"namespace": "com.apache.schema",
@@ -2110,7 +2110,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         |	"fields": [
         |		{
         |			"name": "id",
-        |			"type": "int"
+        |			"type": "null"
         |		},
         |		{
         |			"name": "course_details",
@@ -2137,12 +2137,134 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     val fields = new Array[Field](2)
     fields(0) = new Field("id", DataTypes.INT)
-    val fld_s = new java.util.ArrayList[StructField]
+    val fld_s = new java.util.ArrayList[Field]
+    fld_s.add(new StructField("course_struct_course_time", DataTypes.TIMESTAMP))
+    fields(1) = new Field("course_details", "struct", fld_s)
+    assert(intercept[IOException] {
+      CarbonWriter.builder.withSchema(new Schema(fields)).sortBy(Array("id"))
+        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+    }.getMessage.contains("Null type cannot have a mapping"))
+  }
+
+  test("test if exception is thrown if null avro type in child column is mapped to carbon schema") {
+    val schema1 =
+      """{
+        |	"namespace": "com.apache.schema",
+        |	"type": "record",
+        |	"name": "StudentActivity",
+        |	"fields": [
+        |		{
+        |			"name": "id",
+        |			"type": "int"
+        |		},
+        |		{
+        |			"name": "course_details",
+        |			"type": {
+        |				"name": "course_details",
+        |				"type": "record",
+        |				"fields": [
+        |					{
+        |						"name": "course_struct_course_time",
+        |						"type": "null"
+        |					}
+        |				]
+        |			}
+        |		}
+        |	]
+        |}""".stripMargin
+
+    val json1 =
+      """{"id": 101,"course_details": { "course_struct_course_time":"2014-01-05 00:00:00"  }}""".stripMargin
+    val nn = new org.apache.avro.Schema.Parser().parse(schema1)
+    val converter = new JsonAvroConverter
+    val record = converter
+      .convertToGenericDataRecord(json1.getBytes(CharEncoding.UTF_8), nn)
+
+    val fields = new Array[Field](2)
+    fields(0) = new Field("id", DataTypes.INT)
+    val fld_s = new java.util.ArrayList[Field]
+    fld_s.add(new StructField("course_struct_course_time", DataTypes.TIMESTAMP))
+    fields(1) = new Field("course_details", "struct", fld_s)
+    assert(intercept[IOException] {
+      CarbonWriter.builder.withSchema(new Schema(fields)).sortBy(Array("id"))
+        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+    }.getMessage.contains("Null type cannot have a mapping"))
+  }
+
+  test("test if exception is thrown if carbon schema has more columns than avro") {
+    val schema1 =
+      """{
+        |	"namespace": "com.apache.schema",
+        |	"type": "record",
+        |	"name": "StudentActivity",
+        |	"fields": [
+        |		{
+        |			"name": "id",
+        |			"type": "int"
+        |		}
+        |	]
+        |}""".stripMargin
+
+    val json1 =
+      """{"id": 101,"course_details": { "course_struct_course_time":"2014-01-05 00:00:00"  }}""".stripMargin
+    val nn = new org.apache.avro.Schema.Parser().parse(schema1)
+    val converter = new JsonAvroConverter
+    val record = converter
+      .convertToGenericDataRecord(json1.getBytes(CharEncoding.UTF_8), nn)
+
+    val fields = new Array[Field](2)
+    fields(0) = new Field("id", DataTypes.INT)
+    val fld_s = new java.util.ArrayList[Field]
+    fld_s.add(new StructField("course_struct_course_time", DataTypes.TIMESTAMP))
+    fields(1) = new Field("course_details", "struct", fld_s)
+    assert(intercept[IOException] {
+      CarbonWriter.builder.withSchema(new Schema(fields)).sortBy(Array("id"))
+        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+    }.getMessage.contains("Carbon schema has extra fields"))
+  }
+
+  test("test if data load is success with a struct having timestamp column  ") {
+    val schema1 =
+      """{
+        |	"namespace": "com.apache.schema",
+        |	"type": "record",
+        |	"name": "StudentActivity",
+        |	"fields": [
+        |		{
+        |			"name": "id",
+        |			"type": "int"
+        |		},
+        |		{
+        |			"name": "course_details",
+        |			"type": {
+        |				"name": "course_details",
+        |				"type": "record",
+        |				"fields": [
+        |					{
+        |						"name": "course_struct_course_time",
+        |						"type": "null"
+        |					}
+        |				]
+        |			}
+        |		}
+        |	]
+        |}""".stripMargin
+
+    val json1 =
+      """{"id": 101,"course_details": { "course_struct_course_time":"2014-01-05 00:00:00"  }}""".stripMargin
+    val nn = new org.apache.avro.Schema.Parser().parse(schema1)
+    val converter = new JsonAvroConverter
+    val record = converter
+      .convertToGenericDataRecord(json1.getBytes(CharEncoding.UTF_8), nn)
+
+    val fields = new Array[Field](1)
+    fields(0) = new Field("id", DataTypes.INT)
+    val fld_s = new java.util.ArrayList[Field]
     fld_s.add(new StructField("course_struct_course_time", DataTypes.TIMESTAMP))
     fields(1) = new Field("course_details", "struct", fld_s)
 
     val writer = CarbonWriter.builder.withSchema(new Schema(fields)).sortBy(Array("id"))
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
     writer.write(record)
     writer.close()
   }
@@ -2189,11 +2311,11 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     val fields = new Array[Field](2)
     fields(0) = new Field("id", DataTypes.LONG)
-    val fld_s = new java.util.ArrayList[StructField]
+    val fld_s = new java.util.ArrayList[Field]
     fld_s.add(new StructField("id", DataTypes.LONG))
     fields(1) = new Field("entries", DataTypes.createArrayType(DataTypes.createStructType(fld_s)))
     val writer = CarbonWriter.builder.withSchema(new Schema(fields))
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
     writer.write(record)
     writer.close()
   }
@@ -2250,11 +2372,11 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     val fields = new Array[Field](3)
     fields(0)=new Field("id", DataTypes.STRING)
-    val fld_s = new java.util.ArrayList[StructField]
+    val fld_s = new java.util.ArrayList[Field]
     fld_s.add(new StructField("carbon_int", DataTypes.INT))
     fields(1)=new Field("course_details", "struct",fld_s)
 
-    val fld_a = new java.util.ArrayList[StructField]
+    val fld_a = new java.util.ArrayList[Field]
     fld_a.add(new StructField("carbon_array", DataTypes.INT))
     fields(2)=new Field("salary_string", "array",fld_a)
 
@@ -2262,14 +2384,14 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     loadOptions.put("bad_records_action", "fail")
     assert(intercept[Exception] {
       val writer = CarbonWriter.builder.withSchema(new Schema(fields)).outputPath(writerPath)
-        .isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForAvroInput
+        .isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForAvroInput(nn)
       writer.write(record)
       writer.close()
     }.getMessage.contains("Data load failed due to bad record"))
 
     loadOptions.put("bad_records_action", "FORCE")
       val writer = CarbonWriter.builder.withSchema(new Schema(fields)).outputPath(writerPath)
-        .isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForAvroInput
+        .isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForAvroInput(nn)
       writer.write(record)
       writer.close()
   }

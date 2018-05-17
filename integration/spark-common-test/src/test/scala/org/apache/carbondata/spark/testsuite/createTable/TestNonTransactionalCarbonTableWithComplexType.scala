@@ -19,10 +19,6 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io.File
 import java.util
-import java.util.ArrayList
-
-import scala.collection.mutable.ArrayBuffer
-
 import org.apache.avro
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.CharEncoding
@@ -32,9 +28,9 @@ import org.scalatest.BeforeAndAfterAll
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field, StructField}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
 class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with BeforeAndAfterAll {
 
@@ -75,7 +71,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     try {
       val writer = CarbonWriter.builder.withSchema(new Schema(fields))
         .outputPath(writerPath).isTransactionalTable(false)
-        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput
+        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
       var i = 0
       while (i < rows) {
         writer.write(record)
@@ -186,22 +182,22 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
 
-    val subFld = new util.ArrayList[StructField]
+    val subFld = new util.ArrayList[Field]
     subFld.add(new StructField("EachDoorNum", DataTypes.INT))
 
-    val address = new util.ArrayList[StructField]
+    val address = new util.ArrayList[Field]
     address.add(new StructField("street", DataTypes.STRING))
     address.add(new StructField("city", DataTypes.STRING))
     address.add(new StructField("Temperature", DataTypes.DOUBLE))
     address.add(new StructField("WindSpeed", DataTypes.createDecimalType(6,2)))
     address.add(new StructField("year", DataTypes.DATE))
 
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("DoorNum",
       DataTypes.createArrayType(DataTypes.createStructType(address)),
       subFld))
     // array of struct of struct
-    val doorNum = new util.ArrayList[StructField]
+    val doorNum = new util.ArrayList[Field]
     doorNum.add(new StructField("FloorNum",
       DataTypes.createArrayType(
         DataTypes.createArrayType(DataTypes.createStructType(address))), fld))
@@ -278,12 +274,12 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     fieds(0)=new Field("name",DataTypes.STRING);
     fieds(1)=new Field("age",DataTypes.INT)
 
-    val fld = new util.ArrayList[StructField]
+    val fld = new util.ArrayList[Field]
     fld.add(new StructField("Temperature", DataTypes.DOUBLE))
     fieds(2) = new Field("my_address", "struct", fld)
 
 
-    val writer=CarbonWriter.builder().withSchema(new Schema(fieds)).outputPath(writerPath).buildWriterForAvroInput()
+    val writer=CarbonWriter.builder().withSchema(new Schema(fieds)).outputPath(writerPath).buildWriterForAvroInput(pschema)
     writer.write(records)
     writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")

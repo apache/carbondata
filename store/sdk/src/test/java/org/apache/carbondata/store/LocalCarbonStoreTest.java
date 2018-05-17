@@ -23,7 +23,7 @@ import java.util.Iterator;
 
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.sdk.file.Schema;
 import org.apache.carbondata.sdk.file.TestUtil;
 
