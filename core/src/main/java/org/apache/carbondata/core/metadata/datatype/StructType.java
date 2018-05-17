@@ -21,9 +21,9 @@ import java.util.List;
 
 public class StructType extends DataType {
 
-  private List<StructField> fields;
+  private List<Field> fields;
 
-  StructType(List<StructField> fields) {
+  StructType(List<Field> fields) {
     super(DataTypes.STRUCT_TYPE_ID, 10, "STRUCT", -1);
     this.fields = fields;
   }
@@ -33,7 +33,7 @@ public class StructType extends DataType {
     return true;
   }
 
-  public List<StructField> getFields() {
+  public List<Field> getFields() {
     return fields;
   }
 }

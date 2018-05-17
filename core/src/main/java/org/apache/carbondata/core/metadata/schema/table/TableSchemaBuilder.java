@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -115,11 +116,11 @@ public class TableSchemaBuilder {
     this.sortColumns = sortColumns;
   }
 
-  public ColumnSchema addColumn(StructField field, AtomicInteger valIndex, boolean isSortColumn) {
+  public ColumnSchema addColumn(Field field, AtomicInteger valIndex, boolean isSortColumn) {
     return addColumn(field, null, valIndex, isSortColumn, false);
   }
 
-  private ColumnSchema addColumn(StructField field, String parentName, AtomicInteger valIndex,
+  private ColumnSchema addColumn(Field field, String parentName, AtomicInteger valIndex,
       boolean isSortColumn, boolean isComplexChild) {
     Objects.requireNonNull(field);
     if (isComplexChild) {
@@ -197,7 +198,7 @@ public class TableSchemaBuilder {
       } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")
           && ((StructType) field.getDataType()).getFields().size() > 0) {
         // This field has children.
-        List<StructField> fields = ((StructType) field.getDataType()).getFields();
+        List<Field> fields = ((StructType) field.getDataType()).getFields();
         for (int i = 0; i < fields.size(); i++) {
           addColumn(fields.get(i), parentFieldName, valIndex, false, true);
         }
@@ -215,13 +216,13 @@ public class TableSchemaBuilder {
   /**
    * Throw exception if {@param field} name is repeated
    */
-  private void checkRepeatColumnName(StructField field, String parentName) {
+  private void checkRepeatColumnName(Field field, String parentName) {
     checkRepeatColumnName(
         new StructField(parentName + "." + field.getFieldName(), field.getDataType(),
             field.getChildren()));
   }
 
-  private void checkRepeatColumnName(StructField field) {
+  private void checkRepeatColumnName(Field field) {
     for (ColumnSchema column : sortColumns) {
       if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
         throw new IllegalArgumentException("column name already exists");

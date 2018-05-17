@@ -36,6 +36,7 @@ import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -327,9 +328,11 @@ public class CarbonWriterBuilder {
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public CarbonWriter buildWriterForAvroInput() throws IOException, InvalidLoadOptionException {
+  public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema avroSchema)
+      throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
+    validateSchemas(avroSchema, Arrays.asList(schema.getFields()));
     CarbonLoadModel loadModel = createLoadModel();
 
     // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
@@ -338,6 +341,27 @@ public class CarbonWriterBuilder {
     // which will skip Conversion Step.
     loadModel.setLoadWithoutCoverterStep(true);
     return new AvroCarbonWriter(loadModel);
+  }
+
+  private void validateSchemas(org.apache.avro.Schema avroSchema, List<Field> carbonFields)
+      throws IOException {
+    List<org.apache.avro.Schema.Field> avroFields = avroSchema.getFields();
+    if (carbonFields.size() > avroFields.size()) {
+      throw new IOException("Carbon schema has extra fields");
+    }
+    for (int i = 0; i < avroFields.size(); i++) {
+      org.apache.avro.Schema childSchema = avroFields.get(i).schema();
+      if (childSchema.getType().equals(org.apache.avro.Schema.Type.NULL)
+          && avroFields.size() == carbonFields.size()) {
+        throw new IOException("Null type cannot have a mapping in carbon schema");
+      } else if (childSchema.getType().equals(org.apache.avro.Schema.Type.RECORD) ||
+          childSchema.getType().equals(org.apache.avro.Schema.Type.ARRAY)) {
+        int fieldIndex = avroFields.indexOf(avroFields.get(i));
+        if (carbonFields.size() != fieldIndex) {
+          validateSchemas(childSchema, carbonFields.get(fieldIndex).getChildren());
+        }
+      }
+    }
   }
 
   private void setCsvHeader(CarbonLoadModel model) {
@@ -466,9 +490,9 @@ public class CarbonWriterBuilder {
                 .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false);
           } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
             // Loop through the inner columns and for a StructData
-            List<StructField> structFieldsArray =
-                new ArrayList<StructField>(field.getChildren().size());
-            for (StructField childFld : field.getChildren()) {
+            List<Field> structFieldsArray =
+                new ArrayList<>(field.getChildren().size());
+            for (Field childFld : field.getChildren()) {
               structFieldsArray
                   .add(new StructField(childFld.getFieldName(), childFld.getDataType()));
             }

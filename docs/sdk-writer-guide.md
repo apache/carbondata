@@ -15,7 +15,7 @@ These SDK writer output contains just a carbondata and carbonindex files. No met
  import org.apache.carbondata.core.metadata.datatype.DataTypes;
  import org.apache.carbondata.sdk.file.CarbonWriter;
  import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
- import org.apache.carbondata.sdk.file.Field;
+ import org.apache.carbondata.core.metadata.datatype.Field;
  import org.apache.carbondata.sdk.file.Schema;
  
  public class TestSdk {
@@ -54,7 +54,7 @@ import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.sdk.file.AvroCarbonWriter;
 import org.apache.carbondata.sdk.file.CarbonWriter;
-import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.core.metadata.datatype.Field;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.lang.CharEncoding;
@@ -305,7 +305,7 @@ return new CarbonWriterBuilder();
 }
 ```
 
-### Class org.apache.carbondata.sdk.file.Field
+### Class org.apache.carbondata.core.metadata.datatype.Field
 ```
 /**
 * Field Constructor

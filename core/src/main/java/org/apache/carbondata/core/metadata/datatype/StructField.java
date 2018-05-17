@@ -20,38 +20,32 @@ package org.apache.carbondata.core.metadata.datatype;
 import java.io.Serializable;
 import java.util.List;
 
-public class StructField implements Serializable {
+public class StructField extends Field implements Serializable {
 
   private static final long serialVersionUID = 3271726L;
 
-  private String fieldName;
-
-  private DataType dataType;
-
-  private List<StructField> children;
-
   public StructField(String fieldName, DataType dataType) {
-    this.fieldName = fieldName;
-    this.dataType = dataType;
+    this.name = fieldName;
+    this.type = dataType;
     this.children = null;
   }
 
 
-  public StructField(String fieldName, DataType dataType, List<StructField> children) {
-    this.fieldName = fieldName;
-    this.dataType = dataType;
+  public StructField(String fieldName, DataType dataType, List<Field> children) {
+    this.name = fieldName;
+    this.type = dataType;
     this.children = children;
   }
 
   public DataType getDataType() {
-    return dataType;
+    return type;
   }
 
   public String getFieldName() {
-    return fieldName;
+    return name;
   }
 
-  public List<StructField> getChildren() {
+  public List<Field> getChildren() {
     return children;
   }
 }
