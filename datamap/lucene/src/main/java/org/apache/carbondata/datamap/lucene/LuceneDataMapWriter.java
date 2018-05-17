@@ -447,10 +447,14 @@ public class LuceneDataMapWriter extends DataMapWriter {
    * class.
    */
   public void finish() throws IOException {
-    flushCache(cache, getIndexColumns(), indexWriter, storeBlockletWise);
-    // finished a file , close this index writer
-    if (indexWriter != null) {
-      indexWriter.close();
+    if (!isWritingFinished()) {
+      flushCache(cache, getIndexColumns(), indexWriter, storeBlockletWise);
+      // finished a file , close this index writer
+      if (indexWriter != null) {
+        indexWriter.close();
+        indexWriter = null;
+      }
+      setWritingFinished(true);
     }
   }
 

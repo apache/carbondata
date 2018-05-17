@@ -46,6 +46,8 @@ public abstract class DataMapWriter {
 
   private List<CarbonColumn> indexColumns;
 
+  private boolean isWritingFinished;
+
   public DataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName) {
     this.tablePath = tablePath;
@@ -132,5 +134,13 @@ public abstract class DataMapWriter {
   public static String getDefaultDataMapPath(
       String tablePath, String segmentId, String dataMapName) {
     return CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMapName;
+  }
+
+  public boolean isWritingFinished() {
+    return isWritingFinished;
+  }
+
+  public void setWritingFinished(boolean writingFinished) {
+    isWritingFinished = writingFinished;
   }
 }
