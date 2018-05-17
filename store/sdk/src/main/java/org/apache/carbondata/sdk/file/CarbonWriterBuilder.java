@@ -336,7 +336,7 @@ public class CarbonWriterBuilder {
     // handle multi level complex type support. As there are no conversion converter step is
     // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
     // which will skip Conversion Step.
-    loadModel.setLoadWithoutCoverterStep(true);
+    loadModel.setLoadWithoutConverterStep(true);
     return new AvroCarbonWriter(loadModel);
   }
 

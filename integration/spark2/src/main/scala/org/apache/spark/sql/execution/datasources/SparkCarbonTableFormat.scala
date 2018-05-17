@@ -110,7 +110,7 @@ with Serializable {
     model.setDictionaryServerHost(options.getOrElse("dicthost", null))
     model.setDictionaryServerPort(options.getOrElse("dictport", "-1").toInt)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
-    model.setLoadWithoutCoverterStep(true)
+    model.setLoadWithoutConverterStep(true)
 
     val staticPartition = options.getOrElse("staticpartition", null)
     if (staticPartition != null) {
