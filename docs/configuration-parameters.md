@@ -133,7 +133,8 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.enableMinMax | true | Min max is feature added to enhance query performance. To disable this feature, set it false. |
 | carbon.dynamicallocation.schedulertimeout | 5 | Specifies the maximum time (unit in seconds) the scheduler can wait for executor to be active. Minimum value is 5 sec and maximum value is 15 sec. |
 | carbon.scheduler.minregisteredresourcesratio | 0.8 | Specifies the minimum resource (executor) ratio needed for starting the block distribution. The default value is 0.8, which indicates 80% of the requested resource is allocated for starting block distribution.  The minimum value is 0.1 min and the maximum value is 1.0. | 
-  
+| carbon.search.enabled | false | If set to true, it will use CarbonReader to do distributed scan directly instead of using compute framework like spark, thus avoiding limitation of compute framework like SQL optimizer and task scheduling overhead. |
+
 * **Global Dictionary Configurations**
   
 | Parameter | Default Value | Description |
