@@ -103,7 +103,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   }
 
   @Override public List<DataMapSchema> retrieveSchemas(CarbonTable carbonTable) throws IOException {
-    checkAndReloadDataMapSchemas();
+    checkAndReloadDataMapSchemasWithoutNewFile();
     List<DataMapSchema> dataMapSchemas = new ArrayList<>();
     for (DataMapSchema dataMapSchema : this.dataMapSchemas) {
       List<RelationIdentifier> parentTables = dataMapSchema.getParentTables();
@@ -172,6 +172,18 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
       throw new IOException("DataMap with name " + dataMapName + " cannot be deleted");
     } else {
       touchMDTFile();
+    }
+  }
+
+  private void checkAndReloadDataMapSchemasWithoutNewFile() throws IOException {
+    if (FileFactory.isFileExist(mdtFilePath)) {
+      long lastModifiedTime = FileFactory.getCarbonFile(mdtFilePath).getLastModifiedTime();
+      if (this.lastModifiedTime != lastModifiedTime) {
+        dataMapSchemas = retrieveAllSchemasInternal();
+        this.lastModifiedTime = lastModifiedTime;
+      }
+    } else {
+      dataMapSchemas = retrieveAllSchemasInternal();
     }
   }
 

@@ -27,10 +27,22 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 public class CarbonReaderTest {
+
+  @Before
+  public void cleanFile() {
+    assert (TestUtil.cleanMdtFile());
+  }
+
+  @After
+  public void verifyDMFile() {
+    assert (!TestUtil.verifyMdtFile());
+  }
 
   @Test
   public void testWriteAndReadFiles() throws IOException, InterruptedException {
@@ -162,7 +174,7 @@ public class CarbonReaderTest {
       i++;
     }
     Assert.assertEquals(i, 100);
-
+    reader.close();
     FileUtils.deleteDirectory(new File(path));
   }
 }

@@ -885,7 +885,7 @@ public final class FilterUtil {
   }
 
   /**
-   * Below method will be used to covert the filter surrogate keys
+   * Below method will be used to convert the filter surrogate keys
    * to mdkey
    *
    * @param columnFilterInfo

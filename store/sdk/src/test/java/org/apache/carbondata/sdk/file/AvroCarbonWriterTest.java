@@ -29,15 +29,26 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.CharEncoding;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 import org.apache.avro.Schema;
 
-
 public class AvroCarbonWriterTest {
   private String path = "./AvroCarbonWriterSuiteWriteFiles";
+
+  @Before
+  public void cleanFile() {
+    assert (TestUtil.cleanMdtFile());
+  }
+
+  @After
+  public void verifyDMFile() {
+    assert (!TestUtil.verifyMdtFile());
+  }
 
   @Test
   public void testWriteBasic() throws IOException {

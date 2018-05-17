@@ -860,7 +860,7 @@ case class CarbonLoadDataCommand(
   }
 
   /**
-   * Convert the rdd as per steps of data loading inputprocessor step and coverter step
+   * Convert the rdd as per steps of data loading inputprocessor step and converter step
    * @param originRDD
    * @param sparkSession
    * @param model
