@@ -44,11 +44,10 @@ public class CarbonReaderExample {
             fields[1] = new Field("age", DataTypes.INT);
 
             CarbonWriter writer = CarbonWriter.builder()
-                    .withSchema(new Schema(fields))
                     .isTransactionalTable(true)
                     .outputPath(path)
                     .persistSchemaFile(true)
-                    .buildWriterForCSVInput();
+                    .buildWriterForCSVInput(new Schema(fields));
 
             for (int i = 0; i < 10; i++) {
                 writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});

@@ -73,10 +73,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema))
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -144,10 +143,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema))
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -239,10 +237,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(nn);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -303,10 +300,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(nn);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -343,10 +339,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
           .outputPath(path)
           .isTransactionalTable(true).sortBy(sortColumns)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(nn);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);

@@ -104,7 +104,6 @@ public class CSVNonTransactionalCarbonWriterTest {
       boolean persistSchema, int blockletSize, int blockSize) {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .withSchema(schema)
           .isTransactionalTable(false)
           .uniqueIdentifier(System.currentTimeMillis())
           .taskNo(System.nanoTime())
@@ -122,7 +121,7 @@ public class CSVNonTransactionalCarbonWriterTest {
         builder = builder.withBlockSize(blockSize);
       }
 
-      CarbonWriter writer = builder.buildWriterForCSVInput();
+      CarbonWriter writer = builder.buildWriterForCSVInput(schema);
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), String.valueOf((double) i / 2)});
@@ -168,13 +167,12 @@ public class CSVNonTransactionalCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .withSchema(new Schema(fields))
           .uniqueIdentifier(System.currentTimeMillis())
           .isTransactionalTable(false)
           .taskNo(System.nanoTime())
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput();
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{

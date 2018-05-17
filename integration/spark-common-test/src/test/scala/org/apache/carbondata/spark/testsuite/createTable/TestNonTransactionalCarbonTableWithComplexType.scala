@@ -19,9 +19,6 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import java.io.File
 import java.util
-import java.util.ArrayList
-
-import scala.collection.mutable.ArrayBuffer
 
 import org.apache.avro
 import org.apache.commons.io.FileUtils
@@ -32,9 +29,8 @@ import org.scalatest.BeforeAndAfterAll
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.sdk.file.CarbonWriter
 
 class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with BeforeAndAfterAll {
 
@@ -64,8 +60,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
 
   private def WriteFilesWithAvroWriter(rows: Int,
       mySchema: String,
-      json: String,
-      fields: Array[Field]) = {
+      json: String) = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
     val converter = new JsonAvroConverter
@@ -73,9 +68,9 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       .convertToGenericDataRecord(json.getBytes(CharEncoding.UTF_8), nn)
 
     try {
-      val writer = CarbonWriter.builder.withSchema(new Schema(fields))
+      val writer = CarbonWriter.builder
         .outputPath(writerPath).isTransactionalTable(false)
-        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput
+        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
       var i = 0
       while (i < rows) {
         writer.write(record)
@@ -182,32 +177,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
         |	]
         |} """.stripMargin
 
-    val fields = new Array[Field](3)
-    fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
-
-    val subFld = new util.ArrayList[StructField]
-    subFld.add(new StructField("EachDoorNum", DataTypes.INT))
-
-    val address = new util.ArrayList[StructField]
-    address.add(new StructField("street", DataTypes.STRING))
-    address.add(new StructField("city", DataTypes.STRING))
-    address.add(new StructField("Temperature", DataTypes.DOUBLE))
-    address.add(new StructField("WindSpeed", DataTypes.createDecimalType(6,2)))
-    address.add(new StructField("year", DataTypes.DATE))
-
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("DoorNum",
-      DataTypes.createArrayType(DataTypes.createStructType(address)),
-      subFld))
-    // array of struct of struct
-    val doorNum = new util.ArrayList[StructField]
-    doorNum.add(new StructField("FloorNum",
-      DataTypes.createArrayType(
-        DataTypes.createArrayType(DataTypes.createStructType(address))), fld))
-    fields(2) = new Field("BuildNum", "array", doorNum)
-
-    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+    WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
   def buildAvroTestDataMultiLevel4Type(): Any = {
@@ -274,16 +244,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
 
     val records=new JsonAvroConverter().convertToGenericDataRecord(jsonvalue.getBytes(CharEncoding.UTF_8),pschema)
 
-    val fieds = new Array[Field](3)
-    fieds(0)=new Field("name",DataTypes.STRING);
-    fieds(1)=new Field("age",DataTypes.INT)
-
-    val fld = new util.ArrayList[StructField]
-    fld.add(new StructField("Temperature", DataTypes.DOUBLE))
-    fieds(2) = new Field("my_address", "struct", fld)
-
-
-    val writer=CarbonWriter.builder().withSchema(new Schema(fieds)).outputPath(writerPath).buildWriterForAvroInput()
+    val writer=CarbonWriter.builder().outputPath(writerPath).buildWriterForAvroInput(pschema)
     writer.write(records)
     writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")
