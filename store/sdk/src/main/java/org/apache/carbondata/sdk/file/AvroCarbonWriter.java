@@ -97,8 +97,9 @@ public class AvroCarbonWriter extends CarbonWriter {
         out = fieldValue;
         break;
       case FLOAT:
-        Float f = (Float) fieldValue;
-        out = f.doubleValue();
+        // direct conversion will change precision. So parse from string.
+        // also carbon internally needs float as double
+        out = Double.parseDouble(fieldValue.toString());
         break;
       case RECORD:
         List<Schema.Field> fields = avroField.schema().getFields();
@@ -121,7 +122,8 @@ public class AvroCarbonWriter extends CarbonWriter {
           arrayChildObjects = new Object[size];
           for (int i = 0; i < size; i++) {
             Object childObject = avroFieldToObject(
-                new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
+                new Schema.Field(avroField.name(), avroField.schema().getElementType(),
+                    avroField.doc(), avroField.defaultVal()),
                 ((GenericData.Array) fieldValue).get(i));
             if (childObject != null) {
               arrayChildObjects[i] = childObject;
@@ -132,8 +134,8 @@ public class AvroCarbonWriter extends CarbonWriter {
           arrayChildObjects = new Object[size];
           for (int i = 0; i < size; i++) {
             Object childObject = avroFieldToObject(
-                new Schema.Field(avroField.name(), avroField.schema().getElementType(), null, true),
-                ((ArrayList) fieldValue).get(i));
+                new Schema.Field(avroField.name(), avroField.schema().getElementType(),
+                    avroField.doc(), avroField.defaultVal()), ((ArrayList) fieldValue).get(i));
             if (childObject != null) {
               arrayChildObjects[i] = childObject;
             }

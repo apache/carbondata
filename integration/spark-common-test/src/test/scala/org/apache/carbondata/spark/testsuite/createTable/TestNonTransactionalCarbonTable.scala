@@ -1050,7 +1050,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         | "type": "record",
         | "fields": [
         |  { "name": "name", "type": "string"},
-        |  { "name": "age", "type": "int"},
+        |  { "name": "age", "type": "float"},
         |  { "name": "address",  "type": {
         |    "type" : "record",  "name" : "my_address",
         |        "fields" : [
@@ -1059,11 +1059,11 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         |]}
       """.stripMargin
 
-    val json = """ {"name":"bob", "age":10, "address" : {"street":"abc", "city":"bang"}} """
+    val json = """ {"name":"bob", "age":10.24, "address" : {"street":"abc", "city":"bang"}} """
 
     val fields = new Array[Field](3)
     fields(0) = new Field("name", DataTypes.STRING)
-    fields(1) = new Field("age", DataTypes.INT)
+    fields(1) = new Field("age", DataTypes.DOUBLE)
     val fld = new util.ArrayList[StructField]
     fld.add(new StructField("street", DataTypes.STRING))
     fld.add(new StructField("city", DataTypes.STRING))
@@ -1340,11 +1340,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
-      Row("bob", 10, Row("abc","bang")),
-      Row("bob", 10, Row("abc","bang")),
-      Row("bob", 10, Row("abc","bang"))))
+      Row("bob", 10.24, Row("abc","bang")),
+      Row("bob", 10.24, Row("abc","bang")),
+      Row("bob", 10.24, Row("abc","bang"))))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -1371,6 +1370,75 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(new File(writerPath).listFiles().length > 0)
     cleanTestData()
   }
+
+  // array type Default value test
+  def buildAvroTestDataArrayDefaultType(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema = """ {
+                     |      "name": "address",
+                     |      "type": "record",
+                     |      "fields": [
+                     |      {
+                     |      "name": "name",
+                     |      "type": "string"
+                     |      },
+                     |      {
+                     |      "name": "age",
+                     |      "type": "int"
+                     |      },
+                     |      {
+                     |      "name": "address",
+                     |      "type": {
+                     |      "type": "array",
+                     |      "items": "string"
+                     |      },
+                     |      "default": ["sc","ab"]
+                     |      }
+                     |      ]
+                     |  }
+                   """.stripMargin
+
+    // skip giving array value to take default values
+    val json: String = "{\"name\": \"bob\",\"age\": 10}"
+
+    val fields = new Array[Field](3)
+    fields(0) = new Field("name", DataTypes.STRING)
+    fields(1) = new Field("age", DataTypes.INT)
+    // fields[1] = new Field("age", DataTypes.INT);
+    val fld = new util.ArrayList[StructField]
+    fld.add(new StructField("street", DataTypes.STRING))
+    fields(2) = new Field("address", "array", fld)
+
+    WriteFilesWithAvroWriter(rows, mySchema, json, fields)
+  }
+
+  def buildAvroTestDataSingleFileArrayDefaultType(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataArrayDefaultType(3, null)
+  }
+
+  test("Read sdk writer Avro output Array Type with Default value") {
+    buildAvroTestDataSingleFileArrayDefaultType()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("select * from sdkOutputTable").show(200,false)
+
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(
+      Row("bob", 10, new mutable.WrappedArray.ofRef[String](Array("sc", "ab"))),
+      Row("bob", 10, new mutable.WrappedArray.ofRef[String](Array("sc", "ab"))),
+      Row("bob", 10, new mutable.WrappedArray.ofRef[String](Array("sc", "ab")))))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).listFiles().length > 0)
+    cleanTestData()
+  }
+
 
   test("Read sdk writer Avro output with both Array and Struct Type") {
     buildAvroTestDataBothStructArrayType()
