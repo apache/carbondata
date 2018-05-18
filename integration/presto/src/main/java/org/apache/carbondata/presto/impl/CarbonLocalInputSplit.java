@@ -127,14 +127,15 @@ public class CarbonLocalInputSplit {
     BlockletDetailInfo blockletDetailInfo =
         gson.fromJson(carbonLocalInputSplit.detailInfo, BlockletDetailInfo.class);
 
-    if (null != blockletDetailInfo) {
-      try {
-        blockletDetailInfo.readColumnSchema(blockletDetailInfo.getColumnSchemaBinary());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-      inputSplit.setDetailInfo(blockletDetailInfo);
+    if (null == blockletDetailInfo) {
+      throw new RuntimeException("Could not read blocklet details");
     }
+    try {
+      blockletDetailInfo.readColumnSchema(blockletDetailInfo.getColumnSchemaBinary());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    inputSplit.setDetailInfo(blockletDetailInfo);
     return inputSplit;
   }
 }

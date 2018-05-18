@@ -123,7 +123,7 @@ public class UnsafeSortMemoryManager {
    * total usable memory for sort memory manager
    * @return size in bytes
    */
-  public synchronized long getUsableMemory() {
+  public long getUsableMemory() {
     return totalMemory;
   }
 

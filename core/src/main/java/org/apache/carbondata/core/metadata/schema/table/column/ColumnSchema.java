@@ -33,15 +33,11 @@ import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.WritableUtil;
 import org.apache.carbondata.core.preagg.TimeSeriesUDF;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 /**
  * Store the information about the column meta data present the table
  */
 public class ColumnSchema implements Serializable, Writable {
 
-  private static final Log LOG = LogFactory.getLog(ColumnSchema.class);
   /**
    * serialization version
    */
@@ -334,8 +330,6 @@ public class ColumnSchema implements Serializable, Writable {
         return false;
       }
     } else if (!columnName.equals(other.columnName)) {
-      LOG.error("column name is " + columnName
-          + " but other column name is " + other.columnName);
       return false;
     }
     if (dataType == null) {
@@ -343,8 +337,6 @@ public class ColumnSchema implements Serializable, Writable {
         return false;
       }
     } else if (!dataType.equals(other.dataType)) {
-      LOG.error("column name is" + columnName + " data type is " + dataType
-          + " but other column data type is " + other.dataType);
       return false;
     }
     return true;
@@ -361,40 +353,16 @@ public class ColumnSchema implements Serializable, Writable {
       return false;
     }
     ColumnSchema other = (ColumnSchema) obj;
-    if (!columnUniqueId.equals(other.columnUniqueId)) {
-      LOG.error("Index file's column " + columnName + " columnUniqueId is " + columnUniqueId
-          + " but table's column columnUniqueId is " + other.columnUniqueId);
-      return false;
-    }
-    if (isDimensionColumn != other.isDimensionColumn) {
-      LOG.error("Index file's column " + columnName + " isDimensionColumn is " + isDimensionColumn
-          + " but table's column isDimensionColumn is " + other.isDimensionColumn);
-      return false;
-    }
-    if (scale != other.scale) {
-      LOG.error("Index file's column " + columnName + " scale is " + scale
-          + " but table's column scale is " + other.scale);
-      return false;
-    }
-    if (precision != other.precision) {
-      LOG.error("Index file's column " + columnName + " precision is " + precision
-          + " but table's column precision is " + other.precision);
-      return false;
-    }
-    if (isSortColumn != other.isSortColumn) {
-      LOG.error("Index file's column " + columnName + " isSortColumn is " + isSortColumn
-          + " but table's column isSortColumn is " + other.isSortColumn);
+    if (!columnUniqueId.equals(other.columnUniqueId) ||
+        (isDimensionColumn != other.isDimensionColumn) ||
+        (isSortColumn != other.isSortColumn)) {
       return false;
     }
     if (encodingList.size() != other.encodingList.size()) {
-      LOG.error("Index file's column " + columnName + " encoding size is " + encodingList.size()
-          + " but table's column encoding size is " + other.encodingList.size());
       return false;
     }
     for (int i = 0; i < encodingList.size(); i++) {
       if (encodingList.get(i).compareTo(other.encodingList.get(i)) != 0) {
-        LOG.error("Index file's column " + columnName + " encoding is " + encodingList.get(i)
-            + " but table's column encoding is " + other.encodingList.get(i));
         return false;
       }
     }

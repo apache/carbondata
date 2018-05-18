@@ -67,7 +67,7 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     this.filterRangeValues = filterRangeValues;
     this.msrFilterRangeValues = msrFilterRangeValues;
     lastDimensionColOrdinal = segmentProperties.getLastDimensionColOrdinal();
-    if (!msrColEvalutorInfoList.isEmpty()) {
+    if (!this.msrColEvalutorInfoList.isEmpty()) {
       CarbonMeasure measure = this.msrColEvalutorInfoList.get(0).getMeasure();
       comparator = Comparator.getComparatorByDataTypeForMeasure(measure.getDataType());
     }
@@ -98,8 +98,9 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     } else if (!msrColEvalutorInfoList.isEmpty() && !isMeasurePresentInCurrentBlock[0]) {
       CarbonMeasure measure = this.msrColEvalutorInfoList.get(0).getMeasure();
       byte[] defaultValue = measure.getDefaultValue();
-      SerializableComparator comparatorTmp =
-          Comparator.getComparatorByDataTypeForMeasure(measure.getDataType());
+      SerializableComparator comparatorTmp = (null != comparator ?
+          comparator :
+          Comparator.getComparatorByDataTypeForMeasure(measure.getDataType()));
       if (null != defaultValue) {
         for (int k = 0; k < msrFilterRangeValues.length; k++) {
           int maxCompare = comparatorTmp.compare(msrFilterRangeValues[k],

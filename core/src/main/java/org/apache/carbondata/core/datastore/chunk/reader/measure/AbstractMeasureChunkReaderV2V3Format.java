@@ -105,9 +105,10 @@ public abstract class AbstractMeasureChunkReaderV2V3Format extends AbstractMeasu
    */
   protected BitSet getNullBitSet(org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
     Compressor compressor = CompressorFactory.getInstance().getCompressor();
-    if (null != presentMetadataThrift.getPresent_bit_stream()) {
+    final byte[] present_bit_stream = presentMetadataThrift.getPresent_bit_stream();
+    if (null != present_bit_stream) {
       return BitSet
-          .valueOf(compressor.unCompressByte(presentMetadataThrift.getPresent_bit_stream()));
+          .valueOf(compressor.unCompressByte(present_bit_stream));
     } else {
       return new BitSet(1);
     }

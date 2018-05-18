@@ -132,7 +132,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
       }
     }
     if (null == dictionaryChunkMeta) {
-      throw new IOException("Last dictionary chunk does not exist");
+      throw new IOException("Matching dictionary chunk does not exist");
     }
     // create a new instance of chunk meta wrapper using thrift object
     return getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);

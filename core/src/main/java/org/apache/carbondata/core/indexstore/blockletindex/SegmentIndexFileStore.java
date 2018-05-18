@@ -284,11 +284,11 @@ public class SegmentIndexFileStore {
     byte[] bytes = new byte[(int) indexFile.getSize()];
     try {
       dataInputStream.readFully(bytes);
-    } finally {
       carbonIndexMap.put(indexFile.getName(), bytes);
       carbonIndexMapWithFullPath.put(
           indexFile.getParentFile().getAbsolutePath() + CarbonCommonConstants.FILE_SEPARATOR
               + indexFile.getName(), bytes);
+    } finally {
       dataInputStream.close();
     }
   }

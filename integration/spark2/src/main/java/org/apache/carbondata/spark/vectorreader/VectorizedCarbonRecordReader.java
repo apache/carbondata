@@ -135,17 +135,14 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
       iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
     } catch (QueryExecutionException e) {
-      Throwable ext = e;
-      while (ext != null) {
-        if (ext instanceof FileNotFoundException) {
-          throw new InterruptedException(
-              "Insert overwrite may be in progress.Please check " + e.getMessage());
-        }
-        ext = ext.getCause();
+      if (ExceptionUtils.indexOfThrowable(e, FileNotFoundException.class) > 0) {
+        LOGGER.error(e);
+        throw new InterruptedException(
+            "Insert overwrite may be in progress.Please check " + e.getMessage());
       }
       throw new InterruptedException(e.getMessage());
     } catch (Exception e) {
-      if (ExceptionUtils.hasCause(e, FileNotFoundException.class)) {
+      if (ExceptionUtils.indexOfThrowable(e, FileNotFoundException.class) > 0) {
         LOGGER.error(e);
         throw new InterruptedException(
             "Insert overwrite may be in progress.Please check " + e.getMessage());

@@ -165,9 +165,11 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       return false;
     }
     for (int i = 0; i < tableColumnList.size(); i++) {
-      return indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i));
+      if (!indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i))) {
+        return false;
+      }
     }
-    return false;
+    return true;
   }
 
   /**

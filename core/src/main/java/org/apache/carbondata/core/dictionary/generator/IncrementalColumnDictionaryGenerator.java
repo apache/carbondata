@@ -89,9 +89,7 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
   }
 
   @Override public Integer getKey(String value) {
-    synchronized (lock) {
-      return incrementalCache.get(value);
-    }
+    return incrementalCache.get(value);
   }
 
   @Override public String getValue(Integer key) {

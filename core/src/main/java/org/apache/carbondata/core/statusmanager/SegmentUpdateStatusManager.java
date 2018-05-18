@@ -322,13 +322,12 @@ public class SegmentUpdateStatusManager {
    * @return the list of delete file
    */
   private List<String> getDeltaFiles(CarbonFile blockDir, final String blockNameFromTuple,
-      final String extension,
-      String segment) {
+      final String extension, String segment) throws IOException {
     List<String> deleteFileList = new ArrayList<>();
     for (SegmentUpdateDetails block : updateDetails) {
-      if (block.getBlockName().equalsIgnoreCase(blockNameFromTuple) &&
-          block.getSegmentName().equalsIgnoreCase(segment) &&
-          !CarbonUpdateUtil.isBlockInvalid(block.getSegmentStatus())) {
+      if (block.getBlockName().equalsIgnoreCase(blockNameFromTuple) && block.getSegmentName()
+          .equalsIgnoreCase(segment) && !CarbonUpdateUtil
+          .isBlockInvalid(block.getSegmentStatus())) {
         final long deltaStartTimestamp = getStartTimeOfDeltaFile(extension, block);
         // If there is no delete delete file , then return null
         if (deltaStartTimestamp == 0) {
@@ -347,7 +346,7 @@ public class SegmentUpdateStatusManager {
 
   private List<String> getFilePaths(CarbonFile blockDir, final String blockNameFromTuple,
       final String extension, List<String> deleteFileList, final long deltaStartTimestamp,
-      final long deltaEndTimeStamp) {
+      final long deltaEndTimeStamp) throws IOException {
     if (null != blockDir.getParentFile()) {
       CarbonFile[] files = blockDir.getParentFile().listFiles(new CarbonFileFilter() {
 
@@ -378,7 +377,7 @@ public class SegmentUpdateStatusManager {
         deleteFileList.add(cfile.getCanonicalPath());
       }
     } else {
-      deleteFileList = new ArrayList<String>(0);
+      throw new IOException("Parent file could not found");
     }
     return deleteFileList;
   }

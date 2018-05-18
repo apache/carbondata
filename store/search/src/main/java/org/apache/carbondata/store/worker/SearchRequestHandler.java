@@ -145,8 +145,8 @@ public class SearchRequestHandler {
     } finally {
       reader.close();
     }
-    LOG.info(String
-        .format("[SearchId:%d] scan completed, return %d rows", request.searchId(), rows.size()));
+    LOG.info(String.format("[SearchId:%d] scan completed, return %d rows",
+        request.searchId(), rows.size()));
     return rows;
   }
 

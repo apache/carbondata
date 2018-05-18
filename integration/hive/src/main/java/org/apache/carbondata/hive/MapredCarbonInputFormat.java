@@ -85,6 +85,8 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
       CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
       configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
       setTableInfo(configuration, carbonTable.getTableInfo());
+    } else {
+      throw new InvalidPathException("No input paths specified in job");
     }
   }
 

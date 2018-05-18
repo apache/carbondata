@@ -29,6 +29,37 @@ public class DecimalType extends DataType {
     this.scale = scale;
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof DecimalType)) {
+      return false;
+    }
+    if (!this.getName().equalsIgnoreCase(((DecimalType) obj).getName())) {
+      return false;
+    }
+    if (this.precision != ((DecimalType) obj).precision) {
+      return false;
+    }
+    if (this.scale != ((DecimalType) obj).scale) {
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + getName().hashCode();
+    return result;
+  }
+
   public int getPrecision() {
     return precision;
   }

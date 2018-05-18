@@ -60,8 +60,9 @@ public abstract class AbstractDataFileFooterConverter {
    */
   private static BitSet getPresenceMeta(
       org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
-    if (null != presentMetadataThrift.getPresent_bit_stream()) {
-      return BitSet.valueOf(presentMetadataThrift.getPresent_bit_stream());
+    final byte[] present_bit_stream = presentMetadataThrift.getPresent_bit_stream();
+    if (null != present_bit_stream) {
+      return BitSet.valueOf(present_bit_stream);
     } else {
       return new BitSet(1);
     }

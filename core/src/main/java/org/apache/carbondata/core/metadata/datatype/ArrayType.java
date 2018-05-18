@@ -59,17 +59,4 @@ public class ArrayType extends DataType {
   public DataType getElementType() {
     return elementType;
   }
-
-  @Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ArrayType)) return false;
-
-    ArrayType arrayType = (ArrayType) o;
-
-    return elementType.equals(arrayType.elementType);
-  }
-
-  @Override public int hashCode() {
-    return elementType.hashCode();
-  }
 }
