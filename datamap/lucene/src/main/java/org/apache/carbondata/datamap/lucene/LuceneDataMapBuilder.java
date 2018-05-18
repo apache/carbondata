@@ -83,7 +83,8 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
     this.storeBlockletWise = storeBlockletWise;
   }
 
-  @Override public void initialize() throws IOException {
+  @Override
+  public void initialize() throws IOException {
     // get index path, put index data into segment's path
     Path indexPath = FileFactory.getPath(dataMapPath);
     FileSystem fs = FileFactory.getFileSystem(indexPath);
@@ -118,7 +119,8 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
     indexWriter = new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
   }
 
-  @Override public void addRow(int blockletId, int pageId, int rowId, Object[] values)
+  @Override
+  public void addRow(int blockletId, int pageId, int rowId, Object[] values)
       throws IOException {
 
     // add other fields
@@ -129,7 +131,7 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
     }
     if (writeCacheSize > 0) {
       addToCache(columns, rowId, pageId, blockletId, cache, intBuffer, storeBlockletWise);
-      flushCacheIfCan();
+      flushCacheIfPossible();
     } else {
       addData(columns, rowId, pageId, blockletId, intBuffer, indexWriter, indexColumns,
           storeBlockletWise);
@@ -137,17 +139,19 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
 
   }
 
-  private void flushCacheIfCan() throws IOException {
-    if (cache.size() > writeCacheSize) {
+  private void flushCacheIfPossible() throws IOException {
+    if (cache.size() >= writeCacheSize) {
       flushCache(cache, indexColumns, indexWriter, storeBlockletWise);
     }
   }
 
-  @Override public void finish() throws IOException {
+  @Override
+  public void finish() throws IOException {
     flushCache(cache, indexColumns, indexWriter, storeBlockletWise);
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     if (indexWriter != null) {
       indexWriter.close();
     }

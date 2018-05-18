@@ -61,9 +61,29 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 @InterfaceAudience.Internal
 abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactory<T> {
 
+  /**
+   * Size of the cache to maintain in Lucene writer, if specified then it tries to aggregate the
+   * unique data till the cache limit and flush to Lucene.
+   * It is best suitable for low cardinality dimensions.
+   */
   static final String FLUSH_CACHE = "flush_cache";
 
+  /**
+   * By default it does not use any cache.
+   */
+  static final String FLUSH_CACHE_DEFAULT_SIZE = "-1";
+
+  /**
+   * when made as true then store the data in blocklet wise in lucene , it means new folder will be
+   * created for each blocklet thus it eliminates storing on blockletid in lucene.
+   * And also it makes lucene small chuns of data
+   */
   static final String SPLIT_BLOCKLET = "split_blocklet";
+
+  /**
+   * By default it is false
+   */
+  static final String SPLIT_BLOCKLET_DEFAULT = "false";
   /**
    * Logger
    */
@@ -127,7 +147,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   public static int validateAndGetWriteCacheSize(DataMapSchema schema) {
     String cacheStr = schema.getProperties().get(FLUSH_CACHE);
     if (cacheStr == null) {
-      cacheStr = "-1";
+      cacheStr = FLUSH_CACHE_DEFAULT_SIZE;
     }
     int cacheSize;
     try {
@@ -141,7 +161,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   public static boolean validateAndGetStoreBlockletWise(DataMapSchema schema) {
     String splitBlockletStr = schema.getProperties().get(SPLIT_BLOCKLET);
     if (splitBlockletStr == null) {
-      splitBlockletStr = "false";
+      splitBlockletStr = SPLIT_BLOCKLET_DEFAULT;
     }
     boolean splitBlockletWise;
     try {

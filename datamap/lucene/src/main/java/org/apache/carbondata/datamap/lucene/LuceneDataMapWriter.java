@@ -66,7 +66,8 @@ import org.roaringbitmap.RoaringBitmap;
 /**
  * Implementation to write lucene index while loading
  */
-@InterfaceAudience.Internal public class LuceneDataMapWriter extends DataMapWriter {
+@InterfaceAudience.Internal
+public class LuceneDataMapWriter extends DataMapWriter {
   /**
    * logger
    */
@@ -208,7 +209,8 @@ import org.roaringbitmap.RoaringBitmap;
     // save index data into ram, write into disk after one page finished
     int columnsCount = pages.length;
     if (columnsCount <= 0) {
-      LOGGER.warn("empty data");
+      LOGGER.warn("No data in the page " + pageId + "with blockletid " + blockletId
+          + " to write lucene datamap");
       return;
     }
     for (int rowId = 0; rowId < pageSize; rowId++) {
@@ -228,7 +230,7 @@ import org.roaringbitmap.RoaringBitmap;
       }
     }
     if (cacheSize > 0) {
-      flushCacheIfCan();
+      flushCacheIfPossible();
     }
   }
 
@@ -395,7 +397,7 @@ import org.roaringbitmap.RoaringBitmap;
     indexWriter.addDocument(document);
   }
 
-  private void flushCacheIfCan() throws IOException {
+  private void flushCacheIfPossible() throws IOException {
     if (cache.size() > cacheSize) {
       flushCache(cache, getIndexColumns(), indexWriter, storeBlockletWise);
     }
@@ -446,6 +448,9 @@ import org.roaringbitmap.RoaringBitmap;
     }
   }
 
+  /**
+   * Keeps column values of a single row.
+   */
   public static class LuceneColumnKeys {
 
     private Object[] colValues;
@@ -458,14 +463,16 @@ import org.roaringbitmap.RoaringBitmap;
       return colValues;
     }
 
-    @Override public boolean equals(Object o) {
+    @Override
+    public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
       LuceneColumnKeys that = (LuceneColumnKeys) o;
       return Arrays.equals(colValues, that.colValues);
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
       return Arrays.hashCode(colValues);
     }
   }
