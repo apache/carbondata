@@ -270,26 +270,14 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         carbonMergerMapping,
         carbonLoadModel,
         mergedLoadName)
-      val commitComplete = try {
-        // Once main table compaction is done and 0.1, 4.1, 8.1 is created commit will happen for
-        // all the tables. The commit listener will compact the child tables until no more segments
-        // are left. But 2nd level compaction is yet to happen on the main table therefore again the
-        // compaction flow will try to commit the child tables which is wrong. This check tell the
-        // 2nd level compaction flow that the commit for datamaps is already done.
-        val isCommitDone = operationContext.getProperty("commitComplete")
-        if (isCommitDone != null) {
-          isCommitDone.toString.toBoolean
-        } else {
-          OperationListenerBus.getInstance()
-            .fireEvent(compactionLoadStatusPostEvent, operationContext)
-          true
-        }
-      } catch {
-        case ex: Exception =>
-          LOGGER.error(ex, "Problem while committing data maps")
-          false
+      OperationListenerBus.getInstance()
+        .fireEvent(compactionLoadStatusPostEvent, operationContext)
+      val commitDone = operationContext.getProperty("commitComplete")
+      val commitComplete = if (null != commitDone) {
+        commitDone.toString.toBoolean
+      } else {
+        true
       }
-      operationContext.setProperty("commitComplete", commitComplete)
       // here either of the conditions can be true, when delete segment is fired after compaction
       // has started, statusFileUpdation will be false , but at the same time commitComplete can be
       // true because compaction for all datamaps will be finished at a time to the maximum level
