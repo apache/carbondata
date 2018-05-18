@@ -36,14 +36,11 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.converter.SchemaConverter;
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -152,34 +149,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo segments = segmentStatusManager
         .getValidAndInvalidSegments(loadMetadataDetails, this.readCommittedScope);
-
-    // For NonTransactional table, compare the schema of all index files with inferred schema.
-    // If there is a mismatch throw exception. As all files must be of same schema.
-    if (!carbonTable.getTableInfo().isTransactionalTable()) {
-      SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-      for (Segment segment : segments.getValidSegments()) {
-        Map<String, String> indexFiles = segment.getCommittedIndexFile();
-        for (Map.Entry<String, String> indexFileEntry : indexFiles.entrySet()) {
-          Path indexFile = new Path(indexFileEntry.getKey());
-          org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.inferSchemaFromIndexFile(
-              indexFile.toString(), carbonTable.getTableName());
-          TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-              tableInfo, identifier.getDatabaseName(),
-              identifier.getTableName(),
-              identifier.getTablePath());
-          List<ColumnSchema> indexFileColumnList =
-              wrapperTableInfo.getFactTable().getListOfColumns();
-          List<ColumnSchema> tableColumnList =
-              carbonTable.getTableInfo().getFactTable().getListOfColumns();
-          if (!compareColumnSchemaList(indexFileColumnList, tableColumnList)) {
-            LOG.error("Schema of " + indexFile.getName()
-                + " doesn't match with the table's schema");
-            throw new IOException("All the files doesn't have same schema. "
-                + "Unsupported operation on nonTransactional table. Check logs.");
-          }
-        }
-      }
-    }
 
     // to check whether only streaming segments access is enabled or not,
     // if access streaming segment is true then data will be read from streaming segments
@@ -294,17 +263,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       splits.addAll(splitsOfStreaming);
     }
     return splits;
-  }
-
-  private boolean compareColumnSchemaList(List<ColumnSchema> indexFileColumnList,
-      List<ColumnSchema> tableColumnList) {
-    if (indexFileColumnList.size() != tableColumnList.size()) {
-      return false;
-    }
-    for (int i = 0; i < tableColumnList.size(); i++) {
-      return indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i));
-    }
-    return false;
   }
 
   /**
