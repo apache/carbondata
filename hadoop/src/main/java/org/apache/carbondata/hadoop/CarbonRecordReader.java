@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
@@ -118,6 +119,8 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
         CarbonUtil.clearDictionaryCache(entry.getValue());
       }
     }
+    // Clear the datamap cache
+    DataMapStoreManager.getInstance().getDefaultDataMap(queryModel.getTable()).clear();
     // close read support
     readSupport.close();
     try {

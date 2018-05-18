@@ -44,6 +44,8 @@ public class CarbonReader<T> {
 
   private int index;
 
+  private boolean initialise;
+
   /**
    * Call {@link #builder(String)} to construct an instance
    */
@@ -51,6 +53,7 @@ public class CarbonReader<T> {
     if (readers.size() == 0) {
       throw new IllegalArgumentException("no reader");
     }
+    this.initialise = true;
     this.readers = readers;
     this.index = 0;
     this.currentReader = readers.get(0);
@@ -60,6 +63,7 @@ public class CarbonReader<T> {
    * Return true if has next row
    */
   public boolean hasNext() throws IOException, InterruptedException {
+    validateReader();
     if (currentReader.nextKeyValue()) {
       return true;
     } else {
@@ -78,6 +82,7 @@ public class CarbonReader<T> {
    * Read and return next row object
    */
   public T readNextRow() throws IOException, InterruptedException {
+    validateReader();
     return currentReader.getCurrentValue();
   }
 
@@ -111,6 +116,18 @@ public class CarbonReader<T> {
    * @throws IOException
    */
   public void close() throws IOException {
+    validateReader();
     this.currentReader.close();
+    this.initialise = false;
+  }
+
+  /**
+   * Validate the reader
+   */
+  private void validateReader() {
+    if (!this.initialise) {
+      throw new RuntimeException(this.getClass().getSimpleName() +
+          " not initialise, please create it first.");
+    }
   }
 }
