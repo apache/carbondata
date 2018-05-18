@@ -96,7 +96,9 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
-      processRowToNextStep(sortDataRow, sortParameters);
+      if (!sortParameters.getObserver().isFailed()) {
+        processRowToNextStep(sortDataRow, sortParameters);
+      }
     } catch (Exception e) {
       checkError();
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
