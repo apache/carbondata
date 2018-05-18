@@ -319,6 +319,7 @@ public class UnsafeSortDataRows {
      * @throws CarbonSortKeyAndGroupByException
      */
     public void notifyFailed(Throwable exception) throws CarbonSortKeyAndGroupByException {
+      semaphore.release();
       dataSorterAndWriterExecutorService.shutdownNow();
       unsafeInMemoryIntermediateFileMerger.close();
       parameters.getObserver().setFailed(true);
