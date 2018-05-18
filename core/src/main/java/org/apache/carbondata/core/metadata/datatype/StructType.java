@@ -41,10 +41,14 @@ public class StructType extends DataType {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof StructType)) {
+    if (getClass() != obj.getClass()) {
       return false;
     }
-    if (!this.getName().equalsIgnoreCase(((StructType) obj).getName())) {
+    StructType other = (StructType) obj;
+    if (!this.getName().equalsIgnoreCase(other.getName())) {
+      return false;
+    }
+    if (!this.getFields().equals(other.getFields())) {
       return false;
     }
     return true;
@@ -55,6 +59,7 @@ public class StructType extends DataType {
     final int prime = 31;
     int result = 1;
     result = prime * result + getName().hashCode();
+    result = prime * result + getFields().hashCode();
     return result;
   }
 

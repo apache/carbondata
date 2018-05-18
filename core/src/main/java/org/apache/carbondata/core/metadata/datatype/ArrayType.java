@@ -39,10 +39,14 @@ public class ArrayType extends DataType {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof ArrayType)) {
+    if (getClass() != obj.getClass()) {
       return false;
     }
-    if (!this.getName().equalsIgnoreCase(((ArrayType) obj).getName())) {
+    ArrayType other = (ArrayType) obj;
+    if (!this.getName().equalsIgnoreCase(other.getName())) {
+      return false;
+    }
+    if (!this.getElementType().equals(other.getElementType())) {
       return false;
     }
     return true;
@@ -53,10 +57,12 @@ public class ArrayType extends DataType {
     final int prime = 31;
     int result = 1;
     result = prime * result + getName().hashCode();
+    result = prime * result + getElementType().hashCode();
     return result;
   }
 
   public DataType getElementType() {
     return elementType;
   }
+
 }
