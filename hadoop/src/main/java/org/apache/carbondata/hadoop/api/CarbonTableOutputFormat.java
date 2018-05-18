@@ -253,11 +253,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
               .execute(loadModel, tempStoreLocations, new CarbonIterator[] { iteratorWrapper });
         } catch (Exception e) {
           executorService.shutdownNow();
+          iteratorWrapper.closeWriter(true);
           dataLoadExecutor.close();
           // clean up the folders and files created locally for data load operation
           TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
 
-          iteratorWrapper.closeWriter(true);
           throw new RuntimeException(e);
         }
       }
