@@ -37,12 +37,16 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
 
   private String segmentId;
 
+  // contains a table uniqueName, this can be used to fetch table from MetaStore
+  private String tableUniqueName;
+
   public TableBlockIndexUniqueIdentifier(String indexFilePath, String indexFileName,
-      String mergeIndexFileName, String segmentId) {
+      String mergeIndexFileName, String segmentId, String tableUniqueName) {
     this.indexFilePath = indexFilePath;
     this.indexFileName = indexFileName;
     this.mergeIndexFileName = mergeIndexFileName;
     this.segmentId = segmentId;
+    this.tableUniqueName = tableUniqueName;
   }
 
   /**
@@ -68,6 +72,10 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
 
   public String getSegmentId() {
     return segmentId;
+  }
+
+  public String getTableUniqueName() {
+    return tableUniqueName;
   }
 
   @Override public boolean equals(Object o) {

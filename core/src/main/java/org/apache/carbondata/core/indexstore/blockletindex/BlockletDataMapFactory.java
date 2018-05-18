@@ -45,14 +45,9 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.converter.SchemaConverter;
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
@@ -102,7 +97,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   @Override public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
     Set<TableBlockIndexUniqueIdentifier> identifiers =
-        getTableBlockIndexUniqueIdentifiers(segment);
+        getTableBlockIndexUniqueIdentifiers(segment, this.getCarbonTable().getTableUniqueName());
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         new ArrayList<>(identifiers.size());
     tableBlockIndexUniqueIdentifiers.addAll(identifiers);
@@ -114,62 +109,17 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     return dataMaps;
   }
 
-  private Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(Segment segment)
+  private Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(Segment segment,
+      String tableUniqueName)
       throws IOException {
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segment.getSegmentNo());
     if (tableBlockIndexUniqueIdentifiers == null) {
-      CarbonTable carbonTable = this.getCarbonTable();
-      if (!carbonTable.getTableInfo().isTransactionalTable()) {
-        // For NonTransactional table, compare the schema of all index files with inferred schema.
-        // If there is a mismatch throw exception. As all files must be of same schema.
-        validateSchemaForNewTranscationalTableFiles(segment, carbonTable);
-      }
-      tableBlockIndexUniqueIdentifiers =
-          BlockletDataMapUtil.getTableBlockUniqueIdentifiers(segment);
+      tableBlockIndexUniqueIdentifiers = BlockletDataMapUtil.getTableBlockUniqueIdentifiers(segment,
+          tableUniqueName);
       segmentMap.put(segment.getSegmentNo(), tableBlockIndexUniqueIdentifiers);
     }
     return tableBlockIndexUniqueIdentifiers;
-  }
-
-  private void validateSchemaForNewTranscationalTableFiles(Segment segment, CarbonTable carbonTable)
-      throws IOException {
-    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    Map<String, String> indexFiles = segment.getCommittedIndexFile();
-    for (Map.Entry<String, String> indexFileEntry : indexFiles.entrySet()) {
-      Path indexFile = new Path(indexFileEntry.getKey());
-      org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.inferSchemaFromIndexFile(
-          indexFile.toString(), carbonTable.getTableName());
-      TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-          tableInfo, identifier.getDatabaseName(),
-          identifier.getTableName(),
-          identifier.getTablePath());
-      List<ColumnSchema> indexFileColumnList =
-          wrapperTableInfo.getFactTable().getListOfColumns();
-      List<ColumnSchema> tableColumnList =
-          carbonTable.getTableInfo().getFactTable().getListOfColumns();
-      if (!isSameColumnSchemaList(indexFileColumnList, tableColumnList)) {
-        LOG.error("Schema of " + indexFile.getName()
-            + " doesn't match with the table's schema");
-        throw new IOException("All the files doesn't have same schema. "
-            + "Unsupported operation on nonTransactional table. Check logs.");
-      }
-    }
-  }
-
-  private boolean isSameColumnSchemaList(List<ColumnSchema> indexFileColumnList,
-      List<ColumnSchema> tableColumnList) {
-    if (indexFileColumnList.size() != tableColumnList.size()) {
-      LOG.error("Index file's column size is " + indexFileColumnList.size()
-          + " but table's column size is " + tableColumnList.size());
-      return false;
-    }
-    for (int i = 0; i < tableColumnList.size(); i++) {
-      if (!indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i))) {
-        return false;
-      }
-    }
-    return true;
   }
 
   /**
@@ -189,7 +139,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       return detailedBlocklets;
     }
     Set<TableBlockIndexUniqueIdentifier> identifiers =
-        getTableBlockIndexUniqueIdentifiers(segment);
+        getTableBlockIndexUniqueIdentifiers(segment, this.getCarbonTable().getTableUniqueName());
     // Retrieve each blocklets detail information from blocklet datamap
     for (Blocklet blocklet : blocklets) {
       detailedBlocklets.add(getExtendedBlocklet(identifiers, blocklet));
@@ -203,7 +153,8 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     if (blocklet instanceof ExtendedBlocklet) {
       return (ExtendedBlocklet) blocklet;
     }
-    Set<TableBlockIndexUniqueIdentifier> identifiers = getTableBlockIndexUniqueIdentifiers(segment);
+    Set<TableBlockIndexUniqueIdentifier> identifiers =
+        getTableBlockIndexUniqueIdentifiers(segment, this.getCarbonTable().getTableUniqueName());
     return getExtendedBlocklet(identifiers, blocklet);
   }
 
@@ -227,7 +178,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     List<DataMapDistributable> distributables = new ArrayList<>();
     try {
       Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
-          getTableBlockIndexUniqueIdentifiers(segment);
+          getTableBlockIndexUniqueIdentifiers(segment, this.getCarbonTable().getTableUniqueName());
       CarbonFile[] carbonIndexFiles = new CarbonFile[tableBlockIndexUniqueIdentifiers.size()];
       int identifierCounter = 0;
       for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier :
@@ -294,10 +245,12 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     List<TableBlockIndexUniqueIdentifier> identifiers = new ArrayList<>();
     Path indexPath = new Path(mapDistributable.getFilePath());
     String segmentNo = mapDistributable.getSegment().getSegmentNo();
+    String tableUniqueName = this.getCarbonTable().getTableUniqueName();
     if (indexPath.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
       String parent = indexPath.getParent().toString();
-      identifiers
-          .add(new TableBlockIndexUniqueIdentifier(parent, indexPath.getName(), null, segmentNo));
+      identifiers.add(
+          new TableBlockIndexUniqueIdentifier(parent, indexPath.getName(), null, segmentNo,
+              tableUniqueName));
     } else if (indexPath.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
       CarbonFile carbonFile = FileFactory.getCarbonFile(indexPath.toString());
@@ -306,7 +259,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       for (String indexFile : indexFiles) {
         identifiers.add(
             new TableBlockIndexUniqueIdentifier(parentPath, indexFile, carbonFile.getName(),
-                segmentNo));
+                segmentNo, tableUniqueName));
       }
     }
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
@@ -367,7 +320,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     for (DataMapDistributable distributable : distributables) {
       Segment segment = distributable.getSegment();
       Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
-          getTableBlockIndexUniqueIdentifiers(segment);
+          getTableBlockIndexUniqueIdentifiers(segment, this.getCarbonTable().getTableUniqueName());
       // filter out the tableBlockIndexUniqueIdentifiers based on distributable
       TableBlockIndexUniqueIdentifier validIdentifier = BlockletDataMapUtil
           .filterIdentifiersBasedOnDistributable(tableBlockIndexUniqueIdentifiers,
