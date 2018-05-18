@@ -124,7 +124,6 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | USING 'lucene'
          | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
-
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test where name='n10'"))
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM datamap_test WHERE city='c020'"))
 
