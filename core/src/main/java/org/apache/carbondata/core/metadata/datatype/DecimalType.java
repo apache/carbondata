@@ -37,16 +37,17 @@ public class DecimalType extends DataType {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof DecimalType)) {
+    if (getClass() != obj.getClass()) {
       return false;
     }
-    if (!this.getName().equalsIgnoreCase(((DecimalType) obj).getName())) {
+    DecimalType other = (DecimalType)obj;
+    if (!this.getName().equalsIgnoreCase(other.getName())) {
       return false;
     }
-    if (this.precision != ((DecimalType) obj).precision) {
+    if (this.precision != other.precision) {
       return false;
     }
-    if (this.scale != ((DecimalType) obj).scale) {
+    if (this.scale != other.scale) {
       return false;
     }
     return true;
@@ -57,6 +58,8 @@ public class DecimalType extends DataType {
     final int prime = 31;
     int result = 1;
     result = prime * result + getName().hashCode();
+    result = prime * result + getPrecision();
+    result = prime * result + getScale();
     return result;
   }
 
