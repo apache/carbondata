@@ -731,6 +731,50 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE table1")
   }
 
+  test("test lucene with flush_cache as true") {
+    sql("DROP TABLE IF EXISTS datamap_test_table")
+    sql(
+      """
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm_flush ON TABLE datamap_test_table
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='name , city', 'flush_cache'='true')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
+    checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n99*')"),
+      sql("select * from datamap_test_table where name like 'n99%'"))
+    checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n*9')"),
+      sql(s"select * from datamap_test_table where name like 'n%9'"))
+    sql("drop datamap if exists dm_flush on table datamap_test_table")
+  }
+
+  test("test lucene with split_blocklet as false ") {
+    sql("DROP TABLE IF EXISTS datamap_test_table")
+    sql(
+      """
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm_split_false ON TABLE datamap_test_table
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='name , city', 'split_blocklet'='false')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
+    checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n99*')"),
+      sql("select * from datamap_test_table where name like 'n99%'"))
+    checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n*9')"),
+      sql(s"select * from datamap_test_table where name like 'n%9'"))
+    sql("drop datamap if exists dm_split_false on table datamap_test_table")
+  }
+
   override protected def afterAll(): Unit = {
     LuceneFineGrainDataMapSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")

@@ -18,12 +18,11 @@
 package org.apache.carbondata.datamap.lucene;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
@@ -32,14 +31,15 @@ import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.MatchExpression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -55,16 +55,11 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.BytesRef;
 import org.apache.solr.store.hdfs.HdfsDirectory;
 
 @InterfaceAudience.Internal
 public class LuceneFineGrainDataMap extends FineGrainDataMap {
-
-  private static final int BLOCKLETID_ID = 0;
-
-  private static final int PAGEID_ID = 1;
-
-  private static final int ROWID_ID = 2;
 
   /**
    * log information
@@ -73,14 +68,9 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       LogServiceFactory.getLogService(LuceneFineGrainDataMap.class.getName());
 
   /**
-   * index Reader object to create searcher object
-   */
-  private IndexReader indexReader = null;
-
-  /**
    * searcher object for this datamap
    */
-  private IndexSearcher indexSearcher = null;
+  private Map<String, IndexSearcher> indexSearcherMap = null;
 
   /**
    * analyzer for lucene index
@@ -89,14 +79,21 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
   private String filePath;
 
-  LuceneFineGrainDataMap(Analyzer analyzer) {
+  private int writeCacheSize;
+
+  private boolean storeBlockletWise;
+
+  LuceneFineGrainDataMap(Analyzer analyzer, DataMapSchema schema) {
     this.analyzer = analyzer;
+    writeCacheSize = LuceneDataMapFactoryBase.validateAndGetWriteCacheSize(schema);
+    storeBlockletWise = LuceneDataMapFactoryBase.validateAndGetStoreBlockletWise(schema);
   }
 
   /**
    * It is called to load the data map to memory or to initialize it.
    */
   public void init(DataMapModel dataMapModel) throws IOException {
+    long startTime = System.currentTimeMillis();
     // get this path from file path
     Path indexPath = FileFactory.getPath(dataMapModel.getFilePath());
 
@@ -104,32 +101,51 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
     this.filePath = indexPath.getName();
 
+    this.indexSearcherMap = new HashMap<>();
+
     // get file system , use hdfs file system , realized in solr project
-    FileSystem fs = FileFactory.getFileSystem(indexPath);
+    CarbonFile indexFilePath = FileFactory.getCarbonFile(indexPath.toString());
 
     // check this path valid
-    if (!fs.exists(indexPath)) {
+    if (!indexFilePath.exists()) {
       String errorMessage = String.format("index directory %s not exists.", indexPath);
       LOGGER.error(errorMessage);
       throw new IOException(errorMessage);
     }
 
-    if (!fs.isDirectory(indexPath)) {
+    if (!indexFilePath.isDirectory()) {
       String errorMessage = String.format("error index path %s, must be directory", indexPath);
       LOGGER.error(errorMessage);
       throw new IOException(errorMessage);
     }
 
+    if (storeBlockletWise) {
+      CarbonFile[] blockletDirs = indexFilePath.listFiles();
+      for (CarbonFile blockletDir : blockletDirs) {
+        IndexSearcher indexSearcher = createIndexSearcher(new Path(blockletDir.getAbsolutePath()));
+        indexSearcherMap.put(blockletDir.getName(), indexSearcher);
+      }
+
+    } else {
+      IndexSearcher indexSearcher = createIndexSearcher(indexPath);
+      indexSearcherMap.put("-1", indexSearcher);
+
+    }
+    LOGGER.info(
+        "Time taken to intialize lucene searcher: " + (System.currentTimeMillis() - startTime));
+  }
+
+  private IndexSearcher createIndexSearcher(Path indexPath) throws IOException {
     // open this index path , use HDFS default configuration
     Directory indexDir = new HdfsDirectory(indexPath, FileFactory.getConfiguration());
 
-    indexReader = DirectoryReader.open(indexDir);
+    IndexReader indexReader = DirectoryReader.open(indexDir);
     if (indexReader == null) {
       throw new RuntimeException("failed to create index reader object");
     }
 
     // create a index searcher object
-    indexSearcher = new IndexSearcher(indexReader);
+    return new IndexSearcher(indexReader);
   }
 
   /**
@@ -212,49 +228,40 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       LOGGER.error(errorMessage);
       return null;
     }
-
-    // execute index search
-    // initialize to null, else ScoreDoc objects will get accumulated in memory
-    TopDocs result = null;
-    try {
-      result = indexSearcher.search(query, maxDocs);
-    } catch (IOException e) {
-      String errorMessage =
-          String.format("failed to search lucene data, detail is %s", e.getMessage());
-      LOGGER.error(errorMessage);
-      throw new IOException(errorMessage);
-    }
-
     // temporary data, delete duplicated data
     // Map<BlockId, Map<BlockletId, Map<PageId, Set<RowId>>>>
-    Map<String, Map<Integer, Set<Integer>>> mapBlocks = new HashMap<>();
+    Map<String, Map<Integer, List<Short>>> mapBlocks = new HashMap<>();
 
-    for (ScoreDoc scoreDoc : result.scoreDocs) {
-      // get a document
-      Document doc = indexSearcher.doc(scoreDoc.doc);
-
-      // get all fields
-      List<IndexableField> fieldsInDoc = doc.getFields();
-
-      // get the blocklet id Map<BlockletId, Map<PageId, Set<RowId>>>
-      String blockletId = fieldsInDoc.get(BLOCKLETID_ID).stringValue();
-      Map<Integer, Set<Integer>> mapPageIds = mapBlocks.get(blockletId);
-      if (mapPageIds == null) {
-        mapPageIds = new HashMap<>();
-        mapBlocks.put(blockletId, mapPageIds);
+    for (Map.Entry<String, IndexSearcher> searcherEntry : indexSearcherMap.entrySet()) {
+      IndexSearcher indexSearcher = searcherEntry.getValue();
+      // execute index search
+      // initialize to null, else ScoreDoc objects will get accumulated in memory
+      TopDocs result = null;
+      try {
+        result = indexSearcher.search(query, maxDocs);
+      } catch (IOException e) {
+        String errorMessage =
+            String.format("failed to search lucene data, detail is %s", e.getMessage());
+        LOGGER.error(errorMessage);
+        throw new IOException(errorMessage);
       }
 
-      // get the page id Map<PageId, Set<RowId>>
-      Number pageId = fieldsInDoc.get(PAGEID_ID).numericValue();
-      Set<Integer> setRowId = mapPageIds.get(pageId.intValue());
-      if (setRowId == null) {
-        setRowId = new HashSet<>();
-        mapPageIds.put(pageId.intValue(), setRowId);
-      }
+      ByteBuffer intBuffer = ByteBuffer.allocate(4);
 
-      // get the row id Set<RowId>
-      Number rowId = fieldsInDoc.get(ROWID_ID).numericValue();
-      setRowId.add(rowId.intValue());
+      for (ScoreDoc scoreDoc : result.scoreDocs) {
+        // get a document
+        Document doc = indexSearcher.doc(scoreDoc.doc);
+
+        // get all fields
+        List<IndexableField> fieldsInDoc = doc.getFields();
+        if (writeCacheSize > 0) {
+          // It fills rowids to the map, its value is combined with multiple rows.
+          fillMapForCombineRows(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
+        } else {
+          // Fill rowids to the map
+          fillMap(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
+        }
+      }
     }
 
     // result blocklets
@@ -262,19 +269,19 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
     // transform all blocks into result type blocklets
     // Map<BlockId, Map<BlockletId, Map<PageId, Set<RowId>>>>
-    for (Map.Entry<String, Map<Integer, Set<Integer>>> mapBlocklet :
+    for (Map.Entry<String, Map<Integer, List<Short>>> mapBlocklet :
         mapBlocks.entrySet()) {
       String blockletId = mapBlocklet.getKey();
-      Map<Integer, Set<Integer>> mapPageIds = mapBlocklet.getValue();
+      Map<Integer, List<Short>> mapPageIds = mapBlocklet.getValue();
       List<FineGrainBlocklet.Page> pages = new ArrayList<FineGrainBlocklet.Page>();
 
       // for pages in this blocklet Map<PageId, Set<RowId>>>
-      for (Map.Entry<Integer, Set<Integer>> mapPageId : mapPageIds.entrySet()) {
+      for (Map.Entry<Integer, List<Short>> mapPageId : mapPageIds.entrySet()) {
         // construct array rowid
         int[] rowIds = new int[mapPageId.getValue().size()];
         int i = 0;
         // for rowids in this page Set<RowId>
-        for (Integer rowid : mapPageId.getValue()) {
+        for (Short rowid : mapPageId.getValue()) {
           rowIds[i++] = rowid;
         }
         // construct one page
@@ -291,6 +298,81 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     }
 
     return blocklets;
+  }
+
+  /**
+   * It fills the rowids to the map, its value is combined with multiple rowids as we store group
+   * rows and combine as per there uniqueness.
+   */
+  private void fillMapForCombineRows(ByteBuffer intBuffer,
+      Map<String, Map<Integer, List<Short>>> mapBlocks, List<IndexableField> fieldsInDoc,
+      String blockletId) {
+    for (int i = 0; i < fieldsInDoc.size(); i++) {
+      BytesRef bytesRef = fieldsInDoc.get(i).binaryValue();
+      ByteBuffer buffer = ByteBuffer.wrap(bytesRef.bytes);
+
+      int pageId;
+      if (storeBlockletWise) {
+        // If we store as per blockletwise then just read pageid only we don't store blockletid
+        pageId = buffer.getShort();
+      } else {
+        int combineKey = buffer.getInt();
+        intBuffer.clear();
+        intBuffer.putInt(combineKey);
+        intBuffer.rewind();
+        blockletId = String.valueOf(intBuffer.getShort());
+        pageId = intBuffer.getShort();
+      }
+
+      Map<Integer, List<Short>> mapPageIds = mapBlocks.get(blockletId);
+      if (mapPageIds == null) {
+        mapPageIds = new HashMap<>();
+        mapBlocks.put(blockletId, mapPageIds);
+      }
+      List<Short> setRowId = mapPageIds.get(pageId);
+      if (setRowId == null) {
+        setRowId = new ArrayList<>();
+        mapPageIds.put(pageId, setRowId);
+      }
+
+      while (buffer.hasRemaining()) {
+        setRowId.add(buffer.getShort());
+      }
+    }
+  }
+
+  /**
+   * Fill the map with rowids from documents
+   */
+  private void fillMap(ByteBuffer intBuffer, Map<String, Map<Integer, List<Short>>> mapBlocks,
+      List<IndexableField> fieldsInDoc, String blockletId) {
+    int combineKey = fieldsInDoc.get(0).numericValue().intValue();
+    intBuffer.clear();
+    intBuffer.putInt(combineKey);
+    intBuffer.rewind();
+    short rowId;
+    int pageId;
+    if (storeBlockletWise) {
+      // If we store as per blockletwise then just read pageid and rowid
+      // only we don't store blockletid
+      pageId = intBuffer.getShort();
+      rowId = intBuffer.getShort();
+    } else {
+      blockletId = String.valueOf(intBuffer.getShort());
+      pageId = intBuffer.getShort();
+      rowId = fieldsInDoc.get(1).numericValue().shortValue();
+    }
+    Map<Integer, List<Short>> mapPageIds = mapBlocks.get(blockletId);
+    if (mapPageIds == null) {
+      mapPageIds = new HashMap<>();
+      mapBlocks.put(blockletId, mapPageIds);
+    }
+    List<Short> setRowId = mapPageIds.get(pageId);
+    if (setRowId == null) {
+      setRowId = new ArrayList<>();
+      mapPageIds.put(pageId, setRowId);
+    }
+    setRowId.add(rowId);
   }
 
   @Override
