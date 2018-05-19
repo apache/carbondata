@@ -27,11 +27,11 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
  import org.apache.spark.sql.{CarbonEnv, SparkSession}
  import org.apache.spark.sql.CarbonSession._
  import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
- import org.apache.carbondata.core.util.path.CarbonStorePath
- 
+ import org.apache.carbondata.core.util.path.CarbonTablePath
+
  val warehouse = new File("./warehouse").getCanonicalPath
  val metastore = new File("./metastore").getCanonicalPath
- 
+
  val spark = SparkSession
    .builder()
    .master("local")
@@ -54,8 +54,8 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
       | TBLPROPERTIES('streaming'='true')""".stripMargin)
 
  val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "carbon_table")(spark)
- val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
- 
+ val tablePath = carbonTable.getTablePath
+
  // batch load
  var qry: StreamingQuery = null
  val readSocketDF = spark.readStream
@@ -68,7 +68,7 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
  qry = readSocketDF.writeStream
    .format("carbondata")
    .trigger(ProcessingTime("5 seconds"))
-   .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
+   .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(tablePath))
    .option("dbName", "default")
    .option("tableName", "carbon_table")
    .start()
