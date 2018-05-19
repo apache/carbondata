@@ -81,12 +81,6 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   private Analyzer analyzer = null;
 
-  private boolean isFineGrain = true;
-
-  public static final String BLOCKLETID_NAME = "blockletId";
-
-  private String indexShardName = null;
-
   public static final String PAGEID_NAME = "pageId";
 
   public static final String ROWID_NAME = "rowId";
@@ -100,10 +94,9 @@ public class LuceneDataMapWriter extends DataMapWriter {
   private boolean storeBlockletWise;
 
   LuceneDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, boolean isFineGrain, int flushSize,
+      Segment segment, String shardName, int flushSize,
       boolean storeBlockletWise) {
     super(tablePath, dataMapName, indexColumns, segment, shardName);
-    this.isFineGrain = isFineGrain;
     this.cacheSize = flushSize;
     this.storeBlockletWise = storeBlockletWise;
   }
@@ -234,7 +227,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
     }
   }
 
-  private static boolean addField(Document doc, Object key, String fieldName, Field.Store store) {
+  private static void addField(Document doc, Object key, String fieldName, Field.Store store) {
     //get field name
     if (key instanceof Byte) {
       // byte type , use int range to deal with byte, lucene has no byte type
@@ -302,7 +295,6 @@ public class LuceneDataMapWriter extends DataMapWriter {
         doc.add(new StoredField(fieldName, value ? 1 : 0));
       }
     }
-    return true;
   }
 
   private Object getValue(ColumnPage page, int rowId) {

@@ -83,7 +83,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   /**
    * By default it is false
    */
-  static final String SPLIT_BLOCKLET_DEFAULT = "false";
+  static final String SPLIT_BLOCKLET_DEFAULT = "true";
   /**
    * Logger
    */
@@ -167,7 +167,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     try {
       splitBlockletWise = Boolean.parseBoolean(splitBlockletStr);
     } catch (NumberFormatException e) {
-      splitBlockletWise = false;
+      splitBlockletWise = true;
     }
     return splitBlockletWise;
   }
@@ -206,7 +206,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   public DataMapWriter createWriter(Segment segment, String shardName) {
     LOGGER.info("lucene data write to " + shardName);
     return new LuceneDataMapWriter(getCarbonTable().getTablePath(), dataMapName,
-        dataMapMeta.getIndexedColumns(), segment, shardName, true, flushCacheSize,
+        dataMapMeta.getIndexedColumns(), segment, shardName, flushCacheSize,
         storeBlockletWise);
   }
 

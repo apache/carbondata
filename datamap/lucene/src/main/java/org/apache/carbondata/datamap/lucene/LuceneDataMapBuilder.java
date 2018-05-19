@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.datamap.lucene;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -73,6 +74,8 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
 
   private boolean storeBlockletWise;
 
+  private int currentBlockletId = -1;
+
   LuceneDataMapBuilder(String tablePath, String dataMapName, Segment segment, String shardName,
       List<CarbonColumn> indexColumns, int writeCacheSize, boolean storeBlockletWise) {
     this.dataMapPath = CarbonTablePath
@@ -85,7 +88,13 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
 
   @Override
   public void initialize() throws IOException {
-    // get index path, put index data into segment's path
+    if (!storeBlockletWise) {
+      // get index path, put index data into segment's path
+      indexWriter = createIndexWriter(dataMapPath);
+    }
+  }
+
+  private IndexWriter createIndexWriter(String dataMapPath) throws IOException {
     Path indexPath = FileFactory.getPath(dataMapPath);
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 
@@ -116,13 +125,19 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
           .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
     }
 
-    indexWriter = new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
+    return new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
   }
 
   @Override
   public void addRow(int blockletId, int pageId, int rowId, Object[] values)
       throws IOException {
-
+    if (storeBlockletWise) {
+      if (currentBlockletId != blockletId) {
+        close();
+        indexWriter = createIndexWriter(dataMapPath + File.separator + blockletId);
+        currentBlockletId = blockletId;
+      }
+    }
     // add other fields
     LuceneDataMapWriter.LuceneColumnKeys columns =
         new LuceneDataMapWriter.LuceneColumnKeys(columnsCount);

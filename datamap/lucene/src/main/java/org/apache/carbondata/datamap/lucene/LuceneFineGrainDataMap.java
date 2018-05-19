@@ -255,9 +255,11 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
         // get all fields
         List<IndexableField> fieldsInDoc = doc.getFields();
         if (writeCacheSize > 0) {
-          fillMap(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
+          // It fills rowids to the map, its value is combined with multiple rows.
+          fillMapForCombineRows(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
         } else {
-          fillMapDirect(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
+          // Fill rowids to the map
+          fillMap(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
         }
       }
     }
@@ -298,14 +300,20 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     return blocklets;
   }
 
-  private void fillMap(ByteBuffer intBuffer, Map<String, Map<Integer, List<Short>>> mapBlocks,
-      List<IndexableField> fieldsInDoc, String blockletId) {
+  /**
+   * It fills the rowids to the map, its value is combined with multiple rowids as we store group
+   * rows and combine as per there uniqueness.
+   */
+  private void fillMapForCombineRows(ByteBuffer intBuffer,
+      Map<String, Map<Integer, List<Short>>> mapBlocks, List<IndexableField> fieldsInDoc,
+      String blockletId) {
     for (int i = 0; i < fieldsInDoc.size(); i++) {
       BytesRef bytesRef = fieldsInDoc.get(i).binaryValue();
       ByteBuffer buffer = ByteBuffer.wrap(bytesRef.bytes);
 
       int pageId;
       if (storeBlockletWise) {
+        // If we store as per blockletwise then just read pageid only we don't store blockletid
         pageId = buffer.getShort();
       } else {
         int combineKey = buffer.getInt();
@@ -333,7 +341,10 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     }
   }
 
-  private void fillMapDirect(ByteBuffer intBuffer, Map<String, Map<Integer, List<Short>>> mapBlocks,
+  /**
+   * Fill the map with rowids from documents
+   */
+  private void fillMap(ByteBuffer intBuffer, Map<String, Map<Integer, List<Short>>> mapBlocks,
       List<IndexableField> fieldsInDoc, String blockletId) {
     int combineKey = fieldsInDoc.get(0).numericValue().intValue();
     intBuffer.clear();
@@ -342,6 +353,8 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     short rowId;
     int pageId;
     if (storeBlockletWise) {
+      // If we store as per blockletwise then just read pageid and rowid
+      // only we don't store blockletid
       pageId = intBuffer.getShort();
       rowId = intBuffer.getShort();
     } else {
