@@ -111,7 +111,7 @@ public class CarbonLoadModel implements Serializable {
   private String defaultDateFormat;
 
   /**
-   * defines the string that should be treated as null while loadind data
+   * defines the string that should be treated as null while loading data
    */
   private String serializationNullFormat;
 
@@ -204,7 +204,7 @@ public class CarbonLoadModel implements Serializable {
    * For this method there will be no data conversion step. It writes data which is directly
    * pushed into.
    */
-  private boolean isLoadWithoutCoverterStep;
+  private boolean isLoadWithoutConverterStep;
 
   /**
    * Flder path to where data should be written for this load.
@@ -437,7 +437,7 @@ public class CarbonLoadModel implements Serializable {
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.isAggLoadRequest = isAggLoadRequest;
     copy.badRecordsLocation = badRecordsLocation;
-    copy.isLoadWithoutCoverterStep = isLoadWithoutCoverterStep;
+    copy.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
     copy.sortColumnsBoundsStr = sortColumnsBoundsStr;
     return copy;
   }
@@ -816,12 +816,12 @@ public class CarbonLoadModel implements Serializable {
   }
 
 
-  public boolean isLoadWithoutCoverterStep() {
-    return isLoadWithoutCoverterStep;
+  public boolean isLoadWithoutConverterStep() {
+    return isLoadWithoutConverterStep;
   }
 
-  public void setLoadWithoutCoverterStep(boolean loadWithoutCoverterStep) {
-    isLoadWithoutCoverterStep = loadWithoutCoverterStep;
+  public void setLoadWithoutConverterStep(boolean loadWithoutConverterStep) {
+    isLoadWithoutConverterStep = loadWithoutConverterStep;
   }
 
   public String getDataWritePath() {
