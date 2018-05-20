@@ -18,7 +18,6 @@ package org.apache.carbondata.datamap.bloom;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,8 +33,9 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-import com.google.common.hash.BloomFilter;
-import com.google.common.hash.Funnels;
+import org.apache.hadoop.util.bloom.CarbonBloomFilter;
+import org.apache.hadoop.util.bloom.Key;
+import org.apache.hadoop.util.hash.Hash;
 
 /**
  * BloomDataMap is constructed in CG level (blocklet level).
@@ -50,23 +50,23 @@ public class BloomDataMapWriter extends DataMapWriter {
       BloomDataMapWriter.class.getCanonicalName());
   private int bloomFilterSize;
   private double bloomFilterFpp;
+  private boolean compressBloom;
   protected int currentBlockletId;
   private List<String> currentDMFiles;
   private List<DataOutputStream> currentDataOutStreams;
-  private List<ObjectOutputStream> currentObjectOutStreams;
-  protected List<BloomFilter<byte[]>> indexBloomFilters;
+  protected List<CarbonBloomFilter> indexBloomFilters;
 
   BloomDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp)
+      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
+      boolean compressBloom)
       throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName);
     this.bloomFilterSize = bloomFilterSize;
     this.bloomFilterFpp = bloomFilterFpp;
-
-    currentDMFiles = new ArrayList<String>(indexColumns.size());
-    currentDataOutStreams = new ArrayList<DataOutputStream>(indexColumns.size());
-    currentObjectOutStreams = new ArrayList<ObjectOutputStream>(indexColumns.size());
-    indexBloomFilters = new ArrayList<BloomFilter<byte[]>>(indexColumns.size());
+    this.compressBloom = compressBloom;
+    currentDMFiles = new ArrayList<>(indexColumns.size());
+    currentDataOutStreams = new ArrayList<>(indexColumns.size());
+    indexBloomFilters = new ArrayList<>(indexColumns.size());
     initDataMapFile();
     resetBloomFilters();
   }
@@ -86,10 +86,29 @@ public class BloomDataMapWriter extends DataMapWriter {
   protected void resetBloomFilters() {
     indexBloomFilters.clear();
     List<CarbonColumn> indexColumns = getIndexColumns();
+    int[] stats = calculateBloomStats();
     for (int i = 0; i < indexColumns.size(); i++) {
-      indexBloomFilters.add(BloomFilter.create(Funnels.byteArrayFunnel(),
-          bloomFilterSize, bloomFilterFpp));
+      indexBloomFilters
+          .add(new CarbonBloomFilter(stats[0], stats[1], Hash.MURMUR_HASH, compressBloom));
     }
+  }
+
+  /**
+   * It calculates the bits size and number of hash functions to calculate bloom.
+   */
+  private int[] calculateBloomStats() {
+    /*
+     * n: how many items you expect to have in your filter
+     * p: your acceptable false positive rate
+     * Number of bits (m) = -n*ln(p) / (ln(2)^2)
+     * Number of hashes(k) = m/n * ln(2)
+     */
+    double sizeinBits = -bloomFilterSize * Math.log(bloomFilterFpp) / (Math.pow(Math.log(2), 2));
+    double numberOfHashes = sizeinBits / bloomFilterSize * Math.log(2);
+    int[] stats = new int[2];
+    stats[0] = (int) Math.ceil(sizeinBits);
+    stats[1] = (int) Math.ceil(numberOfHashes);
+    return stats;
   }
 
   @Override
@@ -117,7 +136,7 @@ public class BloomDataMapWriter extends DataMapWriter {
         } else {
           indexValue = CarbonUtil.getValueAsBytes(dataType, data);
         }
-        indexBloomFilters.get(i).put(indexValue);
+        indexBloomFilters.get(i).add(new Key(indexValue));
       }
     }
   }
@@ -140,20 +159,17 @@ public class BloomDataMapWriter extends DataMapWriter {
       String dmFile = BloomCoarseGrainDataMap.getBloomIndexFile(dataMapPath,
           indexColumns.get(indexColId).getColName());
       DataOutputStream dataOutStream = null;
-      ObjectOutputStream objectOutStream = null;
       try {
         FileFactory.createNewFile(dmFile, FileFactory.getFileType(dmFile));
         dataOutStream = FileFactory.getDataOutputStream(dmFile,
             FileFactory.getFileType(dmFile));
-        objectOutStream = new ObjectOutputStream(dataOutStream);
       } catch (IOException e) {
-        CarbonUtil.closeStreams(objectOutStream, dataOutStream);
+        CarbonUtil.closeStreams(dataOutStream);
         throw new IOException(e);
       }
 
       this.currentDMFiles.add(dmFile);
       this.currentDataOutStreams.add(dataOutStream);
-      this.currentObjectOutStreams.add(objectOutStream);
     }
   }
 
@@ -165,14 +181,10 @@ public class BloomDataMapWriter extends DataMapWriter {
             new BloomDMModel(this.currentBlockletId, indexBloomFilters.get(indexColId));
         // only in higher version of guava-bloom-filter, it provides readFrom/writeTo interface.
         // In lower version, we use default java serializer to write bloomfilter.
-        this.currentObjectOutStreams.get(indexColId).writeObject(model);
-        this.currentObjectOutStreams.get(indexColId).flush();
+        model.write(this.currentDataOutStreams.get(indexColId));
         this.currentDataOutStreams.get(indexColId).flush();
       }
     } catch (Exception e) {
-      for (ObjectOutputStream objectOutputStream : currentObjectOutStreams) {
-        CarbonUtil.closeStreams(objectOutputStream);
-      }
       for (DataOutputStream dataOutputStream : currentDataOutStreams) {
         CarbonUtil.closeStreams(dataOutputStream);
       }
@@ -194,7 +206,7 @@ public class BloomDataMapWriter extends DataMapWriter {
     List<CarbonColumn> indexColumns = getIndexColumns();
     for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
       CarbonUtil.closeStreams(
-          currentDataOutStreams.get(indexColId), currentObjectOutStreams.get(indexColId));
+          currentDataOutStreams.get(indexColId));
     }
   }
 

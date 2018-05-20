@@ -44,6 +44,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.util.bloom.Key;
 
 /**
  * BloomDataCoarseGrainMap is constructed in blocklet level. For each indexed column,
@@ -83,7 +84,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) throws IOException {
+      List<PartitionSpec> partitions) {
     List<Blocklet> hitBlocklets = new ArrayList<Blocklet>();
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
@@ -97,8 +98,8 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
           this.indexPath.toString(), bloomQueryModel.columnName);
       List<BloomDMModel> bloomDMModels = this.bloomDataMapCache.getBloomDMModelByKey(cacheKey);
       for (BloomDMModel bloomDMModel : bloomDMModels) {
-        boolean scanRequired = bloomDMModel.getBloomFilter().mightContain(
-            convertValueToBytes(bloomQueryModel.dataType, bloomQueryModel.filterValue));
+        boolean scanRequired = bloomDMModel.getBloomFilter().membershipTest(new Key(
+            convertValueToBytes(bloomQueryModel.dataType, bloomQueryModel.filterValue)));
         if (scanRequired) {
           LOGGER.debug(String.format("BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
               String.valueOf(bloomDMModel.getBlockletNo())));
@@ -110,7 +111,6 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         }
       }
     }
-
     return hitBlocklets;
   }
 
