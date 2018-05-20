@@ -16,22 +16,29 @@
  */
 package org.apache.carbondata.datamap.bloom;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
-import com.google.common.hash.BloomFilter;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.util.bloom.BloomFilter;
+import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 
 /**
  * This class holds a bloom filter for one blocklet
  */
 @InterfaceAudience.Internal
-public class BloomDMModel implements Serializable {
-  private static final long serialVersionUID = 7281578747306832771L;
+public class BloomDMModel implements Writable {
   private int blockletNo;
-  private BloomFilter<byte[]> bloomFilter;
+  private CarbonBloomFilter bloomFilter;
 
-  public BloomDMModel(int blockletNo, BloomFilter<byte[]> bloomFilter) {
+  public BloomDMModel() {
+  }
+
+  public BloomDMModel(int blockletNo, CarbonBloomFilter bloomFilter) {
     this.blockletNo = blockletNo;
     this.bloomFilter = bloomFilter;
   }
@@ -40,15 +47,29 @@ public class BloomDMModel implements Serializable {
     return blockletNo;
   }
 
-  public BloomFilter<byte[]> getBloomFilter() {
+  public BloomFilter getBloomFilter() {
     return bloomFilter;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     final StringBuilder sb = new StringBuilder("BloomDMModel{");
     sb.append(", blockletNo=").append(blockletNo);
     sb.append(", bloomFilter=").append(bloomFilter);
     sb.append('}');
     return sb.toString();
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(blockletNo);
+    bloomFilter.write(out);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    blockletNo = in.readInt();
+    bloomFilter = new CarbonBloomFilter();
+    bloomFilter.readFields(in);
   }
 }
