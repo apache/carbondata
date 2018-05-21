@@ -71,7 +71,7 @@ case class CarbonDropTableCommand(
         throw new ConcurrentOperationException(carbonTable, "loading", "drop table")
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-      if (carbonTable.isStreamingTable) {
+      if (carbonTable.isStreamingSink) {
         // streaming table should acquire streaming.lock
         carbonLocks += CarbonLockUtil.getLockObject(identifier, LockUsage.STREAMING_LOCK)
       }

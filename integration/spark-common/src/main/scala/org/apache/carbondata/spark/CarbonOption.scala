@@ -57,8 +57,13 @@ class CarbonOption(options: Map[String, String]) {
   def isBucketingEnabled: Boolean = options.contains("bucketcolumns") &&
                                     options.contains("bucketnumber")
 
-  def isStreaming: Boolean =
-    options.getOrElse("streaming", "false").toBoolean
+  def isStreaming: Boolean = {
+    var stream = options.getOrElse("streaming", "false")
+    if (stream.equalsIgnoreCase("sink") || stream.equalsIgnoreCase("source")) {
+      stream = "true"
+    }
+    stream.toBoolean
+  }
 
   def overwriteEnabled: Boolean =
     options.getOrElse("overwrite", "false").toBoolean

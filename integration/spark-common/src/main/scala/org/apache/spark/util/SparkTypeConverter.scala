@@ -21,7 +21,6 @@ import java.util.Objects
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.hive.CarbonMetastoreTypes
 import org.apache.spark.sql.types
 import org.apache.spark.sql.types._
 

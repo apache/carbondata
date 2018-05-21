@@ -100,7 +100,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val updateDeltaMetadata = segmentUpdateStatusManager.readLoadMetadata()
     if (updateDeltaMetadata != null && updateDeltaMetadata.nonEmpty) {
       false
-    } else if (relation.carbonTable.isStreamingTable) {
+    } else if (relation.carbonTable.isStreamingSink) {
       false
     } else {
       true
