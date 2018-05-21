@@ -565,12 +565,14 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val (timestampFile, timestampFileType) = getTimestampFileAndType()
     var isRefreshed = false
     if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
-      if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).
-        getLastModifiedTime ==
+      val lastModifiedTime =
+        FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime
+      if (!(lastModifiedTime ==
             tableModifiedTimeStore.get(CarbonCommonConstants.DATABASE_DEFAULT_NAME))) {
         metadata.carbonTables = metadata.carbonTables.filterNot(
           table => table.getTableName.equalsIgnoreCase(tableIdentifier.table) &&
         table.getDatabaseName.equalsIgnoreCase(tableIdentifier.database.getOrElse("default")))
+        updateSchemasUpdatedTime(lastModifiedTime)
         isRefreshed = true
       }
     }
