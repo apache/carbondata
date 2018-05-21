@@ -481,6 +481,61 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select * from normal_test where name='n502670' and city='c2670'"))
   }
 
+  test("test fg datamap and validate the visible and invisible status of datamap ") {
+    sql("DROP TABLE IF EXISTS datamap_test")
+    sql(
+      """
+        | CREATE TABLE datamap_test(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
+    // register datamap writer
+    sql(
+      s"""
+         | CREATE DATAMAP ggdatamap1 ON TABLE datamap_test
+         | USING '${classOf[FGDataMapFactory].getName}'
+         | DMPROPERTIES('index_columns'='name')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP ggdatamap2 ON TABLE datamap_test
+         | USING '${classOf[FGDataMapFactory].getName}'
+         | DMPROPERTIES('index_columns'='city')
+       """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
+
+    val tableName = "datamap_test";
+    val dataMapName1 = "ggdatamap1";
+    val df1 = sql("EXPLAIN EXTENDED SELECT * FROM datamap_test WHERE name='n502670'").collect()
+    assertResult(
+      """== CarbonData Profiler ==
+        |Table Scan on datamap_test
+        | - total blocklets: 1
+        | - filter: (name <> null and name = n502670)
+        | - pruned by Main DataMap
+        |    - skipped blocklets: 0
+        | - pruned by FG DataMap
+        |    - name: ggdatamap1
+        |    - provider: org.apache.carbondata.spark.testsuite.datamap.FGDataMapFactory
+        |    - skipped blocklets: 0
+        |""".stripMargin)(df1(0).getString(0))
+
+    sql(s"set ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = false")
+    val df2 = sql("EXPLAIN EXTENDED SELECT * FROM datamap_test WHERE name='n502670'").collect()
+    assertResult(
+      """== CarbonData Profiler ==
+        |Table Scan on datamap_test
+        | - total blocklets: 1
+        | - filter: (name <> null and name = n502670)
+        | - pruned by Main DataMap
+        |    - skipped blocklets: 0
+        |""".stripMargin)(df2(0).getString(0))
+
+    checkAnswer(sql("SELECT * FROM datamap_test WHERE name='n502670' AND city='c2670'"),
+      sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
+  }
+
   override protected def afterAll(): Unit = {
     CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
