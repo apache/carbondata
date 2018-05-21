@@ -481,14 +481,29 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
     // For conciseness, all Catalyst filter expressions of type `expressions.Expression` below are
     // called `predicate`s, while all data source filters of type `sources.Filter` are simply called
-    // `filter`s.
+    // `filter`s. And block filters for lucene with more than one text_match udf
+    // Todo: handle when lucene and normal query filter is supported
 
-    val translated: Seq[(Expression, Filter)] =
-      for {
-        predicate <- predicatesWithoutComplex
-        filter <- translateFilter(predicate)
-      } yield predicate -> filter
-
+    var count = 0
+    val translated: Seq[(Expression, Filter)] = predicatesWithoutComplex.flatMap {
+      predicate =>
+        if (predicate.isInstanceOf[ScalaUDF]) {
+          predicate match {
+            case u: ScalaUDF if u.function.isInstanceOf[TextMatchUDF] ||
+                                u.function.isInstanceOf[TextMatchMaxDocUDF] => count = count + 1
+          }
+        }
+        if (count > 1) {
+          throw new MalformedCarbonCommandException(
+            "Specify all search filters for Lucene within a single text_match UDF")
+        }
+        val filter = translateFilter(predicate)
+        if (filter.isDefined) {
+          Some(predicate, filter.get)
+        } else {
+          None
+        }
+    }
 
     // A map from original Catalyst expressions to corresponding translated data source filters.
     val translatedMap: Map[Expression, Filter] = translated.toMap

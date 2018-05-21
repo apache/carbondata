@@ -730,7 +730,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     assert(msg.getCause.getMessage.contains("TEXT_MATCH is not supported on table"))
     sql("DROP TABLE table1")
   }
-
+  
   test("test lucene with flush_cache as true") {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
@@ -773,6 +773,30 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n*9')"),
       sql(s"select * from datamap_test_table where name like 'n%9'"))
     sql("drop datamap if exists dm_split_false on table datamap_test_table")
+  }
+
+  test("test text_match filters with more than one text_match udf ") {
+    sql("DROP TABLE IF EXISTS datamap_test_table")
+    sql(
+      """
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm_text ON TABLE datamap_test_table
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='name , city')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
+    val msg = intercept[MalformedCarbonCommandException] {
+      sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n0*') AND TEXT_MATCH" +
+          "('city:c0*')").show()
+    }
+    assert(msg.getMessage
+      .contains("Specify all search filters for Lucene within a single text_match UDF"))
+    sql("drop datamap if exists dm_text on table datamap_test_table")
   }
 
   override protected def afterAll(): Unit = {
