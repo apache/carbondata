@@ -322,14 +322,12 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("robot0", 0, 0.0),
       Row("robot1", 1, 0.5),
       Row("robot2", 2, 1.0)))
-    new File(writerPath).listFiles().map(x => LOGGER.audit(x.getName +" : "+x.lastModified()))
     FileUtils.deleteDirectory(new File(writerPath))
     // Thread.sleep is required because it is possible sometime deletion
     // and creation of new file can happen at same timestamp.
     Thread.sleep(1000)
     assert(!new File(writerPath).exists())
     buildTestDataWithSameUUID(4, false, null, List("name"))
-    new File(writerPath).listFiles().map(x => LOGGER.audit(x.getName +" : "+x.lastModified()))
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
       Row("robot1", 1, 0.5),
@@ -379,9 +377,26 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     checkExistence(sql("describe formatted sdkOutputTable"), true, "name")
 
+    buildTestDataWithSortColumns(List())
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    // with partition
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    sql("describe formatted sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable").show()
+
+    intercept[RuntimeException] {
+      buildTestDataWithSortColumns(List(""))
+    }
+
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(writerPath).exists())
+    assert(!(new File(writerPath).exists()))
     cleanTestData()
   }
 

@@ -377,7 +377,7 @@ public class CarbonWriterBuilder {
     }
 
     List<String> sortColumnsList = new ArrayList<>();
-    if (sortColumns == null) {
+    if (sortColumns == null || sortColumns.length == 0) {
       // If sort columns are not specified, default set all dimensions to sort column.
       // When dimensions are default set to sort column,
       // Inverted index will be supported by default for sort columns.
