@@ -97,7 +97,9 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
   }
 
   @Override public int size() {
-    return currentDictionarySize;
+    synchronized (lock) {
+      return currentDictionarySize;
+    }
   }
 
   @Override public Integer generateKey(String value) throws DictionaryGenerationException {

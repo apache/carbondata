@@ -111,6 +111,9 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
       // get the thrift object for dictionary chunk
       dictionaryChunkMeta = (ColumnDictionaryChunkMeta) dictionaryMetadataFileReader.read();
     }
+    if (null == dictionaryChunkMeta) {
+      throw new IOException("Last dictionary chunk does not exist");
+    }
     // create a new instance of chunk meta wrapper using thrift object
     return getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);
   }
@@ -127,6 +130,9 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
       if (dictionaryChunkMeta.end_offset >= end_Offset) {
         break;
       }
+    }
+    if (null == dictionaryChunkMeta) {
+      throw new IOException("Matching dictionary chunk does not exist");
     }
     // create a new instance of chunk meta wrapper using thrift object
     return getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);

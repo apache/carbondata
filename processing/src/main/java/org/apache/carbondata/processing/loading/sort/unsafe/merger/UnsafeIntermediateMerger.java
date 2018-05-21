@@ -38,6 +38,8 @@ import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 
+import org.apache.commons.collections.list.SynchronizedList;
+
 /**
  * It does mergesort intermediate files to big file.
  */
@@ -76,7 +78,8 @@ public class UnsafeIntermediateMerger {
     this.mergedPages = new ArrayList<>();
     this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores(),
         new CarbonThreadFactory("UnsafeIntermediatePool:" + parameters.getTableName()));
-    this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    this.procFiles =
+        SynchronizedList.decorate(new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN));
     this.mergerTask = new ArrayList<>();
 
     Integer spillPercentage;
@@ -111,15 +114,18 @@ public class UnsafeIntermediateMerger {
   }
 
   public void startFileMergingIfPossible() {
-    File[] fileList;
-    if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
-      synchronized (lockObject) {
+    File[] fileList = null;
+    synchronized (lockObject) {
+      if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
         fileList = procFiles.toArray(new File[procFiles.size()]);
         this.procFiles = new ArrayList<File>();
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER
+              .debug("Submitting request for intermediate merging no of files: " + fileList.length);
+        }
       }
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
-      }
+    }
+    if (null != fileList) {
       startIntermediateMerging(fileList);
     }
   }

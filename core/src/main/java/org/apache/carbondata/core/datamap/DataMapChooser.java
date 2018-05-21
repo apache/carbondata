@@ -283,8 +283,8 @@ public class DataMapChooser {
       List<ColumnExpression> columnExpressions, Set<ExpressionType> expressionTypes) {
     List<DataMapTuple> tuples = new ArrayList<>();
     for (TableDataMap dataMap : allDataMap) {
-      if (contains(dataMap.getDataMapFactory().getMeta(), columnExpressions, expressionTypes))
-      {
+      if (null != dataMap.getDataMapFactory().getMeta() && contains(
+          dataMap.getDataMapFactory().getMeta(), columnExpressions, expressionTypes)) {
         tuples.add(
             new DataMapTuple(dataMap.getDataMapFactory().getMeta().getIndexedColumns().size(),
                 dataMap));

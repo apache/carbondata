@@ -124,8 +124,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
     }
     if (this.dimColEvaluatorInfoList.size() > 0) {
-      this.isDimensionPresentInCurrentBlock = new boolean[dimColEvaluatorInfoList.size()];
-      this.dimensionChunkIndex = new int[dimColEvaluatorInfoList.size()];
+      this.isDimensionPresentInCurrentBlock = new boolean[this.dimColEvaluatorInfoList.size()];
+      this.dimensionChunkIndex = new int[this.dimColEvaluatorInfoList.size()];
     } else {
       this.isDimensionPresentInCurrentBlock = new boolean[]{false};
       this.dimensionChunkIndex = new int[]{0};
@@ -136,8 +136,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       this.msrColEvalutorInfoList = msrColEvalutorInfoList;
     }
     if (this.msrColEvalutorInfoList.size() > 0) {
-      this.isMeasurePresentInCurrentBlock = new boolean[msrColEvalutorInfoList.size()];
-      this.measureChunkIndex = new int[msrColEvalutorInfoList.size()];
+      this.isMeasurePresentInCurrentBlock = new boolean[this.msrColEvalutorInfoList.size()];
+      this.measureChunkIndex = new int[this.msrColEvalutorInfoList.size()];
     } else {
       this.isMeasurePresentInCurrentBlock = new boolean[]{false};
       this.measureChunkIndex = new int[] {0};
@@ -647,13 +647,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       }
     }
 
-    if (null != msrColEvalutorInfoList) {
-      for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
-        if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]]) {
-          rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]] =
-              rawBlockletColumnChunks.getDataBlock()
-                  .readMeasureChunk(rawBlockletColumnChunks.getFileReader(), measureChunkIndex[0]);
-        }
+    for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
+      if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]]) {
+        rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]] =
+            rawBlockletColumnChunks.getDataBlock()
+              .readMeasureChunk(rawBlockletColumnChunks.getFileReader(), measureChunkIndex[0]);
       }
     }
   }

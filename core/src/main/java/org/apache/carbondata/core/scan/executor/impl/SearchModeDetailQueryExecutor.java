@@ -70,9 +70,7 @@ public class SearchModeDetailQueryExecutor extends AbstractQueryExecutor<Object>
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    if (executorService == null) {
-      initThreadPool();
-    }
+
     this.queryIterator = new SearchModeResultIterator(
         blockExecutionInfoList,
         queryModel,

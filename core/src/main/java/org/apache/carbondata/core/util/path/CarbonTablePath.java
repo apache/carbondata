@@ -576,11 +576,15 @@ public class CarbonTablePath {
    */
   public static CarbonFile[] getSortIndexFiles(CarbonFile sortIndexDir,
       final String columnUniqueId) {
-    return sortIndexDir.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-        return file.getName().startsWith(columnUniqueId) && file.getName().endsWith(SORT_INDEX_EXT);
-      }
-    });
+    if (null != sortIndexDir) {
+      return sortIndexDir.listFiles(new CarbonFileFilter() {
+        @Override public boolean accept(CarbonFile file) {
+          return file.getName().startsWith(columnUniqueId) && file.getName()
+              .endsWith(SORT_INDEX_EXT);
+        }
+      });
+    }
+    return null;
   }
 
   /**

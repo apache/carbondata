@@ -124,13 +124,13 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public void putByte(int rowId, byte value) {
-    long offset = rowId << byteBits;
+    long offset = (long)rowId << byteBits;
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, value);
   }
 
   @Override
   public void putShort(int rowId, short value) {
-    long offset = rowId << shortBits;
+    long offset = (long)rowId << shortBits;
     CarbonUnsafe.getUnsafe().putShort(baseAddress, baseOffset + offset, value);
   }
 
@@ -145,13 +145,13 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public void putInt(int rowId, int value) {
-    long offset = rowId << intBits;
+    long offset = (long)rowId << intBits;
     CarbonUnsafe.getUnsafe().putInt(baseAddress, baseOffset + offset, value);
   }
 
   @Override
   public void putLong(int rowId, long value) {
-    long offset = rowId << longBits;
+    long offset = (long)rowId << longBits;
     CarbonUnsafe.getUnsafe().putLong(baseAddress, baseOffset + offset, value);
   }
 
@@ -187,7 +187,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public byte getByte(int rowId) {
-    long offset = rowId << byteBits;
+    long offset = (long)rowId << byteBits;
     return CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
   }
 
@@ -202,7 +202,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public short getShort(int rowId) {
-    long offset = rowId << shortBits;
+    long offset = (long) rowId << shortBits;
     return CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset);
   }
 
@@ -218,13 +218,13 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public int getInt(int rowId) {
-    long offset = rowId << intBits;
+    long offset = (long)rowId << intBits;
     return CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset);
   }
 
   @Override
   public long getLong(int rowId) {
-    long offset = rowId << longBits;
+    long offset = (long) rowId << longBits;
     return CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset);
   }
 
@@ -266,13 +266,13 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
     switch (decimalConverter.getDecimalConverterType()) {
       case DECIMAL_INT:
         for (int i = 0; i < pageSize; i++) {
-          long offset = i << intBits;
+          long offset = (long)i << intBits;
           codec.encode(i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
         }
         break;
       case DECIMAL_LONG:
         for (int i = 0; i < pageSize; i++) {
-          long offset = i << longBits;
+          long offset = (long)i << longBits;
           codec.encode(i, CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset));
         }
         break;

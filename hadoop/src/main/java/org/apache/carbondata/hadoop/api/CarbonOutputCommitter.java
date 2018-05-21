@@ -124,6 +124,9 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         .mergeSegmentFiles(readPath, segmentFileName,
             CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath()));
     if (segmentFile != null) {
+      if (null == newMetaEntry) {
+        throw new RuntimeException("Internal Error");
+      }
       // Move all files from temp directory of each segment to partition directory
       SegmentFileStore.moveFromTempFolder(segmentFile,
           loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp() + ".tmp",

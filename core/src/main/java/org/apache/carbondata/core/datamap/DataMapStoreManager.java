@@ -207,8 +207,8 @@ public final class DataMapStoreManager {
    * @param providerName
    * @return
    */
-  public DataMapCatalog getDataMapCatalog(DataMapProvider dataMapProvider, String providerName)
-      throws IOException {
+  public synchronized DataMapCatalog getDataMapCatalog(DataMapProvider dataMapProvider,
+      String providerName) throws IOException {
     intializeDataMapCatalogs(dataMapProvider);
     return dataMapCatalogs.get(providerName);
   }
@@ -225,6 +225,9 @@ public final class DataMapStoreManager {
         DataMapCatalog dataMapCatalog = dataMapCatalogs.get(schema.getProviderName());
         if (dataMapCatalog == null) {
           dataMapCatalog = dataMapProvider.createDataMapCatalog();
+          if (null == dataMapCatalog) {
+            throw new RuntimeException("Internal Error.");
+          }
           dataMapCatalogs.put(schema.getProviderName(), dataMapCatalog);
         }
         try {

@@ -54,13 +54,16 @@ public class ViewFsCarbonFileTest {
         file = new File("Test.carbondata");
         if (!file.exists())
             try {
-                file.createNewFile();
+              file.createNewFile();
             } catch (IOException e) {
-                e.printStackTrace();
+              e.printStackTrace();
             }
         try {
-            FileOutputStream oFile = new FileOutputStream(file, true);
+          FileOutputStream oFile = new FileOutputStream(file, true);
+          oFile.close();
         } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 

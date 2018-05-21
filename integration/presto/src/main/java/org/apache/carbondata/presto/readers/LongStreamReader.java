@@ -49,7 +49,7 @@ public class LongStreamReader extends AbstractStreamReader {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if(isDictionary) {
+        if (isDictionary) {
           populateDictionaryVector(type, numberOfRows, builder);
         }
         if (columnVector.anyNullsSet()) {
@@ -61,10 +61,8 @@ public class LongStreamReader extends AbstractStreamReader {
     } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (streamData != null) {
-        for (int i = 0; i < numberOfRows; i++) {
-          type.writeLong(builder, (Long) streamData[i]);
-        }
+      for (int i = 0; i < numberOfRows; i++) {
+        type.writeLong(builder, (Long) streamData[i]);
       }
     }
     return builder.build();

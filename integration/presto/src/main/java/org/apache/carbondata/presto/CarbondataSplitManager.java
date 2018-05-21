@@ -67,20 +67,23 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
         getColumnConstraints(layoutHandle.getConstraint());
 
     CarbonTableCacheModel cache = carbonTableReader.getCarbonCache(key);
-    Expression filters = PrestoFilterUtil.parseFilterExpression(layoutHandle.getConstraint());
-    try {
-      List<CarbonLocalInputSplit> splits = carbonTableReader.getInputSplits2(cache, filters, layoutHandle.getConstraint());
+    if (null != cache) {
+      Expression filters = PrestoFilterUtil.parseFilterExpression(layoutHandle.getConstraint());
+      try {
+        List<CarbonLocalInputSplit> splits = carbonTableReader.getInputSplits2(cache, filters,
+                layoutHandle.getConstraint());
 
-      ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
-      for (CarbonLocalInputSplit split : splits) {
-        cSplits.add(new CarbondataSplit(connectorId, tableHandle.getSchemaTableName(),
-            layoutHandle.getConstraint(), split, rebuildConstraints));
+        ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
+        for (CarbonLocalInputSplit split : splits) {
+          cSplits.add(new CarbondataSplit(connectorId, tableHandle.getSchemaTableName(),
+              layoutHandle.getConstraint(), split, rebuildConstraints));
+        }
+        return new FixedSplitSource(cSplits.build());
+      } catch (Exception ex) {
+        throw new RuntimeException(ex.getMessage(), ex);
       }
-      return new FixedSplitSource(cSplits.build());
-    } catch (Exception ex) {
-      throw new RuntimeException(ex.getMessage(), ex);
     }
-
+    return null;
   }
 
   /**

@@ -21,6 +21,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.AbstractQueue;
+import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -215,7 +216,11 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private UnsafeCarbonRowForMerge next() throws CarbonSortKeyAndGroupByException {
-    return getSortedRecordFromMemory();
+    if (hasNext()) {
+      return getSortedRecordFromMemory();
+    } else {
+      throw new NoSuchElementException("No more elements to return");
+    }
   }
 
   /**

@@ -110,6 +110,10 @@ public class BlockletFilterScanner extends BlockletFullScanner {
         totalPagesScanned.getCount() + dataBlock.numberOfPages());
     // apply min max
     if (isMinMaxEnabled) {
+      if (null == dataBlock.getColumnsMaxValue()
+              || null == dataBlock.getColumnsMinValue()) {
+        return true;
+      }
       BitSet bitSet = null;
       // check for implicit include filter instance
       if (filterExecuter instanceof ImplicitColumnFilterExecutor) {

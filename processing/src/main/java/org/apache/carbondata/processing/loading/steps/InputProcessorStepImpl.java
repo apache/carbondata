@@ -96,6 +96,10 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     // to be launched.
     int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);
 
+    if (parallelThreadNumber <= 0) {
+      parallelThreadNumber = 1;
+    }
+
     List<CarbonIterator<Object[]>>[] iterators = new List[parallelThreadNumber];
     for (int i = 0; i < parallelThreadNumber; i++) {
       iterators[i] = new ArrayList<>();
