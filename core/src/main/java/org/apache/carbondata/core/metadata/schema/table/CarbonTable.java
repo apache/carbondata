@@ -874,11 +874,20 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * Return true if this is a streaming table (table with property "streaming"="true")
+   * Return true if this is a streaming table (table with property "streaming"="true" or "sink")
    */
-  public boolean isStreamingTable() {
+  public boolean isStreamingSink() {
     String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
-    return streaming != null && streaming.equalsIgnoreCase("true");
+    return streaming != null &&
+        (streaming.equalsIgnoreCase("true") || streaming.equalsIgnoreCase("sink"));
+  }
+
+  /**
+   * Return true if this is a streaming source (table with property "streaming"="source")
+   */
+  public boolean isStreamingSource() {
+    String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
+    return streaming != null && streaming.equalsIgnoreCase("source");
   }
 
   /**

@@ -33,6 +33,7 @@ import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
+import org.apache.spark.sql.execution.command.stream.{CarbonShowStreamsCommand, CarbonCreateStreamCommand, CarbonDropStreamCommand}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -75,7 +76,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    alterPartition | datamapManagement | alterTableFinishStreaming
+    alterPartition | datamapManagement | alterTableFinishStreaming | stream
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -88,6 +89,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val datamapManagement: Parser[LogicalPlan] =
     createDataMap | dropDataMap | showDataMap | refreshDataMap
+
+  protected lazy val stream: Parser[LogicalPlan] =
+    createStream | dropStream | showStreams
 
   protected lazy val alterAddPartition: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
@@ -146,6 +150,41 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   /**
+   * The syntax of CREATE STREAM
+   * CREATE STREAM streamName ON TABLE [dbName.]tableName
+   * [STMPROPERTIES('KEY'='VALUE')]
+   * AS SELECT COUNT(COL1) FROM tableName
+   */
+  protected lazy val createStream: Parser[LogicalPlan] =
+    (CREATE ~> STREAM ~> ident) ~ (ON ~> TABLE ~> (ident <~ ".").?) ~ ident ~
+    (STMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
+    (AS ~> restInput) <~ opt(";") ^^ {
+      case streamName ~ dbName ~ tableName ~ options ~ query =>
+        val optionMap = options.getOrElse(List[(String, String)]()).toMap[String, String]
+        CarbonCreateStreamCommand(streamName, dbName, tableName, optionMap, query)
+    }
+
+  /**
+   * The syntax of DROP STREAM
+   * DROP STREAM streamName
+   */
+  protected lazy val dropStream: Parser[LogicalPlan] =
+    DROP ~> STREAM ~> ident <~ opt(";") ^^ {
+      case streamName =>
+        CarbonDropStreamCommand(streamName)
+    }
+
+  /**
+   * The syntax of SHOW STREAMS
+   * SHOW STREAMS [ON TABLE dbName.tableName]
+   */
+  protected lazy val showStreams: Parser[LogicalPlan] =
+    SHOW ~> STREAMS ~> opt(ontable) <~ opt(";") ^^ {
+      case tableIdent =>
+        CarbonShowStreamsCommand(tableIdent)
+    }
+
+  /**
    * The syntax of datamap creation is as follows.
    * CREATE DATAMAP IF NOT EXISTS datamapName [ON TABLE tableName]
    * USING 'DataMapProviderName'
@@ -160,7 +199,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
     (AS ~> restInput).? <~ opt(";") ^^ {
       case ifnotexists ~ dmname ~ tableIdent ~ dmProviderName ~ deferred ~ dmprops ~ query =>
-
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
         CarbonCreateDataMapCommand(dmname, tableIdent, dmProviderName, map, query,
           ifnotexists.isDefined, deferred.isDefined)

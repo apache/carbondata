@@ -25,13 +25,16 @@ import java.util.concurrent.Executors
 
 import scala.collection.mutable
 
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.{CarbonEnv, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.types.StructType
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.NoSuchStreamException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
@@ -1430,7 +1433,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     )
     val table1 =
       CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_reopen")(spark)
-    assertResult(true)(table1.isStreamingTable)
+    assertResult(true)(table1.isStreamingSink)
 
     sql("alter table streaming.stream_table_reopen compact 'close_streaming'")
 
@@ -1447,13 +1450,13 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     val table2 =
       CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_reopen")(spark)
-    assertResult(false)(table2.isStreamingTable)
+    assertResult(false)(table2.isStreamingSink)
 
     sql("ALTER TABLE streaming.stream_table_reopen SET TBLPROPERTIES('streaming'='true')")
 
     val table3 =
       CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_reopen")(spark)
-    assertResult(true)(table3.isStreamingTable)
+    assertResult(true)(table3.isStreamingSink)
 
     executeStreamingIngest(
       tableName = "stream_table_reopen",
@@ -1569,8 +1572,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
 
   test("test bad_record_action IGNORE on streaming table") {
-
-sql("drop table if exists streaming.bad_record_ignore")
+    sql("drop table if exists streaming.bad_record_ignore")
     sql(
       s"""
          | CREATE TABLE streaming.bad_record_ignore(
@@ -1628,6 +1630,253 @@ sql("drop table if exists streaming.bad_record_ignore")
     checkAnswer(sql("select count(*) from streaming.bad_record_redirect"), Seq(Row(19)))
   }
 
+  test("StreamSQL: start and stop a stream") {
+    sql("DROP TABLE IF EXISTS source")
+    sql("DROP TABLE IF EXISTS sink")
+
+    var rows = sql("SHOW STREAMS").collect()
+    assertResult(0)(rows.length)
+
+    val csvDataDir = new File("target/streamdata").getCanonicalPath
+    // streaming ingest 10 rows
+    generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
+
+    sql(
+      s"""
+         |CREATE TABLE source(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         |)
+         |STORED AS carbondata
+         |TBLPROPERTIES (
+         | 'streaming'='source',
+         | 'format'='csv',
+         | 'path'='$csvDataDir'
+         |)
+      """.stripMargin)
+
+    sql(
+      s"""
+         |CREATE TABLE sink(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         | )
+         |STORED AS carbondata
+         |TBLPROPERTIES('streaming'='sink')
+      """.stripMargin)
+
+    sql(
+      """
+        |CREATE STREAM stream123 ON TABLE sink
+        |STMPROPERTIES(
+        |  'trigger'='ProcessingTime',
+        |  'interval'='1 seconds')
+        |AS
+        |  SELECT *
+        |  FROM source
+        |  WHERE id % 2 = 1
+      """.stripMargin).show(false)
+    Thread.sleep(2000)
+    sql("select * from sink").show
+
+    generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir)
+    Thread.sleep(5000)
+
+    // after 2 minibatch, there should be 10 row added (filter condition: id%2=1)
+    checkAnswer(sql("select count(*) from sink"), Seq(Row(10)))
+
+    val row = sql("select * from sink order by id").head()
+    val exceptedRow = Row(11, "name_11", "city_11", 110000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), Timestamp.valueOf("2010-01-01 10:01:01.0"), Timestamp.valueOf("2010-01-01 10:01:01.0"))
+    assertResult(exceptedRow)(row)
+
+    sql("SHOW STREAMS").show(false)
+
+    rows = sql("SHOW STREAMS").collect()
+    assertResult(1)(rows.length)
+    assertResult("RUNNING")(rows.head.getString(1))
+    assertResult("streaming.source")(rows.head.getString(2))
+    assertResult("streaming.sink")(rows.head.getString(3))
+
+    rows = sql("SHOW STREAMS ON TABLE sink").collect()
+    assertResult(1)(rows.length)
+    assertResult("RUNNING")(rows.head.getString(1))
+    assertResult("streaming.source")(rows.head.getString(2))
+    assertResult("streaming.sink")(rows.head.getString(3))
+
+    sql("DROP STREAM stream123")
+
+    rows = sql("SHOW STREAMS").collect()
+
+    sql("DROP TABLE IF EXISTS source")
+    sql("DROP TABLE IF EXISTS sink")
+    new File(csvDataDir).delete()
+  }
+
+  test("StreamSQL: start stream without interval ") {
+    sql("DROP TABLE IF EXISTS source")
+    sql("DROP TABLE IF EXISTS sink")
+    val csvDataDir = new File("target/streamdata").getCanonicalPath
+    // streaming ingest 10 rows
+    generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
+
+    sql(
+      s"""
+         |CREATE TABLE source(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         |)
+         |STORED AS carbondata
+         |TBLPROPERTIES (
+         | 'streaming'='source',
+         | 'format'='csv',
+         | 'path'='$csvDataDir'
+         |)
+      """.stripMargin)
+    sql(
+      s"""
+         |CREATE TABLE sink(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         | )
+         |STORED AS carbondata
+         |TBLPROPERTIES('streaming'='sink')
+      """.stripMargin)
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql(
+        """
+          |CREATE STREAM stream456 ON TABLE sink
+          |STMPROPERTIES(
+          |  'trigger'='ProcessingTime')
+          |AS
+          |  SELECT *
+          |  FROM source
+          |  WHERE id % 2 = 1
+        """.stripMargin)
+    }
+    assert(ex.getMessage.contains("interval must be specified"))
+    sql("DROP TABLE IF EXISTS source")
+    sql("DROP TABLE IF EXISTS sink")
+    new File(csvDataDir).delete()
+  }
+
+  test("StreamSQL: stop stream on non exist table") {
+    val ex = intercept[NoSuchStreamException] {
+      sql("DROP STREAM streamyyy")
+    }
+    assert(ex.getMessage.contains("stream 'streamyyy' not found"))
+  }
+
+  test("StreamSQL: start stream on non exist source") {
+    sql(
+      s"""
+         |CREATE TABLE sink(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         | )
+         |STORED AS carbondata
+         |TBLPROPERTIES('streaming'='true')
+      """.stripMargin)
+
+    val ex = intercept[AnalysisException] {
+    sql(
+      """
+        |CREATE STREAM stream123 ON TABLE sink
+        |STMPROPERTIES(
+        |  'trigger'='ProcessingTime',
+        |  'interval'='1 seconds')
+        |AS
+        |  SELECT *
+        |  FROM source
+        |  WHERE id % 2 = 1
+      """.stripMargin).show(false)
+    }
+    sql("DROP TABLE sink")
+  }
+
+  test("StreamSQL: start stream on non-stream table") {
+    sql(
+      s"""
+         |CREATE TABLE notsource(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         | )
+         |STORED AS carbondata
+      """.stripMargin)
+    sql(
+      s"""
+         |CREATE TABLE sink(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         | )
+         |STORED AS carbondata
+         |TBLPROPERTIES('streaming'='true')
+      """.stripMargin)
+
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql(
+        """
+          |CREATE STREAM stream456 ON TABLE sink
+          |STMPROPERTIES(
+          |  'trigger'='ProcessingTime',
+          |  'interval'='1 seconds')
+          |AS
+          |  SELECT *
+          |  FROM notsource
+          |  WHERE id % 2 = 1
+        """.stripMargin).show(false)
+    }
+    assert(ex.getMessage.contains("Must specify stream source table in select query"))
+    sql("DROP TABLE sink")
+  }
 
   def createWriteSocketThread(
       serverSocket: ServerSocket,

@@ -19,6 +19,8 @@ package org.apache.carbondata.spark.util;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -26,13 +28,16 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.catalyst.util.GenericArrayData;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.DecimalType;
+import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.apache.spark.unsafe.types.UTF8String;
 
 /**
@@ -170,5 +175,22 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
       }
     }
     return fields;
+  }
+
+  public static StructType convertToSparkSchema(ColumnSchema[] carbonColumns) {
+    List<StructField> fields = new ArrayList<>(carbonColumns.length);
+    for (int i = 0; i < carbonColumns.length; i++) {
+      ColumnSchema carbonColumn = carbonColumns[i];
+      DataType dataType = carbonColumn.getDataType();
+      if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(dataType)) {
+        fields.add(new StructField(carbonColumn.getColumnName(),
+            new DecimalType(carbonColumn.getPrecision(), carbonColumn.getScale()),
+            true, Metadata.empty()));
+      } else {
+        fields.add(new StructField(carbonColumn.getColumnName(),
+            convertCarbonToSparkDataType(carbonColumn.getDataType()), true, Metadata.empty()));
+      }
+    }
+    return new StructType(fields.toArray(new StructField[0]));
   }
 }
