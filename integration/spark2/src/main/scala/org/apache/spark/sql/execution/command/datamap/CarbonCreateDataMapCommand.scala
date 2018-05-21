@@ -73,7 +73,7 @@ case class CarbonCreateDataMapCommand(
     }
 
     if (mainTable != null &&
-        mainTable.isStreamingTable &&
+        mainTable.isStreamingSink &&
         !(dmProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
           || dmProviderName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
       throw new MalformedCarbonCommandException(s"Streaming table does not support creating " +

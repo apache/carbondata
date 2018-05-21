@@ -233,7 +233,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
     val sparkSession = sqlContext.sparkSession
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-    if (!carbonTable.isStreamingTable) {
+    if (!carbonTable.isStreamingSink) {
       throw new CarbonStreamException(s"Table ${carbonTable.getDatabaseName}." +
                                       s"${carbonTable.getTableName} is not a streaming table")
     }

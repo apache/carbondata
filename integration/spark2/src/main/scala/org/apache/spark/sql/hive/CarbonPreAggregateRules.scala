@@ -664,7 +664,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       aggregationDataMapSchema: DataMapSchema,
       factAggPlan: LogicalPlan): LogicalPlan = {
     // to handle streaming table with pre aggregate
-    if (carbonTable.isStreamingTable) {
+    if (carbonTable.isStreamingSink) {
       setSegmentsForStreaming(carbonTable, aggregationDataMapSchema)
       // get new fact expression
       val factExp = updateFactTablePlanForStreaming(factAggPlan)
@@ -1399,11 +1399,11 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             parentTable,
             parentLogicalPlan,
             aggExpColumnMapping.get,
-            parentTable.isStreamingTable)
+            parentTable.isStreamingSink)
         } else {
           Seq(attr)
         }
-        if(!parentTable.isStreamingTable) {
+        if(!parentTable.isStreamingSink) {
           // for normal table
           // generate new expression id for child
           val newExpressionId = NamedExpression.newExprId
