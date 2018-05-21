@@ -28,6 +28,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
@@ -68,7 +69,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   /**
    * default size for bloom filter, cardinality of the column.
    */
-  private static final int DEFAULT_BLOOM_FILTER_SIZE = Short.MAX_VALUE;
+  private static final int DEFAULT_BLOOM_FILTER_SIZE =
+      CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
   /**
    * property for fpp(false-positive-probability) of bloom filter
    */
@@ -175,9 +177,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   /**
-   * validate bloom DataMap BLOOM_FPP
-   * 1. BLOOM_FPP property is optional, 0.00001 will be the default value.
-   * 2. BLOOM_FPP should be (0, 1)
+   * validate bloom DataMap COMPRESS_BLOOM
+   * Default value is true
    */
   private boolean validateAndGetBloomCompress(DataMapSchema dmSchema) {
     String bloomCompress = dmSchema.getProperties().get(COMPRESS_BLOOM);

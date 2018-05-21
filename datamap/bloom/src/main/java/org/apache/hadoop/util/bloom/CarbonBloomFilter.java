@@ -23,6 +23,10 @@ import java.util.BitSet;
 
 import org.roaringbitmap.RoaringBitmap;
 
+/**
+ * It is the extendable class to hadoop bloomfilter, it is extendable to implement compressed bloom
+ * and fast serialize and deserialize of bloom.
+ */
 public class CarbonBloomFilter extends BloomFilter {
 
   private RoaringBitmap bitmap;
@@ -46,6 +50,7 @@ public class CarbonBloomFilter extends BloomFilter {
     int[] h = hash.hash(key);
     hash.clear();
     if (compress) {
+      // If it is compressed check in roaring bitmap
       for (int i = 0; i < nbHash; i++) {
         if (!bitmap.contains(h[i])) {
           return false;

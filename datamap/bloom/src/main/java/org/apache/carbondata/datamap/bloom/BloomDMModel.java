@@ -19,12 +19,10 @@ package org.apache.carbondata.datamap.bloom;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.util.bloom.BloomFilter;
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 
 /**
@@ -47,7 +45,7 @@ public class BloomDMModel implements Writable {
     return blockletNo;
   }
 
-  public BloomFilter getBloomFilter() {
+  public CarbonBloomFilter getBloomFilter() {
     return bloomFilter;
   }
 
