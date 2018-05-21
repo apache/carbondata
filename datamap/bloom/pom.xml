@@ -22,20 +22,6 @@
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-core</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <!--ignore guava 11.0.2 introduced by hadoop-->
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <!--note: guava 14.0.1 is omitted during assembly.
-    The compile scope here is for building and running test-->
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>14.0.1</version>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>

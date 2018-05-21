@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.cache;
 
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -92,9 +93,34 @@ public class CacheProvider {
       synchronized (lock) {
         if (!dictionaryCacheAlreadyExists(cacheType)) {
           if (null == carbonLRUCache) {
-            createLRULevelCacheInstance(cacheType);
+            createLRULevelCacheInstance();
           }
           createDictionaryCacheForGivenType(cacheType);
+        }
+      }
+    }
+    return cacheTypeToCacheMap.get(cacheType);
+  }
+
+  /**
+   * This method will check if a cache already exists for given cache type and store
+   * if it is not present in the map
+   */
+  public <K, V> Cache<K, V> createCache(CacheType cacheType, String cacheClassName)
+      throws Exception {
+    //check if lru cache is null, if null create one
+    //check if cache is null for given cache type, if null create one
+    if (!dictionaryCacheAlreadyExists(cacheType)) {
+      synchronized (lock) {
+        if (!dictionaryCacheAlreadyExists(cacheType)) {
+          if (null == carbonLRUCache) {
+            createLRULevelCacheInstance();
+          }
+          Class<?> clazz = Class.forName(cacheClassName);
+          Constructor<?> constructor = clazz.getConstructors()[0];
+          constructor.setAccessible(true);
+          Cache cacheObject = (Cache) constructor.newInstance(carbonLRUCache);
+          cacheTypeToCacheMap.put(cacheType, cacheObject);
         }
       }
     }
@@ -126,9 +152,8 @@ public class CacheProvider {
   /**
    * This method will create the lru cache instance based on the given type
    *
-   * @param cacheType
    */
-  private void createLRULevelCacheInstance(CacheType cacheType) {
+  private void createLRULevelCacheInstance() {
     boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
     if (isDriver) {

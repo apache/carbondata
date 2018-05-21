@@ -33,6 +33,8 @@ public class CarbonBloomFilter extends BloomFilter {
 
   private boolean compress;
 
+  private int blockletNo;
+
   public CarbonBloomFilter() {
   }
 
@@ -68,6 +70,7 @@ public class CarbonBloomFilter extends BloomFilter {
 
   @Override
   public void write(DataOutput out) throws IOException {
+    out.writeInt(blockletNo);
     out.writeInt(this.nbHash);
     out.writeByte(this.hashType);
     out.writeInt(this.vectorSize);
@@ -90,6 +93,7 @@ public class CarbonBloomFilter extends BloomFilter {
 
   @Override
   public void readFields(DataInput in) throws IOException {
+    this.blockletNo = in.readInt();
     this.nbHash = in.readInt();
     this.hashType = in.readByte();
     this.vectorSize = in.readInt();
@@ -104,5 +108,23 @@ public class CarbonBloomFilter extends BloomFilter {
       bitmap.deserialize(in);
     }
     this.hash = new HashFunction(this.vectorSize, this.nbHash, this.hashType);
+  }
+
+  public int getSize() {
+    int size = 14; // size of nbHash,hashType, vectorSize, compress
+    if (compress) {
+      size += bitmap.getSizeInBytes();
+    } else {
+      size += bits.toLongArray().length * 8;
+    }
+    return size;
+  }
+
+  public void setBlockletNo(int blockletNo) {
+    this.blockletNo = blockletNo;
+  }
+
+  public int getBlockletNo() {
+    return blockletNo;
   }
 }

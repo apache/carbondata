@@ -19,14 +19,20 @@ package org.apache.carbondata.datamap.bloom;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
@@ -36,7 +42,6 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
-import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -93,6 +98,9 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   private int bloomFilterSize;
   private double bloomFilterFpp;
   private boolean bloomCompress;
+  private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
+  // segmentId -> list of index file
+  private Map<String, Set<String>> segmentMap = new HashMap<>();
 
   public BloomCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
@@ -112,6 +120,13 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     this.dataMapMeta = new DataMapMeta(this.dataMapName, indexedColumns, optimizedOperations);
     LOGGER.info(String.format("DataMap %s works for %s with bloom size %d",
         this.dataMapName, this.dataMapMeta, this.bloomFilterSize));
+    try {
+      this.cache = CacheProvider.getInstance()
+          .createCache(new CacheType("bloom_cache"), BloomDataMapCache.class.getName());
+    } catch (Exception e) {
+      LOGGER.error(e);
+      throw new MalformedDataMapCommandException(e.getMessage());
+    }
   }
 
   /**
@@ -211,14 +226,23 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<CoarseGrainDataMap>(1);
     try {
-      String dataMapStorePath = DataMapWriter.getDefaultDataMapPath(
-          getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
-      CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dataMapStorePath).listFiles();
-      for (CarbonFile carbonFile : carbonFiles) {
-        BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
-        bloomDM.init(new DataMapModel(carbonFile.getAbsolutePath()));
-        bloomDM.setIndexedColumn(new HashSet<String>(dataMapMeta.getIndexedColumnNames()));
-        dataMaps.add(bloomDM);
+      Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
+      if (shardPaths == null) {
+        String dataMapStorePath = DataMapWriter.getDefaultDataMapPath(
+            getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
+        CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dataMapStorePath).listFiles();
+        shardPaths = new HashSet<>();
+        for (CarbonFile carbonFile : carbonFiles) {
+          shardPaths.add(carbonFile.getAbsolutePath());
+        }
+        segmentMap.put(segment.getSegmentNo(), shardPaths);
+      } else {
+        for (String shard : shardPaths) {
+          BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
+          bloomDM.init(new BloomDataMapModel(shard, cache,
+              new HashSet<>(dataMapMeta.getIndexedColumnNames())));
+          dataMaps.add(bloomDM);
+        }
       }
     } catch (Exception e) {
       throw new IOException("Error occurs while init Bloom DataMap", e);
@@ -232,9 +256,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<CoarseGrainDataMap> coarseGrainDataMaps = new ArrayList<>();
     BloomCoarseGrainDataMap bloomCoarseGrainDataMap = new BloomCoarseGrainDataMap();
     String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
-    bloomCoarseGrainDataMap.init(new DataMapModel(indexPath));
-    bloomCoarseGrainDataMap.setIndexedColumn(
-        new HashSet<String>(dataMapMeta.getIndexedColumnNames()));
+    bloomCoarseGrainDataMap.init(new BloomDataMapModel(indexPath, cache,
+        new HashSet<>(dataMapMeta.getIndexedColumnNames())));
     coarseGrainDataMaps.add(bloomCoarseGrainDataMap);
     return coarseGrainDataMaps;
   }
@@ -306,12 +329,21 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
 
   @Override
   public void clear(Segment segment) {
-
+    Set<String> shards = segmentMap.remove(segment.getSegmentNo());
+    if (shards != null) {
+      for (String shard : shards) {
+        for (CarbonColumn carbonColumn : dataMapMeta.getIndexedColumns()) {
+          cache.invalidate(new BloomCacheKeyValue.CacheKey(shard, carbonColumn.getColName()));
+        }
+      }
+    }
   }
 
   @Override
   public void clear() {
-
+    for (String segmentId : segmentMap.keySet().toArray(new String[segmentMap.size()])) {
+      clear(new Segment(segmentId, null, null));
+    }
   }
 
   @Override
