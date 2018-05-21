@@ -64,6 +64,48 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
       .sparkPlan
     assert(df.metadata.get("PushedFilters").get.contains("CarbonContainsWith"))
   }
+
+  test("verify like query contains with filter push down with OR expression") {
+    sql("drop table if exists like_contains_with")
+    sql(
+      s"""create table like_contains_with (id bigint, country string, hscode string, hsdes string,
+      |importer string, importer_address string, exporter string, exporter_address string, port
+      |string, product string, velus double, qty double, unit string, weight double, tel string,
+      |pro1 string, pro2 string, pro3 string, pro4 string, pro5 string, pro6 string, pro7 string)
+      | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    val df = sql(
+      s"""select pro7,pro6,pro4,pro5,pro3,pro2,pro1 from like_contains_with where pro7 like '%15b%'
+      |or pro4 like '%9d%' or pro6 like '%a77h%' or pro5 like '%hina%' or pro3 like '%44d%' or
+      |pro2 like '%ro2%' or pro1 like '%cv%'
+      """.stripMargin)
+      .queryExecution
+      .sparkPlan
+    val pushedFilters: Option[String] = df.metadata.get("PushedFilters")
+    assert(!pushedFilters.isDefined)
+    sql("drop table if exists like_contains_with")
+  }
+
+  test("verify like query ends with filter push down with OR expression") {
+    sql("drop table if exists like_ends_with")
+    sql(
+      s"""create table like_ends_with (id bigint, country string, hscode string, hsdes string,
+        |importer string, importer_address string, exporter string, exporter_address string, port
+        |string, product string, velus double, qty double, unit string, weight double, tel string,
+        |pro1 string, pro2 string, pro3 string, pro4 string, pro5 string, pro6 string, pro7 string)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    val df = sql(
+      s"""select pro7,pro6,pro4,pro5,pro3,pro2,pro1 from like_ends_with where pro7 like '%15b'
+          |or pro4 like '%9d' or pro6 like '%a77h' or pro5 like '%hina' or pro3 like '%44d' or
+          |pro2 like '%ro2' or pro1 like '%cv'
+      """.stripMargin)
+      .queryExecution
+      .sparkPlan
+    val pushedFilters: Option[String] = df.metadata.get("PushedFilters")
+    assert(!pushedFilters.isDefined)
+    sql("drop table if exists like_ends_with")
+  }
   
   override def afterAll {
     sql("drop table alldatatypestableFilter")
