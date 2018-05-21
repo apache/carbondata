@@ -22,12 +22,10 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta}
-import org.apache.carbondata.core.datamap.Segment
-import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapBuilder, DataMapWriter}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapBuilder, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainDataMap, FineGrainDataMapFactory}
@@ -534,6 +532,7 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql("SELECT * FROM datamap_test WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
+    sql("DROP TABLE IF EXISTS datamap_test")
   }
 
   override protected def afterAll(): Unit = {

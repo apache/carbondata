@@ -22,7 +22,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
-import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -474,6 +473,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"))
+    sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
   test("test datamap storage in system folder") {
