@@ -75,7 +75,7 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
     try {
       streaming = CarbonEnv.getCarbonTable(
         tableIdentifier.database, tableIdentifier.table)(sparkSession)
-        .isStreamingTable
+        .isStreamingSink
     } catch {
       case e: Exception =>
         streaming = false

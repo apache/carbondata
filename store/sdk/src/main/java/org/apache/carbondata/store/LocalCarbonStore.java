@@ -65,7 +65,7 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
     Objects.requireNonNull(projectColumns);
 
     CarbonTable table = getTable(path);
-    if (table.isStreamingTable() || table.isHivePartitionTable()) {
+    if (table.isStreamingSink() || table.isHivePartitionTable()) {
       throw new UnsupportedOperationException("streaming and partition table is not supported");
     }
     // TODO: use InputFormat to prune data and read data
