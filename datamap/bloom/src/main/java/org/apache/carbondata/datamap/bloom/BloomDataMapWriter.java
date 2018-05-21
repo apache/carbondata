@@ -177,11 +177,11 @@ public class BloomDataMapWriter extends DataMapWriter {
     List<CarbonColumn> indexColumns = getIndexColumns();
     try {
       for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
-        BloomDMModel model =
-            new BloomDMModel(this.currentBlockletId, indexBloomFilters.get(indexColId));
+        CarbonBloomFilter bloomFilter = indexBloomFilters.get(indexColId);
+        bloomFilter.setBlockletNo(currentBlockletId);
         // only in higher version of guava-bloom-filter, it provides readFrom/writeTo interface.
         // In lower version, we use default java serializer to write bloomfilter.
-        model.write(this.currentDataOutStreams.get(indexColId));
+        bloomFilter.write(this.currentDataOutStreams.get(indexColId));
         this.currentDataOutStreams.get(indexColId).flush();
       }
     } catch (Exception e) {

@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -43,8 +44,8 @@ import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 import org.apache.hadoop.util.bloom.Key;
 
 /**
@@ -58,34 +59,24 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       LogServiceFactory.getLogService(BloomCoarseGrainDataMap.class.getName());
   public static final String BLOOM_INDEX_SUFFIX = ".bloomindex";
   private Set<String> indexedColumn;
-  private List<BloomDMModel> bloomIndexList;
+  private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
   private String shardName;
-  private BloomDataMapCache bloomDataMapCache;
   private Path indexPath;
 
   @Override
   public void init(DataMapModel dataMapModel) throws IOException {
     this.indexPath = FileFactory.getPath(dataMapModel.getFilePath());
     this.shardName = indexPath.getName();
-    FileSystem fs = FileFactory.getFileSystem(indexPath);
-    if (!fs.exists(indexPath)) {
-      throw new IOException(
-          String.format("Path %s for Bloom index dataMap does not exist", indexPath));
+    if (dataMapModel instanceof BloomDataMapModel) {
+      BloomDataMapModel model = (BloomDataMapModel) dataMapModel;
+      this.cache = model.getCache();
+      this.indexedColumn = model.getIndexedColumnNames();
     }
-    if (!fs.isDirectory(indexPath)) {
-      throw new IOException(
-          String.format("Path %s for Bloom index dataMap must be a directory", indexPath));
-    }
-    this.bloomDataMapCache = BloomDataMapCache.getInstance();
-  }
-
-  public void setIndexedColumn(Set<String> indexedColumn) {
-    this.indexedColumn = indexedColumn;
   }
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) {
+      List<PartitionSpec> partitions) throws IOException {
     Set<Blocklet> hitBlocklets = new HashSet<>();
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
@@ -95,20 +86,21 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     List<BloomQueryModel> bloomQueryModels = getQueryValue(filterExp.getFilterExpression());
     for (BloomQueryModel bloomQueryModel : bloomQueryModels) {
       LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
-      BloomDataMapCache.CacheKey cacheKey = new BloomDataMapCache.CacheKey(
+      BloomCacheKeyValue.CacheKey cacheKey = new BloomCacheKeyValue.CacheKey(
           this.indexPath.toString(), bloomQueryModel.columnName);
-      List<BloomDMModel> bloomDMModels = this.bloomDataMapCache.getBloomDMModelByKey(cacheKey);
-      for (BloomDMModel bloomDMModel : bloomDMModels) {
-        boolean scanRequired = bloomDMModel.getBloomFilter().membershipTest(new Key(
+      BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
+      List<CarbonBloomFilter> bloomIndexList = cacheValue.getBloomFilters();
+      for (CarbonBloomFilter bloomFilter : bloomIndexList) {
+        boolean scanRequired = bloomFilter.membershipTest(new Key(
             convertValueToBytes(bloomQueryModel.dataType, bloomQueryModel.filterValue)));
         if (scanRequired) {
           LOGGER.debug(String.format("BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
-              String.valueOf(bloomDMModel.getBlockletNo())));
-          Blocklet blocklet = new Blocklet(shardName, String.valueOf(bloomDMModel.getBlockletNo()));
+              String.valueOf(bloomFilter.getBlockletNo())));
+          Blocklet blocklet = new Blocklet(shardName, String.valueOf(bloomFilter.getBlockletNo()));
           hitBlocklets.add(blocklet);
         } else {
           LOGGER.debug(String.format("BloomCoarseGrainDataMap: Skip scan -> blocklet#%s",
-              String.valueOf(bloomDMModel.getBlockletNo())));
+              String.valueOf(bloomFilter.getBlockletNo())));
         }
       }
     }
@@ -173,8 +165,6 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
 
   @Override
   public void clear() {
-    bloomIndexList.clear();
-    bloomIndexList = null;
   }
 
   /**
