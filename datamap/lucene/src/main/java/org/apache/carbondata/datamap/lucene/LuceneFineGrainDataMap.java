@@ -68,6 +68,15 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       LogServiceFactory.getLogService(LuceneFineGrainDataMap.class.getName());
 
   /**
+   * search limit will help in deciding the size of priority queue which is used by lucene to store
+   * the documents in heap. By default it is 100 means in one search max of 10 documents can be
+   * stored in heap by lucene. This way it will help in reducing the GC.
+   * Note: If it is removed or it's value is increased it will lead to almost 90%
+   * of the query time in GC in worst case scenarios if it's value is increased beyond a limit
+   */
+  private static final int SEARCH_LIMIT = 100;
+
+  /**
    * searcher object for this datamap
    */
   private Map<String, IndexSearcher> indexSearcherMap = null;
@@ -232,13 +241,23 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
     // Map<BlockId, Map<BlockletId, Map<PageId, Set<RowId>>>>
     Map<String, Map<Integer, List<Short>>> mapBlocks = new HashMap<>();
 
+    long luceneSearchStartTime = System.currentTimeMillis();
     for (Map.Entry<String, IndexSearcher> searcherEntry : indexSearcherMap.entrySet()) {
       IndexSearcher indexSearcher = searcherEntry.getValue();
+      // take the min of total documents available in the reader and limit if set by the user
+      maxDocs = Math.min(maxDocs, indexSearcher.getIndexReader().maxDoc());
       // execute index search
       // initialize to null, else ScoreDoc objects will get accumulated in memory
       TopDocs result = null;
+      // the number of documents to be queried in one search. It will always be minimum of
+      // search result and maxDocs
+      int numberOfDocumentsToBeQueried = 0;
+      // counter for maintaining the total number of documents finished querying
+      int documentHitCounter = 0;
       try {
-        result = indexSearcher.search(query, maxDocs);
+        numberOfDocumentsToBeQueried = Math.min(maxDocs, SEARCH_LIMIT);
+        result = indexSearcher.search(query, numberOfDocumentsToBeQueried);
+        documentHitCounter += numberOfDocumentsToBeQueried;
       } catch (IOException e) {
         String errorMessage =
             String.format("failed to search lucene data, detail is %s", e.getMessage());
@@ -247,22 +266,38 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
       }
 
       ByteBuffer intBuffer = ByteBuffer.allocate(4);
-
-      for (ScoreDoc scoreDoc : result.scoreDocs) {
-        // get a document
-        Document doc = indexSearcher.doc(scoreDoc.doc);
-
-        // get all fields
-        List<IndexableField> fieldsInDoc = doc.getFields();
-        if (writeCacheSize > 0) {
-          // It fills rowids to the map, its value is combined with multiple rows.
-          fillMapForCombineRows(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
-        } else {
-          // Fill rowids to the map
-          fillMap(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
+      // last scoreDoc in a result to be used in searchAfter API
+      ScoreDoc lastScoreDoc = null;
+      while (true) {
+        for (ScoreDoc scoreDoc : result.scoreDocs) {
+          // get a document
+          Document doc = indexSearcher.doc(scoreDoc.doc);
+          // get all fields
+          List<IndexableField> fieldsInDoc = doc.getFields();
+          if (writeCacheSize > 0) {
+            // It fills rowids to the map, its value is combined with multiple rows.
+            fillMapForCombineRows(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
+          } else {
+            // Fill rowids to the map
+            fillMap(intBuffer, mapBlocks, fieldsInDoc, searcherEntry.getKey());
+          }
+          lastScoreDoc = scoreDoc;
         }
+        // result will have the total number of hits therefore we always need to query on the
+        // left over documents
+        int remainingHits = result.totalHits - documentHitCounter;
+        // break the loop if count reaches maxDocs to be searched or remaining hits become <=0
+        if (remainingHits <= 0 || documentHitCounter >= maxDocs) {
+          break;
+        }
+        numberOfDocumentsToBeQueried = Math.min(remainingHits, SEARCH_LIMIT);
+        result = indexSearcher.searchAfter(lastScoreDoc, query, numberOfDocumentsToBeQueried);
+        documentHitCounter += numberOfDocumentsToBeQueried;
       }
     }
+    LOGGER.info(
+        "Time taken for lucene search: " + (System.currentTimeMillis() - luceneSearchStartTime)
+            + " ms");
 
     // result blocklets
     List<FineGrainBlocklet> blocklets = new ArrayList<>();
