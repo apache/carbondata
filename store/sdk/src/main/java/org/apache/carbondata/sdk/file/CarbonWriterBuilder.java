@@ -21,9 +21,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -421,6 +423,7 @@ public class CarbonWriterBuilder {
 
   private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
       List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList) {
+    Set<String> uniqueFields = new HashSet<>();
     // a counter which will be used in case of complex array type. This valIndex will be assigned
     // to child of complex array type in the order val1, val2 so that each array type child is
     // differentiated to any level
@@ -442,6 +445,10 @@ public class CarbonWriterBuilder {
     int i = 0;
     for (Field field : fields) {
       if (null != field) {
+        if (!uniqueFields.add(field.getFieldName())) {
+          throw new RuntimeException(
+              "Duplicate column " + field.getFieldName() + " found in table schema");
+        }
         int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
         if (isSortColumn > -1) {
           // unsupported types for ("array", "struct", "double", "float", "decimal")

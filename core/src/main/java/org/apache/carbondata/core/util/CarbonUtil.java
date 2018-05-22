@@ -2380,27 +2380,31 @@ public final class CarbonUtil {
   public static org.apache.carbondata.format.TableInfo inferSchemaFromIndexFile(
       String indexFilePath, String tableName) throws IOException {
     CarbonIndexFileReader indexFileReader = new CarbonIndexFileReader();
-    indexFileReader.openThriftReader(indexFilePath);
-    org.apache.carbondata.format.IndexHeader readIndexHeader = indexFileReader.readIndexHeader();
-    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-    List<org.apache.carbondata.format.ColumnSchema> table_columns =
-        readIndexHeader.getTable_columns();
-    for (int i = 0; i < table_columns.size(); i++) {
-      columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+    try {
+      indexFileReader.openThriftReader(indexFilePath);
+      org.apache.carbondata.format.IndexHeader readIndexHeader = indexFileReader.readIndexHeader();
+      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+      List<org.apache.carbondata.format.ColumnSchema> table_columns =
+          readIndexHeader.getTable_columns();
+      for (int i = 0; i < table_columns.size(); i++) {
+        columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+      }
+      // only columnSchema is the valid entry, reset all dummy entries.
+      TableSchema tableSchema = getDummyTableSchema(tableName, columnSchemaList);
+
+      ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
+          new ThriftWrapperSchemaConverterImpl();
+      org.apache.carbondata.format.TableSchema thriftFactTable =
+          thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
+      org.apache.carbondata.format.TableInfo tableInfo =
+          new org.apache.carbondata.format.TableInfo(thriftFactTable,
+              new ArrayList<org.apache.carbondata.format.TableSchema>());
+
+      tableInfo.setDataMapSchemas(null);
+      return tableInfo;
+    } finally {
+      indexFileReader.closeThriftReader();
     }
-    // only columnSchema is the valid entry, reset all dummy entries.
-    TableSchema tableSchema = getDummyTableSchema(tableName, columnSchemaList);
-
-    ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
-        new ThriftWrapperSchemaConverterImpl();
-    org.apache.carbondata.format.TableSchema thriftFactTable =
-        thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
-    org.apache.carbondata.format.TableInfo tableInfo =
-        new org.apache.carbondata.format.TableInfo(thriftFactTable,
-            new ArrayList<org.apache.carbondata.format.TableSchema>());
-
-    tableInfo.setDataMapSchemas(null);
-    return tableInfo;
   }
 
   private static TableSchema getDummyTableSchema(String tableName,
