@@ -18,6 +18,7 @@
 package org.apache.carbondata.presto.integrationtest
 
 import java.io.File
+import java.sql.Timestamp
 
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
@@ -521,4 +522,56 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
         new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     FileFactory.createNewFile(s"$storePath/testdb/.DS_STORE",FileType.LOCAL)
   }
+
+  test("test the OR operator on same column"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT BONUS FROM TESTDB.TESTTABLE WHERE" +
+      " BONUS < 600 OR BONUS > 5000 ORDER BY BONUS")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("BONUS" -> java.math.BigDecimal.valueOf(500.4140).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(500.5900).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(500.8800).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(500.9900).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(5000.9990).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(9999.9990).setScale(4)))
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test the AND, OR operator on same column"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
+      " SHORTFIELD > 4 AND (SHORTFIELD < 10 or SHORTFIELD > 15) ORDER BY SHORTFIELD")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("SHORTFIELD" -> 8),
+      Map("SHORTFIELD" -> 18))
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test the OR operator with multiple AND on same column"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
+      " (SHORTFIELD > 1 AND SHORTFIELD < 5) OR (SHORTFIELD > 10 AND SHORTFIELD < 15) ORDER BY SHORTFIELD")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("SHORTFIELD" -> 4),
+      Map("SHORTFIELD" -> 11),
+      Map("SHORTFIELD" -> 12))
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test the OR, AND operator with on Different column"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
+      " ID < 7 AND (SHORTFIELD < 5 OR SHORTFIELD > 15) ORDER BY SHORTFIELD")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("SHORTFIELD" -> 4),
+      Map("SHORTFIELD" -> 18))
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test the Timestamp greaterthan expression"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT DOB FROM TESTDB.TESTTABLE" +
+                                                                         " WHERE DOB > timestamp '2016-01-01 00:00:00.0' order by DOB")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("DOB" -> new Timestamp(new java.util.Date(2016-1900,1-1,14,15,7,9).getTime)),
+      Map("DOB" -> new Timestamp(new java.util.Date(2016-1900,4-1,14,15,0,9).getTime)))
+    assert(actualResult.equals(expectedResult))
+  }
+
+
 }
