@@ -78,7 +78,6 @@ public class BlockletDataMapIndexStore
       try {
         SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
         Set<String> filesRead = new HashSet<>();
-        long memorySize = 0L;
         String segmentFilePath = identifier.getIndexFilePath();
         Map<String, BlockMetaInfo> carbonDataFileBlockMetaInfoMapping = BlockletDataMapUtil
             .createCarbonDataFileBlockMetaInfoMapping(segmentFilePath);
@@ -89,7 +88,6 @@ public class BlockletDataMapIndexStore
                   carbonDataFileBlockMetaInfoMapping);
           BlockletDataMap blockletDataMap =
               loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap);
-          memorySize += blockletDataMap.getMemorySize();
           dataMaps.add(blockletDataMap);
           blockletDataMapIndexWrapper = new BlockletDataMapIndexWrapper(dataMaps);
         } else {
@@ -103,13 +101,12 @@ public class BlockletDataMapIndexStore
                     carbonDataFileBlockMetaInfoMapping);
             BlockletDataMap blockletDataMap =
                 loadAndGetDataMap(blockIndexUniqueIdentifier, indexFileStore, blockMetaInfoMap);
-            memorySize += blockletDataMap.getMemorySize();
             dataMaps.add(blockletDataMap);
           }
           blockletDataMapIndexWrapper = new BlockletDataMapIndexWrapper(dataMaps);
         }
         lruCache.put(identifier.getUniqueTableSegmentIdentifier(), blockletDataMapIndexWrapper,
-            memorySize);
+            blockletDataMapIndexWrapper.getMemorySize());
       } catch (Throwable e) {
         // clear all the memory used by datamaps loaded
         for (DataMap dataMap : dataMaps) {
@@ -189,7 +186,6 @@ public class BlockletDataMapIndexStore
     if (lock == null) {
       lock = addAndGetSegmentLock(uniqueTableSegmentIdentifier);
     }
-    long memorySize = 0L;
     // As dataMap will use unsafe memory, it is not recommended to overwrite an existing entry
     // as in that case clearing unsafe memory need to be taken card. If at all datamap entry
     // in the cache need to be overwritten then use the invalidate interface
@@ -201,10 +197,9 @@ public class BlockletDataMapIndexStore
           try {
             for (BlockletDataMap blockletDataMap: dataMaps) {
               blockletDataMap.convertToUnsafeDMStore();
-              memorySize += blockletDataMap.getMemorySize();
             }
             lruCache.put(tableBlockIndexUniqueIdentifier.getUniqueTableSegmentIdentifier(), wrapper,
-                memorySize);
+                wrapper.getMemorySize());
           } catch (Throwable e) {
             // clear all the memory acquired by data map in case of any failure
             for (DataMap blockletDataMap : dataMaps) {

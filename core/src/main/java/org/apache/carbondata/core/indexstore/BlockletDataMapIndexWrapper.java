@@ -30,8 +30,16 @@ public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
 
   private List<BlockletDataMap> dataMaps;
 
+  // size of the wrapper. basically the total size of the datamaps this wrapper is holding
+  private long wrapperSize;
+
   public BlockletDataMapIndexWrapper(List<BlockletDataMap> dataMaps) {
     this.dataMaps = dataMaps;
+    this.wrapperSize = 0L;
+    // add the size of each and every datamap in this wrapper
+    for (BlockletDataMap dataMap : dataMaps) {
+      this.wrapperSize += dataMap.getMemorySize();
+    }
   }
 
   @Override public long getFileTimeStamp() {
@@ -43,7 +51,7 @@ public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
   }
 
   @Override public long getMemorySize() {
-    return 0;
+    return wrapperSize;
   }
 
   public List<BlockletDataMap> getDataMaps() {
