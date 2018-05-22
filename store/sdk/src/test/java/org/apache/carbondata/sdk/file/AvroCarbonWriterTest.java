@@ -21,9 +21,12 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.avro.generic.GenericData;
@@ -450,6 +453,43 @@ public class AvroCarbonWriterTest {
     FileUtils.deleteDirectory(new File(path));
   }
 
+  @Test
+  public void testExceptionForDuplicateColumns() throws IOException, InvalidLoadOptionException {
+    Field[] field = new Field[2];
+    field[0] = new Field("name", DataTypes.STRING);
+    field[1] = new Field("name", DataTypes.STRING);
+    CarbonWriterBuilder writer = CarbonWriter.builder().isTransactionalTable(false)
+        .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
 
+    try {
+      writer.buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field));
+      Assert.fail();
+    } catch (Exception e) {
+      assert(e.getMessage().contains("Duplicate column name found in table schema"));
+    }
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testExceptionForInvalidDate() throws IOException, InvalidLoadOptionException {
+    Field[] field = new Field[2];
+    field[0] = new Field("name", DataTypes.STRING);
+    field[1] = new Field("date", DataTypes.DATE);
+    CarbonWriterBuilder writer = CarbonWriter.builder().isTransactionalTable(false)
+        .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
+
+    try {
+      Map<String, String> loadOptions = new HashMap<String, String>();
+      loadOptions.put("bad_records_action", "fail");
+      CarbonWriter carbonWriter =
+          writer.isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field));
+      carbonWriter.write(new String[] { "k", "20-02-2233" });
+      carbonWriter.close();
+      Assert.fail();
+    } catch (Exception e) {
+      assert(e.getMessage().contains("Data load failed due to bad record"));
+    }
+    FileUtils.deleteDirectory(new File(path));
+  }
 
 }
