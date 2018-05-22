@@ -85,15 +85,18 @@ public class BloomCacheKeyValue {
       }
     }
 
-    @Override public long getFileTimeStamp() {
+    @Override
+    public long getFileTimeStamp() {
       return 0;
     }
 
-    @Override public int getAccessCount() {
+    @Override
+    public int getAccessCount() {
       return 0;
     }
 
-    @Override public long getMemorySize() {
+    @Override
+    public long getMemorySize() {
       return size;
     }
 

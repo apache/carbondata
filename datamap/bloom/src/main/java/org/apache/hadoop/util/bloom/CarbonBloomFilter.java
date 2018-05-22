@@ -19,6 +19,7 @@ package org.apache.hadoop.util.bloom;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.BitSet;
 
 import org.roaringbitmap.RoaringBitmap;
@@ -75,6 +76,7 @@ public class CarbonBloomFilter extends BloomFilter {
     out.writeByte(this.hashType);
     out.writeInt(this.vectorSize);
     out.writeBoolean(compress);
+    BitSet bits = getBitSet();
     if (!compress) {
       byte[] bytes = bits.toByteArray();
       out.writeInt(bytes.length);
@@ -102,7 +104,7 @@ public class CarbonBloomFilter extends BloomFilter {
       int len = in.readInt();
       byte[] bytes = new byte[len];
       in.readFully(bytes);
-      this.bits = BitSet.valueOf(bytes);
+      setBitSet(BitSet.valueOf(bytes));
     } else {
       this.bitmap = new RoaringBitmap();
       bitmap.deserialize(in);
@@ -115,9 +117,46 @@ public class CarbonBloomFilter extends BloomFilter {
     if (compress) {
       size += bitmap.getSizeInBytes();
     } else {
-      size += bits.toLongArray().length * 8;
+      try {
+        size += getBitSet().toLongArray().length * 8;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
     return size;
+  }
+
+  /**
+   * Get bitset from super class using reflection, in some cases java cannot access the fields if
+   * jars are loaded in separte class loaders.
+   *
+   * @return
+   * @throws IOException
+   */
+  private BitSet getBitSet() throws IOException {
+    try {
+      Field field = BloomFilter.class.getDeclaredField("bits");
+      field.setAccessible(true);
+      return (BitSet)field.get(this);
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
+  }
+
+  /**
+   * Set bitset from super class using reflection, in some cases java cannot access the fields if
+   * jars are loaded in separte class loaders.
+   * @param bitSet
+   * @throws IOException
+   */
+  private void setBitSet(BitSet bitSet) throws IOException {
+    try {
+      Field field = BloomFilter.class.getDeclaredField("bits");
+      field.setAccessible(true);
+      field.set(this, bitSet);
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
   }
 
   public void setBlockletNo(int blockletNo) {

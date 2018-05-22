@@ -236,13 +236,12 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
           shardPaths.add(carbonFile.getAbsolutePath());
         }
         segmentMap.put(segment.getSegmentNo(), shardPaths);
-      } else {
-        for (String shard : shardPaths) {
-          BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
-          bloomDM.init(new BloomDataMapModel(shard, cache,
-              new HashSet<>(dataMapMeta.getIndexedColumnNames())));
-          dataMaps.add(bloomDM);
-        }
+      }
+      for (String shard : shardPaths) {
+        BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
+        bloomDM.init(new BloomDataMapModel(shard, cache,
+            new HashSet<>(dataMapMeta.getIndexedColumnNames())));
+        dataMaps.add(bloomDM);
       }
     } catch (Exception e) {
       throw new IOException("Error occurs while init Bloom DataMap", e);

@@ -219,9 +219,8 @@ object CarbonEnv {
     val table = carbonEnv.carbonMetastore.getTableFromMetadataCache(
       identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
       identifier.table)
-    if (table.isEmpty ||
-        (table.isDefined && carbonEnv.carbonMetastore
-          .checkSchemasModifiedTimeAndReloadTable(identifier))) {
+    if (carbonEnv.carbonMetastore
+          .checkSchemasModifiedTimeAndReloadTable(identifier)) {
       sparkSession.sessionState.catalog.refreshTable(identifier)
       val tablePath = CarbonProperties.getStorePath + File.separator + identifier.database
         .getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase) +

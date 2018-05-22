@@ -17,7 +17,6 @@
 package org.apache.carbondata.datamap.bloom;
 
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -36,12 +34,9 @@ import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 
 /**
  * This class is used to add cache for bloomfilter datamap to accelerate query through it.
- * The cache is implemented using guava cache and is a singleton which will be shared by all the
- * bloomfilter datamaps.
+ * The cache is implemented using carbon lru cache.
  * As for the cache, the key is a bloomindex file for a shard and the value is the bloomfilters
  * for the blocklets in this shard.
- * The size of cache can be configurable through CarbonProperties and the cache will be expired if
- * no one access it in the past 2 hours.
  */
 @InterfaceAudience.Internal
 public class BloomDataMapCache
@@ -52,13 +47,14 @@ public class BloomDataMapCache
   /**
    * CarbonLRU cache
    */
-  protected CarbonLRUCache lruCache;
+  private CarbonLRUCache lruCache;
 
   public BloomDataMapCache(CarbonLRUCache lruCache) {
     this.lruCache = lruCache;
   }
 
-  @Override public BloomCacheKeyValue.CacheValue get(BloomCacheKeyValue.CacheKey key)
+  @Override
+  public BloomCacheKeyValue.CacheValue get(BloomCacheKeyValue.CacheKey key)
       throws IOException {
     BloomCacheKeyValue.CacheValue cacheValue = getIfPresent(key);
     if (cacheValue == null) {
@@ -79,15 +75,18 @@ public class BloomDataMapCache
     return cacheValues;
   }
 
-  @Override public BloomCacheKeyValue.CacheValue getIfPresent(BloomCacheKeyValue.CacheKey key) {
+  @Override
+  public BloomCacheKeyValue.CacheValue getIfPresent(BloomCacheKeyValue.CacheKey key) {
     return (BloomCacheKeyValue.CacheValue) lruCache.get(key.toString());
   }
 
-  @Override public void invalidate(BloomCacheKeyValue.CacheKey key) {
+  @Override
+  public void invalidate(BloomCacheKeyValue.CacheKey key) {
     lruCache.remove(key.toString());
   }
 
-  @Override public void put(BloomCacheKeyValue.CacheKey key, BloomCacheKeyValue.CacheValue value)
+  @Override
+  public void put(BloomCacheKeyValue.CacheKey key, BloomCacheKeyValue.CacheValue value)
       throws IOException, MemoryException {
     // No impl required.
   }
@@ -98,20 +97,17 @@ public class BloomDataMapCache
   private BloomCacheKeyValue.CacheValue loadBloomDataMapModel(
       BloomCacheKeyValue.CacheKey cacheKey) {
     DataInputStream dataInStream = null;
-    List<CarbonBloomFilter> bloomFilters = new ArrayList<CarbonBloomFilter>();
+    List<CarbonBloomFilter> bloomFilters = new ArrayList<>();
     try {
       String indexFile = getIndexFileFromCacheKey(cacheKey);
       dataInStream = FileFactory.getDataInputStream(indexFile, FileFactory.getFileType(indexFile));
-      try {
-        while (dataInStream.available() > 0) {
-          CarbonBloomFilter bloomFilter = new CarbonBloomFilter();
-          bloomFilter.readFields(dataInStream);
-          bloomFilters.add(bloomFilter);
-        }
-      } catch (EOFException e) {
-        LOGGER
-            .info(String.format("Read %d bloom indices from %s", bloomFilters.size(), indexFile));
+      while (dataInStream.available() > 0) {
+        CarbonBloomFilter bloomFilter = new CarbonBloomFilter();
+        bloomFilter.readFields(dataInStream);
+        bloomFilters.add(bloomFilter);
       }
+      LOGGER.info(String.format("Read %d bloom indices from %s", bloomFilters.size(), indexFile));
+
       return new BloomCacheKeyValue.CacheValue(bloomFilters);
     } catch (IOException e) {
       LOGGER.error(e, "Error occurs while reading bloom index");
@@ -129,12 +125,7 @@ public class BloomDataMapCache
         .getBloomIndexFile(cacheKey.getShardPath(), cacheKey.getIndexColumn());
   }
 
-  @Override public void clearAccessCount(List<BloomCacheKeyValue.CacheKey> keys) {
-    for (BloomCacheKeyValue.CacheKey key : keys) {
-      Cacheable cacheable = lruCache.get(key.toString());
-      if (cacheable != null) {
-        // TODO Clear or close any resources in memory
-      }
-    }
+  @Override
+  public void clearAccessCount(List<BloomCacheKeyValue.CacheKey> keys) {
   }
 }

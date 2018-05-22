@@ -65,16 +65,18 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
 
   @Override
   public void init(DataMapModel dataMapModel) throws IOException {
-    BloomDataMapModel model = (BloomDataMapModel) dataMapModel;
     this.indexPath = FileFactory.getPath(dataMapModel.getFilePath());
     this.shardName = indexPath.getName();
-    this.cache = model.getCache();
-    this.indexedColumn = model.getIndexedColumnNames();
+    if (dataMapModel instanceof BloomDataMapModel) {
+      BloomDataMapModel model = (BloomDataMapModel) dataMapModel;
+      this.cache = model.getCache();
+      this.indexedColumn = model.getIndexedColumnNames();
+    }
   }
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) {
+      List<PartitionSpec> partitions) throws IOException {
     Set<Blocklet> hitBlocklets = new HashSet<>();
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
