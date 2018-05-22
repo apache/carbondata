@@ -43,6 +43,7 @@ public class TimeseriesDataMapProvider extends PreAggregateDataMapProvider {
     CarbonTable mainTable = getMainTable();
     Map<String, String> dmProperties = dataMapSchema.getProperties();
     String dmProviderName = dataMapSchema.getProviderName();
+    TimeSeriesUtil.validateOldSyntax(dmProperties);
     TimeSeriesUtil.validateTimeSeriesGranularity(dmProperties, dmProviderName);
     Tuple2<String, String> details =
         TimeSeriesUtil.getTimeSeriesGranularityDetails(dmProperties, dmProviderName);
