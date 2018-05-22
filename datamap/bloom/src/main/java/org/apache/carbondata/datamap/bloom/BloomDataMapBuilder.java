@@ -29,6 +29,8 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.util.bloom.Key;
+
 /**
  * Implementation for BloomFilter DataMap to rebuild the datamap for main table with existing data
  */
@@ -36,10 +38,10 @@ import org.apache.carbondata.core.util.CarbonUtil;
 public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBuilder {
 
   BloomDataMapBuilder(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp)
-      throws IOException {
-    super(tablePath, dataMapName, indexColumns, segment, shardName,
-        bloomFilterSize, bloomFilterFpp);
+      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
+      boolean bloomCompress) throws IOException {
+    super(tablePath, dataMapName, indexColumns, segment, shardName, bloomFilterSize, bloomFilterFpp,
+        bloomCompress);
   }
 
   @Override
@@ -70,7 +72,7 @@ public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBu
       } else {
         indexValue = CarbonUtil.getValueAsBytes(dataType, data);
       }
-      indexBloomFilters.get(i).put(indexValue);
+      indexBloomFilters.get(i).add(new Key(indexValue));
     }
   }
 
