@@ -151,7 +151,8 @@ public class SegmentFileStore {
     CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
     CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT);
+        return (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
       }
     });
     if (indexFiles != null && indexFiles.length > 0) {
@@ -160,7 +161,11 @@ public class SegmentFileStore {
       folderDetails.setRelative(true);
       folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
       for (CarbonFile file : indexFiles) {
-        folderDetails.getFiles().add(file.getName());
+        if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+          folderDetails.setMergeFileName(file.getName());
+        } else {
+          folderDetails.getFiles().add(file.getName());
+        }
       }
       String segmentRelativePath = segmentPath.substring(tablePath.length(), segmentPath.length());
       segmentFile.addPath(segmentRelativePath, folderDetails);
@@ -508,10 +513,11 @@ public class SegmentFileStore {
           if (null != mergeFileName) {
             indexFiles.put(location + CarbonCommonConstants.FILE_SEPARATOR + mergeFileName,
                 entry.getValue().mergeFileName);
-          } else {
-            for (String indexFile : entry.getValue().getFiles()) {
-              indexFiles.put(location + CarbonCommonConstants.FILE_SEPARATOR + indexFile,
-                  entry.getValue().mergeFileName);
+          }
+          Set<String> files = entry.getValue().getFiles();
+          if (null != files && !files.isEmpty()) {
+            for (String indexFile : files) {
+              indexFiles.put(location + CarbonCommonConstants.FILE_SEPARATOR + indexFile, null);
             }
           }
         }
