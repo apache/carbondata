@@ -234,6 +234,13 @@ class CGDataMap extends CoarseGrainDataMap {
   }
 
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
+
+  /**
+   * clears all the resources for datamaps
+   */
+  override def finish() = {
+    ???
+  }
 }
 
 class CGDataMapWriter(

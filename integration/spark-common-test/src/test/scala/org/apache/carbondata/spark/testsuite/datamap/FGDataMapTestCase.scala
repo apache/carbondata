@@ -259,6 +259,13 @@ class FGDataMap extends FineGrainDataMap {
   }
 
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
+
+  /**
+   * clears all the resources for datamaps
+   */
+  override def finish() = {
+
+  }
 }
 
 class FGDataMapWriter(carbonTable: CarbonTable,

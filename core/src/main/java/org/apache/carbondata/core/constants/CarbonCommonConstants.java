@@ -1742,6 +1742,13 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL = "512";
 
+  // by default lucene will not store or create index for stop words like "is","the", if this
+  // property is set to true lucene will index for stop words also and gives result for the filter
+  // with stop words(example: TEXT_MATCH('description':'the'))
+  public static final String CARBON_LUCENE_INDEX_STOP_WORDS = "carbon.lucene.index.stop.words";
+
+  public static final String CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }

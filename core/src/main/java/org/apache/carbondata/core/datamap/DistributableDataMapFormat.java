@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
@@ -107,6 +108,7 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     return new RecordReader<Void, ExtendedBlocklet>() {
       private Iterator<ExtendedBlocklet> blockletIterator;
       private ExtendedBlocklet currBlocklet;
+      private List<DataMap> dataMaps;
 
       @Override public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
           throws IOException, InterruptedException {
@@ -124,8 +126,11 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
           blockletIterator = Collections.emptyIterator();
           return;
         }
-        List<ExtendedBlocklet> blocklets = tableDataMap.prune(distributable.getDistributable(),
-            dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);
+        dataMaps = tableDataMap.getTableDataMaps(distributable.getDistributable());
+        List<ExtendedBlocklet> blocklets = tableDataMap
+            .prune(dataMaps,
+                distributable.getDistributable(),
+                dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);
         for (ExtendedBlocklet blocklet : blocklets) {
           blocklet.setDataMapUniqueId(distributable.getUniqueId());
         }
@@ -137,6 +142,9 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
         boolean hasNext = blockletIterator.hasNext();
         if (hasNext) {
           currBlocklet = blockletIterator.next();
+        } else {
+          // close all resources when all the results are returned
+          close();
         }
         return hasNext;
       }
@@ -158,7 +166,11 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
       @Override
       public void close() throws IOException {
-
+        if (null != dataMaps) {
+          for (DataMap dataMap : dataMaps) {
+            dataMap.finish();
+          }
+        }
       }
     };
   }

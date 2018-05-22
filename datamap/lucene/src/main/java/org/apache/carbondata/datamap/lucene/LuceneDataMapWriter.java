@@ -43,7 +43,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.lucene50.Lucene50StoredFieldsFormat;
 import org.apache.lucene.codecs.lucene62.Lucene62Codec;
 import org.apache.lucene.document.Document;
@@ -85,6 +87,11 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   public static final String ROWID_NAME = "rowId";
 
+  private Codec speedCodec = new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED);
+
+  private Codec compressionCodec =
+      new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION);
+
   private Map<LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache = new HashMap<>();
 
   private int cacheSize;
@@ -123,7 +130,14 @@ public class LuceneDataMapWriter extends DataMapWriter {
    */
   public void onBlockletStart(int blockletId) throws IOException {
     if (null == analyzer) {
-      analyzer = new StandardAnalyzer();
+      if (CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
+              CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
+          .equalsIgnoreCase("true")) {
+        analyzer = new StandardAnalyzer(CharArraySet.EMPTY_SET);
+      } else {
+        analyzer = new StandardAnalyzer();
+      }
     }
     // save index data into ram, write into disk after one page finished
     ramDir = new RAMDirectory();
@@ -162,10 +176,10 @@ public class LuceneDataMapWriter extends DataMapWriter {
         .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
             CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
         .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
-      indexWriterConfig.setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED));
+      indexWriterConfig.setCodec(speedCodec);
     } else {
       indexWriterConfig
-          .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
+          .setCodec(compressionCodec);
     }
 
     indexWriter = new IndexWriter(indexDir, indexWriterConfig);
