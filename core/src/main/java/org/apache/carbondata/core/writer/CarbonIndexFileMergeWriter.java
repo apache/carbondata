@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -140,6 +141,7 @@ public class CarbonIndexFileMergeWriter {
         }
         if (new Path(entry.getKey()).equals(new Path(location))) {
           segentry.getValue().setMergeFileName(mergeIndexFile);
+          segentry.getValue().setFiles(new HashSet<String>());
           break;
         }
       }
