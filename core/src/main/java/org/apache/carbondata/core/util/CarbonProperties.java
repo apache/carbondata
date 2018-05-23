@@ -56,6 +56,7 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CSV_READ_BUFFER_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_AUTO_HANDOFF;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_OFFHEAP_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_VECTOR_READER;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.HANDOFF_SIZE;
@@ -149,6 +150,9 @@ public final class CarbonProperties {
       case ENABLE_UNSAFE_SORT:
         validateEnableUnsafeSort();
         break;
+      case ENABLE_OFFHEAP_SORT:
+        validateEnableOffHeapSort();
+        break;
       case CARBON_CUSTOM_BLOCK_DISTRIBUTION:
         validateCustomBlockDistribution();
         break;
@@ -235,6 +239,7 @@ public final class CarbonProperties {
     validateBlockletGroupSizeInMB();
     validateNumberOfColumnPerIORead();
     validateEnableUnsafeSort();
+    validateEnableOffHeapSort();
     validateCustomBlockDistribution();
     validateEnableVectorReader();
     validateLockType();
@@ -468,6 +473,18 @@ public final class CarbonProperties {
           + CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT);
       carbonProperties.setProperty(ENABLE_UNSAFE_SORT,
           CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT);
+    }
+  }
+
+  private void validateEnableOffHeapSort() {
+    String value = carbonProperties.getProperty(ENABLE_OFFHEAP_SORT);
+    boolean isValidBooleanValue = CarbonUtil.validateBoolean(value);
+    if (!isValidBooleanValue) {
+      LOGGER.warn("The enable off heap sort value \"" + value
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT);
+      carbonProperties.setProperty(ENABLE_OFFHEAP_SORT,
+          CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT);
     }
   }
 
