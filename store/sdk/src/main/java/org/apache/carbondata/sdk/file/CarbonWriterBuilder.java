@@ -120,10 +120,10 @@ public class CarbonWriterBuilder {
   /**
    * If set false, writes the carbondata and carbonindex files in a flat folder structure
    * @param isTransactionalTable is a boolelan value
-   * if set to false, then writes the carbondata and carbonindex files
+   * If set to false, then writes the carbondata and carbonindex files
    * in a flat folder structure.
-   * if set to true, then writes the carbondata and carbonindex files
-   * in segment folder structure..
+   * If set to true, then writes the carbondata and carbonindex files
+   * in segment folder structure.
    * By default set to false.
    * @return updated CarbonWriterBuilder
    */
@@ -285,7 +285,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * To set the blocklet size of carbondata file
+   * To set the blocklet size of CarbonData file
    * @param blockletSize is blocklet size in MB
    * default value is 64 MB
    * @return updated CarbonWriterBuilder
