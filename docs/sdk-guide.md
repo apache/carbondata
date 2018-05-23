@@ -1,5 +1,6 @@
-# SDK Writer Guide
-In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.jar.
+# SDK Guide
+In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.jar, including SDK writer and reader.
+# SDK Writer
 This SDK writer, writes carbondata file and carbonindex file at a given path.
 External client can make use of this writer to convert other format data or live data to create carbondata and index files.
 These SDK writer output contains just a carbondata and carbonindex files. No metadata folder will be present.
@@ -296,7 +297,7 @@ public abstract void close() throws IOException;
 * Create a {@link CarbonWriterBuilder} to build a {@link CarbonWriter}
 */
 public static CarbonWriterBuilder builder() {
-return new CarbonWriterBuilder();
+    return new CarbonWriterBuilder();
 }
 ```
 
@@ -398,3 +399,162 @@ Reference : [list of carbon properties](http://carbondata.apache.org/configurati
 */
 public static org.apache.carbondata.sdk.file.Schema getCarbonSchemaFromAvroSchema(String avroSchemaString);
 ```
+# SDK Reader
+This SDK reader, reads carbondata file and carbonindex file at a given path.
+External client can make use of this reader to read carbondata files.
+## Quick example
+```
+    // 1. Create carbon reader
+    String path = "./testWriteFiles";
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .projection(new String[]{"name", "age"})
+        .build();
+
+    // 2. Read data
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      System.out.println(row[0] + "\t" + row[1]);
+      i++;
+    }
+    
+    // 3. Close this reader
+    reader.close();
+```
+
+Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/java/org/apache/carbondata/examples/sdk/CarbonReaderExample.java) in the CarbonData repo.
+
+## API List
+
+### org.apache.carbondata.sdk.file.CarbonReader
+```
+ /**
+   * Return a new {@link CarbonReaderBuilder} instance
+   */
+  public static CarbonReaderBuilder builder(String tablePath, String tableName);
+```
+
+```
+  /**
+   * Read carbondata file and return the schema
+   */
+  public static List<ColumnSchema> readSchemaInDataFile(String dataFilePath);
+```
+
+```
+ /**
+   * Read schmea file and return table info object
+   */
+  public static TableInfo readSchemaFile(String schemaFilePath);
+```
+
+```
+  /**
+   * Return true if has next row
+   */
+  public boolean hasNext();
+```
+
+```
+  /**
+   * Read and return next row object
+   */
+  public T readNextRow();
+```
+
+```
+  /**
+   * Close reader
+   *
+   * @throws IOException
+   */
+  public void close();
+```
+
+###org.apache.carbondata.sdk.file.CarbonReaderBuilder
+```
+  /**
+   * Construct a CarbonReaderBuilder with table path and table name
+   *
+   * @param tablePath table path
+   * @param tableName table name
+   */
+  CarbonReaderBuilder(String tablePath, String tableName);
+```
+
+```
+  /**
+   * Configure the projection column names of carbon reader
+   *
+   * @param projectionColumnNames projection column names
+   * @return CarbonReaderBuilder
+   */
+  public CarbonReaderBuilder projection(String[] projectionColumnNames);
+```
+
+```
+  /**
+   * Configure the transactional status of table
+   *
+   * @param isTransactionalTable whether is transactional table or not
+   * @return CarbonReaderBuilder
+   */
+  public CarbonReaderBuilder isTransactionalTable(boolean isTransactionalTable);
+```
+
+```
+ /**
+   * Configure the filter expression for carbon reader
+   *
+   * @param filterExpression filter expression
+   * @return CarbonReaderBuilder
+   */
+  public CarbonReaderBuilder filter(Expression filterExpression);
+```
+
+```
+  /**
+   * Set the access key for S3
+   *
+   * @param key   the string of access key for different S3 type,like: fs.s3a.access.key
+   * @param value the value of access key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setAccessKey(String key, String value);
+```
+
+```
+  /**
+   * Set the secret key for S3
+   *
+   * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
+   * @param value the value of secret key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setSecretKey(String key, String value);
+```
+
+```
+ /**
+   * Set the endpoint for S3
+   *
+   * @param key   the string of endpoint for different S3 type,like: fs.s3a.endpoint
+   * @param value the value of endpoint
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setEndPoint(String key, String value);
+```
+
+```
+ /**
+   * Build CarbonReader
+   *
+   * @param <T>
+   * @return CarbonReader
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  public <T> CarbonReader<T> build();
+```
+Find S3 example code at [SDKS3Example](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/java/org/apache/carbondata/examples/sdk/SDKS3Example.java) in the CarbonData repo.
