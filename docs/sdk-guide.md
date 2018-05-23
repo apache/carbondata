@@ -429,10 +429,25 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 
 ### Class org.apache.carbondata.sdk.file.CarbonReader
 ```
- /**
-  * Return a new CarbonReaderBuilder instance
-  */
+   /**
+    * Return a new {@link CarbonReaderBuilder} instance
+    *
+    * @param tablePath table store path
+    * @param tableName table name
+    * @return CarbonReaderBuilder object
+    */
   public static CarbonReaderBuilder builder(String tablePath, String tableName);
+```
+
+```
+  /**
+   * Return a new CarbonReaderBuilder instance
+   * Default value of table name is table + tablePath + time
+   *
+   * @param tablePath table path
+   * @return CarbonReaderBuilder object
+   */
+  public static CarbonReaderBuilder builder(String tablePath);
 ```
 
 ```
