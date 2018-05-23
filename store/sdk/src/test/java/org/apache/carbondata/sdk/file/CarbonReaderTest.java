@@ -143,6 +143,46 @@ public class CarbonReaderTest extends TestCase {
   }
 
   @Test
+  public void testReadAfterClose() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+
+    CarbonReader reader = CarbonReader.builder(path, "_temp")
+        .projection(new String[]{"name", "age"}).build();
+
+    reader.close();
+    String msg = "CarbonReader not initialise, please create it first.";
+    try {
+      reader.hasNext();
+      assert (false);
+    } catch (RuntimeException e) {
+      assert (e.getMessage().equals(msg));
+    }
+
+    try {
+      reader.readNextRow();
+      assert (false);
+    } catch (RuntimeException e) {
+      assert (e.getMessage().equals(msg));
+    }
+
+    try {
+      reader.close();
+      assert (false);
+    } catch (RuntimeException e) {
+      assert (e.getMessage().equals(msg));
+    }
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
   public void testReadSchemaFromDataFile() throws IOException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
