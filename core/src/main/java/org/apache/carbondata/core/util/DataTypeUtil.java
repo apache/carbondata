@@ -341,6 +341,7 @@ public final class DataTypeUtil {
       try {
         if (null != dateFormat && !dateFormat.trim().isEmpty()) {
           dateFormatter = new SimpleDateFormat(dateFormat);
+          dateFormatter.setLenient(false);
         } else {
           dateFormatter = timeStampformatter.get();
         }
@@ -376,6 +377,7 @@ public final class DataTypeUtil {
       try {
         if (null != dateFormat && !dateFormat.trim().isEmpty()) {
           dateFormatter = new SimpleDateFormat(dateFormat);
+          dateFormatter.setLenient(false);
         } else {
           dateFormatter = timeStampformatter.get();
         }
