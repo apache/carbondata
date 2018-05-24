@@ -493,6 +493,16 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 
 ```
   /**
+   * Projected all Columns for carbon reader
+   *
+   * @return CarbonReaderBuilder object
+   * @throws IOException
+   */
+  public CarbonReaderBuilder projectAllColumns();
+```
+
+```
+  /**
    * Configure the transactional status of table
    * If set to false, then reads the carbondata and carbonindex files from a flat folder structure.
    * If set to true, then reads the carbondata and carbonindex files from segment folder structure.

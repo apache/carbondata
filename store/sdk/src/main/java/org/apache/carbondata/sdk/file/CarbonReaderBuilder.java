@@ -26,6 +26,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
@@ -85,6 +86,32 @@ public class CarbonReaderBuilder {
   public CarbonReaderBuilder isTransactionalTable(boolean isTransactionalTable) {
     Objects.requireNonNull(isTransactionalTable);
     this.isTransactionalTable = isTransactionalTable;
+    return this;
+  }
+
+  /**
+   * Projected all Columns for carbon reader
+   *
+   * @return CarbonReaderBuilder object
+   * @throws IOException
+   */
+  public CarbonReaderBuilder projectAllColumns() throws IOException {
+    CarbonTable carbonTable = CarbonTable
+        .buildFromTablePath(tableName, tablePath, isTransactionalTable);
+
+    List<ColumnSchema> colList = carbonTable.getTableInfo().getFactTable().getListOfColumns();
+    List<String> projectColumn = new ArrayList<String>();
+    for (ColumnSchema cols : colList) {
+      if (cols.getSchemaOrdinal() != -1) {
+        projectColumn.add(cols.getColumnUniqueId());
+      }
+    }
+    projectionColumns = new String[projectColumn.size()];
+    int i = 0;
+    for (String columnName : projectColumn) {
+      projectionColumns[i] = columnName;
+      i++;
+    }
     return this;
   }
 
@@ -186,9 +213,10 @@ public class CarbonReaderBuilder {
     if (filterExpression != null) {
       format.setFilterPredicates(job.getConfiguration(), filterExpression);
     }
-    if (projectionColumns != null) {
-      format.setColumnProjection(job.getConfiguration(), new CarbonProjection(projectionColumns));
+    if (projectionColumns == null) {
+      projectAllColumns();
     }
+    format.setColumnProjection(job.getConfiguration(), new CarbonProjection(projectionColumns));
 
     final List<InputSplit> splits =
         format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
