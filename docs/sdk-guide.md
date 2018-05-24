@@ -400,8 +400,8 @@ Reference : [list of carbon properties](http://carbondata.apache.org/configurati
 public static org.apache.carbondata.sdk.file.Schema getCarbonSchemaFromAvroSchema(String avroSchemaString);
 ```
 # SDK Reader
-This SDK reader, reads carbondata file and carbonindex file at a given path.
-External client can make use of this reader to read carbondata files.
+This SDK reader reads CarbonData file and carbonindex file at a given path.
+External client can make use of this reader to read CarbonData files without CarbonSession.
 ## Quick example
 ```
     // 1. Create carbon reader
@@ -430,8 +430,8 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ### org.apache.carbondata.sdk.file.CarbonReader
 ```
  /**
-   * Return a new {@link CarbonReaderBuilder} instance
-   */
+  * Return a new CarbonReaderBuilder instance
+  */
   public static CarbonReaderBuilder builder(String tablePath, String tableName);
 ```
 
@@ -444,8 +444,8 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 
 ```
  /**
-   * Read schmea file and return table info object
-   */
+  * Read schema file and return table info object
+  */
   public static TableInfo readSchemaFile(String schemaFilePath);
 ```
 
@@ -466,8 +466,6 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ```
   /**
    * Close reader
-   *
-   * @throws IOException
    */
   public void close();
 ```
@@ -488,7 +486,7 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * Configure the projection column names of carbon reader
    *
    * @param projectionColumnNames projection column names
-   * @return CarbonReaderBuilder
+   * @return CarbonReaderBuilder object
    */
   public CarbonReaderBuilder projection(String[] projectionColumnNames);
 ```
@@ -498,18 +496,18 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * Configure the transactional status of table
    *
    * @param isTransactionalTable whether is transactional table or not
-   * @return CarbonReaderBuilder
+   * @return CarbonReaderBuilder object
    */
   public CarbonReaderBuilder isTransactionalTable(boolean isTransactionalTable);
 ```
 
 ```
  /**
-   * Configure the filter expression for carbon reader
-   *
-   * @param filterExpression filter expression
-   * @return CarbonReaderBuilder
-   */
+  * Configure the filter expression for carbon reader
+  *
+  * @param filterExpression filter expression
+  * @return CarbonReaderBuilder object
+  */
   public CarbonReaderBuilder filter(Expression filterExpression);
 ```
 

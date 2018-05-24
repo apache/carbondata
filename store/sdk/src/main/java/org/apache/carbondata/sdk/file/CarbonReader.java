@@ -97,7 +97,7 @@ public class CarbonReader<T> {
   }
 
   /**
-   * Read schmea file and return table info object
+   * Read schema file and return table info object
    */
   public static TableInfo readSchemaFile(String schemaFilePath) throws IOException {
     org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.readSchemaFile(schemaFilePath);
