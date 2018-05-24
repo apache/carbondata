@@ -65,6 +65,11 @@
       <artifactId>scalatest_${scala.binary.version}</artifactId>
       <scope>provided</scope>
     </dependency>
+      <dependency>
+          <groupId>org.apache.zookeeper</groupId>
+          <artifactId>zookeeper</artifactId>
+          <version>3.4.7</version>
+      </dependency>
   </dependencies>
 
   <build>
