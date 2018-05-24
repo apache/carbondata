@@ -24,7 +24,6 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
-import org.apache.parquet.column.Encoding;
 import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.types.Decimal;
 
@@ -41,8 +40,6 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   private boolean filteredRowsExist;
 
   private DataType blockDataType;
-
-  private CarbonColumnVector dictionaryVector;
 
   ColumnarVectorWrapper(CarbonVectorProxy writableColumnVector,
                         boolean[] filteredRows, int ordinal) {
@@ -198,7 +195,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putNotNull(int rowId) {
     if (!filteredRows[rowId]) {
-      writableColumnVector.putNotNull(counter++,ordinal);
+      columnVector.putNotNull(counter++);
     }
   }
 
@@ -206,12 +203,12 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          writableColumnVector.putNotNull(counter++, ordinal);
+          columnVector.putNotNull(counter++);
         }
         rowId++;
       }
     } else {
-      writableColumnVector.putNotNulls(rowId, count, ordinal);
+      columnVector.putNotNulls(rowId, count);
     }
   }
 
@@ -228,8 +225,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     return null;
   }
 
-  @Override
-  public void reset() {
+  @Override public void reset() {
     counter = 0;
     filteredRowsExist = false;
     if (null != dictionaryVector) {
@@ -251,30 +247,20 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     this.blockDataType = blockDataType;
   }
 
-  @Override
-  public void setFilteredRowsExist(boolean filteredRowsExist) {
+  @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
     this.filteredRowsExist = filteredRowsExist;
   }
 
   @Override public void setDictionary(CarbonDictionary dictionary) {
     if (dictionary == null) {
-      writableColumnVector.setDictionary(null, ordinal);
+      columnVector.setDictionary(null);
     } else {
-      writableColumnVector
-              .setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary),ordinal);
+      columnVector.setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary));
     }
   }
 
   @Override public boolean hasDictionary() {
-    return writableColumnVector.hasDictionary(ordinal);
-  }
-
-  public void reserveDictionaryIds() {
-    if (writableColumnVector.getColumnVector(ordinal).getDictionaryIds() != null) {
-      this.dictionaryVector =
-              new ColumnarVectorWrapper(writableColumnVector, filteredRows, ordinal);
-    }
-    writableColumnVector.reserveDictionaryIds(writableColumnVector.numRows(), ordinal);
+    return columnVector.hasDictionary();
   }
 
   @Override public CarbonColumnVector getDictionaryVector() {

@@ -163,11 +163,11 @@ class StreamHandoffRDD[K, V](
     val format = new CarbonTableInputFormat[Array[Object]]()
     val model = format.createQueryModel(inputSplit, attemptContext)
     val inputFormat = new CarbonStreamInputFormat
+    val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
+      .asInstanceOf[RecordReader[Void, Any]]
     inputFormat.setVectorReader(false)
     inputFormat.setModel(model)
     inputFormat.setUseRawRow(true)
-    val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
-      .asInstanceOf[RecordReader[Void, Any]]
     streamReader.initialize(inputSplit, attemptContext)
     val iteratorList = new util.ArrayList[RawResultIterator](1)
     iteratorList.add(new StreamingRawResultIterator(streamReader))
