@@ -60,7 +60,7 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
 import org.apache.carbondata.spark.format.{CsvReadSupport, VectorCsvReadSupport}
 import org.apache.carbondata.spark.util.{SparkDataTypeConverterImpl, Util}
-import org.apache.carbondata.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
+import org.apache.carbondata.streaming.CarbonStreamInputFormat
 
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
@@ -431,13 +431,13 @@ class CarbonScanRDD[T: ClassTag](
           // create record reader for row format
           DataTypeUtil.setDataTypeConverter(dataTypeConverterClz.newInstance())
           val inputFormat = new CarbonStreamInputFormat
-          val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
-            .asInstanceOf[CarbonStreamRecordReader]
-          streamReader.setVectorReader(vectorReader)
-          streamReader.setInputMetricsStats(inputMetricsStats)
+          inputFormat.setVectorReader(vectorReader)
+          inputFormat.setInputMetricsStats(inputMetricsStats)
           model.setStatisticsRecorder(
             CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId))
-          streamReader.setQueryModel(model)
+          inputFormat.setModel(model)
+          val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
+            .asInstanceOf[RecordReader[Void, Object]]
           streamReader
         case FileFormat.EXTERNAL =>
           require(storageFormat.equals("csv"),
