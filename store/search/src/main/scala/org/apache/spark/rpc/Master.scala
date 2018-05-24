@@ -57,7 +57,7 @@ import org.apache.carbondata.store.worker.Status
  * And it provides search API to fire RPC call to workers.
  */
 @InterfaceAudience.Internal
-class Master(sparkConf: SparkConf) {
+class Master(sparkConf: SparkConf, ioEncryptionKey: Option[Array[Byte]]) {
   private val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   // worker host address map to EndpointRef
@@ -84,7 +84,7 @@ class Master(sparkConf: SparkConf) {
               LOG.info(s"starting registry-service on $hostAddress:$port")
               val config = RpcEnvConfig(
                 sparkConf, "registry-service", hostAddress, "", port,
-                new SecurityManager(sparkConf), clientMode = false)
+                new SecurityManager(sparkConf, ioEncryptionKey), clientMode = false)
               rpcEnv = new NettyRpcEnvFactory().create(config)
               numTry = 0
             } catch {

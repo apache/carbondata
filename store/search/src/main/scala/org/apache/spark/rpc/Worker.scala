@@ -33,23 +33,26 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 @InterfaceAudience.Internal
-object Worker {
+object Worker extends Serializable {
   private val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   private val hostAddress = InetAddress.getLocalHost.getHostAddress
   private var port: Int = _
 
-  def init(masterHostAddress: String, masterPort: Int): Unit = {
+  def init(
+      masterHostAddress: String,
+      masterPort: Int,
+      ioEncryptionKey: Option[Array[Byte]]): Unit = {
     LOG.info(s"initializing worker...")
-    startService()
+    startService(ioEncryptionKey)
     LOG.info(s"registering to master $masterHostAddress:$masterPort")
-    val workerId = registerToMaster(masterHostAddress, masterPort)
+    val workerId = registerToMaster(masterHostAddress, masterPort, ioEncryptionKey)
     LOG.info(s"worker registered to master, workerId: $workerId")
   }
 
   /**
    * Start to listen on port [[CarbonProperties.getSearchWorkerPort]]
    */
-  private def startService(): Unit = {
+  private def startService(IOEncryptionKey: Option[Array[Byte]]): Unit = {
     new Thread(new Runnable {
       override def run(): Unit = {
         port = CarbonProperties.getSearchWorkerPort
@@ -62,7 +65,7 @@ object Worker {
             LOG.info(s"starting search-service on $hostAddress:$port")
             val config = RpcEnvConfig(
               conf, s"worker-$hostAddress", hostAddress, "", port,
-              new SecurityManager(conf), clientMode = false)
+              new SecurityManager(conf, IOEncryptionKey), clientMode = false)
             rpcEnv = new NettyRpcEnvFactory().create(config)
             numTry = 0
           } catch {
@@ -86,11 +89,14 @@ object Worker {
     }).start()
   }
 
-  private def registerToMaster(masterHostAddress: String, masterPort: Int): String = {
+  private def registerToMaster(
+      masterHostAddress: String,
+      masterPort: Int,
+      IOEncryptionKey: Option[Array[Byte]]): String = {
     LOG.info(s"trying to register to master $masterHostAddress:$masterPort")
     val conf = new SparkConf()
     val config = RpcEnvConfig(conf, "registry-client", masterHostAddress, "", masterPort,
-      new SecurityManager(conf), clientMode = true)
+      new SecurityManager(conf, IOEncryptionKey), clientMode = true)
     val rpcEnv: RpcEnv = new NettyRpcEnvFactory().create(config)
 
     val endPointRef: RpcEndpointRef = rpcEnv.setupEndpointRef(

@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.{CarbonInputMetrics, SparkConf}
 import org.apache.spark.rpc.{Master, Worker}
+import org.apache.spark.security.CarbonCryptoStreamUtils
 import org.apache.spark.sql.CarbonSession._
 import org.apache.spark.sql.SparkSession
 
@@ -41,7 +42,7 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
  * with CarbonData query optimization capability
  */
 @InterfaceAudience.Internal
-class SparkCarbonStore extends MetaCachedCarbonStore {
+class SparkCarbonStore extends MetaCachedCarbonStore with Serializable {
   private var session: SparkSession = _
   private var master: Master = _
   private final val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -111,9 +112,12 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
 
   def startSearchMode(): Unit = {
     LOG.info("Starting search mode master")
-    master = new Master(session.sparkContext.getConf)
+    val conf = session.sparkContext.getConf
+    val ioEncryptionKey =
+      Some(CarbonCryptoStreamUtils.createKey(conf))
+    master = new Master(session.sparkContext.getConf, ioEncryptionKey)
     master.startService()
-    startAllWorkers()
+    startAllWorkers(ioEncryptionKey)
   }
 
   def stopSearchMode(): Unit = {
@@ -146,14 +150,14 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
       .asJava
   }
 
-  private def startAllWorkers(): Array[Int] = {
+  private def startAllWorkers(ioEncryptionKey: Option[Array[Byte]]): Array[Int] = {
     // TODO: how to ensure task is sent to every executor?
     val numExecutors = session.sparkContext.getExecutorMemoryStatus.keySet.size
     val masterIp = InetAddress.getLocalHost.getHostAddress
     val rows = session.sparkContext.parallelize(1 to numExecutors * 10, numExecutors)
       .mapPartitions { f =>
         // start worker
-        Worker.init(masterIp, CarbonProperties.getSearchMasterPort)
+        Worker.init(masterIp, CarbonProperties.getSearchMasterPort, ioEncryptionKey)
         new Iterator[Int] {
           override def hasNext: Boolean = false
 
