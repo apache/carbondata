@@ -411,7 +411,7 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * this methos clears the datamap of table from memory
+   * this methods clears the datamap of table from memory
    */
   public void clearDataMaps(String tableUniqName) {
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqName);
