@@ -22,7 +22,7 @@ import java.util
 import java.util.{Date, UUID}
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.{Job, RecordReader, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SerializableWritable, SparkContext, TaskContext}
 import org.apache.spark.sql.SparkSession
@@ -36,6 +36,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
@@ -48,8 +49,13 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.{HandoffResult, HandoffResultImpl}
+<<<<<<< 2f537b724f6f03ab40c95f7ecc8ebd38f6500099
 import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
+=======
+import org.apache.carbondata.spark.util.{CommonUtil, SparkDataTypeConverterImpl}
+import org.apache.carbondata.streaming.CarbonStreamInputFormat
+>>>>>>> [CARBONDATA-2532][Integration] Carbon to support spark 2.3 version, ColumnVector Interface
 
 
 /**
@@ -75,7 +81,7 @@ class HandoffPartition(
  * and we can extract it later
  */
 class StreamingRawResultIterator(
-    recordReader: CarbonStreamRecordReader
+    recordReader: RecordReader[Void, Any]
 ) extends RawResultIterator(null, null, null) {
 
   override def hasNext: Boolean = {
@@ -162,10 +168,10 @@ class StreamHandoffRDD[K, V](
     val model = format.createQueryModel(inputSplit, attemptContext)
     val inputFormat = new CarbonStreamInputFormat
     val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
-      .asInstanceOf[CarbonStreamRecordReader]
-    streamReader.setVectorReader(false)
-    streamReader.setQueryModel(model)
-    streamReader.setUseRawRow(true)
+      .asInstanceOf[RecordReader[Void, Any]]
+    inputFormat.setVectorReader(false)
+    inputFormat.setModel(model)
+    inputFormat.setUseRawRow(true)
     streamReader.initialize(inputSplit, attemptContext)
     val iteratorList = new util.ArrayList[RawResultIterator](1)
     iteratorList.add(new StreamingRawResultIterator(streamReader))
