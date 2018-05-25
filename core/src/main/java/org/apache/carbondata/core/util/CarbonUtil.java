@@ -2204,7 +2204,7 @@ public final class CarbonUtil {
     return tableInfo;
   }
 
-  public static ColumnSchema thriftColumnSchmeaToWrapperColumnSchema(
+  public static ColumnSchema thriftColumnSchemaToWrapperColumnSchema(
       org.apache.carbondata.format.ColumnSchema externalColumnSchema) {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
@@ -2387,7 +2387,7 @@ public final class CarbonUtil {
       List<org.apache.carbondata.format.ColumnSchema> table_columns =
           readIndexHeader.getTable_columns();
       for (int i = 0; i < table_columns.size(); i++) {
-        columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
       // only columnSchema is the valid entry, reset all dummy entries.
       TableSchema tableSchema = getDummyTableSchema(tableName, columnSchemaList);
@@ -2412,7 +2412,7 @@ public final class CarbonUtil {
     TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName(tableName);
     tableSchema.setBucketingInfo(null);
-    tableSchema.setSchemaEvalution(null);
+    tableSchema.setSchemaEvolution(null);
     tableSchema.setTableId(UUID.randomUUID().toString());
     tableSchema.setListOfColumns(columnSchemaList);
 
@@ -2422,7 +2422,7 @@ public final class CarbonUtil {
     List<SchemaEvolutionEntry> schEntryList = new ArrayList<>();
     schEntryList.add(schemaEvolutionEntry);
     schemaEvol.setSchemaEvolutionEntryList(schEntryList);
-    tableSchema.setSchemaEvalution(schemaEvol);
+    tableSchema.setSchemaEvolution(schemaEvol);
     return tableSchema;
   }
 
