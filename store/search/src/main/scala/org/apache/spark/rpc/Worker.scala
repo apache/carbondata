@@ -22,12 +22,10 @@ import java.net.{BindException, InetAddress}
 
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
-
 import org.apache.spark.{SecurityManager, SparkConf}
 import org.apache.spark.rpc.netty.NettyRpcEnvFactory
 import org.apache.spark.search.{RegisterWorkerRequest, RegisterWorkerResponse, Searcher}
 import org.apache.spark.util.ThreadUtils
-
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.CarbonProperties
@@ -60,7 +58,7 @@ object Worker {
         do {
           try {
             LOG.info(s"starting search-service on $hostAddress:$port")
-            val config = RpcEnvConfig(
+            val config = RpcUtil.getRpcEnvConfig(
               conf, s"worker-$hostAddress", hostAddress, "", port,
               new SecurityManager(conf), clientMode = false)
             rpcEnv = new NettyRpcEnvFactory().create(config)
@@ -89,7 +87,7 @@ object Worker {
   private def registerToMaster(masterHostAddress: String, masterPort: Int): String = {
     LOG.info(s"trying to register to master $masterHostAddress:$masterPort")
     val conf = new SparkConf()
-    val config = RpcEnvConfig(conf, "registry-client", masterHostAddress, "", masterPort,
+    val config = RpcUtil.getRpcEnvConfig(conf, "registry-client", masterHostAddress, "", masterPort,
       new SecurityManager(conf), clientMode = true)
     val rpcEnv: RpcEnv = new NettyRpcEnvFactory().create(config)
 
