@@ -96,7 +96,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     val tableComment = tblProps.asScala.getOrElse(CarbonCommonConstants.TABLE_COMMENT, "")
     results ++= Seq(("Comment", tableComment, ""))
     results ++= Seq(("Table Block Size ", carbonTable.getBlockSizeInMB + " MB", ""))
-    val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable)
+    val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable, false)
     if (!dataIndexSize.isEmpty) {
       results ++= Seq((CarbonCommonConstants.TABLE_DATA_SIZE,
         dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString, ""))

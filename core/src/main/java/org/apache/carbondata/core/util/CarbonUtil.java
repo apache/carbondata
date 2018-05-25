@@ -2550,7 +2550,8 @@ public final class CarbonUtil {
   /**
    * This method will calculate the data size and index size for carbon table
    */
-  public static Map<String, Long> calculateDataIndexSize(CarbonTable carbonTable)
+  public static Map<String, Long> calculateDataIndexSize(CarbonTable carbonTable,
+      Boolean updateSize)
       throws IOException {
     Map<String, Long> dataIndexSizeMap = new HashMap<String, Long>();
     long dataSize = 0L;
@@ -2565,7 +2566,11 @@ public final class CarbonUtil {
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
       try {
-        if (carbonLock.lockWithRetries()) {
+        boolean lockAcquired = true;
+        if (updateSize) {
+          lockAcquired = carbonLock.lockWithRetries();
+        }
+        if (lockAcquired) {
           LOGGER.info("Acquired lock for table for table status updation");
           String metadataPath = carbonTable.getMetadataPath();
           LoadMetadataDetails[] loadMetadataDetails =
@@ -2593,7 +2598,7 @@ public final class CarbonUtil {
             }
           }
           // If it contains old segment, write new load details
-          if (needUpdate) {
+          if (needUpdate && updateSize) {
             SegmentStatusManager.writeLoadDetailsIntoFile(
                 CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
                 loadMetadataDetails);
