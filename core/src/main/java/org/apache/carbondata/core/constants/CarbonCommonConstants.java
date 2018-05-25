@@ -1761,6 +1761,18 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT = "false";
 
+  /**
+   * The node loads the smallest amount of data
+   */
+  @CarbonProperty
+  public static final String CARBON_LOAD_MIN_SIZE_INMB = "load_min_size_inmb";
+  public static final String CARBON_LOAD_MIN_NODE_SIZE_INMB_DEFAULT = "256";
+
+  /**
+   *  the node minimum load data default value
+   */
+  public static final int CARBON_LOAD_MIN_SIZE_DEFAULT = 256;
+
   private CarbonCommonConstants() {
   }
 }

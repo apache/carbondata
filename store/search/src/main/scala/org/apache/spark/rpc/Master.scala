@@ -279,7 +279,8 @@ class Master(sparkConf: SparkConf) {
       distributables.asJava,
       -1,
       getWorkers.asJava,
-      CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST)
+      CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST,
+      null)
   }
 
   /** return hostname of all workers */
