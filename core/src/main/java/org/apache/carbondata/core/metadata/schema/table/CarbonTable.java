@@ -566,15 +566,15 @@ public class CarbonTable implements Serializable {
     List<CarbonDimension> dimensions = tableDimensionsMap.get(tableName);
     List<CarbonMeasure> measures = tableMeasuresMap.get(tableName);
     List<CarbonColumn> columnList = new ArrayList<>(dimensions.size() + measures.size());
-    List<CarbonColumn> complexdimensionList = new ArrayList<>(dimensions.size());
+    List<CarbonColumn> complexDimensionList = new ArrayList<>(dimensions.size());
     for (CarbonColumn column : dimensions) {
       if (column.isComplex()) {
-        complexdimensionList.add(column);
+        complexDimensionList.add(column);
       } else {
         columnList.add(column);
       }
     }
-    columnList.addAll(complexdimensionList);
+    columnList.addAll(complexDimensionList);
     for (CarbonColumn column : measures) {
       if (!(column.getColName().equals("default_dummy_measure"))) {
         columnList.add(column);

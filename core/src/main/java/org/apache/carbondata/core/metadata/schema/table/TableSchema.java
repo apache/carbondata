@@ -61,7 +61,7 @@ public class TableSchema implements Serializable, Writable {
   /**
    * History of schema evolution of this table
    */
-  private SchemaEvolution schemaEvalution;
+  private SchemaEvolution schemaEvolution;
 
   /**
    * contains all key value pairs for table properties set by user in craete DDL
@@ -112,17 +112,17 @@ public class TableSchema implements Serializable, Writable {
   }
 
   /**
-   * @return the schemaEvalution
+   * @return the schemaEvolution
    */
-  public SchemaEvolution getSchemaEvalution() {
-    return schemaEvalution;
+  public SchemaEvolution getSchemaEvolution() {
+    return schemaEvolution;
   }
 
   /**
-   * @param schemaEvalution the schemaEvalution to set
+   * @param schemaEvolution the schemaEvolution to set
    */
-  public void setSchemaEvalution(SchemaEvolution schemaEvalution) {
-    this.schemaEvalution = schemaEvalution;
+  public void setSchemaEvolution(SchemaEvolution schemaEvolution) {
+    this.schemaEvolution = schemaEvolution;
   }
 
   /**

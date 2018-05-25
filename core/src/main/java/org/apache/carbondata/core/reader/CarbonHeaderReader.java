@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.format.FileHeader;
 
-import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchmeaToWrapperColumnSchema;
+import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
 import org.apache.thrift.TBase;
 
@@ -78,7 +78,7 @@ public class CarbonHeaderReader {
     List<ColumnSchema> columnSchemaList = new ArrayList<>();
     List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
     for (org.apache.carbondata.format.ColumnSchema table_column : table_columns) {
-      ColumnSchema col = thriftColumnSchmeaToWrapperColumnSchema(table_column);
+      ColumnSchema col = thriftColumnSchemaToWrapperColumnSchema(table_column);
       col.setColumnReferenceId(col.getColumnUniqueId());
       columnSchemaList.add(col);
     }

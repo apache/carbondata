@@ -310,7 +310,7 @@ object CarbonDataStoreCreator {
     val schemaEvol: SchemaEvolution = new SchemaEvolution()
     schemaEvol.setSchemaEvolutionEntryList(
       new util.ArrayList[SchemaEvolutionEntry]())
-    tableSchema.setSchemaEvalution(schemaEvol)
+    tableSchema.setSchemaEvolution(schemaEvol)
     tableSchema.setTableId(UUID.randomUUID().toString)
     tableInfo.setTableUniqueName(
       absoluteTableIdentifier.getCarbonTableIdentifier.getTableUniqueName

@@ -79,7 +79,7 @@ class SparkCarbonFileFormat extends FileFormat
       .getColumn_schema
     var colArray = ArrayBuffer[StructField]()
     for (i <- 0 to table_columns.size() - 1) {
-      val col = CarbonUtil.thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i))
+      val col = CarbonUtil.thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i))
       colArray += (new StructField(col.getColumnName,
         CarbonScalaUtil.convertCarbonToSparkDataType(col.getDataType), false))
     }
