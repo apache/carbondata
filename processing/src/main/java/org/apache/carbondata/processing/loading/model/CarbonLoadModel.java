@@ -210,6 +210,11 @@ public class CarbonLoadModel implements Serializable {
    * Flder path to where data should be written for this load.
    */
   private String dataWritePath;
+  
+  /**
+   * sort columns bounds
+   */
+  private String loadMinSize;
 
   private List<String> mergedSegmentIds;
 
@@ -388,6 +393,14 @@ public class CarbonLoadModel implements Serializable {
     this.sortColumnsBoundsStr = sortColumnsBoundsStr;
   }
 
+  public String getLoadMinSize() {
+    return loadMinSize;
+  }
+
+  public void setLoadMinSize(String loadMinSize) {
+    this.loadMinSize = loadMinSize;
+  }
+
   /**
    * Get copy with taskNo.
    * Broadcast value is shared in process, so we need to copy it to make sure the value in each
@@ -439,6 +452,7 @@ public class CarbonLoadModel implements Serializable {
     copy.badRecordsLocation = badRecordsLocation;
     copy.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
     copy.sortColumnsBoundsStr = sortColumnsBoundsStr;
+    copy.loadMinSize = loadMinSize;
     return copy;
   }
 
@@ -492,6 +506,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.badRecordsLocation = badRecordsLocation;
     copyObj.isAggLoadRequest = isAggLoadRequest;
     copyObj.sortColumnsBoundsStr = sortColumnsBoundsStr;
+    copyObj.loadMinSize = loadMinSize;
     return copyObj;
   }
 

@@ -1070,14 +1070,21 @@ object CarbonDataRDDFactory {
       .ensureExecutorsAndGetNodeList(blockList, sqlContext.sparkContext)
     val skewedDataOptimization = CarbonProperties.getInstance()
       .isLoadSkewedDataOptimizationEnabled()
+    val loadMinSizeOptimization = CarbonProperties.getInstance()
+      .isLoadMinSizeOptimizationEnabled()
+    // get user ddl input the node loads the smallest amount of data
+    val expectedMinSizePerNode = carbonLoadModel.getLoadMinSize()
     val blockAssignStrategy = if (skewedDataOptimization) {
       CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_SIZE_FIRST
+    } else if (loadMinSizeOptimization) {
+      CarbonLoaderUtil.BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST
     } else {
       CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST
     }
     LOGGER.info(s"Allocating block to nodes using strategy: $blockAssignStrategy")
+
     val nodeBlockMapping = CarbonLoaderUtil.nodeBlockMapping(blockList.toSeq.asJava, -1,
-      activeNodes.toList.asJava, blockAssignStrategy).asScala.toSeq
+      activeNodes.toList.asJava, blockAssignStrategy, expectedMinSizePerNode).asScala.toSeq
     val timeElapsed: Long = System.currentTimeMillis - startTime
     LOGGER.info("Total Time taken in block allocation: " + timeElapsed)
     LOGGER.info(s"Total no of blocks: ${ blockList.length }, " +
