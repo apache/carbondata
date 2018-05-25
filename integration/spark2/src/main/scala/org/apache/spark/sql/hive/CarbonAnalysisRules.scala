@@ -58,7 +58,8 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
 
       val tableRelation = if (SPARK_VERSION.startsWith("2.1")) {
         relation
-      } else if (SPARK_VERSION.startsWith("2.2")) {
+      } else if (SPARK_VERSION.startsWith("2.2")
+        || SPARK_VERSION.startsWith("2.3")) {
         alias match {
           case Some(_) =>
             CarbonReflectionUtils.getSubqueryAlias(
@@ -173,7 +174,8 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         // include tuple id in subquery
         if (SPARK_VERSION.startsWith("2.1")) {
           Project(projList, relation)
-        } else if (SPARK_VERSION.startsWith("2.2")) {
+        } else if (SPARK_VERSION.startsWith("2.2")
+          || SPARK_VERSION.startsWith("2.3")) {
           alias match {
             case Some(_) =>
               val subqueryAlias = CarbonReflectionUtils.getSubqueryAlias(

@@ -418,19 +418,20 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     // if filter is null and output projection is empty, use the row number of blocklet header
     int rowNum = 0;
     try {
+      String vectorReaderClassName = "org.apache.spark.sql.CarbonVectorProxy";
+      Class readVectorClass = Class.forName(vectorReaderClassName);
+      cons = readVectorClass.getConstructor(MemoryMode.class, StructType.class, int.class);
+
       if (skipScanData) {
 
-        String vectorReaderClassName = "org.apache.spark.sql.CarbonVectorProxy";
-        Class readVectorClass = Class.forName(vectorReaderClassName);
-        cons = readVectorClass.getConstructor(Enum.class, int.class, StructType.class);
         int rowNums = header.getBlocklet_info().getNum_rows();
-        vectorProxy = (CarbonSparkVectorReader) cons.newInstance(MemoryMode.OFF_HEAP, rowNums, outputSchema);
+        vectorProxy = (CarbonSparkVectorReader) cons.newInstance(MemoryMode.OFF_HEAP, outputSchema, rowNums);
         vectorProxy.setNumRows(rowNums);
         input.skipBlockletData(true);
         return rowNums > 0;
       }
       input.readBlockletData(header);
-      vectorProxy = (CarbonSparkVectorReader) cons.newInstance(MemoryMode.OFF_HEAP, input.getRowNums(), outputSchema);
+      vectorProxy = (CarbonSparkVectorReader) cons.newInstance(MemoryMode.OFF_HEAP, outputSchema, input.getRowNums());
       if (null == filter) {
         while (input.hasNext()) {
           readRowFromStream();
