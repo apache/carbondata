@@ -427,7 +427,7 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 
 ## API List
 
-### org.apache.carbondata.sdk.file.CarbonReader
+### Class org.apache.carbondata.sdk.file.CarbonReader
 ```
  /**
   * Return a new CarbonReaderBuilder instance
@@ -470,7 +470,7 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
   public void close();
 ```
 
-###org.apache.carbondata.sdk.file.CarbonReaderBuilder
+### Class org.apache.carbondata.sdk.file.CarbonReaderBuilder
 ```
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -524,6 +524,16 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 
 ```
   /**
+   * Set the access key for S3.
+   *
+   * @param value the value of access key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setAccessKey(String value);
+```
+
+```
+  /**
    * Set the secret key for S3
    *
    * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
@@ -531,6 +541,16 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @return CarbonWriterBuilder
    */
   public CarbonReaderBuilder setSecretKey(String key, String value);
+```
+
+```
+  /**
+   * Set the secret key for S3
+   *
+   * @param value the value of secret key
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setSecretKey(String value);
 ```
 
 ```
@@ -542,6 +562,16 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @return CarbonWriterBuilder
    */
   public CarbonReaderBuilder setEndPoint(String key, String value);
+```
+
+``` 
+  /**
+   * Set the endpoint for S3
+   *
+   * @param value the value of endpoint
+   * @return CarbonWriterBuilder
+   */
+  public CarbonReaderBuilder setEndPoint(String value);
 ```
 
 ```
