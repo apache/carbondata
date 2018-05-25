@@ -32,15 +32,26 @@ import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable
 import org.apache.spark.sql.hive.{CarbonRelation, CreateCarbonSourceTableAsSelectCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 
 /**
  * Carbon strategies for ddl commands
  */
+/**
+  * CreateDataSourceTableAsSelectCommand class has extra argument in
+  * 2.3, so need to add wrapper to match the case
+  */
+object MatchCreateDataSourceTable {
+
+  def unapply(plan: LogicalPlan): Option[(CatalogTable, SaveMode, LogicalPlan)] = plan match {
+    case t: CreateDataSourceTableAsSelectCommand => Some(t.table, t.mode, t.query)
+    case _ => None
+  }
+}
 
 class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
   val LOGGER: LogService =
@@ -228,7 +239,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val cmd =
           CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
         ExecutedCommandExec(cmd) :: Nil
-      case cmd@CreateDataSourceTableAsSelectCommand(tableDesc, mode, query)
+      case MatchCreateDataSourceTable(tableDesc, mode, query)
         if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
            && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
                || tableDesc.provider.get.equalsIgnoreCase("carbondata")) =>

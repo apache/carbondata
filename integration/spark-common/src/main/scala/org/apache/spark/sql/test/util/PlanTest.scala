@@ -27,9 +27,9 @@ import org.apache.spark.sql.catalyst.util._
 class PlanTest extends CarbonFunSuite {
 
   /** Fails the test if the two expressions do not match */
-  protected def compareExpressions(e1: Expression, e2: Expression): Unit = {
-    comparePlans(Filter(e1, OneRowRelation), Filter(e2, OneRowRelation))
-  }
+//  protected def compareExpressions(e1: Expression, e2: Expression): Unit = {
+//    comparePlans(Filter(e1, OneRowRelation), Filter(e2, OneRowRelation))
+//  }
 
   /** Fails the test if the two plans do not match */
   protected def comparePlans(plan1: LogicalPlan, plan2: LogicalPlan) {

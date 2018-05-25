@@ -17,23 +17,26 @@
 
 package org.apache.spark.util
 
+import org.antlr.v4.runtime.tree.TerminalNode
+
 import scala.reflect.runtime._
 import scala.reflect.runtime.universe._
-
-import org.apache.spark.SPARK_VERSION
-import org.apache.spark.SparkContext
+import org.apache.spark.{SPARK_VERSION, SecurityManager, SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
-import org.apache.spark.sql.catalyst.parser.AstBuilder
+import org.apache.spark.sql.catalyst.parser.{AstBuilder, SqlBaseParser}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.sources.BaseRelation
-
-import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.spark.sql.sources.{BaseRelation, Filter}
+import org.apache.spark.rpc.RpcEnvConfig
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateFileFormatContext, CreateHiveTableContext}
+import org.apache.spark.sql.catalyst.plans.physical.Partitioning
+import org.apache.spark.sql.execution.RowDataSourceScanExec
 
 /**
  * Reflection APIs
@@ -182,16 +185,12 @@ object CarbonReflectionUtils {
   def getAstBuilder(conf: Object,
       sqlParser: Object,
       sparkSession: SparkSession): AstBuilder = {
-    if (SPARK_VERSION.startsWith("2.1") || SPARK_VERSION.startsWith("2.2")) {
-      val className = sparkSession.sparkContext.conf.get(
-        CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME,
-        "org.apache.spark.sql.hive.CarbonSqlAstBuilder")
-      createObject(className,
-        conf,
-        sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]
-    } else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    val className = sparkSession.sparkContext.conf.get(
+      CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME,
+      "org.apache.spark.sql.hive.CarbonSqlAstBuilder")
+    createObject(className,
+      conf,
+      sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]
   }
 
   def getSessionState(sparkContext: SparkContext,
@@ -202,7 +201,7 @@ object CarbonReflectionUtils {
         CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
         "org.apache.spark.sql.hive.CarbonSessionState")
       createObject(className, carbonSession)._1
-    } else if (SPARK_VERSION.startsWith("2.2")) {
+    } else if (SPARK_VERSION.startsWith("2.2") || SPARK_VERSION.startsWith("2.3")) {
       if (useHiveMetaStore) {
         val className = sparkContext.conf.get(
           CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
@@ -245,6 +244,34 @@ object CarbonReflectionUtils {
       .find(_.name.toString.equalsIgnoreCase("isFormatted"))
       .map(l => im.reflectField(l.asTerm).get).getOrElse("false").asInstanceOf[Boolean]
     isFormatted
+  }
+
+
+
+  def getRowDataSourceScanExecObj(relation: LogicalRelation,
+                                  output: Seq[Attribute],
+                                  pushedFilters: Seq[Filter],
+                                  handledFilters: Seq[Filter],
+                                  updateRequestedColumns: Seq[Attribute],
+                                  rdd: RDD[InternalRow],
+                                  partition : Partitioning,
+                                  metadata: Map[String, String]): RowDataSourceScanExec = {
+    val className = "org.apache.spark.sql.execution.RowDataSourceScanExec"
+    if (SPARK_VERSION.startsWith("2.1") || SPARK_VERSION.startsWith("2.2")) {
+      createObject(className, output, rdd, relation.relation,
+        partition, metadata,
+        relation.catalogTable.map(_.identifier))._1.asInstanceOf[RowDataSourceScanExec]
+
+    } else if (SPARK_VERSION.startsWith("2.3")) {
+      createObject(className,output, updateRequestedColumns.map(output.indexOf),
+        pushedFilters.toSet, handledFilters.toSet,  rdd,
+        relation.relation,
+        relation.catalogTable.map(_.identifier))._1.asInstanceOf[RowDataSourceScanExec]
+
+    } else {
+      throw new UnsupportedOperationException("Spark version not supported")
+    }
+
   }
 
   def createObject(className: String, conArgs: Object*): (Any, Class[_]) = {

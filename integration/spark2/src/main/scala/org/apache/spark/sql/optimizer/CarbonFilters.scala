@@ -31,7 +31,7 @@ import org.apache.spark.sql.CarbonEndsWith
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.CarbonSessionCatalog
-
+import org.apache.spark.sql.sources.Filter
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -47,6 +47,8 @@ import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.spark.SPARK_VERSION
+import org.apache.spark.util.CarbonReflectionUtils
 
 
 /**
@@ -294,6 +296,27 @@ object CarbonFilters {
     filters.flatMap(translate(_, false)).toArray
   }
 
+  /**
+    *  This API checks whether StringTrim object is compatible with
+    *  carbon,carbon only deals with the space any other symbol should
+    *  be ignored.So condition is SPARK version < 2.3.
+    *  If it is 2.3 then trimStr field should be empty
+    * @param stringTrim
+    * @return
+    */
+  def isStringTrimCompatibleWithCarbon(stringTrim : StringTrim) : Boolean = {
+    val version = SPARK_VERSION
+    var isCompatible = true
+    if (version.startsWith("2.3")) {
+      val trimStr = CarbonReflectionUtils.getField("trimStr", stringTrim)
+        .asInstanceOf[Option[Expression]]
+      if (trimStr.isDefined) {
+        isCompatible = false
+      }
+    }
+    isCompatible
+  }
+
   def transformExpression(expr: Expression): CarbonExpression = {
     expr match {
       case Or(left, right)
@@ -381,7 +404,9 @@ object CarbonFilters {
           new CarbonLiteralExpression(maxValueLimit,
             CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
         new AndExpression(l, r)
-      case StringTrim(child) => transformExpression(child)
+      case strTrim: StringTrim if (isStringTrimCompatibleWithCarbon(strTrim)) => {
+        transformExpression(strTrim)
+      }
       case _ =>
         new SparkUnknownExpression(expr.transform {
           case AttributeReference(name, dataType, _, _) =>
