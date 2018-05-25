@@ -269,7 +269,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
     }
     org.apache.carbondata.format.SchemaEvolution schemaEvolution =
-        fromWrapperToExternalSchemaEvolution(wrapperTableSchema.getSchemaEvalution());
+        fromWrapperToExternalSchemaEvolution(wrapperTableSchema.getSchemaEvolution());
     org.apache.carbondata.format.TableSchema externalTableSchema =
         new org.apache.carbondata.format.TableSchema(
             wrapperTableSchema.getTableId(), thriftColumnSchema, schemaEvolution);
@@ -535,7 +535,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         externalColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelation) {
       wrapperColumnSchema.setParentColumnTableRelations(
-          fromExtrenalToWrapperParentTableColumnRelations(parentColumnTableRelation));
+          fromExternalToWrapperParentTableColumnRelations(parentColumnTableRelation));
     }
     return wrapperColumnSchema;
   }
@@ -595,11 +595,11 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       listOfColumns.add(fromExternalToWrapperColumnSchema(externalColumnSchema));
     }
     wrapperTableSchema.setListOfColumns(listOfColumns);
-    wrapperTableSchema.setSchemaEvalution(
+    wrapperTableSchema.setSchemaEvolution(
         fromExternalToWrapperSchemaEvolution(externalTableSchema.getSchema_evolution()));
     if (externalTableSchema.isSetBucketingInfo()) {
       wrapperTableSchema.setBucketingInfo(
-          fromExternalToWarpperBucketingInfo(externalTableSchema.bucketingInfo));
+          fromExternalToWrapperBucketingInfo(externalTableSchema.bucketingInfo));
     }
     if (externalTableSchema.getPartitionInfo() != null) {
       wrapperTableSchema.setPartitionInfo(
@@ -608,7 +608,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     return wrapperTableSchema;
   }
 
-  private BucketingInfo fromExternalToWarpperBucketingInfo(
+  private BucketingInfo fromExternalToWrapperBucketingInfo(
       org.apache.carbondata.format.BucketingInfo externalBucketInfo) {
     List<ColumnSchema> listOfColumns = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema externalColumnSchema :
@@ -661,7 +661,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     return childSchema;
   }
 
-  private List<ParentColumnTableRelation> fromExtrenalToWrapperParentTableColumnRelations(
+  private List<ParentColumnTableRelation> fromExternalToWrapperParentTableColumnRelations(
       List<org.apache.carbondata.format.ParentColumnTableRelation> thirftParentColumnRelation) {
     List<ParentColumnTableRelation> parentColumnTableRelationList = new ArrayList<>();
     for (org.apache.carbondata.format.ParentColumnTableRelation carbonTableRelation :

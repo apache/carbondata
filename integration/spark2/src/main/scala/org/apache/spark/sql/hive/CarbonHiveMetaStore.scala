@@ -186,7 +186,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       absoluteTableIdentifier: AbsoluteTableIdentifier): String = {
     val schemaEvolutionEntry = new schema.SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
-    tableInfo.getFactTable.getSchemaEvalution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
+    tableInfo.getFactTable.getSchemaEvolution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
     CarbonUtil.convertToMultiGsonStrings(tableInfo, " ", "", ",")
   }
 

@@ -90,7 +90,7 @@ public class TableSchemaBuilder {
     schema.setBucketingInfo(null);
     SchemaEvolution schemaEvol = new SchemaEvolution();
     schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
-    schema.setSchemaEvalution(schemaEvol);
+    schema.setSchemaEvolution(schemaEvol);
     List<ColumnSchema> allColumns = new LinkedList<>(sortColumns);
     allColumns.addAll(dimension);
     allColumns.addAll(complex);
