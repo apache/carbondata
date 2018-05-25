@@ -892,7 +892,7 @@ public class CarbonTable implements Serializable {
 
 
   public long size() throws IOException {
-    Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this);
+    Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this, true);
     Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
     if (dataSize == null) {
       dataSize = 0L;
