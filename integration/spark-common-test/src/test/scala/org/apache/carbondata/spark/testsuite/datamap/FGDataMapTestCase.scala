@@ -479,60 +479,77 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select * from normal_test where name='n502670' and city='c2670'"))
   }
 
-  test("test fg datamap and validate the visible and invisible status of datamap ") {
-    sql("DROP TABLE IF EXISTS datamap_test")
+  test("test invisible datamap during query") {
+    val tableName = "datamap_test"
+    val dataMapName1 = "datamap1"
+    val dataMapName2 = "datamap2"
+    sql(s"DROP TABLE IF EXISTS $tableName")
     sql(
-      """
-        | CREATE TABLE datamap_test(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      s"""
+         | CREATE TABLE $tableName(id INT, name STRING, city STRING, age INT)
+         | STORED BY 'org.apache.carbondata.format'
+         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
     // register datamap writer
     sql(
       s"""
-         | CREATE DATAMAP ggdatamap1 ON TABLE datamap_test
+         | CREATE DATAMAP $dataMapName1
+         | ON TABLE $tableName
          | USING '${classOf[FGDataMapFactory].getName}'
          | DMPROPERTIES('index_columns'='name')
-       """.stripMargin)
+      """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ggdatamap2 ON TABLE datamap_test
+         | CREATE DATAMAP $dataMapName2
+         | ON TABLE $tableName
          | USING '${classOf[FGDataMapFactory].getName}'
          | DMPROPERTIES('index_columns'='city')
        """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
+    val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    assert(df1(0).getString(0).contains("FG DataMap"))
+    assert(df1(0).getString(0).contains(dataMapName1))
+    val e11 = intercept[Exception] {
+      assert(df1(0).getString(0).contains(dataMapName2))
+    }
+    assert(e11.getMessage.contains("did not contain \"" + dataMapName2))
 
-    val tableName = "datamap_test";
-    val dataMapName1 = "ggdatamap1";
-    val df1 = sql("EXPLAIN EXTENDED SELECT * FROM datamap_test WHERE name='n502670'").collect()
-    assertResult(
-      """== CarbonData Profiler ==
-        |Table Scan on datamap_test
-        | - total blocklets: 1
-        | - filter: (name <> null and name = n502670)
-        | - pruned by Main DataMap
-        |    - skipped blocklets: 0
-        | - pruned by FG DataMap
-        |    - name: ggdatamap1
-        |    - provider: org.apache.carbondata.spark.testsuite.datamap.FGDataMapFactory
-        |    - skipped blocklets: 0
-        |""".stripMargin)(df1(0).getString(0))
-
-    sql(s"set ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = false")
-    val df2 = sql("EXPLAIN EXTENDED SELECT * FROM datamap_test WHERE name='n502670'").collect()
-    assertResult(
-      """== CarbonData Profiler ==
-        |Table Scan on datamap_test
-        | - total blocklets: 1
-        | - filter: (name <> null and name = n502670)
-        | - pruned by Main DataMap
-        |    - skipped blocklets: 0
-        |""".stripMargin)(df2(0).getString(0))
-
-    checkAnswer(sql("SELECT * FROM datamap_test WHERE name='n502670' AND city='c2670'"),
+    // make datamap1 invisible
+    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = false")
+    val df2 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val e = intercept[Exception] {
+      assert(df2(0).getString(0).contains(dataMapName1))
+    }
+    assert(e.getMessage.contains("did not contain \"" + dataMapName1))
+    assert(df2(0).getString(0).contains(dataMapName2))
+    checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
-    sql("DROP TABLE IF EXISTS datamap_test")
+
+    // also make datamap2 invisible
+    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName2 = false")
+    checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
+      sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
+    val df3 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val e31 = intercept[Exception] {
+      assert(df3(0).getString(0).contains(dataMapName1))
+    }
+    assert(e31.getMessage.contains("did not contain \"" + dataMapName1))
+    val e32 = intercept[Exception] {
+      assert(df3(0).getString(0).contains(dataMapName2))
+    }
+    assert(e32.getMessage.contains("did not contain \"" + dataMapName2))
+
+    // make datamap1,datamap2 visible
+    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = true")
+    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = true")
+    checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
+      sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
+    val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    assert(df4(0).getString(0).contains(dataMapName1))
+    val e41 = intercept[Exception] {
+      assert(df3(0).getString(0).contains(dataMapName2))
+    }
+    assert(e41.getMessage.contains("did not contain \"" + dataMapName2))
   }
 
   override protected def afterAll(): Unit = {
