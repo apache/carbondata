@@ -480,7 +480,7 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test invisible datamap during query") {
-    val tableName = "datamap_test"
+    val tableName = "datamap_testFG"
     val dataMapName1 = "datamap1"
     val dataMapName2 = "datamap2"
     sql(s"DROP TABLE IF EXISTS $tableName")
@@ -556,5 +556,6 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
     sql("DROP TABLE IF EXISTS datamap_test")
+    sql("DROP TABLE IF EXISTS datamap_testFG")
   }
 }
