@@ -184,7 +184,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     {
       sql("select * from sdkOutputTable").show(false)
     }
-    assert(exception.getMessage().contains("Index file not present to read the carbondata file"))
+    assert(exception.getMessage().contains("Error while taking index snapshot"))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files

@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -674,5 +675,28 @@ m filterExpression
     } catch (InvalidConfigurationException e) {
       return false;
     }
+  }
+
+  /**
+   * Project all Columns for carbon reader
+   *
+   * @return String araay of columnNames
+   * @param carbonTable
+   */
+  public String[] projectAllColumns(CarbonTable carbonTable) {
+    List<ColumnSchema> colList = carbonTable.getTableInfo().getFactTable().getListOfColumns();
+    List<String> projectColumn = new ArrayList<>();
+    for (ColumnSchema cols : colList) {
+      if (cols.getSchemaOrdinal() != -1) {
+        projectColumn.add(cols.getColumnUniqueId());
+      }
+    }
+    String[] projectionColumns = new String[projectColumn.size()];
+    int i = 0;
+    for (String columnName : projectColumn) {
+      projectionColumns[i] = columnName;
+      i++;
+    }
+    return projectionColumns;
   }
 }
