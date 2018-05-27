@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
+import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -57,7 +58,9 @@ public class TestBlockletDataMapFactory {
 
   private TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier;
 
-  private Cache<TableBlockIndexUniqueIdentifier, BlockletDataMapIndexWrapper> cache;
+  private TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper;
+
+  private Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletDataMapIndexWrapper> cache;
 
   @Before public void setUp()
       throws ClassNotFoundException, IllegalAccessException, InvocationTargetException,
@@ -78,6 +81,8 @@ public class TestBlockletDataMapFactory {
     tableBlockIndexUniqueIdentifier =
         new TableBlockIndexUniqueIdentifier("/opt/store/default/carbon_table/Fact/Part0/Segment_0",
             "0_batchno0-0-1521012756709.carbonindex", null, "0");
+    tableBlockIndexUniqueIdentifierWrapper =
+        new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier, carbonTable);
     cache = CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
   }
 
@@ -86,12 +91,12 @@ public class TestBlockletDataMapFactory {
       IllegalAccessException {
     List<BlockletDataMap> dataMaps = new ArrayList<>();
     Method method = BlockletDataMapFactory.class
-        .getDeclaredMethod("cache", TableBlockIndexUniqueIdentifier.class,
+        .getDeclaredMethod("cache", TableBlockIndexUniqueIdentifierWrapper.class,
             BlockletDataMapIndexWrapper.class);
     method.setAccessible(true);
-    method.invoke(blockletDataMapFactory, tableBlockIndexUniqueIdentifier,
+    method.invoke(blockletDataMapFactory, tableBlockIndexUniqueIdentifierWrapper,
         new BlockletDataMapIndexWrapper(dataMaps));
-    BlockletDataMapIndexWrapper result = cache.getIfPresent(tableBlockIndexUniqueIdentifier);
+    BlockletDataMapIndexWrapper result = cache.getIfPresent(tableBlockIndexUniqueIdentifierWrapper);
     assert null != result;
   }
 
