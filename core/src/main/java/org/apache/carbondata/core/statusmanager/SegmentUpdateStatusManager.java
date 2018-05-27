@@ -86,10 +86,19 @@ public class SegmentUpdateStatusManager {
     this.identifier = table.getAbsoluteTableIdentifier();
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
-    segmentDetails = SegmentStatusManager.readLoadMetadata(
-        CarbonTablePath.getMetadataPath(identifier.getTablePath()));
+    if (!table.getTableInfo().isTransactionalTable()) {
+      // fileExist is costly operation, so check based on table Type
+      segmentDetails = new LoadMetadataDetails[0];
+    } else {
+      segmentDetails = SegmentStatusManager.readLoadMetadata(
+          CarbonTablePath.getMetadataPath(identifier.getTablePath()));
+    }
     isPartitionTable = table.isHivePartitionTable();
-    updateDetails = readLoadMetadata();
+    if (segmentDetails.length != 0) {
+      updateDetails = readLoadMetadata();
+    } else {
+      updateDetails = new SegmentUpdateDetails[0];
+    }
     populateMap();
   }
 

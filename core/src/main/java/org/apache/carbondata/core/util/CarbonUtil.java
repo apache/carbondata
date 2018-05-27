@@ -53,6 +53,7 @@ import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
+import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypeAdapter;
@@ -2368,6 +2369,35 @@ public final class CarbonUtil {
 
     tableInfo.setDataMapSchemas(null);
     return tableInfo;
+  }
+
+  /**
+   * This method will read the prepare dummy tableInfo
+   *
+   * @param carbonDataFilePath
+   * @param tableName
+   * @return
+   */
+  public static TableInfo inferDummySchema(String carbonDataFilePath,
+      String tableName, String dbName) {
+    // During SDK carbon Reader, This method will be called.
+    // This API will avoid IO operation to get the columnSchema list.
+    // ColumnSchema list will be filled during blocklet loading (where actual IO happens)
+    List<ColumnSchema> columnSchemaList = new ArrayList<>();
+    TableSchema tableSchema = getDummyTableSchema(tableName,columnSchemaList);
+    ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
+        new ThriftWrapperSchemaConverterImpl();
+    org.apache.carbondata.format.TableSchema thriftFactTable =
+        thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
+    org.apache.carbondata.format.TableInfo tableInfo =
+        new org.apache.carbondata.format.TableInfo(thriftFactTable,
+            new ArrayList<org.apache.carbondata.format.TableSchema>());
+    tableInfo.setDataMapSchemas(null);
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+        tableInfo, dbName, tableName, carbonDataFilePath);
+    wrapperTableInfo.setTransactionalTable(false);
+    return wrapperTableInfo;
   }
 
   /**

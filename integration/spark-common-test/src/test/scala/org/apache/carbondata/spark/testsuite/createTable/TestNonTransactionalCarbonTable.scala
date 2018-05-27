@@ -989,7 +989,14 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       sql("select * from sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
-      .contains("All the files doesn't have same schema"))
+      .contains("Problem in loading segment blocks."))
+
+    val exception1 =
+      intercept[IOException] {
+        sql("select count(*) from sdkOutputTable").show(false)
+      }
+    assert(exception1.getMessage()
+      .contains("Problem in loading segment blocks."))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -1021,7 +1028,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         sql("select * from sdkOutputTable").show(false)
       }
     assert(exception.getMessage()
-      .contains("All the files doesn't have same schema"))
+      .contains("Problem in loading segment blocks."))
 
 
     sql("DROP TABLE sdkOutputTable")

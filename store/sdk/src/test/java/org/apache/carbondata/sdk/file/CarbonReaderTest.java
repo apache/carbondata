@@ -385,9 +385,8 @@ public class CarbonReaderTest extends TestCase {
     // Write to a Non Transactional Table
     TestUtil.writeFilesAndVerify(new Schema(fields), path, true, false);
 
-    CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
+    CarbonReader reader = CarbonReader.builder(path, "_temp")
         .projection(new String[]{"name", "age"})
-        .isTransactionalTable(false)
         .build();
 
     // expected output after sorting

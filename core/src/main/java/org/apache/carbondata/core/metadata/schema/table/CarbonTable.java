@@ -226,7 +226,7 @@ public class CarbonTable implements Serializable {
     } else {
       // Infer the schema from the Carbondata file.
       TableInfo tableInfoInfer =
-          SchemaReader.inferSchema(AbsoluteTableIdentifier.from(tablePath, "null", "null"), false);
+          CarbonUtil.inferDummySchema(tablePath, "null", "null");
       return CarbonTable.buildFromTableInfo(tableInfoInfer);
     }
   }
@@ -241,24 +241,7 @@ public class CarbonTable implements Serializable {
    */
   public static CarbonTable buildFromTableInfo(TableInfo tableInfo) {
     CarbonTable table = new CarbonTable();
-    updateTableInfo(tableInfo);
-    table.tableInfo = tableInfo;
-    table.blockSize = tableInfo.getTableBlockSizeInMB();
-    table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
-    table.tableUniqueName = tableInfo.getTableUniqueName();
-    table.setTransactionalTable(tableInfo.isTransactionalTable());
-    table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
-    table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
-    if (tableInfo.getFactTable().getBucketingInfo() != null) {
-      table.tableBucketMap.put(tableInfo.getFactTable().getTableName(),
-          tableInfo.getFactTable().getBucketingInfo());
-    }
-    if (tableInfo.getFactTable().getPartitionInfo() != null) {
-      table.tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
-          tableInfo.getFactTable().getPartitionInfo());
-    }
-    table.hasDataMapSchema =
-        null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
+    updateTableByTableInfo(table, tableInfo);
     return table;
   }
 
@@ -995,5 +978,31 @@ public class CarbonTable implements Serializable {
       indexColumn.add(carbonColumn);
     }
     return indexColumn;
+  }
+
+  /**
+   * update the carbon table by using the passed tableInfo
+   * @param table
+   * @param tableInfo
+   */
+  public static void updateTableByTableInfo(CarbonTable table, TableInfo tableInfo) {
+    updateTableInfo(tableInfo);
+    table.tableInfo = tableInfo;
+    table.blockSize = tableInfo.getTableBlockSizeInMB();
+    table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
+    table.tableUniqueName = tableInfo.getTableUniqueName();
+    table.setTransactionalTable(tableInfo.isTransactionalTable());
+    table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
+    table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
+    if (tableInfo.getFactTable().getBucketingInfo() != null) {
+      table.tableBucketMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getBucketingInfo());
+    }
+    if (tableInfo.getFactTable().getPartitionInfo() != null) {
+      table.tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getPartitionInfo());
+    }
+    table.hasDataMapSchema =
+        null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
   }
 }
