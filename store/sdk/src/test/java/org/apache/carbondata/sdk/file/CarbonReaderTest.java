@@ -409,4 +409,105 @@ public class CarbonReaderTest extends TestCase {
         badRecordLoc);
   }
 
+  @Test
+  public void testReadFilesWithProjectAllColumns() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .projectAllColumns()
+        .build();
+
+    // expected output after sorting
+    String[] name = new String[100];
+    int[] age = new int[100];
+    for (int i = 0; i < 100; i++) {
+      name[i] = "robot" + (i / 10);
+      age[i] = (i % 10) * 10 + i / 10;
+    }
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      // Default sort column is applied for dimensions. So, need  to validate accordingly
+      Assert.assertEquals(name[i], row[0]);
+      Assert.assertEquals(age[i], row[1]);
+      i++;
+    }
+    Assert.assertEquals(i, 100);
+
+    reader.close();
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadFilesWithDefaultProjection() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .build();
+
+    // expected output after sorting
+    String[] name = new String[100];
+    int[] age = new int[100];
+    for (int i = 0; i < 100; i++) {
+      name[i] = "robot" + (i / 10);
+      age[i] = (i % 10) * 10 + i / 10;
+    }
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      Assert.assertEquals(name[i], row[0]);
+      Assert.assertEquals(age[i], row[1]);
+      i++;
+    }
+    Assert.assertEquals(i, 100);
+  }
+
+  @Test
+  public void testReadFilesWithNullProjection() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .projection(new String[]{})
+        .build();
+
+    // expected output after sorting
+    String[] name = new String[100];
+    int[] age = new int[100];
+    for (int i = 0; i < 100; i++) {
+      name[i] = "robot" + (i / 10);
+      age[i] = (i % 10) * 10 + i / 10;
+    }
+    // Default sort column is applied for dimensions. So, need  to validate accordingly
+
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert(row.length==0);
+    }
+  }
 }
