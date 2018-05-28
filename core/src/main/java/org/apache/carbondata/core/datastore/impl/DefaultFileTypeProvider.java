@@ -26,7 +26,7 @@ import org.apache.carbondata.core.datastore.filesystem.ViewFSCarbonFile;
 
 import org.apache.hadoop.conf.Configuration;
 
-public class DefaultFileTypeProvider implements FileTypeInerface {
+public class DefaultFileTypeProvider implements FileTypeInterface {
 
   public FileReader getFileHolder(FileFactory.FileType fileType) {
     switch (fileType) {
