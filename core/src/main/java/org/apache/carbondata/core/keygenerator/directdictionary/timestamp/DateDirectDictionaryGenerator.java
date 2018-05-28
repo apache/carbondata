@@ -163,7 +163,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     }
   }
 
-  private int generateKey(long timeValue) {
+  public int generateKey(long timeValue) {
     if (timeValue < MIN_VALUE || timeValue > MAX_VALUE) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Value for date type column is not in valid range. Value considered as null.");

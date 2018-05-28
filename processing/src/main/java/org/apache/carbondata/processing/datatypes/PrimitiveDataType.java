@@ -288,7 +288,11 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           logHolder.setReason(message);
         }
       } else {
-        surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
+        if (dictionaryGenerator instanceof DirectDictionary && input instanceof Long) {
+          surrogateKey = ((DirectDictionary) dictionaryGenerator).generateKey((long) input);
+        } else {
+          surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
+        }
         if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
           surrogateKey = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
           message = CarbonDataProcessorUtil
@@ -316,15 +320,36 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           if (!this.carbonDimension.getUseActualData()) {
             byte[] value = null;
             if (isDirectDictionary) {
-              int surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
+              int surrogateKey;
+              // If the input is a long value then this means that logical type was provided by
+              // the user using AvroCarbonWriter. In this case directly generate surrogate key
+              // using dictionaryGenerator.
+              if (dictionaryGenerator instanceof DirectDictionary && input instanceof Long) {
+                surrogateKey = ((DirectDictionary) dictionaryGenerator).generateKey((long) input);
+              } else {
+                surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
+              }
               if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
                 value = new byte[0];
               } else {
                 value = ByteUtil.toBytes(surrogateKey);
               }
             } else {
-              value = DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(parsedValue,
-                  this.carbonDimension.getDataType(), dateFormat);
+              // If the input is a long value then this means that logical type was provided by
+              // the user using AvroCarbonWriter. In this case directly generate Bytes from value.
+              if (this.carbonDimension.getDataType().equals(DataTypes.DATE)
+                  || this.carbonDimension.getDataType().equals(DataTypes.TIMESTAMP)
+                  && input instanceof Long) {
+                if (dictionaryGenerator != null) {
+                  value = ByteUtil.toBytes(((DirectDictionary) dictionaryGenerator)
+                      .generateKey((long) input));
+                } else {
+                  value = ByteUtil.toBytes(Long.parseLong(parsedValue));
+                }
+              } else {
+                value = DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(parsedValue,
+                    this.carbonDimension.getDataType(), dateFormat);
+              }
               if (this.carbonDimension.getDataType() == DataTypes.STRING
                   && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
                 throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
@@ -333,8 +358,15 @@ public class PrimitiveDataType implements GenericDataType<Object> {
             }
             updateValueToByteStream(dataOutputStream, value);
           } else {
-            Object value = DataTypeUtil.getDataDataTypeForNoDictionaryColumn(parsedValue,
-                this.carbonDimension.getDataType(), dateFormat);
+            Object value;
+            if (dictionaryGenerator instanceof DirectDictionary
+                && input instanceof Long) {
+              value = ByteUtil.toBytes(
+                  ((DirectDictionary) dictionaryGenerator).generateKey((long) input));
+            } else {
+              value = DataTypeUtil.getDataDataTypeForNoDictionaryColumn(parsedValue,
+                  this.carbonDimension.getDataType(), dateFormat);
+            }
             if (this.carbonDimension.getDataType() == DataTypes.STRING
                 && value.toString().length() > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
               throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "

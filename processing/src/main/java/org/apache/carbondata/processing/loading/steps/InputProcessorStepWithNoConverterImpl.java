@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -215,6 +217,10 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private Map<Integer, GenericDataType> dataFieldsWithComplexDataType;
 
+    private DirectDictionaryGenerator dateDictionaryGenerator;
+
+    private DirectDictionaryGenerator timestampDictionaryGenerator;
+
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
         boolean preFetch, AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
         DataType[] dataTypes, CarbonDataLoadConfiguration configuration,
@@ -313,7 +319,23 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
               throw new CarbonDataLoadingException("Loading Exception", e);
             }
           } else {
-            newData[i] = data[orderOfData[i]];
+            DataType dataType = dataFields[i].getColumn().getDataType();
+            if (dataType == DataTypes.DATE && data[orderOfData[i]] instanceof Long) {
+              if (dateDictionaryGenerator == null) {
+                dateDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+                    .getDirectDictionaryGenerator(dataType, dataFields[i].getDateFormat());
+              }
+              newData[i] = dateDictionaryGenerator.generateKey((long) data[orderOfData[i]]);
+            } else if (dataType == DataTypes.TIMESTAMP && data[orderOfData[i]] instanceof Long) {
+              if (timestampDictionaryGenerator == null) {
+                timestampDictionaryGenerator =
+                    DirectDictionaryKeyGeneratorFactory
+                        .getDirectDictionaryGenerator(dataType, dataFields[i].getTimestampFormat());
+              }
+              newData[i] = timestampDictionaryGenerator.generateKey((long) data[orderOfData[i]]);
+            } else {
+              newData[i] = data[orderOfData[i]];
+            }
           }
         }
       }
