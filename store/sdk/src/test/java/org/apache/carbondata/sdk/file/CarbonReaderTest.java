@@ -448,7 +448,7 @@ public class CarbonReaderTest extends TestCase {
   }
 
   @Test
-  public void testReadFilesWithDefaultProjection() throws IOException, InterruptedException {
+  public void testReadFilesWithNullProjection() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
@@ -460,6 +460,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
+        .projection(new String[]{})
         .build();
 
     // expected output after sorting
@@ -471,14 +472,9 @@ public class CarbonReaderTest extends TestCase {
     }
     // Default sort column is applied for dimensions. So, need  to validate accordingly
 
-    int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
-      // Default sort column is applied for dimensions. So, need  to validate accordingly
-      Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(age[i], row[1]);
-      i++;
+      assert(row.length==0);
     }
-    Assert.assertEquals(i, 100);
   }
 }

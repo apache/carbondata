@@ -50,6 +50,8 @@ public class CarbonReaderBuilder {
   private Expression filterExpression;
   private String tableName;
   private boolean isTransactionalTable = true;
+  // it will be true if use the projectAllColumns method
+  private boolean isProjectAllColumns = false;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -112,6 +114,7 @@ public class CarbonReaderBuilder {
       projectionColumns[i] = columnName;
       i++;
     }
+    isProjectAllColumns = true;
     return this;
   }
 
@@ -213,7 +216,7 @@ public class CarbonReaderBuilder {
     if (filterExpression != null) {
       format.setFilterPredicates(job.getConfiguration(), filterExpression);
     }
-    if (projectionColumns == null) {
+    if (isProjectAllColumns) {
       projectAllColumns();
     }
     format.setColumnProjection(job.getConfiguration(), new CarbonProjection(projectionColumns));
