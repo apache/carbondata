@@ -28,7 +28,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
@@ -224,7 +223,7 @@ public class CarbonReaderBuilder {
     if (isProjectAllColumns) {
       projectAllColumns();
     }
-    format.setColumnProjection(job.getConfiguration(), new CarbonProjection(projectionColumns));
+    format.setColumnProjection(job.getConfiguration(), projectionColumns);
 
     final List<InputSplit> splits =
         format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
