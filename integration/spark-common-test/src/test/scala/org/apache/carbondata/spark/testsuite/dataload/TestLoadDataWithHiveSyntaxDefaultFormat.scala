@@ -365,6 +365,22 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("drop table if exists complexcarbontable")
   }
 
+  test("test Complex Data type - Array and Struct of timestamp with dictionary include") {
+    sql("DROP TABLE IF EXISTS array_timestamp")
+    sql(
+      "create table array_timestamp (date1 array<timestamp>,date2 struct<date:timestamp> ) stored" +
+      " by 'carbondata' tblproperties" +
+      "('dictionary_include'='date1,date2')")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    sql("insert into array_timestamp values('2015/01/01$2016/01/01','2017/01/01')")
+    checkExistence(sql("select * from array_timestamp "),
+      true, "2015-01-01 00:00:00.0, 2016-01-01 00:00:00.0")
+    checkExistence(sql("select * from array_timestamp "),
+      true, "2017-01-01 00:00:00.0")
+    sql("DROP TABLE IF EXISTS array_timestamp")
+  }
+
   test("array<string> and string datatype for same column is not working properly") {
     sql("drop table if exists complexcarbontable")
     sql("create table complexcarbontable(deviceInformationId int, MAC array<string>, channelsId string, "+
