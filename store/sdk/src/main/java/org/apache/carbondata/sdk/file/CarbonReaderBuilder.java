@@ -92,7 +92,7 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * Projected all Columns for carbon reader
+   * Project all Columns for carbon reader
    *
    * @return CarbonReaderBuilder object
    * @throws IOException

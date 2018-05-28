@@ -493,7 +493,7 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 
 ```
   /**
-   * Projected all Columns for carbon reader
+   * Project all Columns for carbon reader
    *
    * @return CarbonReaderBuilder object
    * @throws IOException
