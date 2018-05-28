@@ -22,7 +22,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 
 import org.apache.hadoop.conf.Configuration;
 
-public interface FileTypeInerface {
+public interface FileTypeInterface {
 
   FileReader getFileHolder(FileFactory.FileType fileType);
   CarbonFile getCarbonFile(String path, FileFactory.FileType fileType);
