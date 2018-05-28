@@ -90,7 +90,6 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
 
   @Override public boolean nextKeyValue() {
     return carbonIterator.hasNext();
-
   }
 
   @Override public Void getCurrentKey() throws IOException, InterruptedException {

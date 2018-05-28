@@ -190,6 +190,19 @@ m filterExpression
     }
   }
 
+  public static void setColumnProjection(Configuration configuration, String[] projectionColumns) {
+    if (projectionColumns == null || projectionColumns.length < 1) {
+      return;
+    }
+    StringBuilder builder = new StringBuilder();
+    for (String column : projectionColumns) {
+      builder.append(column).append(",");
+    }
+    String columnString = builder.toString();
+    columnString = columnString.substring(0, columnString.length() - 1);
+    configuration.set(COLUMN_PROJECTION, columnString);
+  }
+
   public static void setColumnProjection(Configuration configuration, CarbonProjection projection) {
     if (projection == null || projection.isEmpty()) {
       return;
