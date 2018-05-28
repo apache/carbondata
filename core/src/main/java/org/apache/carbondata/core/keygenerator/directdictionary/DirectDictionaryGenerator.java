@@ -40,6 +40,8 @@ public interface DirectDictionaryGenerator {
    */
   Object getValueFromSurrogate(int key);
 
+  int generateKey(long value);
+
   /**
    * The method generate and returns the dictionary / surrogate key for direct dictionary column
    * This Method is called while executing filter queries for getting direct surrogate members.
