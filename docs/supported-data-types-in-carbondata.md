@@ -38,6 +38,8 @@
   * Complex Types
     * arrays: ARRAY``<data_type>``
     * structs: STRUCT``<col_name : data_type COMMENT col_comment, ...>``
+    
+    **NOTE**: Only 2 level complex type schema is supported for now.
 
   * Other Types
     * BOOLEAN
