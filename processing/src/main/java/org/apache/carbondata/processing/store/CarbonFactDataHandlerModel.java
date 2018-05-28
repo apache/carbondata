@@ -168,7 +168,7 @@ public class CarbonFactDataHandlerModel {
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
       CarbonDataLoadConfiguration configuration, String[] storeLocation, int bucketId,
-      int taskExtension) {
+      int taskExtension, DataMapWriterListener listener) {
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     boolean[] isUseInvertedIndex =
@@ -258,15 +258,17 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
 
-    DataMapWriterListener listener = new DataMapWriterListener();
-    listener.registerAllWriter(
-        configuration.getTableSpec().getCarbonTable(),
-        configuration.getSegmentId(),
-        CarbonTablePath.getShardName(
-            carbonDataFileAttributes.getTaskId(),
-            bucketId,
-            0,
-            String.valueOf(carbonDataFileAttributes.getFactTimeStamp())));
+    if (listener == null) {
+      listener = new DataMapWriterListener();
+      listener.registerAllWriter(
+          configuration.getTableSpec().getCarbonTable(),
+          configuration.getSegmentId(),
+          CarbonTablePath.getShardName(
+              carbonDataFileAttributes.getTaskId(),
+              bucketId,
+              0,
+              String.valueOf(carbonDataFileAttributes.getFactTimeStamp())));
+    }
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
 

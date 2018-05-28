@@ -36,6 +36,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
@@ -56,6 +57,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       LogServiceFactory.getLogService(DataWriterProcessorStepImpl.class.getName());
 
   private long readCounter;
+
+  private DataMapWriterListener listener;
 
   public DataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -88,8 +91,9 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     String[] storeLocation = getStoreLocation(tableIdentifier);
+    listener = getDataMapWriterListener(0);
     return CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(configuration,
-        storeLocation, 0, 0);
+        storeLocation, 0, 0, listener);
   }
 
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
@@ -162,8 +166,9 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       CarbonTableIdentifier tableIdentifier, int rangeId) {
     String[] storeLocation = getStoreLocation(tableIdentifier);
 
+    listener = getDataMapWriterListener(rangeId);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-        .createCarbonFactDataHandlerModel(configuration, storeLocation, rangeId, 0);
+        .createCarbonFactDataHandlerModel(configuration, storeLocation, rangeId, 0, listener);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
     while (insideRangeIterator.hasNext()) {
@@ -247,4 +252,18 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return null;
   }
 
+  @Override public void close() {
+    if (!closed) {
+      super.close();
+      if (listener != null) {
+        try {
+          LOGGER.info("closing all the DataMap writers registered to DataMap writer listener");
+          listener.finish();
+        } catch (IOException e) {
+          LOGGER.error(e, "error while closing the datamap writers");
+          // ignoring the exception
+        }
+      }
+    }
+  }
 }

@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
@@ -85,8 +86,9 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
           CarbonRowBatch next = iterator.next();
           // If no rows from merge sorter, then don't create a file in fact column handler
           if (next.hasNext()) {
+            DataMapWriterListener listener = getDataMapWriterListener(0);
             CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-                .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, k++);
+                .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, k++, listener);
             CarbonFactHandler dataHandler = CarbonFactHandlerFactory
                 .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
             dataHandler.initialise();
