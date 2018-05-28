@@ -317,7 +317,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-
+    checkAnswer(sql("SELECT name,name FROM sdkOutputTable"), Seq(
+      Row("robot0", "robot0"),
+      Row("robot1", "robot1"),
+      Row("robot2", "robot2")))
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
       Row("robot1", 1, 0.5),
@@ -1528,6 +1531,12 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
+
+    sql("SELECT name,name FROM sdkOutputTable").show()
+    checkAnswer(sql("SELECT name,name FROM sdkOutputTable"), Seq(
+      Row("bob", "bob"),
+      Row("bob", "bob"),
+      Row("bob", "bob")))
 
     sql("select * from sdkOutputTable").show(false)
 
