@@ -95,7 +95,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       DimensionRawColumnChunk[] rawColumnChunks, int rowNumber,
       int pageNumber, DataOutputStream dataOutputStream) throws IOException {
     byte[] currentVal = copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber);
-    if (!this.isDictionary) {
+    if (!this.isDictionary && !this.isDirectDictionary) {
       dataOutputStream.writeShort(currentVal.length);
     }
     dataOutputStream.write(currentVal);
