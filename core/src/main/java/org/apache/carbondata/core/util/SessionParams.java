@@ -33,6 +33,7 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_OFFHEAP_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE;
@@ -145,6 +146,7 @@ public class SessionParams implements Serializable, Cloneable {
     boolean isValid = false;
     switch (key) {
       case ENABLE_UNSAFE_SORT:
+      case ENABLE_OFFHEAP_SORT:
       case CARBON_CUSTOM_BLOCK_DISTRIBUTION:
       case CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE:
       case CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD:
