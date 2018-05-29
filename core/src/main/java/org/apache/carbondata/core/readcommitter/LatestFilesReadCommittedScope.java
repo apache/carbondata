@@ -45,12 +45,13 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   private LoadMetadataDetails[] loadMetadataDetails;
 
   /**
-   * a new constructor of this class, which supports obtain lucene index in search mode
+   * a new constructor of this class
    *
    * @param path      carbon file path
    * @param segmentId segment id
    */
   public LatestFilesReadCommittedScope(String path, String segmentId) {
+    Objects.requireNonNull(path);
     this.carbonFilePath = path;
     this.segmentId = segmentId;
     try {
@@ -60,13 +61,13 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     }
   }
 
+  /**
+   * a new constructor with path
+   *
+   * @param path carbon file path
+   */
   public LatestFilesReadCommittedScope(String path) {
-    this.carbonFilePath = path;
-    try {
-      takeCarbonIndexFileSnapShot();
-    } catch (IOException ex) {
-      throw new RuntimeException("Error while taking index snapshot", ex);
-    }
+    this(path, null);
   }
 
   private void prepareLoadMetadata() {
@@ -157,9 +158,10 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     // Read the current file Path get the list of indexes from the path.
     CarbonFile file = FileFactory.getCarbonFile(carbonFilePath);
     CarbonFile[] files = file.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
-            .endsWith(CarbonTablePath.CARBON_DATA_EXT);
+            .endsWith(CarbonTablePath.CARBON_DATA_EXT) || file.getName().endsWith("Fact");
       }
     });
     if (files.length == 0) {

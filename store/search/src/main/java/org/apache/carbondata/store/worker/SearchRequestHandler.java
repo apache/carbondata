@@ -192,6 +192,8 @@ public class SearchRequestHandler {
     List<TableBlockInfo> blockToRead = new LinkedList<>();
     for (TableBlockInfo block : blocks) {
       if (pathToRead.keySet().contains(block.getFilePath())) {
+        // If not set this, it will can't create FineGrainBlocklet object in
+        // org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode.getIndexedData
         block.setDataMapWriterPath(pathToRead.get(block.getFilePath()).getDataMapWriterPath());
         blockToRead.add(block);
       }
