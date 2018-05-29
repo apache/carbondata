@@ -237,7 +237,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     for (CarbonFile indexDir : indexDirs) {
       // Filter out the tasks which are filtered through CG datamap.
       if (getDataMapLevel() != DataMapLevel.FG &&
-        !segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
+              !segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
         continue;
       }
       DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
