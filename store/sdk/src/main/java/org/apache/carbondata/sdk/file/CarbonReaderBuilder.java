@@ -48,7 +48,7 @@ public class CarbonReaderBuilder {
   private String[] projectionColumns;
   private Expression filterExpression;
   private String tableName;
-  private boolean isTransactionalTable = true;
+  private boolean isTransactionalTable;
 
   /**
    * It will be true if use the projectAllColumns method，
@@ -84,7 +84,7 @@ public class CarbonReaderBuilder {
    * Configure the transactional status of table
    * If set to false, then reads the carbondata and carbonindex files from a flat folder structure.
    * If set to true, then reads the carbondata and carbonindex files from segment folder structure.
-   * Default value is true
+   * Default value is false
    *
    * @param isTransactionalTable whether is transactional table or not
    * @return CarbonReaderBuilder object
