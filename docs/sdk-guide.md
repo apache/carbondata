@@ -437,20 +437,6 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 
 ```
   /**
-   * Read carbondata file and return the schema
-   */
-  public static List<ColumnSchema> readSchemaInDataFile(String dataFilePath);
-```
-
-```
- /**
-  * Read schema file and return table info object
-  */
-  public static TableInfo readSchemaFile(String schemaFilePath);
-```
-
-```
-  /**
    * Return true if has next row
    */
   public boolean hasNext();
@@ -598,4 +584,97 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    */
   public <T> CarbonReader<T> build();
 ```
+### Class org.apache.carbondata.sdk.file.CarbonSchemaReader
+```
+  /**
+   * Read schema file and return the schema
+   *
+   * @param schemaFilePath complete path including schema file name
+   * @return schema object
+   * @throws IOException
+   */
+  public static Schema readSchemaInSchemaFile(String schemaFilePath);
+```
+
+```
+  /**
+   * Read carbondata file and return the schema
+   *
+   * @param dataFilePath complete path including carbondata file name
+   * @return Schema object
+   * @throws IOException
+   */
+  public static Schema readSchemaInDataFile(String dataFilePath);
+```
+
+```
+  /**
+   * Read carbonindex file and return the schema
+   *
+   * @param indexFilePath complete path including index file name
+   * @return schema object
+   * @throws IOException
+   */
+  public static Schema readSchemaInIndexFile(String indexFilePath);
+```
+
+### Class org.apache.carbondata.sdk.file.Schema
+```
+  /**
+   * construct a schema with fields
+   * @param fields
+   */
+  public Schema(Field[] fields);
+```
+
+```
+  /**
+   * construct a schema with List<ColumnSchema>
+   *
+   * @param columnSchemaList column schema list
+   */
+  public Schema(List<ColumnSchema> columnSchemaList);
+```
+
+```
+  /**
+   * Create a Schema using JSON string, for example:
+   * [
+   *   {"name":"string"},
+   *   {"age":"int"}
+   * ]
+   * @param json specified as string
+   * @return Schema
+   */
+  public static Schema parseJson(String json);
+```
+
+```
+  /**
+   * Sort the schema order as original order
+   *
+   * @return Schema object
+   */
+  public Schema asOriginOrder();
+```
+
+### Class org.apache.carbondata.sdk.file.Field
+```
+  /**
+   * Field Constructor
+   * @param name name of the field
+   * @param type datatype of field, specified in strings.
+   */
+  public Field(String name, String type);
+```
+
+```
+  /**
+   * Construct Field from ColumnSchema
+   *
+   * @param columnSchema ColumnSchema, Store the information about the column meta data
+   */
+  public Field(ColumnSchema columnSchema);
+```
+
 Find S3 example code at [SDKS3Example](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/java/org/apache/carbondata/examples/sdk/SDKS3Example.java) in the CarbonData repo.
