@@ -39,8 +39,8 @@ public class TestUtil {
     writeFilesAndVerify(100, schema, path, sortColumns, false, -1, -1, true);
   }
 
-  public static void writeFilesAndVerify(Schema schema, String path, boolean persistSchema) {
-    writeFilesAndVerify(100, schema, path, null, persistSchema, -1, -1, true);
+  public static void writeFilesAndVerify(int rows, Schema schema, String path, boolean persistSchema) {
+    writeFilesAndVerify(rows, schema, path, null, persistSchema, -1, -1, true);
   }
 
   public static void writeFilesAndVerify(Schema schema, String path, boolean persistSchema,

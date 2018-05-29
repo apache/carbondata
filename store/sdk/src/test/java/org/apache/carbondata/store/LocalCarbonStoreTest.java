@@ -56,7 +56,7 @@ public class LocalCarbonStoreTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonStore store = new LocalCarbonStore();
     Iterator<CarbonRow> rows = store.scan(path, new String[]{"name, age"}, null);

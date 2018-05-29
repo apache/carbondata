@@ -205,7 +205,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     String schemaFile = CarbonTablePath.getSchemaFilePath(path);
     Assert.assertTrue(new File(schemaFile).exists());
