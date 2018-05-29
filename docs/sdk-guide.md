@@ -350,52 +350,6 @@ public Schema(Field[] fields);
 public static Schema parseJson(String json);
 ```
 
-### Class org.apache.carbondata.core.util.CarbonProperties
-
-```
-/**
-* This method will be responsible to get the instance of CarbonProperties class
-*
-* @return carbon properties instance
-*/
-public static CarbonProperties getInstance();
-```
-
-```
-/**
-* This method will be used to add a new property
-*
-* @param key is a property name to set for carbon.
-* @param value is valid parameter corresponding to property.
-* @return CarbonProperties object
-*/
-public CarbonProperties addProperty(String key, String value);
-```
-
-```
-/**
-* This method will be used to get the property value. If property is not
-* present, then it will return the default value.
-*
-* @param key is a property name to get user specified value.
-* @return properties value for corresponding key. If not set, then returns null.
-*/
-public String getProperty(String key);
-```
-
-```
-/**
-* This method will be used to get the property value. If property is not
-* present, then it will return the default value.
-*
-* @param key is a property name to get user specified value..
-* @param defaultValue used to be returned by function if corrosponding key not set.
-* @return properties value for corresponding key. If not set, then returns specified defaultValue.
-*/
-public String getProperty(String key, String defaultValue);
-```
-Reference : [list of carbon properties](http://carbondata.apache.org/configuration-parameters.html)
-
 ### Class org.apache.carbondata.sdk.file.AvroCarbonWriter
 ```
 /**
@@ -705,3 +659,52 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ```
 
 Find S3 example code at [SDKS3Example](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/java/org/apache/carbondata/examples/sdk/SDKS3Example.java) in the CarbonData repo.
+
+
+# Common API List for CarbonReader and CarbonWriter
+
+### Class org.apache.carbondata.core.util.CarbonProperties
+
+```
+/**
+* This method will be responsible to get the instance of CarbonProperties class
+*
+* @return carbon properties instance
+*/
+public static CarbonProperties getInstance();
+```
+
+```
+/**
+* This method will be used to add a new property
+*
+* @param key is a property name to set for carbon.
+* @param value is valid parameter corresponding to property.
+* @return CarbonProperties object
+*/
+public CarbonProperties addProperty(String key, String value);
+```
+
+```
+/**
+* This method will be used to get the property value. If property is not
+* present, then it will return the default value.
+*
+* @param key is a property name to get user specified value.
+* @return properties value for corresponding key. If not set, then returns null.
+*/
+public String getProperty(String key);
+```
+
+```
+/**
+* This method will be used to get the property value. If property is not
+* present, then it will return the default value.
+*
+* @param key is a property name to get user specified value..
+* @param defaultValue used to be returned by function if corrosponding key not set.
+* @return properties value for corresponding key. If not set, then returns specified defaultValue.
+*/
+public String getProperty(String key, String defaultValue);
+```
+Reference : [list of carbon properties](http://carbondata.apache.org/configuration-parameters.html)
