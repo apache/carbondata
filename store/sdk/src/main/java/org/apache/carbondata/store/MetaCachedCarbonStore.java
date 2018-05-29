@@ -42,7 +42,8 @@ abstract class MetaCachedCarbonStore implements CarbonStore {
     if (cache.containsKey(path)) {
       return cache.get(path);
     }
-    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(path));
+    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
+        .readSchemaFile(CarbonTablePath.getSchemaFilePath(path));
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     TableInfo tableInfo1 = schemaConverter.fromExternalToWrapperTableInfo(tableInfo, "", "", "");
     tableInfo1.setTablePath(path);
