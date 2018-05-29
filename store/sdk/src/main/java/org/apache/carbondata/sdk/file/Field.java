@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.sdk.file;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -24,6 +25,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
  * A field represent one column
@@ -124,6 +126,20 @@ public class Field {
   public Field(String name, DataType type) {
     this.name = name;
     this.type = type;
+  }
+
+  /**
+   * Construct Field from ColumnSchema
+   *
+   * @param columnSchema ColumnSchema, Store the information about the column meta data
+   */
+  public Field(ColumnSchema columnSchema) {
+    this.name = columnSchema.getColumnName();
+    this.type = columnSchema.getDataType();
+    children = new LinkedList<>();
+    schemaOrdinal = columnSchema.getSchemaOrdinal();
+    precision = columnSchema.getPrecision();
+    scale = columnSchema.getScale();
   }
 
   public String getFieldName() {
