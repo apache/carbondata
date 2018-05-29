@@ -61,7 +61,7 @@ public class CarbonReaderTest extends TestCase {
 
     TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
 
-    CarbonReader reader = CarbonReader.builder(path, "_temp")
+    CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
         .projection(new String[]{"name", "age"}).build();
 
     // expected output after sorting
@@ -87,6 +87,7 @@ public class CarbonReaderTest extends TestCase {
     // Read again
     CarbonReader reader2 = CarbonReader
         .builder(path, "_temp")
+        .isTransactionalTable(true)
         .projection(new String[]{"name", "age"})
         .build();
 
@@ -159,11 +160,13 @@ public class CarbonReaderTest extends TestCase {
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .projection(new String[]{"name", "age"})
+        .isTransactionalTable(true)
         .build();
     // Reader 2
     CarbonReader reader2 = CarbonReader
         .builder(path, "_temp")
         .projection(new String[]{"name", "age"})
+        .isTransactionalTable(true)
         .build();
 
     while (reader.hasNext()) {
@@ -191,7 +194,7 @@ public class CarbonReaderTest extends TestCase {
 
     TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
 
-    CarbonReader reader = CarbonReader.builder(path, "_temp")
+    CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
         .projection(new String[]{"name", "age"}).build();
 
     reader.close();
@@ -305,7 +308,7 @@ public class CarbonReaderTest extends TestCase {
     // Write to a Non Transactional Table
     TestUtil.writeFilesAndVerify(new Schema(fields), path, true, false);
 
-    CarbonReader reader = CarbonReader.builder(path, "_temp")
+    CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
         .projection(new String[]{"name", "age"})
         .isTransactionalTable(false)
         .build();
@@ -422,8 +425,8 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertNotNull(dataFiles);
     Assert.assertTrue(dataFiles.length > 0);
 
-    CarbonReader reader = CarbonReader
-        .builder(path, "_temp")
+    CarbonReader reader = CarbonReader.builder(path, "_temp")
+        .isTransactionalTable(true)
         .projection(new String[]{
             "stringField"
             , "shortField"
@@ -808,6 +811,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
+        .isTransactionalTable(true)
         .projectAllColumns()
         .build();
 
@@ -846,6 +850,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
+        .isTransactionalTable(true)
         .build();
 
     // expected output after sorting
@@ -881,6 +886,7 @@ public class CarbonReaderTest extends TestCase {
       CarbonReader reader = CarbonReader
           .builder(path, "_temp")
           .projection(new String[]{})
+          .isTransactionalTable(true)
           .build();
       assert (false);
     } catch (RuntimeException e) {
