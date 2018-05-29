@@ -22,10 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.metadata.converter.SchemaConverter;
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.sdk.file.CarbonReader;
 
 /**
  * A CarbonStore base class that caches CarbonTable object
@@ -40,9 +42,11 @@ abstract class MetaCachedCarbonStore implements CarbonStore {
     if (cache.containsKey(path)) {
       return cache.get(path);
     }
-    TableInfo schema = CarbonReader.readSchemaFile(CarbonTablePath.getSchemaFilePath(path));
-    schema.setTablePath(path);
-    CarbonTable table = CarbonTable.buildFromTableInfo(schema);
+    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(path));
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    TableInfo tableInfo1 = schemaConverter.fromExternalToWrapperTableInfo(tableInfo, "", "", "");
+    tableInfo1.setTablePath(path);
+    CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo1);
     cache.put(path, table);
     return table;
   }

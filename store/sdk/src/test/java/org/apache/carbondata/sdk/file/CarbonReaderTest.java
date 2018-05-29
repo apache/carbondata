@@ -20,9 +20,8 @@ package org.apache.carbondata.sdk.file;
 import java.io.*;
 import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
@@ -30,8 +29,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -200,12 +197,12 @@ public class CarbonReaderTest extends TestCase {
     });
     Assert.assertTrue(dataFiles != null);
     Assert.assertTrue(dataFiles.length > 0);
-    List<ColumnSchema> columns = CarbonReader.readSchemaInDataFile(dataFiles[0].getAbsolutePath());
-    Assert.assertTrue(columns.size() == 2);
-    Assert.assertEquals("name", columns.get(0).getColumnName());
-    Assert.assertEquals("age", columns.get(1).getColumnName());
-    Assert.assertEquals(DataTypes.STRING, columns.get(0).getDataType());
-    Assert.assertEquals(DataTypes.INT, columns.get(1).getDataType());
+    Schema schema = CarbonSchemaReader.readSchemaInDataFile(dataFiles[0].getAbsolutePath());
+    Assert.assertTrue(schema.getFields().length == 2);
+    Assert.assertEquals("name", (schema.getFields())[0].getFieldName());
+    Assert.assertEquals("age", (schema.getFields())[1].getFieldName());
+    Assert.assertEquals(DataTypes.STRING, (schema.getFields())[0].getDataType());
+    Assert.assertEquals(DataTypes.INT, (schema.getFields())[1].getDataType());
 
     FileUtils.deleteDirectory(new File(path));
   }
@@ -228,19 +225,32 @@ public class CarbonReaderTest extends TestCase {
     });
     Assert.assertTrue(dataFiles != null);
     Assert.assertTrue(dataFiles.length > 0);
-    TableInfo tableInfo = CarbonReader.readSchemaFile(dataFiles[0].getAbsolutePath());
-    Assert.assertEquals(2, tableInfo.getFactTable().getListOfColumns().size());
 
-    List<ColumnSchema> columns = tableInfo.getFactTable().getListOfColumns();
-    Assert.assertEquals(2, columns.size());
-    Assert.assertEquals("name", columns.get(0).getColumnName());
-    Assert.assertEquals("age", columns.get(1).getColumnName());
-    Assert.assertEquals(DataTypes.STRING, columns.get(0).getDataType());
-    Assert.assertEquals(DataTypes.INT, columns.get(1).getDataType());
+    Schema schema = CarbonSchemaReader.readSchemaInSchemaFile(dataFiles[0].getAbsolutePath());
+
+    // sort the schema
+    Arrays.sort(schema.getFields(), new Comparator<Field>() {
+      @Override
+      public int compare(Field o1, Field o2) {
+        return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
+      }
+    });
+
+    // Transform the schema
+    String[] strings = new String[schema.getFields().length];
+    for (int i = 0; i < schema.getFields().length; i++) {
+      strings[i] = (schema.getFields())[i].getFieldName();
+    }
+
+    Assert.assertEquals(2, schema.getFields().length);
+
+    Assert.assertEquals("name", (schema.getFields())[0].getFieldName());
+    Assert.assertEquals("age", (schema.getFields())[1].getFieldName());
+    Assert.assertEquals(DataTypes.STRING, (schema.getFields())[0].getDataType());
+    Assert.assertEquals(DataTypes.INT, (schema.getFields())[1].getDataType());
 
     FileUtils.deleteDirectory(new File(path));
   }
-
 
   @Test
   public void testWriteAndReadFilesNonTransactional() throws IOException, InterruptedException {
@@ -473,22 +483,20 @@ public class CarbonReaderTest extends TestCase {
         return name.endsWith("schema");
       }
     });
-    TableInfo tableInfo = CarbonReader.readSchemaFile(dataFiles[0].getAbsolutePath());
-
-    List<ColumnSchema> columns = tableInfo.getFactTable().getListOfColumns();
+    Schema schema = CarbonSchemaReader.readSchemaInSchemaFile(dataFiles[0].getAbsolutePath());
 
     // sort the schema
-    Collections.sort(tableInfo.getFactTable().getListOfColumns(), new Comparator<ColumnSchema>() {
+    Arrays.sort(schema.getFields(), new Comparator<Field>() {
       @Override
-      public int compare(ColumnSchema o1, ColumnSchema o2) {
+      public int compare(Field o1, Field o2) {
         return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
       }
     });
 
     // Transform the schema
-    String[] strings= new String[columns.size()];
-    for (int i = 0; i < columns.size(); i++) {
-      strings[i]= columns.get(i).getColumnName();
+    String[] strings = new String[schema.getFields().length];
+    for (int i = 0; i < schema.getFields().length; i++) {
+      strings[i] = (schema.getFields())[i].getFieldName();
     }
 
     File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
@@ -591,20 +599,20 @@ public class CarbonReaderTest extends TestCase {
       }
     });
 
-    List<ColumnSchema> columns = CarbonReader.readSchemaInDataFile(dataFiles2[0].getAbsolutePath());
+    Schema schema = CarbonSchemaReader.readSchemaInDataFile(dataFiles2[0].getAbsolutePath());
 
     // sort the schema
-    Collections.sort(columns, new Comparator<ColumnSchema>() {
+    Arrays.sort(schema.getFields(), new Comparator<Field>() {
       @Override
-      public int compare(ColumnSchema o1, ColumnSchema o2) {
+      public int compare(Field o1, Field o2) {
         return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
       }
     });
 
     // Transform the schema
-    String[] strings= new String[columns.size()];
-    for (int i = 0; i < columns.size(); i++) {
-      strings[i]= columns.get(i).getColumnName();
+    String[] strings = new String[schema.getFields().length];
+    for (int i = 0; i < schema.getFields().length; i++) {
+      strings[i] = (schema.getFields())[i].getFieldName();
     }
 
     File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
@@ -704,12 +712,12 @@ public class CarbonReaderTest extends TestCase {
       }
     });
 
-    List<ColumnSchema> columns = CarbonReader.readUserSchema(dataFiles2[0].getAbsolutePath());
+    Schema schema = CarbonSchemaReader.readSchemaInIndexFile(dataFiles2[0].getAbsolutePath()).asOriginOrder();
 
     // Transform the schema
-    String[] strings= new String[columns.size()];
-    for (int i = 0; i < columns.size(); i++) {
-      strings[i]= columns.get(i).getColumnName();
+    String[] strings = new String[schema.getFields().length];
+    for (int i = 0; i < schema.getFields().length; i++) {
+      strings[i] = (schema.getFields())[i].getFieldName();
     }
 
     File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
@@ -936,10 +944,10 @@ public class CarbonReaderTest extends TestCase {
       }
     });
 
-    List<ColumnSchema> columns = CarbonReader.readUserSchema(dataFiles2[0].getAbsolutePath());
+    Schema schema = CarbonSchemaReader.readSchemaInIndexFile(dataFiles2[0].getAbsolutePath()).asOriginOrder();
 
-    for (int i = 0; i < columns.size(); i++) {
-      System.out.println(columns.get(i).getColumnName() + "\t" + columns.get(i).getSchemaOrdinal());
+    for (int i = 0; i < schema.getFields().length; i++) {
+      System.out.println((schema.getFields())[i].getFieldName() + "\t" + schema.getFields()[i].getSchemaOrdinal());
     }
     FileUtils.deleteDirectory(new File(path));
   }
