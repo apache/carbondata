@@ -532,23 +532,14 @@ public class CarbonReaderTest extends TestCase {
 
     TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
 
-    CarbonReader reader = CarbonReader
-        .builder(path, "_temp")
-        .projection(new String[]{})
-        .build();
-
-    // expected output after sorting
-    String[] name = new String[100];
-    int[] age = new int[100];
-    for (int i = 0; i < 100; i++) {
-      name[i] = "robot" + (i / 10);
-      age[i] = (i % 10) * 10 + i / 10;
-    }
-    // Default sort column is applied for dimensions. So, need  to validate accordingly
-
-    while (reader.hasNext()) {
-      Object[] row = (Object[]) reader.readNextRow();
-      assert(row.length==0);
+    try {
+      CarbonReader reader = CarbonReader
+          .builder(path, "_temp")
+          .projection(new String[]{})
+          .build();
+      assert (false);
+    } catch (RuntimeException e) {
+      assert (e.getMessage().equalsIgnoreCase("Projection can't be empty"));
     }
   }
 }

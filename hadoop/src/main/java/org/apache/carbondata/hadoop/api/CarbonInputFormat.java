@@ -24,6 +24,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
@@ -190,9 +191,16 @@ m filterExpression
     }
   }
 
+  /**
+   * Set the column projection column names
+   *
+   * @param configuration     Configuration info
+   * @param projectionColumns projection columns name
+   */
   public static void setColumnProjection(Configuration configuration, String[] projectionColumns) {
-    if (projectionColumns == null || projectionColumns.length < 1) {
-      return;
+    Objects.requireNonNull(projectionColumns);
+    if (projectionColumns.length < 1) {
+      throw new RuntimeException("Projection can't be empty");
     }
     StringBuilder builder = new StringBuilder();
     for (String column : projectionColumns) {
@@ -203,6 +211,12 @@ m filterExpression
     configuration.set(COLUMN_PROJECTION, columnString);
   }
 
+  /**
+   * Set the column projection column names from CarbonProjection
+   *
+   * @param configuration Configuration info
+   * @param projection    CarbonProjection object that includes unique projection column name
+   */
   public static void setColumnProjection(Configuration configuration, CarbonProjection projection) {
     if (projection == null || projection.isEmpty()) {
       return;
