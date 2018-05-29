@@ -373,6 +373,8 @@ public class LocalCarbonFile implements CarbonFile {
     } else if ("LZ4".equalsIgnoreCase(compressor)) {
       outputStream = new LZ4BlockOutputStream(new FileOutputStream(path));
     } else if ("ZSTD".equalsIgnoreCase(compressor)) {
+      // compression level 1 is cost-effective for sort temp file
+      // which is not used for storage
       outputStream = new ZstdOutputStream(new FileOutputStream(path), 1);
     } else {
       throw new IOException("Unsupported compressor: " + compressor);
