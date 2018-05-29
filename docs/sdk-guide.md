@@ -492,7 +492,7 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * Configure the transactional status of table
    * If set to false, then reads the carbondata and carbonindex files from a flat folder structure.
    * If set to true, then reads the carbondata and carbonindex files from segment folder structure.
-   * Default value is true
+   * Default value is false
    *
    * @param isTransactionalTable whether is transactional table or not
    * @return CarbonReaderBuilder object
