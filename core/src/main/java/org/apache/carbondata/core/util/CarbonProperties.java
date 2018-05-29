@@ -1294,7 +1294,7 @@ public final class CarbonProperties {
       return compressor;
     } else {
       LOGGER.warn("The ".concat(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR)
-          .concat(" configuration value is invalid. Only snappy,gzip,bip2,lz4 and")
+          .concat(" configuration value is invalid. Only snappy,gzip,bip2,lz4,zstd and")
           .concat(" empty are allowed. It will not compress the sort temp files by default"));
       return CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT;
     }
