@@ -59,28 +59,28 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, true);
 
     CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
         .projection(new String[]{"name", "age"}).build();
 
     // expected output after sorting
-    String[] name = new String[100];
-    int[] age = new int[100];
-    for (int i = 0; i < 100; i++) {
+    String[] name = new String[200];
+    Integer[] age = new Integer[200];
+    for (int i = 0; i < 200; i++) {
       name[i] = "robot" + (i / 10);
-      age[i] = (i % 10) * 10 + i / 10;
+      age[i] = i;
     }
 
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
       // Default sort column is applied for dimensions. So, need  to validate accordingly
-      Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(age[i], row[1]);
+      assert(Arrays.asList(name).contains(row[0]));
+      assert(Arrays.asList(age).contains(row[1]));
       i++;
     }
-    Assert.assertEquals(i, 100);
+    Assert.assertEquals(i, 200);
 
     reader.close();
 
@@ -95,11 +95,11 @@ public class CarbonReaderTest extends TestCase {
     while (reader2.hasNext()) {
       Object[] row = (Object[]) reader2.readNextRow();
       // Default sort column is applied for dimensions. So, need  to validate accordingly
-      Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(age[i], row[1]);
+      assert(Arrays.asList(name).contains(row[0]));
+      assert(Arrays.asList(age).contains(row[1]));
       i++;
     }
-    Assert.assertEquals(i, 100);
+    Assert.assertEquals(i, 200);
     reader2.close();
 
     FileUtils.deleteDirectory(new File(path));
@@ -114,7 +114,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
@@ -156,7 +156,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
@@ -193,7 +193,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
         .projection(new String[]{"name", "age"}).build();
@@ -233,7 +233,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonReader reader = CarbonReader
         .builder(path)
@@ -309,7 +309,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     File[] dataFiles = new File(path + "/Fact/Part0/Segment_null/").listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String name) {
@@ -337,7 +337,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     File[] dataFiles = new File(path + "/Metadata").listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String name) {
@@ -887,7 +887,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
@@ -926,7 +926,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
@@ -948,6 +948,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertEquals(age[i], row[1]);
       i++;
     }
+    reader.close();
     Assert.assertEquals(i, 100);
   }
 
@@ -960,7 +961,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     try {
       CarbonReader reader = CarbonReader
