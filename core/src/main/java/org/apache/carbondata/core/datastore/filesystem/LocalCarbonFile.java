@@ -42,6 +42,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import com.github.luben.zstd.ZstdInputStream;
+import com.github.luben.zstd.ZstdOutputStream;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
@@ -290,6 +292,8 @@ public class LocalCarbonFile implements CarbonFile {
       inputStream = new SnappyInputStream(new FileInputStream(path));
     } else if ("LZ4".equalsIgnoreCase(compressor)) {
       inputStream = new LZ4BlockInputStream(new FileInputStream(path));
+    } else if ("ZSTD".equalsIgnoreCase(compressor)) {
+      inputStream = new ZstdInputStream(new FileInputStream(path));
     } else {
       throw new IOException("Unsupported compressor: " + compressor);
     }
@@ -368,6 +372,10 @@ public class LocalCarbonFile implements CarbonFile {
       outputStream = new SnappyOutputStream(new FileOutputStream(path));
     } else if ("LZ4".equalsIgnoreCase(compressor)) {
       outputStream = new LZ4BlockOutputStream(new FileOutputStream(path));
+    } else if ("ZSTD".equalsIgnoreCase(compressor)) {
+      // compression level 1 is cost-effective for sort temp file
+      // which is not used for storage
+      outputStream = new ZstdOutputStream(new FileOutputStream(path), 1);
     } else {
       throw new IOException("Unsupported compressor: " + compressor);
     }
