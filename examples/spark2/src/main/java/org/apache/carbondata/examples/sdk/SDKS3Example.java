@@ -29,8 +29,8 @@ public class SDKS3Example {
     public static void main(String[] args) throws Exception {
         LogService logger = LogServiceFactory.getLogService(SDKS3Example.class.getName());
         if (args == null || args.length < 3) {
-            logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>" +
-                    "<s3-endpoint> [table-path-on-s3] [persistSchema] [transactionalTable]");
+            logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>"
+                + "<s3-endpoint> [table-path-on-s3] [rows]");
             System.exit(0);
         }
 
@@ -44,24 +44,6 @@ public class SDKS3Example {
             num = Integer.parseInt(args[4]);
         }
 
-        Boolean persistSchema = true;
-        if (args.length > 5) {
-            if (args[5].equalsIgnoreCase("true")) {
-                persistSchema = true;
-            } else {
-                persistSchema = false;
-            }
-        }
-
-        Boolean transactionalTable = true;
-        if (args.length > 6) {
-            if (args[6].equalsIgnoreCase("true")) {
-                transactionalTable = true;
-            } else {
-                transactionalTable = false;
-            }
-        }
-
         Field[] fields = new Field[2];
         fields[0] = new Field("name", DataTypes.STRING);
         fields[1] = new Field("age", DataTypes.INT);
@@ -69,9 +51,7 @@ public class SDKS3Example {
                 .setAccessKey(args[0])
                 .setSecretKey(args[1])
                 .setEndPoint(args[2])
-                .outputPath(path)
-                .persistSchemaFile(persistSchema)
-                .isTransactionalTable(transactionalTable);
+                .outputPath(path);
 
         CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
 

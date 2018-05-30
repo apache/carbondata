@@ -44,7 +44,6 @@ public class CarbonReaderExample {
             fields[1] = new Field("age", DataTypes.INT);
 
             CarbonWriter writer = CarbonWriter.builder()
-                    .isTransactionalTable(true)
                     .outputPath(path)
                     .persistSchemaFile(true)
                     .buildWriterForCSVInput(new Schema(fields));
