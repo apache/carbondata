@@ -65,7 +65,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
     val catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
       DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]
     if (needAnalysis && catalog != null && isValidPlan(plan, catalog)) {
-      val modularPlan = catalog.mVState.rewritePlan(plan).withSummaryData
+      val modularPlan = catalog.mvSession.sessionState.rewritePlan(plan).withMVTable
       if (modularPlan.find (_.rewritten).isDefined) {
         val compactSQL = modularPlan.asCompactSQL
         LOGGER.audit(s"\n$compactSQL\n")
