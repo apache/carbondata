@@ -35,7 +35,7 @@ import org.apache.carbondata.mv.plans.util._
  */
 package object dsl {
 
-  // object plans {
+  object Plans {
 
     implicit class DslModularPlan(val modularPlan: ModularPlan) {
       def select(outputExprs: NamedExpression*)
@@ -96,6 +96,6 @@ package object dsl {
       def optimize: LogicalPlan = BirdcageOptimizer.execute(logicalPlan)
     }
 
-  // }
+   }
 
 }

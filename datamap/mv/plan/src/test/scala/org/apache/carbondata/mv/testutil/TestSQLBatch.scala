@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.mv
+package org.apache.carbondata.mv.testutil
 
 object TestSQLBatch {
 

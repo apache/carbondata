@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.immutable
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Cast, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.rules.{Rule, RuleExecutor}
 
 import org.apache.carbondata.mv.expressions.modular._
@@ -71,6 +71,10 @@ class SQLBuilder private(
           CleanupQualifier,
           // Insert sub queries on top of operators that need to appear after FROM clause.
           AddSubquery
+          // Removes [[Cast Casts]] that are unnecessary when converting back to SQL
+          // Comment out for now, will add later by converting AttributMap to Map in SQLBuildDSL
+          // .scala
+          // RemoveCasts
         )
       )
     }
@@ -213,6 +217,14 @@ class SQLBuilder private(
                   qualifier = Some(subqueryName))
             }.copy(alias = Some(subqueryName))
         }
+      }
+    }
+  }
+
+  object RemoveCasts extends Rule[ModularPlan] {
+    def apply(tree: ModularPlan): ModularPlan = {
+      tree transformAllExpressions {
+        case Cast(e, dataType, _) => e
       }
     }
   }
