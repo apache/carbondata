@@ -438,6 +438,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       .contains("Unsupported alter operation on hive table"))
     sql("drop datamap if exists dm2 on table datamap_test_table")
   }
+
   test("test Clean Files and check Lucene DataMap") {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
