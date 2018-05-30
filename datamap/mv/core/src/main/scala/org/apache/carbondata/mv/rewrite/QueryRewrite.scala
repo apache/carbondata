@@ -21,31 +21,38 @@ import java.util.concurrent.atomic.AtomicLong
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-import org.apache.carbondata.mv.datamap.MVState
+import org.apache.carbondata.mv.datamap.MVHelper
 import org.apache.carbondata.mv.plans.modular.ModularPlan
+import org.apache.carbondata.mv.session.MVSession
 
 /**
  * The primary workflow for rewriting relational queries using Spark libraries.
+ * Designed to allow easy access to the intermediate phases of query rewrite for developers.
+ *
+ * While this is not a public class, we should avoid changing the function names for the sake of
+ * changing them, because a lot of developers use the feature for debugging.
  */
 class QueryRewrite private (
-    state: MVState,
+    state: MVSession,
     logical: LogicalPlan,
     nextSubqueryId: AtomicLong) {
   self =>
 
-  def this(state: MVState, logical: LogicalPlan) =
+  def this(state: MVSession, logical: LogicalPlan) =
     this(state, logical, new AtomicLong(0))
 
   def newSubsumerName(): String = s"gen_subsumer_${nextSubqueryId.getAndIncrement()}"
 
   lazy val optimizedPlan: LogicalPlan =
-    state.optimizer.execute(logical)
+    state.sessionState.optimizer.execute(logical)
 
   lazy val modularPlan: ModularPlan =
-    state.modularizer.modularize(optimizedPlan).next().harmonized
+    state.sessionState.modularizer.modularize(optimizedPlan).next().harmonized
 
   lazy val withSummaryData: ModularPlan =
-    state.navigator.rewriteWithSummaryDatasets(modularPlan, self)
+    state.sessionState.navigator.rewriteWithSummaryDatasets(modularPlan, self)
+
+  lazy val withMVTable: ModularPlan = MVHelper.rewriteWithMVTable(withSummaryData, this)
 
   lazy val toCompactSQL: String = withSummaryData.asCompactSQL
 

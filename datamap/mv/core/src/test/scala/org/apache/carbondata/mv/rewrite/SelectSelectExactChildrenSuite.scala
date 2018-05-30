@@ -19,9 +19,10 @@ package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.test.util.PlanTest
 
-class SelectSelectExactChildrenSuite extends PlanTest {
+import org.apache.carbondata.mv.testutil.ModularPlanTest
+
+class SelectSelectExactChildrenSuite extends ModularPlanTest { 
   
   object Match extends DefaultMatchMaker {
     val patterns = SelectSelectNoChildDelta :: Nil
