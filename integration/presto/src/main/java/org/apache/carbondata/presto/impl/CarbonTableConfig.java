@@ -59,8 +59,7 @@ public class CarbonTableConfig {
     return this;
   }
 
-  @NotNull public String
-  getStorePath() {
+  @NotNull public String getStorePath() {
     return storePath;
   }
 
@@ -68,7 +67,6 @@ public class CarbonTableConfig {
     this.storePath = storePath;
     return this;
   }
-
 
   public String getUnsafeMemoryInMb() {
     return unsafeMemoryInMb;
