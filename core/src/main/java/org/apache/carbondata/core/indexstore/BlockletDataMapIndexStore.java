@@ -93,7 +93,8 @@ public class BlockletDataMapIndexStore
         } else {
           // if the identifier is a merge file then collect the index files and load the datamaps
           List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
-              BlockletDataMapUtil.getIndexFileIdentifiersFromMergeFile(identifier, indexFileStore);
+              BlockletDataMapUtil.getIndexFileIdentifiersFromMergeFile(identifier, indexFileStore,
+                  identifier.getTableUniqueName());
           for (TableBlockIndexUniqueIdentifier blockIndexUniqueIdentifier :
               tableBlockIndexUniqueIdentifiers) {
             Map<String, BlockMetaInfo> blockMetaInfoMap = BlockletDataMapUtil

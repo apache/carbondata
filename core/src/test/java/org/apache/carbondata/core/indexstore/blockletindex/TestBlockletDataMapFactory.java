@@ -77,7 +77,8 @@ public class TestBlockletDataMapFactory {
         CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP));
     tableBlockIndexUniqueIdentifier =
         new TableBlockIndexUniqueIdentifier("/opt/store/default/carbon_table/Fact/Part0/Segment_0",
-            "0_batchno0-0-1521012756709.carbonindex", null, "0");
+            "0_batchno0-0-1521012756709.carbonindex", null, "0",
+            absoluteTableIdentifier.getCarbonTableIdentifier().getTableUniqueName());
     cache = CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
   }
 
@@ -108,11 +109,12 @@ public class TestBlockletDataMapFactory {
     dataMapDistributables.add(blockletDataMapDistributable1);
     new MockUp<BlockletDataMapFactory>() {
       @Mock Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(
-          Segment segment) {
+          Segment segment, String tableUniqueName) {
         TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier1 =
             new TableBlockIndexUniqueIdentifier(
                 "/opt/store/default/carbon_table/Fact/Part0/Segment_0",
-                "0_batchno0-0-1521012756701.carbonindex", null, "0");
+                "0_batchno0-0-1521012756701.carbonindex", null, "0",
+                absoluteTableIdentifier.getCarbonTableIdentifier().getTableUniqueName());
         Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = new HashSet<>(3);
         tableBlockIndexUniqueIdentifiers.add(tableBlockIndexUniqueIdentifier);
         tableBlockIndexUniqueIdentifiers.add(tableBlockIndexUniqueIdentifier1);

@@ -35,18 +35,27 @@ import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
 public class BlockletDataMapUtil {
 
+  private static final Log LOG = LogFactory.getLog(BlockletDataMapUtil.class);
+
   public static Map<String, BlockMetaInfo> getBlockMetaInfoMap(
       TableBlockIndexUniqueIdentifier identifier, SegmentIndexFileStore indexFileStore,
       Set<String> filesRead, Map<String, BlockMetaInfo> fileNameToMetaInfoMapping)
       throws IOException {
+    boolean isTransactionalTable = true;
+    List<ColumnSchema> tableColumnList = null;
     if (identifier.getMergeIndexFileName() != null
         && indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
       CarbonFile indexMergeFile = FileFactory.getCarbonFile(
@@ -67,7 +76,22 @@ public class BlockletDataMapUtil {
     List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(
         identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
             .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()));
+    CarbonTable carbonTable =
+        CarbonMetadata.getInstance().getCarbonTable(identifier.getTableUniqueName());
+    if (carbonTable != null) {
+      isTransactionalTable = carbonTable.getTableInfo().isTransactionalTable();
+      tableColumnList =
+          carbonTable.getTableInfo().getFactTable().getListOfColumns();
+    }
     for (DataFileFooter footer : indexInfo) {
+      if ((!isTransactionalTable) && !isSameColumnSchemaList(footer.getColumnInTable(),
+          tableColumnList)) {
+        LOG.error("Schema of " + identifier.getIndexFileName()
+            + " doesn't match with the table's schema");
+        throw new IOException("All the files doesn't have same schema. "
+            + "Unsupported operation on nonTransactional table. Check logs.");
+      }
+
       String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
       if (null == blockMetaInfoMap.get(blockPath)) {
         blockMetaInfoMap.put(blockPath, createBlockMetaInfo(fileNameToMetaInfoMapping, blockPath));
@@ -117,7 +141,8 @@ public class BlockletDataMapUtil {
     }
   }
 
-  public static Set<TableBlockIndexUniqueIdentifier> getTableBlockUniqueIdentifiers(Segment segment)
+  public static Set<TableBlockIndexUniqueIdentifier> getTableBlockUniqueIdentifiers(Segment segment,
+      String getTableUniqueName)
       throws IOException {
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = new HashSet<>();
     Map<String, String> indexFiles = segment.getCommittedIndexFile();
@@ -125,7 +150,7 @@ public class BlockletDataMapUtil {
       Path indexFile = new Path(indexFileEntry.getKey());
       tableBlockIndexUniqueIdentifiers.add(
           new TableBlockIndexUniqueIdentifier(indexFile.getParent().toString(), indexFile.getName(),
-              indexFileEntry.getValue(), segment.getSegmentNo()));
+              indexFileEntry.getValue(), segment.getSegmentNo(), getTableUniqueName));
     }
     return tableBlockIndexUniqueIdentifiers;
   }
@@ -156,11 +181,13 @@ public class BlockletDataMapUtil {
    * This method will the index files tableBlockIndexUniqueIdentifiers of a merge index file
    *
    * @param identifier
+   * @param tableUniqueName
    * @return
    * @throws IOException
    */
   public static List<TableBlockIndexUniqueIdentifier> getIndexFileIdentifiersFromMergeFile(
-      TableBlockIndexUniqueIdentifier identifier, SegmentIndexFileStore segmentIndexFileStore)
+      TableBlockIndexUniqueIdentifier identifier, SegmentIndexFileStore segmentIndexFileStore,
+      String tableUniqueName)
       throws IOException {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = new ArrayList<>();
     String mergeFilePath =
@@ -172,9 +199,23 @@ public class BlockletDataMapUtil {
     for (String indexFile : indexFiles) {
       tableBlockIndexUniqueIdentifiers.add(
           new TableBlockIndexUniqueIdentifier(identifier.getIndexFilePath(), indexFile,
-              identifier.getIndexFileName(), identifier.getSegmentId()));
+              identifier.getIndexFileName(), identifier.getSegmentId(), tableUniqueName));
     }
     return tableBlockIndexUniqueIdentifiers;
   }
 
+  private static boolean isSameColumnSchemaList(List<ColumnSchema> indexFileColumnList,
+      List<ColumnSchema> tableColumnList) {
+    if (indexFileColumnList.size() != tableColumnList.size()) {
+      LOG.error("Index file's column size is " + indexFileColumnList.size()
+          + " but table's column size is " + tableColumnList.size());
+      return false;
+    }
+    for (int i = 0; i < tableColumnList.size(); i++) {
+      if (!indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
