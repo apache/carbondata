@@ -37,8 +37,10 @@ public class SearchModeDetailQueryExecutor extends AbstractQueryExecutor<Object>
           LogServiceFactory.getLogService(SearchModeDetailQueryExecutor.class.getName());
   private static ExecutorService executorService = null;
 
-  static {
-    initThreadPool();
+  public SearchModeDetailQueryExecutor() {
+    if (executorService == null) {
+      initThreadPool();
+    }
   }
 
   private static synchronized void initThreadPool() {
