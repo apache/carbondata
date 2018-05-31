@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.hadoop.mapreduce.RecordReader;
 
 
@@ -85,6 +86,10 @@ public class CarbonReader<T> {
 
   /**
    * Return a new {@link CarbonReaderBuilder} instance
+   *
+   * @param tablePath table store path
+   * @param tableName table name
+   * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder(String tablePath, String tableName) {
     return new CarbonReaderBuilder(tablePath, tableName);
@@ -92,15 +97,15 @@ public class CarbonReader<T> {
 
   /**
    * Return a new {@link CarbonReaderBuilder} instance
-   * Default value of table name is table + time
+   * Default value of table name is table + tablePath + time
    *
    * @param tablePath table path
    * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder(String tablePath) {
     String time = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
-    String uniqueName = "table" + time;
-    return builder(tablePath, uniqueName);
+    String tableName = CarbonUtil.convertPath(tablePath, "table", time);
+    return builder(tablePath, tableName);
   }
 
 

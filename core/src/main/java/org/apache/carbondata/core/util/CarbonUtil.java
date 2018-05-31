@@ -632,6 +632,29 @@ public final class CarbonUtil {
   }
 
   /**
+   * Convert path with start and end string
+   * Convert / . \ : space to _
+   * remove duplicate _
+   *
+   * @param path   store path
+   * @param prefix prefix string
+   * @param suffix suffix string
+   * @return converted string
+   */
+  public static String convertPath(String path, String prefix, String suffix) {
+    String convert = path
+        .trim()
+        .replaceAll("/", "_")
+        .replace(".", "_")
+        .replace("\\", "_")
+        .replace(":", "_")
+        .replace(" ", "_");
+    String result = (prefix + "_" + convert + "_" + suffix)
+        .replaceAll("\\_+", "_");
+    return result;
+  }
+
+  /**
    * Read level metadata file and return cardinality
    *
    * @param levelPath
