@@ -276,6 +276,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path)
+        .projection(new String[]{"name", "age"})
         .build();
 
     // expected output after sorting
@@ -947,6 +948,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.assertEquals(age[i], row[1]);
       i++;
     }
+    reader.close();
     Assert.assertEquals(i, 100);
   }
 
