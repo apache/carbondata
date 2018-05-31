@@ -1,12 +1,12 @@
 # CarbonData Timeseries DataMap
 
-* [Timeseries DataMap](#timeseries-datamap-intoduction-(alpha-feature-in-1.3.0))
+* [Timeseries DataMap Introduction](#timeseries-datamap-intoduction)
 * [Compaction](#compacting-pre-aggregate-tables)
 * [Data Management](#data-management-with-pre-aggregate-tables)
 
-## Timeseries DataMap Intoduction (Alpha feature in 1.3.0)
-Timeseries DataMap a pre-aggregate table implementation based on 'preaggregate' DataMap. 
-Difference is that Timerseries DataMap has built-in understanding of time hierarchy and 
+## Timeseries DataMap Introduction (Alpha feature in 1.3.0)
+Timeseries DataMap a pre-aggregate table implementation based on 'pre-aggregate' DataMap.
+Difference is that Timeseries DataMap has built-in understanding of time hierarchy and
 levels: year, month, day, hour, minute, so that it supports automatic roll-up in time dimension 
 for query.
 
