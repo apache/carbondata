@@ -41,7 +41,9 @@ public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<O
   private static ExecutorService executorService = null;
 
   public SearchModeVectorDetailQueryExecutor() {
-    initThreadPool();
+    if (executorService == null) {
+      initThreadPool();
+    }
   }
 
   private static synchronized void initThreadPool() {
