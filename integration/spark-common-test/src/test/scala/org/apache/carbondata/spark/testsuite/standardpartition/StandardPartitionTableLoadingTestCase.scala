@@ -533,27 +533,29 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
-  def dropTable = {
-    sql("drop table if exists originTable")
-    sql("drop table if exists originMultiLoads")
-    sql("drop table if exists partitionone")
-    sql("drop table if exists partitiontwo")
-    sql("drop table if exists partitionthree")
-    sql("drop table if exists partitionfive")
-    sql("drop table if exists partitionmultiplethree")
-    sql("drop table if exists insertpartitionthree")
-    sql("drop table if exists staticpartitionone")
-    sql("drop table if exists singlepasspartitionone")
-    sql("drop table if exists loadstaticpartitionone")
-    sql("drop table if exists loadstaticpartitiononeoverwrite")
-    sql("drop table if exists streamingpartitionedtable")
-    sql("drop table if exists mergeindexpartitionthree")
-    sql("drop table if exists loadstaticpartitiononeissue")
-    sql("drop table if exists partitionmultiplethreeconcurrent")
-    sql("drop table if exists loadpartitionwithspecialchar")
-    sql("drop table if exists emp1")
-    sql("drop table if exists restorepartition")
-    sql("drop table if exists casesensitivepartition")
+  def dropTable {
+    dropTables(
+      "originTable",
+      "originMultiLoads",
+      "partitionone",
+      "partitiontwo",
+      "partitionthree",
+      "partitionfive",
+      "partitionmultiplethree",
+      "insertpartitionthree",
+      "staticpartitionone",
+      "singlepasspartitionone",
+      "loadstaticpartitionone",
+      "loadstaticpartitiononeoverwrite",
+      "streamingpartitionedtable",
+      "mergeindexpartitionthree",
+      "loadstaticpartitiononeissue",
+      "partitionmultiplethreeconcurrent",
+      "loadpartitionwithspecialchar",
+      "emp1",
+      "restorepartition",
+      "casesensitivepartition"
+    )
   }
 
 }

@@ -37,14 +37,16 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     threshold = sqlContext.getConf("spark.sql.autoBroadcastJoinThreshold").toInt
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "-1")
-    sql("DROP TABLE IF EXISTS t4")
-    sql("DROP TABLE IF EXISTS t5")
-    sql("DROP TABLE IF EXISTS t6")
-    sql("DROP TABLE IF EXISTS t7")
-    sql("DROP TABLE IF EXISTS t8")
-    sql("DROP TABLE IF EXISTS t9")
-    sql("DROP TABLE IF EXISTS t10")
-    sql("DROP TABLE IF EXISTS t11")
+    dropTables(
+      "t4",
+      "t5",
+      "t6",
+      "t7",
+      "t8",
+      "t9",
+      "t10",
+      "t11"
+    )
   }
 
   test("test create table with buckets") {
@@ -216,15 +218,18 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("DROP TABLE IF EXISTS t4")
-    sql("DROP TABLE IF EXISTS t5")
-    sql("DROP TABLE IF EXISTS t6")
-    sql("DROP TABLE IF EXISTS t7")
-    sql("DROP TABLE IF EXISTS t8")
-    sql("DROP TABLE IF EXISTS t9")
-    sql("DROP TABLE IF EXISTS t10")
-    sql("DROP TABLE IF EXISTS bucketed_parquet_table")
-    sql("DROP TABLE IF EXISTS parquet_table")
+    dropTables(
+      "t4",
+      "t5",
+      "t6",
+      "t7",
+      "t8",
+      "t9",
+      "t10",
+      "t11",
+      "bucketed_parquet_table",
+      "parquet_table"
+    )
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
   }
 }
