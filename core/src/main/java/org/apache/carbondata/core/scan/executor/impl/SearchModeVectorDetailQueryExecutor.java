@@ -40,7 +40,7 @@ public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<O
           LogServiceFactory.getLogService(SearchModeVectorDetailQueryExecutor.class.getName());
   private static ExecutorService executorService = null;
 
-  static {
+  public SearchModeVectorDetailQueryExecutor() {
     initThreadPool();
   }
 
