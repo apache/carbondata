@@ -104,10 +104,9 @@ public class CarbonReader<T> {
    */
   public static CarbonReaderBuilder builder(String tablePath) {
     String time = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
-    String tableName = CarbonUtil.convertPath(tablePath, "table", time);
+    String tableName = "UnknownTable" + time;
     return builder(tablePath, tableName);
   }
-
 
   /**
    * Close reader
