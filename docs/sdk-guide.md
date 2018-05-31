@@ -415,17 +415,22 @@ External client can make use of this reader to read CarbonData files without Car
     String path = "./testWriteFiles";
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age"})
+        .projection(new String[]{"stringField", "shortField", "intField", "longField", 
+                "doubleField", "boolField", "dateField", "timeField", "decimalField"})
         .build();
 
     // 2. Read data
+    long day = 24L * 3600 * 1000;
     int i = 0;
     while (reader.hasNext()) {
-      Object[] row = (Object[]) reader.readNextRow();
-      System.out.println(row[0] + "\t" + row[1]);
-      i++;
+        Object[] row = (Object[]) reader.readNextRow();
+        System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
+            i, row[0], row[1], row[2], row[3], row[4], row[5],
+            new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000), row[8]
+        ));
+        i++;
     }
-    
+
     // 3. Close this reader
     reader.close();
 ```
