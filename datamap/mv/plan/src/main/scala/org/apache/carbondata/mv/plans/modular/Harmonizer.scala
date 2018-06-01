@@ -36,17 +36,32 @@ abstract class Harmonizer(conf: SQLConf)
   def batches: Seq[Batch] = {
     Batch(
       "Data Harmonizations", fixedPoint,
-      HarmonizeDimensionTable,
-      HarmonizeFactTable) :: Nil
+      Seq( HarmonizeDimensionTable) ++
+      extendedOperatorHarmonizationRules: _*) :: Nil
   }
+
+  /**
+   * Override to provide additional rules for the modular operator harmonization batch.
+   */
+  def extendedOperatorHarmonizationRules: Seq[Rule[ModularPlan]] = Nil
 }
 
 /**
- * An default Harmonizer
+ * A full Harmonizer - harmonize both fact and dimension tables
  */
-object DefaultHarmonizer extends DefaultHarmonizer
+object FullHarmonizer extends FullHarmonizer
 
-class DefaultHarmonizer extends Harmonizer(new SQLConf())
+class FullHarmonizer extends Harmonizer(new SQLConf()) {
+  override def extendedOperatorHarmonizationRules: Seq[Rule[ModularPlan]] =
+    super.extendedOperatorHarmonizationRules ++ (HarmonizeFactTable :: Nil)
+}
+
+/**
+ * A semi Harmonizer - it harmonizes dimension tables only
+ */
+object SemiHarmonizer extends SemiHarmonizer
+
+class SemiHarmonizer extends Harmonizer(new SQLConf())
 
 object HarmonizeDimensionTable extends Rule[ModularPlan] with PredicateHelper {
 
@@ -68,8 +83,9 @@ object HarmonizeDimensionTable extends Rule[ModularPlan] with PredicateHelper {
           s1@Select(_, _, _, _, _, dim :: Nil, NoFlags, Nil, Nil, _),
           NoFlags,
           Nil, _) if (dim.isInstanceOf[ModularRelation]) => {
-            val rAliasMap = AttributeMap(h.outputList
-              .collect { case a: Alias => (a.child.asInstanceOf[Attribute], a.toAttribute) })
+            val rAliasMap = AttributeMap(h.outputList.collect {
+                case a: Alias  if a.child.isInstanceOf[Attribute] =>
+                (a.child.asInstanceOf[Attribute], a.toAttribute) })
             val pullUpPredicates = s1.predicateList
               .map(replaceAlias(_, rAliasMap.asInstanceOf[AttributeMap[Expression]]))
             if (pullUpPredicates.forall(cond => canEvaluate(cond, h))) {
