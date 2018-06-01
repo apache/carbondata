@@ -166,7 +166,9 @@ abstract class ModularPlan
    *
    * Some nodes should overwrite this to provide proper harmonization logic.
    */
-  lazy val harmonized: ModularPlan = DefaultHarmonizer.execute(preHarmonized)
+  lazy val harmonized: ModularPlan = FullHarmonizer.execute(preHarmonized)
+
+  lazy val semiHarmonized: ModularPlan = SemiHarmonizer.execute(preHarmonized)
 
   /**
    * Do some simple transformation on this plan before harmonizing. Implementations can override
