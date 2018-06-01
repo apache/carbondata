@@ -116,7 +116,6 @@ public class CarbonReaderExample {
             // Read data
             CarbonReader reader2 = CarbonReader
                 .builder(path, "_temp")
-                .projectAllColumns()
                 .build();
 
             System.out.println("\nData:");
