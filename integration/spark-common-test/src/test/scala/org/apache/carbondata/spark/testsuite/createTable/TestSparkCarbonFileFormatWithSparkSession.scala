@@ -36,7 +36,7 @@ object TestSparkCarbonFileFormatWithSparkSession {
                             "../." +
                             "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
-  //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+  //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/");
 
   val filePath = writerPath + "/Fact/Part0/Segment_null/"
