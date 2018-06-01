@@ -982,6 +982,7 @@ public class CarbonTable implements Serializable {
 
   /**
    * update the carbon table by using the passed tableInfo
+   *
    * @param table
    * @param tableInfo
    */

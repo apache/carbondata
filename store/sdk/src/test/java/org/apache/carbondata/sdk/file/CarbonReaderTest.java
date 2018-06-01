@@ -276,7 +276,6 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path)
-        .projection(new String[]{"name", "age"})
         .build();
 
     // expected output after sorting
@@ -892,7 +891,6 @@ public class CarbonReaderTest extends TestCase {
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .isTransactionalTable(true)
-        .projectAllColumns()
         .build();
 
     // expected output after sorting

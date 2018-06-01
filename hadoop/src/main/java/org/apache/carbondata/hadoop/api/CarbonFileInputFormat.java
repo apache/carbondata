@@ -145,7 +145,15 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         }
       }
       // do block filtering and get split
-      return getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null);
+      List<InputSplit> splits =
+          getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null);
+      if (getColumnProjection(job.getConfiguration()) == null) {
+        // If the user projection is empty, use default all columns as projections.
+        // All column name will be filled inside getSplits, so can update only here.
+        String[]  projectionColumns = projectAllColumns(carbonTable);
+        setColumnProjection(job.getConfiguration(), projectionColumns);
+      }
+      return splits;
     }
     return null;
   }

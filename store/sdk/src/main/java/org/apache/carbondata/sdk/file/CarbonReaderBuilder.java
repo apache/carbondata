@@ -26,7 +26,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 
@@ -51,12 +50,6 @@ public class CarbonReaderBuilder {
   private boolean isTransactionalTable;
 
   /**
-   * It will be true if use the projectAllColumns method，
-   * it will be false if use the projection method
-   */
-  private boolean isProjectAllColumns = true;
-
-  /**
    * Construct a CarbonReaderBuilder with table path and table name
    *
    * @param tablePath table path
@@ -76,7 +69,6 @@ public class CarbonReaderBuilder {
   public CarbonReaderBuilder projection(String[] projectionColumnNames) {
     Objects.requireNonNull(projectionColumnNames);
     this.projectionColumns = projectionColumnNames;
-    isProjectAllColumns = false;
     return this;
   }
 
@@ -92,33 +84,6 @@ public class CarbonReaderBuilder {
   public CarbonReaderBuilder isTransactionalTable(boolean isTransactionalTable) {
     Objects.requireNonNull(isTransactionalTable);
     this.isTransactionalTable = isTransactionalTable;
-    return this;
-  }
-
-  /**
-   * Project all Columns for carbon reader
-   *
-   * @return CarbonReaderBuilder object
-   * @throws IOException
-   */
-  public CarbonReaderBuilder projectAllColumns() throws IOException {
-    CarbonTable carbonTable = CarbonTable
-        .buildFromTablePath(tableName, tablePath, isTransactionalTable);
-
-    List<ColumnSchema> colList = carbonTable.getTableInfo().getFactTable().getListOfColumns();
-    List<String> projectColumn = new ArrayList<String>();
-    for (ColumnSchema cols : colList) {
-      if (cols.getSchemaOrdinal() != -1) {
-        projectColumn.add(cols.getColumnUniqueId());
-      }
-    }
-    projectionColumns = new String[projectColumn.size()];
-    int i = 0;
-    for (String columnName : projectColumn) {
-      projectionColumns[i] = columnName;
-      i++;
-    }
-    isProjectAllColumns = true;
     return this;
   }
 
@@ -220,10 +185,11 @@ public class CarbonReaderBuilder {
     if (filterExpression != null) {
       format.setFilterPredicates(job.getConfiguration(), filterExpression);
     }
-    if (isProjectAllColumns) {
-      projectAllColumns();
+
+    if (projectionColumns != null) {
+      // set the user projection
+      format.setColumnProjection(job.getConfiguration(), projectionColumns);
     }
-    format.setColumnProjection(job.getConfiguration(), projectionColumns);
 
     final List<InputSplit> splits =
         format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
