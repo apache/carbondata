@@ -81,7 +81,8 @@ private[rpc] class Scheduler {
     LOG.info(s"sending search request to worker ${worker.address}:${worker.port}")
 
     val list = new util.LinkedList[Future[T]]()
-    val mode = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_SEARCH_PRUNE_MODE,
+    val mode = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_SEARCH_PRUNE_MODE,
       CarbonCommonConstants.CARBON_SEARCH_PRUNE_MODET_DEFAULT)
     if (mode.equalsIgnoreCase("block")) {
       val future = worker.ref.ask(request)
