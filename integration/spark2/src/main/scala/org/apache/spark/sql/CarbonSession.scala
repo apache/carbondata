@@ -101,8 +101,8 @@ class CarbonSession(@transient val sc: SparkContext,
           } catch {
             case e: Exception =>
               logError(String.format(
-                "Exception when executing search mode: %s, fallback to SparkSQL", e.getMessage))
-              new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
+                "Exception when executing search mode: %s", e.getMessage))
+              throw e;
           }
         } else {
           new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
