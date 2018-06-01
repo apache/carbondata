@@ -37,9 +37,8 @@ import org.apache.spark.sql.profiler.{Profiler, SQLStart}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
-import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.scan.expression.LiteralExpression
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.store.SparkCarbonStore
@@ -171,19 +170,24 @@ class CarbonSession(@transient val sc: SparkContext,
    */
   private def trySearchMode(qe: QueryExecution, sse: SQLStart): DataFrame = {
     val analyzed = qe.analyzed
+    val LOG: LogService = LogServiceFactory.getLogService(classOf[CarbonSession].getName)
     analyzed match {
       case _@Project(columns, _@Filter(expr, s: SubqueryAlias))
         if s.child.isInstanceOf[LogicalRelation] &&
            s.child.asInstanceOf[LogicalRelation].relation
              .isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        LOG.info(String.format("Search service started and supports: %s", sse.sqlText))
         runSearch(analyzed, columns, expr, s.child.asInstanceOf[LogicalRelation])
       case gl@GlobalLimit(_, ll@LocalLimit(_, p@Project(columns, _@Filter(expr, s: SubqueryAlias))))
         if s.child.isInstanceOf[LogicalRelation] &&
            s.child.asInstanceOf[LogicalRelation].relation
              .isInstanceOf[CarbonDatasourceHadoopRelation] =>
         val logicalRelation = s.child.asInstanceOf[LogicalRelation]
+        LOG.info(String.format("Search service started and supports: %s", sse.sqlText))
         runSearch(analyzed, columns, expr, logicalRelation, gl.maxRows, ll.maxRows)
       case _ =>
+        LOG.info(String.format(
+          "Search service started, but don't support: %s, and running it with SparkSQL", sse.sqlText))
         new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
     }
   }
