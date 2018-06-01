@@ -187,7 +187,8 @@ class CarbonSession(@transient val sc: SparkContext,
         runSearch(analyzed, columns, expr, logicalRelation, gl.maxRows, ll.maxRows)
       case _ =>
         LOG.info(String.format(
-          "Search service started, but don't support: %s, and running it with SparkSQL", sse.sqlText))
+          "Search service started, but don't support: %s, and running it with SparkSQL",
+          sse.sqlText))
         new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
     }
   }
