@@ -112,6 +112,24 @@ public class CarbonReaderExample {
                 i++;
             }
             System.out.println("\nFinished");
+
+            // Read data
+            CarbonReader reader2 = CarbonReader
+                .builder(path, "_temp")
+                .projectAllColumns()
+                .build();
+
+            System.out.println("\nData:");
+            i = 0;
+            while (reader2.hasNext()) {
+              Object[] row = (Object[]) reader2.readNextRow();
+              System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
+                  i, row[0], new Date((day * ((int) row[1]))), new Timestamp((long) row[2] / 1000),
+                  row[3], row[4], row[5], row[6], row[7], row[8]
+              ));
+              i++;
+            }
+            System.out.println("\nFinished");
             reader.close();
             FileUtils.deleteDirectory(new File(path));
         } catch (Throwable e) {
