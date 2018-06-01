@@ -50,7 +50,7 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
           val compensation =
             (for { dataset <- catalog.lookupFeasibleSummaryDatasets(currentFragment).toStream
                    subsumer <- session.sessionState.modularizer.modularize(
-                     session.sessionState.optimizer.execute(dataset.plan)) // .map(_.harmonized)
+                     session.sessionState.optimizer.execute(dataset.plan)).map(_.semiHarmonized)
                    subsumee <- unifySubsumee(currentFragment)
                    comp <- subsume(
                      unifySubsumer2(
@@ -173,12 +173,15 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
 
     pairs.foldLeft(subsumer) {
       case (curSubsumer, pair) =>
-        val nxtSubsumer = curSubsumer.transform { case pair._1 => pair._2 }
-        val attributeSet = AttributeSet(pair._1.output)
-        val rewrites = AttributeMap(pair._1.output.zip(pair._2.output))
+        val mappedOperator = if (pair._1.isInstanceOf[modular.HarmonizedRelation] && pair._1.asInstanceOf[modular.HarmonizedRelation].hasTag) pair._2.asInstanceOf[modular.HarmonizedRelation].addTag
+        else pair._2
+        val nxtSubsumer = curSubsumer.transform { case pair._1 => mappedOperator}
+        // val attributeSet = AttributeSet(pair._1.output)
+        // reverse first due to possible tag for left join
+        val rewrites = AttributeMap(pair._1.output.zip(mappedOperator.output))
         nxtSubsumer.transformUp {
           case p => p.transformExpressions {
-            case a: Attribute if attributeSet contains a => rewrites(a).withQualifier(a.qualifier)
+            case a: Attribute if rewrites contains a => rewrites(a).withQualifier(a.qualifier)
           }
         }
     }

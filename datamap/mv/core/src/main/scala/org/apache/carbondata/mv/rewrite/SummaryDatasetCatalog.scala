@@ -101,7 +101,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
       val planToRegister = MVHelper.dropDummFuc(query.queryExecution.analyzed)
       val modularPlan =
         mvSession.sessionState.modularizer.modularize(
-          mvSession.sessionState.optimizer.execute(planToRegister)).next().harmonized
+          mvSession.sessionState.optimizer.execute(planToRegister)).next().semiHarmonized
       val signature = modularPlan.signature
       val identifier = dataMapSchema.getRelationIdentifier
       val output = new FindDataSourceTable(sparkSession).apply(sparkSession.sessionState.catalog
@@ -141,6 +141,8 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   override def listAllSchema(): Array[SummaryDataset] = summaryDatasets.toArray
 
   /**
+   * API for test only
+   *
    * Registers the data produced by the logical representation of the given [[DataFrame]]. Unlike
    * `RDD.cache()`, the default storage level is set to be `MEMORY_AND_DISK` because recomputing
    * the in-memory columnar representation of the underlying table is expensive.
@@ -155,8 +157,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
       } else {
         val modularPlan =
           mvSession.sessionState.modularizer.modularize(
-            mvSession.sessionState.optimizer.execute(planToRegister)).next()
-        // .harmonized
+            mvSession.sessionState.optimizer.execute(planToRegister)).next().semiHarmonized
         val signature = modularPlan.signature
         summaryDatasets +=
         SummaryDataset(signature, planToRegister, null, null)
@@ -174,8 +175,11 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
     }
   }
 
-  /** Tries to remove the data set for the given [[DataFrame]] from the catalog if it's
-   * registered */
+  /**
+   *  API for test only
+   *
+   *  Tries to remove the data set for the given [[DataFrame]] from the catalog if it's registered
+   **/
   private[mv] def tryUnregisterSummaryDataset(
       query: DataFrame,
       blocking: Boolean = true): Boolean = {
@@ -214,7 +218,11 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
       val enabledDataSets = summaryDatasets.filter { p =>
         statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.dataMapSchema.getDataMapName))
       }
-      val feasible = enabledDataSets.filter { x =>
+
+      //  ****not sure what enabledDataSets is used for ****
+      //  can enable/disable datamap move to other place ?
+      //    val feasible = enabledDataSets.filter { x =>
+      val feasible = summaryDatasets.filter { x =>
         (x.signature, sig) match {
           case (Some(sig1), Some(sig2)) =>
             if (sig1.groupby && sig2.groupby && sig1.datasets.subsetOf(sig2.datasets)) {

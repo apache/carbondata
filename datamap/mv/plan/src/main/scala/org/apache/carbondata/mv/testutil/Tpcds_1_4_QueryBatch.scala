@@ -4269,7 +4269,50 @@ object Tpcds_1_4_QueryBatch {
         | GROUP BY channel, d_year, d_qoy, i_category
         | ORDER BY channel, d_year, d_qoy, i_category
         | limit 100
-      """.stripMargin)
+      """.stripMargin),
+    ("qJoin", 
+           """
+            |    SELECT
+            |        i_category,
+            |        ss_ext_sales_price ext_sales_price
+            |    FROM store_sales, item
+            |    WHERE ss_item_sk=i_item_sk
+           """.stripMargin),
+    ("qJoin1", 
+           """
+            |  SELECT gen_subsumer_0.`i_category`
+            |  FROM  
+            |    (SELECT
+            |         item.`i_category`,
+            |         store_sales.`ss_ext_sales_price` ext_sales_price
+            |     FROM store_sales, item
+            |     WHERE store_sales.`ss_item_sk`=item.`i_item_sk`) gen_subsumer_0
+           """.stripMargin),
+    ("qCarbon",
+           """
+            |SELECT gen_subsumer_0.`c1` AS `c1`, gen_subsumer_0.`designation` 
+            |FROM
+            |  (SELECT t1.`empname` AS `c1`, t2.`designation`, t2.`empname` AS `c2` 
+            |  FROM
+            |    fact_table1 t1 
+            |    INNER JOIN fact_table2 t2  ON (t1.`empname` = t2.`empname`)) gen_subsumer_0
+           """.stripMargin),
+    ("qCarbon1",
+           """
+            |  SELECT t1.`empname` AS `c1`, t2.`designation`, t2.`empname` AS `c2`
+            |  FROM
+            |    fact_table1 t1 
+            |    INNER JOIN fact_table2 t2  ON (t1.`empname` = t2.`empname`)
+           """.stripMargin),
+    ("qLeftJoin", 
+           """
+            |    SELECT
+            |        i_category,
+            |        ss_ext_sales_price ext_sales_price
+            |    FROM store_sales 
+            |         Left Join item 
+            |         ON ss_item_sk=i_item_sk
+           """.stripMargin)
   )
   // .map { case (name, sqlText) =>
   //    Query(name + "-v1.4", sqlText, description = "TPCDS 1.4 Query", executionMode =
