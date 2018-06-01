@@ -417,18 +417,10 @@ External client can make use of this reader to read CarbonData files without Car
     int i = 0;
     while (reader.hasNext()) {
         Object[] row = (Object[]) reader.readNextRow();
-        System.out.println(
-            i + ":\t" +
-            row[0] + "\t" +
-            row[1] + "\t" +
-            row[2] + "\t" +
-            row[3] + "\t" +
-            row[4] + "\t" + row[0] + "\t" +
-            row[5] + "\t" +
-            new Date((day * ((int) row[6]))) + "\t" +
-            new Timestamp((long) row[7] / 1000) + "\t" +
-            row[8]
-        );
+        System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
+            i, row[0], row[1], row[2], row[3], row[4], row[5],
+            new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000), row[8]
+        ));
         i++;
     }
 
