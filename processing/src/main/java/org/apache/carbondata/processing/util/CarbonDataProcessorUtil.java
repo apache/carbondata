@@ -223,6 +223,26 @@ public final class CarbonDataProcessorUtil {
         .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
   }
 
+  /**
+   * Preparing the boolean [] to map whether the dimension is text data type or not.
+   */
+  public static boolean[] getIsTextColumnMapping(DataField[] fields) {
+    List<Boolean> isTextColumnMapping = new ArrayList<Boolean>();
+    for (DataField field : fields) {
+      // for complex type need to break the loop
+      if (field.getColumn().isComplex()) {
+        break;
+      }
+
+      if (field.getColumn().isDimension()) {
+        isTextColumnMapping.add(
+            field.getColumn().getColumnSchema().getDataType() == DataTypes.TEXT);
+      }
+    }
+    return ArrayUtils.toPrimitive(
+        isTextColumnMapping.toArray(new Boolean[isTextColumnMapping.size()]));
+  }
+
   public static boolean[] getNoDictionaryMapping(CarbonColumn[] carbonColumns) {
     List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
     for (CarbonColumn column : carbonColumns) {

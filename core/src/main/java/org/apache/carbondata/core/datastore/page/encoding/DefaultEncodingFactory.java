@@ -103,6 +103,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
         return new HighCardDictDimensionIndexCodec(
             dimensionSpec.isInSortColumns(),
             dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(),
+            dimensionSpec.getSchemaDataType() == DataTypes.TEXT,
             compressor).createEncoder(null);
       default:
         throw new RuntimeException("unsupported dimension type: " +

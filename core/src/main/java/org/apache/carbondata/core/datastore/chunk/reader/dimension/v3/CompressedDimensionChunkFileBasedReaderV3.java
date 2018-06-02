@@ -273,7 +273,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     if (!hasEncoding(pageMetadata.encoders, Encoding.DICTIONARY)) {
       columnDataChunk =
           new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
-              pageMetadata.getNumberOfRowsInpage());
+              pageMetadata.getNumberOfRowsInpage(),
+              hasEncoding(pageMetadata.encoders, Encoding.DIRECT_COMPRESS_TEXT));
     } else {
       // to store fixed length column chunk values
       columnDataChunk =

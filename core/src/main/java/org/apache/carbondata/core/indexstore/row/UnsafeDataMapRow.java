@@ -49,10 +49,15 @@ public class UnsafeDataMapRow extends DataMapRow {
     int length;
     int position = getPosition(ordinal);
     switch (schemas[ordinal].getSchemaType()) {
-      case VARIABLE:
-        length =
-            getUnsafe().getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
+      case VARIABLE_SHORT:
+        length = getUnsafe().getShort(block.getBaseObject(),
+            block.getBaseOffset() + pointer + position);
         position += 2;
+        break;
+      case VARIABLE_INT:
+        length = getUnsafe().getInt(block.getBaseObject(),
+            block.getBaseOffset() + pointer + position);
+        position += 4;
         break;
       default:
         length = schemas[ordinal].getLength();
@@ -67,9 +72,13 @@ public class UnsafeDataMapRow extends DataMapRow {
     int length;
     int position = getPosition(ordinal);
     switch (schemas[ordinal].getSchemaType()) {
-      case VARIABLE:
-        length =
-            getUnsafe().getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
+      case VARIABLE_SHORT:
+        length = getUnsafe().getShort(block.getBaseObject(),
+            block.getBaseOffset() + pointer + position);
+        break;
+      case VARIABLE_INT:
+        length = getUnsafe().getInt(block.getBaseObject(),
+            block.getBaseOffset() + pointer + position);
         break;
       default:
         length = schemas[ordinal].getLength();
@@ -80,9 +89,13 @@ public class UnsafeDataMapRow extends DataMapRow {
   private int getLengthInBytes(int ordinal, int position) {
     int length;
     switch (schemas[ordinal].getSchemaType()) {
-      case VARIABLE:
-        length =
-            getUnsafe().getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
+      case VARIABLE_SHORT:
+        length = getUnsafe().getShort(block.getBaseObject(),
+            block.getBaseOffset() + pointer + position);
+        break;
+      case VARIABLE_INT:
+        length = getUnsafe().getInt(block.getBaseObject(),
+            block.getBaseOffset() + pointer + position);
         break;
       default:
         length = schemas[ordinal].getLength();
@@ -226,20 +239,27 @@ public class UnsafeDataMapRow extends DataMapRow {
                 "unsupported data type for unsafe storage: " + schema.getDataType());
           }
           break;
-        case VARIABLE:
-          short length = getUnsafe().getShort(
-              block.getBaseObject(),
-              block.getBaseOffset() + pointer + runningLength);
+        case VARIABLE_SHORT:
+          int length = getUnsafe()
+              .getShort(block.getBaseObject(), block.getBaseOffset() + pointer + runningLength);
           runningLength += 2;
           byte[] data = new byte[length];
-          getUnsafe().copyMemory(
-              block.getBaseObject(),
+          getUnsafe().copyMemory(block.getBaseObject(),
               block.getBaseOffset() + pointer + runningLength,
-                  data,
-              BYTE_ARRAY_OFFSET,
-              data.length);
+              data, BYTE_ARRAY_OFFSET, data.length);
           runningLength += data.length;
           row.setByteArray(data, i);
+          break;
+        case VARIABLE_INT:
+          int length2 = getUnsafe()
+              .getInt(block.getBaseObject(), block.getBaseOffset() + pointer + runningLength);
+          runningLength += 4;
+          byte[] data2 = new byte[length2];
+          getUnsafe().copyMemory(block.getBaseObject(),
+              block.getBaseOffset() + pointer + runningLength,
+              data2, BYTE_ARRAY_OFFSET, data2.length);
+          runningLength += data2.length;
+          row.setByteArray(data2, i);
           break;
         case STRUCT:
           DataMapRow structRow = ((UnsafeDataMapRow) getRow(i)).convertToSafeRow();
@@ -260,8 +280,10 @@ public class UnsafeDataMapRow extends DataMapRow {
     switch (schemas[ordinal].getSchemaType()) {
       case FIXED:
         return schemas[ordinal].getLength();
-      case VARIABLE:
+      case VARIABLE_SHORT:
         return getLengthInBytes(ordinal, position) + 2;
+      case VARIABLE_INT:
+        return getLengthInBytes(ordinal, position) + 4;
       case STRUCT:
         return getRow(ordinal).getTotalSizeInBytes();
       default:

@@ -31,7 +31,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  * Below class is responsible to store variable length dimension data chunk in
  * memory Memory occupied can be on heap or offheap using unsafe interface
  */
-public class UnsafeVariableLengthDimensionDataChunkStore
+public abstract class UnsafeVariableLengthDimensionDataChunkStore
     extends UnsafeAbstractDimensionDataChunkStore {
 
   /**
@@ -67,48 +67,52 @@ public class UnsafeVariableLengthDimensionDataChunkStore
    * @param invertedIndexReverse inverted index reverse to be stored
    * @param data                 data to be stored
    */
-  @Override public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
+  @Override
+  public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
       byte[] data) {
     // first put the data, inverted index and reverse inverted index to memory
     super.putArray(invertedIndex, invertedIndexReverse, data);
     // position from where offsets will start
     this.dataPointersOffsets = this.invertedIndexReverseOffset;
     if (isExplicitSorted) {
-      this.dataPointersOffsets += (long)numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE;
+      this.dataPointersOffsets += (long) numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE;
     }
     // As data is of variable length and data format is
-    // <length in short><data><length in short><data>
+    // <length in short><data><length in short/int><data>
     // we need to store offset of each data so data can be accessed directly
     // for example:
     //data = {0,5,1,2,3,4,5,0,6,0,1,2,3,4,5,0,2,8,9}
     //so value stored in offset will be position of actual data
     // [2,9,17]
-    // to store this value we need to get the actual data length + 2 bytes used for storing the
+    // to store this value we need to get the actual data length + 2/4 bytes used for storing the
     // length
 
     // start position will be used to store the current data position
     int startOffset = 0;
-    // as first position will be start from 2 byte as data is stored first in the memory block
+    // as first position will be start from 2/4 byte as data is stored first in the memory block
     // we need to skip first two bytes this is because first two bytes will be length of the data
     // which we have to skip
     int [] dataOffsets = new int[numberOfRows];
-    dataOffsets[0] = CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+    dataOffsets[0] = getLengthSize();
     // creating a byte buffer which will wrap the length of the row
     ByteBuffer buffer = ByteBuffer.wrap(data);
     for (int i = 1; i < numberOfRows; i++) {
       buffer.position(startOffset);
       // so current row position will be
-      // previous row length + 2 bytes used for storing previous row data
-      startOffset += buffer.getShort() + CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+      // previous row length + 2/4 bytes used for storing previous row data
+      startOffset += getLengthFromBuffer(buffer) + getLengthSize();
       // as same byte buffer is used to avoid creating many byte buffer for each row
       // we need to clear the byte buffer
-      dataOffsets[i] = startOffset + CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+      dataOffsets[i] = startOffset + getLengthSize();
     }
     CarbonUnsafe.getUnsafe().copyMemory(dataOffsets, CarbonUnsafe.INT_ARRAY_OFFSET,
         dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets,
         dataOffsets.length * CarbonCommonConstants.INT_SIZE_IN_BYTE);
   }
+
+  protected abstract int getLengthSize();
+  protected abstract int getLengthFromBuffer(ByteBuffer byteBuffer);
 
   /**
    * Below method will be used to get the row based on row id passed
@@ -122,13 +126,14 @@ public class UnsafeVariableLengthDimensionDataChunkStore
    * @param rowId
    * @return row
    */
-  @Override public byte[] getRow(int rowId) {
+  @Override
+  public byte[] getRow(int rowId) {
     // get the actual row id
     rowId = getRowId(rowId);
     // get offset of data in unsafe
     int currentDataOffset = getOffSet(rowId);
     // get the data length
-    short length = getLength(rowId, currentDataOffset);
+    int length = getLength(rowId, currentDataOffset);
     // create data array
     byte[] data = new byte[length];
     // fill the row data
@@ -167,25 +172,24 @@ public class UnsafeVariableLengthDimensionDataChunkStore
   /**
    * To get the length of data for row id
    * if it's not a last row- get the next row offset
-   * Subtract the current row offset + 2 bytes(to skip the data length) with next row offset
+   * Subtract the current row offset + 2/4 bytes(to skip the data length) with next row offset
    * if it's last row
-   * subtract the current row offset + 2 bytes(to skip the data length) with complete data length
+   * subtract the current row offset + 2/4 bytes(to skip the data length) with complete data length
    * @param rowId rowId
    * @param currentDataOffset current data offset
    * @return length of row
    */
-  private short getLength(int rowId, int currentDataOffset) {
-    short length = 0;
+  private int getLength(int rowId, int currentDataOffset) {
+    int length = 0;
     // calculating the length of data
     if (rowId < numberOfRows - 1) {
       int OffsetOfNextdata = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((rowId + 1)
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
-      length = (short) (OffsetOfNextdata - (currentDataOffset
-          + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
+      length = OffsetOfNextdata - (currentDataOffset + getLengthSize());
     } else {
       // for last record we need to subtract with data length
-      length = (short) (this.dataLength - currentDataOffset);
+      length = this.dataLength - currentDataOffset;
     }
     return length;
   }
@@ -196,7 +200,7 @@ public class UnsafeVariableLengthDimensionDataChunkStore
    * @param data data array
    * @param currentDataOffset current data offset
    */
-  private void fillRowInternal(short length, byte[] data, int currentDataOffset) {
+  private void fillRowInternal(int length, byte[] data, int currentDataOffset) {
     CarbonUnsafe.getUnsafe().copyMemory(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + currentDataOffset, data,
         CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
@@ -217,13 +221,14 @@ public class UnsafeVariableLengthDimensionDataChunkStore
    * @param vectorRow vector row id
    *
    */
-  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+  @Override
+  public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
     // get the row id from reverse inverted index based on row id
     rowId = getRowId(rowId);
     // get the current row offset
     int currentDataOffset = getOffSet(rowId);
     // get the row data length
-    short length = getLength(rowId, currentDataOffset);
+    int length = getLength(rowId, currentDataOffset);
     // check if value length is less the current data length
     // then create a new array else use the same
     if (length > value.length) {
@@ -262,9 +267,10 @@ public class UnsafeVariableLengthDimensionDataChunkStore
    * @param compareValue value of to be compared
    * @return compare result
    */
-  @Override public int compareTo(int rowId, byte[] compareValue) {
+  @Override
+  public int compareTo(int rowId, byte[] compareValue) {
     int currentDataOffset = getOffSet(rowId);;
-    short length = getLength(rowId, currentDataOffset);
+    int length = getLength(rowId, currentDataOffset);
     // as this class handles this variable length data, so filter value can be
     // smaller or bigger than than actual data, so we need to take the smaller length
     int compareResult;

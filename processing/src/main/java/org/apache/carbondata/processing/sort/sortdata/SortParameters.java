@@ -111,7 +111,11 @@ public class SortParameters implements Serializable {
   private boolean[] noDictionaryDimnesionColumn;
 
   private boolean[] noDictionarySortColumn;
-
+  /**
+   * whether dimension is text data type.
+   * since all dimensions are string, we use an array of boolean instead of datatypes
+   */
+  private boolean[] isTextDimensionColumn;
   private int numberOfSortColumns;
 
   private int numberOfNoDictSortColumns;
@@ -143,6 +147,7 @@ public class SortParameters implements Serializable {
     parameters.segmentId = segmentId;
     parameters.taskNo = taskNo;
     parameters.noDictionaryDimnesionColumn = noDictionaryDimnesionColumn;
+    parameters.isTextDimensionColumn = isTextDimensionColumn;
     parameters.noDictionarySortColumn = noDictionarySortColumn;
     parameters.numberOfSortColumns = numberOfSortColumns;
     parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
@@ -312,6 +317,14 @@ public class SortParameters implements Serializable {
     this.noDictionaryDimnesionColumn = noDictionaryDimnesionColumn;
   }
 
+  public boolean[] getIsTextDimensionColumn() {
+    return isTextDimensionColumn;
+  }
+
+  public void setIsTextDimensionColumn(boolean[] isTextDimensionColumn) {
+    this.isTextDimensionColumn = isTextDimensionColumn;
+  }
+
   public int getNumberOfCores() {
     return numberOfCores;
   }
@@ -371,6 +384,8 @@ public class SortParameters implements Serializable {
         .getComplexNonDictionaryColumnCount());
     parameters.setNoDictionaryDimnesionColumn(
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
+    parameters.setIsTextDimensionColumn(
+        CarbonDataProcessorUtil.getIsTextColumnMapping(configuration.getDataFields()));
     parameters.setBatchSortSizeinMb(CarbonDataProcessorUtil.getBatchSortSizeinMb(configuration));
 
     parameters.setNumberOfSortColumns(configuration.getNumberOfSortColumns());
@@ -461,7 +476,8 @@ public class SortParameters implements Serializable {
   public static SortParameters createSortParameters(CarbonTable carbonTable, String databaseName,
       String tableName, int dimColCount, int complexDimColCount, int measureColCount,
       int noDictionaryCount, String segmentId, String taskNo,
-      boolean[] noDictionaryColMaping, boolean isCompactionFlow) {
+      boolean[] noDictionaryColMaping, boolean[] isTextDimensionColumn,
+      boolean isCompactionFlow) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(databaseName);
@@ -476,6 +492,7 @@ public class SortParameters implements Serializable {
     parameters.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
     parameters.setComplexDimColCount(complexDimColCount);
     parameters.setNoDictionaryDimnesionColumn(noDictionaryColMaping);
+    parameters.setIsTextDimensionColumn(isTextDimensionColumn);
     parameters.setObserver(new SortObserver());
     // get sort buffer size
     parameters.setSortBufferSize(Integer.parseInt(carbonProperties

@@ -90,9 +90,15 @@ public abstract class CarbonRowSchema implements Serializable {
   }
 
   public static class VariableCarbonRowSchema extends CarbonRowSchema {
+    private boolean isTextType = false;
 
     public VariableCarbonRowSchema(DataType dataType) {
       super(dataType);
+    }
+
+    public VariableCarbonRowSchema(DataType dataType, boolean isTextType) {
+      super(dataType);
+      this.isTextType = isTextType;
     }
 
     @Override public int getLength() {
@@ -100,7 +106,7 @@ public abstract class CarbonRowSchema implements Serializable {
     }
 
     @Override public DataMapSchemaType getSchemaType() {
-      return DataMapSchemaType.VARIABLE;
+      return isTextType ? DataMapSchemaType.VARIABLE_INT : DataMapSchemaType.VARIABLE_SHORT;
     }
   }
 
@@ -127,6 +133,6 @@ public abstract class CarbonRowSchema implements Serializable {
   }
 
   public enum DataMapSchemaType {
-    FIXED, VARIABLE, STRUCT
+    FIXED, VARIABLE_INT, VARIABLE_SHORT, STRUCT
   }
 }

@@ -144,7 +144,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
               "unsupported data type for unsafe storage: " + schema.getDataType());
         }
         break;
-      case VARIABLE:
+      case VARIABLE_SHORT:
         byte[] data = row.getByteArray(index);
         getUnsafe().putShort(memoryBlock.getBaseObject(),
             memoryBlock.getBaseOffset() + runningLength, (short) data.length);
@@ -152,6 +152,15 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
         getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
             memoryBlock.getBaseOffset() + runningLength, data.length);
         runningLength += data.length;
+        break;
+      case VARIABLE_INT:
+        byte[] data2 = row.getByteArray(index);
+        getUnsafe().putInt(memoryBlock.getBaseObject(),
+            memoryBlock.getBaseOffset() + runningLength, data2.length);
+        runningLength += 4;
+        getUnsafe().copyMemory(data2, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
+            memoryBlock.getBaseOffset() + runningLength, data2.length);
+        runningLength += data2.length;
         break;
       case STRUCT:
         CarbonRowSchema[] childSchemas =

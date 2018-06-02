@@ -46,6 +46,7 @@ public class SortStepRowHandler implements Serializable {
   private int dictNoSortDimCnt = 0;
   private int noDictSortDimCnt = 0;
   private int noDictNoSortDimCnt = 0;
+  private int textDimCnt = 0;
   private int measureCnt;
 
   // indices for dict & sort dimension columns
@@ -56,6 +57,7 @@ public class SortStepRowHandler implements Serializable {
   private int[] noDictSortDimIdx;
   // indices for no-dict & no-sort dimension columns, including complex columns
   private int[] noDictNoSortDimIdx;
+  private int[] textDimIdx;
   // indices for measure columns
   private int[] measureIdx;
 
@@ -70,11 +72,13 @@ public class SortStepRowHandler implements Serializable {
     this.dictNoSortDimCnt = tableFieldStat.getDictNoSortDimCnt();
     this.noDictSortDimCnt = tableFieldStat.getNoDictSortDimCnt();
     this.noDictNoSortDimCnt = tableFieldStat.getNoDictNoSortDimCnt();
+    this.textDimCnt = tableFieldStat.getTextDimCnt();
     this.measureCnt = tableFieldStat.getMeasureCnt();
     this.dictSortDimIdx = tableFieldStat.getDictSortDimIdx();
     this.dictNoSortDimIdx = tableFieldStat.getDictNoSortDimIdx();
     this.noDictSortDimIdx = tableFieldStat.getNoDictSortDimIdx();
     this.noDictNoSortDimIdx = tableFieldStat.getNoDictNoSortDimIdx();
+    this.textDimIdx = tableFieldStat.getTextDimIdx();
     this.measureIdx = tableFieldStat.getMeasureIdx();
     this.dataTypes = tableFieldStat.getMeasureDataType();
   }
@@ -122,6 +126,10 @@ public class SortStepRowHandler implements Serializable {
       for (int idx = 0; idx < this.noDictNoSortDimCnt; idx++) {
         nonDictArray[idxAcc++] = (byte[]) row[this.noDictNoSortDimIdx[idx]];
       }
+      // convert text dims
+      for (int idx = 0; idx < this.textDimCnt; idx++) {
+        nonDictArray[idxAcc++] = (byte[]) row[this.textDimIdx[idx]];
+      }
 
       // convert measure data
       for (int idx = 0; idx < this.measureCnt; idx++) {
@@ -146,13 +154,15 @@ public class SortStepRowHandler implements Serializable {
     int[] dictDims
         = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
     byte[][] noDictArray
-        = new byte[this.noDictSortDimCnt + this.noDictNoSortDimCnt][];
+        = new byte[this.noDictSortDimCnt + this.noDictNoSortDimCnt + this.textDimCnt][];
 
     int[] dictNoSortDims = new int[this.dictNoSortDimCnt];
-    byte[][] noDictNoSortDims = new byte[this.noDictNoSortDimCnt][];
+    byte[][] noDictNoSortAndTextDims
+        = new byte[this.noDictNoSortDimCnt + this.textDimCnt][];
     Object[] measures = new Object[this.measureCnt];
 
-    sortTempRow.unpackNoSortFromBytes(dictNoSortDims, noDictNoSortDims, measures, this.dataTypes);
+    sortTempRow.unpackNoSortFromBytes(dictNoSortDims, noDictNoSortAndTextDims, measures,
+        this.dataTypes, this.textDimCnt);
 
     // dict dims
     System.arraycopy(sortTempRow.getDictSortDims(), 0 , dictDims,
@@ -163,8 +173,8 @@ public class SortStepRowHandler implements Serializable {
     // no dict dims, including complex
     System.arraycopy(sortTempRow.getNoDictSortDims(), 0,
         noDictArray, 0, this.noDictSortDimCnt);
-    System.arraycopy(noDictNoSortDims, 0, noDictArray,
-        this.noDictSortDimCnt, this.noDictNoSortDimCnt);
+    System.arraycopy(noDictNoSortAndTextDims, 0, noDictArray,
+        this.noDictSortDimCnt, this.noDictNoSortDimCnt + this.textDimCnt);
 
     // measures are already here
 
@@ -426,6 +436,12 @@ public class SortStepRowHandler implements Serializable {
     for (int idx = 0; idx < this.noDictNoSortDimCnt; idx++) {
       byte[] bytes = (byte[]) row[this.noDictNoSortDimIdx[idx]];
       rowBuffer.putShort((short) bytes.length);
+      rowBuffer.put(bytes);
+    }
+    // convert text dims
+    for (int idx = 0; idx < this.textDimCnt; idx++) {
+      byte[] bytes = (byte[]) row[this.textDimIdx[idx]];
+      rowBuffer.putInt(bytes.length);
       rowBuffer.put(bytes);
     }
 

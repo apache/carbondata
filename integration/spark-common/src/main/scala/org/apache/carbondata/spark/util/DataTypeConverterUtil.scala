@@ -126,6 +126,7 @@ object DataTypeConverterUtil {
       case "timestamp" => ThriftDataType.TIMESTAMP
       case "array" => ThriftDataType.ARRAY
       case "struct" => ThriftDataType.STRUCT
+      case "text" => ThriftDataType.TEXT
       case _ => ThriftDataType.STRING
     }
   }

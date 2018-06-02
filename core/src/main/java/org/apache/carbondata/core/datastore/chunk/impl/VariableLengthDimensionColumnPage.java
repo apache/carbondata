@@ -30,21 +30,19 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
 
   /**
    * Constructor for this class
-   * @param dataChunks
-   * @param invertedIndex
-   * @param invertedIndexReverse
-   * @param numberOfRows
    */
   public VariableLengthDimensionColumnPage(byte[] dataChunks, int[] invertedIndex,
-      int[] invertedIndexReverse, int numberOfRows) {
+      int[] invertedIndexReverse, int numberOfRows, boolean isTextEncoded) {
     boolean isExplicitSorted = isExplicitSorted(invertedIndex);
-    long totalSize = isExplicitSorted ?
+    long totalSize = null != invertedIndex ?
         (dataChunks.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
             numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE)) :
         (dataChunks.length + (numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE));
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(0, isExplicitSorted, numberOfRows, totalSize,
-            DimensionStoreType.VARIABLELENGTH);
+            isTextEncoded ?
+                DimensionStoreType.VARIABLE_INT_LENGTH :
+                DimensionStoreType.VARIABLE_SHORT_LENGTH);
     dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunks);
   }
 

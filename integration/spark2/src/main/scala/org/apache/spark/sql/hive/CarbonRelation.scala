@@ -201,6 +201,7 @@ case class CarbonRelation(
 object CarbonMetastoreTypes extends RegexParsers {
   protected lazy val primitiveType: Parser[DataType] =
     "string" ^^^ StringType |
+    "text" ^^^ StringType |
     "float" ^^^ FloatType |
     "int" ^^^ IntegerType |
     "tinyint" ^^^ ShortType |

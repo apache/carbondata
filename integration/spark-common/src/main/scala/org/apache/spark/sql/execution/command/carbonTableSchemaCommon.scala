@@ -55,6 +55,7 @@ case class TableModel(
     dimCols: Seq[Field],
     msrCols: Seq[Field],
     sortKeyDims: Option[Seq[String]],
+    textCols: Option[Seq[String]],
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
     columnGroups: Seq[String],
@@ -213,9 +214,9 @@ class AlterTableColumnSchemaGenerator(
     tableIdentifier: AbsoluteTableIdentifier,
     sc: SparkContext) {
 
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
-  def isSortColumn(columnName: String): Boolean = {
+  private def isSortColumn(columnName: String): Boolean = {
     val sortColumns = alterTableModel.tableProperties.get("sort_columns")
     if(sortColumns.isDefined) {
       sortColumns.get.contains(columnName)
@@ -223,6 +224,16 @@ class AlterTableColumnSchemaGenerator(
       true
     }
   }
+
+  private def isTextColumn(columnName: String): Boolean = {
+    val textColumns = alterTableModel.tableProperties.get("long_string_columns")
+    if (textColumns.isDefined) {
+      textColumns.get.contains(columnName)
+    } else {
+      false
+    }
+  }
+
   def process: Seq[ColumnSchema] = {
     val tableSchema = tableInfo.getFactTable
     val tableCols = tableSchema.getListOfColumns.asScala
@@ -242,7 +253,8 @@ class AlterTableColumnSchemaGenerator(
         field.schemaOrdinal + existingColsSize,
         alterTableModel.highCardinalityDims,
         alterTableModel.databaseName.getOrElse(dbName),
-        isSortColumn(field.name.getOrElse(field.column)))
+        isSortColumn(field.name.getOrElse(field.column)),
+        isTextColumn(field.name.getOrElse(field.column)))
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
@@ -351,14 +363,19 @@ object TableNewProcessor {
       schemaOrdinal: Int,
       highCardinalityDims: Seq[String],
       databaseName: String,
-      isSortColumn: Boolean = false): ColumnSchema = {
+      isSortColumn: Boolean = false,
+      isTextColumn: Boolean = false): ColumnSchema = {
     val dataType = DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse(""))
     if (DataTypes.isDecimal(dataType)) {
       dataType.asInstanceOf[DecimalType].setPrecision(field.precision)
       dataType.asInstanceOf[DecimalType].setScale(field.scale)
     }
     val columnSchema = new ColumnSchema()
-    columnSchema.setDataType(dataType)
+    if (isTextColumn) {
+      columnSchema.setDataType(DataTypes.TEXT)
+    } else {
+      columnSchema.setDataType(dataType)
+    }
     val colName = field.name.getOrElse(field.column)
     columnSchema.setColumnName(colName)
     if (highCardinalityDims.contains(colName)) {
@@ -415,6 +432,11 @@ class TableNewProcessor(cm: TableModel) {
     allColumns
   }
 
+  // text column is a string column that in long_string_columns
+  private def isTextColumn(colName : String): Boolean = {
+    cm.textCols.get.contains(colName)
+  }
+
   def getColumnSchema(
       dataType: DataType,
       colName: String,
@@ -450,6 +472,9 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setScale(field.scale)
     columnSchema.setSchemaOrdinal(field.schemaOrdinal)
     columnSchema.setSortColumn(false)
+    if (isTextColumn(colName)) {
+      columnSchema.setDataType(DataTypes.TEXT)
+    }
     if(isParentColumnRelation) {
       val dataMapField = map.get.get(field).get
       columnSchema.setFunction(dataMapField.aggregateFunction)
@@ -517,7 +542,7 @@ class TableNewProcessor(cm: TableModel) {
     val dictionaryIncludeCols = cm.tableProperties
       .getOrElse(CarbonCommonConstants.DICTIONARY_INCLUDE, "")
 
-    cm.dimCols.foreach { field =>
+    def addDimensionCol(field: Field): Unit = {
       val sortField = cm.sortKeyDims.get.find(field.column equals _)
       if (sortField.isEmpty) {
         val encoders = if (getEncoderFromParent(field)) {
@@ -549,6 +574,12 @@ class TableNewProcessor(cm: TableModel) {
         }
       }
     }
+    // dimensions that are not text
+    cm.dimCols.filter(field => !cm.textCols.get.contains(field.column))
+      .foreach(addDimensionCol(_))
+    // dimensions that are text
+    cm.dimCols.filter(field => cm.textCols.get.contains(field.column))
+      .foreach(addDimensionCol(_))
 
     cm.msrCols.foreach { field =>
       // if aggregate function is defined in case of preaggregate and agg function is sum or avg

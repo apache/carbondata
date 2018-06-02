@@ -883,6 +883,7 @@ public final class CarbonCommonConstants {
   public static final String COLUMN_GROUPS = "column_groups";
   public static final String DICTIONARY_EXCLUDE = "dictionary_exclude";
   public static final String DICTIONARY_INCLUDE = "dictionary_include";
+  public static final String LONG_STRING_COLUMNS = "long_string_columns";
   /**
    * key for dictionary path
    */
@@ -1568,6 +1569,8 @@ public final class CarbonCommonConstants {
   // As Short data type is used for storing the length of a column during data processing hence
   // the maximum characters that can be supported should be less than Short max value
   public static final int MAX_CHARS_PER_COLUMN_DEFAULT = 32000;
+  // todo: use infinity first, will switch later
+  public static final int MAX_CHARS_PER_COLUMN_INFINITY = -1;
 
   /**
    * Enabling page level reader for compaction reduces the memory usage while compacting more

@@ -39,7 +39,8 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
-import org.apache.carbondata.core.datastore.page.statistics.LVStringStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.LVLongStringStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.LVShortStringStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
@@ -98,8 +99,16 @@ public class TablePage {
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
     for (int i = 0; i < noDictDimensionPages.length; i++) {
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i + numDictDimension);
-      ColumnPage page = ColumnPage.newPage(spec, DataTypes.STRING, pageSize);
-      page.setStatsCollector(LVStringStatsCollector.newInstance());
+      ColumnPage page;
+      if (DataTypes.TEXT == spec.getSchemaDataType()) {
+        page = ColumnPage.newPage(spec, DataTypes.TEXT, pageSize);
+        page.setStatsCollector(LVLongStringStatsCollector.newInstance());
+      } else {
+        // In previous implementation, other data types such as string, date and timestamp
+        // will be encoded using string page
+        page = ColumnPage.newPage(spec, DataTypes.STRING, pageSize);
+        page.setStatsCollector(LVShortStringStatsCollector.newInstance());
+      }
       noDictDimensionPages[i] = page;
     }
     complexDimensionPages = new ComplexColumnPage[model.getComplexColumnCount()];
@@ -155,16 +164,21 @@ public class TablePage {
       dictDimensionPages[i].putData(rowId, keys[i]);
     }
 
-    // 2. convert noDictionary columns and complex columns.
+    // 2. convert noDictionary columns and complex columns and text columns.
     int noDictionaryCount = noDictDimensionPages.length;
     int complexColumnCount = complexDimensionPages.length;
     if (noDictionaryCount > 0 || complexColumnCount > 0) {
+      TableSpec tableSpec = model.getTableSpec();
       byte[][] noDictAndComplex = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictAndComplex.length; i++) {
-        if (i < noDictionaryCount) {
+        if (tableSpec.getDimensionSpec(dictDimensionPages.length + i).getSchemaDataType()
+            == DataTypes.TEXT) {
+          byte[] valueWithLength = addIntLengthToByteArray(noDictAndComplex[i]);
+          noDictDimensionPages[i].putData(rowId, valueWithLength);
+        } else if (i < noDictionaryCount) {
           // noDictionary columns, since it is variable length, we need to prepare each
           // element as LV result byte array (first two bytes are the length of the array)
-          byte[] valueWithLength = addLengthToByteArray(noDictAndComplex[i]);
+          byte[] valueWithLength = addShortLengthToByteArray(noDictAndComplex[i]);
           noDictDimensionPages[i].putData(rowId, valueWithLength);
         } else {
           // complex columns
@@ -250,7 +264,7 @@ public class TablePage {
   }
 
   // Adds length as a short element (first 2 bytes) to the head of the input byte array
-  private byte[] addLengthToByteArray(byte[] input) {
+  private byte[] addShortLengthToByteArray(byte[] input) {
     if (input.length > Short.MAX_VALUE) {
       throw new RuntimeException("input data length " + input.length +
           " bytes too long, maximum length supported is " + Short.MAX_VALUE + " bytes");
@@ -258,6 +272,15 @@ public class TablePage {
     byte[] output = new byte[input.length + 2];
     ByteBuffer buffer = ByteBuffer.wrap(output);
     buffer.putShort((short)input.length);
+    buffer.put(input, 0, input.length);
+    return output;
+  }
+
+  // Adds length as a integer element (first 4 bytes) to the head of the input byte array
+  private byte[] addIntLengthToByteArray(byte[] input) {
+    byte[] output = new byte[input.length + 4];
+    ByteBuffer buffer = ByteBuffer.wrap(output);
+    buffer.putInt(input.length);
     buffer.put(input, 0, input.length);
     return output;
   }

@@ -854,6 +854,8 @@ public final class DataTypeUtil {
       return DataTypes.FLOAT;
     } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(name)) {
       return DataTypes.DOUBLE;
+    } else if (DataTypes.TEXT.getName().equalsIgnoreCase(name)) {
+      return DataTypes.TEXT;
     } else if (DataTypes.NULL.getName().equalsIgnoreCase(name)) {
       return DataTypes.NULL;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
@@ -902,6 +904,8 @@ public final class DataTypeUtil {
       return DataTypes.FLOAT;
     } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.DOUBLE;
+    } else if (DataTypes.TEXT.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.TEXT;
     } else if (DataTypes.NULL.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.NULL;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(dataType.getName())) {

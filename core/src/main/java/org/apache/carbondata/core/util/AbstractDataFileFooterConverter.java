@@ -436,6 +436,8 @@ public abstract class AbstractDataFileFooterConverter {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+      case TEXT:
+        return DataTypes.TEXT;
       default:
         return DataTypes.STRING;
     }
