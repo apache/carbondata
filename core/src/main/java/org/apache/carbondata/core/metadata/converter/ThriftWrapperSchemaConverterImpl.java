@@ -112,6 +112,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.apache.carbondata.format.Encoding.RLE;
       case INVERTED_INDEX:
         return org.apache.carbondata.format.Encoding.INVERTED_INDEX;
+      case DIRECT_COMPRESS_VARCHAR:
+        return org.apache.carbondata.format.Encoding.DIRECT_COMPRESS_VARCHAR;
       case BIT_PACKED:
         return org.apache.carbondata.format.Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
@@ -154,6 +156,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return org.apache.carbondata.format.DataType.ARRAY;
     } else if (DataTypes.isStructType(dataType)) {
       return org.apache.carbondata.format.DataType.STRUCT;
+    } else if (dataType.getId() == DataTypes.VARCHAR.getId()) {
+      return org.apache.carbondata.format.DataType.VARCHAR;
     } else {
       return org.apache.carbondata.format.DataType.STRING;
     }
@@ -447,6 +451,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return Encoding.RLE;
       case INVERTED_INDEX:
         return Encoding.INVERTED_INDEX;
+      case DIRECT_COMPRESS_VARCHAR:
+        return Encoding.DIRECT_COMPRESS_VARCHAR;
       case BIT_PACKED:
         return Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
@@ -490,6 +496,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+      case VARCHAR:
+        return DataTypes.VARCHAR;
       default:
         return DataTypes.STRING;
     }

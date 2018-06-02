@@ -223,6 +223,26 @@ public final class CarbonDataProcessorUtil {
         .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
   }
 
+  /**
+   * Preparing the boolean [] to map whether the dimension is varchar data type or not.
+   */
+  public static boolean[] getIsVarcharColumnMapping(DataField[] fields) {
+    List<Boolean> isVarcharColumnMapping = new ArrayList<Boolean>();
+    for (DataField field : fields) {
+      // for complex type need to break the loop
+      if (field.getColumn().isComplex()) {
+        break;
+      }
+
+      if (field.getColumn().isDimension()) {
+        isVarcharColumnMapping.add(
+            field.getColumn().getColumnSchema().getDataType() == DataTypes.VARCHAR);
+      }
+    }
+    return ArrayUtils.toPrimitive(
+        isVarcharColumnMapping.toArray(new Boolean[isVarcharColumnMapping.size()]));
+  }
+
   public static boolean[] getNoDictionaryMapping(CarbonColumn[] carbonColumns) {
     List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
     for (CarbonColumn column : carbonColumns) {

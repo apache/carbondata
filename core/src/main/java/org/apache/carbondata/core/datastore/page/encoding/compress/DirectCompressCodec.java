@@ -64,7 +64,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
     return new DirectDecompressor(meta);
   }
 
-  private static class DirectCompressor extends ColumnPageEncoder {
+  private class DirectCompressor extends ColumnPageEncoder {
 
     private Compressor compressor;
 
@@ -80,7 +80,9 @@ public class DirectCompressCodec implements ColumnPageCodec {
     @Override
     protected List<Encoding> getEncodingList() {
       List<Encoding> encodings = new ArrayList<>();
-      encodings.add(Encoding.DIRECT_COMPRESS);
+      encodings.add(dataType == DataTypes.VARCHAR ?
+          Encoding.DIRECT_COMPRESS_VARCHAR :
+          Encoding.DIRECT_COMPRESS);
       return encodings;
     }
 

@@ -31,7 +31,8 @@ public enum Encoding {
   DIRECT_COMPRESS,
   ADAPTIVE_INTEGRAL,
   ADAPTIVE_DELTA_INTEGRAL,
-  RLE_INTEGRAL;
+  RLE_INTEGRAL,
+  DIRECT_COMPRESS_VARCHAR;
 
   public static Encoding valueOf(int ordinal) {
     if (ordinal == DICTIONARY.ordinal()) {
@@ -56,6 +57,8 @@ public enum Encoding {
       return ADAPTIVE_DELTA_INTEGRAL;
     } else if (ordinal == RLE_INTEGRAL.ordinal()) {
       return RLE_INTEGRAL;
+    } else if (ordinal == DIRECT_COMPRESS_VARCHAR.ordinal()) {
+      return DIRECT_COMPRESS_VARCHAR;
     } else {
       throw new RuntimeException("create Encoding with invalid ordinal: " + ordinal);
     }
