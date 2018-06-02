@@ -176,19 +176,18 @@ class CarbonSession(@transient val sc: SparkContext,
         if s.child.isInstanceOf[LogicalRelation] &&
            s.child.asInstanceOf[LogicalRelation].relation
              .isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        LOG.info(String.format("Search service started and supports: %s", sse.sqlText))
+        LOG.info(s"Search service started and supports: ${sse.sqlText}")
         runSearch(analyzed, columns, expr, s.child.asInstanceOf[LogicalRelation])
       case gl@GlobalLimit(_, ll@LocalLimit(_, p@Project(columns, _@Filter(expr, s: SubqueryAlias))))
         if s.child.isInstanceOf[LogicalRelation] &&
            s.child.asInstanceOf[LogicalRelation].relation
              .isInstanceOf[CarbonDatasourceHadoopRelation] =>
         val logicalRelation = s.child.asInstanceOf[LogicalRelation]
-        LOG.info(String.format("Search service started and supports: %s", sse.sqlText))
+        LOG.info(s"Search service started and supports: ${sse.sqlText}")
         runSearch(analyzed, columns, expr, logicalRelation, gl.maxRows, ll.maxRows)
       case _ =>
-        LOG.info(String.format(
-          "Search service started, but don't support: %s, and running it with SparkSQL",
-          sse.sqlText))
+        LOG.info(s"Search service started, but don't support: ${sse.sqlText}," +
+          s" and will run it with SparkSQL")
         new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
     }
   }
