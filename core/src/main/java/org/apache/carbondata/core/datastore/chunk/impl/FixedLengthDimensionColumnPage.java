@@ -47,7 +47,7 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
         dataChunk.length;
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(columnValueSize, isExplicitSorted, numberOfRows, totalSize,
-            DimensionStoreType.FIXEDLENGTH);
+            DimensionStoreType.FIXED_LENGTH);
     dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
   }
 

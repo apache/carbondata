@@ -19,9 +19,11 @@ package org.apache.carbondata.core.datastore.chunk.store;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeFixedLengthDimensionDataChunkStore;
-import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableIntLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableShortLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeFixedLengthDimensionDataChunkStore;
-import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableIntLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableShortLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -63,19 +65,23 @@ public class DimensionChunkStoreFactory {
       boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType) {
 
     if (isUnsafe) {
-      if (storeType == DimensionStoreType.FIXEDLENGTH) {
+      if (storeType == DimensionStoreType.FIXED_LENGTH) {
         return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
             isInvertedIndex, numberOfRows);
+      } else if (storeType == DimensionStoreType.VARIABLE_SHORT_LENGTH) {
+        return new UnsafeVariableShortLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
+            numberOfRows);
       } else {
-        return new UnsafeVariableLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
+        return new UnsafeVariableIntLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
             numberOfRows);
       }
-
     } else {
-      if (storeType == DimensionStoreType.FIXEDLENGTH) {
+      if (storeType == DimensionStoreType.FIXED_LENGTH) {
         return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize);
+      } else if (storeType == DimensionStoreType.VARIABLE_SHORT_LENGTH) {
+        return new SafeVariableShortLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
       } else {
-        return new SafeVariableLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
+        return new SafeVariableIntLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
       }
     }
   }
@@ -84,6 +90,6 @@ public class DimensionChunkStoreFactory {
    * dimension store type enum
    */
   public enum DimensionStoreType {
-    FIXEDLENGTH, VARIABLELENGTH;
+    FIXED_LENGTH, VARIABLE_SHORT_LENGTH, VARIABLE_INT_LENGTH;
   }
 }

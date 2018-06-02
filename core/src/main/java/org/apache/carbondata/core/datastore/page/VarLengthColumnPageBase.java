@@ -289,6 +289,12 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes) {
+    // rowId * 4 represents the length of L in LV
+    if (bytes.length > (Integer.MAX_VALUE - totalLength - rowId * 4)) {
+      // since we later store a column page in a byte array, so its maximum size is 2GB
+      throw new RuntimeException("Carbondata only support maximum 2GB size for one column page,"
+          + " exceed this limit at rowId " + rowId);
+    }
     if (rowId == 0) {
       rowOffset[0] = 0;
     }
