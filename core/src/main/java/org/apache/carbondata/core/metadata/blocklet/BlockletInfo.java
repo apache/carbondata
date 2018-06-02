@@ -268,7 +268,7 @@ public class BlockletInfo implements Serializable, Writable {
   @Override public void readFields(DataInput input) throws IOException {
     dimensionOffset = input.readLong();
     measureOffsets = input.readLong();
-    short dimensionChunkOffsetsSize = input.readShort();
+    int dimensionChunkOffsetsSize = input.readShort();
     dimensionChunkOffsets = new ArrayList<>(dimensionChunkOffsetsSize);
     for (int i = 0; i < dimensionChunkOffsetsSize; i++) {
       dimensionChunkOffsets.add(input.readLong());
