@@ -36,13 +36,13 @@ export CARBON_SOURCE="$(cd "`dirname "$0"`"/..; pwd)"
 ASSEMBLY_DIR="$CARBON_SOURCE/assembly/target/scala-2.11"
 
 GREP_OPTIONS=
-num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^carbondata.*hadoop.*\.jar$" | wc -l)"
+num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^apache-carbondata.*\.jar$" | wc -l)"
 if [ "$num_jars" -eq "0" -a -z "$ASSEMBLY_DIR" ]; then
   echo "Failed to find Carbondata assembly in $ASSEMBLY_DIR." 1>&2
   echo "You need to build Carbondata before running this program." 1>&2
   exit 1
 fi
-ASSEMBLY_JARS="$(ls -1 "$ASSEMBLY_DIR" | grep "^carbondata.*hadoop.*\.jar$" || true)"
+ASSEMBLY_JARS="$(ls -1 "$ASSEMBLY_DIR" | grep "^apache-carbondata.*\.jar$" || true)"
 if [ "$num_jars" -gt "1" ]; then
   echo "Found multiple Carbondata assembly jars in $ASSEMBLY_DIR:" 1>&2
   echo "$ASSEMBLY_JARS" 1>&2
