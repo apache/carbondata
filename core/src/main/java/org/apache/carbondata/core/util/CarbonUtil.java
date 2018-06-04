@@ -2372,13 +2372,13 @@ public final class CarbonUtil {
   }
 
   /**
-   * This method will read the prepare dummy tableInfo
+   * This method will prepare dummy tableInfo
    *
    * @param carbonDataFilePath
    * @param tableName
    * @return
    */
-  public static TableInfo inferDummySchema(String carbonDataFilePath,
+  public static TableInfo buildDummyTableInfo(String carbonDataFilePath,
       String tableName, String dbName) {
     // During SDK carbon Reader, This method will be called.
     // This API will avoid IO operation to get the columnSchema list.

@@ -174,8 +174,13 @@ public class CarbonReaderBuilder {
    * @throws InterruptedException
    */
   public <T> CarbonReader<T> build() throws IOException, InterruptedException {
-    CarbonTable table = CarbonTable.buildFromTablePath(tableName, tablePath, isTransactionalTable);
-
+    // DB name is not applicable for SDK reader as, table will be never registered.
+    CarbonTable table;
+    if (isTransactionalTable) {
+      table = CarbonTable.buildFromTablePath(tableName, "default", tablePath);
+    } else {
+      table = CarbonTable.buildDummyTable(tablePath);
+    }
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     final Job job = new Job(new Configuration());
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());

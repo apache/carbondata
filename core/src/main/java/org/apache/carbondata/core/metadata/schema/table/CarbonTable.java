@@ -218,17 +218,9 @@ public class CarbonTable implements Serializable {
     }
   }
 
-  public static CarbonTable buildFromTablePath(String tableName, String tablePath,
-      boolean isTransactionalTable) throws IOException {
-    if (isTransactionalTable) {
-      return SchemaReader
-          .readCarbonTableFromStore(AbsoluteTableIdentifier.from(tablePath, "default", tableName));
-    } else {
-      // Infer the schema from the Carbondata file.
-      TableInfo tableInfoInfer =
-          CarbonUtil.inferDummySchema(tablePath, "null", "null");
-      return CarbonTable.buildFromTableInfo(tableInfoInfer);
-    }
+  public static CarbonTable buildDummyTable(String tablePath) throws IOException {
+    TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
+    return CarbonTable.buildFromTableInfo(tableInfoInfer);
   }
 
   public static CarbonTable buildFromTablePath(String tableName, String dbName, String tablePath)
