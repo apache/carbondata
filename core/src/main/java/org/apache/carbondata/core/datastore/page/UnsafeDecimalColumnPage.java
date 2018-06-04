@@ -168,7 +168,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
       throw new RuntimeException(e);
     }
     CarbonUnsafe.getUnsafe().copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset, baseAddress,
-        baseOffset + rowOffset[rowId], length);
+        baseOffset + rowOffset.get(rowId), length);
   }
 
   @Override
@@ -193,9 +193,9 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public byte[] getBytes(int rowId) {
-    int length = rowOffset[rowId + 1] - rowOffset[rowId];
+    int length = rowOffset.get(rowId + 1) - rowOffset.get(rowId);
     byte[] bytes = new byte[length];
-    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.get(rowId),
         bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
     return bytes;
   }
@@ -242,9 +242,9 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
     } else if (dataType == DataTypes.LONG) {
       value = getLong(rowId);
     } else {
-      int length = rowOffset[rowId + 1] - rowOffset[rowId];
+      int length = rowOffset.get(rowId + 1) - rowOffset.get(rowId);
       byte[] bytes = new byte[length];
-      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId], bytes,
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.get(rowId), bytes,
           CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
       return decimalConverter.getDecimal(bytes);
     }
@@ -253,7 +253,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
-    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId], dest,
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.get(rowId), dest,
         CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);
   }
 

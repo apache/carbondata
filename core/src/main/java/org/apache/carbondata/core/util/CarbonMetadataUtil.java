@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
+import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -44,6 +46,7 @@ import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
 import org.apache.carbondata.format.IndexHeader;
+import org.apache.carbondata.format.LocalDictionaryChunk;
 import org.apache.carbondata.format.SegmentInfo;
 
 /**
@@ -124,18 +127,39 @@ public class CarbonMetadataUtil {
     return numberOfRows;
   }
 
-  public static BlockletIndex getBlockletIndex(List<EncodedTablePage> encodedTablePageList,
+  private static EncodedColumnPage[] getEncodedColumnPages(EncodedBlocklet encodedBlocklet,
+      boolean isDimension, int pageIndex) {
+    int size =
+        isDimension ? encodedBlocklet.getNumberOfDimension() : encodedBlocklet.getNumberOfMeasure();
+    EncodedColumnPage [] encodedPages = new EncodedColumnPage[size];
+
+    for (int i = 0; i < size; i++) {
+      if (isDimension) {
+        encodedPages[i] =
+            encodedBlocklet.getEncodedDimensionColumnPages().get(i).getEncodedColumnPageList()
+                .get(pageIndex);
+      } else {
+        encodedPages[i] =
+            encodedBlocklet.getEncodedMeasureColumnPages().get(i).getEncodedColumnPageList()
+                .get(pageIndex);
+      }
+    }
+    return encodedPages;
+  }
+  public static BlockletIndex getBlockletIndex(EncodedBlocklet encodedBlocklet,
       List<CarbonMeasure> carbonMeasureList) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
+
     // Calculating min/max for every each column.
-    TablePageStatistics stats = new TablePageStatistics(encodedTablePageList.get(0).getDimensions(),
-        encodedTablePageList.get(0).getMeasures());
+    TablePageStatistics stats =
+        new TablePageStatistics(getEncodedColumnPages(encodedBlocklet, true, 0),
+            getEncodedColumnPages(encodedBlocklet, false, 0));
     byte[][] minCol = stats.getDimensionMinValue().clone();
     byte[][] maxCol = stats.getDimensionMaxValue().clone();
 
-    for (EncodedTablePage encodedTablePage : encodedTablePageList) {
-      stats = new TablePageStatistics(encodedTablePage.getDimensions(),
-          encodedTablePage.getMeasures());
+    for (int pageIndex = 0; pageIndex < encodedBlocklet.getNumberOfPages(); pageIndex++) {
+      stats = new TablePageStatistics(getEncodedColumnPages(encodedBlocklet, true, pageIndex),
+          getEncodedColumnPages(encodedBlocklet, false, pageIndex));
       byte[][] columnMaxData = stats.getDimensionMaxValue();
       byte[][] columnMinData = stats.getDimensionMinValue();
       for (int i = 0; i < maxCol.length; i++) {
@@ -155,16 +179,16 @@ public class CarbonMetadataUtil {
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
 
-    stats = new TablePageStatistics(encodedTablePageList.get(0).getDimensions(),
-        encodedTablePageList.get(0).getMeasures());
+    stats = new TablePageStatistics(getEncodedColumnPages(encodedBlocklet, true, 0),
+        getEncodedColumnPages(encodedBlocklet, false, 0));
     byte[][] measureMaxValue = stats.getMeasureMaxValue().clone();
     byte[][] measureMinValue = stats.getMeasureMinValue().clone();
     byte[] minVal = null;
     byte[] maxVal = null;
-    for (int i = 1; i < encodedTablePageList.size(); i++) {
+    for (int i = 1; i < encodedBlocklet.getNumberOfPages(); i++) {
       for (int j = 0; j < measureMinValue.length; j++) {
-        stats = new TablePageStatistics(
-            encodedTablePageList.get(i).getDimensions(), encodedTablePageList.get(i).getMeasures());
+        stats = new TablePageStatistics(getEncodedColumnPages(encodedBlocklet, true, i),
+            getEncodedColumnPages(encodedBlocklet, false, i));
         minVal = stats.getMeasureMinValue()[j];
         maxVal = stats.getMeasureMaxValue()[j];
         if (compareMeasureData(measureMaxValue[j], maxVal, carbonMeasureList.get(j).getDataType())
@@ -185,10 +209,11 @@ public class CarbonMetadataUtil {
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
     BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
-    byte[] startKey = encodedTablePageList.get(0).getPageKey().serializeStartKey();
+    byte[] startKey = encodedBlocklet.getPageMetadataList().get(0).serializeStartKey();
     blockletBTreeIndex.setStart_key(startKey);
-    byte[] endKey = encodedTablePageList.get(
-        encodedTablePageList.size() - 1).getPageKey().serializeEndKey();
+    byte[] endKey =
+        encodedBlocklet.getPageMetadataList().get(encodedBlocklet.getPageMetadataList().size() - 1)
+            .serializeEndKey();
     blockletBTreeIndex.setEnd_key(endKey);
     BlockletIndex blockletIndex = new BlockletIndex();
     blockletIndex.setMin_max_index(blockletMinMaxIndex);
@@ -300,7 +325,8 @@ public class CarbonMetadataUtil {
   /**
    * return DataChunk3 that contains the input DataChunk2 list
    */
-  public static DataChunk3 getDataChunk3(List<DataChunk2> dataChunksList) {
+  public static DataChunk3 getDataChunk3(List<DataChunk2> dataChunksList,
+      LocalDictionaryChunk encodedDictionary) {
     int offset = 0;
     DataChunk3 dataChunk = new DataChunk3();
     List<Integer> pageOffsets = new ArrayList<>();
@@ -313,6 +339,7 @@ public class CarbonMetadataUtil {
       pageLengths.add(length);
       offset += length;
     }
+    dataChunk.setLocal_dictionary(encodedDictionary);
     dataChunk.setData_chunk_list(dataChunksList);
     dataChunk.setPage_length(pageLengths);
     dataChunk.setPage_offset(pageOffsets);
@@ -323,26 +350,32 @@ public class CarbonMetadataUtil {
    * return DataChunk3 for the dimension column (specifed by `columnIndex`)
    * in `encodedTablePageList`
    */
-  public static DataChunk3 getDimensionDataChunk3(List<EncodedTablePage> encodedTablePageList,
-      int columnIndex) throws IOException {
-    List<DataChunk2> dataChunksList = new ArrayList<>(encodedTablePageList.size());
-    for (EncodedTablePage encodedTablePage : encodedTablePageList) {
-      dataChunksList.add(encodedTablePage.getDimension(columnIndex).getPageMetadata());
+  public static DataChunk3 getDimensionDataChunk3(EncodedBlocklet encodedBlocklet,
+      int columnIndex) {
+    List<DataChunk2> dataChunksList = new ArrayList<>();
+    BlockletEncodedColumnPage blockletEncodedColumnPage =
+        encodedBlocklet.getEncodedDimensionColumnPages().get(columnIndex);
+    for (EncodedColumnPage encodedColumnPage : blockletEncodedColumnPage
+        .getEncodedColumnPageList()) {
+      dataChunksList.add(encodedColumnPage.getPageMetadata());
     }
-    return CarbonMetadataUtil.getDataChunk3(dataChunksList);
+    return CarbonMetadataUtil
+        .getDataChunk3(dataChunksList, blockletEncodedColumnPage.getEncodedDictionary());
   }
 
   /**
    * return DataChunk3 for the measure column (specifed by `columnIndex`)
    * in `encodedTablePageList`
    */
-  public static DataChunk3 getMeasureDataChunk3(List<EncodedTablePage> encodedTablePageList,
-      int columnIndex) throws IOException {
-    List<DataChunk2> dataChunksList = new ArrayList<>(encodedTablePageList.size());
-    for (EncodedTablePage encodedTablePage : encodedTablePageList) {
-      dataChunksList.add(encodedTablePage.getMeasure(columnIndex).getPageMetadata());
+  public static DataChunk3 getMeasureDataChunk3(EncodedBlocklet encodedBlocklet, int columnIndex) {
+    List<DataChunk2> dataChunksList = new ArrayList<>();
+    BlockletEncodedColumnPage blockletEncodedColumnPage =
+        encodedBlocklet.getEncodedMeasureColumnPages().get(columnIndex);
+    for (EncodedColumnPage encodedColumnPage : blockletEncodedColumnPage
+        .getEncodedColumnPageList()) {
+      dataChunksList.add(encodedColumnPage.getPageMetadata());
     }
-    return CarbonMetadataUtil.getDataChunk3(dataChunksList);
+    return CarbonMetadataUtil.getDataChunk3(dataChunksList, null);
   }
 
   private static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {

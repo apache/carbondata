@@ -53,7 +53,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   Object baseAddress;
 
   // the offset of row in the unsafe memory, its size is pageSize + 1
-  int[] rowOffset;
+  List<Integer> rowOffset;
 
   // the length of bytes added in the page
   int totalLength;
@@ -66,7 +66,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   VarLengthColumnPageBase(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
     super(columnSpec, dataType, pageSize);
-    rowOffset = new int[pageSize + 1];
+    rowOffset = new ArrayList<>();
     totalLength = 0;
   }
 
@@ -160,9 +160,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     // set total length and rowOffset in page
     page.totalLength = offset;
-    page.rowOffset = new int[rowId + 1];
-    for (int i = 0; i < rowId + 1; i++) {
-      page.rowOffset[i] = rowOffset.get(i);
+    page.rowOffset = new ArrayList<>();
+    for (int i = 0; i < rowOffset.size(); i++) {
+      page.rowOffset.add(rowOffset.get(i));
     }
     for (int i = 0; i < rowId; i++) {
       page.putBytes(i, lvEncodedBytes, i * size, size);
@@ -240,9 +240,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     // set total length and rowOffset in page
     page.totalLength = offset;
-    page.rowOffset = new int[rowId + 1];
-    for (int i = 0; i < rowId + 1; i++) {
-      page.rowOffset[i] = rowOffset.get(i);
+    page.rowOffset = new ArrayList<>();
+    for (int i = 0; i < rowOffset.size(); i++) {
+      page.rowOffset.add(rowOffset.get(i));
     }
 
     // set data in page
@@ -296,9 +296,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
           + " exceed this limit at rowId " + rowId);
     }
     if (rowId == 0) {
-      rowOffset[0] = 0;
+      rowOffset.add(0);
     }
-    rowOffset[rowId + 1] = rowOffset[rowId] + bytes.length;
+    rowOffset.add(rowOffset.get(rowId) + bytes.length);
     putBytesAtRow(rowId, bytes);
     totalLength += bytes.length;
   }
@@ -379,7 +379,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int offset = 0;
     byte[] data = new byte[totalLength];
     for (int rowId = 0; rowId < pageSize; rowId++) {
-      int length = rowOffset[rowId + 1] - rowOffset[rowId];
+      int length = rowOffset.get(rowId + 1) - rowOffset.get(rowId);
       copyBytes(rowId, data, offset, length);
       offset += length;
     }
@@ -395,9 +395,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   public byte[] getLVFlattenedBytePage() throws IOException {
     // output LV encoded byte array
     int offset = 0;
-    byte[] data = new byte[totalLength + pageSize * 4];
-    for (int rowId = 0; rowId < pageSize; rowId++) {
-      int length = rowOffset[rowId + 1] - rowOffset[rowId];
+    byte[] data = new byte[totalLength + ((rowOffset.size() - 1) * 4)];
+    for (int rowId = 0; rowId < rowOffset.size() - 1; rowId++) {
+      int length = rowOffset.get(rowId + 1) - rowOffset.get(rowId);
       ByteUtil.setInt(data, offset, length);
       copyBytes(rowId, data, offset + 4, length);
       offset += 4 + length;
@@ -408,9 +408,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   @Override public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
     // output LV encoded byte array
     int offset = 0;
-    byte[] data = new byte[totalLength + pageSize * 2];
-    for (int rowId = 0; rowId < pageSize; rowId++) {
-      short length = (short) (rowOffset[rowId + 1] - rowOffset[rowId]);
+    byte[] data = new byte[totalLength + ((rowOffset.size() - 1) * 2)];
+    for (int rowId = 0; rowId < rowOffset.size() - 1; rowId++) {
+      short length = (short) (rowOffset.get(rowId + 1) - rowOffset.get(rowId));
       ByteUtil.setShort(data, offset, length);
       copyBytes(rowId, data, offset + 2, length);
       offset += 2 + length;
@@ -423,8 +423,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     // output LV encoded byte array
     int offset = 0;
     byte[] data = new byte[totalLength];
-    for (int rowId = 0; rowId < pageSize; rowId++) {
-      short length = (short) (rowOffset[rowId + 1] - rowOffset[rowId]);
+    for (int rowId = 0; rowId < rowOffset.size() - 1; rowId++) {
+      short length = (short) (rowOffset.get(rowId + 1) - rowOffset.get(rowId));
       copyBytes(rowId, data, offset, length);
       offset += length;
     }

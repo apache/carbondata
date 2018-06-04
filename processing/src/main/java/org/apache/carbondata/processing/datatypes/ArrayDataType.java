@@ -65,10 +65,12 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    */
   private int dataCounter;
 
-  private ArrayDataType(int outputArrayIndex, int dataCounter, GenericDataType children) {
+  private ArrayDataType(int outputArrayIndex, int dataCounter, GenericDataType children,
+      String name) {
     this.outputArrayIndex = outputArrayIndex;
     this.dataCounter = dataCounter;
     this.children = children;
+    this.name = name;
   }
 
 
@@ -108,7 +110,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    * return column unique id
    */
   @Override
-  public String getColumnId() {
+  public String getColumnNames() {
     return columnId;
   }
 
@@ -285,7 +287,8 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public GenericDataType<ArrayObject> deepCopy() {
-    return new ArrayDataType(this.outputArrayIndex, this.dataCounter, this.children.deepCopy());
+    return new ArrayDataType(this.outputArrayIndex, this.dataCounter, this.children.deepCopy(),
+        this.name);
   }
 
   @Override
@@ -293,4 +296,10 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     type.add(ColumnType.COMPLEX_ARRAY);
     children.getChildrenType(type);
   }
+
+  @Override public void getColumnNames(List<String> columnNameList) {
+    columnNameList.add(name);
+    children.getColumnNames(columnNameList);
+  }
+
 }

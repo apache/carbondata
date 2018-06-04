@@ -37,7 +37,9 @@ public enum ColumnType {
 
   COMPLEX_ARRAY,
 
-  COMPLEX_PRIMITIVE;
+  COMPLEX_PRIMITIVE,
+
+  PLAIN_LONG_VALUE;
 
   public static ColumnType valueOf(int ordinal) {
     if (ordinal == GLOBAL_DICTIONARY.ordinal()) {
@@ -56,6 +58,8 @@ public enum ColumnType {
       return COMPLEX_ARRAY;
     } else if (ordinal == COMPLEX_PRIMITIVE.ordinal()) {
       return COMPLEX_PRIMITIVE;
+    } else if (ordinal == PLAIN_LONG_VALUE.ordinal()) {
+      return PLAIN_LONG_VALUE;
     } else {
       throw new RuntimeException("create ColumnType with invalid ordinal: " + ordinal);
     }
