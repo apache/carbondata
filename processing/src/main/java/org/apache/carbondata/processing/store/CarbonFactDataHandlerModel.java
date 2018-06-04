@@ -23,10 +23,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
+import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -35,6 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
@@ -48,6 +53,12 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 // This class contains all the data required for processing and writing the carbon data
 // TODO: we should try to minimize this class as refactorying loading process
 public class CarbonFactDataHandlerModel {
+
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonFactDataHandlerModel.class.getName());
 
   /**
    * dbName
@@ -163,6 +174,10 @@ public class CarbonFactDataHandlerModel {
 
   private short writingCoresCount;
 
+  private Map<String, LocalDictionaryGenerator> columnLocalDictGenMap;
+
+  private int numberOfCores;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -272,7 +287,8 @@ public class CarbonFactDataHandlerModel {
     }
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
-
+    setLocalDictToModel(carbonTable, wrapperColumnSchema, carbonFactDataHandlerModel);
+    setNumberOfCores(carbonFactDataHandlerModel);
     return carbonFactDataHandlerModel;
   }
 
@@ -340,8 +356,9 @@ public class CarbonFactDataHandlerModel {
             carbonFactDataHandlerModel.getTaskExtension(),
             String.valueOf(loadModel.getFactTimeStamp()),
             loadModel.getSegmentId()));
-
+    setLocalDictToModel(carbonTable, wrapperColumnSchema, carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
+    setNumberOfCores(carbonFactDataHandlerModel);
     return carbonFactDataHandlerModel;
   }
 
@@ -623,5 +640,86 @@ public class CarbonFactDataHandlerModel {
     return dataMapWriterlistener;
   }
 
+  public Map<String, LocalDictionaryGenerator> getColumnLocalDictGenMap() {
+    return columnLocalDictGenMap;
+  }
+
+  /**
+   * This method prepares a map which will have column and local dictionary generator mapping for
+   * all the local dictionary columns.
+   * @param carbonTable
+   * @param wrapperColumnSchema
+   * @param carbonFactDataHandlerModel
+   */
+  private static void setLocalDictToModel(CarbonTable carbonTable,
+      List<ColumnSchema> wrapperColumnSchema,
+      CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
+    boolean islocalDictEnabled = carbonTable.isLocalDictionaryEnabled();
+    // creates a map only if local dictionary is enabled, else map will be null
+    Map<String, LocalDictionaryGenerator> columnLocalDictGenMap = new HashMap<>();
+    if (islocalDictEnabled) {
+      int localDictionaryThreshold = carbonTable.getLocalDictionaryThreshold();
+      for (ColumnSchema columnSchema : wrapperColumnSchema) {
+        // check whether the column is local dictionary column or not
+        if (columnSchema.isLocalDictColumn()) {
+          columnLocalDictGenMap.put(columnSchema.getColumnName(),
+              new ColumnLocalDictionaryGenerator(localDictionaryThreshold));
+        }
+      }
+    }
+    if (islocalDictEnabled) {
+      LOGGER.info("Local dictionary is enabled for table: " + carbonTable.getTableUniqueName());
+      LOGGER.info(
+          "Local dictionary threshold for table: " + carbonTable.getTableUniqueName() + " is: "
+              + carbonTable.getLocalDictionaryThreshold());
+      Iterator<Map.Entry<String, LocalDictionaryGenerator>> iterator =
+          columnLocalDictGenMap.entrySet().iterator();
+      StringBuilder stringBuilder = new StringBuilder();
+      while (iterator.hasNext()) {
+        Map.Entry<String, LocalDictionaryGenerator> next = iterator.next();
+        stringBuilder.append(next.getKey());
+        stringBuilder.append(',');
+      }
+      LOGGER.info("Local dictionary will be generated for the columns:" + stringBuilder.toString()
+          + " for table: " + carbonTable.getTableUniqueName());
+    }
+    carbonFactDataHandlerModel.setColumnLocalDictGenMap(columnLocalDictGenMap);
+  }
+
+  public void setColumnLocalDictGenMap(
+      Map<String, LocalDictionaryGenerator> columnLocalDictGenMap) {
+    this.columnLocalDictGenMap = columnLocalDictGenMap;
+  }
+
+  private static void setNumberOfCores(CarbonFactDataHandlerModel model) {
+    // in compaction flow the measure with decimal type will come as spark decimal.
+    // need to convert it to byte array.
+    if (model.isCompactionFlow()) {
+      try {
+        model.numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.NUM_CORES_COMPACTING,
+                CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+      } catch (NumberFormatException exc) {
+        LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_COMPACTING
+            + "is wrong.Falling back to the default value "
+            + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+        model.numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+      }
+    } else {
+      model.numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    }
+
+    if (model.sortScope != null && model.sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+      model.numberOfCores = 1;
+    }
+    // Overriding it to the task specified cores.
+    if (model.getWritingCoresCount() > 0) {
+      model.numberOfCores = model.getWritingCoresCount();
+    }
+  }
+
+  public int getNumberOfCores() {
+    return numberOfCores;
+  }
 }
 

@@ -235,7 +235,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * get column unique id
    */
   @Override
-  public String getColumnId() {
+  public String getColumnNames() {
     return columnId;
   }
 
@@ -536,11 +536,15 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     dataType.nullformat = this.nullformat;
     dataType.setKeySize(this.keySize);
     dataType.setSurrogateIndex(this.index);
-
+    dataType.name = this.name;
     return dataType;
   }
 
   public void getChildrenType(List<ColumnType> type) {
     type.add(ColumnType.COMPLEX_PRIMITIVE);
+  }
+
+  @Override public void getColumnNames(List<String> columnNameList) {
+    columnNameList.add(name);
   }
 }

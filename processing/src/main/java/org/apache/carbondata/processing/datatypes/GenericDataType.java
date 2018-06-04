@@ -100,7 +100,7 @@ public interface GenericDataType<T> {
   /**
    * @return column uuid string
    */
-  String getColumnId();
+  String getColumnNames();
 
   /**
    * set array index to be referred while creating metadata column
@@ -158,5 +158,7 @@ public interface GenericDataType<T> {
   GenericDataType<T> deepCopy();
 
   void getChildrenType(List<ColumnType> type);
+
+  void getColumnNames(List<String> columnNameList);
 
 }
