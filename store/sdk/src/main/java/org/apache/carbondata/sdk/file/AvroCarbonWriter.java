@@ -323,13 +323,35 @@ public class AvroCarbonWriter extends CarbonWriter {
   }
 
   private static DataType getMappingDataTypeForArrayRecord(Schema childSchema) {
+    LogicalType logicalType = childSchema.getLogicalType();
     switch (childSchema.getType()) {
       case BOOLEAN:
         return DataTypes.BOOLEAN;
       case INT:
-        return DataTypes.INT;
+        if (logicalType != null) {
+          if (logicalType instanceof LogicalTypes.Date) {
+            return DataTypes.DATE;
+          } else {
+            LOGGER.warn("Unsupported logical type. Considering Data Type as INT for " + childSchema
+                .getName());
+            return DataTypes.INT;
+          }
+        } else {
+          return DataTypes.INT;
+        }
       case LONG:
-        return DataTypes.LONG;
+        if (logicalType != null) {
+          if (logicalType instanceof LogicalTypes.TimestampMillis
+              || logicalType instanceof LogicalTypes.TimestampMicros) {
+            return DataTypes.TIMESTAMP;
+          } else {
+            LOGGER.warn("Unsupported logical type. Considering Data Type as LONG for " + childSchema
+                .getName());
+            return DataTypes.LONG;
+          }
+        } else {
+          return DataTypes.LONG;
+        }
       case DOUBLE:
         return DataTypes.DOUBLE;
       case STRING:
