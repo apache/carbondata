@@ -26,8 +26,8 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
@@ -48,28 +48,89 @@ public class CarbonReaderBuilder {
   private String[] projectionColumns;
   private Expression filterExpression;
   private String tableName;
-  private boolean isTransactionalTable = true;
+  private boolean isTransactionalTable;
 
+  /**
+   * It will be true if use the projectAllColumns method，
+   * it will be false if use the projection method
+   */
+  private boolean isProjectAllColumns = true;
+
+  /**
+   * Construct a CarbonReaderBuilder with table path and table name
+   *
+   * @param tablePath table path
+   * @param tableName table name
+   */
   CarbonReaderBuilder(String tablePath, String tableName) {
     this.tablePath = tablePath;
     this.tableName = tableName;
   }
 
+  /**
+   * Configure the projection column names of carbon reader
+   *
+   * @param projectionColumnNames projection column names
+   * @return CarbonReaderBuilder object
+   */
   public CarbonReaderBuilder projection(String[] projectionColumnNames) {
     Objects.requireNonNull(projectionColumnNames);
     this.projectionColumns = projectionColumnNames;
+    isProjectAllColumns = false;
     return this;
   }
 
+  /**
+   * Configure the transactional status of table
+   * If set to false, then reads the carbondata and carbonindex files from a flat folder structure.
+   * If set to true, then reads the carbondata and carbonindex files from segment folder structure.
+   * Default value is false
+   *
+   * @param isTransactionalTable whether is transactional table or not
+   * @return CarbonReaderBuilder object
+   */
   public CarbonReaderBuilder isTransactionalTable(boolean isTransactionalTable) {
     Objects.requireNonNull(isTransactionalTable);
     this.isTransactionalTable = isTransactionalTable;
     return this;
   }
 
-  public CarbonReaderBuilder filter(Expression fileterExpression) {
-    Objects.requireNonNull(fileterExpression);
-    this.filterExpression = fileterExpression;
+  /**
+   * Project all Columns for carbon reader
+   *
+   * @return CarbonReaderBuilder object
+   * @throws IOException
+   */
+  public CarbonReaderBuilder projectAllColumns() throws IOException {
+    CarbonTable carbonTable = CarbonTable
+        .buildFromTablePath(tableName, tablePath, isTransactionalTable);
+
+    List<ColumnSchema> colList = carbonTable.getTableInfo().getFactTable().getListOfColumns();
+    List<String> projectColumn = new ArrayList<String>();
+    for (ColumnSchema cols : colList) {
+      if (cols.getSchemaOrdinal() != -1) {
+        projectColumn.add(cols.getColumnUniqueId());
+      }
+    }
+    projectionColumns = new String[projectColumn.size()];
+    int i = 0;
+    for (String columnName : projectColumn) {
+      projectionColumns[i] = columnName;
+      i++;
+    }
+    isProjectAllColumns = true;
+    return this;
+  }
+
+  /**
+   * Configure the filter expression for carbon reader
+   *
+   * @param filterExpression filter expression
+   * @return CarbonReaderBuilder object
+   */
+  public CarbonReaderBuilder filter(Expression filterExpression) {
+    Objects.requireNonNull(filterExpression);
+    this.filterExpression = filterExpression;
     return this;
   }
 
@@ -78,7 +139,7 @@ public class CarbonReaderBuilder {
    *
    * @param key   the string of access key for different S3 type,like: fs.s3a.access.key
    * @param value the value of access key
-   * @return CarbonWriterBuilder
+   * @return CarbonWriterBuilder object
    */
   public CarbonReaderBuilder setAccessKey(String key, String value) {
     FileFactory.getConfiguration().set(key, value);
@@ -89,7 +150,7 @@ public class CarbonReaderBuilder {
    * Set the access key for S3.
    *
    * @param value the value of access key
-   * @return CarbonWriterBuilder
+   * @return CarbonWriterBuilder object
    */
   public CarbonReaderBuilder setAccessKey(String value) {
     return setAccessKey(Constants.ACCESS_KEY, value);
@@ -100,7 +161,7 @@ public class CarbonReaderBuilder {
    *
    * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
    * @param value the value of secret key
-   * @return CarbonWriterBuilder
+   * @return CarbonWriterBuilder object
    */
   public CarbonReaderBuilder setSecretKey(String key, String value) {
     FileFactory.getConfiguration().set(key, value);
@@ -111,7 +172,7 @@ public class CarbonReaderBuilder {
    * Set the secret key for S3
    *
    * @param value the value of secret key
-   * @return CarbonWriterBuilder
+   * @return CarbonWriterBuilder object
    */
   public CarbonReaderBuilder setSecretKey(String value) {
     return setSecretKey(Constants.SECRET_KEY, value);
@@ -122,7 +183,7 @@ public class CarbonReaderBuilder {
    *
    * @param key   the string of endpoint for different S3 type,like: fs.s3a.endpoint
    * @param value the value of endpoint
-   * @return CarbonWriterBuilder
+   * @return CarbonWriterBuilder object
    */
   public CarbonReaderBuilder setEndPoint(String key, String value) {
     FileFactory.getConfiguration().set(key, value);
@@ -133,13 +194,20 @@ public class CarbonReaderBuilder {
    * Set the endpoint for S3
    *
    * @param value the value of endpoint
-   * @return CarbonWriterBuilder
+   * @return CarbonWriterBuilder object
    */
   public CarbonReaderBuilder setEndPoint(String value) {
-    FileFactory.getConfiguration().set(Constants.ENDPOINT, value);
-    return this;
+    return setEndPoint(Constants.ENDPOINT, value);
   }
 
+  /**
+   * Build CarbonReader
+   *
+   * @param <T>
+   * @return CarbonReader
+   * @throws IOException
+   * @throws InterruptedException
+   */
   public <T> CarbonReader<T> build() throws IOException, InterruptedException {
     CarbonTable table = CarbonTable.buildFromTablePath(tableName, tablePath, isTransactionalTable);
 
@@ -152,9 +220,10 @@ public class CarbonReaderBuilder {
     if (filterExpression != null) {
       format.setFilterPredicates(job.getConfiguration(), filterExpression);
     }
-    if (projectionColumns != null) {
-      format.setColumnProjection(job.getConfiguration(), new CarbonProjection(projectionColumns));
+    if (isProjectAllColumns) {
+      projectAllColumns();
     }
+    format.setColumnProjection(job.getConfiguration(), projectionColumns);
 
     final List<InputSplit> splits =
         format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
@@ -165,6 +234,7 @@ public class CarbonReaderBuilder {
           new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
       RecordReader reader = format.createRecordReader(split, attempt);
       reader.initialize(split, attempt);
+      reader.close();
       readers.add(reader);
     }
 

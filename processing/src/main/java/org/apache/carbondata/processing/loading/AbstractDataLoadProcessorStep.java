@@ -25,8 +25,12 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.datamap.DataMapWriterListener;
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
+import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 
 /**
  * This base abstract class for data loading.
@@ -149,6 +153,26 @@ public abstract class AbstractDataLoadProcessorStep {
    */
   protected abstract String getStepName();
 
+  /**
+   * This method registers all writer listeners and returns the listener
+   * @param bucketId bucketId
+   * @return
+   */
+  protected DataMapWriterListener getDataMapWriterListener(int bucketId) {
+    CarbonDataFileAttributes carbonDataFileAttributes =
+        new CarbonDataFileAttributes(Long.parseLong(configuration.getTaskNo()),
+            (Long) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
+    DataMapWriterListener listener = new DataMapWriterListener();
+    listener.registerAllWriter(
+        configuration.getTableSpec().getCarbonTable(),
+        configuration.getSegmentId(),
+        CarbonTablePath.getShardName(
+            carbonDataFileAttributes.getTaskId(),
+            bucketId,
+            0,
+            String.valueOf(carbonDataFileAttributes.getFactTimeStamp())));
+    return listener;
+  }
 
   /**
    * Close all resources.This method is called after execute() is finished.

@@ -109,7 +109,6 @@ public class UnsafeSortDataRows {
     // observer of writing file in thread
     this.threadStatusObserver = new ThreadStatusObserver();
     this.taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
-    this.inMemoryChunkSize = inMemoryChunkSize;
     this.inMemoryChunkSize = inMemoryChunkSize * 1024L * 1024L;
     enableInMemoryIntermediateMerge = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT,
@@ -121,7 +120,7 @@ public class UnsafeSortDataRows {
       // in sort memory size.
       this.maxSizeAllowed = UnsafeMemoryManager.INSTANCE.getUsableMemory() / 2;
     } else {
-      this.maxSizeAllowed = this.maxSizeAllowed * 1024 * 1024;
+      this.maxSizeAllowed = this.maxSizeAllowed * 1024L * 1024L;
     }
   }
 
@@ -319,6 +318,7 @@ public class UnsafeSortDataRows {
      * @throws CarbonSortKeyAndGroupByException
      */
     public void notifyFailed(Throwable exception) throws CarbonSortKeyAndGroupByException {
+      semaphore.release();
       dataSorterAndWriterExecutorService.shutdownNow();
       unsafeInMemoryIntermediateFileMerger.close();
       parameters.getObserver().setFailed(true);

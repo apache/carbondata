@@ -35,11 +35,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name[(col_name data_type , ...)]
-  STORED BY 'carbondata'
+  STORED AS carbondata
   [TBLPROPERTIES (property_name=property_value, ...)]
   [LOCATION 'path']
   ```
-  **NOTE:** CarbonData also supports "STORED AS carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
+  **NOTE:** CarbonData also supports "STORED AS carbondata" and "USING carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
 ### Usage Guidelines
 
   Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.

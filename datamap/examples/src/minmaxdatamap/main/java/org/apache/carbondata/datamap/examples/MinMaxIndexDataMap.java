@@ -170,4 +170,9 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
     readMinMaxDataMap = null;
   }
 
+  @Override
+  public void finish() {
+
+  }
+
 }

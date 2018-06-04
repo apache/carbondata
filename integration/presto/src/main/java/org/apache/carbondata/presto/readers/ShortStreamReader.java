@@ -49,7 +49,7 @@ public class ShortStreamReader extends AbstractStreamReader {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if(isDictionary) {
+        if (isDictionary) {
           populateDictionaryVector(type, numberOfRows, builder);
         } else {
           if (columnVector.anyNullsSet()) {
@@ -59,13 +59,11 @@ public class ShortStreamReader extends AbstractStreamReader {
           }
         }
       }
-   } else {
+    } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (streamData != null) {
-        for (int i = 0; i < numberOfRows; i++) {
-          type.writeLong(builder, (Short) streamData[i]);
-        }
+      for (int i = 0; i < numberOfRows; i++) {
+        type.writeLong(builder, (Short) streamData[i]);
       }
     }
     return builder.build();

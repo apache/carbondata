@@ -36,7 +36,7 @@ object S3UsingSDKExample {
       num: Int = 3,
       persistSchema: Boolean = false): Any = {
 
-    // getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+    // getCanonicalPath gives path with \, but the code expects /.
     val writerPath = path.replace("\\", "/");
 
     val fields: Array[Field] = new Array[Field](3)
@@ -49,15 +49,15 @@ object S3UsingSDKExample {
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)
-          builder.withSchema(new Schema(fields)).outputPath(writerPath).isTransactionalTable(true)
+          builder.outputPath(writerPath).isTransactionalTable(true)
             .uniqueIdentifier(
               System.currentTimeMillis)
-            .buildWriterForCSVInput()
+            .buildWriterForCSVInput(new Schema(fields))
         } else {
-          builder.withSchema(new Schema(fields)).outputPath(writerPath).isTransactionalTable(true)
+          builder.outputPath(writerPath).isTransactionalTable(true)
             .uniqueIdentifier(
               System.currentTimeMillis).withBlockSize(2)
-            .buildWriterForCSVInput()
+            .buildWriterForCSVInput(new Schema(fields))
         }
       var i = 0
       var row = num

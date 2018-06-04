@@ -355,8 +355,6 @@ public class ColumnSchema implements Serializable, Writable {
     ColumnSchema other = (ColumnSchema) obj;
     if (!columnUniqueId.equals(other.columnUniqueId) ||
         (isDimensionColumn != other.isDimensionColumn) ||
-        (scale != other.scale) ||
-        (precision != other.precision) ||
         (isSortColumn != other.isSortColumn)) {
       return false;
     }

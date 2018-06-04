@@ -60,8 +60,7 @@ case class SearchRequest(
     tableInfo: TableInfo,
     projectColumns: Array[String],
     filterExpression: Expression,
-    limit: Long,
-    dataMap: Option[DataMapExprWrapper])
+    limit: Long)
 
 // Search result sent from worker to master
 case class SearchResult(

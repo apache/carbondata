@@ -55,4 +55,9 @@ public interface BlockletDetailsFetcher {
    */
   List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions)
       throws IOException;
+
+  /**
+   * clears the datamap from cache and segmentMap from executor
+   */
+  void clear();
 }

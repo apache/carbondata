@@ -17,8 +17,10 @@
 
 package org.apache.spark.carbondata.bucketing
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.common.util.Spark2QueryTest
-import org.apache.spark.sql.execution.exchange.ShuffleExchange
+import org.apache.spark.sql.execution.exchange.Exchange
+//import org.apache.spark.sql.execution.exchange.{ShuffleExchangeExec => ShuffleExchange}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -127,7 +129,11 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: Exchange if (s.getClass.getName.equals
+      ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+        s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+      => shuffleExists = true
     }
     assert(shuffleExists, "shuffle should exist on non bucket tables")
   }
@@ -145,7 +151,11 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: Exchange if (s.getClass.getName.equals
+      ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+        s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+      => shuffleExists = true
     }
     assert(!shuffleExists, "shuffle should not exist on bucket tables")
   }
@@ -170,7 +180,11 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: Exchange if (s.getClass.getName.equals
+      ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+        s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+      => shuffleExists = true
     }
     assert(!shuffleExists, "shuffle should not exist on bucket tables")
     sql("DROP TABLE bucketed_parquet_table")
@@ -195,7 +209,11 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       """.stripMargin).queryExecution.executedPlan
     var shuffleExists = false
     plan.collect {
-      case s: ShuffleExchange => shuffleExists = true
+      case s: Exchange if (s.getClass.getName.equals
+      ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+        s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+      => shuffleExists = true
     }
     assert(shuffleExists, "shuffle should exist on non bucket tables")
     sql("DROP TABLE parquet_table")

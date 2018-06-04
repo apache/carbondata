@@ -27,7 +27,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
@@ -35,11 +34,9 @@ import org.apache.spark.{SecurityManager, SerializableWritable, SparkConf}
 import org.apache.spark.rpc.netty.NettyRpcEnvFactory
 import org.apache.spark.search._
 import org.apache.spark.util.ThreadUtils
-
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DataMapChooser
-import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -82,7 +79,7 @@ class Master(sparkConf: SparkConf) {
           do {
             try {
               LOG.info(s"starting registry-service on $hostAddress:$port")
-              val config = RpcEnvConfig(
+              val config = RpcUtil.getRpcEnvConfig(
                 sparkConf, "registry-service", hostAddress, "", port,
                 new SecurityManager(sparkConf), clientMode = false)
               rpcEnv = new NettyRpcEnvFactory().create(config)
@@ -215,13 +212,12 @@ class Master(sparkConf: SparkConf) {
     // prune data and get a mapping of worker hostname to list of blocks,
     // then add these blocks to the SearchRequest and fire the RPC call
     val nodeBlockMapping: JMap[String, JList[Distributable]] = pruneBlock(table, columns, filter)
-    val fgDataMap = chooseFGDataMap(table, filter)
     val tuple = nodeBlockMapping.asScala.map { case (splitAddress, blocks) =>
       // Build a SearchRequest
       val split = new SerializableWritable[CarbonMultiBlockSplit](
         new CarbonMultiBlockSplit(blocks, splitAddress))
       val request =
-        SearchRequest(queryId, split, table.getTableInfo, columns, filter, localLimit, fgDataMap)
+        SearchRequest(queryId, split, table.getTableInfo, columns, filter, localLimit)
 
       // Find an Endpoind and send the request to it
       // This RPC is non-blocking so that we do not need to wait before send to next worker
@@ -233,10 +229,14 @@ class Master(sparkConf: SparkConf) {
 
       // if we have enough data already, we do not need to collect more result
       if (rowCount < globalLimit) {
-        // wait for worker for 10s
-        ThreadUtils.awaitResult(future, Duration.apply("10s"))
+        // wait for worker
+        val timeout = CarbonProperties
+          .getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT,
+            CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT)
+        ThreadUtils.awaitResult(future, Duration.apply(timeout))
         LOG.info(s"[SearchId:$queryId] receive search response from worker " +
-                 s"${worker.address}:${worker.port}")
+          s"${worker.address}:${worker.port}")
         try {
           future.value match {
             case Some(response: Try[SearchResult]) =>
@@ -252,14 +252,6 @@ class Master(sparkConf: SparkConf) {
       }
     }
     output.toArray
-  }
-
-  private def chooseFGDataMap(
-      table: CarbonTable,
-      filter: Expression): Option[DataMapExprWrapper] = {
-    val chooser = new DataMapChooser(table)
-    val filterInterface = table.resolveFilter(filter)
-    Option(chooser.chooseFGDataMap(filterInterface))
   }
 
   /**

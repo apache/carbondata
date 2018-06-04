@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
@@ -59,6 +60,21 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
     return andBlocklets;
   }
 
+  @Override
+  public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
+      List<PartitionSpec> partitionsToPrune)
+          throws IOException {
+    List<ExtendedBlocklet> leftPrune = left.prune(distributable, partitionsToPrune);
+    List<ExtendedBlocklet> rightPrune = right.prune(distributable, partitionsToPrune);
+    List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
+    for (ExtendedBlocklet blocklet : leftPrune) {
+      if (rightPrune.contains(blocklet)) {
+        andBlocklets.add(blocklet);
+      }
+    }
+    return andBlocklets;
+  }
+
   @Override public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)
       throws IOException {
     List<ExtendedBlocklet> leftPrune = left.pruneBlocklets(blocklets);
@@ -87,7 +103,8 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
     return null;
   }
 
-  @Override public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
+  @Override
+  public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
       throws IOException {
     List<DataMapDistributableWrapper> wrappers = new ArrayList<>();
     wrappers.addAll(left.toDistributable(segments));

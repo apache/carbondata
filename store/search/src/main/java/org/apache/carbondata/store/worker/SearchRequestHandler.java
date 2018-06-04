@@ -18,6 +18,7 @@
 package org.apache.carbondata.store.worker;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,7 +27,10 @@ import java.util.Objects;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.DataMapChooser;
+import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -37,6 +41,7 @@ import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.scan.executor.impl.SearchModeDetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.impl.SearchModeVectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
@@ -81,6 +86,19 @@ public class SearchRequestHandler {
     return new ShutdownResponse(Status.SUCCESS.ordinal(), "");
   }
 
+  private DataMapExprWrapper chooseFGDataMap(
+          CarbonTable table,
+          FilterResolverIntf filterInterface) {
+    DataMapChooser chooser = null;
+    try {
+      chooser = new DataMapChooser(table);
+      return chooser.chooseFGDataMap(filterInterface);
+    } catch (IOException e) {
+      LOG.audit(e.getMessage());
+      return null;
+    }
+  }
+
   /**
    * Builds {@link QueryModel} and read data from files
    */
@@ -97,25 +115,30 @@ public class SearchRequestHandler {
     queryModel.setVectorReader(false);
 
     CarbonMultiBlockSplit mbSplit = request.split().value();
+    List<TableBlockInfo> list = CarbonInputSplit.createBlocks(mbSplit.getAllSplits());
+    queryModel.setTableBlockInfos(list);
     long limit = request.limit();
     long rowCount = 0;
 
     LOG.info(String.format("[SearchId:%d] %s, number of block: %d",
         request.searchId(), queryModel.toString(), mbSplit.getAllSplits().size()));
+    DataMapExprWrapper fgDataMap = chooseFGDataMap(table,
+            queryModel.getFilterExpressionResolverTree());
 
     // If there is DataMap selected in Master, prune the split by it
-    if (request.dataMap() != null) {
-      queryModel = prune(request.searchId(), table, queryModel, mbSplit, request.dataMap().get());
+    if (fgDataMap != null) {
+      queryModel = prune(request.searchId(), table, queryModel, mbSplit, fgDataMap);
     }
 
     // In search mode, reader will read multiple blocks by using a thread pool
     CarbonRecordReader<CarbonRow> reader =
         new CarbonRecordReader<>(queryModel, new CarbonRowReadSupport());
-    reader.initialize(mbSplit, null);
 
     // read all rows by the reader
     List<CarbonRow> rows = new LinkedList<>();
     try {
+      reader.initialize(mbSplit, null);
+
       // loop to read required number of rows.
       // By default, if user does not specify the limit value, limit is Long.MaxValue
       while (reader.nextKeyValue() && rowCount < limit) {
@@ -140,22 +163,38 @@ public class SearchRequestHandler {
       CarbonMultiBlockSplit mbSplit, DataMapExprWrapper datamap) throws IOException {
     Objects.requireNonNull(datamap);
     List<Segment> segments = new LinkedList<>();
+    HashMap<String, Integer> uniqueSegments = new HashMap<>();
     for (CarbonInputSplit split : mbSplit.getAllSplits()) {
-      segments.add(
-          Segment.toSegment(split.getSegmentId(),
-              new LatestFilesReadCommittedScope(table.getTablePath())));
+      String segmentId = split.getSegmentId();
+      if (uniqueSegments.get(segmentId) == null) {
+        segments.add(Segment.toSegment(
+                segmentId,
+                new LatestFilesReadCommittedScope(table.getTablePath(), segmentId)));
+        uniqueSegments.put(segmentId, 1);
+      } else {
+        uniqueSegments.put(segmentId, uniqueSegments.get(segmentId) + 1);
+      }
     }
-    List<ExtendedBlocklet> prunnedBlocklets = datamap.prune(segments, null);
 
-    List<String> pathToRead = new LinkedList<>();
-    for (ExtendedBlocklet prunnedBlocklet : prunnedBlocklets) {
-      pathToRead.add(prunnedBlocklet.getPath());
+    List<DataMapDistributableWrapper> distributables = datamap.toDistributable(segments);
+    List<ExtendedBlocklet> prunnedBlocklets = new LinkedList<ExtendedBlocklet>();
+    for (int i = 0; i < distributables.size(); i++) {
+      DataMapDistributable dataMapDistributable = distributables.get(i).getDistributable();
+      prunnedBlocklets.addAll(datamap.prune(dataMapDistributable, null));
+    }
+
+    HashMap<String, ExtendedBlocklet> pathToRead = new HashMap<>();
+    for (ExtendedBlocklet prunedBlocklet : prunnedBlocklets) {
+      pathToRead.put(prunedBlocklet.getFilePath(), prunedBlocklet);
     }
 
     List<TableBlockInfo> blocks = queryModel.getTableBlockInfos();
     List<TableBlockInfo> blockToRead = new LinkedList<>();
     for (TableBlockInfo block : blocks) {
-      if (pathToRead.contains(block.getFilePath())) {
+      if (pathToRead.keySet().contains(block.getFilePath())) {
+        // If not set this, it will can't create FineGrainBlocklet object in
+        // org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode.getIndexedData
+        block.setDataMapWriterPath(pathToRead.get(block.getFilePath()).getDataMapWriterPath());
         blockToRead.add(block);
       }
     }

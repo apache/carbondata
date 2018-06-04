@@ -23,6 +23,8 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.junit.Assert;
@@ -61,7 +63,6 @@ public class TestUtil {
       boolean persistSchema, int blockletSize, int blockSize, boolean isTransactionalTable) {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .withSchema(schema)
           .isTransactionalTable(isTransactionalTable)
           .outputPath(path);
       if (sortColumns != null) {
@@ -77,7 +78,7 @@ public class TestUtil {
         builder = builder.withBlockSize(blockSize);
       }
 
-      CarbonWriter writer = builder.buildWriterForCSVInput();
+      CarbonWriter writer = builder.buildWriterForCSVInput(schema);
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), String.valueOf((double) i / 2)});
@@ -107,5 +108,47 @@ public class TestUtil {
     });
     Assert.assertNotNull(dataFiles);
     Assert.assertTrue(dataFiles.length > 0);
+  }
+
+  /**
+   * verify whether the file exists
+   * if delete the file success or file not exists, then return true; otherwise return false
+   *
+   * @return boolean
+   */
+  public static boolean cleanMdtFile() {
+    String fileName = CarbonProperties.getInstance().getSystemFolderLocation()
+            + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
+    try {
+      if (FileFactory.isFileExist(fileName)) {
+        File file = new File(fileName);
+        file.delete();
+        return true;
+      } else {
+        return true;
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
+
+  /**
+   * verify whether the mdt file exists
+   * if the file exists, then return true; otherwise return false
+   *
+   * @return boolean
+   */
+  public static boolean verifyMdtFile() {
+    String fileName = CarbonProperties.getInstance().getSystemFolderLocation()
+            + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
+    try {
+      if (FileFactory.isFileExist(fileName)) {
+        return true;
+      }
+      return false;
+    } catch (IOException e) {
+      throw new RuntimeException("IO exception:", e);
+    }
   }
 }

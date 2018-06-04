@@ -694,7 +694,7 @@ class TableNewProcessor(cm: TableModel) {
     }
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
-    tableSchema.setSchemaEvalution(schemaEvol)
+    tableSchema.setSchemaEvolution(schemaEvol)
     tableInfo.setDatabaseName(cm.databaseNameOp.getOrElse(null))
     tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(cm.databaseNameOp.getOrElse(null),
       cm.tableName))

@@ -39,10 +39,9 @@ public class TimestampStreamReader extends AbstractStreamReader {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if(columnVector.anyNullsSet()) {
+        if (columnVector.anyNullsSet()) {
           handleNullInVector(type, numberOfRows, builder);
-        }
-        else {
+        } else {
           populateVector(type, numberOfRows, builder);
         }
       }
@@ -50,10 +49,8 @@ public class TimestampStreamReader extends AbstractStreamReader {
     } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (streamData != null) {
-        for (int i = 0; i < numberOfRows; i++) {
-          type.writeLong(builder, (Long) streamData[i]);
-        }
+      for (int i = 0; i < numberOfRows; i++) {
+        type.writeLong(builder, (Long) streamData[i]);
       }
     }
 

@@ -131,6 +131,25 @@ public class DataMapChooser {
   }
 
   /**
+   * Get all datamaps of the table for clearing purpose
+   */
+  public DataMapExprWrapper getAllDataMapsForClear(CarbonTable carbonTable)
+      throws IOException {
+    List<TableDataMap> allDataMapFG =
+        DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+    DataMapExprWrapper initialExpr = null;
+    if (allDataMapFG.size() > 0) {
+      initialExpr = new DataMapExprWrapperImpl(allDataMapFG.get(0), null);
+
+      for (int i = 1; i < allDataMapFG.size(); i++) {
+        initialExpr = new AndDataMapExprWrapper(initialExpr,
+            new DataMapExprWrapperImpl(allDataMapFG.get(i), null), null);
+      }
+    }
+    return initialExpr;
+  }
+
+  /**
    * Returns default blocklet datamap
    * @param carbonTable
    * @param resolverIntf
@@ -264,8 +283,8 @@ public class DataMapChooser {
       List<ColumnExpression> columnExpressions, Set<ExpressionType> expressionTypes) {
     List<DataMapTuple> tuples = new ArrayList<>();
     for (TableDataMap dataMap : allDataMap) {
-      if (contains(dataMap.getDataMapFactory().getMeta(), columnExpressions, expressionTypes))
-      {
+      if (null != dataMap.getDataMapFactory().getMeta() && contains(
+          dataMap.getDataMapFactory().getMeta(), columnExpressions, expressionTypes)) {
         tuples.add(
             new DataMapTuple(dataMap.getDataMapFactory().getMeta().getIndexedColumns().size(),
                 dataMap));

@@ -262,10 +262,11 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
 
     val tableInfo = if (external) {
       // read table info from schema file in the provided table path
+      // external table also must convert table name to lower case
       val identifier = AbsoluteTableIdentifier.from(
         tablePath.get,
-        CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession),
-        tableIdentifier.table)
+        CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession).toLowerCase(),
+        tableIdentifier.table.toLowerCase())
       val table = try {
         val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
         if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {

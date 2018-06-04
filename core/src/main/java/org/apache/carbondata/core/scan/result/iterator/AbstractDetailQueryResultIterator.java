@@ -135,14 +135,19 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       } else {
         DataRefNode startDataBlock =
             finder.findFirstDataBlock(dataRefNode, blockInfo.getStartKey());
-        while (startDataBlock.nodeIndex() < blockInfo.getStartBlockletIndex()) {
+        while ((null != startDataBlock) && (startDataBlock.nodeIndex() < blockInfo
+            .getStartBlockletIndex())) {
           startDataBlock = startDataBlock.getNextDataRefNode();
         }
         long numberOfBlockToScan = blockInfo.getNumberOfBlockletToScan();
         //if number of block is less than 0 then take end block.
         if (numberOfBlockToScan <= 0) {
           DataRefNode endDataBlock = finder.findLastDataBlock(dataRefNode, blockInfo.getEndKey());
-          numberOfBlockToScan = endDataBlock.nodeIndex() - startDataBlock.nodeIndex() + 1;
+          if (null != startDataBlock) {
+            numberOfBlockToScan = endDataBlock.nodeIndex() - startDataBlock.nodeIndex() + 1;
+          } else {
+            numberOfBlockToScan = endDataBlock.nodeIndex() + 1;
+          }
         }
         blockInfo.setFirstDataBlock(startDataBlock);
         blockInfo.setNumberOfBlockToScan(numberOfBlockToScan);

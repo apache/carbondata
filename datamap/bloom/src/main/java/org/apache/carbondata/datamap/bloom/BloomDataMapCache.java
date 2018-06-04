@@ -19,7 +19,6 @@ package org.apache.carbondata.datamap.bloom;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -133,15 +132,14 @@ public class BloomDataMapCache implements Serializable {
    */
   private List<BloomDMModel> loadBloomDataMapModel(CacheKey cacheKey) {
     DataInputStream dataInStream = null;
-    ObjectInputStream objectInStream = null;
     List<BloomDMModel> bloomDMModels = new ArrayList<BloomDMModel>();
     try {
       String indexFile = getIndexFileFromCacheKey(cacheKey);
       dataInStream = FileFactory.getDataInputStream(indexFile, FileFactory.getFileType(indexFile));
-      objectInStream = new ObjectInputStream(dataInStream);
       try {
-        BloomDMModel model = null;
-        while ((model = (BloomDMModel) objectInStream.readObject()) != null) {
+        while (dataInStream.available() > 0) {
+          BloomDMModel model = new BloomDMModel();
+          model.readFields(dataInStream);
           bloomDMModels.add(model);
         }
       } catch (EOFException e) {
@@ -150,12 +148,12 @@ public class BloomDataMapCache implements Serializable {
       }
       this.bloomDMCache.put(cacheKey, bloomDMModels);
       return bloomDMModels;
-    } catch (ClassNotFoundException | IOException e) {
+    } catch (IOException e) {
+      clear(cacheKey);
       LOGGER.error(e, "Error occurs while reading bloom index");
       throw new RuntimeException("Error occurs while reading bloom index", e);
     } finally {
-      clear();
-      CarbonUtil.closeStreams(objectInStream, dataInStream);
+      CarbonUtil.closeStreams(dataInStream);
     }
   }
 
@@ -191,10 +189,10 @@ public class BloomDataMapCache implements Serializable {
   /**
    * clear this cache
    */
-  private void clear() {
+  private void clear(CacheKey cacheKey) {
     LOGGER.info(String.format("Current meta cache statistic: %s", getCacheStatus()));
-    LOGGER.info("Trigger invalid all the cache for bloom datamap");
-    this.bloomDMCache.invalidateAll();
+    LOGGER.info("Trigger invalid cache for bloom datamap, key is " + cacheKey);
+    this.bloomDMCache.invalidate(cacheKey);
   }
 
   public static class CacheKey {

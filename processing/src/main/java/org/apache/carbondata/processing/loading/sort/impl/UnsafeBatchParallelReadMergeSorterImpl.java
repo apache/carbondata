@@ -164,7 +164,9 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
         LOGGER.error(e);
         this.threadStatusObserver.notifyFailed(e);
       } finally {
-        sortDataRows.finishThread();
+        synchronized (sortDataRows) {
+          sortDataRows.finishThread();
+        }
       }
     }
 

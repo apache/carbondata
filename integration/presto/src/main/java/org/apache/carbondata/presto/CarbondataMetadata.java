@@ -71,6 +71,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
     ImmutableList.Builder<SchemaTableName> builder = ImmutableList.builder();
     for (String schemaName : schemaNames) {
       for (String tableName : carbonTableReader.getTableNames(schemaName)) {
+        if(!tableName.equalsIgnoreCase(".DS_Store"))
         builder.add(new SchemaTableName(schemaName, tableName));
       }
     }

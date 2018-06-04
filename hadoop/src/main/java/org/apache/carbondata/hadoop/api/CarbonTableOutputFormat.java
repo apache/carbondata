@@ -33,8 +33,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
-import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
 import org.apache.carbondata.processing.loading.TableProcessingOperations;
 import org.apache.carbondata.processing.loading.iterator.CarbonOutputIteratorWrapper;
@@ -253,11 +253,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
               .execute(loadModel, tempStoreLocations, new CarbonIterator[] { iteratorWrapper });
         } catch (Exception e) {
           executorService.shutdownNow();
+          iteratorWrapper.closeWriter(true);
           dataLoadExecutor.close();
           // clean up the folders and files created locally for data load operation
           TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
 
-          iteratorWrapper.closeWriter(true);
           throw new RuntimeException(e);
         }
       }

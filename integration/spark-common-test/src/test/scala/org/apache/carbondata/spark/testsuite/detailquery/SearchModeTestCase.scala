@@ -19,7 +19,8 @@ package org.apache.carbondata.spark.testsuite.detailquery
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonSession, Row, SaveMode}
-import org.scalatest.{BeforeAndAfterAll, Ignore}
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.DataGenerator
@@ -98,6 +99,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
   test("aggregate query with datamap and fallback to SparkSQL") {
     sql("create datamap preagg on table main using 'preaggregate' as select city, count(*) from main group by city ")
     checkSearchAnswer("select city, count(*) from main group by city")
+    sql("drop datamap preagg on table main").show()
   }
 
   test("set search mode") {
@@ -106,5 +108,45 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
     checkSearchAnswer("select id from main where id = '3' limit 10")
     sql("set carbon.search.enabled = false")
     assert(!sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+  }
+
+  test("test lucene datamap with search mode") {
+    sql("DROP DATAMAP IF EXISTS dm ON TABLE main")
+    sql("CREATE DATAMAP dm ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='id') ")
+    checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('id:100000')"),
+      sql(s"SELECT * FROM main WHERE id='100000'"))
+    sql("DROP DATAMAP if exists dm ON TABLE main")
+  }
+
+  test("test lucene datamap with search mode 2") {
+    sql("drop datamap if exists dm3 ON TABLE main")
+    sql("CREATE DATAMAP dm3 ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='city') ")
+    checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('city:city6')"),
+      sql("SELECT * FROM main WHERE city='city6'"))
+    sql("DROP DATAMAP if exists dm3 ON TABLE main")
+  }
+
+  test("test lucene datamap with search mode, two column") {
+    sql("drop datamap if exists dm3 ON TABLE main")
+    sql("CREATE DATAMAP dm3 ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='city , id') ")
+    checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('city:city6')"),
+      sql("SELECT * FROM main WHERE city='city6'"))
+    checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('id:100000')"),
+      sql(s"SELECT * FROM main WHERE id='100000'"))
+    sql("DROP DATAMAP if exists dm3 ON TABLE main")
+  }
+
+  test("start search mode twice") {
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+    checkSearchAnswer("select id from main where id = '3' limit 10")
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
+    assert(!sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+
+    // start twice
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+    checkSearchAnswer("select id from main where id = '3' limit 10")
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
   }
 }

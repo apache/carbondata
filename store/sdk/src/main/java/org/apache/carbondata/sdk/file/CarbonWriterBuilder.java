@@ -21,9 +21,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,18 +67,6 @@ public class CarbonWriterBuilder {
   private long UUID;
   private Map<String, String> options;
   private String taskNo;
-
-  /**
-   * prepares the builder with the schema provided
-   * @param schema is instance of Schema
-   * This method must be called when building CarbonWriterBuilder
-   * @return updated CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder withSchema(Schema schema) {
-    Objects.requireNonNull(schema, "schema should not be null");
-    this.schema = schema;
-    return this;
-  }
 
   /**
    * Sets the output path of the writer builder
@@ -130,10 +120,10 @@ public class CarbonWriterBuilder {
   /**
    * If set false, writes the carbondata and carbonindex files in a flat folder structure
    * @param isTransactionalTable is a boolelan value
-   * if set to false, then writes the carbondata and carbonindex files
+   * If set to false, then writes the carbondata and carbonindex files
    * in a flat folder structure.
-   * if set to true, then writes the carbondata and carbonindex files
-   * in segment folder structure..
+   * If set to true, then writes the carbondata and carbonindex files
+   * in segment folder structure.
    * By default set to false.
    * @return updated CarbonWriterBuilder
    */
@@ -295,7 +285,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * To set the blocklet size of carbondata file
+   * To set the blocklet size of CarbonData file
    * @param blockletSize is blocklet size in MB
    * default value is 64 MB
    * @return updated CarbonWriterBuilder
@@ -310,24 +300,30 @@ public class CarbonWriterBuilder {
 
   /**
    * Build a {@link CarbonWriter}, which accepts row in CSV format
+   * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
    * @return CSVCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOptionException {
+  public CarbonWriter buildWriterForCSVInput(Schema schema)
+      throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
+    this.schema = schema;
     CarbonLoadModel loadModel = createLoadModel();
     return new CSVCarbonWriter(loadModel);
   }
 
   /**
    * Build a {@link CarbonWriter}, which accepts Avro object
+   * @param avroSchema avro Schema object {org.apache.avro.Schema}
    * @return AvroCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public CarbonWriter buildWriterForAvroInput() throws IOException, InvalidLoadOptionException {
+  public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema avroSchema)
+      throws IOException, InvalidLoadOptionException {
+    this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
     CarbonLoadModel loadModel = createLoadModel();
@@ -336,7 +332,7 @@ public class CarbonWriterBuilder {
     // handle multi level complex type support. As there are no conversion converter step is
     // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
     // which will skip Conversion Step.
-    loadModel.setLoadWithoutCoverterStep(true);
+    loadModel.setLoadWithoutConverterStep(true);
     return new AvroCarbonWriter(loadModel);
   }
 
@@ -383,7 +379,7 @@ public class CarbonWriterBuilder {
     }
 
     List<String> sortColumnsList = new ArrayList<>();
-    if (sortColumns == null) {
+    if (sortColumns == null || sortColumns.length == 0) {
       // If sort columns are not specified, default set all dimensions to sort column.
       // When dimensions are default set to sort column,
       // Inverted index will be supported by default for sort columns.
@@ -414,8 +410,8 @@ public class CarbonWriterBuilder {
       tableName = "_tempTable";
       dbName = "_tempDB";
     } else {
-      dbName = null;
-      tableName = null;
+      dbName = "";
+      tableName = "_tempTable_" + String.valueOf(UUID);
     }
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
@@ -427,6 +423,7 @@ public class CarbonWriterBuilder {
 
   private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
       List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList) {
+    Set<String> uniqueFields = new HashSet<>();
     // a counter which will be used in case of complex array type. This valIndex will be assigned
     // to child of complex array type in the order val1, val2 so that each array type child is
     // differentiated to any level
@@ -448,6 +445,10 @@ public class CarbonWriterBuilder {
     int i = 0;
     for (Field field : fields) {
       if (null != field) {
+        if (!uniqueFields.add(field.getFieldName())) {
+          throw new RuntimeException(
+              "Duplicate column " + field.getFieldName() + " found in table schema");
+        }
         int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
         if (isSortColumn > -1) {
           // unsupported types for ("array", "struct", "double", "float", "decimal")

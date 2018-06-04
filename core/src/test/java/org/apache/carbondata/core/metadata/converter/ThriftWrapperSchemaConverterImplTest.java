@@ -1421,7 +1421,7 @@ public class ThriftWrapperSchemaConverterImplTest {
         return columnSchemas;
       }
 
-      @Mock public SchemaEvolution getSchemaEvalution() {
+      @Mock public SchemaEvolution getSchemaEvolution() {
         return schemaEvolution;
       }
 
@@ -1537,7 +1537,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       final SchemaEvolution schemaEvolution = new SchemaEvolution();
       final Map mapTableProperties = new HashMap<String, String>();
 
-      @Mock public SchemaEvolution getSchemaEvalution() {
+      @Mock public SchemaEvolution getSchemaEvolution() {
         return schemaEvolution;
       }
 

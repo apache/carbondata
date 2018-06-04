@@ -21,23 +21,37 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.CharEncoding;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 import org.apache.avro.Schema;
 
-
 public class AvroCarbonWriterTest {
   private String path = "./AvroCarbonWriterSuiteWriteFiles";
+
+  @Before
+  public void cleanFile() {
+    assert (TestUtil.cleanMdtFile());
+  }
+
+  @After
+  public void verifyDMFile() {
+    assert (!TestUtil.verifyMdtFile());
+  }
 
   @Test
   public void testWriteBasic() throws IOException {
@@ -62,10 +76,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema))
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -133,10 +146,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema))
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -228,10 +240,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(nn);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -292,10 +303,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(nn);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -332,10 +342,9 @@ public class AvroCarbonWriterTest {
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(AvroCarbonWriter.getCarbonSchemaFromAvroSchema(mySchema))
           .outputPath(path)
           .isTransactionalTable(true).sortBy(sortColumns)
-          .buildWriterForAvroInput();
+          .buildWriterForAvroInput(nn);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -444,6 +453,43 @@ public class AvroCarbonWriterTest {
     FileUtils.deleteDirectory(new File(path));
   }
 
+  @Test
+  public void testExceptionForDuplicateColumns() throws IOException, InvalidLoadOptionException {
+    Field[] field = new Field[2];
+    field[0] = new Field("name", DataTypes.STRING);
+    field[1] = new Field("name", DataTypes.STRING);
+    CarbonWriterBuilder writer = CarbonWriter.builder().isTransactionalTable(false)
+        .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
 
+    try {
+      writer.buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field));
+      Assert.fail();
+    } catch (Exception e) {
+      assert(e.getMessage().contains("Duplicate column name found in table schema"));
+    }
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testExceptionForInvalidDate() throws IOException, InvalidLoadOptionException {
+    Field[] field = new Field[2];
+    field[0] = new Field("name", DataTypes.STRING);
+    field[1] = new Field("date", DataTypes.DATE);
+    CarbonWriterBuilder writer = CarbonWriter.builder().isTransactionalTable(false)
+        .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
+
+    try {
+      Map<String, String> loadOptions = new HashMap<String, String>();
+      loadOptions.put("bad_records_action", "fail");
+      CarbonWriter carbonWriter =
+          writer.isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field));
+      carbonWriter.write(new String[] { "k", "20-02-2233" });
+      carbonWriter.close();
+      Assert.fail();
+    } catch (Exception e) {
+      assert(e.getMessage().contains("Data load failed due to bad record"));
+    }
+    FileUtils.deleteDirectory(new File(path));
+  }
 
 }

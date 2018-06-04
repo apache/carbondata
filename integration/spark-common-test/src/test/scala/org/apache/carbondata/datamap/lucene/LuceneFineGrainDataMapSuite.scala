@@ -117,14 +117,13 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test lucene fine grain data map") {
-    sql("drop datamap if exists dm on table datamap_test")
+//    sql("drop datamap if exists dm on table datamap_test")
     sql(
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test
          | USING 'lucene'
          | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
-
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test where name='n10'"))
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM datamap_test WHERE city='c020'"))
 
@@ -439,6 +438,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       .contains("Unsupported alter operation on hive table"))
     sql("drop datamap if exists dm2 on table datamap_test_table")
   }
+
   test("test Clean Files and check Lucene DataMap") {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
@@ -731,6 +731,89 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     assert(msg.getCause.getMessage.contains("TEXT_MATCH is not supported on table"))
     sql("DROP TABLE table1")
   }
+  
+  test("test lucene with flush_cache as true") {
+    sql("DROP TABLE IF EXISTS datamap_test_table")
+    sql(
+      """
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm_flush ON TABLE datamap_test_table
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='name , city', 'flush_cache'='true')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
+    checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n99*')"),
+      sql("select * from datamap_test_table where name like 'n99%'"))
+    checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n*9')"),
+      sql(s"select * from datamap_test_table where name like 'n%9'"))
+    sql("drop datamap if exists dm_flush on table datamap_test_table")
+  }
+
+  test("test lucene with split_blocklet as false ") {
+    sql("DROP TABLE IF EXISTS datamap_test_table")
+    sql(
+      """
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm_split_false ON TABLE datamap_test_table
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='name , city', 'split_blocklet'='false')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
+    checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n99*')"),
+      sql("select * from datamap_test_table where name like 'n99%'"))
+    checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n*9')"),
+      sql(s"select * from datamap_test_table where name like 'n%9'"))
+    sql("drop datamap if exists dm_split_false on table datamap_test_table")
+  }
+
+  test("test text_match filters with more than one text_match udf ") {
+    sql("DROP TABLE IF EXISTS datamap_test_table")
+    sql(
+      """
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm_text ON TABLE datamap_test_table
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='name , city')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
+    val msg = intercept[MalformedCarbonCommandException] {
+      sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n0*') AND TEXT_MATCH" +
+          "('city:c0*')").show()
+    }
+    assert(msg.getMessage
+      .contains("Specify all search filters for Lucene within a single text_match UDF"))
+    sql("drop datamap if exists dm_text on table datamap_test_table")
+  }
+
+  test("test lucene indexing english stop words") {
+    sql("drop table if exists table_stop")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS, "false")
+    sql("create table table_stop(suggestion string,goal string) stored by 'carbondata'")
+    sql(
+      "create datamap stop_dm on table table_stop using 'lucene' DMPROPERTIES('index_columns'='suggestion')")
+    sql("insert into table_stop select 'The is the stop word','abcde'")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS, "true")
+    sql("insert into table_stop select 'The is one more stop word','defg'")
+    assert(
+      sql("select * from table_stop where text_match('suggestion:*is*')").collect().length == 1)
+  }
 
   override protected def afterAll(): Unit = {
     LuceneFineGrainDataMapSuite.deleteFile(file2)
@@ -746,11 +829,15 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test5")
     sql("DROP TABLE IF EXISTS datamap_test7")
     sql("DROP TABLE IF EXISTS datamap_main")
+    sql("DROP TABLE IF EXISTS table_stop")
     sql("use default")
     sql("drop database if exists lucene cascade")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
-          CarbonProperties.getStorePath)
+        CarbonProperties.getStorePath)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
+        CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
   }
 }
 

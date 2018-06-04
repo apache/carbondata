@@ -38,7 +38,6 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.network.TransportContext;
 import org.apache.spark.network.netty.SparkTransportConf;
 import org.apache.spark.network.sasl.SaslServerBootstrap;
-import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.network.server.TransportServerBootstrap;
 import org.apache.spark.network.util.TransportConf;
 import scala.Some;
@@ -144,8 +143,7 @@ public class SecureDictionaryServer extends AbstractDictionaryServer implements 
         TransportServerBootstrap bootstrap =
             new SaslServerBootstrap(transportConf, securityManager);
         String host = findLocalIpAddress(LOGGER);
-        TransportServer transportServer = context
-            .createServer(host, port, Lists.<TransportServerBootstrap>newArrayList(bootstrap));
+        context.createServer(host, port, Lists.<TransportServerBootstrap>newArrayList(bootstrap));
         LOGGER.audit("Dictionary Server started, Time spent " + (System.currentTimeMillis() - start)
             + " Listening on port " + newPort);
         this.port = newPort;

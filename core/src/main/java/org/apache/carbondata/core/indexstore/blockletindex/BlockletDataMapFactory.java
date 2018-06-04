@@ -17,11 +17,8 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -49,12 +46,19 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.converter.SchemaConverter;
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -66,6 +70,7 @@ import org.apache.hadoop.fs.RemoteIterator;
 public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher, CacheableDataMap {
 
+  private static final Log LOG = LogFactory.getLog(BlockletDataMapFactory.class);
   private static final String NAME = "clustered.btree.blocklet";
 
   public static final DataMapSchema DATA_MAP_SCHEMA =
@@ -74,7 +79,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   private AbsoluteTableIdentifier identifier;
 
   // segmentId -> list of index file
-  private Map<String, Set<TableBlockIndexUniqueIdentifier>> segmentMap = new HashMap<>();
+  private Map<String, Set<TableBlockIndexUniqueIdentifier>> segmentMap = new ConcurrentHashMap<>();
 
   private Cache<TableBlockIndexUniqueIdentifier, BlockletDataMapIndexWrapper> cache;
 
@@ -115,11 +120,57 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segment.getSegmentNo());
     if (tableBlockIndexUniqueIdentifiers == null) {
+      CarbonTable carbonTable = this.getCarbonTable();
+      if (!carbonTable.getTableInfo().isTransactionalTable()) {
+        // For NonTransactional table, compare the schema of all index files with inferred schema.
+        // If there is a mismatch throw exception. As all files must be of same schema.
+        validateSchemaForNewTranscationalTableFiles(segment, carbonTable);
+      }
       tableBlockIndexUniqueIdentifiers =
           BlockletDataMapUtil.getTableBlockUniqueIdentifiers(segment);
       segmentMap.put(segment.getSegmentNo(), tableBlockIndexUniqueIdentifiers);
     }
     return tableBlockIndexUniqueIdentifiers;
+  }
+
+  private void validateSchemaForNewTranscationalTableFiles(Segment segment, CarbonTable carbonTable)
+      throws IOException {
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    Map<String, String> indexFiles = segment.getCommittedIndexFile();
+    for (Map.Entry<String, String> indexFileEntry : indexFiles.entrySet()) {
+      Path indexFile = new Path(indexFileEntry.getKey());
+      org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.inferSchemaFromIndexFile(
+          indexFile.toString(), carbonTable.getTableName());
+      TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+          tableInfo, identifier.getDatabaseName(),
+          identifier.getTableName(),
+          identifier.getTablePath());
+      List<ColumnSchema> indexFileColumnList =
+          wrapperTableInfo.getFactTable().getListOfColumns();
+      List<ColumnSchema> tableColumnList =
+          carbonTable.getTableInfo().getFactTable().getListOfColumns();
+      if (!isSameColumnSchemaList(indexFileColumnList, tableColumnList)) {
+        LOG.error("Schema of " + indexFile.getName()
+            + " doesn't match with the table's schema");
+        throw new IOException("All the files doesn't have same schema. "
+            + "Unsupported operation on nonTransactional table. Check logs.");
+      }
+    }
+  }
+
+  private boolean isSameColumnSchemaList(List<ColumnSchema> indexFileColumnList,
+      List<ColumnSchema> tableColumnList) {
+    if (indexFileColumnList.size() != tableColumnList.size()) {
+      LOG.error("Index file's column size is " + indexFileColumnList.size()
+          + " but table's column size is " + tableColumnList.size());
+      return false;
+    }
+    for (int i = 0; i < tableColumnList.size(); i++) {
+      if (!indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -229,9 +280,11 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   @Override
-  public void clear() {
-    for (String segmentId : segmentMap.keySet().toArray(new String[segmentMap.size()])) {
-      clear(new Segment(segmentId, null, null));
+  public synchronized void clear() {
+    if (segmentMap.size() > 0) {
+      for (String segmentId : segmentMap.keySet().toArray(new String[segmentMap.size()])) {
+        clear(new Segment(segmentId, null, null));
+      }
     }
   }
 

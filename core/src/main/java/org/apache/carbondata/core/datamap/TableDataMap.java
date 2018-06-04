@@ -74,6 +74,10 @@ public final class TableDataMap extends OperationEventListener {
     this.segmentPropertiesFetcher = segmentPropertiesFetcher;
   }
 
+  public BlockletDetailsFetcher getBlockletDetailsFetcher() {
+    return blockletDetailsFetcher;
+  }
+
   /**
    * Pass the valid segments and prune the datamap using filter expression
    *
@@ -122,8 +126,9 @@ public final class TableDataMap extends OperationEventListener {
   public List<DataMapDistributable> toDistributable(List<Segment> segments) throws IOException {
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (Segment segment : segments) {
-      List<DataMapDistributable> list = dataMapFactory.toDistributable(segment);
-      for (DataMapDistributable distributable: list) {
+      List<DataMapDistributable> list =
+          dataMapFactory.toDistributable(segment);
+      for (DataMapDistributable distributable : list) {
         distributable.setDataMapSchema(dataMapSchema);
         distributable.setSegment(segment);
         distributable.setTablePath(identifier.getTablePath());
@@ -134,6 +139,17 @@ public final class TableDataMap extends OperationEventListener {
   }
 
   /**
+   * This method returns all the datamaps corresponding to the distributable object
+   *
+   * @param distributable
+   * @return
+   * @throws IOException
+   */
+  public List<DataMap> getTableDataMaps(DataMapDistributable distributable) throws IOException {
+    return dataMapFactory.getDataMaps(distributable);
+  }
+
+  /**
    * This method is used from any machine after it is distributed. It takes the distributable object
    * to prune the filters.
    *
@@ -141,11 +157,10 @@ public final class TableDataMap extends OperationEventListener {
    * @param filterExp
    * @return
    */
-  public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
+  public List<ExtendedBlocklet> prune(List<DataMap> dataMaps, DataMapDistributable distributable,
       FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     List<Blocklet> blocklets = new ArrayList<>();
-    List<DataMap> dataMaps = dataMapFactory.getDataMaps(distributable);
     for (DataMap dataMap : dataMaps) {
       blocklets.addAll(dataMap.prune(filterExp,
           segmentPropertiesFetcher.getSegmentProperties(distributable.getSegment()),
@@ -187,7 +202,9 @@ public final class TableDataMap extends OperationEventListener {
    * Clears all datamap
    */
   public void clear() {
-    dataMapFactory.clear();
+    if (null != dataMapFactory) {
+      dataMapFactory.clear();
+    }
   }
 
   /**

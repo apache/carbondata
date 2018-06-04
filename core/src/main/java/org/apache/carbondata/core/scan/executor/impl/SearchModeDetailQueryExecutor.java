@@ -37,8 +37,10 @@ public class SearchModeDetailQueryExecutor extends AbstractQueryExecutor<Object>
           LogServiceFactory.getLogService(SearchModeDetailQueryExecutor.class.getName());
   private static ExecutorService executorService = null;
 
-  static {
-    initThreadPool();
+  public SearchModeDetailQueryExecutor() {
+    if (executorService == null) {
+      initThreadPool();
+    }
   }
 
   private static synchronized void initThreadPool() {
@@ -70,9 +72,7 @@ public class SearchModeDetailQueryExecutor extends AbstractQueryExecutor<Object>
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    if (executorService == null) {
-      initThreadPool();
-    }
+
     this.queryIterator = new SearchModeResultIterator(
         blockExecutionInfoList,
         queryModel,

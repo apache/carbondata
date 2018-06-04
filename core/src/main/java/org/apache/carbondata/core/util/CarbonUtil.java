@@ -2204,7 +2204,7 @@ public final class CarbonUtil {
     return tableInfo;
   }
 
-  public static ColumnSchema thriftColumnSchmeaToWrapperColumnSchema(
+  public static ColumnSchema thriftColumnSchemaToWrapperColumnSchema(
       org.apache.carbondata.format.ColumnSchema externalColumnSchema) {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
@@ -2380,27 +2380,31 @@ public final class CarbonUtil {
   public static org.apache.carbondata.format.TableInfo inferSchemaFromIndexFile(
       String indexFilePath, String tableName) throws IOException {
     CarbonIndexFileReader indexFileReader = new CarbonIndexFileReader();
-    indexFileReader.openThriftReader(indexFilePath);
-    org.apache.carbondata.format.IndexHeader readIndexHeader = indexFileReader.readIndexHeader();
-    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-    List<org.apache.carbondata.format.ColumnSchema> table_columns =
-        readIndexHeader.getTable_columns();
-    for (int i = 0; i < table_columns.size(); i++) {
-      columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+    try {
+      indexFileReader.openThriftReader(indexFilePath);
+      org.apache.carbondata.format.IndexHeader readIndexHeader = indexFileReader.readIndexHeader();
+      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+      List<org.apache.carbondata.format.ColumnSchema> table_columns =
+          readIndexHeader.getTable_columns();
+      for (int i = 0; i < table_columns.size(); i++) {
+        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
+      }
+      // only columnSchema is the valid entry, reset all dummy entries.
+      TableSchema tableSchema = getDummyTableSchema(tableName, columnSchemaList);
+
+      ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
+          new ThriftWrapperSchemaConverterImpl();
+      org.apache.carbondata.format.TableSchema thriftFactTable =
+          thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
+      org.apache.carbondata.format.TableInfo tableInfo =
+          new org.apache.carbondata.format.TableInfo(thriftFactTable,
+              new ArrayList<org.apache.carbondata.format.TableSchema>());
+
+      tableInfo.setDataMapSchemas(null);
+      return tableInfo;
+    } finally {
+      indexFileReader.closeThriftReader();
     }
-    // only columnSchema is the valid entry, reset all dummy entries.
-    TableSchema tableSchema = getDummyTableSchema(tableName, columnSchemaList);
-
-    ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
-        new ThriftWrapperSchemaConverterImpl();
-    org.apache.carbondata.format.TableSchema thriftFactTable =
-        thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
-    org.apache.carbondata.format.TableInfo tableInfo =
-        new org.apache.carbondata.format.TableInfo(thriftFactTable,
-            new ArrayList<org.apache.carbondata.format.TableSchema>());
-
-    tableInfo.setDataMapSchemas(null);
-    return tableInfo;
   }
 
   private static TableSchema getDummyTableSchema(String tableName,
@@ -2408,7 +2412,7 @@ public final class CarbonUtil {
     TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName(tableName);
     tableSchema.setBucketingInfo(null);
-    tableSchema.setSchemaEvalution(null);
+    tableSchema.setSchemaEvolution(null);
     tableSchema.setTableId(UUID.randomUUID().toString());
     tableSchema.setListOfColumns(columnSchemaList);
 
@@ -2418,7 +2422,7 @@ public final class CarbonUtil {
     List<SchemaEvolutionEntry> schEntryList = new ArrayList<>();
     schEntryList.add(schemaEvolutionEntry);
     schemaEvol.setSchemaEvolutionEntryList(schEntryList);
-    tableSchema.setSchemaEvalution(schemaEvol);
+    tableSchema.setSchemaEvolution(schemaEvol);
     return tableSchema;
   }
 
@@ -2546,7 +2550,8 @@ public final class CarbonUtil {
   /**
    * This method will calculate the data size and index size for carbon table
    */
-  public static Map<String, Long> calculateDataIndexSize(CarbonTable carbonTable)
+  public static Map<String, Long> calculateDataIndexSize(CarbonTable carbonTable,
+      Boolean updateSize)
       throws IOException {
     Map<String, Long> dataIndexSizeMap = new HashMap<String, Long>();
     long dataSize = 0L;
@@ -2561,7 +2566,11 @@ public final class CarbonUtil {
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
       try {
-        if (carbonLock.lockWithRetries()) {
+        boolean lockAcquired = true;
+        if (updateSize) {
+          lockAcquired = carbonLock.lockWithRetries();
+        }
+        if (lockAcquired) {
           LOGGER.info("Acquired lock for table for table status updation");
           String metadataPath = carbonTable.getMetadataPath();
           LoadMetadataDetails[] loadMetadataDetails =
@@ -2589,7 +2598,7 @@ public final class CarbonUtil {
             }
           }
           // If it contains old segment, write new load details
-          if (needUpdate) {
+          if (needUpdate && updateSize) {
             SegmentStatusManager.writeLoadDetailsIntoFile(
                 CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
                 loadMetadataDetails);

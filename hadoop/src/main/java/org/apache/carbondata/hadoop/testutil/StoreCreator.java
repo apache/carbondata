@@ -167,7 +167,7 @@ public class StoreCreator {
   /**
    * Method to clear the data maps
    */
-  public static void clearDataMaps() {
+  public static void clearDataMaps() throws IOException {
     DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier);
   }
 
@@ -278,7 +278,7 @@ public class StoreCreator {
     tableSchema.setListOfColumns(columnSchemas);
     SchemaEvolution schemaEvol = new SchemaEvolution();
     schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
-    tableSchema.setSchemaEvalution(schemaEvol);
+    tableSchema.setSchemaEvolution(schemaEvol);
     tableSchema.setTableId(UUID.randomUUID().toString());
     tableInfo.setTableUniqueName(
         identifier.getCarbonTableIdentifier().getTableUniqueName()

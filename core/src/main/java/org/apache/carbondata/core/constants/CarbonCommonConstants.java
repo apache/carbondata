@@ -1003,7 +1003,7 @@ public final class CarbonCommonConstants {
   /**
    * Indicates alter partition
    */
-  public static String ALTER_PARTITION_KEY_WORD = "ALTER_PARTITION";
+  public static final String ALTER_PARTITION_KEY_WORD = "ALTER_PARTITION";
 
   /**
    * hdfs temporary directory key
@@ -1658,6 +1658,18 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_MODE_ENABLE_DEFAULT = "false";
 
   /**
+   * It's timeout threshold of carbon search query
+   */
+  @CarbonProperty
+  @InterfaceStability.Unstable
+  public static final String CARBON_SEARCH_QUERY_TIMEOUT = "carbon.search.query.timeout";
+
+  /**
+   * Default value is 10 seconds
+   */
+  public static final String CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT = "10s";
+
+  /**
    * The size of thread pool used for reading files in Work for search mode. By default,
    * it is number of cores in Worker
    */
@@ -1741,6 +1753,13 @@ public final class CarbonCommonConstants {
    * default value in size for cache size of bloom filter datamap.
    */
   public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL = "512";
+
+  // by default lucene will not store or create index for stop words like "is","the", if this
+  // property is set to true lucene will index for stop words also and gives result for the filter
+  // with stop words(example: TEXT_MATCH('description':'the'))
+  public static final String CARBON_LUCENE_INDEX_STOP_WORDS = "carbon.lucene.index.stop.words";
+
+  public static final String CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT = "false";
 
   private CarbonCommonConstants() {
   }

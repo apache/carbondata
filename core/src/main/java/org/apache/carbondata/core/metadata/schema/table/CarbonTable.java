@@ -231,6 +231,11 @@ public class CarbonTable implements Serializable {
     }
   }
 
+  public static CarbonTable buildFromTablePath(String tableName, String dbName, String tablePath)
+      throws IOException {
+    return SchemaReader
+        .readCarbonTableFromStore(AbsoluteTableIdentifier.from(tablePath, dbName, tableName));
+  }
   /**
    * @param tableInfo
    */
@@ -473,12 +478,12 @@ public class CarbonTable implements Serializable {
   /**
    * Return the segment path of the specified segmentId
    */
-  public String getSemgentPath(String segmentId) {
+  public String getSegmentPath(String segmentId) {
     return CarbonTablePath.getSegmentPath(getTablePath(), segmentId);
   }
 
   /**
-   * @return storepath
+   * @return store path
    */
   public String getTablePath() {
     return tableInfo.getOrCreateAbsoluteTableIdentifier().getTablePath();
@@ -561,15 +566,15 @@ public class CarbonTable implements Serializable {
     List<CarbonDimension> dimensions = tableDimensionsMap.get(tableName);
     List<CarbonMeasure> measures = tableMeasuresMap.get(tableName);
     List<CarbonColumn> columnList = new ArrayList<>(dimensions.size() + measures.size());
-    List<CarbonColumn> complexdimensionList = new ArrayList<>(dimensions.size());
+    List<CarbonColumn> complexDimensionList = new ArrayList<>(dimensions.size());
     for (CarbonColumn column : dimensions) {
       if (column.isComplex()) {
-        complexdimensionList.add(column);
+        complexDimensionList.add(column);
       } else {
         columnList.add(column);
       }
     }
-    columnList.addAll(complexdimensionList);
+    columnList.addAll(complexDimensionList);
     for (CarbonColumn column : measures) {
       if (!(column.getColName().equals("default_dummy_measure"))) {
         columnList.add(column);
@@ -887,7 +892,7 @@ public class CarbonTable implements Serializable {
 
 
   public long size() throws IOException {
-    Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this);
+    Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this, true);
     Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
     if (dataSize == null) {
       dataSize = 0L;

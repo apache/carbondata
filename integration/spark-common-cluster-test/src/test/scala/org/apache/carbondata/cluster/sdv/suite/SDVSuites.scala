@@ -150,6 +150,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new LuceneTestCase ::
                     new TimeSeriesPreAggregateTestCase :: 
                     new TestPartitionWithGlobalSort ::
+                    new SDKwriterTestCase ::
                     new SetParameterTestCase ::
                     new PartitionWithPreAggregateTestCase :: Nil
 

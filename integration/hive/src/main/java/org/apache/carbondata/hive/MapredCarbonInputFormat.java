@@ -30,10 +30,10 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.InvalidPathException;
@@ -77,13 +77,17 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
         }
       }
     }
-    AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
-        .from(validInputPath, getDatabaseName(configuration), getTableName(configuration));
-    // read the schema file to get the absoluteTableIdentifier having the correct table id
-    // persisted in the schema
-    CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
-    configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
-    setTableInfo(configuration, carbonTable.getTableInfo());
+    if (null != validInputPath) {
+      AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
+          .from(validInputPath, getDatabaseName(configuration), getTableName(configuration));
+      // read the schema file to get the absoluteTableIdentifier having the correct table id
+      // persisted in the schema
+      CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
+      configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
+      setTableInfo(configuration, carbonTable.getTableInfo());
+    } else {
+      throw new InvalidPathException("No input paths specified in job");
+    }
   }
 
   private static CarbonTable getCarbonTable(Configuration configuration, String path)

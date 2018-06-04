@@ -24,16 +24,18 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapChooser;
+import org.apache.carbondata.core.datamap.DataMapJob;
+import org.apache.carbondata.core.datamap.DataMapUtil;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -54,6 +56,7 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
@@ -61,7 +64,6 @@ import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
-import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -103,7 +105,6 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       "mapreduce.input.carboninputformat.transactional";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
-  private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
   public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
   private static final String PARTITIONS_TO_PRUNE =
@@ -171,22 +172,6 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(ALTER_PARTITION_ID, partitionIds.toString());
   }
 
-  public static void setDataMapJob(Configuration configuration, Object dataMapJob)
-      throws IOException {
-    if (dataMapJob != null) {
-      String toString = ObjectSerializationUtil.convertObjectToString(dataMapJob);
-      configuration.set(DATA_MAP_DSTR, toString);
-    }
-  }
-
-  public static DataMapJob getDataMapJob(Configuration configuration) throws IOException {
-    String jobString = configuration.get(DATA_MAP_DSTR);
-    if (jobString != null) {
-      return (DataMapJob) ObjectSerializationUtil.convertStringToObject(jobString);
-    }
-    return null;
-  }
-
   /**
    * It sets unresolved filter expression.
    *
@@ -206,6 +191,32 @@ m filterExpression
     }
   }
 
+  /**
+   * Set the column projection column names
+   *
+   * @param configuration     Configuration info
+   * @param projectionColumns projection columns name
+   */
+  public static void setColumnProjection(Configuration configuration, String[] projectionColumns) {
+    Objects.requireNonNull(projectionColumns);
+    if (projectionColumns.length < 1) {
+      throw new RuntimeException("Projection can't be empty");
+    }
+    StringBuilder builder = new StringBuilder();
+    for (String column : projectionColumns) {
+      builder.append(column).append(",");
+    }
+    String columnString = builder.toString();
+    columnString = columnString.substring(0, columnString.length() - 1);
+    configuration.set(COLUMN_PROJECTION, columnString);
+  }
+
+  /**
+   * Set the column projection column names from CarbonProjection
+   *
+   * @param configuration Configuration info
+   * @param projection    CarbonProjection object that includes unique projection column name
+   */
   public static void setColumnProjection(Configuration configuration, CarbonProjection projection) {
     if (projection == null || projection.isEmpty()) {
       return;
@@ -361,7 +372,7 @@ m filterExpression
     List<ExtendedBlocklet> prunedBlocklets =
         getPrunedBlocklets(job, carbonTable, resolver, segmentIds);
 
-    List<CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();
+    List<CarbonInputSplit> resultFilteredBlocks = new ArrayList<>();
     int partitionIndex = 0;
     List<Integer> partitionIdList = new ArrayList<>();
     if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
@@ -390,7 +401,7 @@ m filterExpression
         if (matchedPartitions == null || matchedPartitions.get(partitionIndex)) {
           CarbonInputSplit inputSplit = convertToCarbonInputSplit(blocklet);
           if (inputSplit != null) {
-            resultFilterredBlocks.add(inputSplit);
+            resultFilteredBlocks.add(inputSplit);
           }
         }
       }
@@ -398,7 +409,7 @@ m filterExpression
     statistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
     recorder.recordStatisticsForDriver(statistic, job.getConfiguration().get("query.id"));
-    return resultFilterredBlocks;
+    return resultFilteredBlocks;
   }
 
   /**
@@ -416,7 +427,7 @@ m filterExpression
     boolean distributedCG = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
             CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
-    DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
+    DataMapJob dataMapJob = DataMapUtil.getDataMapJob(job.getConfiguration());
     List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     // First prune using default datamap on driver side.
     DataMapExprWrapper dataMapExprWrapper = DataMapChooser
@@ -436,8 +447,8 @@ m filterExpression
       pruneSegments(segmentIds, prunedBlocklets);
       // Again prune with CG datamap.
       if (distributedCG && dataMapJob != null) {
-        prunedBlocklets =
-            executeDataMapJob(carbonTable, resolver, segmentIds, cgDataMapExprWrapper, dataMapJob,
+        prunedBlocklets = DataMapUtil
+            .executeDataMapJob(carbonTable, resolver, segmentIds, cgDataMapExprWrapper, dataMapJob,
                 partitionsToPrune);
       } else {
         prunedBlocklets = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
@@ -452,8 +463,8 @@ m filterExpression
       if (fgDataMapExprWrapper != null) {
         // Prune segments from already pruned blocklets
         pruneSegments(segmentIds, prunedBlocklets);
-        prunedBlocklets =
-            executeDataMapJob(carbonTable, resolver, segmentIds, fgDataMapExprWrapper, dataMapJob,
+        prunedBlocklets = DataMapUtil
+            .executeDataMapJob(carbonTable, resolver, segmentIds, fgDataMapExprWrapper, dataMapJob,
                 partitionsToPrune);
 
         ExplainCollector.recordFGDataMapPruning(
@@ -461,33 +472,6 @@ m filterExpression
       }
     } // TODO: add a else branch to push FGDataMap pruning to reader side
     return prunedBlocklets;
-  }
-
-  private List<ExtendedBlocklet> executeDataMapJob(CarbonTable carbonTable,
-      FilterResolverIntf resolver, List<Segment> segmentIds, DataMapExprWrapper dataMapExprWrapper,
-      DataMapJob dataMapJob, List<PartitionSpec> partitionsToPrune) throws IOException {
-    String className = "org.apache.carbondata.hadoop.api.DistributableDataMapFormat";
-    FileInputFormat dataMapFormat =
-        createDataMapJob(carbonTable, dataMapExprWrapper, segmentIds, partitionsToPrune, className);
-    List<ExtendedBlocklet> prunedBlocklets =
-        dataMapJob.execute((DistributableDataMapFormat) dataMapFormat, resolver);
-    // Apply expression on the blocklets.
-    prunedBlocklets = dataMapExprWrapper.pruneBlocklets(prunedBlocklets);
-    return prunedBlocklets;
-  }
-
-
-  public static FileInputFormat createDataMapJob(CarbonTable carbonTable,
-      DataMapExprWrapper dataMapExprWrapper, List<Segment> segments,
-      List<PartitionSpec> partitionsToPrune, String clsName) {
-    try {
-      Constructor<?> cons = Class.forName(clsName).getDeclaredConstructors()[0];
-      return (FileInputFormat) cons
-          .newInstance(carbonTable, dataMapExprWrapper, segments, partitionsToPrune,
-              BlockletDataMapFactory.class.getName());
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   /**

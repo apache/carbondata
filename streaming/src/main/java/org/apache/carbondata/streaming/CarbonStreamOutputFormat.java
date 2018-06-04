@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.hadoop.conf.Configuration;

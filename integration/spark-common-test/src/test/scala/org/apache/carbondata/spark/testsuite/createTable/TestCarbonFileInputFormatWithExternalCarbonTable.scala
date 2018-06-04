@@ -38,7 +38,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
                             "../." +
                             "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
-  //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+  //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/");
 
 
@@ -59,9 +59,9 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
       val writer =
       if (persistSchema) {
         builder.persistSchemaFile(true)
-        builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+        builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
       } else {
-        builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+        builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
       }
 
       var i = 0

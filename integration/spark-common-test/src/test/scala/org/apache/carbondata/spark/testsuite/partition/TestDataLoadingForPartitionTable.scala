@@ -61,7 +61,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
 
   def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Seq[Int]): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
-    val segmentDir = carbonTable.getSemgentPath(segmentId)
+    val segmentDir = carbonTable.getSegmentPath(segmentId)
     val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
     val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
       override def accept(file: CarbonFile): Boolean = {

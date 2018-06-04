@@ -60,12 +60,10 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil, ObjectSerializationUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.events.exception.PreEventException
-import org.apache.carbondata.hadoop.util.ObjectSerializationUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
@@ -812,17 +810,21 @@ case class CarbonLoadDataCommand(
       // datatype is always int
       val column = table.getColumnByName(table.getTableName, attr.name)
       if (column.hasEncoding(Encoding.DICTIONARY)) {
-        AttributeReference(
-          attr.name,
+        CarbonCompilerUtil.createAttributeReference(attr.name,
           IntegerType,
           attr.nullable,
-          attr.metadata)(attr.exprId, attr.qualifier, attr.isGenerated)
+          attr.metadata,
+          attr.exprId,
+          attr.qualifier,
+          attr)
       } else if (attr.dataType == TimestampType || attr.dataType == DateType) {
-        AttributeReference(
-          attr.name,
+        CarbonCompilerUtil.createAttributeReference(attr.name,
           LongType,
           attr.nullable,
-          attr.metadata)(attr.exprId, attr.qualifier, attr.isGenerated)
+          attr.metadata,
+          attr.exprId,
+          attr.qualifier,
+          attr)
       } else {
         attr
       }
@@ -860,7 +862,7 @@ case class CarbonLoadDataCommand(
   }
 
   /**
-   * Convert the rdd as per steps of data loading inputprocessor step and coverter step
+   * Convert the rdd as per steps of data loading inputprocessor step and converter step
    * @param originRDD
    * @param sparkSession
    * @param model

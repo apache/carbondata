@@ -341,6 +341,7 @@ public final class DataTypeUtil {
       try {
         if (null != dateFormat && !dateFormat.trim().isEmpty()) {
           dateFormatter = new SimpleDateFormat(dateFormat);
+          dateFormatter.setLenient(false);
         } else {
           dateFormatter = timeStampformatter.get();
         }
@@ -376,6 +377,7 @@ public final class DataTypeUtil {
       try {
         if (null != dateFormat && !dateFormat.trim().isEmpty()) {
           dateFormatter = new SimpleDateFormat(dateFormat);
+          dateFormatter.setLenient(false);
         } else {
           dateFormatter = timeStampformatter.get();
         }
@@ -587,20 +589,16 @@ public final class DataTypeUtil {
       return null;
     }
     try {
-      Object parsedValue = null;
       if (actualDataType == DataTypes.SHORT) {
-        parsedValue = Short.parseShort(data);
+        Short.parseShort(data);
       } else if (actualDataType == DataTypes.INT) {
-        parsedValue = Integer.parseInt(data);
+        Integer.parseInt(data);
       } else if (actualDataType == DataTypes.LONG) {
-        parsedValue = Long.parseLong(data);
+        Long.parseLong(data);
       } else {
         return data;
       }
-      if (null != parsedValue) {
-        return data;
-      }
-      return null;
+      return data;
     } catch (NumberFormatException ex) {
       return null;
     }

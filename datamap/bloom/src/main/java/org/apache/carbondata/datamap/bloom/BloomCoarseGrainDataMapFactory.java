@@ -28,6 +28,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
@@ -66,22 +67,33 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
    */
   private static final String BLOOM_SIZE = "bloom_size";
   /**
-   * default size for bloom filter: suppose one blocklet contains 20 pages
-   * and all the indexed value is distinct.
+   * default size for bloom filter, cardinality of the column.
    */
-  private static final int DEFAULT_BLOOM_FILTER_SIZE = 32000 * 20;
+  private static final int DEFAULT_BLOOM_FILTER_SIZE =
+      CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
   /**
    * property for fpp(false-positive-probability) of bloom filter
    */
   private static final String BLOOM_FPP = "bloom_fpp";
   /**
-   * default value for fpp of bloom filter
+   * default value for fpp of bloom filter is 1%
    */
-  private static final double DEFAULT_BLOOM_FILTER_FPP = 0.00001d;
+  private static final double DEFAULT_BLOOM_FILTER_FPP = 0.01d;
+
+  /**
+   * property for compressing bloom while saving to disk.
+   */
+  private static final String COMPRESS_BLOOM = "bloom_compress";
+  /**
+   * Default value of compressing bloom while save to disk.
+   */
+  private static final boolean DEFAULT_BLOOM_COMPRESS = true;
+
   private DataMapMeta dataMapMeta;
   private String dataMapName;
   private int bloomFilterSize;
   private double bloomFilterFpp;
+  private boolean bloomCompress;
 
   public BloomCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
@@ -94,6 +106,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<CarbonColumn> indexedColumns = carbonTable.getIndexedColumns(dataMapSchema);
     this.bloomFilterSize = validateAndGetBloomFilterSize(dataMapSchema);
     this.bloomFilterFpp = validateAndGetBloomFilterFpp(dataMapSchema);
+    this.bloomCompress = validateAndGetBloomCompress(dataMapSchema);
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
     // todo: support more optimize operations
     optimizedOperations.add(ExpressionType.EQUALS);
@@ -163,6 +176,21 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     return bloomFilterFpp;
   }
 
+  /**
+   * validate bloom DataMap COMPRESS_BLOOM
+   * Default value is true
+   */
+  private boolean validateAndGetBloomCompress(DataMapSchema dmSchema) {
+    String bloomCompress = dmSchema.getProperties().get(COMPRESS_BLOOM);
+    if (StringUtils.isBlank(bloomCompress)) {
+      LOGGER.warn(
+          String.format("Bloom compress is not configured for datamap %s, use default value %b",
+              dataMapName, DEFAULT_BLOOM_COMPRESS));
+      return DEFAULT_BLOOM_COMPRESS;
+    }
+    return Boolean.parseBoolean(bloomCompress);
+  }
+
   @Override
   public DataMapWriter createWriter(Segment segment, String shardName) throws IOException {
     LOGGER.info(
@@ -170,14 +198,14 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
             this.dataMapName, getCarbonTable().getTableName() , shardName));
     return new BloomDataMapWriter(getCarbonTable().getTablePath(), this.dataMapName,
         this.dataMapMeta.getIndexedColumns(), segment, shardName,
-        this.bloomFilterSize, this.bloomFilterFpp);
+        this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
   }
 
   @Override
   public DataMapBuilder createBuilder(Segment segment, String shardName) throws IOException {
     return new BloomDataMapBuilder(getCarbonTable().getTablePath(), this.dataMapName,
         this.dataMapMeta.getIndexedColumns(), segment, shardName,
-        this.bloomFilterSize, this.bloomFilterFpp);
+        this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
   }
 
   @Override
@@ -252,6 +280,14 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<DataMapDistributable> dataMapDistributableList = new ArrayList<>();
     CarbonFile[] indexDirs =
         getAllIndexDirs(getCarbonTable().getTablePath(), segment.getSegmentNo());
+    if (segment.getFilteredIndexShardNames().size() == 0) {
+      for (CarbonFile indexDir : indexDirs) {
+        DataMapDistributable bloomDataMapDistributable = new BloomDataMapDistributable(
+            indexDir.getAbsolutePath());
+        dataMapDistributableList.add(bloomDataMapDistributable);
+      }
+      return dataMapDistributableList;
+    }
     for (CarbonFile indexDir : indexDirs) {
       // Filter out the tasks which are filtered through CG datamap.
       if (!segment.getFilteredIndexShardNames().contains(indexDir.getName())) {

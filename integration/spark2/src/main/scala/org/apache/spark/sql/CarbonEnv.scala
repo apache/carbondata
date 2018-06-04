@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.util.Try
@@ -26,7 +27,7 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
-import org.apache.spark.sql.hive.{HiveSessionCatalog, _}
+import org.apache.spark.sql.hive._
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -216,14 +217,19 @@ object CarbonEnv {
     var isRefreshed = false
     val carbonEnv = getInstance(sparkSession)
     val table = carbonEnv.carbonMetastore.getTableFromMetadataCache(
-      identifier.database.getOrElse("default"), identifier.table)
+      identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
+      identifier.table)
     if (table.isEmpty ||
         (table.isDefined && carbonEnv.carbonMetastore
           .checkSchemasModifiedTimeAndReloadTable(identifier))) {
       sparkSession.sessionState.catalog.refreshTable(identifier)
+      val tablePath = CarbonProperties.getStorePath + File.separator + identifier.database
+        .getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase) +
+                      File.separator + identifier.table
       DataMapStoreManager.getInstance().
-        clearDataMaps(AbsoluteTableIdentifier.from(CarbonProperties.getStorePath,
-          identifier.database.getOrElse("default"), identifier.table))
+        clearDataMaps(AbsoluteTableIdentifier.from(tablePath,
+          identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
+          identifier.table))
       isRefreshed = true
     }
     isRefreshed
