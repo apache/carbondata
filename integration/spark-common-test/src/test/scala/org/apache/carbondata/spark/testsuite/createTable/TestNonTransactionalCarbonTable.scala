@@ -1825,6 +1825,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
                      |						"items": {
                      |							"name": "EachdoorNums",
                      |							"type": "int",
+                     |              "logicalType": "date",
                      |							"default": -1
                      |						}
                      |					}
@@ -1849,8 +1850,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildAvroTestDataMultiLevel3_2(3, null)
   }
 
-  // test multi level -- 3 levels [array of array of array of int]
-  test("test multi level support : array of array of array of int") {
+  // test multi level -- 3 levels [array of array of array of int with logical type]
+  test("test multi level support : array of array of array of int with logical type") {
     buildAvroTestDataMultiLevel3_2Type()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -1858,22 +1859,19 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    sql("select * from sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable limit 1").show(false)
 
     // TODO: Add a validation
     /*
-    +----+---+---------------------------------------------------------------------------+
-    |name|age|BuildNum
-                                               |
-    +----+---+---------------------------------------------------------------------------+
-    |bob |10 |[WrappedArray(WrappedArray(1, 2, 3), WrappedArray(4, 5, 6)), WrappedArray
-    (WrappedArray(10, 20, 30), WrappedArray(40, 50, 60))]|
-    |bob |10 |[WrappedArray(WrappedArray(1, 2, 3), WrappedArray(4, 5, 6)), WrappedArray
-    (WrappedArray(10, 20, 30), WrappedArray(40, 50, 60))]|
-    |bob |10 |[WrappedArray(WrappedArray(1, 2, 3), WrappedArray(4, 5, 6)), WrappedArray
-    (WrappedArray(10, 20, 30), WrappedArray(40, 50, 60))]|
-    +----+---+---------------------------------------------------------------------------+
-   */
+    +----+---+------------------------------------------------------------------+
+    |name|age|BuildNum                                                          |
+    +----+---+------------------------------------------------------------------+
+    |bob |10 |[WrappedArray(WrappedArray(1970-01-02, 1970-01-03, 1970-01-04),   |
+    |                    WrappedArray(1970-01-05, 1970-01-06, 1970-01-07)),     |
+    |       WrappedArray(WrappedArray(1970-01-11, 1970-01-21, 1970-01-31),      |
+    |                    WrappedArray(1970-02-10, 1970-02-20, 1970-03-02))]     |
+    +----+---+------------------------------------------------------------------+
+     */
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
