@@ -145,6 +145,7 @@ struct DataChunk3{
     1: required list<DataChunk2> data_chunk_list; // List of data chunk
     2: optional list<i32> page_offset; // Offset of each chunk
     3: optional list<i32> page_length; // Length of each chunk
+    4: optional LocalDictionaryChunk local_dictionary; // to store blocklet local dictionary values
    
  }
 /**
@@ -230,4 +231,15 @@ struct BlockletHeader{
 	3: optional BlockletIndex blocklet_index;  // Index for the following blocklet
 	4: required BlockletInfo blocklet_info;  // Info for the following blocklet
 	5: optional dictionary.ColumnDictionaryChunk dictionary; // Blocklet local dictionary
+}
+
+struct LocalDictionaryChunk {
+  1: required LocalDictionaryChunkMeta dictionary_meta
+	2: required binary dictionary_data; // the values in dictionary order, each value is represented in binary format
+	3: required binary dictionary_values; // surrogate keys used in the blocklet
+}
+
+struct LocalDictionaryChunkMeta {
+  1: required list<schema.Encoding> encoders; // The List of encoders overriden at node level
+  2: required list<binary> encoder_meta; // Extra information required by encoders
 }

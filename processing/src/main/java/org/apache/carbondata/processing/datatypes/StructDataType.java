@@ -60,10 +60,12 @@ public class StructDataType implements GenericDataType<StructObject> {
    */
   private int dataCounter;
 
-  private StructDataType(List<GenericDataType> children, int outputArrayIndex, int dataCounter) {
+  private StructDataType(List<GenericDataType> children, int outputArrayIndex, int dataCounter,
+      String name) {
     this.children = children;
     this.outputArrayIndex = outputArrayIndex;
     this.dataCounter = dataCounter;
+    this.name = name;
   }
 
   /**
@@ -113,7 +115,7 @@ public class StructDataType implements GenericDataType<StructObject> {
    * get column unique id
    */
   @Override
-  public String getColumnId() {
+  public String getColumnNames() {
     return columnId;
   }
 
@@ -318,13 +320,20 @@ public class StructDataType implements GenericDataType<StructObject> {
     for (GenericDataType child : children) {
       childrenClone.add(child.deepCopy());
     }
-    return new StructDataType(childrenClone, this.outputArrayIndex, this.dataCounter);
+    return new StructDataType(childrenClone, this.outputArrayIndex, this.dataCounter, this.name);
   }
 
   public void getChildrenType(List<ColumnType> type) {
     type.add(ColumnType.COMPLEX_STRUCT);
     for (int i = 0; i < children.size(); i++) {
       children.get(i).getChildrenType(type);
+    }
+  }
+
+  @Override public void getColumnNames(List<String> columnNameList) {
+    columnNameList.add(name);
+    for (int i = 0; i < children.size(); i++) {
+      children.get(i).getColumnNames(columnNameList);
     }
   }
 }
