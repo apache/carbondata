@@ -216,7 +216,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   This can be SDK output. Refer [SDK Writer Guide](https://github.com/apache/carbondata/blob/master/docs/sdk-writer-guide.md). 
   
   **Note:**
-  Dropping of the external table should not delete the files present in the location.
+  1. Dropping of the external table should not delete the files present in the location.
+  2. When external table is created on non-transactional table data, 
+  external table will be registered with the schema of carbondata files.
+  If multiple files with different schema is present, exception will be thrown.
+  So, If table registered with one schema and files are of different schema, 
+  suggest to drop the external table and create again to register table with new schema.  
 
 
 ## CREATE DATABASE 

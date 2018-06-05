@@ -128,6 +128,21 @@ Each of SQL data types are mapped into data types of SDK. Following are the mapp
 | STRING | DataTypes.STRING |
 | DECIMAL | DataTypes.createDecimalType(precision, scale) |
 
+**NOTE:**
+ Carbon Supports below logical types of AVRO.
+ a. Date
+    The date logical type represents a date within the calendar, with no reference to a particular time zone or time of day.
+    A date logical type annotates an Avro int, where the int stores the number of days from the unix epoch, 1 January 1970 (ISO calendar). 
+ b. Timestamp (millisecond precision)
+    The timestamp-millis logical type represents an instant on the global timeline, independent of a particular time zone or calendar, with a precision of one millisecond.
+    A timestamp-millis logical type annotates an Avro long, where the long stores the number of milliseconds from the unix epoch, 1 January 1970 00:00:00.000 UTC.
+ c. Timestamp (microsecond precision)
+    The timestamp-micros logical type represents an instant on the global timeline, independent of a particular time zone or calendar, with a precision of one microsecond.
+    A timestamp-micros logical type annotates an Avro long, where the long stores the number of microseconds from the unix epoch, 1 January 1970 00:00:00.000000 UTC.
+    
+    Currently the values of logical types are not validated by carbon. 
+    Expect that avro record passed by the user is already validated by avro record generator tools.   
+
 ## Run SQL on files directly
 Instead of creating table and query it, you can also query that file directly with SQL.
 
