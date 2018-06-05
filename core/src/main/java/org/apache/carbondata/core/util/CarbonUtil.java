@@ -2688,27 +2688,30 @@ public final class CarbonUtil {
       throws IOException {
     long carbonDataSize = 0L;
     long carbonIndexSize = 0L;
-    List<String> listOfFilesRead = new ArrayList<>();
     HashMap<String, Long> dataAndIndexSize = new HashMap<String, Long>();
-    if (fileStore.getLocationMap() != null) {
+    Map<String, SegmentFileStore.FolderDetails> locationMap = fileStore.getLocationMap();
+    if (locationMap != null) {
       fileStore.readIndexFiles();
-      Map<String, String> indexFiles = fileStore.getIndexFiles();
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
-      for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
-        // get the size of carbonindex file
-        String indexFile = entry.getKey();
-        String mergeIndexFile = indexFiles.get(indexFile);
-        if (null != mergeIndexFile) {
-          String mergeIndexPath = indexFile
-              .substring(0, indexFile.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1)
-              + mergeIndexFile;
-          if (!listOfFilesRead.contains(mergeIndexPath)) {
-            carbonIndexSize += FileFactory.getCarbonFile(mergeIndexPath).getSize();
-            listOfFilesRead.add(mergeIndexPath);
-          }
-        } else {
-          carbonIndexSize += FileFactory.getCarbonFile(indexFile).getSize();
+      // get the size of carbonindex file
+      for (Map.Entry<String, SegmentFileStore.FolderDetails> entry : locationMap.entrySet()) {
+        SegmentFileStore.FolderDetails folderDetails = entry.getValue();
+        Set<String> carbonindexFiles = folderDetails.getFiles();
+        String mergeFileName = folderDetails.getMergeFileName();
+        if (null != mergeFileName) {
+          String mergeIndexPath =
+              fileStore.getTablePath() + entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR
+                  + mergeFileName;
+          carbonIndexSize += FileFactory.getCarbonFile(mergeIndexPath).getSize();
         }
+        for (String indexFile : carbonindexFiles) {
+          String indexPath =
+              fileStore.getTablePath() + entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR
+                  + indexFile;
+          carbonIndexSize += FileFactory.getCarbonFile(indexPath).getSize();
+        }
+      }
+      for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
         // get the size of carbondata files
         for (String blockFile : entry.getValue()) {
           carbonDataSize += FileFactory.getCarbonFile(blockFile).getSize();
