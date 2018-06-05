@@ -484,11 +484,6 @@ public class CarbonWriterBuilder {
           if (isSortColumn > -1) {
             columnSchema.setSortColumn(true);
             sortColumnsSchemaList[isSortColumn] = columnSchema;
-          } else if (!sortColumnsList.isEmpty() && columnSchema.isDimensionColumn()
-              && columnSchema.getNumberOfChild() < 1) {
-            columnSchema.setSortColumn(true);
-            sortColumnsSchemaList[i] = columnSchema;
-            i++;
           }
         }
       }
