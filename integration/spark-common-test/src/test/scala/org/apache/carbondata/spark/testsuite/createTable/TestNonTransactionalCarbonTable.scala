@@ -368,8 +368,9 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    checkExistence(sql("describe formatted sdkOutputTable"), true, "age")
-
+    checkExistence(sql("describe formatted sdkOutputTable"), true, "SORT_COLUMNS                        age")
+    checkExistence(sql("describe formatted sdkOutputTable"), false, "SORT_COLUMNS                        name,age")
+    checkExistence(sql("describe formatted sdkOutputTable"), false, "SORT_COLUMNS                        age,name")
     buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -402,7 +403,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     intercept[RuntimeException] {
       buildTestDataWithSortColumns(List(""))
     }
-    
+
     assert(!(new File(writerPath).exists()))
     cleanTestData()
   }
