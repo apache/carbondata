@@ -74,6 +74,8 @@ public class CarbonReader<T> {
         return false;
       } else {
         index++;
+        // current reader is closed
+        currentReader.close();
         currentReader = readers.get(index);
         return currentReader.nextKeyValue();
       }
