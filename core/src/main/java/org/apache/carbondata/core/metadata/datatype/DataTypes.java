@@ -47,7 +47,7 @@ public class DataTypes {
   // Only for internal use for backward compatability. It is only used for V1 version
   public static final DataType LEGACY_LONG = LegacyLongType.LEGACY_LONG;
 
-  public static final DataType TEXT = TextType.TEXT;
+  public static final DataType VARCHAR = VarcharType.VARCHAR;
 
   // these IDs are used within this package only
   static final int STRING_TYPE_ID = 0;
@@ -68,7 +68,7 @@ public class DataTypes {
   public static final int ARRAY_TYPE_ID = 11;
   public static final int STRUCT_TYPE_ID = 12;
   public static final int MAP_TYPE_ID = 13;
-  public static final int TEXT_TYPE_ID = 18;
+  public static final int VARCHAR_TYPE_ID = 18;
 
   /**
    * create a DataType instance from uniqueId of the DataType
@@ -110,8 +110,8 @@ public class DataTypes {
       return createDefaultMapType();
     } else if (id == BYTE_ARRAY.getId()) {
       return BYTE_ARRAY;
-    } else if (id == TEXT.getId()) {
-      return TEXT;
+    } else if (id == VARCHAR.getId()) {
+      return VARCHAR;
     } else {
       throw new RuntimeException("create DataType with invalid id: " + id);
     }

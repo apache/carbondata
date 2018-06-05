@@ -32,14 +32,14 @@ import org.apache.carbondata.format.Encoding;
 
 public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
   /**
-   * whether this column is text data type(long string)
+   * whether this column is varchar data type(long string)
    */
-  private boolean isTextType;
+  private boolean isVarcharType;
 
   public HighCardDictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex,
-      boolean isTextType, Compressor compressor) {
+      boolean isVarcharType, Compressor compressor) {
     super(isSort, isInvertedIndex, compressor);
-    this.isTextType = isTextType;
+    this.isVarcharType = isVarcharType;
   }
 
   @Override
@@ -68,8 +68,8 @@ public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
       @Override
       protected List<Encoding> getEncodingList() {
         List<Encoding> encodings = new ArrayList<>();
-        if (isTextType) {
-          encodings.add(Encoding.DIRECT_COMPRESS_TEXT);
+        if (isVarcharType) {
+          encodings.add(Encoding.DIRECT_COMPRESS_VARCHAR);
         } else if (indexStorage.getRowIdPageLengthInBytes() > 0) {
           encodings.add(Encoding.INVERTED_INDEX);
         }

@@ -2307,8 +2307,8 @@ public final class CarbonUtil {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
-      case TEXT:
-        return DataTypes.TEXT;
+      case VARCHAR:
+        return DataTypes.VARCHAR;
       default:
         return DataTypes.STRING;
     }
@@ -2469,7 +2469,7 @@ public final class CarbonUtil {
     } else if (dataType == DataTypes.STRING
         || dataType == DataTypes.TIMESTAMP
         || dataType == DataTypes.DATE
-        || dataType == DataTypes.TEXT) {
+        || dataType == DataTypes.VARCHAR) {
       return (byte[]) value;
     } else {
       throw new IllegalArgumentException("Invalid data type: " + dataType);

@@ -80,8 +80,9 @@ public class DirectCompressCodec implements ColumnPageCodec {
     @Override
     protected List<Encoding> getEncodingList() {
       List<Encoding> encodings = new ArrayList<>();
-      encodings.add(
-          dataType == DataTypes.TEXT ? Encoding.DIRECT_COMPRESS_TEXT : Encoding.DIRECT_COMPRESS);
+      encodings.add(dataType == DataTypes.VARCHAR ?
+          Encoding.DIRECT_COMPRESS_VARCHAR :
+          Encoding.DIRECT_COMPRESS);
       return encodings;
     }
 

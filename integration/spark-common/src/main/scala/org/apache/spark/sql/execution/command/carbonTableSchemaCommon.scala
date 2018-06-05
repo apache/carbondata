@@ -55,7 +55,7 @@ case class TableModel(
     dimCols: Seq[Field],
     msrCols: Seq[Field],
     sortKeyDims: Option[Seq[String]],
-    textCols: Option[Seq[String]],
+    varcharCols: Option[Seq[String]],
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
     columnGroups: Seq[String],
@@ -225,10 +225,10 @@ class AlterTableColumnSchemaGenerator(
     }
   }
 
-  private def isTextColumn(columnName: String): Boolean = {
-    val textColumns = alterTableModel.tableProperties.get("long_string_columns")
-    if (textColumns.isDefined) {
-      textColumns.get.contains(columnName)
+  private def isVarcharColumn(columnName: String): Boolean = {
+    val varcharColumns = alterTableModel.tableProperties.get("long_string_columns")
+    if (varcharColumns.isDefined) {
+      varcharColumns.get.contains(columnName)
     } else {
       false
     }
@@ -254,7 +254,7 @@ class AlterTableColumnSchemaGenerator(
         alterTableModel.highCardinalityDims,
         alterTableModel.databaseName.getOrElse(dbName),
         isSortColumn(field.name.getOrElse(field.column)),
-        isTextColumn(field.name.getOrElse(field.column)))
+        isVarcharColumn(field.name.getOrElse(field.column)))
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
@@ -364,15 +364,15 @@ object TableNewProcessor {
       highCardinalityDims: Seq[String],
       databaseName: String,
       isSortColumn: Boolean = false,
-      isTextColumn: Boolean = false): ColumnSchema = {
+      isVarcharColumn: Boolean = false): ColumnSchema = {
     val dataType = DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse(""))
     if (DataTypes.isDecimal(dataType)) {
       dataType.asInstanceOf[DecimalType].setPrecision(field.precision)
       dataType.asInstanceOf[DecimalType].setScale(field.scale)
     }
     val columnSchema = new ColumnSchema()
-    if (isTextColumn) {
-      columnSchema.setDataType(DataTypes.TEXT)
+    if (isVarcharColumn) {
+      columnSchema.setDataType(DataTypes.VARCHAR)
     } else {
       columnSchema.setDataType(dataType)
     }
@@ -432,9 +432,9 @@ class TableNewProcessor(cm: TableModel) {
     allColumns
   }
 
-  // text column is a string column that in long_string_columns
-  private def isTextColumn(colName : String): Boolean = {
-    cm.textCols.get.contains(colName)
+  // varchar column is a string column that in long_string_columns
+  private def isVarcharColumn(colName : String): Boolean = {
+    cm.varcharCols.get.contains(colName)
   }
 
   def getColumnSchema(
@@ -472,8 +472,8 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setScale(field.scale)
     columnSchema.setSchemaOrdinal(field.schemaOrdinal)
     columnSchema.setSortColumn(false)
-    if (isTextColumn(colName)) {
-      columnSchema.setDataType(DataTypes.TEXT)
+    if (isVarcharColumn(colName)) {
+      columnSchema.setDataType(DataTypes.VARCHAR)
     }
     if(isParentColumnRelation) {
       val dataMapField = map.get.get(field).get
@@ -574,11 +574,11 @@ class TableNewProcessor(cm: TableModel) {
         }
       }
     }
-    // dimensions that are not text
-    cm.dimCols.filter(field => !cm.textCols.get.contains(field.column))
+    // dimensions that are not varchar
+    cm.dimCols.filter(field => !cm.varcharCols.get.contains(field.column))
       .foreach(addDimensionCol(_))
-    // dimensions that are text
-    cm.dimCols.filter(field => cm.textCols.get.contains(field.column))
+    // dimensions that are varchar
+    cm.dimCols.filter(field => cm.varcharCols.get.contains(field.column))
       .foreach(addDimensionCol(_))
 
     cm.msrCols.foreach { field =>

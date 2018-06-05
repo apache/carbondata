@@ -205,7 +205,7 @@ public abstract class ColumnPage {
         instance = new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);
       } else if (dataType == DataTypes.STRING
           || dataType == DataTypes.BYTE_ARRAY
-          || dataType == DataTypes.TEXT) {
+          || dataType == DataTypes.VARCHAR) {
         instance = new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize);
       } else {
         throw new RuntimeException("Unsupported data dataType: " + dataType);
@@ -229,7 +229,7 @@ public abstract class ColumnPage {
         instance = newDecimalPage(columnSpec, new byte[pageSize][]);
       } else if (dataType == DataTypes.STRING
           || dataType == DataTypes.BYTE_ARRAY
-          || dataType == DataTypes.TEXT) {
+          || dataType == DataTypes.VARCHAR) {
         instance = new SafeVarLengthColumnPage(columnSpec, dataType, pageSize);
       } else {
         throw new RuntimeException("Unsupported data dataType: " + dataType);
@@ -404,7 +404,7 @@ public abstract class ColumnPage {
       statsCollector.update((BigDecimal) value);
     } else if (dataType == DataTypes.STRING
         || dataType == DataTypes.BYTE_ARRAY
-        || dataType == DataTypes.TEXT) {
+        || dataType == DataTypes.VARCHAR) {
       putBytes(rowId, (byte[]) value);
       statsCollector.update((byte[]) value);
     } else {
@@ -439,7 +439,7 @@ public abstract class ColumnPage {
       return getDecimal(rowId);
     } else if (dataType == DataTypes.STRING
         || dataType == DataTypes.BYTE_ARRAY
-        || dataType == DataTypes.TEXT) {
+        || dataType == DataTypes.VARCHAR) {
       return getBytes(rowId);
     } else {
       throw new RuntimeException("unsupported data type: " + dataType);

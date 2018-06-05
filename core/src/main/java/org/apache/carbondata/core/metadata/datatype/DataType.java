@@ -69,7 +69,7 @@ public class DataType implements Serializable {
 
   public static final char DOUBLE_MEASURE_CHAR = 'n';
   public static final char STRING_CHAR = 's';
-  public static final char TEXT_CHAR = 'e';
+  public static final char VARCHAR_CHAR = 'v';
   public static final char TIMESTAMP_CHAR = 't';
   public static final char DATE_CHAR = 'x';
   public static final char BYTE_ARRAY_CHAR = 'y';
@@ -90,8 +90,8 @@ public class DataType implements Serializable {
       return BIG_DECIMAL_MEASURE_CHAR;
     } else if (dataType == DataTypes.STRING) {
       return STRING_CHAR;
-    } else if (dataType == DataTypes.TEXT) {
-      return TEXT_CHAR;
+    } else if (dataType == DataTypes.VARCHAR) {
+      return VARCHAR_CHAR;
     } else if (dataType == DataTypes.TIMESTAMP) {
       return TIMESTAMP_CHAR;
     } else if (dataType == DataTypes.DATE) {

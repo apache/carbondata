@@ -54,13 +54,13 @@ public class IntermediateSortTempRow {
   /**
    * deserialize from bytes array to get the no sort fields
    * @param outDictNoSort stores the dict & no-sort fields
-   * @param outNoDictNoSortAndTextDims stores the no-dict & no-sort fields,
- *                                    including complex and text fields
+   * @param outNoDictNoSortAndVarcharDims stores the no-dict & no-sort fields,
+ *                                    including complex and varchar fields
    * @param outMeasures stores the measure fields
    * @param dataTypes data type for the measure
    */
-  public void unpackNoSortFromBytes(int[] outDictNoSort, byte[][] outNoDictNoSortAndTextDims,
-      Object[] outMeasures, DataType[] dataTypes, int textDimCnt) {
+  public void unpackNoSortFromBytes(int[] outDictNoSort, byte[][] outNoDictNoSortAndVarcharDims,
+      Object[] outMeasures, DataType[] dataTypes, int varcharDimCnt) {
     ByteBuffer rowBuffer = ByteBuffer.wrap(noSortDimsAndMeasures);
     // read dict_no_sort
     int dictNoSortCnt = outDictNoSort.length;
@@ -69,20 +69,20 @@ public class IntermediateSortTempRow {
     }
 
     // read no_dict_no_sort (including complex)
-    int noDictNoSortCnt = outNoDictNoSortAndTextDims.length - textDimCnt;
+    int noDictNoSortCnt = outNoDictNoSortAndVarcharDims.length - varcharDimCnt;
     for (int i = 0; i < noDictNoSortCnt; i++) {
       short len = rowBuffer.getShort();
       byte[] bytes = new byte[len];
       rowBuffer.get(bytes);
-      outNoDictNoSortAndTextDims[i] = bytes;
+      outNoDictNoSortAndVarcharDims[i] = bytes;
     }
 
-    // read text dims
-    for (int i = 0; i < textDimCnt; i++) {
+    // read varchar dims
+    for (int i = 0; i < varcharDimCnt; i++) {
       int len = rowBuffer.getInt();
       byte[] bytes = new byte[len];
       rowBuffer.get(bytes);
-      outNoDictNoSortAndTextDims[i + noDictNoSortCnt] = bytes;
+      outNoDictNoSortAndVarcharDims[i + noDictNoSortCnt] = bytes;
     }
 
     // read measure

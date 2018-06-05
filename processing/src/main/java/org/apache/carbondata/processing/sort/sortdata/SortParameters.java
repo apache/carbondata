@@ -112,10 +112,10 @@ public class SortParameters implements Serializable {
 
   private boolean[] noDictionarySortColumn;
   /**
-   * whether dimension is text data type.
+   * whether dimension is varchar data type.
    * since all dimensions are string, we use an array of boolean instead of datatypes
    */
-  private boolean[] isTextDimensionColumn;
+  private boolean[] isVarcharDimensionColumn;
   private int numberOfSortColumns;
 
   private int numberOfNoDictSortColumns;
@@ -147,7 +147,7 @@ public class SortParameters implements Serializable {
     parameters.segmentId = segmentId;
     parameters.taskNo = taskNo;
     parameters.noDictionaryDimnesionColumn = noDictionaryDimnesionColumn;
-    parameters.isTextDimensionColumn = isTextDimensionColumn;
+    parameters.isVarcharDimensionColumn = isVarcharDimensionColumn;
     parameters.noDictionarySortColumn = noDictionarySortColumn;
     parameters.numberOfSortColumns = numberOfSortColumns;
     parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
@@ -317,12 +317,12 @@ public class SortParameters implements Serializable {
     this.noDictionaryDimnesionColumn = noDictionaryDimnesionColumn;
   }
 
-  public boolean[] getIsTextDimensionColumn() {
-    return isTextDimensionColumn;
+  public boolean[] getIsVarcharDimensionColumn() {
+    return isVarcharDimensionColumn;
   }
 
-  public void setIsTextDimensionColumn(boolean[] isTextDimensionColumn) {
-    this.isTextDimensionColumn = isTextDimensionColumn;
+  public void setIsVarcharDimensionColumn(boolean[] isVarcharDimensionColumn) {
+    this.isVarcharDimensionColumn = isVarcharDimensionColumn;
   }
 
   public int getNumberOfCores() {
@@ -384,8 +384,8 @@ public class SortParameters implements Serializable {
         .getComplexNonDictionaryColumnCount());
     parameters.setNoDictionaryDimnesionColumn(
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
-    parameters.setIsTextDimensionColumn(
-        CarbonDataProcessorUtil.getIsTextColumnMapping(configuration.getDataFields()));
+    parameters.setIsVarcharDimensionColumn(
+        CarbonDataProcessorUtil.getIsVarcharColumnMapping(configuration.getDataFields()));
     parameters.setBatchSortSizeinMb(CarbonDataProcessorUtil.getBatchSortSizeinMb(configuration));
 
     parameters.setNumberOfSortColumns(configuration.getNumberOfSortColumns());
@@ -476,7 +476,7 @@ public class SortParameters implements Serializable {
   public static SortParameters createSortParameters(CarbonTable carbonTable, String databaseName,
       String tableName, int dimColCount, int complexDimColCount, int measureColCount,
       int noDictionaryCount, String segmentId, String taskNo,
-      boolean[] noDictionaryColMaping, boolean[] isTextDimensionColumn,
+      boolean[] noDictionaryColMaping, boolean[] isVarcharDimensionColumn,
       boolean isCompactionFlow) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
@@ -492,7 +492,7 @@ public class SortParameters implements Serializable {
     parameters.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
     parameters.setComplexDimColCount(complexDimColCount);
     parameters.setNoDictionaryDimnesionColumn(noDictionaryColMaping);
-    parameters.setIsTextDimensionColumn(isTextDimensionColumn);
+    parameters.setIsVarcharDimensionColumn(isVarcharDimensionColumn);
     parameters.setObserver(new SortObserver());
     // get sort buffer size
     parameters.setSortBufferSize(Integer.parseInt(carbonProperties

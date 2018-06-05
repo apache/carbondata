@@ -33,13 +33,13 @@ public class TableFieldStat implements Serializable {
   private int dictSortDimCnt = 0;
   private int dictNoSortDimCnt = 0;
   private int noDictSortDimCnt = 0;
-  // for columns that are no_dict_dim and no_sort_dim and complex, except the text dims
+  // for columns that are no_dict_dim and no_sort_dim and complex, except the varchar dims
   private int noDictNoSortDimCnt = 0;
-  // for columns that are text data type
-  private int textDimCnt = 0;
+  // for columns that are varchar data type
+  private int varcharDimCnt = 0;
   // whether sort column is of dictionary type or not
   private boolean[] isSortColNoDictFlags;
-  private boolean[] isTextDimFlags;
+  private boolean[] isVarcharDimFlags;
   private int measureCnt;
   private DataType[] measureDataType;
 
@@ -51,8 +51,8 @@ public class TableFieldStat implements Serializable {
   private int[] noDictSortDimIdx;
   // indices for no-dict & no-sort dimension columns, including complex columns
   private int[] noDictNoSortDimIdx;
-  // indices for text dimension columns
-  private int[] textDimIdx;
+  // indices for varchar dimension columns
+  private int[] varcharDimIdx;
   // indices for measure columns
   private int[] measureIdx;
 
@@ -61,7 +61,7 @@ public class TableFieldStat implements Serializable {
     int complexDimCnt = sortParameters.getComplexDimColCount();
     int dictDimCnt = sortParameters.getDimColCount() - noDictDimCnt;
     this.isSortColNoDictFlags = sortParameters.getNoDictionarySortColumn();
-    this.isTextDimFlags = sortParameters.getIsTextDimensionColumn();
+    this.isVarcharDimFlags = sortParameters.getIsVarcharDimensionColumn();
     int sortColCnt = isSortColNoDictFlags.length;
     for (boolean flag : isSortColNoDictFlags) {
       if (flag) {
@@ -73,9 +73,9 @@ public class TableFieldStat implements Serializable {
     this.measureCnt = sortParameters.getMeasureColCount();
     this.measureDataType = sortParameters.getMeasureDataType();
 
-    for (boolean flag : isTextDimFlags) {
+    for (boolean flag : isVarcharDimFlags) {
       if (flag) {
-        textDimCnt++;
+        varcharDimCnt++;
       }
     }
 
@@ -84,21 +84,21 @@ public class TableFieldStat implements Serializable {
     this.dictNoSortDimIdx = new int[dictDimCnt - dictSortDimCnt];
     this.noDictSortDimIdx = new int[noDictSortDimCnt];
     this.noDictNoSortDimIdx = new int[noDictDimCnt + complexDimCnt - noDictSortDimCnt
-        - textDimCnt];
-    this.textDimIdx = new int[textDimCnt];
+        - varcharDimCnt];
+    this.varcharDimIdx = new int[varcharDimCnt];
     this.measureIdx = new int[measureCnt];
 
     int tmpNoDictSortCnt = 0;
     int tmpNoDictNoSortCnt = 0;
     int tmpDictSortCnt = 0;
     int tmpDictNoSortCnt = 0;
-    int tmpTextCnt = 0;
+    int tmpVarcharCnt = 0;
     boolean[] isDimNoDictFlags = sortParameters.getNoDictionaryDimnesionColumn();
 
     for (int i = 0; i < isDimNoDictFlags.length; i++) {
       if (isDimNoDictFlags[i]) {
-        if (isTextDimFlags[i]) {
-          textDimIdx[tmpTextCnt++] = i;
+        if (isVarcharDimFlags[i]) {
+          varcharDimIdx[tmpVarcharCnt++] = i;
         } else if (i < sortColCnt && isSortColNoDictFlags[i]) {
           noDictSortDimIdx[tmpNoDictSortCnt++] = i;
         } else {
@@ -144,16 +144,16 @@ public class TableFieldStat implements Serializable {
     return noDictNoSortDimCnt;
   }
 
-  public int getTextDimCnt() {
-    return textDimCnt;
+  public int getVarcharDimCnt() {
+    return varcharDimCnt;
   }
 
   public boolean[] getIsSortColNoDictFlags() {
     return isSortColNoDictFlags;
   }
 
-  public boolean[] getIsTextDimFlags() {
-    return isTextDimFlags;
+  public boolean[] getIsVarcharDimFlags() {
+    return isVarcharDimFlags;
   }
 
   public int getMeasureCnt() {
@@ -180,8 +180,8 @@ public class TableFieldStat implements Serializable {
     return noDictNoSortDimIdx;
   }
 
-  public int[] getTextDimIdx() {
-    return textDimIdx;
+  public int[] getVarcharDimIdx() {
+    return varcharDimIdx;
   }
 
   public int[] getMeasureIdx() {
@@ -196,12 +196,12 @@ public class TableFieldStat implements Serializable {
         && dictNoSortDimCnt == that.dictNoSortDimCnt
         && noDictSortDimCnt == that.noDictSortDimCnt
         && noDictNoSortDimCnt == that.noDictNoSortDimCnt
-        && textDimCnt == that.textDimCnt
+        && varcharDimCnt == that.varcharDimCnt
         && measureCnt == that.measureCnt;
   }
 
   @Override public int hashCode() {
     return Objects.hash(dictSortDimCnt, dictNoSortDimCnt, noDictSortDimCnt,
-        noDictNoSortDimCnt, textDimCnt, measureCnt);
+        noDictNoSortDimCnt, varcharDimCnt, measureCnt);
   }
 }

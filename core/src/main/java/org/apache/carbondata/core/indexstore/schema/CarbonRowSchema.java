@@ -90,15 +90,15 @@ public abstract class CarbonRowSchema implements Serializable {
   }
 
   public static class VariableCarbonRowSchema extends CarbonRowSchema {
-    private boolean isTextType = false;
+    private boolean isVarcharType = false;
 
     public VariableCarbonRowSchema(DataType dataType) {
       super(dataType);
     }
 
-    public VariableCarbonRowSchema(DataType dataType, boolean isTextType) {
+    public VariableCarbonRowSchema(DataType dataType, boolean isVarcharType) {
       super(dataType);
-      this.isTextType = isTextType;
+      this.isVarcharType = isVarcharType;
     }
 
     @Override public int getLength() {
@@ -106,7 +106,7 @@ public abstract class CarbonRowSchema implements Serializable {
     }
 
     @Override public DataMapSchemaType getSchemaType() {
-      return isTextType ? DataMapSchemaType.VARIABLE_INT : DataMapSchemaType.VARIABLE_SHORT;
+      return isVarcharType ? DataMapSchemaType.VARIABLE_INT : DataMapSchemaType.VARIABLE_SHORT;
     }
   }
 

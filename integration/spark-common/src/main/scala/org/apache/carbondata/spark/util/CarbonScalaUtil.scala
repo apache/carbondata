@@ -115,7 +115,7 @@ object CarbonScalaUtil {
         case CarbonDataTypes.BOOLEAN => BooleanType
         case CarbonDataTypes.TIMESTAMP => TimestampType
         case CarbonDataTypes.DATE => DateType
-        case CarbonDataTypes.TEXT => StringType
+        case CarbonDataTypes.VARCHAR => StringType
       }
     }
   }

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark.testsuite.texttype
+package org.apache.carbondata.spark.testsuite.longstring
 
 import java.io.{File, PrintWriter}
 
@@ -26,9 +26,9 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TextDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
+class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   private val longStringTable = "long_string_table"
-  private val inputDir = s"$resourcesPath${File.separator}texttype${File.separator}"
+  private val inputDir = s"$resourcesPath${File.separator}varchartype${File.separator}"
   private val fileName = s"longStringData.csv"
   private val inputFile = s"$inputDir$fileName"
   private val lineNum = 1000

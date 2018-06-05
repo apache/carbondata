@@ -18,8 +18,8 @@
 package org.apache.carbondata.core.datastore.page.statistics;
 
 /**
- * This class is for the columns with text data type -- a string type which can hold more than 32000
- * characters
+ * This class is for the columns with varchar data type,
+ * a string type which can hold more than 32000 characters
  */
 public class LVLongStringStatsCollector extends LVStringStatsCollector {
 

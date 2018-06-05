@@ -20,15 +20,15 @@ package org.apache.carbondata.core.metadata.datatype;
 /**
  * This class is for internal use. It is used to support string that longer than 32000 characters
  */
-public class TextType extends DataType {
-  static final DataType TEXT = new TextType(DataTypes.TEXT_TYPE_ID, 0, "TEXT", -1);
+public class VarcharType extends DataType {
+  static final DataType VARCHAR = new VarcharType(DataTypes.VARCHAR_TYPE_ID, 0, "VARCHAR", -1);
 
-  private TextType(int id, int precedenceOrder, String name, int sizeInBytes) {
+  private VarcharType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);
   }
 
   // this function is needed to ensure singleton pattern while supporting java serialization
   private Object readResolve() {
-    return DataTypes.TEXT;
+    return DataTypes.VARCHAR;
   }
 }

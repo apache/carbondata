@@ -224,10 +224,10 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * Preparing the boolean [] to map whether the dimension is text data type or not.
+   * Preparing the boolean [] to map whether the dimension is varchar data type or not.
    */
-  public static boolean[] getIsTextColumnMapping(DataField[] fields) {
-    List<Boolean> isTextColumnMapping = new ArrayList<Boolean>();
+  public static boolean[] getIsVarcharColumnMapping(DataField[] fields) {
+    List<Boolean> isVarcharColumnMapping = new ArrayList<Boolean>();
     for (DataField field : fields) {
       // for complex type need to break the loop
       if (field.getColumn().isComplex()) {
@@ -235,12 +235,12 @@ public final class CarbonDataProcessorUtil {
       }
 
       if (field.getColumn().isDimension()) {
-        isTextColumnMapping.add(
-            field.getColumn().getColumnSchema().getDataType() == DataTypes.TEXT);
+        isVarcharColumnMapping.add(
+            field.getColumn().getColumnSchema().getDataType() == DataTypes.VARCHAR);
       }
     }
     return ArrayUtils.toPrimitive(
-        isTextColumnMapping.toArray(new Boolean[isTextColumnMapping.size()]));
+        isVarcharColumnMapping.toArray(new Boolean[isVarcharColumnMapping.size()]));
   }
 
   public static boolean[] getNoDictionaryMapping(CarbonColumn[] carbonColumns) {

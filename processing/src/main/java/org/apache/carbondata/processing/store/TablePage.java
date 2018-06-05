@@ -100,8 +100,8 @@ public class TablePage {
     for (int i = 0; i < noDictDimensionPages.length; i++) {
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i + numDictDimension);
       ColumnPage page;
-      if (DataTypes.TEXT == spec.getSchemaDataType()) {
-        page = ColumnPage.newPage(spec, DataTypes.TEXT, pageSize);
+      if (DataTypes.VARCHAR == spec.getSchemaDataType()) {
+        page = ColumnPage.newPage(spec, DataTypes.VARCHAR, pageSize);
         page.setStatsCollector(LVLongStringStatsCollector.newInstance());
       } else {
         // In previous implementation, other data types such as string, date and timestamp
@@ -164,7 +164,7 @@ public class TablePage {
       dictDimensionPages[i].putData(rowId, keys[i]);
     }
 
-    // 2. convert noDictionary columns and complex columns and text columns.
+    // 2. convert noDictionary columns and complex columns and varchar columns.
     int noDictionaryCount = noDictDimensionPages.length;
     int complexColumnCount = complexDimensionPages.length;
     if (noDictionaryCount > 0 || complexColumnCount > 0) {
@@ -172,7 +172,7 @@ public class TablePage {
       byte[][] noDictAndComplex = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictAndComplex.length; i++) {
         if (tableSpec.getDimensionSpec(dictDimensionPages.length + i).getSchemaDataType()
-            == DataTypes.TEXT) {
+            == DataTypes.VARCHAR) {
           byte[] valueWithLength = addIntLengthToByteArray(noDictAndComplex[i]);
           noDictDimensionPages[i].putData(rowId, valueWithLength);
         } else if (i < noDictionaryCount) {

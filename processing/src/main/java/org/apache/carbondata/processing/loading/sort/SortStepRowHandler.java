@@ -46,7 +46,7 @@ public class SortStepRowHandler implements Serializable {
   private int dictNoSortDimCnt = 0;
   private int noDictSortDimCnt = 0;
   private int noDictNoSortDimCnt = 0;
-  private int textDimCnt = 0;
+  private int varcharDimCnt = 0;
   private int measureCnt;
 
   // indices for dict & sort dimension columns
@@ -57,7 +57,7 @@ public class SortStepRowHandler implements Serializable {
   private int[] noDictSortDimIdx;
   // indices for no-dict & no-sort dimension columns, including complex columns
   private int[] noDictNoSortDimIdx;
-  private int[] textDimIdx;
+  private int[] varcharDimIdx;
   // indices for measure columns
   private int[] measureIdx;
 
@@ -72,13 +72,13 @@ public class SortStepRowHandler implements Serializable {
     this.dictNoSortDimCnt = tableFieldStat.getDictNoSortDimCnt();
     this.noDictSortDimCnt = tableFieldStat.getNoDictSortDimCnt();
     this.noDictNoSortDimCnt = tableFieldStat.getNoDictNoSortDimCnt();
-    this.textDimCnt = tableFieldStat.getTextDimCnt();
+    this.varcharDimCnt = tableFieldStat.getVarcharDimCnt();
     this.measureCnt = tableFieldStat.getMeasureCnt();
     this.dictSortDimIdx = tableFieldStat.getDictSortDimIdx();
     this.dictNoSortDimIdx = tableFieldStat.getDictNoSortDimIdx();
     this.noDictSortDimIdx = tableFieldStat.getNoDictSortDimIdx();
     this.noDictNoSortDimIdx = tableFieldStat.getNoDictNoSortDimIdx();
-    this.textDimIdx = tableFieldStat.getTextDimIdx();
+    this.varcharDimIdx = tableFieldStat.getVarcharDimIdx();
     this.measureIdx = tableFieldStat.getMeasureIdx();
     this.dataTypes = tableFieldStat.getMeasureDataType();
   }
@@ -126,9 +126,9 @@ public class SortStepRowHandler implements Serializable {
       for (int idx = 0; idx < this.noDictNoSortDimCnt; idx++) {
         nonDictArray[idxAcc++] = (byte[]) row[this.noDictNoSortDimIdx[idx]];
       }
-      // convert text dims
-      for (int idx = 0; idx < this.textDimCnt; idx++) {
-        nonDictArray[idxAcc++] = (byte[]) row[this.textDimIdx[idx]];
+      // convert varchar dims
+      for (int idx = 0; idx < this.varcharDimCnt; idx++) {
+        nonDictArray[idxAcc++] = (byte[]) row[this.varcharDimIdx[idx]];
       }
 
       // convert measure data
@@ -154,15 +154,15 @@ public class SortStepRowHandler implements Serializable {
     int[] dictDims
         = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
     byte[][] noDictArray
-        = new byte[this.noDictSortDimCnt + this.noDictNoSortDimCnt + this.textDimCnt][];
+        = new byte[this.noDictSortDimCnt + this.noDictNoSortDimCnt + this.varcharDimCnt][];
 
     int[] dictNoSortDims = new int[this.dictNoSortDimCnt];
-    byte[][] noDictNoSortAndTextDims
-        = new byte[this.noDictNoSortDimCnt + this.textDimCnt][];
+    byte[][] noDictNoSortAndVarcharDims
+        = new byte[this.noDictNoSortDimCnt + this.varcharDimCnt][];
     Object[] measures = new Object[this.measureCnt];
 
-    sortTempRow.unpackNoSortFromBytes(dictNoSortDims, noDictNoSortAndTextDims, measures,
-        this.dataTypes, this.textDimCnt);
+    sortTempRow.unpackNoSortFromBytes(dictNoSortDims, noDictNoSortAndVarcharDims, measures,
+        this.dataTypes, this.varcharDimCnt);
 
     // dict dims
     System.arraycopy(sortTempRow.getDictSortDims(), 0 , dictDims,
@@ -173,8 +173,8 @@ public class SortStepRowHandler implements Serializable {
     // no dict dims, including complex
     System.arraycopy(sortTempRow.getNoDictSortDims(), 0,
         noDictArray, 0, this.noDictSortDimCnt);
-    System.arraycopy(noDictNoSortAndTextDims, 0, noDictArray,
-        this.noDictSortDimCnt, this.noDictNoSortDimCnt + this.textDimCnt);
+    System.arraycopy(noDictNoSortAndVarcharDims, 0, noDictArray,
+        this.noDictSortDimCnt, this.noDictNoSortDimCnt + this.varcharDimCnt);
 
     // measures are already here
 
@@ -438,9 +438,9 @@ public class SortStepRowHandler implements Serializable {
       rowBuffer.putShort((short) bytes.length);
       rowBuffer.put(bytes);
     }
-    // convert text dims
-    for (int idx = 0; idx < this.textDimCnt; idx++) {
-      byte[] bytes = (byte[]) row[this.textDimIdx[idx]];
+    // convert varchar dims
+    for (int idx = 0; idx < this.varcharDimCnt; idx++) {
+      byte[] bytes = (byte[]) row[this.varcharDimIdx[idx]];
       rowBuffer.putInt(bytes.length);
       rowBuffer.put(bytes);
     }

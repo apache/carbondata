@@ -35,7 +35,7 @@ enum DataType {
 	BOOLEAN = 8,
 	ARRAY = 20,
 	STRUCT = 21,
-	TEXT = 22,
+	VARCHAR = 22,
 }
 
 /**
@@ -57,7 +57,7 @@ enum Encoding{
 	ADAPTIVE_FLOATING = 11; // Identifies that a column is encoded using AdaptiveFloatingCodec
 	BOOL_BYTE = 12;   // Identifies that a column is encoded using BooleanPageCodec
 	ADAPTIVE_DELTA_FLOATING = 13; // Identifies that a column is encoded using AdaptiveDeltaFloatingCodec
-	DIRECT_COMPRESS_TEXT = 14;  // Identifies that a columm is encoded using DirectCompressTextCodec, it is used for long string columns
+	DIRECT_COMPRESS_VARCHAR = 14;  // Identifies that a columm is encoded using DirectCompressCodec, it is used for long string columns
 }
 
 enum PartitionType{
