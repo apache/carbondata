@@ -23,7 +23,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -157,27 +156,19 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   @Override public void takeCarbonIndexFileSnapShot() throws IOException {
     // Read the current file Path get the list of indexes from the path.
     CarbonFile file = FileFactory.getCarbonFile(carbonFilePath);
-    CarbonFile[] files = file.listFiles(new CarbonFileFilter() {
-      @Override
-      public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
-            .endsWith(CarbonTablePath.CARBON_DATA_EXT) || file.getName().endsWith("Fact");
-      }
-    });
-    if (files.length == 0) {
-      // For nonTransactional table, files can be removed at any point of time.
-      // So cannot assume files will be present
-      throw new IOException("No files are present in the table location :" + carbonFilePath);
-    }
     Map<String, List<String>> indexFileStore = new HashMap<>();
     Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap = new HashMap<>();
     CarbonFile[] carbonIndexFiles = null;
     if (file.isDirectory()) {
       if (segmentId == null) {
-        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(carbonFilePath);
+        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(file);
       } else {
         String segmentPath = CarbonTablePath.getSegmentPath(carbonFilePath, segmentId);
         carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);
+      }
+      if (carbonIndexFiles.length == 0) {
+        throw new IOException(
+            "No Index files are present in the table location :" + carbonFilePath);
       }
       for (int i = 0; i < carbonIndexFiles.length; i++) {
         // TODO. If Required to support merge index, then this code has to be modified.

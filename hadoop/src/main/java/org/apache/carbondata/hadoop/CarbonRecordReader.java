@@ -123,7 +123,8 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
       }
     }
     // Clear the datamap cache
-    DataMapStoreManager.getInstance().getDefaultDataMap(queryModel.getTable()).clear();
+    DataMapStoreManager.getInstance()
+        .clearDataMaps(queryModel.getTable().getAbsoluteTableIdentifier());
     // close read support
     readSupport.close();
     try {

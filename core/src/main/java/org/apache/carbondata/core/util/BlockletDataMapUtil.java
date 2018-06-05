@@ -33,20 +33,31 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
+import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
 public class BlockletDataMapUtil {
 
+  private static final Log LOG = LogFactory.getLog(BlockletDataMapUtil.class);
+
   public static Map<String, BlockMetaInfo> getBlockMetaInfoMap(
-      TableBlockIndexUniqueIdentifier identifier, SegmentIndexFileStore indexFileStore,
-      Set<String> filesRead, Map<String, BlockMetaInfo> fileNameToMetaInfoMapping)
-      throws IOException {
+      TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
+      SegmentIndexFileStore indexFileStore, Set<String> filesRead,
+      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping) throws IOException {
+    boolean isTransactionalTable = true;
+    TableBlockIndexUniqueIdentifier identifier =
+        identifierWrapper.getTableBlockIndexUniqueIdentifier();
+    List<ColumnSchema> tableColumnList = null;
     if (identifier.getMergeIndexFileName() != null
         && indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
       CarbonFile indexMergeFile = FileFactory.getCarbonFile(
@@ -67,7 +78,25 @@ public class BlockletDataMapUtil {
     List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(
         identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
             .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()));
+    CarbonTable carbonTable = identifierWrapper.getCarbonTable();
+    if (carbonTable != null) {
+      isTransactionalTable = carbonTable.getTableInfo().isTransactionalTable();
+      tableColumnList =
+          carbonTable.getTableInfo().getFactTable().getListOfColumns();
+    }
     for (DataFileFooter footer : indexInfo) {
+      if ((!isTransactionalTable) && (tableColumnList.size() != 0) &&
+          !isSameColumnSchemaList(footer.getColumnInTable(), tableColumnList)) {
+        LOG.error("Schema of " + identifier.getIndexFileName()
+            + " doesn't match with the table's schema");
+        throw new IOException("All the files doesn't have same schema. "
+            + "Unsupported operation on nonTransactional table. Check logs.");
+      }
+      if ((tableColumnList != null) && (tableColumnList.size() == 0)) {
+        // Carbon reader have used dummy columnSchema. Update it with inferred schema now
+        carbonTable.getTableInfo().getFactTable().setListOfColumns(footer.getColumnInTable());
+        CarbonTable.updateTableByTableInfo(carbonTable, carbonTable.getTableInfo());
+      }
       String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
       if (null == blockMetaInfoMap.get(blockPath)) {
         blockMetaInfoMap.put(blockPath, createBlockMetaInfo(fileNameToMetaInfoMapping, blockPath));
@@ -156,6 +185,7 @@ public class BlockletDataMapUtil {
    * This method will the index files tableBlockIndexUniqueIdentifiers of a merge index file
    *
    * @param identifier
+   * @param segmentIndexFileStore
    * @return
    * @throws IOException
    */
@@ -177,4 +207,18 @@ public class BlockletDataMapUtil {
     return tableBlockIndexUniqueIdentifiers;
   }
 
+  private static boolean isSameColumnSchemaList(List<ColumnSchema> indexFileColumnList,
+      List<ColumnSchema> tableColumnList) {
+    if (indexFileColumnList.size() != tableColumnList.size()) {
+      LOG.error("Index file's column size is " + indexFileColumnList.size()
+          + " but table's column size is " + tableColumnList.size());
+      return false;
+    }
+    for (int i = 0; i < tableColumnList.size(); i++) {
+      if (!indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
