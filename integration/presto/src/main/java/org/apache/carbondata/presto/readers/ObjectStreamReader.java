@@ -17,50 +17,50 @@
 
 package org.apache.carbondata.presto.readers;
 
-import java.io.IOException;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.BlockBuilderStatus;
+import com.facebook.presto.spi.type.IntegerType;
 import com.facebook.presto.spi.type.Type;
 
 /**
  * Class to read the Object Stream
  */
-public class ObjectStreamReader  extends AbstractStreamReader {
+public class ObjectStreamReader extends CarbonColumnVectorImpl implements PrestoVectorBlockBuilder {
 
+  protected int batchSize;
 
+  protected Type type = IntegerType.INTEGER;
 
-  public ObjectStreamReader() {
+  protected BlockBuilder builder;
 
+  public ObjectStreamReader(int batchSize, DataType dataType) {
+    super(batchSize, dataType);
+    this.batchSize = batchSize;
+    this.builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
   }
 
-  /**
-   * Function to create the object Block
-   * @param type
-   * @return
-   * @throws IOException
-   */
-  public Block readBlock(Type type) throws IOException {
-    int numberOfRows = 0;
-    BlockBuilder builder = null;
-    if (isVectorReader) {
-      numberOfRows = batchSize;
-      builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (columnVector != null) {
-        for (int i = 0; i < numberOfRows; i++) {
-          type.writeObject(builder, columnVector.getData(i));
-        }
-      }
-    } else {
-      numberOfRows = streamData.length;
-      builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      for (int i = 0; i < numberOfRows; i++) {
-        type.writeObject(builder, streamData[i]);
-      }
-    }
-
+  @Override public Block buildBlock() {
     return builder.build();
+  }
+
+  @Override public void setBatchSize(int batchSize) {
+    this.batchSize = batchSize;
+  }
+
+  @Override public void putObject(int rowId, Object value) {
+    type.writeObject(builder, value);
+  }
+
+  @Override public void putNull(int rowId) {
+    builder.appendNull();
+  }
+
+  @Override public void reset() {
+    builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
   }
 
 }

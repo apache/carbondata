@@ -17,27 +17,12 @@
 
 package org.apache.carbondata.presto.readers;
 
-import java.io.IOException;
-
-import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
-
 import com.facebook.presto.spi.block.Block;
-import com.facebook.presto.spi.type.Type;
 
-/**
- * Interface for StreamReader
- */
-public interface StreamReader {
+public interface PrestoVectorBlockBuilder {
 
-  Block readBlock(Type type) throws IOException;
-
-  void setStreamData(Object[] data);
-
-  void setVector(CarbonColumnVectorImpl vector);
-
-  void setVectorReader(boolean isVectorReader);
+  Block buildBlock();
 
   void setBatchSize(int batchSize);
-
 
 }

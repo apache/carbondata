@@ -80,11 +80,14 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   private long queryStartTime;
 
+  private CarbonDictionaryDecodeReadSupport readSupport;
+
   public PrestoCarbonVectorizedRecordReader(QueryExecutor queryExecutor, QueryModel queryModel,
-      AbstractDetailQueryResultIterator iterator) {
+      AbstractDetailQueryResultIterator iterator, CarbonDictionaryDecodeReadSupport readSupport) {
     this.queryModel = queryModel;
     this.iterator = iterator;
     this.queryExecutor = queryExecutor;
+    this.readSupport = readSupport;
     enableReturningBatches();
     this.queryStartTime = System.currentTimeMillis();
   }
@@ -184,17 +187,15 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       if (dim.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-           generator.getReturnType());
+        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(), generator.getReturnType());
       } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-            dim.getDimension().getDataType());
+        fields[dim.getOrdinal()] =
+            new StructField(dim.getColumnName(), dim.getDimension().getDataType());
       } else if (dim.getDimension().isComplex()) {
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-           dim.getDimension().getDataType());
+        fields[dim.getOrdinal()] =
+            new StructField(dim.getColumnName(), dim.getDimension().getDataType());
       } else {
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-            DataTypes.INT);
+        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(), DataTypes.INT);
       }
     }
 
@@ -212,7 +213,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       }
     }
 
-    columnarBatch = CarbonVectorBatch.allocate(fields);
+    columnarBatch = CarbonVectorBatch.allocate(fields, readSupport);
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
     boolean[] filteredRows = new boolean[columnarBatch.capacity()];
     for (int i = 0; i < fields.length; i++) {
@@ -220,7 +221,6 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     }
     carbonColumnarBatch = new CarbonColumnarBatch(vectors, columnarBatch.capacity(), filteredRows);
   }
-
 
   private CarbonVectorBatch resultBatch() {
     if (columnarBatch == null) initBatch();
@@ -251,6 +251,9 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     return false;
   }
 
+  public CarbonVectorBatch getColumnarBatch() {
+    return columnarBatch;
+  }
   public void setTaskId(long taskId) {
     this.taskId = taskId;
   }
