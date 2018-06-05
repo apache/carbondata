@@ -78,13 +78,12 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
       ConnectorSession session, ConnectorSplit split, List<ColumnHandle> columns) {
     this.queryId = ((CarbondataSplit)split).getQueryId();
     CarbonDictionaryDecodeReadSupport readSupport = new CarbonDictionaryDecodeReadSupport();
-    PrestoCarbonVectorizedRecordReader carbonRecordReader = createReader(split, columns, readSupport);
-    return new CarbondataPageSource(readSupport, carbonRecordReader, columns );
+    PrestoCarbonVectorizedRecordReader carbonRecordReader =
+        createReader(split, columns, readSupport);
+    return new CarbondataPageSource(carbonRecordReader, columns);
   }
 
-
   /**
-   *
    * @param split
    * @param columns
    * @param readSupport
@@ -103,7 +102,7 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
       CarbonIterator iterator = queryExecutor.execute(queryModel);
       readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
       PrestoCarbonVectorizedRecordReader reader = new PrestoCarbonVectorizedRecordReader(queryExecutor, queryModel,
-          (AbstractDetailQueryResultIterator) iterator);
+          (AbstractDetailQueryResultIterator) iterator, readSupport);
       reader.setTaskId(carbondataSplit.getIndex());
       return reader;
     } catch (IOException e) {
@@ -116,7 +115,6 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
   }
 
   /**
-   *
    * @param carbondataSplit
    * @param columns
    * @return
@@ -152,9 +150,6 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
       List<TableBlockInfo> tableBlockInfoList =
           CarbonInputSplit.createBlocks(carbonInputSplit.getAllSplits());
       queryModel.setTableBlockInfos(tableBlockInfoList);
-
-
-
       return queryModel;
     } catch (IOException e) {
       throw new RuntimeException("Unable to get the Query Model ", e);
@@ -162,7 +157,6 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
   }
 
   /**
-   *
    * @param conf
    * @param carbonTable
    * @param filterExpression
@@ -190,9 +184,7 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
     return format;
   }
 
-
   /**
-   *
    * @param columns
    * @return
    */
@@ -208,7 +200,6 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
   }
 
   /**
-   *
    * @param carbonSplit
    * @return
    */
@@ -221,6 +212,5 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
         "tableCacheModel.carbonTable.tableInfo should not be null");
     return tableCacheModel.carbonTable;
   }
-
 
 }

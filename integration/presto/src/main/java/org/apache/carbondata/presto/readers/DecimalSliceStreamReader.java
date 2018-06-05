@@ -17,13 +17,13 @@
 
 package org.apache.carbondata.presto.readers;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Objects;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
@@ -45,80 +45,66 @@ import static java.math.RoundingMode.HALF_UP;
 /**
  * Reader for DecimalValues
  */
-public class DecimalSliceStreamReader  extends AbstractStreamReader {
-
-  private Dictionary dictionary;
-  private boolean isDictionary;
-
+public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
+    implements PrestoVectorBlockBuilder {
 
   private final char[] buffer = new char[100];
+  protected int batchSize;
+  protected Type type;
+  protected BlockBuilder builder;
+  private Dictionary dictionary;
 
-  public DecimalSliceStreamReader() {
-
-  }
-
-  public DecimalSliceStreamReader(boolean isDictionary, Dictionary dictionary) {
+  public DecimalSliceStreamReader(int batchSize,
+      org.apache.carbondata.core.metadata.datatype.DecimalType dataType, Dictionary dictionary) {
+    super(batchSize, dataType);
+    this.type = DecimalType.createDecimalType(dataType.getPrecision(), dataType.getScale());
+    this.batchSize = batchSize;
+    this.builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
     this.dictionary = dictionary;
-    this.isDictionary = isDictionary;
   }
 
-  /**
-   * Create Block for DecimalType
-   * @param type
-   * @return
-   * @throws IOException
-   */
-  public Block readBlock(Type type) throws IOException {
-    int numberOfRows = 0;
-    BlockBuilder builder = null;
-    if (isVectorReader) {
-      numberOfRows = batchSize;
-      builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (columnVector != null) {
-        if (isDictionary) {
-          if (isShortDecimal(type)) {
-            populateShortDictionaryVector(type, numberOfRows, builder);
-          } else {
-            populateLongDictionaryVector(type, numberOfRows, builder);
-          }
-        } else {
-          if (columnVector.anyNullsSet()) {
-            handleNullInVector(type, numberOfRows, builder);
-          } else {
-            if (isShortDecimal(type)) {
-              populateShortDecimalVector(type, numberOfRows, builder);
-            } else {
-              populateLongDecimalVector(type, numberOfRows, builder);
-            }
-          }
-        }
-      }
-    } else {
-      if (streamData != null) {
-        numberOfRows = streamData.length;
-        builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-        for (int i = 0; i < numberOfRows; i++) {
-          Slice slice = getSlice(streamData[i], type);
-          if (isShortDecimal(type)) {
-            type.writeLong(builder, parseLong((DecimalType) type, slice, 0, slice.length()));
-          } else {
-            type.writeSlice(builder, parseSlice((DecimalType) type, slice, 0, slice.length()));
-          }
-        }
-      }
-    }
-    if (builder == null) {
-      return null;
-    }
+  @Override public Block buildBlock() {
     return builder.build();
   }
 
-  /**
-   * Function to getSlice from Decimal Object
-   * @param value
-   * @param type
-   * @return
-   */
+  @Override public void setBatchSize(int batchSize) {
+    this.batchSize = batchSize;
+  }
+
+  @Override public void putInt(int rowId, int value) {
+    DecimalType decimalType = (DecimalType) type;
+    Object data = DataTypeUtil.getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value),
+        DataTypes.createDecimalType(decimalType.getPrecision(), decimalType.getScale()));
+    if (Objects.isNull(data)) {
+      builder.appendNull();
+    } else {
+      decimalBlockWriter((BigDecimal) data);
+    }
+  }
+
+  @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
+    decimalBlockWriter(value);
+  }
+
+  @Override public void putNull(int rowId) {
+    builder.appendNull();
+  }
+
+  @Override public void reset() {
+    builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+  }
+
+  private void decimalBlockWriter(BigDecimal value) {
+    if (isShortDecimal(type)) {
+      long rescaledDecimal = Decimals.rescale(value.unscaledValue().longValue(), value.scale(),
+          ((DecimalType) type).getScale());
+      type.writeLong(builder, rescaledDecimal);
+    } else {
+      Slice slice = getSlice(value, type);
+      type.writeSlice(builder, parseSlice((DecimalType) type, slice, slice.length()));
+    }
+  }
+
   private Slice getSlice(Object value, Type type) {
     if (type instanceof DecimalType) {
       DecimalType actual = (DecimalType) type;
@@ -137,50 +123,20 @@ public class DecimalSliceStreamReader  extends AbstractStreamReader {
               rescale(bigDecimalValue.unscaledValue(), bigDecimalValue.scale(), actual.getScale());
           Slice decimalSlice = Decimals.encodeUnscaledValue(unscaledDecimal);
           return utf8Slice(Decimals.toString(decimalSlice, actual.getScale()));
-
         }
-
       }
     } else {
       return utf8Slice(value.toString());
     }
   }
 
-  /**
-   * Function to parse ShortDecimalType as it is internally treated as Long
-   * @param type
-   * @param slice
-   * @param offset
-   * @param length
-   * @return
-   */
-  private long parseLong(DecimalType type, Slice slice, int offset, int length) {
-    BigDecimal decimal = parseBigDecimal(type, slice, offset, length);
-    return decimal.unscaledValue().longValue();
-  }
-
-  /**
-   * Function for parsing the Slice
-   * @param type
-   * @param slice
-   * @param offset
-   * @param length
-   * @return
-   */
-  private Slice parseSlice(DecimalType type, Slice slice, int offset, int length) {
-    BigDecimal decimal = parseBigDecimal(type, slice, offset, length);
+  private Slice parseSlice(DecimalType type, Slice slice, int length) {
+    BigDecimal decimal = parseBigDecimal(type, slice, length);
     return encodeUnscaledValue(decimal.unscaledValue());
   }
 
-  /**
-   * Function for parsing the BigDecimal
-   * @param type
-   * @param slice
-   * @param offset
-   * @param length
-   * @return
-   */
-  private BigDecimal parseBigDecimal(DecimalType type, Slice slice, int offset, int length) {
+  private BigDecimal parseBigDecimal(DecimalType type, Slice slice, int length) {
+    int offset = 0;
     checkArgument(length < buffer.length);
     for (int i = 0; i < length; i++) {
       buffer[i] = (char) slice.getByte(offset + i);
@@ -192,78 +148,5 @@ public class DecimalSliceStreamReader  extends AbstractStreamReader {
     checkState(decimal.precision() <= type.getPrecision(),
         "Read decimal precision larger than column precision");
     return decimal;
-
   }
-
-  private void handleNullInVector(Type type, int numberOfRows, BlockBuilder builder) {
-    for (int i = 0; i < numberOfRows; i++) {
-      if (columnVector.isNullAt(i)) {
-        builder.appendNull();
-      } else {
-        if (isShortDecimal(type)) {
-          BigDecimal decimalValue = (BigDecimal)columnVector.getData(i);
-          long rescaledDecimal = Decimals.rescale(decimalValue.unscaledValue().longValue(),
-              decimalValue.scale(),((DecimalType) type).getScale());
-          type.writeLong(builder, rescaledDecimal);
-        } else {
-          Slice slice = getSlice(columnVector.getData(i), type);
-          type.writeSlice(builder, parseSlice((DecimalType) type, slice, 0, slice.length()));
-        }
-      }
-    }
-  }
-
-  private void populateShortDecimalVector(Type type, int numberOfRows, BlockBuilder builder) {
-    DecimalType decimalType = (DecimalType) type;
-    for (int i = 0; i < numberOfRows; i++) {
-      BigDecimal decimalValue = (BigDecimal) columnVector.getData(i);
-      long rescaledDecimal = Decimals
-          .rescale(decimalValue.unscaledValue().longValue(), decimalValue.scale(),
-              decimalType.getScale());
-      type.writeLong(builder, rescaledDecimal);
-    }
-  }
-
-  private void populateLongDecimalVector(Type type, int numberOfRows, BlockBuilder builder) {
-    for (int i = 0; i < numberOfRows; i++) {
-      Slice slice = getSlice((columnVector.getData(i)), type);
-      type.writeSlice(builder, parseSlice((DecimalType) type, slice, 0, slice.length()));
-    }
-  }
-
-  private void populateShortDictionaryVector(Type type, int numberOfRows, BlockBuilder builder) {
-    DecimalType decimalType = (DecimalType) type;
-    for (int i = 0; i < numberOfRows; i++) {
-      int value = (int) columnVector.getData(i);
-      Object data = DataTypeUtil.getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value),
-          DataTypes.createDecimalType(decimalType.getPrecision(), decimalType.getScale()));
-      if (Objects.isNull(data)) {
-        builder.appendNull();
-      } else {
-        BigDecimal decimalValue = (BigDecimal) data;
-        long rescaledDecimal = Decimals
-            .rescale(decimalValue.unscaledValue().longValue(), decimalValue.scale(),
-                decimalType.getScale());
-        type.writeLong(builder, rescaledDecimal);
-      }
-    }
-  }
-
-  private void populateLongDictionaryVector(Type type, int numberOfRows, BlockBuilder builder) {
-    DecimalType decimalType = (DecimalType) type;
-    for (int i = 0; i < numberOfRows; i++) {
-      int value = (int) columnVector.getData(i);
-      Object data = DataTypeUtil.getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value),
-          DataTypes.createDecimalType(decimalType.getPrecision(), decimalType.getScale()));
-      if (Objects.isNull(data)) {
-        builder.appendNull();
-      } else {
-        BigDecimal decimalValue = (BigDecimal) data;
-        Slice slice = getSlice(decimalValue, type);
-        type.writeSlice(builder, parseSlice((DecimalType) type, slice, 0, slice.length()));
-      }
-    }
-  }
-
-
 }
