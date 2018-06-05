@@ -19,7 +19,6 @@ package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSet}
 
-import org.apache.carbondata.mv.datamap.{MVHelper, MVState}
 import org.apache.carbondata.mv.expressions.modular._
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, Select}
 import org.apache.carbondata.mv.plans.modular

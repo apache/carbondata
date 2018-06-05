@@ -374,6 +374,9 @@ object MVHelper {
     }
   }
 
+  /**
+   * Rewrite the updated mv query with corresponding MV table.
+   */
   def rewriteWithMVTable(rewrittenPlan: ModularPlan, rewrite: QueryRewrite): ModularPlan = {
     if (rewrittenPlan.find(_.rewritten).isDefined) {
       val updatedDataMapTablePlan = rewrittenPlan transform {
