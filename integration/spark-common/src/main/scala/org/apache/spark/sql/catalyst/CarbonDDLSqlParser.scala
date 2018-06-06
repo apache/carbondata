@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, Map}
 import scala.language.implicitConversions
+import scala.util.Try
 import scala.util.matching.Regex
 
 import org.apache.hadoop.hive.ql.lib.Node
@@ -43,7 +44,7 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
-import org.apache.carbondata.spark.util.{CommonUtil, DataTypeConverterUtil}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataTypeConverterUtil}
 
 /**
  * TODO remove the duplicate code and add the common methods to common class.
@@ -292,6 +293,83 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         s"${CarbonCommonConstants.COLUMN_GROUPS} is deprecated")
     }
 
+    // validate the local dictionary property if defined
+    if (tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).isDefined) {
+      Try(tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).toBoolean) match {
+        case scala.util.Success(value) =>
+        case scala.util.Failure(ex) =>
+          tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+            CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+      }
+    } else {
+      // if LOCAL_DICTIONARY_ENABLE is not defined, consider the default value which is true
+      tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+        CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+    }
+
+    // validate the local dictionary threshold property if defined
+    if (tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD).isDefined) {
+      // if any invalid value is configured for LOCAL_DICTIONARY_THRESHOLD, then default value
+      // will be
+      // considered which is 1000
+      Try(tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD).toInt) match {
+        case scala.util.Success(value) =>
+          if (value <= 0) {
+            tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+              CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
+          }
+        case scala.util.Failure(ex) =>
+          LOGGER
+            .debug(
+              "invalid value is configured for local_dictionary_threshold, considering the defaut" +
+              " " +
+              "value")
+          tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+            CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
+      }
+    }
+
+    // validate the local dictionary columns defined, this we will validated if the local dictionary
+    // is enabled, else it is not validated
+    if (!(tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).isDefined &&
+          tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).trim
+            .equalsIgnoreCase("false"))) {
+      var localDictIncludeColumns: Seq[String] = Seq[String]()
+      var localDictExcludeColumns: Seq[String] = Seq[String]()
+      val isLocalDictIncludeDefined = tableProperties
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+        .isDefined
+      val isLocalDictExcludeDefined = tableProperties
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+        .isDefined
+      if (isLocalDictIncludeDefined) {
+        localDictIncludeColumns =
+          tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE).split(",").map(_.trim)
+        // validate all the local dictionary include columns
+        validateLocalDictionaryColumns(fields, tableProperties, localDictIncludeColumns)
+      }
+      if (isLocalDictExcludeDefined) {
+        localDictExcludeColumns =
+          tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).split(",").map(_.trim)
+        // validate all the local dictionary exclude columns
+        validateLocalDictionaryColumns(fields, tableProperties, localDictExcludeColumns)
+      }
+      // validate if both local dictionary include and exclude contains same column
+      if (isLocalDictIncludeDefined && isLocalDictExcludeDefined) {
+        val localDictIncludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+        val localDictExcludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+        if (List(localDictIncludeCols, localDictExcludeCols).mkString(",").split(",")
+              .distinct.length !=
+            List(localDictIncludeCols, localDictExcludeCols).mkString(",").split(",")
+              .length) {
+          val errMsg =
+            "Column ambiguity as duplicate columns present in LOCAL_DICTIONARY_INCLUDE and " +
+            "LOCAL_DICTIONARY_INCLUDE.Duplicate columns are not allowed."
+          throw new MalformedCarbonCommandException(errMsg)
+        }
+      }
+    }
+
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
     // get partitionInfo
@@ -319,6 +397,65 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       bucketFields: Option[BucketFields],
       partitionInfo,
       tableComment)
+  }
+
+  /**
+   * This method validates the local dictionary configured columns
+   *
+   * @param fields
+   * @param tableProperties
+   */
+  private def validateLocalDictionaryColumns(fields: Seq[Field],
+      tableProperties: Map[String, String], localDictColumns: Seq[String]): Unit = {
+    var dictIncludeColumns: Seq[String] = Seq[String]()
+
+    // check if the duplicate columns are specified in table schema
+    if (localDictColumns.distinct.lengthCompare(localDictColumns.size) != 0) {
+      val a = localDictColumns.diff(localDictColumns.distinct).distinct
+      val errMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE contains Duplicate Columns " +
+                   a.mkString("(", ",", ")") +
+                   ". Please check create table statement."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+
+    // check if the column specified exists in table schema
+    localDictColumns.foreach { distCol =>
+      if (!fields.exists(x => x.column.equalsIgnoreCase(distCol.trim))) {
+        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
+                       " does not exist in table. Please check create table statement."
+        throw new MalformedCarbonCommandException(errormsg)
+      }
+    }
+
+    // check if column is other than string datatype
+    localDictColumns.foreach { dictColm =>
+      if (fields
+        .exists(x => x.column.equalsIgnoreCase(dictColm) &&
+                     !x.dataType.get.equalsIgnoreCase("STRING") &&
+                     !x.dataType.get.equalsIgnoreCase("STRUCT") &&
+                     !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
+        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
+                       dictColm.trim +
+                       " is not a String datatype column. LOCAL_DICTIONARY_COLUMN should be no " +
+                       "dictionary string datatype column.Please check create table statement."
+        throw new MalformedCarbonCommandException(errormsg)
+      }
+    }
+    // check if the same column is present in both dictionary include and local dictionary columns
+    // configuration
+    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
+      dictIncludeColumns =
+        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
+      localDictColumns.foreach { distCol =>
+        if (dictIncludeColumns.exists(x => x.equalsIgnoreCase(distCol.trim))) {
+          val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
+                         distCol.trim +
+                         " specified in Dictionary include. Local Dictionary will not be " +
+                         "generated for Dictionary include. Please check create table statement."
+          throw new MalformedCarbonCommandException(errormsg)
+        }
+      }
+    }
   }
 
   /**

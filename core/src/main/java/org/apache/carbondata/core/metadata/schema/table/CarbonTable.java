@@ -151,6 +151,16 @@ public class CarbonTable implements Serializable {
   private boolean hasDataMapSchema;
 
   /**
+   * is local dictionary generation enabled for the table
+   */
+  private boolean isLocalDictionaryEnabled;
+
+  /**
+   * local dictionary generation threshold
+   */
+  private int localDictionaryThreshold;
+
+  /**
    * The boolean field which points if the data written for Non Transactional Table
    * or Transactional Table.
    * transactional table means carbon will provide transactional support when user doing data
@@ -465,6 +475,37 @@ public class CarbonTable implements Serializable {
    */
   public String getTableUniqueName() {
     return tableUniqueName;
+  }
+
+  /**
+   * is local dictionary enabled for the table
+   * @return
+   */
+  public boolean isLocalDictionaryEnabled() {
+    return isLocalDictionaryEnabled;
+  }
+
+  /**
+   * set whether local dictionary enabled or not
+   * @param localDictionaryEnabled
+   */
+  public void setLocalDictionaryEnabled(boolean localDictionaryEnabled) {
+    isLocalDictionaryEnabled = localDictionaryEnabled;
+  }
+
+  /**
+   * @return local dictionary generation threshold
+   */
+  public int getLocalDictionaryThreshold() {
+    return localDictionaryThreshold;
+  }
+
+  /**
+   * set the local dictionary generation threshold
+   * @param localDictionaryThreshold
+   */
+  public void setLocalDictionaryThreshold(int localDictionaryThreshold) {
+    this.localDictionaryThreshold = localDictionaryThreshold;
   }
 
   /**
@@ -1045,5 +1086,32 @@ public class CarbonTable implements Serializable {
     }
     table.hasDataMapSchema =
         null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
+    setLocalDictInfo(table, tableInfo);
+  }
+
+  /**
+   * This method sets whether the local dictionary is enabled or not, and the local dictionary
+   * threshold, if not defined default value are considered.
+   * @param table
+   * @param tableInfo
+   */
+  private static void setLocalDictInfo(CarbonTable table, TableInfo tableInfo) {
+    String isLocalDictionaryEnabled = tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
+    String localDictionaryThreshold = tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD);
+    if (null != isLocalDictionaryEnabled) {
+      table.setLocalDictionaryEnabled(Boolean.parseBoolean(isLocalDictionaryEnabled));
+      if (null != localDictionaryThreshold) {
+        table.setLocalDictionaryThreshold(Integer.parseInt(localDictionaryThreshold));
+      } else {
+        table.setLocalDictionaryThreshold(
+            Integer.parseInt(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT));
+      }
+    } else {
+      // in case of old tables, local dictionary enable property will not be present in
+      // tableProperties, so disable the local dictionary generation
+      table.setLocalDictionaryEnabled(Boolean.parseBoolean("false"));
+    }
   }
 }
