@@ -3004,5 +3004,113 @@ public final class CarbonUtil {
     }
     return blockId;
   }
+
+  /**
+   * sets the local dictionary columns to wrapper schema, if the table property
+   * local_dictionary_include is defined, then those columns will be set as local dictionary
+   * columns, if not, all the no dictionary string datatype columns are set as local dictionary
+   * columns.
+   * Handling for complexTypes::
+   *    Since the column structure will be flat
+   *    if the parent column is configured as local Dictionary column, then it gets the child column
+   *    count and then sets the primitive child column as local dictionary column if it is string
+   *    datatype column
+   * Handling for both localDictionary Include and exclude columns:
+   * There will be basically four scenarios which are
+   * -------------------------------------------------------
+   * | Local_Dictionary_include | Local_Dictionary_Exclude |
+   * -------------------------------------------------------
+   * |   Not Defined            |     Not Defined          |
+   * |   Not Defined            |      Defined             |
+   * |   Defined                |     Not Defined          |
+   * |   Defined                |      Defined             |
+   * -------------------------------------------------------
+   * 1. when the both local dictionary include and exclude is not defined, then set all the no
+   * dictionary string datatype columns as local dictionary generate columns
+   * 2. set all the no dictionary string datatype columns as local dictionary columns except the
+   * columns present in local dictionary exclude
+   * 3. & 4. when local dictionary include is defined, no need to check dictionary exclude columns
+   * configured or not, we just need to set only the columns present in local dictionary include as
+   * local dictionary columns
+   *
+   * @param columns
+   * @param mainTableProperties
+   */
+  public static void setLocalDictColumnsToWrapperSchema(List<ColumnSchema> columns,
+      Map<String, String> mainTableProperties) {
+    String isLocalDictEnabledForMainTable =
+        mainTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
+    String localDictIncludeColumnsOfMainTable =
+        mainTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE);
+    String localDictExcludeColumnsOfMainTable =
+        mainTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE);
+    String[] listOfDictionaryIncludeColumns = null;
+    String[] listOfDictionaryExcludeColumns = null;
+    if (null != isLocalDictEnabledForMainTable && Boolean
+        .parseBoolean(isLocalDictEnabledForMainTable)) {
+      int childColumnCount = 0;
+      for (ColumnSchema column : columns) {
+        // for complex type columns, user gives the parent column as local dictionary column and
+        // only the string primitive type child column will be set as local dictionary column in the
+        // schema
+        if (childColumnCount > 0) {
+          if (column.getDataType().equals(DataTypes.STRING)) {
+            column.setLocalDictColumn(true);
+            childColumnCount -= 1;
+          } else {
+            childColumnCount -= 1;
+          }
+        }
+        // if complex column is defined in local dictionary include column, then get the child
+        // columns and set the string datatype child type as local dictionary column
+        if (column.getNumberOfChild() > 0 && null != localDictIncludeColumnsOfMainTable) {
+          listOfDictionaryIncludeColumns = localDictIncludeColumnsOfMainTable.split(",");
+          for (String dictColumn : listOfDictionaryIncludeColumns) {
+            if (dictColumn.trim().equalsIgnoreCase(column.getColumnName())) {
+              childColumnCount = column.getNumberOfChild();
+            }
+          }
+        }
+        if (null == localDictIncludeColumnsOfMainTable) {
+          // if local dictionary exclude columns is not defined, then set all the no dictionary
+          // string datatype column
+          if (null == localDictExcludeColumnsOfMainTable) {
+            // column should be no dictionary string datatype column
+            if (column.isDimensionColumn() && column.getDataType().equals(DataTypes.STRING)
+                && !column.hasEncoding(Encoding.DICTIONARY)) {
+              column.setLocalDictColumn(true);
+            }
+            // if local dictionary exclude columns is defined, then set for all no dictionary string
+            // datatype columns except excluded columns
+          } else {
+            if (column.isDimensionColumn() && column.getDataType().equals(DataTypes.STRING)
+                && !column.hasEncoding(Encoding.DICTIONARY)) {
+              listOfDictionaryExcludeColumns = localDictExcludeColumnsOfMainTable.split(",");
+              for (String excludeDictColumn : listOfDictionaryExcludeColumns) {
+                if (!excludeDictColumn.trim().equalsIgnoreCase(column.getColumnName())) {
+                  column.setLocalDictColumn(true);
+                }
+              }
+            }
+          }
+        } else {
+          // if local dict columns alre not configured, set for all no dictionary string datatype
+          // column
+          if (column.isDimensionColumn() && column.getDataType().equals(DataTypes.STRING) && !column
+              .hasEncoding(Encoding.DICTIONARY) && localDictIncludeColumnsOfMainTable.toLowerCase()
+              .contains(column.getColumnName().toLowerCase())) {
+            if (null == listOfDictionaryIncludeColumns) {
+              listOfDictionaryIncludeColumns = localDictIncludeColumnsOfMainTable.split(",");
+            }
+            for (String dictColumn : listOfDictionaryIncludeColumns) {
+              if (dictColumn.trim().equalsIgnoreCase(column.getColumnName())) {
+                column.setLocalDictColumn(true);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 

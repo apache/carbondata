@@ -910,6 +910,37 @@ public final class CarbonCommonConstants {
   public static final String COLUMN_GROUPS = "column_groups";
   public static final String DICTIONARY_EXCLUDE = "dictionary_exclude";
   public static final String DICTIONARY_INCLUDE = "dictionary_include";
+
+  /**
+   * Table property to enable or disable local dictionary generation
+   */
+  public static final String LOCAL_DICTIONARY_ENABLE = "local_dictionary_enable";
+
+  /**
+   * default value for local dictionary generation
+   */
+  public static final String LOCAL_DICTIONARY_ENABLE_DEFAULT = "true";
+
+  /**
+   * Threshold value for local dictionary
+   */
+  public static final String LOCAL_DICTIONARY_THRESHOLD = "local_dictionary_threshold";
+
+  /**
+   * default value for local dictionary
+   */
+  public static final String LOCAL_DICTIONARY_THRESHOLD_DEFAULT = "1000";
+
+  /**
+   * Table property to specify the columns for which local dictionary needs to be generated.
+   */
+  public static final String LOCAL_DICTIONARY_INCLUDE = "local_dictionary_include";
+
+  /**
+   * Table property to specify the columns for which local dictionary should not be to be generated.
+   */
+  public static final String LOCAL_DICTIONARY_EXCLUDE = "local_dictionary_exclude";
+
   /**
    * key for dictionary path
    */

@@ -138,6 +138,25 @@ public class ColumnSchema implements Serializable, Writable {
   private String timeSeriesFunction = "";
 
   /**
+   * set whether the column is local dictionary column or not.
+   */
+  private boolean isLocalDictColumn = false;
+
+  /**
+   * @return isLocalDictColumn
+   */
+  public boolean isLocalDictColumn() {
+    return isLocalDictColumn;
+  }
+
+  /**
+   * @param localDictColumn whether column is local dictionary column
+   */
+  public void setLocalDictColumn(boolean localDictColumn) {
+    isLocalDictColumn = localDictColumn;
+  }
+
+  /**
    * @return the columnName
    */
   public String getColumnName() {

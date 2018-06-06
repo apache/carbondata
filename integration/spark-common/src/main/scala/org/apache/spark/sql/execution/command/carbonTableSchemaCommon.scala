@@ -27,7 +27,6 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.util.CarbonException
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
@@ -40,7 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationId
 import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
@@ -246,7 +245,6 @@ class AlterTableColumnSchemaGenerator(
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
-
     allColumns ++= tableCols.filter(x => !x.isDimensionColumn)
     alterTableModel.msrCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
@@ -294,7 +292,9 @@ class AlterTableColumnSchemaGenerator(
     alterTableModel.tableProperties.foreach {
       x => val value = tablePropertiesMap.get(x._1)
         if (null != value) {
-          tablePropertiesMap.put(x._1, value + "," + x._2)
+          if (value != x._2) {
+            tablePropertiesMap.put(x._1, value + "," + x._2)
+          }
         } else {
           tablePropertiesMap.put(x._1, x._2)
         }
@@ -550,6 +550,11 @@ class TableNewProcessor(cm: TableModel) {
       }
     }
 
+    // check whether the column is a local dictionary column and set in column schema
+    if (null != cm.tableProperties) {
+      CarbonUtil
+        .setLocalDictColumnsToWrapperSchema(allColumns.asJava, cm.tableProperties.asJava)
+    }
     cm.msrCols.foreach { field =>
       // if aggregate function is defined in case of preaggregate and agg function is sum or avg
       // then it can be stored as measure
