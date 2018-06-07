@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.metadata.schema.table;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -56,6 +58,8 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+
+import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
 /**
  * Mapping class for Carbon actual table
@@ -216,6 +220,37 @@ public class CarbonTable implements Serializable {
                 columnSchema.getScale()));
       }
     }
+  }
+
+  public static CarbonTable buildTable(
+      String tablePath,
+      String tableName) throws IOException {
+    TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
+    File[] dataFiles = new File(tablePath).listFiles(new FilenameFilter() {
+      @Override
+      public boolean accept(File dir, String name) {
+        if (name == null) {
+          return false;
+        }
+        return name.endsWith("carbonindex");
+      }
+    });
+    if (dataFiles == null || dataFiles.length < 1) {
+      throw new RuntimeException("Carbon index file not exists.");
+    }
+    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
+        .inferSchemaFromIndexFile(dataFiles[0].toString(), tableName);
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
+        .getFact_table().getTable_columns()) {
+      ColumnSchema columnSchema = thriftColumnSchemaToWrapperColumnSchema(thriftColumnSchema);
+      if (columnSchema.getColumnReferenceId() == null) {
+        columnSchema.setColumnReferenceId(columnSchema.getColumnUniqueId());
+      }
+      columnSchemaList.add(columnSchema);
+    }
+    tableInfoInfer.getFactTable().setListOfColumns(columnSchemaList);
+    return CarbonTable.buildFromTableInfo(tableInfoInfer);
   }
 
   public static CarbonTable buildDummyTable(String tablePath) throws IOException {
