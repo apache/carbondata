@@ -20,8 +20,7 @@ package org.apache.carbondata.sdk.file;
 import java.io.*;
 import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
@@ -29,6 +28,11 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
+import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -48,6 +52,12 @@ public class CarbonReaderTest extends TestCase {
   @After
   public void verifyDMFile() {
     assert (!TestUtil.verifyMdtFile());
+    String path = "./testWriteFiles";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Test
@@ -101,6 +111,243 @@ public class CarbonReaderTest extends TestCase {
     }
     Assert.assertEquals(i, 200);
     reader2.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfTransactional() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, true);
+
+    EqualToExpression equalToExpression = new EqualToExpression(
+        new ColumnExpression("name", DataTypes.STRING),
+        new LiteralExpression("robot1", DataTypes.STRING));
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(true)
+        .projection(new String[]{"name", "age"})
+        .filter(equalToExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      // Default sort column is applied for dimensions. So, need  to validate accordingly
+      assert ("robot1".equals(row[0]));
+      i++;
+    }
+    Assert.assertEquals(i, 20);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfTransactionalAnd() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, true);
+
+    ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
+    EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
+        new LiteralExpression("3.5", DataTypes.DOUBLE));
+
+    ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
+    EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
+        new LiteralExpression("robot7", DataTypes.STRING));
+
+    AndExpression andExpression = new AndExpression(equalToExpression, equalToExpression2);
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(true)
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(andExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert (((String) row[0]).contains("robot7"));
+      assert (7 == (int) (row[1]));
+      assert (3.5 == (double) (row[2]));
+      i++;
+    }
+    Assert.assertEquals(i, 1);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfNonTransactionalSimple() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+
+    ColumnExpression columnExpression = new ColumnExpression("name", DataTypes.STRING);
+    EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
+        new LiteralExpression("robot1", DataTypes.STRING));
+
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age"})
+        .filter(equalToExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      // Default sort column is applied for dimensions. So, need  to validate accordingly
+      assert ("robot1".equals(row[0]));
+      i++;
+    }
+    Assert.assertEquals(i, 20);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfNonTransactional2() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+
+    ColumnExpression columnExpression = new ColumnExpression("age", DataTypes.INT);
+
+    EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
+        new LiteralExpression("1", DataTypes.INT));
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age"})
+        .filter(equalToExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      // Default sort column is applied for dimensions. So, need  to validate accordingly
+      assert (((String) row[0]).contains("robot"));
+      assert (1 == (int) (row[1]));
+      i++;
+    }
+    Assert.assertEquals(i, 1);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfNonTransactionalAnd() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+
+    ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
+    EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
+        new LiteralExpression("3.5", DataTypes.DOUBLE));
+
+    ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
+    EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
+        new LiteralExpression("robot7", DataTypes.STRING));
+
+    AndExpression andExpression = new AndExpression(equalToExpression, equalToExpression2);
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(andExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert (((String) row[0]).contains("robot7"));
+      assert (7 == (int) (row[1]));
+      assert (3.5 == (double) (row[2]));
+      i++;
+    }
+    Assert.assertEquals(i, 1);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfNonTransactionalOr() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+
+    ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
+    EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
+        new LiteralExpression("3.5", DataTypes.DOUBLE));
+
+    ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
+    EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
+        new LiteralExpression("robot7", DataTypes.STRING));
+
+    OrExpression andExpression = new OrExpression(equalToExpression, equalToExpression2);
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(andExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert (((String) row[0]).contains("robot7"));
+      assert (7 == ((int) (row[1]) % 10));
+      assert (0.5 == ((double) (row[2]) % 1));
+      i++;
+    }
+    Assert.assertEquals(i, 20);
+
+    reader.close();
 
     FileUtils.deleteDirectory(new File(path));
   }
