@@ -168,14 +168,19 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
     val pairs = for {
       rtable <- rtables
       etable <- etables
-      if (rtable == etable)
+      if rtable == etable
     } yield (rtable, etable)
 
     pairs.foldLeft(subsumer) {
       case (curSubsumer, pair) =>
-        val mappedOperator = if (pair._1.isInstanceOf[modular.HarmonizedRelation] && pair._1.asInstanceOf[modular.HarmonizedRelation].hasTag) pair._2.asInstanceOf[modular.HarmonizedRelation].addTag
-        else pair._2
-        val nxtSubsumer = curSubsumer.transform { case pair._1 => mappedOperator}
+        val mappedOperator =
+          if (pair._1.isInstanceOf[modular.HarmonizedRelation] &&
+              pair._1.asInstanceOf[modular.HarmonizedRelation].hasTag) {
+          pair._2.asInstanceOf[modular.HarmonizedRelation].addTag
+        } else {
+          pair._2
+        }
+        val nxtSubsumer = curSubsumer.transform { case pair._1 => mappedOperator }
         // val attributeSet = AttributeSet(pair._1.output)
         // reverse first due to possible tag for left join
         val rewrites = AttributeMap(pair._1.output.zip(mappedOperator.output))

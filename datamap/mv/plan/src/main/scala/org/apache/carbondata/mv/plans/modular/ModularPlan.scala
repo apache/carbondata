@@ -170,7 +170,6 @@ abstract class ModularPlan
 
   lazy val semiHarmonized: ModularPlan = SemiHarmonizer.execute(preHarmonized)
 
-  
   /**
    * Do some simple transformation on this plan before harmonizing. Implementations can override
    * this method to provide customized harmonize logic without rewriting the whole logic.

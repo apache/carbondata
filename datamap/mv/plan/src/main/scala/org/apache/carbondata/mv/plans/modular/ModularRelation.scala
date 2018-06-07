@@ -19,13 +19,13 @@ package org.apache.carbondata.mv.plans.modular
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, Literal, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.internal.SQLConf
 
 import org.apache.carbondata.mv.plans.modular.Flags._
-import org.apache.spark.sql.catalyst.expressions.aggregate._
 
 object ModularRelation {
   def apply(outputList: NamedExpression*): ModularRelation = {
@@ -77,42 +77,44 @@ case class ModularRelation(databaseName: String,
 }
 
 object HarmonizedRelation {
-  def canHarmonize(source: ModularPlan): Boolean = source match {
-    case g@GroupBy(
-    _,
-    _,
-    _,
-    _,
-    Select(_, _, _, _, _, dim :: Nil, NoFlags, Nil, Nil, _),
-    NoFlags,
-    Nil, _) if (dim.isInstanceOf[ModularRelation]) =>
-      if (g.outputList.forall(col => {
-        if (col.isInstanceOf[Alias]) {
-          val check = (col.asInstanceOf[Alias].child.isInstanceOf[AttributeReference] ||
-                       col.asInstanceOf[Alias].child.isInstanceOf[Literal] ||
-                       (col.asInstanceOf[Alias].child match {
-                          case AggregateExpression(First(_,_),_,_,_) => true
-                          case AggregateExpression(Last(_,_),_,_,_) => true
-                          case _ => false
-                       }))
-          check
+  def canHarmonize(source: ModularPlan): Boolean = {
+    source match {
+      case g@GroupBy(
+      _,
+      _,
+      _,
+      _,
+      Select(_, _, _, _, _, dim :: Nil, NoFlags, Nil, Nil, _),
+      NoFlags,
+      Nil, _) if (dim.isInstanceOf[ModularRelation]) =>
+        if (g.outputList.forall(col => {
+          if (col.isInstanceOf[Alias]) {
+            val check = (col.asInstanceOf[Alias].child.isInstanceOf[AttributeReference] ||
+                         col.asInstanceOf[Alias].child.isInstanceOf[Literal] ||
+                         (col.asInstanceOf[Alias].child match {
+                           case AggregateExpression(First(_, _), _, _, _) => true
+                           case AggregateExpression(Last(_, _), _, _, _) => true
+                           case _ => false
+                         }))
+            check
+          }
+          else {
+            val check = (col.isInstanceOf[AttributeReference] ||
+                         col.isInstanceOf[Literal] ||
+                         (col.asInstanceOf[Expression] match {
+                           case AggregateExpression(First(_, _), _, _, _) => true
+                           case AggregateExpression(Last(_, _), _, _, _) => true
+                           case _ => false
+                         }))
+            check
+          }
+        })) {
+          true
+        } else {
+          false
         }
-        else {
-          val check = (col.isInstanceOf[AttributeReference] ||
-                       col.isInstanceOf[Literal] ||
-                       (col.asInstanceOf[Expression] match {
-                          case AggregateExpression(First(_,_),_,_,_) => true
-                          case AggregateExpression(Last(_,_),_,_,_) => true
-                          case _ => false
-                       }))
-          check
-        }
-      })) {
-        true
-      } else {
-        false
-      }
-    case _ => false
+      case _ => false
+    }
   }
 }
 
@@ -125,7 +127,9 @@ case class HarmonizedRelation(source: ModularPlan) extends LeafNode {
     .asInstanceOf[ModularRelation].databaseName
   lazy val tag: Option[Attribute] = {
     source match {
-      case GroupBy(head::tail,_,_,_,_,_,_, _) if (head.isInstanceOf[Alias] && head.asInstanceOf[Alias].child == Literal(1)) => Some(head.toAttribute)
+      case GroupBy(head :: tail, _, _, _, _, _, _, _)
+        if (head.isInstanceOf[Alias] && head.asInstanceOf[Alias].child == Literal(1)) =>
+        Some(head.toAttribute)
       case _ => None
     }
   }
@@ -140,15 +144,19 @@ case class HarmonizedRelation(source: ModularPlan) extends LeafNode {
     val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
       table => AttributeMap(table.output.zip(output))
     }
-    val rewrites = mapSeq(0)
+    val rewrites = mapSeq.head
     val aliasMap = AttributeMap(
       source.asInstanceOf[GroupBy].outputList.collect {
-        case a: Alias if (a.child.isInstanceOf[Attribute]) => (a.child.asInstanceOf[Attribute], a
-          .toAttribute)
+        case a@Alias(ar: Attribute, _) => (ar, a.toAttribute)
+        case a@Alias(AggregateExpression(First(ar: Attribute, _), _, _, _), _) =>
+          (ar, a.toAttribute)
+        case a@Alias(AggregateExpression(Last(ar: Attribute, _), _, _, _), _) =>
+          (ar, a.toAttribute)
       })
     val aStatsIterator = stats.attributeStats.iterator.map { pair => (rewrites(pair._1), pair._2) }
-    val attributeStats = AttributeMap(aStatsIterator
-      .map(pair => ((aliasMap.get(pair._1)).getOrElse(pair._1), pair._2)).toSeq)
+    val attributeStats =
+      AttributeMap(
+        aStatsIterator.map(pair => (aliasMap.get(pair._1).getOrElse(pair._1), pair._2)).toSeq)
 
     Statistics(stats.sizeInBytes, None, attributeStats, stats.hints)
   }
@@ -160,33 +168,36 @@ case class HarmonizedRelation(source: ModularPlan) extends LeafNode {
   override def equals(that: Any): Boolean = {
     def canonicalize(source: ModularPlan): ModularPlan = {
       source.transform {
-        case gb @ GroupBy(head::tail, _, _, _, _, _, _, _)
-          if (head.isInstanceOf[Alias] && head.asInstanceOf[Alias].child == Literal(1)) =>
+        case gb@GroupBy(head :: tail, _, _, _, _, _, _, _)
+          if head.isInstanceOf[Alias] && head.asInstanceOf[Alias].child == Literal(1) =>
           gb.copy(outputList = tail)
       }
     }
 
     that match {
-      case that: HarmonizedRelation => {
+      case that: HarmonizedRelation =>
         val s1 = canonicalize(source)
         val s2 = canonicalize(that.source)
         val r = s1.sameResult(s2)
-        r }
+        r
       case _ => false
     }
   }
 
   def addTag: HarmonizedRelation = {
-    val source1 = source.transform { case gb @ GroupBy(head::tail,_,_,_,_,_,_) if (!head.isInstanceOf[Alias] || !(head.asInstanceOf[Alias].child == Literal(1))) => {
+    val source1 = source.transform { case gb@GroupBy(head :: tail, _, _, _, _, _, _, _)
+      if !head.isInstanceOf[Alias] || !(head.asInstanceOf[Alias].child == Literal(1)) =>
       val exprId = NamedExpression.newExprId
-      gb.copy(outputList = Alias(Literal(1), s"gen_tag_${exprId.id}")(exprId) +: gb.outputList) }
+      gb.copy(outputList = Alias(Literal(1), s"gen_tag_${ exprId.id }")(exprId) +: gb.outputList)
     }
     HarmonizedRelation(source1)
   }
 
-  def hasTag: Boolean = tag match {
-    case Some(_) => true
-    case None => false
+  def hasTag: Boolean = {
+    tag match {
+      case Some(_) => true
+      case None => false
+    }
   }
 
 }

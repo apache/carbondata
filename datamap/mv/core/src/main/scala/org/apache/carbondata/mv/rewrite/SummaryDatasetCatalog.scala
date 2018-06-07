@@ -176,10 +176,9 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   }
 
   /**
-   *  API for test only
-   *
-   *  Tries to remove the data set for the given [[DataFrame]] from the catalog if it's registered
-   **/
+   * API for test only
+   * Tries to remove the data set for the given [[DataFrame]] from the catalog if it's registered
+   */
   private[mv] def tryUnregisterSummaryDataset(
       query: DataFrame,
       blocking: Boolean = true): Boolean = {
