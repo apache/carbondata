@@ -357,7 +357,7 @@
              Spark has changed this jar to org.lz4:lz4-java
              net.jpountz and org.lz4 has same class Name -->
             <exclusion>
-              <groupId>net.jpountz</groupId>
+              <groupId>net.jpountz.lz4</groupId>
               <artifactId>lz4</artifactId>
             </exclusion>
           </exclusions>
@@ -368,7 +368,7 @@
           <version>${project.version}</version>
           <exclusions>
             <exclusion>
-              <groupId>net.jpountz</groupId>
+              <groupId>net.jpountz.lz4</groupId>
               <artifactId>lz4</artifactId>
             </exclusion>
           </exclusions>

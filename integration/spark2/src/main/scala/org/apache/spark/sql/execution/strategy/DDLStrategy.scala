@@ -19,6 +19,7 @@ package org.apache.spark.sql.execution.strategy
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
@@ -32,19 +33,16 @@ import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable
 import org.apache.spark.sql.hive.{CarbonRelation, CreateCarbonSourceTableAsSelectCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
+
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
 
-/**
- * Carbon strategies for ddl commands
- */
-/**
-  * CreateDataSourceTableAsSelectCommand class has extra argument in
-  * 2.3, so need to add wrapper to match the case
-  */
+  /** Carbon strategies for ddl commands
+   * CreateDataSourceTableAsSelectCommand class has extra argument in
+   * 2.3, so need to add wrapper to match the case
+   */
 object MatchCreateDataSourceTable {
 
   def unapply(plan: LogicalPlan): Option[(CatalogTable, SaveMode, LogicalPlan)] = plan match {

@@ -261,7 +261,7 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
             CarbonScalaUtil.convertCarbonToSparkDataType(DataTypes.DOUBLE), true, null);
       }
     }
-    vectorProxy= new CarbonVectorProxy(MemoryMode.OFF_HEAP,DEFAULT_BATCH_SIZE,fields);
+    vectorProxy = new CarbonVectorProxy(MemoryMode.OFF_HEAP,DEFAULT_BATCH_SIZE,fields);
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
     boolean[] filteredRows = new boolean[vectorProxy.numRows()];
     for (int i = 0; i < fields.length; i++) {
@@ -284,7 +284,7 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
    * Advances to the next batch of rows. Returns false if there are no more.
    */
   private boolean nextBatch() {
-      vectorProxy.reset();
+    vectorProxy.reset();
     carbonColumnarBatch.reset();
     if (iterator.hasNext()) {
       iterator.processNextBatch(carbonColumnarBatch);

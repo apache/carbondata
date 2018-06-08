@@ -17,7 +17,7 @@
 
 package org.apache.spark.rpc
 
-import org.apache.spark.{SPARK_VERSION, SecurityManager, SparkConf}
+import org.apache.spark.{SecurityManager, SPARK_VERSION, SparkConf}
 import org.apache.spark.util.Utils
 
 object RpcUtil {
@@ -31,13 +31,13 @@ object RpcUtil {
                       clientMode: Boolean): RpcEnvConfig = {
     val className = "org.apache.spark.rpc.RpcEnvConfig"
     if (SPARK_VERSION.startsWith("2.1") || SPARK_VERSION.startsWith("2.2")) {
-      createObject(className,conf, name, bindAddress,
+      createObject(className, conf, name, bindAddress,
         advertiseAddress, port.asInstanceOf[Object],
         securityManager, clientMode.asInstanceOf[Object])._1.asInstanceOf[RpcEnvConfig]
     } else if (SPARK_VERSION.startsWith("2.3")) {
       // numUsableCores if it is 0 then spark will consider the available CPUs on the host.
       val numUsableCores: Int = 0
-      createObject(className,conf, name, bindAddress,
+      createObject(className, conf, name, bindAddress,
         advertiseAddress, port.asInstanceOf[Object],
         securityManager, numUsableCores.asInstanceOf[Object],
         clientMode.asInstanceOf[Object])._1.asInstanceOf[RpcEnvConfig]

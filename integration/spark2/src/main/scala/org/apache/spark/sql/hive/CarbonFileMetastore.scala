@@ -21,6 +21,7 @@ import java.io.IOException
 import java.net.URI
 
 import scala.collection.mutable.ArrayBuffer
+
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
@@ -30,7 +31,9 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.util.CarbonReflectionUtils
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -40,7 +43,7 @@ import org.apache.carbondata.core.fileoperations.FileWriteOperation
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema
-import org.apache.carbondata.core.metadata.schema.{SchemaReader, table}
+import org.apache.carbondata.core.metadata.schema.{table, SchemaReader}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -48,8 +51,6 @@ import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.events.{LookupRelationPostEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
-import org.apache.spark.sql.catalyst.expressions.BaseGenericInternalRow
-import org.apache.spark.sql.sources.BaseRelation
 
 case class MetaData(var carbonTables: ArrayBuffer[CarbonTable]) {
   // clear the metadata

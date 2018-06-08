@@ -17,11 +17,11 @@
 
 package org.apache.spark.util
 
-import org.antlr.v4.runtime.tree.TerminalNode
-
 import scala.reflect.runtime._
 import scala.reflect.runtime.universe._
+
 import org.apache.spark.{SPARK_VERSION, SparkContext}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
@@ -29,12 +29,12 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
 import org.apache.spark.sql.catalyst.parser.AstBuilder
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, SubqueryAlias}
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.sources.{BaseRelation, Filter}
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.plans.physical.Partitioning
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.RowDataSourceScanExec
+import org.apache.spark.sql.sources.{BaseRelation, Filter}
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
  * Reflection APIs
@@ -126,9 +126,9 @@ object CarbonReflectionUtils {
   }
 
   def getLogicalRelation(relation: BaseRelation,
-      expectedOutputAttributes: Seq[Attribute],
-      catalogTable: Option[CatalogTable],
-      isStreaming:Boolean): LogicalRelation = {
+                         expectedOutputAttributes: Seq[Attribute],
+                         catalogTable: Option[CatalogTable],
+                         isStreaming: Boolean): LogicalRelation = {
     val className = "org.apache.spark.sql.execution.datasources.LogicalRelation"
     if (SPARK_VERSION.startsWith("2.1")) {
       createObject(
@@ -142,7 +142,7 @@ object CarbonReflectionUtils {
         relation,
         expectedOutputAttributes,
         catalogTable)._1.asInstanceOf[LogicalRelation]
-    } else if (SPARK_VERSION.startsWith("2.3")){
+    } else if (SPARK_VERSION.startsWith("2.3")) {
       createObject(
         className,
         relation,
@@ -253,13 +253,12 @@ object CarbonReflectionUtils {
   }
 
 
-
   def getRowDataSourceScanExecObj(relation: LogicalRelation,
                                   output: Seq[Attribute],
                                   pushedFilters: Seq[Filter],
                                   handledFilters: Seq[Filter],
                                   rdd: RDD[InternalRow],
-                                  partition : Partitioning,
+                                  partition: Partitioning,
                                   metadata: Map[String, String]): RowDataSourceScanExec = {
     val className = "org.apache.spark.sql.execution.RowDataSourceScanExec"
     if (SPARK_VERSION.startsWith("2.1") || SPARK_VERSION.startsWith("2.2")) {
@@ -268,8 +267,8 @@ object CarbonReflectionUtils {
         relation.catalogTable.map(_.identifier))._1.asInstanceOf[RowDataSourceScanExec]
 
     } else if (SPARK_VERSION.startsWith("2.3")) {
-      createObject(className,output, output.map(output.indexOf),
-        pushedFilters.toSet, handledFilters.toSet,  rdd,
+      createObject(className, output, output.map(output.indexOf),
+        pushedFilters.toSet, handledFilters.toSet, rdd,
         relation.relation,
         relation.catalogTable.map(_.identifier))._1.asInstanceOf[RowDataSourceScanExec]
 

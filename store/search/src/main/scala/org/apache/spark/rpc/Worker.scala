@@ -22,10 +22,12 @@ import java.net.{BindException, InetAddress}
 
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
+
 import org.apache.spark.{SecurityManager, SparkConf}
 import org.apache.spark.rpc.netty.NettyRpcEnvFactory
 import org.apache.spark.search.{RegisterWorkerRequest, RegisterWorkerResponse, Searcher}
 import org.apache.spark.util.ThreadUtils
+
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.CarbonProperties

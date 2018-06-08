@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
-import org.apache.spark.sql.CarbonVectorProxy;
+
 import org.apache.spark.sql.types.Decimal;
 
 class ColumnarVectorWrapper implements CarbonColumnVector {
@@ -32,15 +32,16 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   private boolean[] filteredRows;
 
   private int counter;
-  
+
   private int ordinal;
 
   private boolean filteredRowsExist;
 
   private DataType blockDataType;
 
-  ColumnarVectorWrapper(CarbonSparkVectorReader writableColumnVector, boolean[] filteredRows, int ordinal) {
-      this.writableColumnVector = writableColumnVector;
+  ColumnarVectorWrapper(CarbonSparkVectorReader writableColumnVector,
+                        boolean[] filteredRows, int ordinal) {
+    this.writableColumnVector = writableColumnVector;
     this.filteredRows = filteredRows;
     this.ordinal = ordinal;
   }
@@ -53,7 +54,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putFloat(int rowId, float value) {
     if (!filteredRows[rowId]) {
-      writableColumnVector.putFloat(counter++, value,ordinal );
+      writableColumnVector.putFloat(counter++, value,ordinal);
     }
   }
 

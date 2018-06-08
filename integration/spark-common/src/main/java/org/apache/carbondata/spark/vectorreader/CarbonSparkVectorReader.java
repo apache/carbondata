@@ -46,7 +46,7 @@ public interface CarbonSparkVectorReader {
 
   /**
    * ColumnarBatch wraps multiple ColumnVectors as a row-wise table. It provides a row view of this
-   * batch so that Spark can access the data row by row. Instance of it is meant to be reused 
+   * batch so that Spark can access the data row by row. Instance of it is meant to be reused
    * during the entire data loading process.
    */
   Object getColumnarBatch();
