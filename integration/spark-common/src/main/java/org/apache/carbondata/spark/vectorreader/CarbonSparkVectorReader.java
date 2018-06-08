@@ -27,91 +27,91 @@ import org.apache.spark.sql.types.Decimal;
 public interface CarbonSparkVectorReader {
 
 
-    /**
-     * Returns the number of columns that make up this batch.
-     */
-    int numRows();
+  /**
+   * Returns the number of columns that make up this batch.
+   */
+  int numRows();
 
 
-    /**
-     * Resets this column for writing. The currently stored values are no longer accessible.
-     */
-    void reset();
+  /**
+   * Resets this column for writing. The currently stored values are no longer accessible.
+   */
+  void reset();
 
-    /**
-     * Returns the row in this batch at `rowId`. Returned row is reused across calls.
-     */
-    InternalRow getRow(int rowId);
-
-
-    /**
-     * ColumnarBatch wraps multiple ColumnVectors as a row-wise table. It provides a row view of this
-     * batch so that Spark can access the data row by row. Instance of it is meant to be reused during
-     * the entire data loading process.
-     */
-    Object getColumnarBatch();
-
-    /**
-     * Called to close all the columns in this batch. It is not valid to access the data after
-     * calling this. This must be called at the end to clean up memory allocations.
-     */
-    void close();
-
-    /**
-     * Sets the number of rows in this batch.
-     */
-    void setNumRows(int numRows);
+  /**
+   * Returns the row in this batch at `rowId`. Returned row is reused across calls.
+   */
+  InternalRow getRow(int rowId);
 
 
-    /**
-     * API will add a specific row to columnar batch using spark api
-     *
-     * @param rowId
-     * @param value
-     */
-    void putRowToColumnBatch(int rowId, Object value, int offset);
+  /**
+   * ColumnarBatch wraps multiple ColumnVectors as a row-wise table. It provides a row view of this
+   * batch so that Spark can access the data row by row. Instance of it is meant to be reused 
+   * during the entire data loading process.
+   */
+  Object getColumnarBatch();
 
-    /**
-     * API will add a specific row to columnar batch using spark api
-     *
-     * @param rowId
-     * @param value
-     */
-    void putBoolean(int rowId, boolean value, int ordinal);
+  /**
+   * Called to close all the columns in this batch. It is not valid to access the data after
+   * calling this. This must be called at the end to clean up memory allocations.
+   */
+  void close();
 
-    void putByte(int rowId, byte value, int ordinal);
+  /**
+   * Sets the number of rows in this batch.
+   */
+  void setNumRows(int numRows);
 
-    void putShort(int rowId, short value, int ordinal);
 
-    void putInt(int rowId, int value, int ordinal);
+  /**
+   * API will add a specific row to columnar batch using spark api
+   *
+   * @param rowId
+   * @param value
+   */
+  void putRowToColumnBatch(int rowId, Object value, int offset);
 
-    void putFloat(int rowId, float value, int ordinal);
+  /**
+   * API will add a specific row to columnar batch using spark api
+   *
+   * @param rowId
+   * @param value
+   */
+  void putBoolean(int rowId, boolean value, int ordinal);
 
-    void putLong(int rowId, long value, int ordinal);
+  void putByte(int rowId, byte value, int ordinal);
 
-    void putDouble(int rowId, double value, int ordinal);
+  void putShort(int rowId, short value, int ordinal);
 
-    void putByteArray(int rowId, byte[] value, int ordinal);
+  void putInt(int rowId, int value, int ordinal);
 
-    void putInts(int rowId, int count, int value, int ordinal);
+  void putFloat(int rowId, float value, int ordinal);
 
-    void putShorts(int rowId, int count, short value, int ordinal);
+  void putLong(int rowId, long value, int ordinal);
 
-    void putLongs(int rowId, int count, long value, int ordinal);
+  void putDouble(int rowId, double value, int ordinal);
 
-    void putDecimal(int rowId, Decimal value, int precision, int ordinal);
+  void putByteArray(int rowId, byte[] value, int ordinal);
 
-    void putDoubles(int rowId, int count, double value, int ordinal);
+  void putInts(int rowId, int count, int value, int ordinal);
 
-    void putByteArray(int rowId, byte[] value, int offset, int length, int ordinal);
+  void putShorts(int rowId, int count, short value, int ordinal);
 
-    void putNull(int rowId, int ordinal);
+  void putLongs(int rowId, int count, long value, int ordinal);
 
-    void putNulls(int rowId, int count, int ordinal);
+  void putDecimal(int rowId, Decimal value, int precision, int ordinal);
 
-    boolean isNullAt(int rowId, int ordinal);
+  void putDoubles(int rowId, int count, double value, int ordinal);
 
-    DataType dataType(int ordinal);
+  void putByteArray(int rowId, byte[] value, int offset, int length, int ordinal);
+
+  void putNull(int rowId, int ordinal);
+
+  void putNulls(int rowId, int count, int ordinal);
+
+  boolean isNullAt(int rowId, int ordinal);
+
+  DataType dataType(int ordinal);
 
 
 }
