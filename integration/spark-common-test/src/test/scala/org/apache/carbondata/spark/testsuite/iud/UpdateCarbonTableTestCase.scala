@@ -487,7 +487,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS study_carbondata ")
   }
 
-  test("update table in carbondata with rand() ") {
+  /*test("update table in carbondata with rand() ") {
 
     sql("""CREATE TABLE iud.rand(imei string,age int,task bigint,num double,level decimal(10,3),name string)STORED BY 'org.apache.carbondata.format' """)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/update01.csv' INTO TABLE iud.rand OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='imei,age,task,num,level,name')""").collect
@@ -515,7 +515,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("select  name , rand()  from  iud.rand").show(100)
 
     sql("DROP TABLE IF EXISTS iud.rand")
-  }
+  }*/
 
   test("test if update is unsupported for pre-aggregate tables") {
     sql("drop table if exists preaggMain")

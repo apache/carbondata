@@ -23,41 +23,44 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
-import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.types.Decimal;
 
 class ColumnarVectorWrapper implements CarbonColumnVector {
 
-  private ColumnVector columnVector;
+  private CarbonSparkVectorReader writableColumnVector;
 
   private boolean[] filteredRows;
 
   private int counter;
 
+  private int ordinal;
+
   private boolean filteredRowsExist;
 
   private DataType blockDataType;
 
-  ColumnarVectorWrapper(ColumnVector columnVector, boolean[] filteredRows) {
-    this.columnVector = columnVector;
+  ColumnarVectorWrapper(CarbonSparkVectorReader writableColumnVector,
+                        boolean[] filteredRows, int ordinal) {
+    this.writableColumnVector = writableColumnVector;
     this.filteredRows = filteredRows;
+    this.ordinal = ordinal;
   }
 
   @Override public void putBoolean(int rowId, boolean value) {
     if (!filteredRows[rowId]) {
-      columnVector.putBoolean(counter++, value);
+      writableColumnVector.putBoolean(counter++, value, ordinal);
     }
   }
 
   @Override public void putFloat(int rowId, float value) {
     if (!filteredRows[rowId]) {
-      columnVector.putFloat(counter++, value);
+      writableColumnVector.putFloat(counter++, value,ordinal);
     }
   }
 
   @Override public void putShort(int rowId, short value) {
     if (!filteredRows[rowId]) {
-      columnVector.putShort(counter++, value);
+      writableColumnVector.putShort(counter++, value, ordinal);
     }
   }
 
@@ -65,18 +68,18 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putShort(counter++, value);
+          writableColumnVector.putShort(counter++, value, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putShorts(rowId, count, value);
+      writableColumnVector.putShorts(rowId, count, value, ordinal);
     }
   }
 
   @Override public void putInt(int rowId, int value) {
     if (!filteredRows[rowId]) {
-      columnVector.putInt(counter++, value);
+      writableColumnVector.putInt(counter++, value, ordinal);
     }
   }
 
@@ -84,18 +87,18 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putInt(counter++, value);
+          writableColumnVector.putInt(counter++, value, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putInts(rowId, count, value);
+      writableColumnVector.putInts(rowId, count, value, ordinal);
     }
   }
 
   @Override public void putLong(int rowId, long value) {
     if (!filteredRows[rowId]) {
-      columnVector.putLong(counter++, value);
+      writableColumnVector.putLong(counter++, value, ordinal);
     }
   }
 
@@ -103,19 +106,19 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putLong(counter++, value);
+          writableColumnVector.putLong(counter++, value, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putLongs(rowId, count, value);
+      writableColumnVector.putLongs(rowId, count, value, ordinal);
     }
   }
 
   @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
     if (!filteredRows[rowId]) {
       Decimal toDecimal = Decimal.apply(value);
-      columnVector.putDecimal(counter++, toDecimal, precision);
+      writableColumnVector.putDecimal(counter++, toDecimal, precision, ordinal);
     }
   }
 
@@ -123,7 +126,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     Decimal decimal = Decimal.apply(value);
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        columnVector.putDecimal(counter++, decimal, precision);
+        writableColumnVector.putDecimal(counter++, decimal, precision, ordinal);
       }
       rowId++;
     }
@@ -131,7 +134,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putDouble(int rowId, double value) {
     if (!filteredRows[rowId]) {
-      columnVector.putDouble(counter++, value);
+      writableColumnVector.putDouble(counter++, value, ordinal);
     }
   }
 
@@ -139,25 +142,25 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putDouble(counter++, value);
+          writableColumnVector.putDouble(counter++, value, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putDoubles(rowId, count, value);
+      writableColumnVector.putDoubles(rowId, count, value, ordinal);
     }
   }
 
   @Override public void putBytes(int rowId, byte[] value) {
     if (!filteredRows[rowId]) {
-      columnVector.putByteArray(counter++, value);
+      writableColumnVector.putByteArray(counter++, value, ordinal);
     }
   }
 
   @Override public void putBytes(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        columnVector.putByteArray(counter++, value);
+        writableColumnVector.putByteArray(counter++, value, ordinal);
       }
       rowId++;
     }
@@ -165,13 +168,13 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
     if (!filteredRows[rowId]) {
-      columnVector.putByteArray(counter++, value, offset, length);
+      writableColumnVector.putByteArray(counter++, value, offset, length, ordinal);
     }
   }
 
   @Override public void putNull(int rowId) {
     if (!filteredRows[rowId]) {
-      columnVector.putNull(counter++);
+      writableColumnVector.putNull(counter++, ordinal);
     }
   }
 
@@ -179,17 +182,17 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putNull(counter++);
+          writableColumnVector.putNull(counter++, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putNulls(rowId, count);
+      writableColumnVector.putNulls(rowId, count,ordinal);
     }
   }
 
   @Override public boolean isNull(int rowId) {
-    return columnVector.isNullAt(rowId);
+    return writableColumnVector.isNullAt(rowId,ordinal);
   }
 
   @Override public void putObject(int rowId, Object obj) {
@@ -207,7 +210,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public DataType getType() {
-    return CarbonScalaUtil.convertSparkToCarbonDataType(columnVector.dataType());
+    return CarbonScalaUtil.convertSparkToCarbonDataType(writableColumnVector.dataType(ordinal));
   }
 
   @Override

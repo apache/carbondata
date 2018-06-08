@@ -204,5 +204,35 @@
         <maven.test.skip>true</maven.test.skip>
       </properties>
     </profile>
+    <profile>
+      <id>spark-2.3</id>
+      <properties>
+        <spark.version>2.3.0</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
+      </properties>
+      <dependencies>
+        <!-- in spark 2.3 spark catalyst added dependency on spark-core-->
+        <dependency>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-core_${scala.binary.version}</artifactId>
+          <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-core</artifactId>
+          <version>${project.version}</version>
+          <exclusions>
+            <!-- need to Exclude net.jpountz jar from this project.
+             Spark has changed this jar to org.lz4:lz4-java
+             net.jpountz and org.lz4 has same class Name -->
+            <exclusion>
+              <groupId>net.jpountz.lz4</groupId>
+              <artifactId>lz4</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+      </dependencies>
+    </profile>
   </profiles>
 </project>

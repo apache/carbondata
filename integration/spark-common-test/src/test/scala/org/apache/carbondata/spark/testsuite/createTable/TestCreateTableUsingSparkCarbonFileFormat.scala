@@ -114,7 +114,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")
+      || sqlContext.sparkContext.version.startsWith("2.3")) {
       //data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
@@ -162,7 +163,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")
+      || sqlContext.sparkContext.version.startsWith("2.3")) {
       //data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
@@ -191,7 +193,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")
+      || sqlContext.sparkContext.version.startsWith("2.3")) {
       //data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
@@ -224,7 +227,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       if (sqlContext.sparkContext.version.startsWith("2.1")) {
         //data source file format
         sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-      } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      } else if (sqlContext.sparkContext.version.startsWith("2.2")
+        || sqlContext.sparkContext.version.startsWith("2.3")) {
         //data source file format
         sql(
           s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
@@ -254,7 +258,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       if (sqlContext.sparkContext.version.startsWith("2.1")) {
         //data source file format
         sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-      } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      } else if (sqlContext.sparkContext.version.startsWith("2.2")
+        || sqlContext.sparkContext.version.startsWith("2.3")) {
         //data source file format
         sql(
           s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
@@ -284,7 +289,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")
+      || sqlContext.sparkContext.version.startsWith("2.3")) {
       //data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
@@ -333,7 +339,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     if (sqlContext.sparkContext.version.startsWith("2.1")) {
       //data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")
+      || sqlContext.sparkContext.version.startsWith("2.3")) {
       //data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION

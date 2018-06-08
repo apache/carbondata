@@ -123,18 +123,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-lucene</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-bloom</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-store-sdk</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
@@ -431,6 +419,118 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>spark-2.3</id>
+      <properties>
+        <spark.version>2.3.0</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
+      </properties>
+      <dependencies>
+        <dependency>
+          <!-- spark catalyst added runtime dependency on spark-core,so
+          while executing the testcases spark-core should be present else it
+          will fail to execute -->
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-core_${scala.binary.version}</artifactId>
+          <version>${spark.version}</version>
+          <scope>test</scope>
+          <exclusions>
+            <!-- need to Exclude Avro jar from this project,spark core is using
+            the version 1.7.4 which is not compatible with Carbon -->
+            <exclusion>
+              <groupId>org.apache.avro</groupId>
+              <artifactId>avro</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-lucene</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+          <exclusions>
+            <!-- need to Exclude net.jpountz jar from this project.
+             Spark has changed this jar to org.lz4:lz4-java
+             net.jpountz and org.lz4 has same class Name -->
+            <exclusion>
+              <groupId>net.jpountz.lz4</groupId>
+              <artifactId>lz4</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-bloom</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+          <exclusions>
+           <exclusion>
+              <groupId>net.jpountz.lz4</groupId>
+              <artifactId>lz4</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-sql_${scala.binary.version}</artifactId>
+          <version>${spark.version}</version>
+          <exclusions>
+            <!-- from transitive dependency com.univocity:univocity-parsers:2.5.9
+            is added from the org.apache.spark:spark-sql_2.11,so need to remove
+            this version.Carbon uses 2.2.1 version  -->
+            <exclusion>
+              <groupId>com.univocity</groupId>
+              <artifactId>univocity-parsers</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>spark-2.2</id>
+      <properties>
+        <spark.version>2.2.1</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
+      </properties>
+      <dependencies>
+        <dependency>
+            <groupId>org.apache.carbondata</groupId>
+            <artifactId>carbondata-lucene</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-bloom</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>spark-2.1</id>
+      <properties>
+        <spark.version>2.1.0</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-lucene</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-bloom</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
 </project>
