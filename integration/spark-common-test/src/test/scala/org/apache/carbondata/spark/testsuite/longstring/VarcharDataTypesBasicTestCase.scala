@@ -66,12 +66,14 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   }
 
   private def prepareTable(): Unit = {
+    // there are two long string columns: `description` is implicitly specified through `varchar` data type,
+    // while `note` is explicitly specified through property `long_string_columns`.
     sql(
       s"""
          | CREATE TABLE if not exists $longStringTable(
-         | id INT, name STRING, description STRING, address STRING, note STRING
+         | id INT, name STRING, description VARCHAR(33), address STRING, note STRING
          | ) STORED BY 'carbondata'
-         | TBLPROPERTIES('LONG_STRING_COLUMNS'='description, note', 'SORT_COLUMNS'='name')
+         | TBLPROPERTIES('SORT_COLUMNS'='name', 'long_string_columns'='note')
          |""".stripMargin)
     sql(
       s"""

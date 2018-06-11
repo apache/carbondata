@@ -27,7 +27,6 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.util.CarbonException
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
@@ -225,12 +224,17 @@ class AlterTableColumnSchemaGenerator(
     }
   }
 
-  private def isVarcharColumn(columnName: String): Boolean = {
-    val varcharColumns = alterTableModel.tableProperties.get("long_string_columns")
-    if (varcharColumns.isDefined) {
-      varcharColumns.get.contains(columnName)
+  private def isVarcharColumn(column: Field): Boolean = {
+    if (column.dataType.getOrElse("").equalsIgnoreCase("varchar")) {
+      true
     } else {
-      false
+      val varcharColumns = alterTableModel.tableProperties.get(
+        CarbonCommonConstants.LONG_STRING_COLUMNS)
+      if (varcharColumns.isDefined) {
+        varcharColumns.get.contains(column.name.getOrElse(column.column))
+      } else {
+        false
+      }
     }
   }
 
@@ -254,7 +258,7 @@ class AlterTableColumnSchemaGenerator(
         alterTableModel.highCardinalityDims,
         alterTableModel.databaseName.getOrElse(dbName),
         isSortColumn(field.name.getOrElse(field.column)),
-        isVarcharColumn(field.name.getOrElse(field.column)))
+        isVarcharColumn(field))
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
@@ -433,8 +437,12 @@ class TableNewProcessor(cm: TableModel) {
   }
 
   // varchar column is a string column that in long_string_columns
-  private def isVarcharColumn(colName : String): Boolean = {
-    cm.varcharCols.get.contains(colName)
+  private def isVarcharColumn(column : Field): Boolean = {
+    if (column.dataType.getOrElse("").equalsIgnoreCase("varchar")) {
+      true
+    } else {
+      cm.varcharCols.get.contains(column.name.getOrElse(column.column))
+    }
   }
 
   def getColumnSchema(
@@ -472,7 +480,7 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setScale(field.scale)
     columnSchema.setSchemaOrdinal(field.schemaOrdinal)
     columnSchema.setSortColumn(false)
-    if (isVarcharColumn(colName)) {
+    if (isVarcharColumn(field)) {
       columnSchema.setDataType(DataTypes.VARCHAR)
     }
     if(isParentColumnRelation) {
@@ -575,11 +583,9 @@ class TableNewProcessor(cm: TableModel) {
       }
     }
     // dimensions that are not varchar
-    cm.dimCols.filter(field => !cm.varcharCols.get.contains(field.column))
-      .foreach(addDimensionCol(_))
+    cm.dimCols.filterNot(isVarcharColumn).foreach(addDimensionCol)
     // dimensions that are varchar
-    cm.dimCols.filter(field => cm.varcharCols.get.contains(field.column))
-      .foreach(addDimensionCol(_))
+    cm.dimCols.filter(isVarcharColumn).foreach(addDimensionCol)
 
     cm.msrCols.foreach { field =>
       // if aggregate function is defined in case of preaggregate and agg function is sum or avg
