@@ -1,20 +1,3 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.apache.carbondata.mv.rewrite.matching
 
 object TestTPCDS_1_4_Batch {
@@ -32,73 +15,67 @@ object TestTPCDS_1_4_Batch {
         |FROM item
         |WHERE i_item_sk IN (2, 3, 5, 7, 11, 13, 17, 19)
         """.stripMargin.trim,
-       """
-        |SELECT
-        |FROM 
-        |WHERE 
-        """.stripMargin.trim),
+       """ 
+       """.stripMargin.trim),
       // test case 2: test SELECT-SELECT-EXACT_MATCH with SELECT containing join (derive from q64)
-      ("case_2",
-       """
-        |SELECT cs1.product_name, cs1.store_name, cs1.store_zip, cs1.b_street_number,
-        |       cs1.b_streen_name, cs1.b_city, cs1.b_zip, cs1.c_street_number, cs1.c_street_name,
-        |       cs1.c_city, cs1.c_zip, cs1.syear, cs1.cnt, cs1.s1, cs1.s2, cs1.s3, cs2.s1,
-        |       cs2.s2, cs2.s3, cs2.syear, cs2.cnt
-        |FROM cross_sales cs1,cross_sales cs2
-        |WHERE cs1.item_sk=cs2.item_sk AND
-        |     cs1.syear = 1999 AND
-        |     cs2.syear = 1999 + 1 AND
-        |     cs2.cnt <= cs1.cnt AND
-        |     cs1.store_name = cs2.store_name AND
-        |     cs1.store_zip = cs2.store_zip
-        """.stripMargin.trim,
-       """
-        |SELECT cs1.product_name, cs1.store_name, cs1.store_zip, cs1.b_street_number,
-        |       cs1.b_streen_name, cs1.b_city, cs1.b_zip, cs1.c_street_number, cs1.c_street_name,
-        |       cs1.c_city, cs1.c_zip, cs1.syear, cs1.cnt, cs1.s1, cs1.s2, cs1.s3, cs2.s1,
-        |       cs2.s2, cs2.s3
-        |FROM cross_sales cs1,cross_sales cs2
-        |WHERE cs1.item_sk=cs2.item_sk AND
-        |     cs1.syear = 1999 AND
-        |     cs2.syear = 1999 + 1 AND
-        |     cs2.cnt <= cs1.cnt AND
-        |     cs1.store_name = cs2.store_name AND
-        |     cs1.store_zip = cs2.store_zip
-        |ORDER BY cs1.product_name, cs1.store_name, cs2.cnt
-        """.stripMargin.trim,
-       """
-        |SELECT
-        |FROM
-        |WHERE
-        """.stripMargin.trim),
+      // cross_sales not in Tpcds_1_4_Tables.scala
+//      ("case_2",
+//       """
+//        |SELECT cs1.product_name, cs1.store_name, cs1.store_zip, cs1.b_street_number,
+//        |       cs1.b_streen_name, cs1.b_city, cs1.b_zip, cs1.c_street_number, cs1.c_street_name,
+//        |       cs1.c_city, cs1.c_zip, cs1.syear, cs1.cnt, cs1.s1, cs1.s2, cs1.s3, cs2.s1,
+//        |       cs2.s2, cs2.s3, cs2.syear, cs2.cnt
+//        |FROM cross_sales cs1,cross_sales cs2
+//        |WHERE cs1.item_sk=cs2.item_sk AND
+//        |     cs1.syear = 1999 AND
+//        |     cs2.syear = 1999 + 1 AND
+//        |     cs2.cnt <= cs1.cnt AND
+//        |     cs1.store_name = cs2.store_name AND
+//        |     cs1.store_zip = cs2.store_zip
+//        """.stripMargin.trim,
+//       """
+//        |SELECT cs1.product_name, cs1.store_name, cs1.store_zip, cs1.b_street_number,
+//        |       cs1.b_streen_name, cs1.b_city, cs1.b_zip, cs1.c_street_number, cs1.c_street_name,
+//        |       cs1.c_city, cs1.c_zip, cs1.syear, cs1.cnt, cs1.s1, cs1.s2, cs1.s3, cs2.s1,
+//        |       cs2.s2, cs2.s3
+//        |FROM cross_sales cs1,cross_sales cs2
+//        |WHERE cs1.item_sk=cs2.item_sk AND
+//        |     cs1.syear = 1999 AND
+//        |     cs2.syear = 1999 + 1 AND
+//        |     cs2.cnt <= cs1.cnt AND
+//        |     cs1.store_name = cs2.store_name AND
+//        |     cs1.store_zip = cs2.store_zip
+//        |ORDER BY cs1.product_name, cs1.store_name, cs2.cnt
+//        """.stripMargin.trim,
+//       """
+//        |SELECT
+//        |FROM
+//        |WHERE
+//        """.stripMargin.trim),
       // test case 3: test simple SELECT with GROUPBY (from q99)
       ("case_3",
        """
         |SELECT count(ss_sold_date_sk) as not_null_total,
         |       max(ss_sold_date_sk) as max_ss_sold_date_sk,
         |       max(ss_sold_time_sk) as max_ss_sold_time_sk,
-        |       ss_item_sk,
-        |       ss_store_sk
+        |       ss_item_sk, ss_store_sk
         |FROM store_sales
         |GROUP BY ss_item_sk, ss_store_sk
         """.stripMargin.trim,
        """
         |SELECT count(ss_sold_date_sk) as not_null_total,
         |       max(ss_sold_date_sk) as max_ss_sold_date_sk,
-        |       ss_item_sk,
-        |       ss_store_sk
+        |       ss_item_sk, ss_store_sk  
         |FROM store_sales
         |GROUP BY ss_item_sk, ss_store_sk
         """.stripMargin.trim,
        """
-        |SELECT gen_subsumer_0.`not_null_total`,
-        |       gen_subsumer_0.`max_ss_sold_date_sk`,
-        |       gen_subsumer_0.`ss_item_sk`,
-        |       gen_subsumer_0.`ss_store_sk`
+        |SELECT gen_subsumer_0.`not_null_total` AS `not_null_total`, gen_subsumer_0.`max_ss_sold_date_sk` AS `max_ss_sold_date_sk`, gen_subsumer_0.`ss_item_sk`, gen_subsumer_0.`ss_store_sk` 
         |FROM
-        |  (SELECT count(`ss_sold_date_sk`) AS `not_null_total`, max(`ss_sold_date_sk`) AS `max_ss_sold_date_sk`, max(`ss_sold_time_sk`) AS `max_ss_sold_time_sk`, `ss_item_sk`, `ss_store_sk` 
-        |  FROM store_sales
-        |  GROUP BY `ss_item_sk`, `ss_store_sk`) gen_subsumer_0
+        |  (SELECT count(store_sales.`ss_sold_date_sk`) AS `not_null_total`, max(store_sales.`ss_sold_date_sk`) AS `max_ss_sold_date_sk`, max(store_sales.`ss_sold_time_sk`) AS `max_ss_sold_time_sk`, store_sales.`ss_item_sk`, store_sales.`ss_store_sk` 
+        |  FROM
+        |    store_sales
+        |  GROUP BY store_sales.`ss_item_sk`, store_sales.`ss_store_sk`) gen_subsumer_0
         """.stripMargin.trim),
       // test case 4 test SELECT containing join with GROUPBY (from q65)
       ("case_4",
@@ -115,11 +92,11 @@ object TestTPCDS_1_4_Batch {
         |GROUP BY ss_store_sk, ss_item_sk
         """.stripMargin.trim,
        """
-        |SELECT `ss_store_sk`, `ss_item_sk`, sum(`ss_sales_price`) AS `revenue` 
+        |SELECT store_sales.`ss_store_sk`, store_sales.`ss_item_sk`, sum(store_sales.`ss_sales_price`) AS `revenue` 
         |FROM
         |  store_sales
-        |  INNER JOIN date_dim ON (`d_month_seq` >= 1176) AND (`d_month_seq` <= 1187) AND (`ss_sold_date_sk` = `d_date_sk`)
-        |GROUP BY `ss_store_sk`, `ss_item_sk`
+        |  INNER JOIN date_dim ON (date_dim.`d_month_seq` >= 1176) AND (date_dim.`d_month_seq` <= 1187) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |GROUP BY store_sales.`ss_store_sk`, store_sales.`ss_item_sk`
         """.stripMargin.trim),
       // the following 6 cases involve an MV of store_sales, item, date_dim
       // q3
@@ -152,12 +129,12 @@ object TestTPCDS_1_4_Batch {
        """
         |SELECT gen_subsumer_0.`d_year`, gen_subsumer_0.`i_brand_id` AS `brand_id`, gen_subsumer_0.`i_brand` AS `brand`, sum(gen_subsumer_0.`sum_agg`) AS `sum_agg` 
         |FROM
-        |  (SELECT `d_date`, `d_moy`, `d_year`, `i_brand`, `i_brand_id`, `i_item_id`, `i_item_desc`, `i_manufact_id`, substring(`i_item_desc`, 1, 30) AS `itemdesc`, `i_category`, `i_class`, `i_current_price`, `i_item_sk`, `ss_store_sk`, sum(`ss_ext_sales_price`) AS `sum_agg`, sum((CAST(CAST(`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(`ss_list_price` AS DECIMAL(12,2)))) AS `sales`, count(1) AS `number_sales` 
+        |  (SELECT dt.`d_date`, dt.`d_moy`, dt.`d_year`, item.`i_brand`, item.`i_brand_id`, item.`i_item_id`, item.`i_item_desc`, item.`i_manufact_id`, substring(item.`i_item_desc`, 1, 30) AS `itemdesc`, item.`i_category`, item.`i_class`, item.`i_current_price`, item.`i_item_sk`, store_sales.`ss_store_sk`, sum(store_sales.`ss_ext_sales_price`) AS `sum_agg`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_list_price` AS DECIMAL(12,2)))) AS `sales`, count(1) AS `number_sales` 
         |  FROM
         |    date_dim dt 
-        |    INNER JOIN store_sales ON (`d_date_sk` = `ss_sold_date_sk`)
-        |    INNER JOIN item   ON (`ss_item_sk` = `i_item_sk`)
-        |  GROUP BY `d_date`, `d_moy`, `d_year`, `i_brand`, `i_brand_id`, `i_item_id`, `i_item_desc`, `i_manufact_id`, substring(`i_item_desc`, 1, 30), `i_category`, `i_category_id`, `i_class`, `i_class_id`, `i_current_price`, `i_manager_id`, `i_item_sk`, `ss_store_sk`) gen_subsumer_0 
+        |    INNER JOIN store_sales ON (dt.`d_date_sk` = store_sales.`ss_sold_date_sk`)
+        |    INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |  GROUP BY dt.`d_date`, dt.`d_moy`, dt.`d_year`, item.`i_brand`, item.`i_brand_id`, item.`i_item_id`, item.`i_item_desc`, item.`i_manufact_id`, substring(item.`i_item_desc`, 1, 30), item.`i_category`, item.`i_category_id`, item.`i_class`, item.`i_class_id`, item.`i_current_price`, item.`i_manager_id`, item.`i_item_sk`, store_sales.`ss_store_sk`) gen_subsumer_0 
         |WHERE
         |  (gen_subsumer_0.`d_moy` = 11) AND (gen_subsumer_0.`i_manufact_id` = 128)
         |GROUP BY gen_subsumer_0.`d_year`, gen_subsumer_0.`i_brand`, gen_subsumer_0.`i_brand_id`
@@ -234,7 +211,7 @@ object TestTPCDS_1_4_Batch {
         |      FROM
         |        date_dim dt 
         |        INNER JOIN store_sales ON (dt.`d_date_sk` = store_sales.`ss_sold_date_sk`)
-        |        INNER JOIN item   ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |        INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
         |      GROUP BY dt.`d_date`, dt.`d_moy`, dt.`d_year`, item.`i_brand`, item.`i_brand_id`, item.`i_item_id`, item.`i_item_desc`, item.`i_manufact_id`, substring(item.`i_item_desc`, 1, 30), item.`i_category`, item.`i_category_id`, item.`i_class`, item.`i_class_id`, item.`i_current_price`, item.`i_manager_id`, item.`i_item_sk`, store_sales.`ss_store_sk`) gen_subsumer_0 
         |    WHERE
         |      (gen_subsumer_0.`d_year` IN (2000, 2001, 2002, 2003))
@@ -242,8 +219,8 @@ object TestTPCDS_1_4_Batch {
         |    LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#271 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#274 as decimal(12,2)))), DecimalType(18,2)))` 
         |    FROM
         |      store_sales
-        |      INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
-        |    GROUP BY customer.`c_customer_sk`) gen_subquery_1  ON (CAST(gen_subquery_1.`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#271 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#274 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_scalar_subquery_0_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_scalar_subquery_0_0 ) AS DECIMAL(32,6)))) AND (catalog_sales.`cs_bill_customer_sk` = gen_subquery_1.`c_customer_sk`)
+        |      INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
+        |    GROUP BY customer.`c_customer_sk`) gen_subquery_1  ON (CAST(gen_subquery_1.`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#271 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#274 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_0_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_expression_0_0 ) AS DECIMAL(32,6)))) AND (catalog_sales.`cs_bill_customer_sk` = gen_subquery_1.`c_customer_sk`)
         |    INNER JOIN date_dim ON (date_dim.`d_year` = 2000) AND (date_dim.`d_moy` = 2) AND (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
         |  UNION ALL
         |  SELECT (CAST(CAST(web_sales.`ws_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(web_sales.`ws_list_price` AS DECIMAL(12,2))) AS `sales` 
@@ -255,7 +232,7 @@ object TestTPCDS_1_4_Batch {
         |      FROM
         |        date_dim dt 
         |        INNER JOIN store_sales ON (dt.`d_date_sk` = store_sales.`ss_sold_date_sk`)
-        |        INNER JOIN item   ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |        INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
         |      GROUP BY dt.`d_date`, dt.`d_moy`, dt.`d_year`, item.`i_brand`, item.`i_brand_id`, item.`i_item_id`, item.`i_item_desc`, item.`i_manufact_id`, substring(item.`i_item_desc`, 1, 30), item.`i_category`, item.`i_category_id`, item.`i_class`, item.`i_class_id`, item.`i_current_price`, item.`i_manager_id`, item.`i_item_sk`, store_sales.`ss_store_sk`) gen_subsumer_1 
         |    WHERE
         |      (gen_subsumer_1.`d_year` IN (2000, 2001, 2002, 2003))
@@ -263,8 +240,8 @@ object TestTPCDS_1_4_Batch {
         |    LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#271 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#274 as decimal(12,2)))), DecimalType(18,2)))` 
         |    FROM
         |      store_sales
-        |      INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
-        |    GROUP BY customer.`c_customer_sk`) gen_subquery_3  ON (CAST(gen_subquery_3.`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#271 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#274 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_scalar_subquery_1_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_scalar_subquery_1_0 ) AS DECIMAL(32,6)))) AND (web_sales.`ws_bill_customer_sk` = gen_subquery_3.`c_customer_sk`)
+        |      INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
+        |    GROUP BY customer.`c_customer_sk`) gen_subquery_3  ON (CAST(gen_subquery_3.`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#271 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#274 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_1_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_expression_1_0 ) AS DECIMAL(32,6)))) AND (web_sales.`ws_bill_customer_sk` = gen_subquery_3.`c_customer_sk`)
         |    INNER JOIN date_dim ON (date_dim.`d_year` = 2000) AND (date_dim.`d_moy` = 2) AND (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)) gen_subquery_4 
         |LIMIT 100
         """.stripMargin.trim),
@@ -365,10 +342,7 @@ object TestTPCDS_1_4_Batch {
         | limit 100
         """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
+       """.stripMargin.trim),
       // q55
       ("case_8",
        """
@@ -401,12 +375,12 @@ object TestTPCDS_1_4_Batch {
        """
         |SELECT gen_subsumer_0.`i_brand_id` AS `brand_id`, gen_subsumer_0.`i_brand` AS `brand`, sum(gen_subsumer_0.`sum_agg`) AS `ext_price` 
         |FROM
-        |  (SELECT `d_date`, `d_moy`, `d_year`, `i_brand`, `i_brand_id`, `i_item_id`, `i_item_desc`, substring(`i_item_desc`, 1, 30) AS `itemdesc`, `i_category`, `i_class`, `i_manager_id`, `i_current_price`, `i_item_sk`, `ss_store_sk`, sum(`ss_ext_sales_price`) AS `sum_agg`, sum((CAST(CAST(`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(`ss_list_price` AS DECIMAL(12,2)))) AS `sales`, count(1) AS `number_sales` 
+        |  (SELECT dt.`d_date`, dt.`d_moy`, dt.`d_year`, item.`i_brand`, item.`i_brand_id`, item.`i_item_id`, item.`i_item_desc`, substring(item.`i_item_desc`, 1, 30) AS `itemdesc`, item.`i_category`, item.`i_class`, item.`i_manager_id`, item.`i_current_price`, item.`i_item_sk`, store_sales.`ss_store_sk`, sum(store_sales.`ss_ext_sales_price`) AS `sum_agg`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_list_price` AS DECIMAL(12,2)))) AS `sales`, count(1) AS `number_sales` 
         |  FROM
         |    date_dim dt 
-        |    INNER JOIN store_sales ON (`d_date_sk` = `ss_sold_date_sk`)
-        |    INNER JOIN item   ON (`ss_item_sk` = `i_item_sk`)
-        |  GROUP BY `d_date`, `d_moy`, `d_year`, `i_brand`, `i_brand_id`, `i_item_id`, `i_item_desc`, substring(`i_item_desc`, 1, 30), `i_category`, `i_category_id`, `i_class`, `i_class_id`, `i_current_price`, `i_manager_id`, `i_item_sk`, `ss_store_sk`) gen_subsumer_0 
+        |    INNER JOIN store_sales ON (dt.`d_date_sk` = store_sales.`ss_sold_date_sk`)
+        |    INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |  GROUP BY dt.`d_date`, dt.`d_moy`, dt.`d_year`, item.`i_brand`, item.`i_brand_id`, item.`i_item_id`, item.`i_item_desc`, substring(item.`i_item_desc`, 1, 30), item.`i_category`, item.`i_category_id`, item.`i_class`, item.`i_class_id`, item.`i_current_price`, item.`i_manager_id`, item.`i_item_sk`, store_sales.`ss_store_sk`) gen_subsumer_0 
         |WHERE
         |  (gen_subsumer_0.`d_moy` = 11) AND (gen_subsumer_0.`d_year` = 1999) AND (gen_subsumer_0.`i_manager_id` = 28)
         |GROUP BY gen_subsumer_0.`i_brand`, gen_subsumer_0.`i_brand_id`
@@ -448,14 +422,28 @@ object TestTPCDS_1_4_Batch {
         |   i_category, i_class, i_item_id, i_item_desc, revenueratio
        """.stripMargin.trim,
        """
-        |
-        |
-        |
+        |SELECT gen_subquery_1.`i_item_desc`, gen_subquery_1.`i_category`, gen_subquery_1.`i_class`, gen_subquery_1.`i_current_price`, gen_subquery_1.`itemrevenue`, ((gen_subquery_1.`_w0` * 100.00BD) / CAST(gen_subquery_1.`_we0` AS DECIMAL(28,2))) AS `revenueratio` 
+        |FROM
+        |  (SELECT gen_subquery_0.`i_item_desc`, gen_subquery_0.`i_category`, gen_subquery_0.`i_class`, gen_subquery_0.`i_current_price`, gen_subquery_0.`itemrevenue`, gen_subquery_0.`_w0`, gen_subquery_0.`_w1`, gen_subquery_0.`i_item_id`, sum(gen_subquery_0.`_w1`) OVER (PARTITION BY gen_subquery_0.`i_class` ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS `_we0` 
+        |  FROM
+        |    (SELECT gen_subsumer_0.`i_item_desc`, gen_subsumer_0.`i_category`, gen_subsumer_0.`i_class`, gen_subsumer_0.`i_current_price`, sum(gen_subsumer_0.`sum_agg`) AS `itemrevenue`, sum(gen_subsumer_0.`sum_agg`) AS `_w0`, sum(gen_subsumer_0.`sum_agg`) AS `_w1`, gen_subsumer_0.`i_item_id` 
+        |    FROM
+        |      (SELECT dt.`d_date`, dt.`d_moy`, dt.`d_year`, item.`i_brand`, item.`i_brand_id`, item.`i_item_id`, item.`i_item_desc`, substring(item.`i_item_desc`, 1, 30) AS `itemdesc`, item.`i_category`, item.`i_class`, item.`i_manager_id`, item.`i_current_price`, item.`i_item_sk`, store_sales.`ss_store_sk`, sum(store_sales.`ss_ext_sales_price`) AS `sum_agg`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_list_price` AS DECIMAL(12,2)))) AS `sales`, count(1) AS `number_sales` 
+        |      FROM
+        |        date_dim dt 
+        |        INNER JOIN store_sales ON (dt.`d_date_sk` = store_sales.`ss_sold_date_sk`)
+        |        INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |      GROUP BY dt.`d_date`, dt.`d_moy`, dt.`d_year`, item.`i_brand`, item.`i_brand_id`, item.`i_item_id`, item.`i_item_desc`, substring(item.`i_item_desc`, 1, 30), item.`i_category`, item.`i_category_id`, item.`i_class`, item.`i_class_id`, item.`i_current_price`, item.`i_manager_id`, item.`i_item_sk`, store_sales.`ss_store_sk`) gen_subsumer_0 
+        |    WHERE
+        |      (gen_subsumer_0.`i_category` IN ('Sports', 'Books', 'Home')) AND (gen_subsumer_0.`d_date` >= DATE '1999-02-22') AND (gen_subsumer_0.`d_date` <= DATE '1999-03-24')
+        |    GROUP BY gen_subsumer_0.`i_item_id`, gen_subsumer_0.`i_item_desc`, gen_subsumer_0.`i_category`, gen_subsumer_0.`i_class`, gen_subsumer_0.`i_current_price`) gen_subquery_0 ) gen_subquery_1 
+        |ORDER BY gen_subquery_1.`i_category` ASC NULLS FIRST, gen_subquery_1.`i_class` ASC NULLS FIRST, gen_subquery_1.`i_item_id` ASC NULLS FIRST, gen_subquery_1.`i_item_desc` ASC NULLS FIRST, `revenueratio` ASC NULLS FIRST
         """.stripMargin.trim),
-      // q76
+      // q76 
+      // this case requires a rule of PushAggregateThroughUnion for rewrite to work, which is not implemented for now 
       ("case_10",
        """
-        |SELECT dt.d_date, dt.d_moy, dt.d_year, item.i_brand, item.i_brand_id, item.i_item_id, item.i_item_desc,
+        |SELECT dt.d_date, dt.d_moy, dt.d_year, dt.d_qoy, item.i_brand, item.i_brand_id, item.i_item_id, item.i_item_desc,
         |       substr(item.i_item_desc, 1, 30) itemdesc, item.i_category, item.i_class,
         |       item.i_manager_id, item.i_current_price, item.i_item_sk, store_sales.ss_store_sk,
         |       SUM(store_sales.ss_ext_sales_price) sum_agg,
@@ -463,7 +451,7 @@ object TestTPCDS_1_4_Batch {
         |FROM date_dim dt, store_sales, item
         |WHERE dt.d_date_sk = store_sales.ss_sold_date_sk
         |      AND store_sales.ss_item_sk = item.i_item_sk
-        |GROUP BY dt.d_date, dt.d_moy, dt.d_year, item.i_brand, item.i_brand_id, item.i_item_id, item.i_item_desc,
+        |GROUP BY dt.d_date, dt.d_moy, dt.d_qoy, dt.d_year, item.i_brand, item.i_brand_id, item.i_item_id, item.i_item_desc,
         |         substr(item.i_item_desc, 1, 30), item.i_category, item.i_category_id,
         |         item.i_class, item.i_class_id, item.i_current_price, item.i_manager_id,
         |         item.i_item_sk, store_sales.ss_store_sk
@@ -501,15 +489,12 @@ object TestTPCDS_1_4_Batch {
         | limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
+       """.stripMargin.trim),
       // the following four cases involve a MV of catalog_sales, item, date_dim
       // q20
       ("case_11",
        """
-        |SELECT cs_ship_addr_sk , d_date, d_year, d_qoy, d_moy, i_category,i_item_sk, i_item_id,
+        |SELECT cs_ship_addr_sk , d_date, d_year, d_qoy, d_moy, i_category, cs_ship_addr_sk,i_item_sk, i_item_id,
         |       i_item_desc, i_class, i_current_price, i_brand_id, i_class_id, i_category_id, i_manufact_id,
         |       SUM(cs_ext_sales_price) sales_amt, 
         |       SUM(cs_quantity*cs_list_price) sales,
@@ -546,19 +531,19 @@ object TestTPCDS_1_4_Batch {
         |  FROM
         |    (SELECT gen_subsumer_0.`i_item_desc`, gen_subsumer_0.`i_category`, gen_subsumer_0.`i_class`, gen_subsumer_0.`i_current_price`, sum(gen_subsumer_0.`sales_amt`) AS `itemrevenue`, sum(gen_subsumer_0.`sales_amt`) AS `_w0`, sum(gen_subsumer_0.`sales_amt`) AS `_w1`, gen_subsumer_0.`i_item_id` 
         |    FROM
-        |      (SELECT `cs_ship_addr_sk`, `d_date`, `d_year`, `d_qoy`, `d_moy`, `i_category`, `cs_ship_addr_sk`, `i_item_sk`, `i_item_id`, `i_item_desc`, `i_class`, `i_current_price`, `i_brand_id`, `i_class_id`, `i_category_id`, `i_manufact_id`, sum(`cs_ext_sales_price`) AS `sales_amt`, sum((CAST(CAST(`cs_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(`cs_list_price` AS DECIMAL(12,2)))) AS `sales`, sum(`cs_ext_discount_amt`) AS `excess discount amount`, count(1) AS `number_sales` 
+        |      (SELECT catalog_sales.`cs_ship_addr_sk`, date_dim.`d_date`, date_dim.`d_year`, date_dim.`d_qoy`, date_dim.`d_moy`, item.`i_category`, catalog_sales.`cs_ship_addr_sk`, item.`i_item_sk`, item.`i_item_id`, item.`i_item_desc`, item.`i_class`, item.`i_current_price`, item.`i_brand_id`, item.`i_class_id`, item.`i_category_id`, item.`i_manufact_id`, sum(catalog_sales.`cs_ext_sales_price`) AS `sales_amt`, sum((CAST(CAST(catalog_sales.`cs_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(catalog_sales.`cs_list_price` AS DECIMAL(12,2)))) AS `sales`, sum(catalog_sales.`cs_ext_discount_amt`) AS `excess discount amount`, count(1) AS `number_sales` 
         |      FROM
         |        catalog_sales
-        |        INNER JOIN item   ON (`cs_item_sk` = `i_item_sk`)
-        |        INNER JOIN date_dim ON (`cs_sold_date_sk` = `d_date_sk`)
-        |      GROUP BY `i_brand_id`, `i_class_id`, `i_category_id`, `i_item_id`, `i_item_desc`, `i_category`, `i_class`, `i_current_price`, `i_manufact_id`, `d_date`, `d_moy`, `d_qoy`, `d_year`, `cs_ship_addr_sk`, `i_item_sk`) gen_subsumer_0 
+        |        INNER JOIN item ON (catalog_sales.`cs_item_sk` = item.`i_item_sk`)
+        |        INNER JOIN date_dim ON (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
+        |      GROUP BY item.`i_brand_id`, item.`i_class_id`, item.`i_category_id`, item.`i_item_id`, item.`i_item_desc`, item.`i_category`, item.`i_class`, item.`i_current_price`, item.`i_manufact_id`, date_dim.`d_date`, date_dim.`d_moy`, date_dim.`d_qoy`, date_dim.`d_year`, catalog_sales.`cs_ship_addr_sk`, item.`i_item_sk`) gen_subsumer_0 
         |    WHERE
         |      (gen_subsumer_0.`i_category` IN ('Sports', 'Books', 'Home')) AND (gen_subsumer_0.`d_date` >= DATE '1999-02-22') AND (gen_subsumer_0.`d_date` <= DATE '1999-03-24')
         |    GROUP BY gen_subsumer_0.`i_item_id`, gen_subsumer_0.`i_item_desc`, gen_subsumer_0.`i_category`, gen_subsumer_0.`i_class`, gen_subsumer_0.`i_current_price`) gen_subquery_0 ) gen_subquery_1 
         |ORDER BY gen_subquery_1.`i_category` ASC NULLS FIRST, gen_subquery_1.`i_class` ASC NULLS FIRST, gen_subquery_1.`i_item_id` ASC NULLS FIRST, gen_subquery_1.`i_item_desc` ASC NULLS FIRST, `revenueratio` ASC NULLS FIRST
         |LIMIT 100
        """.stripMargin.trim),
-      // q32
+      // q32 - no rewrite
       ("case_12",
        """
         |SELECT cs_ship_addr_sk , d_date, d_year, d_qoy, d_moy, i_category, cs_ship_addr_sk,i_item_sk, i_item_id,
@@ -591,18 +576,15 @@ object TestTPCDS_1_4_Batch {
         |limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
-      // q58 debug
+       """.stripMargin.trim),
+      // q58 debug - no rewrite
       ("case_13",
        """
         |SELECT cs_ship_addr_sk , d_date, d_year, d_qoy, d_moy, i_category, cs_ext_sales_price, cs_ship_addr_sk, i_item_sk, i_item_id,
         |       i_item_desc, i_class, i_current_price, i_brand_id, i_class_id, i_category_id, i_manufact_id,
         |       SUM(cs_ext_sales_price) sales_amt, 
         |       SUM(cs_ext_sales_price)*100/sum(sum(cs_ext_sales_price)) over
-        |          (partition by i_class) as revenueratio
+        |          (partition by i_class) as revenueratio,
         |       SUM(cs_quantity*cs_list_price) sales,
         |       SUM(cs_ext_discount_amt) as `excess discount amount`,
         |       count(*) number_sales
@@ -610,7 +592,7 @@ object TestTPCDS_1_4_Batch {
         |WHERE cs_item_sk = i_item_sk
         |  AND cs_sold_date_sk = d_date_sk      
         |GROUP BY i_brand_id, i_class_id, i_category_id, i_item_id, i_item_desc, i_category, i_class,
-        |         i_current_price, i_manufact_id, d_date, d_moy, d_qoy, d_year, cs_ship_addr_sk, i_item_sk
+        |         i_current_price, i_manufact_id, d_date, d_moy, d_qoy, d_year, cs_ext_sales_price, cs_ship_addr_sk, i_item_sk
        """.stripMargin.trim,
        """
         | with ss_items as
@@ -668,11 +650,8 @@ object TestTPCDS_1_4_Batch {
         | limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
-      // q76
+       """.stripMargin.trim),
+      // q76 - as case 10, require the rule PushAggregateThroughUnion
       ("case_14",
        """
         |SELECT cs_ship_addr_sk , d_date, d_year, d_qoy, d_moy, i_category, cs_ext_sales_price, cs_ship_addr_sk, i_item_sk, i_item_id,
@@ -685,7 +664,8 @@ object TestTPCDS_1_4_Batch {
         |WHERE cs_item_sk = i_item_sk
         |  AND cs_sold_date_sk = d_date_sk      
         |GROUP BY i_brand_id, i_class_id, i_category_id, i_item_id, i_item_desc, i_category, i_class,
-        |         i_current_price, i_manufact_id, d_date, d_moy, d_qoy, d_year, cs_ship_addr_sk, i_item_sk
+        |         i_current_price, i_manufact_id, d_date, d_moy, d_qoy, d_year, cs_ship_addr_sk, i_item_sk,
+        |         cs_ext_sales_price
        """.stripMargin.trim,
        """
         | SELECT
@@ -720,10 +700,7 @@ object TestTPCDS_1_4_Batch {
         | limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
+       """.stripMargin.trim),
       // the following two cases involve a MV of store_sales and customer
       // q23a
       ("case_15",
@@ -777,10 +754,45 @@ object TestTPCDS_1_4_Batch {
         | limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
+        |SELECT sum(gen_subquery_4.`sales`) AS `sum(sales)` 
+        |FROM
+        |  (SELECT (CAST(CAST(catalog_sales.`cs_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(catalog_sales.`cs_list_price` AS DECIMAL(12,2))) AS `sales` 
+        |  FROM
+        |    catalog_sales
+        |    LEFT SEMI JOIN (SELECT item.`i_item_sk` AS `item_sk`, count(1) AS `count(1)` 
+        |    FROM
+        |      store_sales
+        |      INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |      INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |    GROUP BY substring(item.`i_item_desc`, 1, 30), item.`i_item_sk`, date_dim.`d_date`) gen_subquery_0  ON (gen_subquery_0.`count(1)` > 4L) AND (catalog_sales.`cs_item_sk` = gen_subquery_0.`item_sk`)
+        |    LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales` 
+        |    FROM
+        |      customer
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |    GROUP BY customer.`c_customer_sk`) gen_subquery_1  ON (catalog_sales.`cs_bill_customer_sk` = gen_subquery_1.`c_customer_sk`)
+        |    INNER JOIN date_dim ON (date_dim.`d_year` = 2000) AND (date_dim.`d_moy` = 2) AND (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    (CAST(`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#219 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#222 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_0_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_expression_0_0 ) AS DECIMAL(32,6))))
+        |  UNION ALL
+        |  SELECT (CAST(CAST(web_sales.`ws_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(web_sales.`ws_list_price` AS DECIMAL(12,2))) AS `sales` 
+        |  FROM
+        |    web_sales
+        |    LEFT SEMI JOIN (SELECT item.`i_item_sk` AS `item_sk`, count(1) AS `count(1)` 
+        |    FROM
+        |      store_sales
+        |      INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |      INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |    GROUP BY substring(item.`i_item_desc`, 1, 30), item.`i_item_sk`, date_dim.`d_date`) gen_subquery_2  ON (gen_subquery_2.`count(1)` > 4L) AND (web_sales.`ws_item_sk` = gen_subquery_2.`item_sk`)
+        |    LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales` 
+        |    FROM
+        |      customer
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |    GROUP BY customer.`c_customer_sk`) gen_subquery_3  ON (web_sales.`ws_bill_customer_sk` = gen_subquery_3.`c_customer_sk`)
+        |    INNER JOIN date_dim ON (date_dim.`d_year` = 2000) AND (date_dim.`d_moy` = 2) AND (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    (CAST(`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#219 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#222 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_1_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_expression_1_0 ) AS DECIMAL(32,6))))) gen_subquery_4 
+        |LIMIT 100
+       """.stripMargin.trim),
       // q23b
       ("case_16",
        """
@@ -791,7 +803,6 @@ object TestTPCDS_1_4_Batch {
         | GROUP BY c_customer_sk
        """.stripMargin.trim,
        """
-        |
         | with frequent_ss_items as
         | (select substr(i_item_desc,1,30) itemdesc,i_item_sk item_sk,d_date solddate,count(*) cnt
         |  from store_sales, date_dim, item
@@ -851,17 +862,17 @@ object TestTPCDS_1_4_Batch {
         |      FROM
         |        store_sales
         |        INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
-        |        INNER JOIN item   ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |        INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
         |      GROUP BY substring(item.`i_item_desc`, 1, 30), item.`i_item_sk`, date_dim.`d_date`) gen_subquery_0  ON (gen_subquery_0.`count(1)` > 4L) AND (catalog_sales.`cs_item_sk` = gen_subquery_0.`item_sk`)
         |      LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales` 
         |      FROM
-        |        customer  
+        |        customer
         |        INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
         |      GROUP BY customer.`c_customer_sk`) gen_subquery_1  ON (catalog_sales.`cs_bill_customer_sk` = gen_subquery_1.`c_customer_sk`)
         |      INNER JOIN customer ON (catalog_sales.`cs_bill_customer_sk` = customer.`c_customer_sk`)
         |      INNER JOIN date_dim ON (date_dim.`d_year` = 2000) AND (date_dim.`d_moy` = 2) AND (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
         |    WHERE
-        |      (CAST(`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#219 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#222 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_0_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_expression_0_0 ) AS DECIMAL(32,6))))) gen_subquery_2 
+        |      (CAST(`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#219 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#222 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_0_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_expression_0_0 ) AS DECIMAL(32,6))))) gen_subquery_2 
         |  GROUP BY gen_subquery_2.`c_last_name`, gen_subquery_2.`c_first_name`
         |  UNION ALL
         |  SELECT gen_subquery_5.`c_last_name`, gen_subquery_5.`c_first_name`, sum((CAST(CAST(gen_subquery_5.`ws_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(gen_subquery_5.`ws_list_price` AS DECIMAL(12,2)))) AS `sales` 
@@ -873,17 +884,17 @@ object TestTPCDS_1_4_Batch {
         |      FROM
         |        store_sales
         |        INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
-        |        INNER JOIN item   ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |        INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
         |      GROUP BY substring(item.`i_item_desc`, 1, 30), item.`i_item_sk`, date_dim.`d_date`) gen_subquery_3  ON (gen_subquery_3.`count(1)` > 4L) AND (web_sales.`ws_item_sk` = gen_subquery_3.`item_sk`)
         |      LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales` 
         |      FROM
-        |        customer  
+        |        customer
         |        INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
         |      GROUP BY customer.`c_customer_sk`) gen_subquery_4  ON (web_sales.`ws_bill_customer_sk` = gen_subquery_4.`c_customer_sk`)
         |      INNER JOIN customer ON (web_sales.`ws_bill_customer_sk` = customer.`c_customer_sk`)
         |      INNER JOIN date_dim ON (date_dim.`d_year` = 2000) AND (date_dim.`d_moy` = 2) AND (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)
         |    WHERE
-        |      (CAST(`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#219 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#222 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_1_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_expression_1_0 ) AS DECIMAL(32,6))))) gen_subquery_5 
+        |      (CAST(`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#219 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#222 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_1_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`   FROM  store_sales  INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`) gen_expression_1_0 ) AS DECIMAL(32,6))))) gen_subquery_5 
         |  GROUP BY gen_subquery_5.`c_last_name`, gen_subquery_5.`c_first_name`) gen_subquery_6 
         |ORDER BY gen_subquery_6.`c_last_name` ASC NULLS FIRST, gen_subquery_6.`c_first_name` ASC NULLS FIRST, gen_subquery_6.`sales` ASC NULLS FIRST
         |LIMIT 100
@@ -1026,9 +1037,187 @@ object TestTPCDS_1_4_Batch {
         | LIMIT 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
+        |SELECT gen_subquery_1.`customer_id`, gen_subquery_1.`customer_first_name`, gen_subquery_1.`customer_last_name`, gen_subquery_1.`customer_preferred_cust_flag`, gen_subquery_1.`customer_birth_country`, gen_subquery_1.`customer_login`, gen_subquery_1.`customer_email_address` 
+        |FROM
+        |  (SELECT gen_subsumer_0.`customer_id` AS `customer_id`, sum(gen_subsumer_0.`year_total`) AS `year_total` 
+        |  FROM
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    FROM
+        |      customer
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_0 
+        |  WHERE
+        |    (gen_subsumer_0.`dyear` = 2001)
+        |  GROUP BY gen_subsumer_0.`customer_id`, gen_subsumer_0.`customer_first_name`, gen_subsumer_0.`customer_last_name`, gen_subsumer_0.`customer_preferred_cust_flag`, gen_subsumer_0.`customer_birth_country`, gen_subsumer_0.`customer_login`, gen_subsumer_0.`customer_email_address`, gen_subsumer_0.`dyear`
+        |  HAVING (sum(gen_subsumer_0.`year_total`) > 0E-13BD)
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(catalog_sales.`cs_ext_list_price` AS DECIMAL(8,2)) - CAST(catalog_sales.`cs_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(catalog_sales.`cs_ext_discount_amt` AS DECIMAL(8,2))) + CAST(catalog_sales.`cs_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN catalog_sales ON (customer.`c_customer_sk` = catalog_sales.`cs_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    false
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`
+        |  HAVING (`year_total` > 0E-13BD)
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(web_sales.`ws_ext_list_price` AS DECIMAL(8,2)) - CAST(web_sales.`ws_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(web_sales.`ws_ext_discount_amt` AS DECIMAL(8,2))) + CAST(web_sales.`ws_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    false
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`
+        |  HAVING (`year_total` > 0E-13BD)) gen_subquery_0 
+        |  INNER JOIN (SELECT gen_subsumer_1.`customer_id` AS `customer_id`, gen_subsumer_1.`customer_first_name` AS `customer_first_name`, gen_subsumer_1.`customer_last_name` AS `customer_last_name`, gen_subsumer_1.`customer_preferred_cust_flag` AS `customer_preferred_cust_flag`, gen_subsumer_1.`customer_birth_country` AS `customer_birth_country`, gen_subsumer_1.`customer_login` AS `customer_login`, gen_subsumer_1.`customer_email_address` AS `customer_email_address`, sum(gen_subsumer_1.`year_total`) AS `year_total` 
+        |  FROM
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    FROM
+        |      customer
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_1 
+        |  WHERE
+        |    (gen_subsumer_1.`dyear` = 2002)
+        |  GROUP BY gen_subsumer_1.`customer_id`, gen_subsumer_1.`customer_first_name`, gen_subsumer_1.`customer_last_name`, gen_subsumer_1.`customer_preferred_cust_flag`, gen_subsumer_1.`customer_birth_country`, gen_subsumer_1.`customer_login`, gen_subsumer_1.`customer_email_address`, gen_subsumer_1.`dyear`
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, sum((CAST((((CAST(catalog_sales.`cs_ext_list_price` AS DECIMAL(8,2)) - CAST(catalog_sales.`cs_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(catalog_sales.`cs_ext_discount_amt` AS DECIMAL(8,2))) + CAST(catalog_sales.`cs_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN catalog_sales ON (customer.`c_customer_sk` = catalog_sales.`cs_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    false
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, sum((CAST((((CAST(web_sales.`ws_ext_list_price` AS DECIMAL(8,2)) - CAST(web_sales.`ws_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(web_sales.`ws_ext_discount_amt` AS DECIMAL(8,2))) + CAST(web_sales.`ws_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    false
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`) gen_subquery_1  ON (gen_subquery_1.`customer_id` = gen_subquery_0.`customer_id`)
+        |  INNER JOIN (SELECT gen_subsumer_2.`customer_id` AS `customer_id`, sum(gen_subsumer_2.`year_total`) AS `year_total` 
+        |  FROM
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    FROM
+        |      customer
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_2 
+        |  WHERE
+        |    false
+        |  GROUP BY gen_subsumer_2.`customer_id`, gen_subsumer_2.`customer_first_name`, gen_subsumer_2.`customer_last_name`, gen_subsumer_2.`customer_preferred_cust_flag`, gen_subsumer_2.`customer_birth_country`, gen_subsumer_2.`customer_login`, gen_subsumer_2.`customer_email_address`, gen_subsumer_2.`dyear`
+        |  HAVING (sum(gen_subsumer_2.`year_total`) > 0E-13BD)
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(catalog_sales.`cs_ext_list_price` AS DECIMAL(8,2)) - CAST(catalog_sales.`cs_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(catalog_sales.`cs_ext_discount_amt` AS DECIMAL(8,2))) + CAST(catalog_sales.`cs_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN catalog_sales ON (customer.`c_customer_sk` = catalog_sales.`cs_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (date_dim.`d_year` = 2001) AND (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`
+        |  HAVING (`year_total` > 0E-13BD)
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(web_sales.`ws_ext_list_price` AS DECIMAL(8,2)) - CAST(web_sales.`ws_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(web_sales.`ws_ext_discount_amt` AS DECIMAL(8,2))) + CAST(web_sales.`ws_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    false
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`
+        |  HAVING (`year_total` > 0E-13BD)) gen_subquery_2  ON (gen_subquery_0.`customer_id` = gen_subquery_2.`customer_id`)
+        |  INNER JOIN (SELECT gen_subsumer_3.`customer_id` AS `customer_id`, sum(gen_subsumer_3.`year_total`) AS `year_total` 
+        |  FROM
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    FROM
+        |      customer
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_3 
+        |  WHERE
+        |    false
+        |  GROUP BY gen_subsumer_3.`customer_id`, gen_subsumer_3.`customer_first_name`, gen_subsumer_3.`customer_last_name`, gen_subsumer_3.`customer_preferred_cust_flag`, gen_subsumer_3.`customer_birth_country`, gen_subsumer_3.`customer_login`, gen_subsumer_3.`customer_email_address`, gen_subsumer_3.`dyear`
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(catalog_sales.`cs_ext_list_price` AS DECIMAL(8,2)) - CAST(catalog_sales.`cs_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(catalog_sales.`cs_ext_discount_amt` AS DECIMAL(8,2))) + CAST(catalog_sales.`cs_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN catalog_sales ON (customer.`c_customer_sk` = catalog_sales.`cs_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (date_dim.`d_year` = 2002) AND (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(web_sales.`ws_ext_list_price` AS DECIMAL(8,2)) - CAST(web_sales.`ws_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(web_sales.`ws_ext_discount_amt` AS DECIMAL(8,2))) + CAST(web_sales.`ws_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    false
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`) gen_subquery_3 
+        |  INNER JOIN (SELECT gen_subsumer_4.`customer_id` AS `customer_id`, sum(gen_subsumer_4.`year_total`) AS `year_total` 
+        |  FROM
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    FROM
+        |      customer
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_4 
+        |  WHERE
+        |    false
+        |  GROUP BY gen_subsumer_4.`customer_id`, gen_subsumer_4.`customer_first_name`, gen_subsumer_4.`customer_last_name`, gen_subsumer_4.`customer_preferred_cust_flag`, gen_subsumer_4.`customer_birth_country`, gen_subsumer_4.`customer_login`, gen_subsumer_4.`customer_email_address`, gen_subsumer_4.`dyear`
+        |  HAVING (sum(gen_subsumer_4.`year_total`) > 0E-13BD)
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(catalog_sales.`cs_ext_list_price` AS DECIMAL(8,2)) - CAST(catalog_sales.`cs_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(catalog_sales.`cs_ext_discount_amt` AS DECIMAL(8,2))) + CAST(catalog_sales.`cs_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN catalog_sales ON (customer.`c_customer_sk` = catalog_sales.`cs_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    false
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`
+        |  HAVING (`year_total` > 0E-13BD)
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(web_sales.`ws_ext_list_price` AS DECIMAL(8,2)) - CAST(web_sales.`ws_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(web_sales.`ws_ext_discount_amt` AS DECIMAL(8,2))) + CAST(web_sales.`ws_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (date_dim.`d_year` = 2001) AND (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`
+        |  HAVING (`year_total` > 0E-13BD)) gen_subquery_4  ON (gen_subquery_0.`customer_id` = gen_subquery_4.`customer_id`)
+        |  INNER JOIN (SELECT gen_subsumer_5.`customer_id` AS `customer_id`, sum(gen_subsumer_5.`year_total`) AS `year_total` 
+        |  FROM
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    FROM
+        |      customer
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_5 
+        |  WHERE
+        |    false
+        |  GROUP BY gen_subsumer_5.`customer_id`, gen_subsumer_5.`customer_first_name`, gen_subsumer_5.`customer_last_name`, gen_subsumer_5.`customer_preferred_cust_flag`, gen_subsumer_5.`customer_birth_country`, gen_subsumer_5.`customer_login`, gen_subsumer_5.`customer_email_address`, gen_subsumer_5.`dyear`
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(catalog_sales.`cs_ext_list_price` AS DECIMAL(8,2)) - CAST(catalog_sales.`cs_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(catalog_sales.`cs_ext_discount_amt` AS DECIMAL(8,2))) + CAST(catalog_sales.`cs_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN catalog_sales ON (customer.`c_customer_sk` = catalog_sales.`cs_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
+        |  WHERE
+        |    false
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`
+        |  UNION ALL
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum((CAST((((CAST(web_sales.`ws_ext_list_price` AS DECIMAL(8,2)) - CAST(web_sales.`ws_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(web_sales.`ws_ext_discount_amt` AS DECIMAL(8,2))) + CAST(web_sales.`ws_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total` 
+        |  FROM
+        |    customer
+        |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
+        |    INNER JOIN date_dim ON (date_dim.`d_year` = 2002) AND (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)
+        |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`) gen_subquery_5 
+        |WHERE
+        |  (gen_subquery_0.`customer_id` = gen_subquery_3.`customer_id`) AND (CASE WHEN (gen_subquery_2.`year_total` > 0E-13BD) THEN (gen_subquery_3.`year_total` / gen_subquery_2.`year_total`) ELSE CAST(NULL AS DECIMAL(38,23)) END > CASE WHEN (gen_subquery_0.`year_total` > 0E-13BD) THEN (gen_subquery_1.`year_total` / gen_subquery_0.`year_total`) ELSE CAST(NULL AS DECIMAL(38,23)) END) AND (gen_subquery_0.`customer_id` = gen_subquery_5.`customer_id`) AND (CASE WHEN (gen_subquery_2.`year_total` > 0E-13BD) THEN (gen_subquery_3.`year_total` / gen_subquery_2.`year_total`) ELSE CAST(NULL AS DECIMAL(38,23)) END > CASE WHEN (gen_subquery_4.`year_total` > 0E-13BD) THEN (gen_subquery_5.`year_total` / gen_subquery_4.`year_total`) ELSE CAST(NULL AS DECIMAL(38,23)) END)
+        |ORDER BY gen_subquery_1.`customer_id` ASC NULLS FIRST, gen_subquery_1.`customer_first_name` ASC NULLS FIRST, gen_subquery_1.`customer_last_name` ASC NULLS FIRST, gen_subquery_1.`customer_preferred_cust_flag` ASC NULLS FIRST, gen_subquery_1.`customer_birth_country` ASC NULLS FIRST, gen_subquery_1.`customer_login` ASC NULLS FIRST, gen_subquery_1.`customer_email_address` ASC NULLS FIRST
+        |LIMIT 100
         """.stripMargin.trim),
       //q11
       ("case_18",
@@ -1128,12 +1317,12 @@ object TestTPCDS_1_4_Batch {
         |FROM
         |  (SELECT gen_subsumer_0.`customer_id` AS `customer_id`, sum(gen_subsumer_0.`year_total1`) AS `year_total` 
         |  FROM
-        |    (SELECT `c_customer_id` AS `customer_id`, `c_first_name` AS `customer_first_name`, `c_last_name` AS `customer_last_name`, `c_preferred_cust_flag` AS `customer_preferred_cust_flag`, `c_birth_country` AS `customer_birth_country`, `c_login` AS `customer_login`, `c_email_address` AS `customer_email_address`, `d_year` AS `dyear`, `d_date` AS `ddate`, sum((CAST((((CAST(`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
         |    FROM
         |      customer
-        |      INNER JOIN store_sales ON (`c_customer_sk` = `ss_customer_sk`)
-        |      INNER JOIN date_dim ON (`ss_sold_date_sk` = `d_date_sk`)
-        |    GROUP BY `c_customer_id`, `c_first_name`, `c_last_name`, `c_preferred_cust_flag`, `c_birth_country`, `c_login`, `c_email_address`, `d_year`, `d_date`) gen_subsumer_0 
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_0 
         |  WHERE
         |    (gen_subsumer_0.`dyear` = 2001)
         |  GROUP BY gen_subsumer_0.`customer_id`, gen_subsumer_0.`customer_first_name`, gen_subsumer_0.`customer_last_name`, gen_subsumer_0.`dyear`, gen_subsumer_0.`customer_preferred_cust_flag`, gen_subsumer_0.`customer_birth_country`, gen_subsumer_0.`customer_login`, gen_subsumer_0.`customer_email_address`
@@ -1150,12 +1339,12 @@ object TestTPCDS_1_4_Batch {
         |  HAVING (`year_total` > 0.00BD)) gen_subquery_0 
         |  INNER JOIN (SELECT gen_subsumer_1.`customer_id` AS `customer_id`, gen_subsumer_1.`customer_preferred_cust_flag` AS `customer_preferred_cust_flag`, sum(gen_subsumer_1.`year_total1`) AS `year_total` 
         |  FROM
-        |    (SELECT `c_customer_id` AS `customer_id`, `c_first_name` AS `customer_first_name`, `c_last_name` AS `customer_last_name`, `c_preferred_cust_flag` AS `customer_preferred_cust_flag`, `c_birth_country` AS `customer_birth_country`, `c_login` AS `customer_login`, `c_email_address` AS `customer_email_address`, `d_year` AS `dyear`, `d_date` AS `ddate`, sum((CAST((((CAST(`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
         |    FROM
         |      customer
-        |      INNER JOIN store_sales ON (`c_customer_sk` = `ss_customer_sk`)
-        |      INNER JOIN date_dim ON (`ss_sold_date_sk` = `d_date_sk`)
-        |    GROUP BY `c_customer_id`, `c_first_name`, `c_last_name`, `c_preferred_cust_flag`, `c_birth_country`, `c_login`, `c_email_address`, `d_year`, `d_date`) gen_subsumer_1 
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_1 
         |  WHERE
         |    (gen_subsumer_1.`dyear` = 2002)
         |  GROUP BY gen_subsumer_1.`customer_id`, gen_subsumer_1.`customer_first_name`, gen_subsumer_1.`customer_last_name`, gen_subsumer_1.`dyear`, gen_subsumer_1.`customer_preferred_cust_flag`, gen_subsumer_1.`customer_birth_country`, gen_subsumer_1.`customer_login`, gen_subsumer_1.`customer_email_address`
@@ -1170,12 +1359,12 @@ object TestTPCDS_1_4_Batch {
         |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`) gen_subquery_1  ON (gen_subquery_1.`customer_id` = gen_subquery_0.`customer_id`)
         |  INNER JOIN (SELECT gen_subsumer_2.`customer_id` AS `customer_id`, sum(gen_subsumer_2.`year_total1`) AS `year_total` 
         |  FROM
-        |    (SELECT `c_customer_id` AS `customer_id`, `c_first_name` AS `customer_first_name`, `c_last_name` AS `customer_last_name`, `c_preferred_cust_flag` AS `customer_preferred_cust_flag`, `c_birth_country` AS `customer_birth_country`, `c_login` AS `customer_login`, `c_email_address` AS `customer_email_address`, `d_year` AS `dyear`, `d_date` AS `ddate`, sum((CAST((((CAST(`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
         |    FROM
         |      customer
-        |      INNER JOIN store_sales ON (`c_customer_sk` = `ss_customer_sk`)
-        |      INNER JOIN date_dim ON (`ss_sold_date_sk` = `d_date_sk`)
-        |    GROUP BY `c_customer_id`, `c_first_name`, `c_last_name`, `c_preferred_cust_flag`, `c_birth_country`, `c_login`, `c_email_address`, `d_year`, `d_date`) gen_subsumer_2 
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_2 
         |  WHERE
         |    false
         |  GROUP BY gen_subsumer_2.`customer_id`, gen_subsumer_2.`customer_first_name`, gen_subsumer_2.`customer_last_name`, gen_subsumer_2.`dyear`, gen_subsumer_2.`customer_preferred_cust_flag`, gen_subsumer_2.`customer_birth_country`, gen_subsumer_2.`customer_login`, gen_subsumer_2.`customer_email_address`
@@ -1190,12 +1379,12 @@ object TestTPCDS_1_4_Batch {
         |  HAVING (`year_total` > 0.00BD)) gen_subquery_2  ON (gen_subquery_0.`customer_id` = gen_subquery_2.`customer_id`)
         |  INNER JOIN (SELECT gen_subsumer_3.`customer_id` AS `customer_id`, sum(gen_subsumer_3.`year_total1`) AS `year_total` 
         |  FROM
-        |    (SELECT `c_customer_id` AS `customer_id`, `c_first_name` AS `customer_first_name`, `c_last_name` AS `customer_last_name`, `c_preferred_cust_flag` AS `customer_preferred_cust_flag`, `c_birth_country` AS `customer_birth_country`, `c_login` AS `customer_login`, `c_email_address` AS `customer_email_address`, `d_year` AS `dyear`, `d_date` AS `ddate`, sum((CAST((((CAST(`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2)))) AS `year_total1`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
         |    FROM
         |      customer
-        |      INNER JOIN store_sales ON (`c_customer_sk` = `ss_customer_sk`)
-        |      INNER JOIN date_dim ON (`ss_sold_date_sk` = `d_date_sk`)
-        |    GROUP BY `c_customer_id`, `c_first_name`, `c_last_name`, `c_preferred_cust_flag`, `c_birth_country`, `c_login`, `c_email_address`, `d_year`, `d_date`) gen_subsumer_3 
+        |      INNER JOIN store_sales ON (customer.`c_customer_sk` = store_sales.`ss_customer_sk`)
+        |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`) gen_subsumer_3 
         |  WHERE
         |    false
         |  GROUP BY gen_subsumer_3.`customer_id`, gen_subsumer_3.`customer_first_name`, gen_subsumer_3.`customer_last_name`, gen_subsumer_3.`dyear`, gen_subsumer_3.`customer_preferred_cust_flag`, gen_subsumer_3.`customer_birth_country`, gen_subsumer_3.`customer_login`, gen_subsumer_3.`customer_email_address`
@@ -1262,10 +1451,7 @@ object TestTPCDS_1_4_Batch {
         | limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
+       """.stripMargin.trim),
       //q74
       ("case_20",
        """
@@ -1346,9 +1532,9 @@ object TestTPCDS_1_4_Batch {
        """
         |SELECT gen_subquery_1.`customer_id`, gen_subquery_1.`customer_first_name`, gen_subquery_1.`customer_last_name` 
         |FROM
-        |  (SELECT gen_subsumer_0.`customer_id` AS `customer_id`, gen_subsumer_0.`year_total_74` AS `year_total` 
+        |  (SELECT gen_subsumer_0.`customer_id` AS `customer_id`, sum(gen_subsumer_0.`year_total_74`) AS `year_total` 
         |  FROM
-        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, date_dim.`d_month_seq`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, makedecimal(sum(unscaledvalue(store_sales.`ss_net_paid`))) AS `year_total_74`, 's' AS `sale_type` 
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, date_dim.`d_month_seq`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
         |    FROM
         |      customer
         |      INNER JOIN store_sales ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
@@ -1357,9 +1543,9 @@ object TestTPCDS_1_4_Batch {
         |  WHERE
         |    (gen_subsumer_0.`dyear` IN (2001, 2002)) AND (gen_subsumer_0.`dyear` = 2001)
         |  GROUP BY gen_subsumer_0.`customer_id`, gen_subsumer_0.`customer_first_name`, gen_subsumer_0.`customer_last_name`, gen_subsumer_0.`dyear`
-        |  HAVING (gen_subsumer_0.`year_total_74` > 0.00BD)
+        |  HAVING (sum(gen_subsumer_0.`year_total_74`) > 0.00BD)
         |  UNION ALL
-        |  SELECT customer.`c_customer_id` AS `customer_id`, makedecimal(sum(unscaledvalue(web_sales.`ws_net_paid`))) AS `year_total` 
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum(web_sales.`ws_net_paid`) AS `year_total` 
         |  FROM
         |    customer
         |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
@@ -1368,19 +1554,19 @@ object TestTPCDS_1_4_Batch {
         |    false
         |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`
         |  HAVING (`year_total` > 0.00BD)) gen_subquery_0 
-        |  INNER JOIN (SELECT gen_subsumer_1.`customer_id` AS `customer_id`, gen_subsumer_1.`customer_first_name` AS `customer_first_name`, gen_subsumer_1.`customer_last_name` AS `customer_last_name`, gen_subsumer_1.`year_total_74` AS `year_total` 
+        |  INNER JOIN (SELECT gen_subsumer_1.`customer_id` AS `customer_id`, gen_subsumer_1.`customer_first_name` AS `customer_first_name`, gen_subsumer_1.`customer_last_name` AS `customer_last_name`, sum(gen_subsumer_1.`year_total_74`) AS `year_total` 
         |  FROM
-        |    (SELECT customer.`customer_id` AS `customer_id`, customer.`customer_first_name` AS `customer_first_name`, customer.`customer_last_name` AS `customer_last_name`, customer.`customer_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`customer_birth_country` AS `customer_birth_country`, customer.`customer_login` AS `customer_login`, customer.`customer_email_address` AS `customer_email_address`, date_dim.`dyear` AS `dyear`, date_dim.`ddate` AS `ddate`, date_dim.`d_month_seq`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, makedecimal(sum(unscaledvalue(store_sales.`ss_net_paid`))) AS `year_total_74`, 's' AS `sale_type` 
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, date_dim.`d_month_seq`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
         |    FROM
         |      customer
         |      INNER JOIN store_sales ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
         |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
-        |    GROUP BY customer.`customer_id`, customer.`customer_first_name`, customer.`customer_last_name`, customer.`customer_preferred_cust_flag`, customer.`customer_birth_country`, customer.`customer_login`, customer.`customer_email_address`, date_dim.`dyear`, date_dim.`ddate`, date_dim.`d_month_seq`) gen_subsumer_1 
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`, date_dim.`d_month_seq`) gen_subsumer_1 
         |  WHERE
         |    (gen_subsumer_1.`dyear` IN (2001, 2002)) AND (gen_subsumer_1.`dyear` = 2002)
         |  GROUP BY gen_subsumer_1.`customer_id`, gen_subsumer_1.`customer_first_name`, gen_subsumer_1.`customer_last_name`, gen_subsumer_1.`dyear`
         |  UNION ALL
-        |  SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, makedecimal(sum(unscaledvalue(web_sales.`ws_net_paid`))) AS `year_total` 
+        |  SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, sum(web_sales.`ws_net_paid`) AS `year_total` 
         |  FROM
         |    customer
         |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
@@ -1388,9 +1574,9 @@ object TestTPCDS_1_4_Batch {
         |  WHERE
         |    false
         |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`) gen_subquery_1  ON (gen_subquery_1.`customer_id` = gen_subquery_0.`customer_id`)
-        |  INNER JOIN (SELECT gen_subsumer_2.`customer_id` AS `customer_id`, gen_subsumer_2.`year_total_74` AS `year_total` 
+        |  INNER JOIN (SELECT gen_subsumer_2.`customer_id` AS `customer_id`, sum(gen_subsumer_2.`year_total_74`) AS `year_total` 
         |  FROM
-        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, date_dim.`d_month_seq`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, makedecimal(sum(unscaledvalue(store_sales.`ss_net_paid`))) AS `year_total_74`, 's' AS `sale_type` 
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, date_dim.`d_month_seq`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
         |    FROM
         |      customer
         |      INNER JOIN store_sales ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
@@ -1399,28 +1585,28 @@ object TestTPCDS_1_4_Batch {
         |  WHERE
         |    false AND (gen_subsumer_2.`dyear` IN (2001, 2002))
         |  GROUP BY gen_subsumer_2.`customer_id`, gen_subsumer_2.`customer_first_name`, gen_subsumer_2.`customer_last_name`, gen_subsumer_2.`dyear`
-        |  HAVING (gen_subsumer_2.`year_total_74` > 0.00BD)
+        |  HAVING (sum(gen_subsumer_2.`year_total_74`) > 0.00BD)
         |  UNION ALL
-        |  SELECT customer.`c_customer_id` AS `customer_id`, makedecimal(sum(unscaledvalue(web_sales.`ws_net_paid`))) AS `year_total` 
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum(web_sales.`ws_net_paid`) AS `year_total` 
         |  FROM
         |    customer
         |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
         |    INNER JOIN date_dim ON (date_dim.`d_year` IN (2001, 2002)) AND (date_dim.`d_year` = 2001) AND (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)
         |  GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`
         |  HAVING (`year_total` > 0.00BD)) gen_subquery_2  ON (gen_subquery_0.`customer_id` = gen_subquery_2.`customer_id`)
-        |  INNER JOIN (SELECT gen_subsumer_3.`customer_id` AS `customer_id`, gen_subsumer_3.`year_total_74` AS `year_total` 
+        |  INNER JOIN (SELECT gen_subsumer_3.`customer_id` AS `customer_id`, sum(gen_subsumer_3.`year_total_74`) AS `year_total` 
         |  FROM
-        |    (SELECT customer.`customer_id` AS `customer_id`, customer.`customer_first_name` AS `customer_first_name`, customer.`customer_last_name` AS `customer_last_name`, customer.`customer_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`customer_birth_country` AS `customer_birth_country`, customer.`customer_login` AS `customer_login`, customer.`customer_email_address` AS `customer_email_address`, date_dim.`dyear` AS `dyear`, date_dim.`ddate` AS `ddate`, date_dim.`d_month_seq`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, makedecimal(sum(unscaledvalue(store_sales.`ss_net_paid`))) AS `year_total_74`, 's' AS `sale_type` 
+        |    (SELECT customer.`c_customer_id` AS `customer_id`, customer.`c_first_name` AS `customer_first_name`, customer.`c_last_name` AS `customer_last_name`, customer.`c_preferred_cust_flag` AS `customer_preferred_cust_flag`, customer.`c_birth_country` AS `customer_birth_country`, customer.`c_login` AS `customer_login`, customer.`c_email_address` AS `customer_email_address`, date_dim.`d_year` AS `dyear`, date_dim.`d_date` AS `ddate`, date_dim.`d_month_seq`, sum((CAST((((CAST(store_sales.`ss_ext_list_price` AS DECIMAL(8,2)) - CAST(store_sales.`ss_ext_wholesale_cost` AS DECIMAL(8,2))) - CAST(store_sales.`ss_ext_discount_amt` AS DECIMAL(8,2))) + CAST(store_sales.`ss_ext_sales_price` AS DECIMAL(8,2))) AS DECIMAL(12,2)) / 2.00BD)) AS `year_total`, sum(store_sales.`ss_net_paid`) AS `year_total_74`, 's' AS `sale_type` 
         |    FROM
         |      customer
         |      INNER JOIN store_sales ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
         |      INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
-        |    GROUP BY customer.`customer_id`, customer.`customer_first_name`, customer.`customer_last_name`, customer.`customer_preferred_cust_flag`, customer.`customer_birth_country`, customer.`customer_login`, customer.`customer_email_address`, date_dim.`dyear`, date_dim.`ddate`, date_dim.`d_month_seq`) gen_subsumer_3 
+        |    GROUP BY customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, customer.`c_preferred_cust_flag`, customer.`c_birth_country`, customer.`c_login`, customer.`c_email_address`, date_dim.`d_year`, date_dim.`d_date`, date_dim.`d_month_seq`) gen_subsumer_3 
         |  WHERE
         |    false AND (gen_subsumer_3.`dyear` IN (2001, 2002))
         |  GROUP BY gen_subsumer_3.`customer_id`, gen_subsumer_3.`customer_first_name`, gen_subsumer_3.`customer_last_name`, gen_subsumer_3.`dyear`
         |  UNION ALL
-        |  SELECT customer.`c_customer_id` AS `customer_id`, makedecimal(sum(unscaledvalue(web_sales.`ws_net_paid`))) AS `year_total` 
+        |  SELECT customer.`c_customer_id` AS `customer_id`, sum(web_sales.`ws_net_paid`) AS `year_total` 
         |  FROM
         |    customer
         |    INNER JOIN web_sales ON (customer.`c_customer_sk` = web_sales.`ws_bill_customer_sk`)
@@ -1623,9 +1809,9 @@ object TestTPCDS_1_4_Batch {
         |FROM
         |  (SELECT gen_subquery_4.`total_sum`, gen_subquery_4.`s_state`, gen_subquery_4.`s_county`, gen_subquery_4.`lochierarchy`, gen_subquery_4.`_w1`, gen_subquery_4.`_w2`, gen_subquery_4.`_w3`, RANK() OVER (PARTITION BY gen_subquery_4.`_w1`, gen_subquery_4.`_w2` ORDER BY gen_subquery_4.`_w3` DESC NULLS LAST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `rank_within_parent` 
         |  FROM
-        |    (SELECT makedecimal(sum(unscaledvalue(store_sales.`ss_net_profit`))) AS gen_subquery_3.`total_sum`, gen_subquery_3.`s_state`, gen_subquery_3.`s_county`, (CAST((shiftright(`spark_grouping_id`, 1) & 1) AS TINYINT) + CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT)) AS gen_subquery_3.`lochierarchy`, (CAST((shiftright(`spark_grouping_id`, 1) & 1) AS TINYINT) + CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT)) AS gen_subquery_3.`_w1`, CASE WHEN (CAST(CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT) AS INT) = 0) THEN gen_subquery_3.`s_state` END AS gen_subquery_3.`_w2`, makedecimal(sum(unscaledvalue(store_sales.`ss_net_profit`))) AS gen_subquery_3.`_w3` 
+        |    (SELECT sum(store_sales.`ss_net_profit`) AS gen_subquery_3.`total_sum`, gen_subquery_3.`s_state`, gen_subquery_3.`s_county`, (CAST((shiftright(`spark_grouping_id`, 1) & 1) AS TINYINT) + CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT)) AS gen_subquery_3.`lochierarchy`, (CAST((shiftright(`spark_grouping_id`, 1) & 1) AS TINYINT) + CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT)) AS gen_subquery_3.`_w1`, CASE WHEN (CAST(CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT) AS INT) = 0) THEN gen_subquery_3.`s_state` END AS gen_subquery_3.`_w2`, sum(store_sales.`ss_net_profit`) AS gen_subquery_3.`_w3` 
         |    FROM
-        |      (SELECT makedecimal(sum(unscaledvalue(gen_subquery_2.`ss_net_profit`))) AS `total_sum`, `s_state`, `s_county`, (CAST((shiftright(`spark_grouping_id`, 1) & 1) AS TINYINT) + CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT)) AS `lochierarchy`, (CAST((shiftright(`spark_grouping_id`, 1) & 1) AS TINYINT) + CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT)) AS `_w1`, CASE WHEN (CAST(CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT) AS INT) = 0) THEN `s_state` END AS `_w2`, makedecimal(sum(unscaledvalue(gen_subquery_2.`ss_net_profit`))) AS `_w3` 
+        |      (SELECT sum(gen_subquery_2.`ss_net_profit`) AS `total_sum`, `s_state`, `s_county`, (CAST((shiftright(`spark_grouping_id`, 1) & 1) AS TINYINT) + CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT)) AS `lochierarchy`, (CAST((shiftright(`spark_grouping_id`, 1) & 1) AS TINYINT) + CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT)) AS `_w1`, CASE WHEN (CAST(CAST((shiftright(`spark_grouping_id`, 0) & 1) AS TINYINT) AS INT) = 0) THEN `s_state` END AS `_w2`, sum(gen_subquery_2.`ss_net_profit`) AS `_w3` 
         |      FROM
         |        (SELECT store_sales.`ss_net_profit`, store.`s_state` AS `s_state`, store.`s_county` AS `s_county` 
         |        FROM
@@ -1634,9 +1820,9 @@ object TestTPCDS_1_4_Batch {
         |          INNER JOIN store ON (store.`s_store_sk` = store_sales.`ss_store_sk`)
         |          LEFT SEMI JOIN (SELECT gen_subquery_0.`s_state`, gen_subquery_0.`s_state`, gen_subquery_0.`_w1`, RANK() OVER (PARTITION BY gen_subquery_0.`s_state` ORDER BY gen_subquery_0.`_w1` DESC NULLS LAST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `ranking` 
         |          FROM
-        |            (SELECT gen_subsumer_0.`s_state` AS `s_state`, gen_subsumer_0.`s_state`, gen_subsumer_0.`sum(ss_net_profit)` AS `_w1` 
+        |            (SELECT gen_subsumer_0.`s_state` AS `s_state`, gen_subsumer_0.`s_state`, sum(gen_subsumer_0.`sum(ss_net_profit)`) AS `_w1` 
         |            FROM
-        |              (SELECT store.`s_store_name`, store.`s_store_id`, store.`s_gmt_offset`, date_dim.`d_year`, store.`s_state`, store.`s_county`, date_dim.`d_month_seq`, makedecimal(sum(unscaledvalue(store_sales.`ss_net_profit`))) AS `sum(ss_net_profit)`, makedecimal(sum(unscaledvalue(CASE WHEN (date_dim.`d_day_name` = 'Sunday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END))) AS `sun_sales`, makedecimal(sum(unscaledvalue(CASE WHEN (date_dim.`d_day_name` = 'Monday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END))) AS `mon_sales`, makedecimal(sum(unscaledvalue(CASE WHEN (date_dim.`d_day_name` = 'Tuesday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END))) AS `tue_sales`, makedecimal(sum(unscaledvalue(CASE WHEN (date_dim.`d_day_name` = 'Wednesday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END))) AS `wed_sales`, makedecimal(sum(unscaledvalue(CASE WHEN (date_dim.`d_day_name` = 'Thursday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END))) AS `thu_sales`, makedecimal(sum(unscaledvalue(CASE WHEN (date_dim.`d_day_name` = 'Friday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END))) AS `fri_sales`, makedecimal(sum(unscaledvalue(CASE WHEN (date_dim.`d_day_name` = 'Saturday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END))) AS `sat_sales` 
+        |              (SELECT store.`s_store_name`, store.`s_store_id`, store.`s_gmt_offset`, date_dim.`d_year`, store.`s_state`, store.`s_county`, date_dim.`d_month_seq`, sum(store_sales.`ss_net_profit`) AS `sum(ss_net_profit)`, sum(CASE WHEN (date_dim.`d_day_name` = 'Sunday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END) AS `sun_sales`, sum(CASE WHEN (date_dim.`d_day_name` = 'Monday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END) AS `mon_sales`, sum(CASE WHEN (date_dim.`d_day_name` = 'Tuesday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END) AS `tue_sales`, sum(CASE WHEN (date_dim.`d_day_name` = 'Wednesday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END) AS `wed_sales`, sum(CASE WHEN (date_dim.`d_day_name` = 'Thursday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END) AS `thu_sales`, sum(CASE WHEN (date_dim.`d_day_name` = 'Friday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END) AS `fri_sales`, sum(CASE WHEN (date_dim.`d_day_name` = 'Saturday') THEN store_sales.`ss_sales_price` ELSE CAST(NULL AS DECIMAL(7,2)) END) AS `sat_sales` 
         |              FROM
         |                date_dim
         |                INNER JOIN store_sales ON (date_dim.`d_date_sk` = store_sales.`ss_sold_date_sk`)
@@ -1694,9 +1880,9 @@ object TestTPCDS_1_4_Batch {
         |FROM
         |  (SELECT gen_subquery_0.`i_item_desc`, gen_subquery_0.`i_category`, gen_subquery_0.`i_class`, gen_subquery_0.`i_current_price`, gen_subquery_0.`itemrevenue`, gen_subquery_0.`_w0`, gen_subquery_0.`_w1`, gen_subquery_0.`i_item_id`, sum(gen_subquery_0.`_w1`) OVER (PARTITION BY gen_subquery_0.`i_class` ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS `_we0` 
         |  FROM
-        |    (SELECT gen_subsumer_0.`i_item_desc`, gen_subsumer_0.`i_category`, gen_subsumer_0.`i_class`, gen_subsumer_0.`i_current_price`, gen_subsumer_0.`itemrevenue` AS `itemrevenue`, gen_subsumer_0.`itemrevenue` AS `_w0`, gen_subsumer_0.`itemrevenue` AS `_w1`, gen_subsumer_0.`i_item_id` 
+        |    (SELECT gen_subsumer_0.`i_item_desc`, gen_subsumer_0.`i_category`, gen_subsumer_0.`i_class`, gen_subsumer_0.`i_current_price`, sum(gen_subsumer_0.`itemrevenue`) AS `itemrevenue`, sum(gen_subsumer_0.`itemrevenue`) AS `_w0`, sum(gen_subsumer_0.`itemrevenue`) AS `_w1`, gen_subsumer_0.`i_item_id` 
         |    FROM
-        |      (SELECT item.`i_item_desc`, item.`i_item_id`, item.`i_category`, item.`i_class`, item.`i_current_price`, item.`i_brand_id`, item.`i_class_id`, item.`i_category_id`, web_sales.`ws_ship_customer_sk`, date_dim.`d_year`, date_dim.`d_qoy`, date_dim.`d_date`, sum((CAST(CAST(web_sales.`ws_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(web_sales.`ws_list_price` AS DECIMAL(12,2)))) AS `sales`, count(1) AS `number_sales`, makedecimal(sum(unscaledvalue(web_sales.`ws_ext_sales_price`))) AS `itemrevenue`, makedecimal(sum(unscaledvalue(web_sales.`ws_net_paid`))) AS `total_sum` 
+        |      (SELECT item.`i_item_desc`, item.`i_item_id`, item.`i_category`, item.`i_class`, item.`i_current_price`, item.`i_brand_id`, item.`i_class_id`, item.`i_category_id`, web_sales.`ws_ship_customer_sk`, date_dim.`d_year`, date_dim.`d_qoy`, date_dim.`d_date`, sum((CAST(CAST(web_sales.`ws_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(web_sales.`ws_list_price` AS DECIMAL(12,2)))) AS `sales`, count(1) AS `number_sales`, sum(web_sales.`ws_ext_sales_price`) AS `itemrevenue`, sum(web_sales.`ws_net_paid`) AS `total_sum` 
         |      FROM
         |        web_sales
         |        INNER JOIN item ON (web_sales.`ws_item_sk` = item.`i_item_sk`)
@@ -1806,10 +1992,7 @@ object TestTPCDS_1_4_Batch {
         | limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
+       """.stripMargin.trim),
       //q86
       ("case_26",
        """
@@ -1848,10 +2031,7 @@ object TestTPCDS_1_4_Batch {
         | limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
+       """.stripMargin.trim),
       //q58
       ("case_27",
        """
@@ -1925,10 +2105,7 @@ object TestTPCDS_1_4_Batch {
         | limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
+       """.stripMargin.trim),
       //q76
       ("case_28",
        """
@@ -1979,10 +2156,7 @@ object TestTPCDS_1_4_Batch {
         | limit 100
        """.stripMargin.trim,
        """
-        |
-        |
-        |
-        """.stripMargin.trim),
+       """.stripMargin.trim),
       // MV constructed from tool
       ("case_29",
        """
@@ -2005,20 +2179,20 @@ object TestTPCDS_1_4_Batch {
         | LIMIT 100
         """.stripMargin.trim,
        """
-        |SELECT gen_subsumer_0.`d_year`, gen_subsumer_0.`i_brand_id` AS `brand_id`, gen_subsumer_0.`i_brand` AS `brand`, sum(gen_subsumer_0.`sum_agg`) AS `sum_agg` 
+        |SELECT gen_subsumer_0.`d_year`, gen_subsumer_0.`i_brand_id` AS `brand_id`, gen_subsumer_0.`i_brand` AS `brand`, sum(gen_subsumer_0.`ext_price`) AS `sum_agg` 
         |FROM
-        |  (SELECT item.`i_current_price`, date_dim.`d_date`, date_dim.`d_year`, item.`i_item_desc`, item.`i_category`, count(1) AS `cnt`, substring(item.`i_item_desc`, 1, 30) AS `itemdesc`, date_dim.`d_moy`, item.`i_manager_id`, item.`i_item_sk`, item.`i_manufact_id`, item.`i_brand_id`, item.`i_item_id`, item.`i_brand`, item.`i_class`, sum(store_sales.`ss_ext_sales_price`) AS `sum_agg` 
+        |  (SELECT item.`i_brand`, date_dim.`d_date`, substring(item.`i_item_desc`, 1, 30) AS `itemdesc`, sum(store_sales.`ss_ext_sales_price`) AS `ext_price`, item.`i_item_id`, date_dim.`d_moy`, item.`i_item_desc`, item.`i_manager_id`, item.`i_class`, item.`i_manufact_id`, count(1) AS `cnt`, item.`i_category`, date_dim.`d_year`, item.`i_current_price`, item.`i_item_sk`, item.`i_brand_id` 
         |  FROM
         |    store_sales
         |    INNER JOIN date_dim ON (date_dim.`d_date_sk` = store_sales.`ss_sold_date_sk`)
-        |    INNER JOIN item   ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
-        |  GROUP BY item.`i_current_price`, date_dim.`d_date`, date_dim.`d_year`, item.`i_item_desc`, item.`i_category`, substring(item.`i_item_desc`, 1, 30), date_dim.`d_moy`, item.`i_manager_id`, item.`i_item_sk`, item.`i_manufact_id`, item.`i_brand_id`, item.`i_item_id`, item.`i_brand`, item.`i_class`) gen_subsumer_0 
+        |    INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |  GROUP BY item.`i_brand`, date_dim.`d_date`, substring(item.`i_item_desc`, 1, 30), item.`i_item_id`, date_dim.`d_moy`, item.`i_item_desc`, item.`i_manager_id`, item.`i_class`, item.`i_manufact_id`, item.`i_category`, date_dim.`d_year`, item.`i_current_price`, item.`i_item_sk`, item.`i_brand_id`) gen_subsumer_0 
         |WHERE
         |  (gen_subsumer_0.`d_moy` = 11) AND (gen_subsumer_0.`i_manufact_id` = 128)
         |GROUP BY gen_subsumer_0.`d_year`, gen_subsumer_0.`i_brand`, gen_subsumer_0.`i_brand_id`
         |ORDER BY gen_subsumer_0.`d_year` ASC NULLS FIRST, `sum_agg` DESC NULLS LAST, `brand_id` ASC NULLS FIRST
-        |LIMIT 100 
-        """.stripMargin.trim),
+        |LIMIT 100
+       """.stripMargin.trim),
       // scalar sub-query
       ("case_30",
        """
@@ -2081,13 +2255,13 @@ object TestTPCDS_1_4_Batch {
         |    FROM
         |      store_sales
         |      INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
-        |      INNER JOIN item   ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |      INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
         |    GROUP BY substring(item.`i_item_desc`, 1, 30), item.`i_item_sk`, date_dim.`d_date`) gen_subquery_0  ON (gen_subquery_0.`count(1)` > 4L) AND (catalog_sales.`cs_item_sk` = gen_subquery_0.`item_sk`)
-        |    LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#683 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#686 as decimal(12,2)))), DecimalType(18,2)))` 
+        |    LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#256 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#259 as decimal(12,2)))), DecimalType(18,2)))` 
         |    FROM
         |      store_sales
-        |      INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
-        |    GROUP BY customer.`c_customer_sk`) gen_subquery_1  ON (CAST(gen_subquery_1.`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#683 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#686 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_0_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum(gen_subsumer_0.`csales`) AS `csales`   FROM  (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`, customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`, sum(store_sales.`ss_net_paid`) AS `year_total`   FROM  store_sales  INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`, customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`) gen_subsumer_0   WHERE  (gen_subsumer_0.`d_year` IN (2000, 2001, 2002, 2003))  GROUP BY gen_subsumer_0.`c_customer_sk`) gen_expression_0_0 ) AS DECIMAL(32,6)))) AND (catalog_sales.`cs_bill_customer_sk` = gen_subquery_1.`c_customer_sk`)
+        |      INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
+        |    GROUP BY customer.`c_customer_sk`) gen_subquery_1  ON (CAST(gen_subquery_1.`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#256 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#259 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_0_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum(gen_subsumer_0.`csales`) AS `csales`   FROM  (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`, customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`, sum(store_sales.`ss_net_paid`) AS `year_total`   FROM  store_sales  INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`, customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`) gen_subsumer_0   WHERE  (gen_subsumer_0.`d_year` IN (2000, 2001, 2002, 2003))  GROUP BY gen_subsumer_0.`c_customer_sk`) gen_expression_0_0 ) AS DECIMAL(32,6)))) AND (catalog_sales.`cs_bill_customer_sk` = gen_subquery_1.`c_customer_sk`)
         |    INNER JOIN date_dim ON (date_dim.`d_year` = 2000) AND (date_dim.`d_moy` = 2) AND (catalog_sales.`cs_sold_date_sk` = date_dim.`d_date_sk`)
         |  UNION ALL
         |  SELECT (CAST(CAST(web_sales.`ws_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(web_sales.`ws_list_price` AS DECIMAL(12,2))) AS `sales` 
@@ -2097,17 +2271,17 @@ object TestTPCDS_1_4_Batch {
         |    FROM
         |      store_sales
         |      INNER JOIN date_dim ON (date_dim.`d_year` IN (2000, 2001, 2002, 2003)) AND (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)
-        |      INNER JOIN item   ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
+        |      INNER JOIN item ON (store_sales.`ss_item_sk` = item.`i_item_sk`)
         |    GROUP BY substring(item.`i_item_desc`, 1, 30), item.`i_item_sk`, date_dim.`d_date`) gen_subquery_2  ON (gen_subquery_2.`count(1)` > 4L) AND (web_sales.`ws_item_sk` = gen_subquery_2.`item_sk`)
-        |    LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#683 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#686 as decimal(12,2)))), DecimalType(18,2)))` 
+        |    LEFT SEMI JOIN (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#256 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#259 as decimal(12,2)))), DecimalType(18,2)))` 
         |    FROM
         |      store_sales
-        |      INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
-        |    GROUP BY customer.`c_customer_sk`) gen_subquery_3  ON (CAST(gen_subquery_3.`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#683 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#686 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_1_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum(gen_subsumer_1.`csales`) AS `csales`   FROM  (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`, customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`, sum(store_sales.`ss_net_paid`) AS `year_total`   FROM  store_sales  INNER JOIN customer   ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`, customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`) gen_subsumer_1   WHERE  (gen_subsumer_1.`d_year` IN (2000, 2001, 2002, 2003))  GROUP BY gen_subsumer_1.`c_customer_sk`) gen_expression_1_0 ) AS DECIMAL(32,6)))) AND (web_sales.`ws_bill_customer_sk` = gen_subquery_3.`c_customer_sk`)
+        |      INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)
+        |    GROUP BY customer.`c_customer_sk`) gen_subquery_3  ON (CAST(gen_subquery_3.`sum(CheckOverflow((promote_precision(cast(cast(ss_quantity#256 as decimal(10,0)) as decimal(12,2))) * promote_precision(cast(ss_sales_price#259 as decimal(12,2)))), DecimalType(18,2)))` AS DECIMAL(38,8)) > (0.500000BD * CAST((SELECT max(gen_expression_1_0.`csales`) AS `tpcds_cmax`   FROM  (SELECT sum(gen_subsumer_1.`csales`) AS `csales`   FROM  (SELECT customer.`c_customer_sk`, sum((CAST(CAST(store_sales.`ss_quantity` AS DECIMAL(10,0)) AS DECIMAL(12,2)) * CAST(store_sales.`ss_sales_price` AS DECIMAL(12,2)))) AS `csales`, customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`, sum(store_sales.`ss_net_paid`) AS `year_total`   FROM  store_sales  INNER JOIN customer ON (store_sales.`ss_customer_sk` = customer.`c_customer_sk`)  INNER JOIN date_dim ON (store_sales.`ss_sold_date_sk` = date_dim.`d_date_sk`)  GROUP BY customer.`c_customer_sk`, customer.`c_customer_id`, customer.`c_first_name`, customer.`c_last_name`, date_dim.`d_year`) gen_subsumer_1   WHERE  (gen_subsumer_1.`d_year` IN (2000, 2001, 2002, 2003))  GROUP BY gen_subsumer_1.`c_customer_sk`) gen_expression_1_0 ) AS DECIMAL(32,6)))) AND (web_sales.`ws_bill_customer_sk` = gen_subquery_3.`c_customer_sk`)
         |    INNER JOIN date_dim ON (date_dim.`d_year` = 2000) AND (date_dim.`d_moy` = 2) AND (web_sales.`ws_sold_date_sk` = date_dim.`d_date_sk`)) gen_subquery_4 
         |LIMIT 100
         """.stripMargin.trim),
-      // harmonization, benchmark SEQ
+      // harmonization
       ("case_31",
        """
         |SELECT CAST(((FLOOR(((CAST(sdr_dyn_seq_custer_iot_all_hour_60min.`STARTTIME` AS DOUBLE) + 28800.0D) / 3600.0D)) * 3600L) - 28800L) AS INT) AS `a3600`, dim_apn_iot.`a12575903189`, sdr_dyn_seq_custer_iot_all_hour_60min.`DIM_52`, sdr_dyn_seq_custer_iot_all_hour_60min.`DIM_1`, sum(1L) AS `CUSTER_IOT_GRP_USER_NUM_STREAM_C`, sdr_dyn_seq_custer_iot_all_hour_60min.`STARTTIME`, dim_apn_iot.`a12575847251`, dim_apn_iot.`a12575817396`, dim_apn_iot.`a12575873557` 
@@ -2225,31 +2399,7 @@ object TestTPCDS_1_4_Batch {
         |	,AT.a12575903189
         |ORDER BY START_TIME ASC
        """.stripMargin.trim,
-       """
-        |SELECT gen_subquery_2.`START_TIME`, gen_subquery_2.`USER_NUMBER`, gen_subquery_2.`CITY_ASCRIPTION`, gen_subquery_2.`SERVICE_LEVEL`, gen_subquery_2.`INDUSTRY` 
-        |FROM
-        |  (SELECT gen_subquery_1.`a3600` AS `START_TIME`, sum(CAST(gen_subquery_1.`CUSTER_IOT_GRP_USER_NUMBER_M` AS BIGINT)) AS `USER_NUMBER`, gen_subquery_1.`a12575873557` AS `CITY_ASCRIPTION`, gen_subquery_1.`a12575847251` AS `SERVICE_LEVEL`, gen_subquery_1.`a12575903189` AS `INDUSTRY` 
-        |  FROM
-        |    (SELECT gen_subquery_0.`a3600`, gen_subquery_0.`a12575873557` AS `a12575873557`, gen_subquery_0.`a12575847251` AS `a12575847251`, gen_subquery_0.`a12575903189` AS `a12575903189`, CASE WHEN (sum(coalesce(gen_subquery_0.`CUSTER_IOT_GRP_USER_NUM_STREAM_C`, 0L)) > 0L) THEN 1 ELSE 0 END AS `CUSTER_IOT_GRP_USER_NUMBER_M` 
-        |    FROM
-        |      (SELECT gen_subsumer_0.`a3600` AS `a3600`, sum(gen_subsumer_0.`CUSTER_IOT_GRP_USER_NUM_STREAM_C`) AS `CUSTER_IOT_GRP_USER_NUM_STREAM_C`, gen_subsumer_0.`a12575903189` AS `a12575903189`, gen_subsumer_0.`DIM_52` AS `a204010101`, gen_subsumer_0.`a12575873557` AS `a12575873557`, gen_subsumer_0.`a12575847251` AS `a12575847251` 
-        |      FROM
-        |        (SELECT dim_apn_iot.`a12575873557`, sdr_dyn_seq_custer_iot_all_hour_60min.`starttime`, sum(1L) AS `CUSTER_IOT_GRP_USER_NUM_STREAM_C`, CAST(((FLOOR(((CAST(sdr_dyn_seq_custer_iot_all_hour_60min.`starttime` AS DOUBLE) + 28800.0D) / 3600.0D)) * 3600L) - 28800L) AS INT) AS `a3600`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_52`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_1`, dim_apn_iot.`a12575847251`, dim_apn_iot.`a12575903189` 
-        |        FROM
-        |          sdr_dyn_seq_custer_iot_all_hour_60min
-        |          INNER JOIN (SELECT dim_apn_iot.`INDUSTRY` AS `a12575903189`, dim_apn_iot.`APN_NAME` AS `a12575817396`, dim_apn_iot.`CITY_ASCRIPTION` AS `a12575873557`, dim_apn_iot.`SERVICE_LEVEL` AS `a12575847251` 
-        |          FROM
-        |            dim_apn_iot
-        |          WHERE
-        |            (dim_apn_iot.`CITY_ASCRIPTION` IN ('金华', '丽水', '台州', '舟山', '嘉兴', '宁波', '温州', '绍兴', '湖州', '杭州', '衢州', '省直管', '外省地市', '测试')) AND (dim_apn_iot.`INDUSTRY` IN ('公共管理', '卫生社保', '电力供应', '金融业', '软件业', '文体娱业', '居民服务', '科研技术', '交运仓储', '建筑业', '租赁服务', '制造业', '住宿餐饮', '公共服务', '批发零售', '农林牧渔')) AND (dim_apn_iot.`SERVICE_LEVEL` IN ('金', '标准', '银', '铜'))
-        |          GROUP BY dim_apn_iot.`INDUSTRY`, dim_apn_iot.`APN_NAME`, dim_apn_iot.`CITY_ASCRIPTION`, dim_apn_iot.`SERVICE_LEVEL`) dim_apn_iot  ON (sdr_dyn_seq_custer_iot_all_hour_60min.`dim_51` = dim_apn_iot.`a12575817396`)
-        |        GROUP BY dim_apn_iot.`a12575873557`, sdr_dyn_seq_custer_iot_all_hour_60min.`starttime`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_52`, dim_apn_iot.`a12575817396`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_1`, dim_apn_iot.`a12575847251`, dim_apn_iot.`a12575903189`) gen_subsumer_0 
-        |      WHERE
-        |        (gen_subsumer_0.`DIM_1` IN ('1', '2', '5'))
-        |      GROUP BY gen_subsumer_0.`STARTTIME`, gen_subsumer_0.`a12575903189`, gen_subsumer_0.`DIM_52`, gen_subsumer_0.`a12575873557`, gen_subsumer_0.`a12575847251`) gen_subquery_0 
-        |    GROUP BY gen_subquery_0.`a3600`, gen_subquery_0.`a12575873557`, gen_subquery_0.`a12575847251`, gen_subquery_0.`a12575903189`, gen_subquery_0.`a204010101`) gen_subquery_1 
-        |  GROUP BY gen_subquery_1.`a3600`, gen_subquery_1.`a12575873557`, gen_subquery_1.`a12575847251`, gen_subquery_1.`a12575903189`) gen_subquery_2 
-        |ORDER BY gen_subquery_2.`START_TIME` ASC NULLS FIRST 
+       """ 
        """.stripMargin.trim),
       // single table MV, latest benchmark
       ("case_32",
@@ -2325,31 +2475,31 @@ object TestTPCDS_1_4_Batch {
         |	OR colunm_2016 IS NOT NULL
        """.stripMargin.trim,
        """
-         |SELECT gen_subquery_1.`country_show_cn`, gen_subquery_1.`country`, gen_subquery_1.`colunm_2014`, gen_subquery_1.`colunm_2015`, gen_subquery_1.`colunm_2016`, gen_subquery_1.`tb`, gen_subquery_1.`dbupdate` 
-         |FROM
-         |  (SELECT w.`country_show_cn`, w.`country`, CASE WHEN ((up.`startdate` <= '201401') AND (up.`newdate` >= '201412')) THEN CASE WHEN isnan(w.`colunm_2014`) THEN 0.0D ELSE w.`colunm_2014` END ELSE CAST(NULL AS DOUBLE) END AS `colunm_2014`, CASE WHEN ((up.`startdate` <= '201501') AND (up.`newdate` >= '201512')) THEN CASE WHEN isnan(w.`colunm_2015`) THEN 0.0D ELSE w.`colunm_2015` END ELSE CAST(NULL AS DOUBLE) END AS `colunm_2015`, CASE WHEN ((up.`startdate` <= '201601') AND (up.`newdate` >= '201612')) THEN CASE WHEN isnan(w.`colunm_2016`) THEN 0.0D ELSE w.`colunm_2016` END ELSE CAST(NULL AS DOUBLE) END AS `colunm_2016`, w.`tb`, concat_ws('-', up.`startdate`, up.`newdate`) AS `dbupdate` 
-         |  FROM
-         |    (SELECT gen_subquery_0.`country` AS `countryid`, gen_subquery_0.`country_cn` AS `country_show_cn`, gen_subquery_0.`country_en` AS `country`, sum(gen_subquery_0.`v2014`) AS `colunm_2014`, sum(gen_subquery_0.`v2015`) AS `colunm_2015`, sum(gen_subquery_0.`v2016`) AS `colunm_2016`, ((sum(gen_subquery_0.`v2016`) - sum(gen_subquery_0.`v2015`)) / sum(gen_subquery_0.`v2015`)) AS `tb` 
-         |    FROM
-         |      (SELECT `Country`, `v2014`, `v2015`, `v2016`, `countryid`, `country_en`, `country_cn` 
-         |      FROM
-         |        (SELECT gen_subsumer_0.`b_country` AS `Country`, sum(gen_subsumer_0.`v2014`) AS `v2014`, sum(gen_subsumer_0.`v2015`) AS `v2015`, sum(gen_subsumer_0.`v2016`) AS `v2016` 
-         |        FROM
-         |          (SELECT tradeflow_all.`b_country`, tradeflow_all.`y_year`, substring(tradeflow_all.`hs_code`, 1, 2) AS `hs1`, sum(CASE WHEN (CAST(tradeflow_all.`y_year` AS INT) = 2016) THEN tradeflow_all.`dollar_value` ELSE 0.0D END) AS `v2016`, sum(CASE WHEN (CAST(tradeflow_all.`y_year` AS INT) = 2014) THEN tradeflow_all.`dollar_value` ELSE 0.0D END) AS `v2014`, sum(CASE WHEN (CAST(tradeflow_all.`y_year` AS INT) = 2015) THEN tradeflow_all.`dollar_value` ELSE 0.0D END) AS `v2015`, tradeflow_all.`country`, tradeflow_all.`imex` 
-         |          FROM
-         |            tradeflow_all
-         |          GROUP BY tradeflow_all.`b_country`, tradeflow_all.`y_year`, substring(tradeflow_all.`hs_code`, 1, 2), tradeflow_all.`country`, tradeflow_all.`imex`) gen_subsumer_0 
-         |        WHERE
-         |          (CAST(gen_subsumer_0.`imex` AS INT) = 0) AND (((CAST(gen_subsumer_0.`y_year` AS INT) = 2014) OR (CAST(gen_subsumer_0.`y_year` AS INT) = 2015)) OR (CAST(gen_subsumer_0.`y_year` AS INT) = 2016))
-         |        GROUP BY gen_subsumer_0.`b_country`, gen_subsumer_0.`y_year`) a 
-         |        LEFT OUTER JOIN country c  ON (a.`country` = c.`countryid`)) gen_subquery_0 
-         |    GROUP BY gen_subquery_0.`country_cn`, gen_subquery_0.`country`, gen_subquery_0.`countryid`, gen_subquery_0.`country_en`) w 
-         |    LEFT OUTER JOIN updatetime up  ON (CAST(up.`imex` AS INT) = 0) AND (w.`countryid` = up.`countryid`) AND (((CASE WHEN ((up.`startdate` <= '201401') AND (up.`newdate` >= '201412')) THEN CASE WHEN isnan(w.`colunm_2014`) THEN 0.0D ELSE w.`colunm_2014` END ELSE CAST(NULL AS DOUBLE) END IS NOT NULL) OR (CASE WHEN ((up.`startdate` <= '201501') AND (up.`newdate` >= '201512')) THEN CASE WHEN isnan(w.`colunm_2015`) THEN 0.0D ELSE w.`colunm_2015` END ELSE CAST(NULL AS DOUBLE) END IS NOT NULL)) OR (CASE WHEN ((up.`startdate` <= '201601') AND (up.`newdate` >= '201612')) THEN CASE WHEN isnan(w.`colunm_2016`) THEN 0.0D ELSE w.`colunm_2016` END ELSE CAST(NULL AS DOUBLE) END IS NOT NULL))
-         |  WHERE
-         |    (((NOT isnan(w.`colunm_2014`)) OR (NOT isnan(w.`colunm_2015`))) OR (NOT isnan(w.`colunm_2016`))) AND (((NOT (w.`colunm_2014` = 0.0D)) OR (NOT (w.`colunm_2015` = 0.0D))) OR (NOT (w.`colunm_2016` = 0.0D)))) gen_subquery_1 
-         |GROUP BY gen_subquery_1.`country_show_cn`, gen_subquery_1.`country`, gen_subquery_1.`colunm_2014`, gen_subquery_1.`colunm_2015`, gen_subquery_1.`colunm_2016`, gen_subquery_1.`tb`, gen_subquery_1.`dbupdate`
+        |SELECT gen_subquery_3.`country_show_cn`, gen_subquery_3.`country`, gen_subquery_3.`colunm_2014`, gen_subquery_3.`colunm_2015`, gen_subquery_3.`colunm_2016`, gen_subquery_3.`tb`, gen_subquery_3.`dbupdate` 
+        |FROM
+        |  (SELECT gen_subquery_2.`country_show_cn`, gen_subquery_2.`country`, CASE WHEN ((up.`startdate` <= '201401') AND (up.`newdate` >= '201412')) THEN CASE WHEN isnan(gen_subquery_2.`colunm_2014`) THEN 0.0D ELSE gen_subquery_2.`colunm_2014` END ELSE CAST(NULL AS DOUBLE) END AS `colunm_2014`, CASE WHEN ((up.`startdate` <= '201501') AND (up.`newdate` >= '201512')) THEN CASE WHEN isnan(gen_subquery_2.`colunm_2015`) THEN 0.0D ELSE gen_subquery_2.`colunm_2015` END ELSE CAST(NULL AS DOUBLE) END AS `colunm_2015`, CASE WHEN ((up.`startdate` <= '201601') AND (up.`newdate` >= '201612')) THEN CASE WHEN isnan(gen_subquery_2.`colunm_2016`) THEN 0.0D ELSE gen_subquery_2.`colunm_2016` END ELSE CAST(NULL AS DOUBLE) END AS `colunm_2016`, gen_subquery_2.`tb`, concat_ws('-', up.`startdate`, up.`newdate`) AS `dbupdate` 
+        |  FROM
+        |    (SELECT gen_subquery_1.`country` AS `countryid`, gen_subquery_1.`country_cn` AS `country_show_cn`, gen_subquery_1.`country_en` AS `country`, sum(gen_subquery_1.`v2014`) AS `colunm_2014`, sum(gen_subquery_1.`v2015`) AS `colunm_2015`, sum(gen_subquery_1.`v2016`) AS `colunm_2016`, ((sum(gen_subquery_1.`v2016`) - sum(gen_subquery_1.`v2015`)) / sum(gen_subquery_1.`v2015`)) AS `tb` 
+        |    FROM
+        |      (SELECT gen_subquery_0.`Country`, gen_subquery_0.`v2014`, gen_subquery_0.`v2015`, gen_subquery_0.`v2016`, `countryid`, `country_en`, `country_cn` 
+        |      FROM
+        |        (SELECT gen_subsumer_0.`b_country` AS `Country`, sum(gen_subsumer_0.`v2014`) AS `v2014`, sum(gen_subsumer_0.`v2015`) AS `v2015`, sum(gen_subsumer_0.`v2016`) AS `v2016` 
+        |        FROM
+        |          (SELECT tradeflow_all.`b_country`, tradeflow_all.`y_year`, substring(tradeflow_all.`hs_code`, 1, 2) AS `hs1`, sum(CASE WHEN (CAST(tradeflow_all.`y_year` AS INT) = 2016) THEN tradeflow_all.`dollar_value` ELSE 0.0D END) AS `v2016`, sum(CASE WHEN (CAST(tradeflow_all.`y_year` AS INT) = 2014) THEN tradeflow_all.`dollar_value` ELSE 0.0D END) AS `v2014`, sum(CASE WHEN (CAST(tradeflow_all.`y_year` AS INT) = 2015) THEN tradeflow_all.`dollar_value` ELSE 0.0D END) AS `v2015`, tradeflow_all.`country`, tradeflow_all.`imex` 
+        |          FROM
+        |            tradeflow_all
+        |          GROUP BY tradeflow_all.`b_country`, tradeflow_all.`y_year`, substring(tradeflow_all.`hs_code`, 1, 2), tradeflow_all.`country`, tradeflow_all.`imex`) gen_subsumer_0 
+        |        WHERE
+        |          (CAST(gen_subsumer_0.`imex` AS INT) = 0) AND (((CAST(gen_subsumer_0.`y_year` AS INT) = 2014) OR (CAST(gen_subsumer_0.`y_year` AS INT) = 2015)) OR (CAST(gen_subsumer_0.`y_year` AS INT) = 2016))
+        |        GROUP BY gen_subsumer_0.`b_country`, gen_subsumer_0.`y_year`) gen_subquery_0 
+        |        LEFT OUTER JOIN country c  ON (gen_subquery_0.`country` = c.`countryid`)) gen_subquery_1 
+        |    GROUP BY gen_subquery_1.`country_cn`, gen_subquery_1.`country`, gen_subquery_1.`countryid`, gen_subquery_1.`country_en`) gen_subquery_2 
+        |    LEFT OUTER JOIN updatetime up  ON (CAST(up.`imex` AS INT) = 0) AND (gen_subquery_2.`countryid` = up.`countryid`) AND (((CASE WHEN ((up.`startdate` <= '201401') AND (up.`newdate` >= '201412')) THEN CASE WHEN isnan(gen_subquery_2.`colunm_2014`) THEN 0.0D ELSE gen_subquery_2.`colunm_2014` END ELSE CAST(NULL AS DOUBLE) END IS NOT NULL) OR (CASE WHEN ((up.`startdate` <= '201501') AND (up.`newdate` >= '201512')) THEN CASE WHEN isnan(gen_subquery_2.`colunm_2015`) THEN 0.0D ELSE gen_subquery_2.`colunm_2015` END ELSE CAST(NULL AS DOUBLE) END IS NOT NULL)) OR (CASE WHEN ((up.`startdate` <= '201601') AND (up.`newdate` >= '201612')) THEN CASE WHEN isnan(gen_subquery_2.`colunm_2016`) THEN 0.0D ELSE gen_subquery_2.`colunm_2016` END ELSE CAST(NULL AS DOUBLE) END IS NOT NULL))
+        |  WHERE
+        |    (((NOT isnan(gen_subquery_2.`colunm_2014`)) OR (NOT isnan(gen_subquery_2.`colunm_2015`))) OR (NOT isnan(gen_subquery_2.`colunm_2016`))) AND (((NOT (gen_subquery_2.`colunm_2014` = 0.0D)) OR (NOT (gen_subquery_2.`colunm_2015` = 0.0D))) OR (NOT (gen_subquery_2.`colunm_2016` = 0.0D)))) gen_subquery_3 
+        |GROUP BY gen_subquery_3.`country_show_cn`, gen_subquery_3.`country`, gen_subquery_3.`colunm_2014`, gen_subquery_3.`colunm_2015`, gen_subquery_3.`colunm_2016`, gen_subquery_3.`tb`, gen_subquery_3.`dbupdate`
         """.stripMargin.trim),
-      // single table MV, benchmark SEQ
+      // single table MV
       ("case_33",
        """
         |SELECT sdr_dyn_seq_custer_iot_all_hour_60min.`starttime`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_51`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_52`, sdr_dyn_seq_custer_iot_all_hour_60min.`DIM_10`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_1`, sum(1L) AS `sum(1)` 
@@ -2462,35 +2612,231 @@ object TestTPCDS_1_4_Batch {
         |ORDER BY START_TIME ASC
        """.stripMargin.trim,
        """
-        |SELECT gen_subquery_3.`START_TIME`, gen_subquery_3.`USER_NUMBER`, gen_subquery_3.`CITY_ASCRIPTION`, gen_subquery_3.`SERVICE_LEVEL`, gen_subquery_3.`INDUSTRY` 
+        |SELECT gen_subquery_4.`START_TIME`, gen_subquery_4.`USER_NUMBER`, gen_subquery_4.`CITY_ASCRIPTION`, gen_subquery_4.`SERVICE_LEVEL`, gen_subquery_4.`INDUSTRY` 
         |FROM
-        |  (SELECT gen_subquery_2.`a3600` AS `START_TIME`, sum(CAST(gen_subquery_2.`CUSTER_IOT_GRP_USER_NUMBER_M` AS BIGINT)) AS `USER_NUMBER`, gen_subquery_2.`a12575873557` AS `CITY_ASCRIPTION`, gen_subquery_2.`a12575847251` AS `SERVICE_LEVEL`, gen_subquery_2.`a12575903189` AS `INDUSTRY` 
+        |  (SELECT gen_subquery_3.`a3600` AS `START_TIME`, sum(CAST(gen_subquery_3.`CUSTER_IOT_GRP_USER_NUMBER_M` AS BIGINT)) AS `USER_NUMBER`, gen_subquery_3.`a12575873557` AS `CITY_ASCRIPTION`, gen_subquery_3.`a12575847251` AS `SERVICE_LEVEL`, gen_subquery_3.`a12575903189` AS `INDUSTRY` 
         |  FROM
-        |    (SELECT gen_subquery_1.`a3600`, gen_subquery_1.`a12575873557` AS `a12575873557`, gen_subquery_1.`a12575847251` AS `a12575847251`, gen_subquery_1.`a12575903189` AS `a12575903189`, CASE WHEN (sum(coalesce(gen_subquery_1.`CUSTER_IOT_GRP_USER_NUM_STREAM_C`, 0L)) > 0L) THEN 1 ELSE 0 END AS `CUSTER_IOT_GRP_USER_NUMBER_M` 
+        |    (SELECT gen_subquery_2.`a3600`, gen_subquery_2.`a12575873557` AS `a12575873557`, gen_subquery_2.`a12575847251` AS `a12575847251`, gen_subquery_2.`a12575903189` AS `a12575903189`, CASE WHEN (sum(coalesce(gen_subquery_2.`CUSTER_IOT_GRP_USER_NUM_STREAM_C`, 0L)) > 0L) THEN 1 ELSE 0 END AS `CUSTER_IOT_GRP_USER_NUMBER_M` 
         |    FROM
-        |      (SELECT CAST(((FLOOR(((CAST(gen_subquery_0.`STARTTIME` AS DOUBLE) + 28800.0D) / 3600.0D)) * 3600L) - 28800L) AS INT) AS `a3600`, sum(gen_subquery_0.`sum(1)`) AS `CUSTER_IOT_GRP_USER_NUM_STREAM_C`, gen_subquery_0.`a12575903189` AS `a12575903189`, gen_subquery_0.`DIM_52` AS `a204010101`, gen_subquery_0.`a12575873557` AS `a12575873557`, gen_subquery_0.`a12575847251` AS `a12575847251` 
+        |      (SELECT CAST(((FLOOR(((CAST(gen_subquery_1.`STARTTIME` AS DOUBLE) + 28800.0D) / 3600.0D)) * 3600L) - 28800L) AS INT) AS `a3600`, sum(gen_subquery_1.`sum(1)`) AS `CUSTER_IOT_GRP_USER_NUM_STREAM_C`, gen_subquery_1.`a12575903189` AS `a12575903189`, gen_subquery_1.`DIM_52` AS `a204010101`, gen_subquery_1.`a12575873557` AS `a12575873557`, gen_subquery_1.`a12575847251` AS `a12575847251` 
         |      FROM
-        |        (SELECT `starttime`, `dim_52`, `a12575903189`, `a12575873557`, `a12575847251`, gen_harmonized_default_sdr_dyn_seq_custer_iot_all_hour_60min.`sum(1)` 
+        |        (SELECT gen_subquery_0.`starttime`, gen_subquery_0.`dim_52`, `a12575903189`, `a12575873557`, `a12575847251`, gen_subquery_0.`sum(1)` 
         |        FROM
-        |          (SELECT gen_subsumer_0.`DIM_51`, gen_subsumer_0.`DIM_1`, gen_subsumer_0.`STARTTIME`, gen_subsumer_0.`DIM_52`, sum(gen_subsumer_0.`sum(1)`) AS `sum(1)` 
+        |          (SELECT gen_subsumer_0.`DIM_1`, gen_subsumer_0.`DIM_51`, gen_subsumer_0.`DIM_52`, gen_subsumer_0.`STARTTIME`, sum(gen_subsumer_0.`sum(1)`) AS `sum(1)` 
         |          FROM
         |            (SELECT sdr_dyn_seq_custer_iot_all_hour_60min.`starttime`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_51`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_52`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_10`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_1`, sum(1L) AS `sum(1)` 
         |            FROM
         |              sdr_dyn_seq_custer_iot_all_hour_60min
         |            GROUP BY sdr_dyn_seq_custer_iot_all_hour_60min.`starttime`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_51`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_52`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_10`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_1`) gen_subsumer_0 
-        |          GROUP BY gen_subsumer_0.`DIM_51`, gen_subsumer_0.`DIM_1`, gen_subsumer_0.`STARTTIME`, gen_subsumer_0.`DIM_52`) gen_harmonized_default_sdr_dyn_seq_custer_iot_all_hour_60min 
+        |          GROUP BY gen_subsumer_0.`DIM_1`, gen_subsumer_0.`DIM_51`, gen_subsumer_0.`DIM_52`, gen_subsumer_0.`STARTTIME`) gen_subquery_0 
         |          INNER JOIN (SELECT dim_apn_iot.`INDUSTRY` AS `a12575903189`, dim_apn_iot.`APN_NAME` AS `a12575817396`, dim_apn_iot.`CITY_ASCRIPTION` AS `a12575873557`, dim_apn_iot.`SERVICE_LEVEL` AS `a12575847251` 
         |          FROM
         |            dim_apn_iot
-        |          GROUP BY dim_apn_iot.`INDUSTRY`, dim_apn_iot.`APN_NAME`, dim_apn_iot.`CITY_ASCRIPTION`, dim_apn_iot.`SERVICE_LEVEL`) D12575657700_H104  ON (sdr_dyn_seq_custer_iot_all_hour_60min.`DIM_51` = D12575657700_H104.`a12575817396`) AND (`a12575873557` IN ('金华', '丽水', '台州', '舟山', '嘉兴', '宁波', '温州', '绍兴', '湖州', '杭州', '衢州', '省直管', '外省地市', '测试')) AND (`a12575903189` IN ('公共管理', '卫生社保', '电力供应', '金融业', '软件业', '文体娱业', '居民服务', '科研技术', '交运仓储', '建筑业', '租赁服务', '制造业', '住宿餐饮', '公共服务', '批发零售', '农林牧渔')) AND (`a12575847251` IN ('金', '标准', '银', '铜'))
+        |          GROUP BY dim_apn_iot.`INDUSTRY`, dim_apn_iot.`APN_NAME`, dim_apn_iot.`CITY_ASCRIPTION`, dim_apn_iot.`SERVICE_LEVEL`) D12575657700_H104  ON (gen_subquery_0.`DIM_51` = D12575657700_H104.`a12575817396`) AND (`a12575873557` IN ('金华', '丽水', '台州', '舟山', '嘉兴', '宁波', '温州', '绍兴', '湖州', '杭州', '衢州', '省直管', '外省地市', '测试')) AND (`a12575903189` IN ('公共管理', '卫生社保', '电力供应', '金融业', '软件业', '文体娱业', '居民服务', '科研技术', '交运仓储', '建筑业', '租赁服务', '制造业', '住宿餐饮', '公共服务', '批发零售', '农林牧渔')) AND (`a12575847251` IN ('金', '标准', '银', '铜'))
         |        WHERE
-        |          (sdr_dyn_seq_custer_iot_all_hour_60min.`DIM_1` IN ('1', '2', '5'))) gen_subquery_0 
-        |      GROUP BY gen_subquery_0.`STARTTIME`, gen_subquery_0.`a12575903189`, gen_subquery_0.`DIM_52`, gen_subquery_0.`a12575873557`, gen_subquery_0.`a12575847251`) gen_subquery_1 
-        |    GROUP BY gen_subquery_1.`a3600`, gen_subquery_1.`a12575873557`, gen_subquery_1.`a12575847251`, gen_subquery_1.`a12575903189`, gen_subquery_1.`a204010101`) gen_subquery_2 
-        |  GROUP BY gen_subquery_2.`a3600`, gen_subquery_2.`a12575873557`, gen_subquery_2.`a12575847251`, gen_subquery_2.`a12575903189`) gen_subquery_3 
-        |ORDER BY gen_subquery_3.`START_TIME` ASC NULLS FIRST
+        |          (gen_subquery_0.`DIM_1` IN ('1', '2', '5'))) gen_subquery_1 
+        |      GROUP BY gen_subquery_1.`STARTTIME`, gen_subquery_1.`a12575903189`, gen_subquery_1.`DIM_52`, gen_subquery_1.`a12575873557`, gen_subquery_1.`a12575847251`) gen_subquery_2 
+        |    GROUP BY gen_subquery_2.`a3600`, gen_subquery_2.`a12575873557`, gen_subquery_2.`a12575847251`, gen_subquery_2.`a12575903189`, gen_subquery_2.`a204010101`) gen_subquery_3 
+        |  GROUP BY gen_subquery_3.`a3600`, gen_subquery_3.`a12575873557`, gen_subquery_3.`a12575847251`, gen_subquery_3.`a12575903189`) gen_subquery_4 
+        |ORDER BY gen_subquery_4.`START_TIME` ASC NULLS FIRST
        """.stripMargin.trim
-        )
+        ),
+      ("case_34",
+       """
+        |SELECT ss_item_sk, ss_customer_sk, ss_cdemo_sk, sum(ss_list_price), sum(ss_net_paid)
+        |FROM store_sales
+        |GROUP BY ss_item_sk, ss_customer_sk, ss_cdemo_sk, ss_store_sk, ss_promo_sk
+        """.stripMargin.trim,
+       """
+        |SELECT ss_cdemo_sk, ss_customer_sk, sum(ss_net_paid) as sum_paid
+        |FROM store_sales
+        |GROUP BY ss_cdemo_sk, ss_customer_sk, ss_item_sk, ss_store_sk, ss_promo_sk
+        """.stripMargin.trim,
+       """ 
+        |SELECT gen_subsumer_0.`ss_cdemo_sk`, gen_subsumer_0.`ss_customer_sk`, gen_subsumer_0.`sum(ss_net_paid)` AS `sum_paid` 
+        |FROM
+        |  (SELECT store_sales.`ss_item_sk`, store_sales.`ss_customer_sk`, store_sales.`ss_cdemo_sk`, sum(store_sales.`ss_list_price`) AS `sum(ss_list_price)`, sum(store_sales.`ss_net_paid`) AS `sum(ss_net_paid)` 
+        |  FROM
+        |    store_sales
+        |  GROUP BY store_sales.`ss_item_sk`, store_sales.`ss_customer_sk`, store_sales.`ss_cdemo_sk`, store_sales.`ss_store_sk`, store_sales.`ss_promo_sk`) gen_subsumer_0
+       """.stripMargin.trim),
+      ("case_35",
+       """
+        |SELECT ss_item_sk, ss_customer_sk, ss_cdemo_sk, sum(ss_list_price), sum(ss_net_paid), count(ss_net_paid)
+        |FROM store_sales
+        |GROUP BY ss_item_sk, ss_customer_sk, ss_cdemo_sk, ss_store_sk, ss_promo_sk
+        """.stripMargin.trim,
+       """
+        |SELECT ss_customer_sk, avg(ss_net_paid) as avg_paid
+        |FROM store_sales
+        |GROUP BY ss_customer_sk
+        """.stripMargin.trim,
+       """ 
+        |SELECT gen_subsumer_0.`ss_customer_sk`, (sum(gen_subsumer_0.`sum(ss_net_paid)`) / CAST(sum(gen_subsumer_0.`count(ss_net_paid)`) AS DECIMAL(27,2))) AS `avg_paid` 
+        |FROM
+        |  (SELECT store_sales.`ss_item_sk`, store_sales.`ss_customer_sk`, store_sales.`ss_cdemo_sk`, sum(store_sales.`ss_list_price`) AS `sum(ss_list_price)`, sum(store_sales.`ss_net_paid`) AS `sum(ss_net_paid)`, count(store_sales.`ss_net_paid`) AS `count(ss_net_paid)` 
+        |  FROM
+        |    store_sales
+        |  GROUP BY store_sales.`ss_item_sk`, store_sales.`ss_customer_sk`, store_sales.`ss_cdemo_sk`, store_sales.`ss_store_sk`, store_sales.`ss_promo_sk`) gen_subsumer_0 
+        |GROUP BY gen_subsumer_0.`ss_customer_sk`
+        """.stripMargin.trim),
+      ("case_36",
+       """
+        |SELECT ss_item_sk, ss_customer_sk, ss_cdemo_sk, sum(ss_list_price), avg(ss_net_paid), count(ss_net_paid)
+        |FROM store_sales
+        |GROUP BY ss_item_sk, ss_customer_sk, ss_cdemo_sk, ss_store_sk, ss_promo_sk
+        """.stripMargin.trim,
+       """
+        |SELECT ss_customer_sk, avg(ss_net_paid) as avg_paid
+        |FROM store_sales
+        |GROUP BY ss_customer_sk
+        """.stripMargin.trim,
+       """ 
+        |SELECT gen_subsumer_0.`ss_customer_sk`, (sum((gen_subsumer_0.`avg(ss_net_paid)` * CAST(sum(gen_subsumer_0.`count(ss_net_paid)`) AS DECIMAL(11,6)))) / CAST(sum(gen_subsumer_0.`count(ss_net_paid)`) AS DECIMAL(21,6))) AS `avg_paid` 
+        |FROM
+        |  (SELECT store_sales.`ss_item_sk`, store_sales.`ss_customer_sk`, store_sales.`ss_cdemo_sk`, sum(store_sales.`ss_list_price`) AS `sum(ss_list_price)`, avg(store_sales.`ss_net_paid`) AS `avg(ss_net_paid)`, count(store_sales.`ss_net_paid`) AS `count(ss_net_paid)` 
+        |  FROM
+        |    store_sales
+        |  GROUP BY store_sales.`ss_item_sk`, store_sales.`ss_customer_sk`, store_sales.`ss_cdemo_sk`, store_sales.`ss_store_sk`, store_sales.`ss_promo_sk`) gen_subsumer_0 
+        |GROUP BY gen_subsumer_0.`ss_customer_sk`
+        """.stripMargin.trim),
+      ("case_37",
+       """
+        |SELECT dim_1, dim_51, dim_52, starttime, sum(1L) AS `sum(1)`
+        |FROM
+        |       sdr_dyn_seq_custer_iot_all_hour_60min
+        |GROUP BY dim_1, starttime, dim_52, dim_51
+        """.stripMargin.trim,
+       """
+        |SELECT AT.a3600 AS START_TIME
+        |	,SUM(CUSTER_IOT_GRP_USER_NUMBER_M) AS USER_NUMBER
+        |	,AT.a12575873557 AS CITY_ASCRIPTION
+        |	,AT.a12575847251 AS SERVICE_LEVEL
+        |	,AT.a12575903189 AS INDUSTRY
+        |FROM (
+        |	SELECT MT.a3600 AS a3600
+        |		,MT.a12575873557 AS a12575873557
+        |		,MT.a12575847251 AS a12575847251
+        |		,MT.a12575903189 AS a12575903189
+        |		,SUM(COALESCE(CUSTER_IOT_GRP_USER_NUM_STREAM_C, 0)) AS CUSTER_IOT_GRP_USER_NUM_STREAM_CA
+        |		,(
+        |			CASE 
+        |				WHEN (SUM(COALESCE(CUSTER_IOT_GRP_USER_NUM_STREAM_C, 0))) > 0
+        |					THEN 1
+        |				ELSE 0
+        |				END
+        |			) AS CUSTER_IOT_GRP_USER_NUMBER_M
+        |		,MT.a204010101 AS a204010101
+        |	FROM (
+        |		SELECT cast(floor((STARTTIME + 28800) / 3600) * 3600 - 28800 AS INT) AS a3600
+        |			,SUM(COALESCE(1, 0)) AS CUSTER_IOT_GRP_USER_NUM_STREAM_C
+        |			,D12575657700_H104.a12575903189 AS a12575903189
+        |			,DIM_52 AS a204010101
+        |			,D12575657700_H104.a12575873557 AS a12575873557
+        |			,D12575657700_H104.a12575847251 AS a12575847251
+        |		FROM SDR_DYN_SEQ_CUSTER_IOT_ALL_HOUR_60MIN
+        |		LEFT JOIN (
+        |			SELECT INDUSTRY AS a12575903189
+        |				,APN_NAME AS a12575817396
+        |				,CITY_ASCRIPTION AS a12575873557
+        |				,SERVICE_LEVEL AS a12575847251
+        |			FROM DIM_APN_IOT
+        |			GROUP BY INDUSTRY
+        |				,APN_NAME
+        |				,CITY_ASCRIPTION
+        |				,SERVICE_LEVEL
+        |			) D12575657700_H104 ON DIM_51 = D12575657700_H104.a12575817396
+        |		WHERE (
+        |				D12575657700_H104.a12575873557 IN (
+        |					'金华'
+        |					,'丽水'
+        |					,'台州'
+        |					,'舟山'
+        |					,'嘉兴'
+        |					,'宁波'
+        |					,'温州'
+        |					,'绍兴'
+        |					,'湖州'
+        |					,'杭州'
+        |					,'衢州'
+        |					,'省直管'
+        |					,'外省地市'
+        |					,'测试'
+        |					)
+        |				AND D12575657700_H104.a12575903189 IN (
+        |					'公共管理'
+        |					,'卫生社保'
+        |					,'电力供应'
+        |					,'金融业'
+        |					,'软件业'
+        |					,'文体娱业'
+        |					,'居民服务'
+        |					,'科研技术'
+        |					,'交运仓储'
+        |					,'建筑业'
+        |					,'租赁服务'
+        |					,'制造业'
+        |					,'住宿餐饮'
+        |					,'公共服务'
+        |					,'批发零售'
+        |					,'农林牧渔'
+        |					)
+        |				AND D12575657700_H104.a12575847251 IN (
+        |					'金'
+        |					,'标准'
+        |					,'银'
+        |					,'铜'
+        |					)
+        |				AND DIM_1 IN (
+        |					'1'
+        |					,'2'
+        |					,'5'
+        |					)
+        |				)
+        |		GROUP BY STARTTIME
+        |			,D12575657700_H104.a12575903189
+        |			,DIM_52
+        |			,D12575657700_H104.a12575873557
+        |			,D12575657700_H104.a12575847251
+        |		) MT
+        |	GROUP BY MT.a3600
+        |		,MT.a12575873557
+        |		,MT.a12575847251
+        |		,MT.a12575903189
+        |		,MT.a204010101
+        |	) AT
+        |GROUP BY AT.a3600
+        |	,AT.a12575873557
+        |	,AT.a12575847251
+        |	,AT.a12575903189
+        |ORDER BY START_TIME ASC
+        """.stripMargin.trim,
+       """ 
+        |SELECT gen_subquery_4.`START_TIME`, gen_subquery_4.`USER_NUMBER`, gen_subquery_4.`CITY_ASCRIPTION`, gen_subquery_4.`SERVICE_LEVEL`, gen_subquery_4.`INDUSTRY` 
+        |FROM
+        |  (SELECT gen_subquery_3.`a3600` AS `START_TIME`, sum(CAST(gen_subquery_3.`CUSTER_IOT_GRP_USER_NUMBER_M` AS BIGINT)) AS `USER_NUMBER`, gen_subquery_3.`a12575873557` AS `CITY_ASCRIPTION`, gen_subquery_3.`a12575847251` AS `SERVICE_LEVEL`, gen_subquery_3.`a12575903189` AS `INDUSTRY` 
+        |  FROM
+        |    (SELECT gen_subquery_2.`a3600`, gen_subquery_2.`a12575873557` AS `a12575873557`, gen_subquery_2.`a12575847251` AS `a12575847251`, gen_subquery_2.`a12575903189` AS `a12575903189`, CASE WHEN (sum(coalesce(gen_subquery_2.`CUSTER_IOT_GRP_USER_NUM_STREAM_C`, 0L)) > 0L) THEN 1 ELSE 0 END AS `CUSTER_IOT_GRP_USER_NUMBER_M` 
+        |    FROM
+        |      (SELECT CAST(((FLOOR(((CAST(gen_subquery_1.`STARTTIME` AS DOUBLE) + 28800.0D) / 3600.0D)) * 3600L) - 28800L) AS INT) AS `a3600`, sum(gen_subquery_1.`sum(1)`) AS `CUSTER_IOT_GRP_USER_NUM_STREAM_C`, gen_subquery_1.`a12575903189` AS `a12575903189`, gen_subquery_1.`DIM_52` AS `a204010101`, gen_subquery_1.`a12575873557` AS `a12575873557`, gen_subquery_1.`a12575847251` AS `a12575847251` 
+        |      FROM
+        |        (SELECT gen_subquery_0.`starttime`, gen_subquery_0.`dim_52`, `a12575903189`, `a12575873557`, `a12575847251`, gen_harmonized_default_sdr_dyn_seq_custer_iot_all_hour_60min.`sum(1)` 
+        |        FROM
+        |          (SELECT sdr_dyn_seq_custer_iot_all_hour_60min.`dim_1`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_51`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_52`, sdr_dyn_seq_custer_iot_all_hour_60min.`starttime`, sum(1L) AS `sum(1)` 
+        |          FROM
+        |            sdr_dyn_seq_custer_iot_all_hour_60min
+        |          GROUP BY sdr_dyn_seq_custer_iot_all_hour_60min.`dim_1`, sdr_dyn_seq_custer_iot_all_hour_60min.`starttime`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_52`, sdr_dyn_seq_custer_iot_all_hour_60min.`dim_51`) gen_subquery_0 
+        |          INNER JOIN (SELECT dim_apn_iot.`INDUSTRY` AS `a12575903189`, dim_apn_iot.`APN_NAME` AS `a12575817396`, dim_apn_iot.`CITY_ASCRIPTION` AS `a12575873557`, dim_apn_iot.`SERVICE_LEVEL` AS `a12575847251` 
+        |          FROM
+        |            dim_apn_iot
+        |          GROUP BY dim_apn_iot.`INDUSTRY`, dim_apn_iot.`APN_NAME`, dim_apn_iot.`CITY_ASCRIPTION`, dim_apn_iot.`SERVICE_LEVEL`) D12575657700_H104  ON (gen_subquery_0.`DIM_51` = D12575657700_H104.`a12575817396`) AND (`a12575873557` IN ('金华', '丽水', '台州', '舟山', '嘉兴', '宁波', '温州', '绍兴', '湖州', '杭州', '衢州', '省直管', '外省地市', '测试')) AND (`a12575903189` IN ('公共管理', '卫生社保', '电力供应', '金融业', '软件业', '文体娱业', '居民服务', '科研技术', '交运仓储', '建筑业', '租赁服务', '制造业', '住宿餐饮', '公共服务', '批发零售', '农林牧渔')) AND (`a12575847251` IN ('金', '标准', '银', '铜'))
+        |        WHERE
+        |          (gen_subquery_0.`DIM_1` IN ('1', '2', '5'))) gen_subquery_1 
+        |      GROUP BY gen_subquery_1.`STARTTIME`, gen_subquery_1.`a12575903189`, gen_subquery_1.`DIM_52`, gen_subquery_1.`a12575873557`, gen_subquery_1.`a12575847251`) gen_subquery_2 
+        |    GROUP BY gen_subquery_2.`a3600`, gen_subquery_2.`a12575873557`, gen_subquery_2.`a12575847251`, gen_subquery_2.`a12575903189`, gen_subquery_2.`a204010101`) gen_subquery_3 
+        |  GROUP BY gen_subquery_3.`a3600`, gen_subquery_3.`a12575873557`, gen_subquery_3.`a12575847251`, gen_subquery_3.`a12575903189`) gen_subquery_4 
+        |ORDER BY gen_subquery_4.`START_TIME` ASC NULLS FIRST
+        """.stripMargin.trim)
   )
   
 }

@@ -20,8 +20,7 @@ package org.apache.carbondata.mv.plans
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.dsl.plans._
 import org.apache.spark.sql.catalyst.plans.logical.LocalRelation
-
-import org.apache.carbondata.mv.dsl._
+import org.apache.carbondata.mv.dsl.Plans._
 import org.apache.carbondata.mv.plans.modular.ModularPlan
 import org.apache.carbondata.mv.testutil.ModularPlanTest
 

@@ -19,35 +19,38 @@ package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSet}
 
-import org.apache.carbondata.mv.datamap.{MVHelper, MVState}
 import org.apache.carbondata.mv.expressions.modular._
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, Select}
 import org.apache.carbondata.mv.plans.modular
+import org.apache.carbondata.mv.session.MVSession
 
-private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVState) {
+private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) {
 
   def rewriteWithSummaryDatasets(plan: ModularPlan, rewrite: QueryRewrite): ModularPlan = {
     val replaced = plan.transformAllExpressions {
       case s: ModularSubquery =>
         if (s.children.isEmpty) {
-          ScalarModularSubquery(
-            rewriteWithSummaryDatasetsCore(s.plan, rewrite), s.children, s.exprId)
+          rewriteWithSummaryDatasetsCore(s.plan, rewrite) match {
+            case Some(rewrittenPlan) => ScalarModularSubquery(rewrittenPlan, s.children, s.exprId)
+            case None => s
+          }
         }
         else throw new UnsupportedOperationException(s"Rewrite expression $s isn't supported")
       case o => o
     }
-    rewriteWithSummaryDatasetsCore(replaced, rewrite)
+    rewriteWithSummaryDatasetsCore(replaced, rewrite).getOrElse(replaced)
   }
 
-  def rewriteWithSummaryDatasetsCore(plan: ModularPlan, rewrite: QueryRewrite): ModularPlan = {
+  def rewriteWithSummaryDatasetsCore(plan: ModularPlan,
+      rewrite: QueryRewrite): Option[ModularPlan] = {
     val rewrittenPlan = plan transformDown {
       case currentFragment =>
         if (currentFragment.rewritten || !currentFragment.isSPJGH) currentFragment
         else {
           val compensation =
             (for { dataset <- catalog.lookupFeasibleSummaryDatasets(currentFragment).toStream
-                   subsumer <- session.modularizer.modularize(
-                     session.optimizer.execute(dataset.plan)).map(_.harmonized)
+                   subsumer <- session.sessionState.modularizer.modularize(
+                     session.sessionState.optimizer.execute(dataset.plan)) // .map(_.harmonized)
                    subsumee <- unifySubsumee(currentFragment)
                    comp <- subsume(
                      unifySubsumer2(
@@ -61,25 +64,10 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVState) {
           compensation.map(_.setRewritten).getOrElse(currentFragment)
         }
     }
-    // In case it is rewritten plan and the datamap table is not updated then update the datamap
-    // table in plan.
-    if (rewrittenPlan.find(_.rewritten).isDefined) {
-      val updatedDataMapTablePlan = rewrittenPlan transform {
-        case s: Select =>
-          MVHelper.updateDataMap(s, rewrite)
-        case g: GroupBy =>
-          MVHelper.updateDataMap(g, rewrite)
-      }
-      // TODO Find a better way to set the rewritten flag, it may fail in some conditions.
-      val mapping =
-        rewrittenPlan.collect {case m: ModularPlan => m } zip
-        updatedDataMapTablePlan.collect {case m: ModularPlan => m}
-      mapping.foreach(f => if (f._1.rewritten) f._2.setRewritten())
-
-      updatedDataMapTablePlan
-
+    if (rewrittenPlan.fastEquals(plan)) {
+      None
     } else {
-      rewrittenPlan
+      Some(rewrittenPlan)
     }
   }
 
@@ -92,7 +80,7 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVState) {
         case (Nil, Nil) => None
         case (r, e) if r.forall(_.isInstanceOf[modular.LeafNode]) &&
                        e.forall(_.isInstanceOf[modular.LeafNode]) =>
-          val iter = session.matcher.execute(subsumer, subsumee, None, rewrite)
+          val iter = session.sessionState.matcher.execute(subsumer, subsumee, None, rewrite)
           if (iter.hasNext) Some(iter.next)
           else None
 
@@ -100,16 +88,18 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVState) {
           val compensation = subsume(rchild, echild, rewrite)
           val oiter = compensation.map {
             case comp if comp.eq(rchild) =>
-              session.matcher.execute(subsumer, subsumee, None, rewrite)
+              session.sessionState.matcher.execute(subsumer, subsumee, None, rewrite)
             case _ =>
-              session.matcher.execute(subsumer, subsumee, compensation, rewrite)
+              session.sessionState.matcher.execute(subsumer, subsumee, compensation, rewrite)
           }
           oiter.flatMap { case iter if iter.hasNext => Some(iter.next)
                           case _ => None }
 
         case _ => None
       }
-    } else None
+    } else {
+      None
+    }
   }
 
   private def updateDatamap(rchild: ModularPlan, subsume: ModularPlan) = {
