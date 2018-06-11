@@ -182,7 +182,7 @@ public class CarbonReaderBuilder {
       if (filterExpression != null) {
         table = CarbonTable.buildTable(tablePath, tableName, true);
       } else {
-        table = CarbonTable.buildTable(tablePath, tableName, false);
+        table = CarbonTable.buildDummyTable(tablePath);
       }
     }
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
