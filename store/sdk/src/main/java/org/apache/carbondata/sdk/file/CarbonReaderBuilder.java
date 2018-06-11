@@ -24,6 +24,7 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -200,23 +201,29 @@ public class CarbonReaderBuilder {
       format.setColumnProjection(job.getConfiguration(), projectionColumns);
     }
 
-    final List<InputSplit> splits =
-        format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
+    try {
+      final List<InputSplit> splits =
+          format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
 
-    List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
-    for (InputSplit split : splits) {
-      TaskAttemptContextImpl attempt =
-          new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
-      RecordReader reader = format.createRecordReader(split, attempt);
-      try {
-        reader.initialize(split, attempt);
-        readers.add(reader);
-      } catch (Exception e) {
-        reader.close();
-        throw e;
+      List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
+      for (InputSplit split : splits) {
+        TaskAttemptContextImpl attempt =
+            new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
+        RecordReader reader = format.createRecordReader(split, attempt);
+        try {
+          reader.initialize(split, attempt);
+          readers.add(reader);
+        } catch (Exception e) {
+          reader.close();
+          throw e;
+        }
       }
+      return new CarbonReader<>(readers);
+    } catch (Exception ex) {
+      // Clear the datamap cache as it can get added in getSplits() method
+      DataMapStoreManager.getInstance()
+          .clearDataMaps(table.getAbsoluteTableIdentifier());
+      throw ex;
     }
-
-    return new CarbonReader<>(readers);
   }
 }
