@@ -26,6 +26,7 @@ import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.examples.util.ExampleUtils
+import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 // scalastyle:off println
 object StructuredStreamingExample {
@@ -156,6 +157,8 @@ object StructuredStreamingExample {
               CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
             .option("dbName", "default")
             .option("tableName", "stream_table")
+            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+              CarbonStreamParser.CARBON_STREAM_PARSER_CSV)
             .start()
 
           qry.awaitTermination()

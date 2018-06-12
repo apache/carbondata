@@ -40,6 +40,7 @@ import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
+import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
@@ -1713,6 +1714,8 @@ sql("drop table if exists streaming.bad_record_ignore")
             .option("BAD_RECORD_PATH", badRecordsPath)
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
+            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+              CarbonStreamParser.CARBON_STREAM_PARSER_CSV)
             .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
             .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
             .option(CarbonCommonConstants.ENABLE_AUTO_HANDOFF, autoHandoff)
@@ -1830,6 +1833,8 @@ sql("drop table if exists streaming.bad_record_ignore")
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
             .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+              CarbonStreamParser.CARBON_STREAM_PARSER_CSV)
             .start()
 
           qry.awaitTermination()
