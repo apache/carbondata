@@ -35,7 +35,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 case class FileElement(school: Array[String], age: Integer)
 case class StreamData(id: Integer, name: String, city: String, salary: java.lang.Float,
@@ -783,8 +782,6 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
             .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
             .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
             .option(CarbonCommonConstants.ENABLE_AUTO_HANDOFF, autoHandoff)
-            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-              CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
             .start()
           qry.awaitTermination()
         } catch {
