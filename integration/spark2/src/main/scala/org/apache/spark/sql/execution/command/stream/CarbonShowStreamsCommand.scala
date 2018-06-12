@@ -35,7 +35,8 @@ case class CarbonShowStreamsCommand(
     tableOp: Option[TableIdentifier]
 ) extends MetadataCommand {
   override def output: Seq[Attribute] = {
-    Seq(AttributeReference("JobId", StringType, nullable = false)(),
+    Seq(AttributeReference("Stream Name", StringType, nullable = false)(),
+      AttributeReference("JobId", StringType, nullable = false)(),
       AttributeReference("Status", StringType, nullable = false)(),
       AttributeReference("Source", StringType, nullable = false)(),
       AttributeReference("Sink", StringType, nullable = false)(),
@@ -57,6 +58,7 @@ case class CarbonShowStreamsCommand(
     jobs.map { job =>
       val elapsedTime = System.currentTimeMillis() - job.startTime
       Row(
+        job.streamName,
         job.streamingQuery.id.toString,
         if (job.streamingQuery.isActive) "RUNNING" else "FAILED",
         s"${ job.sourceDb }.${ job.sourceTable }",

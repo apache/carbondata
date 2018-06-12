@@ -1630,7 +1630,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from streaming.bad_record_redirect"), Seq(Row(19)))
   }
 
-  test("StreamSQL: start and stop a stream") {
+  test("StreamSQL: create and drop a stream") {
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
 
@@ -1707,26 +1707,29 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     rows = sql("SHOW STREAMS").collect()
     assertResult(1)(rows.length)
-    assertResult("RUNNING")(rows.head.getString(1))
-    assertResult("streaming.source")(rows.head.getString(2))
-    assertResult("streaming.sink")(rows.head.getString(3))
+    assertResult("stream123")(rows.head.getString(0))
+    assertResult("RUNNING")(rows.head.getString(2))
+    assertResult("streaming.source")(rows.head.getString(3))
+    assertResult("streaming.sink")(rows.head.getString(4))
 
     rows = sql("SHOW STREAMS ON TABLE sink").collect()
     assertResult(1)(rows.length)
-    assertResult("RUNNING")(rows.head.getString(1))
-    assertResult("streaming.source")(rows.head.getString(2))
-    assertResult("streaming.sink")(rows.head.getString(3))
+    assertResult("stream123")(rows.head.getString(0))
+    assertResult("RUNNING")(rows.head.getString(2))
+    assertResult("streaming.source")(rows.head.getString(3))
+    assertResult("streaming.sink")(rows.head.getString(4))
 
     sql("DROP STREAM stream123")
 
     rows = sql("SHOW STREAMS").collect()
+    assertResult(0)(rows.length)
 
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
     new File(csvDataDir).delete()
   }
 
-  test("StreamSQL: start stream without interval ") {
+  test("StreamSQL: create stream without interval ") {
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
     val csvDataDir = new File("target/streamdata").getCanonicalPath
@@ -1787,14 +1790,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     new File(csvDataDir).delete()
   }
 
-  test("StreamSQL: stop stream on non exist table") {
-    val ex = intercept[NoSuchStreamException] {
-      sql("DROP STREAM streamyyy")
-    }
-    assert(ex.getMessage.contains("stream 'streamyyy' not found"))
-  }
-
-  test("StreamSQL: start stream on non exist source") {
+  test("StreamSQL: create stream on non exist stream source table") {
     sql(
       s"""
          |CREATE TABLE sink(
@@ -1826,6 +1822,65 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       """.stripMargin).show(false)
     }
     sql("DROP TABLE sink")
+  }
+
+  test("StreamSQL: create stream source using carbon file") {
+    sql("DROP TABLE IF EXISTS source")
+    sql("DROP TABLE IF EXISTS sink")
+
+    sql(
+      s"""
+         |CREATE TABLE source(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         |)
+         |STORED AS carbondata
+         |TBLPROPERTIES (
+         | 'streaming'='source'
+         |)
+      """.stripMargin)
+
+    sql(
+      s"""
+         |CREATE TABLE sink(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         | )
+         |STORED AS carbondata
+         |TBLPROPERTIES('streaming'='sink')
+      """.stripMargin)
+
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql(
+        """
+          |CREATE STREAM stream123 ON TABLE sink
+          |STMPROPERTIES(
+          |  'trigger'='ProcessingTime',
+          |  'interval'='1 seconds')
+          |AS
+          |  SELECT *
+          |  FROM source
+          |  WHERE id % 2 = 1
+        """.stripMargin)
+    }
+    assert(ex.getMessage.contains("Streaming from carbon file is not supported"))
+
+    sql("DROP TABLE IF EXISTS source")
+    sql("DROP TABLE IF EXISTS sink")
   }
 
   test("StreamSQL: start stream on non-stream table") {
@@ -1876,6 +1931,20 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     }
     assert(ex.getMessage.contains("Must specify stream source table in select query"))
     sql("DROP TABLE sink")
+  }
+
+  test("StreamSQL: drop stream on non exist table") {
+    val ex = intercept[NoSuchStreamException] {
+      sql("DROP STREAM streamyyy")
+    }
+    assert(ex.getMessage.contains("stream 'streamyyy' not found"))
+  }
+
+  test("StreamSQL: show streams on non-exist table") {
+    val ex = intercept[NoSuchTableException] {
+      sql("SHOW STREAMS ON TABLE ddd")
+    }
+    assert(ex.getMessage.contains("'ddd' not found"))
   }
 
   def createWriteSocketThread(

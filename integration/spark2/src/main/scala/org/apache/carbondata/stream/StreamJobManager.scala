@@ -35,6 +35,8 @@ import org.apache.carbondata.streaming.CarbonStreamException
 
 object StreamJobManager {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  // map of stream name to job desc
   private val jobs = new ConcurrentHashMap[String, StreamJobDesc]()
 
   private def validateStreamName(streamName: String): Unit = {
@@ -129,7 +131,7 @@ object StreamJobManager {
       }
 
       jobs.put(
-        job.id.toString,
+        streamName,
         StreamJobDesc(job, streamName, sourceTable.getDatabaseName, sourceTable.getTableName,
           sinkTable.getDatabaseName, sinkTable.getTableName, query, thread))
 
@@ -148,23 +150,17 @@ object StreamJobManager {
    * @param streamName name of the stream
    */
   def stopStream(streamName: String): Unit = {
-    val jobId = StreamJobManager.getJobId(streamName).getOrElse {
-      throw new NoSuchStreamException(streamName)
-    }
-    if (jobs.contains(jobId)) {
-      val jobDesc = jobs.get(jobId)
+    if (jobs.containsKey(streamName)) {
+      val jobDesc = jobs.get(streamName)
       jobDesc.streamingQuery.stop()
       jobDesc.thread.interrupt()
-      jobs.remove(jobId)
-      LOGGER.audit(s"STREAM $streamName stopped, job id '$jobId', " +
+      jobs.remove(streamName)
+      LOGGER.audit(s"STREAM $streamName stopped, job id '${jobDesc.streamingQuery.id.toString}', " +
                    s"from ${jobDesc.sourceDb}.${jobDesc.sourceTable} " +
                    s"to ${jobDesc.sinkDb}.${jobDesc.sinkTable}")
+    } else {
+      throw new NoSuchStreamException(streamName)
     }
-  }
-
-  private def getJobId(streamName: String): Option[String] = {
-    val job = getAllJobs.filter(_.streamName.equalsIgnoreCase(streamName))
-    if (job.nonEmpty) Some(job.head.streamingQuery.id.toString) else None
   }
 
   /**
