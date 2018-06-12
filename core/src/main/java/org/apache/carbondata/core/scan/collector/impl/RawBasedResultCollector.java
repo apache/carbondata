@@ -92,16 +92,22 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
         // re initialized with left over value
         batchSize = 0;
       }
+      // for every iteration of available rows filling newly created list of Object[] and add it to
+      // the final list so there is no mismatch in the counter while filling dimension and
+      // measure data
+      List<Object[]> collectedData = new ArrayList<>(availableBatchRowCount);
       // fill dimension data
-      fillDimensionData(scannedResult, listBasedResult, queryMeasures, availableBatchRowCount);
-      fillMeasureData(scannedResult, listBasedResult);
+      fillDimensionData(scannedResult, collectedData, queryMeasures, availableBatchRowCount);
+      fillMeasureData(scannedResult, collectedData);
       // increment the number of rows scanned in scanned result statistics
       incrementScannedResultRowCounter(scannedResult, availableBatchRowCount);
       // assign the left over rows to batch size if the number of rows fetched are lesser
       // than batchSize
-      if (listBasedResult.size() < availableBatchRowCount) {
+      if (collectedData.size() < availableBatchRowCount) {
         batchSize += availableBatchRowCount - listBasedResult.size();
       }
+      // add the collected data to the final list
+      listBasedResult.addAll(collectedData);
     }
   }
 
