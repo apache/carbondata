@@ -180,7 +180,7 @@ public class CarbonReaderBuilder {
       table = CarbonTable.buildFromTablePath(tableName, "default", tablePath);
     } else {
       if (filterExpression != null) {
-        table = CarbonTable.buildTable(tablePath, tableName, true);
+        table = CarbonTable.buildTable(tablePath, tableName);
       } else {
         table = CarbonTable.buildDummyTable(tablePath);
       }

@@ -224,35 +224,32 @@ public class CarbonTable implements Serializable {
 
   public static CarbonTable buildTable(
       String tablePath,
-      String tableName,
-      boolean hasFilter) throws IOException {
+      String tableName) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    if (!tableInfoInfer.isTransactionalTable() && hasFilter) {
-      File[] dataFiles = new File(tablePath).listFiles(new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String name) {
-          if (name == null) {
-            return false;
-          }
-          return name.endsWith("carbonindex");
+    File[] dataFiles = new File(tablePath).listFiles(new FilenameFilter() {
+      @Override
+      public boolean accept(File dir, String name) {
+        if (name == null) {
+          return false;
         }
-      });
-      if (dataFiles == null || dataFiles.length < 1) {
-        throw new RuntimeException("Carbon index file not exists.");
+        return name.endsWith("carbonindex");
       }
-      org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
-          .inferSchemaFromIndexFile(dataFiles[0].toString(), tableName);
-      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-      for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
-          .getFact_table().getTable_columns()) {
-        ColumnSchema columnSchema = thriftColumnSchemaToWrapperColumnSchema(thriftColumnSchema);
-        if (columnSchema.getColumnReferenceId() == null) {
-          columnSchema.setColumnReferenceId(columnSchema.getColumnUniqueId());
-        }
-        columnSchemaList.add(columnSchema);
-      }
-      tableInfoInfer.getFactTable().setListOfColumns(columnSchemaList);
+    });
+    if (dataFiles == null || dataFiles.length < 1) {
+      throw new RuntimeException("Carbon index file not exists.");
     }
+    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
+        .inferSchemaFromIndexFile(dataFiles[0].toString(), tableName);
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
+        .getFact_table().getTable_columns()) {
+      ColumnSchema columnSchema = thriftColumnSchemaToWrapperColumnSchema(thriftColumnSchema);
+      if (columnSchema.getColumnReferenceId() == null) {
+        columnSchema.setColumnReferenceId(columnSchema.getColumnUniqueId());
+      }
+      columnSchemaList.add(columnSchema);
+    }
+    tableInfoInfer.getFactTable().setListOfColumns(columnSchemaList);
     return CarbonTable.buildFromTableInfo(tableInfoInfer);
   }
 
