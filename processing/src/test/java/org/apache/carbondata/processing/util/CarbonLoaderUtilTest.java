@@ -72,6 +72,29 @@ public class CarbonLoaderUtilTest {
     return blockInfos;
   }
 
+  private List<Distributable> generateBlocks2() {
+    List<Distributable> blockInfos = new ArrayList<>();
+    String filePath = "/fakepath";
+    String blockId = "1";
+
+    String[] locations = new String[] { "host2", "host3" };
+    ColumnarFormatVersion version = ColumnarFormatVersion.V1;
+
+    TableBlockInfo tableBlockInfo1 = new TableBlockInfo(filePath + "_a", 0,
+            blockId, locations, 30 * 1024 * 1024, version, null);
+    blockInfos.add(tableBlockInfo1);
+
+    TableBlockInfo tableBlockInfo2 = new TableBlockInfo(filePath + "_b", 0,
+            blockId, locations, 30 * 1024 * 1024, version, null);
+    blockInfos.add(tableBlockInfo2);
+
+    TableBlockInfo tableBlockInfo3 = new TableBlockInfo(filePath + "_c", 0,
+            blockId, locations, 30 * 1024 * 1024, version, null);
+    blockInfos.add(tableBlockInfo3);
+
+    return blockInfos;
+  }
+
   private List<String> generateExecutors() {
     List<String> activeNodes = new ArrayList<>();
     activeNodes.add("host1");
@@ -86,9 +109,9 @@ public class CarbonLoaderUtilTest {
     List<String> activeNodes = generateExecutors();
 
     // the blocks are assigned by size, so the number of block for each node are different
-    Map<String, List<Distributable>> nodeMappingBySize =
-        CarbonLoaderUtil.nodeBlockMapping(blockInfos, -1, activeNodes,
-            CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_SIZE_FIRST);
+    Map<String, List<Distributable>> nodeMappingBySize = CarbonLoaderUtil
+        .nodeBlockMapping(blockInfos, -1, activeNodes,
+            CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_SIZE_FIRST, null);
     LOGGER.info(convertMapListAsString(nodeMappingBySize));
     Assert.assertEquals(3, nodeMappingBySize.size());
     for (Map.Entry<String, List<Distributable>> entry : nodeMappingBySize.entrySet()) {
@@ -102,14 +125,30 @@ public class CarbonLoaderUtilTest {
     }
 
     // the blocks are assigned by number, so the number of blocks for each node are nearly the same
-    Map<String, List<Distributable>> nodeMappingByNum =
-        CarbonLoaderUtil.nodeBlockMapping(blockInfos, -1, activeNodes,
-            CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST);
+    Map<String, List<Distributable>> nodeMappingByNum = CarbonLoaderUtil
+        .nodeBlockMapping(blockInfos, -1, activeNodes,
+            CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST, null);
     LOGGER.info(convertMapListAsString(nodeMappingByNum));
     Assert.assertEquals(3, nodeMappingBySize.size());
     for (Map.Entry<String, List<Distributable>> entry : nodeMappingByNum.entrySet()) {
       Assert.assertTrue(entry.getValue().size() == blockInfos.size() / 3
           || entry.getValue().size() == blockInfos.size() / 3 + 1);
+    }
+  }
+
+  @Test
+  public void testNodeBlockMappingByNodeRandom() throws Exception {
+    List<Distributable> blockInfos = generateBlocks2();
+    List<String> activeNodes = generateExecutors();
+
+    // the blocks are assigned by node as random, The node loads the smallest amount of data by user specified
+    Map<String, List<Distributable>> nodeMappingByRandom = CarbonLoaderUtil
+        .nodeBlockMapping(blockInfos, -1, activeNodes,
+            CarbonLoaderUtil.BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST, "90");
+    LOGGER.info(convertMapListAsString(nodeMappingByRandom));
+    Assert.assertEquals(1, nodeMappingByRandom.size());
+    for (Map.Entry<String, List<Distributable>> entry : nodeMappingByRandom.entrySet()) {
+      Assert.assertTrue(entry.getValue().size() == blockInfos.size());
     }
   }
 
