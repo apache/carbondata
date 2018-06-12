@@ -353,6 +353,67 @@ public class CarbonReaderTest extends TestCase {
   }
 
   @Test
+  public void testWriteAndReadFilesWithReaderBuildFail() throws IOException, InterruptedException {
+    String path1 = "./testWriteFiles";
+    String path2 = "./testWriteFiles2";
+    FileUtils.deleteDirectory(new File(path1));
+    FileUtils.deleteDirectory(new File(path2));
+
+    Field[] fields = new Field[] { new Field("c1", "string"),
+         new Field("c2", "int") };
+    Schema schema = new Schema(fields);
+    CarbonWriterBuilder builder = CarbonWriter.builder();
+
+    CarbonWriter carbonWriter = null;
+    try {
+      carbonWriter = builder.outputPath(path1).isTransactionalTable(false).uniqueIdentifier(12345)
+  .buildWriterForCSVInput(schema);
+    } catch (InvalidLoadOptionException e) {
+      e.printStackTrace();
+    }
+    carbonWriter.write(new String[] { "MNO", "100" });
+    carbonWriter.close();
+
+    Field[] fields1 = new Field[] { new Field("p1", "string"),
+         new Field("p2", "int") };
+    Schema schema1 = new Schema(fields1);
+    CarbonWriterBuilder builder1 = CarbonWriter.builder();
+
+    CarbonWriter carbonWriter1 = null;
+    try {
+      carbonWriter1 = builder1.outputPath(path2).isTransactionalTable(false).uniqueIdentifier(12345)
+   .buildWriterForCSVInput(schema1);
+    } catch (InvalidLoadOptionException e) {
+      e.printStackTrace();
+    }
+    carbonWriter1.write(new String[] { "PQR", "200" });
+    carbonWriter1.close();
+
+    try {
+       CarbonReader reader =
+       CarbonReader.builder(path1, "_temp").
+       projection(new String[] { "c1", "c3" })
+       .isTransactionalTable(false).build();
+    } catch (Exception e){
+       System.out.println("Success");
+    }
+    CarbonReader reader1 =
+         CarbonReader.builder(path2, "_temp1")
+     .projection(new String[] { "p1", "p2" })
+     .isTransactionalTable(false).build();
+
+    while (reader1.hasNext()) {
+       Object[] row1 = (Object[]) reader1.readNextRow();
+       System.out.println(row1[0]);
+       System.out.println(row1[1]);
+    }
+    reader1.close();
+
+    FileUtils.deleteDirectory(new File(path1));
+    FileUtils.deleteDirectory(new File(path2));
+  }
+
+  @Test
   public void testReadColumnTwice() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
