@@ -49,6 +49,20 @@ public class TestUtil {
   }
 
   /**
+   * write file and verify
+   *
+   * @param rows                 number of rows
+   * @param schema               schema
+   * @param path                 table store path
+   * @param persistSchema        whether persist schema
+   * @param isTransactionalTable whether is transactional table
+   */
+  public static void writeFilesAndVerify(int rows, Schema schema, String path, boolean persistSchema,
+    boolean isTransactionalTable) {
+    writeFilesAndVerify(rows, schema, path, null, persistSchema, -1, -1, isTransactionalTable);
+  }
+
+  /**
    * Invoke CarbonWriter API to write carbon files and assert the file is rewritten
    * @param rows number of rows to write
    * @param schema schema of the file

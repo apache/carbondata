@@ -179,7 +179,11 @@ public class CarbonReaderBuilder {
     if (isTransactionalTable) {
       table = CarbonTable.buildFromTablePath(tableName, "default", tablePath);
     } else {
-      table = CarbonTable.buildDummyTable(tablePath);
+      if (filterExpression != null) {
+        table = CarbonTable.buildTable(tablePath, tableName);
+      } else {
+        table = CarbonTable.buildDummyTable(tablePath);
+      }
     }
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     final Job job = new Job(new Configuration());
