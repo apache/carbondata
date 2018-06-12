@@ -28,6 +28,7 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
  import org.apache.spark.sql.CarbonSession._
  import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
  import org.apache.carbondata.core.util.path.CarbonTablePath
+ import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
  val warehouse = new File("./warehouse").getCanonicalPath
  val metastore = new File("./metastore").getCanonicalPath
@@ -71,6 +72,8 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
    .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(tablePath))
    .option("dbName", "default")
    .option("tableName", "carbon_table")
+   .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+     CarbonStreamParser.CARBON_STREAM_PARSER_CSV)
    .start()
 
  // start new thread to show data
@@ -157,13 +160,13 @@ Config the property "carbon.stream.parser" to define a stream parser to convert 
 
 property name | default | description
 --- | --- | ---
-carbon.stream.parser | org.apache.carbondata.streaming.parser.CSVStreamParserImp | the class of the stream parser
+carbon.stream.parser | org.apache.carbondata.streaming.parser.RowStreamParserImp | the class of the stream parser
 
 Currently CarbonData support two parsers, as following:
 
-**1. org.apache.carbondata.streaming.parser.CSVStreamParserImp**: This is the default stream parser, it gets a line data(String type) from the first index of InternalRow and converts this String to Object[].
+**1. org.apache.carbondata.streaming.parser.CSVStreamParserImp**: This parser gets a line data(String type) from the first index of InternalRow and converts this String to Object[].
 
-**2. org.apache.carbondata.streaming.parser.RowStreamParserImp**: This stream parser will auto convert InternalRow to Object[] according to schema of this `DataSet`, for example:
+**2. org.apache.carbondata.streaming.parser.RowStreamParserImp**: This is the default stream parser, it will auto convert InternalRow to Object[] according to schema of this `DataSet`, for example:
 
 ```scala
  case class FileElement(school: Array[String], age: Int)
@@ -191,8 +194,6 @@ Currently CarbonData support two parsers, as following:
    .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
    .option("dbName", "default")
    .option("tableName", "carbon_table")
-   .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-     CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
    .start()
 
  ...
