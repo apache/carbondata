@@ -15,37 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.statusmanager;
+package org.apache.carbondata.common.annotations;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * The data file format supported in carbondata project.
- * The fileformat along with its property will be stored in tableinfo
+ * The annotation indicates that the version number since a member or a type has been present.
  */
-public enum FileFormat {
-
-  // carbondata columnar file format, optimized for read
-  COLUMNAR_V3,
-
-  // carbondata row file format, optimized for write
-  ROW_V1,
-
-  // external file format, such as parquet/csv
-  EXTERNAL;
-
-  public static FileFormat getByOrdinal(int ordinal) {
-    if (ordinal < 0 || ordinal >= FileFormat.values().length) {
-      return COLUMNAR_V3;
-    }
-
-    switch (ordinal) {
-      case 0:
-        return COLUMNAR_V3;
-      case 1:
-        return ROW_V1;
-      case 2:
-        return EXTERNAL;
-    }
-
-    return COLUMNAR_V3;
-  }
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+public @interface Since {
+  /**
+   * the value indicating a version number since this member
+   * or type has been present.
+   */
+  String value();
 }

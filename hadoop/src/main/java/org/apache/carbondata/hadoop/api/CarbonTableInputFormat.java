@@ -531,9 +531,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
     // for each segment fetch blocks matching filter in Driver BTree
-    List<org.apache.carbondata.hadoop.CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
-            validSegments, partitionInfo, oldPartitionIdList);
+    List<org.apache.carbondata.hadoop.CarbonInputSplit> dataBlocksOfSegment;
+    if (carbonTable.getTableInfo().getFormat().equals("")
+        || carbonTable.getTableInfo().getFormat().equals("carbondata")) {
+      dataBlocksOfSegment = getDataBlocksOfSegment(job, carbonTable, filterResolver,
+          matchedPartitions, validSegments, partitionInfo, oldPartitionIdList);
+    } else {
+      dataBlocksOfSegment = getDataBlocksOfSegment4ExternalFormat(job, carbonTable, filterResolver,
+          validSegments);
+    }
     numBlocks = dataBlocksOfSegment.size();
     for (org.apache.carbondata.hadoop.CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 
