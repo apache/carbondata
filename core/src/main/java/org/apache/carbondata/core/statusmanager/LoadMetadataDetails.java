@@ -122,6 +122,11 @@ public class LoadMetadataDetails implements Serializable {
    * the file format of this segment
    */
   private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
+  /**
+   * path of the fact files.
+   * Since format and formatProperties are stored in tableInfo, we do not store it in each segment
+   */
+  private String factFilePath;
 
   /**
    * Segment file name where it has the information of partition information.
@@ -429,8 +434,17 @@ public class LoadMetadataDetails implements Serializable {
     this.segmentFile = segmentFile;
   }
 
+  public String getFactFilePath() {
+    return factFilePath;
+  }
+
+  public void setFactFilePath(String factFilePath) {
+    this.factFilePath = factFilePath;
+  }
+
   @Override public String toString() {
     return "LoadMetadataDetails{" + "loadStatus=" + loadStatus + ", loadName='" + loadName + '\''
-        + ", loadStartTime='" + loadStartTime + '\'' + ", segmentFile='" + segmentFile + '\'' + '}';
+        + ", loadStartTime='" + loadStartTime + '\'' + ", factFilePath='" + factFilePath + '\''
+        + ", segmentFile='" + segmentFile + '\'' + '}';
   }
 }

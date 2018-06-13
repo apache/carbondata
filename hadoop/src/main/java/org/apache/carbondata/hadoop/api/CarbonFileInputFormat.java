@@ -174,9 +174,14 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     List<InputSplit> result = new LinkedList<InputSplit>();
 
     // for each segment fetch blocks matching filter in Driver BTree
-    List<CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
-            validSegments, partitionInfo, oldPartitionIdList);
+    List<CarbonInputSplit> dataBlocksOfSegment;
+    if (carbonTable.getTableInfo().getFormat().equals("carbondata")) {
+      dataBlocksOfSegment = getDataBlocksOfSegment(job, carbonTable, filterResolver,
+          matchedPartitions, validSegments, partitionInfo, oldPartitionIdList);
+    } else {
+      dataBlocksOfSegment = getDataBlocksOfSegment4ExternalFormat(job, carbonTable, filterResolver,
+          validSegments);
+    }
     numBlocks = dataBlocksOfSegment.size();
     result.addAll(dataBlocksOfSegment);
     return result;
