@@ -69,6 +69,7 @@ public class QueryModel {
    * table block information in which query will be executed
    */
   private List<TableBlockInfo> tableBlockInfos;
+
   /**
    * To handle most of the computation in query engines like spark and hive, carbon should give
    * raw detailed records to it.
@@ -376,14 +377,6 @@ public class QueryModel {
 
   public void setRequiredRowId(boolean requiredRowId) {
     this.requiredRowId = requiredRowId;
-  }
-
-  public boolean isFG() {
-    return isFG;
-  }
-
-  public void setFG(boolean FG) {
-    isFG = FG;
   }
 
   @Override

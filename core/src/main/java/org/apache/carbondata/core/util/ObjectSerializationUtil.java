@@ -113,4 +113,18 @@ public class ObjectSerializationUtil {
     }
   }
 
+  public static byte[] serialize(Object object) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+    ObjectOutputStream oos = new ObjectOutputStream(baos);
+    oos.writeObject(object);
+    return baos.toByteArray();
+  }
+
+  public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
+    if (bytes == null) {
+      return null;
+    }
+    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
+    return ois.readObject();
+  }
 }

@@ -86,12 +86,8 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     } else {
       throw new RuntimeException("unsupported input split type: " + inputSplit);
     }
-    // It should use the exists tableBlockInfos if tableBlockInfos of queryModel is not empty
-    // otherwise the prune is no use before this method
-    if (!queryModel.isFG()) {
-      List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
-      queryModel.setTableBlockInfos(tableBlockInfoList);
-    }
+    List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
+    queryModel.setTableBlockInfos(tableBlockInfoList);
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
     try {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));

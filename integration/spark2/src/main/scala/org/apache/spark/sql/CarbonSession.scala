@@ -213,6 +213,7 @@ class CarbonSession(@transient val sc: SparkContext,
         case e: RuntimeException =>
           LogServiceFactory.getLogService(this.getClass.getCanonicalName)
             .error(s"Stop search mode failed: ${e.getMessage}")
+          throw e
       }
     }
   }
