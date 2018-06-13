@@ -23,7 +23,6 @@ import java.net.InetAddress
 import scala.collection.JavaConverters._
 
 import org.apache.spark.{CarbonInputMetrics, SparkConf}
-import org.apache.spark.rpc.{Master, Worker}
 import org.apache.spark.sql.CarbonSession._
 import org.apache.spark.sql.SparkSession
 
@@ -111,24 +110,26 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
 
   def startSearchMode(): Unit = {
     LOG.info("Starting search mode master")
-    master = new Master(session.sparkContext.getConf)
+    master = new Master()
     master.startService()
     startAllWorkers()
   }
 
   def stopSearchMode(): Unit = {
-    LOG.info("Shutting down all workers...")
-    try {
-      master.stopAllWorkers()
-      LOG.info("All workers are shutted down")
-    } catch {
-      case e: Exception =>
-        LOG.error(s"failed to shutdown worker: ${e.toString}")
+    if (master != null) {
+      LOG.info("Shutting down all workers...")
+      try {
+        master.stopAllWorkers()
+        LOG.info("All workers are shut down")
+      } catch {
+        case e: Exception =>
+          LOG.error(s"failed to shutdown worker: ${ e.toString }")
+      }
+      LOG.info("Stopping master...")
+      master.stopService()
+      LOG.info("Master stopped")
+      master = null
     }
-    LOG.info("Stopping master...")
-    master.stopService()
-    LOG.info("Master stopped")
-    master = null
   }
 
   /** search mode */
