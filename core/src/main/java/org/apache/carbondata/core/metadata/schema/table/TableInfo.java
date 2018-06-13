@@ -25,6 +25,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +90,15 @@ public class TableInfo implements Serializable, Writable {
    *
    */
   private boolean isTransactionalTable = true;
+  /**
+   * The format of the fact table.
+   * By default it is carbondata, and we also support other format like CSV
+   */
+  private String format = "carbondata";
+  /**
+   * properties for the format, such as delimiter/header for csv format
+   */
+  private Map<String, String> formatProperties;
 
   // this identifier is a lazy field which will be created when it is used first time
   private AbsoluteTableIdentifier identifier;
@@ -104,6 +114,7 @@ public class TableInfo implements Serializable, Writable {
 
   public TableInfo() {
     dataMapSchemaList = new ArrayList<>();
+    formatProperties = new HashMap<>();
     isTransactionalTable = true;
   }
 
@@ -194,6 +205,22 @@ public class TableInfo implements Serializable, Writable {
 
   public void setTablePath(String tablePath) {
     this.tablePath = tablePath;
+  }
+
+  public String getFormat() {
+    return format;
+  }
+
+  public void setFormat(String format) {
+    this.format = format;
+  }
+
+  public Map<String, String> getFormatProperties() {
+    return formatProperties;
+  }
+
+  public void setFormatProperties(Map<String, String> formatProperties) {
+    this.formatProperties = formatProperties;
   }
 
   public List<DataMapSchema> getDataMapSchemaList() {
@@ -291,6 +318,17 @@ public class TableInfo implements Serializable, Writable {
       }
     }
     out.writeBoolean(isSchemaModified);
+
+    out.writeUTF(format);
+    boolean isFormatPropertiesExists = null != formatProperties && formatProperties.size() > 0;
+    out.writeBoolean(isFormatPropertiesExists);
+    if (isFormatPropertiesExists) {
+      out.writeShort(formatProperties.size());
+      for (Map.Entry<String, String> entry : formatProperties.entrySet()) {
+        out.writeUTF(entry.getKey());
+        out.writeUTF(entry.getValue());
+      }
+    }
   }
 
   @Override public void readFields(DataInput in) throws IOException {
@@ -327,6 +365,17 @@ public class TableInfo implements Serializable, Writable {
       }
     }
     this.isSchemaModified = in.readBoolean();
+
+    this.format = in.readUTF();
+    boolean isFormatPropertiesExists = in.readBoolean();
+    if (isFormatPropertiesExists) {
+      short size = in.readShort();
+      for (int i = 0; i < size; i++) {
+        String key = in.readUTF();
+        String value = in.readUTF();
+        this.formatProperties.put(key, value);
+      }
+    }
   }
 
   public AbsoluteTableIdentifier getOrCreateAbsoluteTableIdentifier() {

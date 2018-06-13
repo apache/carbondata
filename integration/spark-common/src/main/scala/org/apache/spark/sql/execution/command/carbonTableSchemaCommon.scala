@@ -736,6 +736,13 @@ class TableNewProcessor(cm: TableModel) {
       cm.tableName))
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
+    val format = cm.tableProperties.get(CarbonCommonConstants.FORMAT)
+    if (format.isDefined) {
+      tableInfo.setFormat(format.get)
+      val formatProperties = cm.tableProperties.filter(pair =>
+        pair._1.startsWith(s"${format.get.toLowerCase}.")).asJava
+      tableInfo.setFormatProperties(formatProperties)
+    }
     tableInfo
   }
 
