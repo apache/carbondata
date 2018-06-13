@@ -582,7 +582,7 @@ public final class CarbonLoaderUtil {
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(
       List<Distributable> blockInfos, int noOfNodesInput, List<String> activeNodes,
-      BlockAssignmentStrategy blockAssignmentStrategy, String expectedMinSizePerNode ) {
+      BlockAssignmentStrategy blockAssignmentStrategy, String expectedMinSizePerNode) {
     ArrayList<NodeMultiBlockRelation> rtnNode2Blocks = new ArrayList<>();
 
     Set<Distributable> uniqueBlocks = new HashSet<>(blockInfos);
@@ -630,13 +630,13 @@ public final class CarbonLoaderUtil {
         } else {
           blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_NUM_FIRST;
         }
-        LOGGER.info("Specified minimum data size to load is less than the average size for each node, "
-            + "fallback to default strategy" + blockAssignmentStrategy);
+        LOGGER.info("Specified minimum data size to load is less than the average size "
+            + "for each node, fallback to default strategy" + blockAssignmentStrategy);
       } else {
         sizePerNode = iexpectedMinSizePerNode;
       }
     }
-     
+
     if (BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
       // assign blocks to each node ignore data locality
       assignBlocksIgnoreDataLocality(rtnNode2Blocks, sizePerNode, uniqueBlocks, activeNodes);
@@ -658,7 +658,7 @@ public final class CarbonLoaderUtil {
     }
     return rtnNodeBlocksMap;
   }
-  
+
   /**
    * Assigning the blocks of a node to tasks.
    *
