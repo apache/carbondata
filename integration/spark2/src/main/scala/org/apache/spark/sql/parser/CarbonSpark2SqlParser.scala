@@ -79,7 +79,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     alterPartition | datamapManagement | alterTableFinishStreaming | stream
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
-    deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
+    deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew | addSegment
 
   protected lazy val restructure: Parser[LogicalPlan] =
     alterTableModifyDataType | alterTableDropColumn | alterTableAddColumns
@@ -441,6 +441,17 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           tableInfoOp = None,
           internalOptions = Map.empty,
           partition = partitionSpec)
+    }
+
+  /**
+   * The syntax of
+   * ALTER TABLE [dbName.]tableName ADD SEGMENT LOCATION 'path/to/data'
+   */
+  protected lazy val addSegment: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    ADD ~ SEGMENT ~ LOCATION ~ stringLit <~ opt(";") ^^ {
+      case dbName ~ tableName ~ add ~ segment ~ location ~ filePath =>
+        CarbonAddSegmentCommand(convertDbNameToLowerCase(dbName), tableName, filePath)
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
