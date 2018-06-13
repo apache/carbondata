@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.spark.StreamingOption
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.streaming.CarbonStreamException
+import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 object StreamJobManager {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -111,6 +112,8 @@ object StreamJobManager {
             .option("carbon.stream.parser", options.rowParser)
             .option("dbName", sinkTable.getDatabaseName)
             .option("tableName", sinkTable.getTableName)
+            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
+              CarbonStreamParser.CARBON_STREAM_PARSER_CSV)
             .start()
           latch.countDown()
           job.awaitTermination()
