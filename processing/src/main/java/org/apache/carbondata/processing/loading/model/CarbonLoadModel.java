@@ -210,7 +210,7 @@ public class CarbonLoadModel implements Serializable {
    * Flder path to where data should be written for this load.
    */
   private String dataWritePath;
-  
+
   /**
    * sort columns bounds
    */
