@@ -1599,4 +1599,14 @@ public final class CarbonProperties {
     }
     return storageLevel.toUpperCase();
   }
+
+  public int getQueryTimeout() {
+    try {
+      return Integer.parseInt(
+          CarbonProperties.getInstance().getProperty(
+              CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT));
+    } catch (NumberFormatException e) {
+      return CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT;
+    }
+  }
 }
