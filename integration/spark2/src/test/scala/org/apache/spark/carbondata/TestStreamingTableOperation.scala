@@ -1637,7 +1637,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     var rows = sql("SHOW STREAMS").collect()
     assertResult(0)(rows.length)
 
-    val csvDataDir = new File("target/streamdata").getCanonicalPath
+    val csvDataDir = new File("target/csvdata").getCanonicalPath
     // streaming ingest 10 rows
     generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
@@ -1732,7 +1732,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   test("StreamSQL: create stream without interval ") {
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
-    val csvDataDir = new File("target/streamdata").getCanonicalPath
+    val csvDataDir = new File("target/csvdata").getCanonicalPath
     // streaming ingest 10 rows
     generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
@@ -1791,6 +1791,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   }
 
   test("StreamSQL: create stream on non exist stream source table") {
+    sql("DROP TABLE IF EXISTS sink")
     sql(
       s"""
          |CREATE TABLE sink(
@@ -1821,7 +1822,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         |  WHERE id % 2 = 1
       """.stripMargin).show(false)
     }
-    sql("DROP TABLE sink")
+    sql("DROP TABLE IF EXISTS sink")
   }
 
   test("StreamSQL: create stream source using carbon file") {
