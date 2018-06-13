@@ -885,7 +885,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "DATEFORMAT", "BAD_RECORD_PATH",
       "BATCH_SORT_SIZE_INMB", "GLOBAL_SORT_PARTITIONS", "SINGLE_PASS",
       "IS_EMPTY_DATA_BAD_RECORD", "HEADER", "TIMESTAMPFORMAT", "SKIP_EMPTY_LINE",
-      "SORT_COLUMN_BOUNDS","LOAD_MIN_SIZE_INMB"
+      "SORT_COLUMN_BOUNDS", "LOAD_MIN_SIZE_INMB"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
