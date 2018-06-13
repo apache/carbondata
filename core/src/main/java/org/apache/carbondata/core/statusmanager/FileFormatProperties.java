@@ -18,34 +18,15 @@
 package org.apache.carbondata.core.statusmanager;
 
 /**
- * The data file format supported in carbondata project.
- * The fileformat along with its property will be stored in tableinfo
+ * Provides the constant name for the file format properties
  */
-public enum FileFormat {
-
-  // carbondata columnar file format, optimized for read
-  COLUMNAR_V3,
-
-  // carbondata row file format, optimized for write
-  ROW_V1,
-
-  // external file format, such as parquet/csv
-  EXTERNAL;
-
-  public static FileFormat getByOrdinal(int ordinal) {
-    if (ordinal < 0 || ordinal >= FileFormat.values().length) {
-      return COLUMNAR_V3;
-    }
-
-    switch (ordinal) {
-      case 0:
-        return COLUMNAR_V3;
-      case 1:
-        return ROW_V1;
-      case 2:
-        return EXTERNAL;
-    }
-
-    return COLUMNAR_V3;
+public class FileFormatProperties {
+  public static class CSV {
+    public static final String HEADER = "csv.header";
+    public static final String DELIMITER = "csv.delimiter";
+    public static final String COMMENT = "csv.comment";
+    public static final String SKIP_EMPTY_LINE = "csv.skipemptyline";
+    public static final String QUOTE = "csv.quote";
+    public static final String ESCAPE = "csv.escape";
   }
 }
