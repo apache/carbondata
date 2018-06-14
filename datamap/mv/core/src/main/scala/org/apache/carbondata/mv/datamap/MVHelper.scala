@@ -20,11 +20,12 @@ import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, Expression, NamedExpression, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Expression, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.{Field, TableModel, TableNewProcessor}
@@ -33,10 +34,9 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, DataMapSchemaStorageProvider, RelationIdentifier}
-import org.apache.carbondata.mv.plans.modular
+import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
 import org.apache.carbondata.mv.plans.modular.{GroupBy, Matchable, ModularPlan, Select}
-import org.apache.carbondata.mv.rewrite.{DefaultMatchMaker, QueryRewrite}
+import org.apache.carbondata.mv.rewrite.{MVPlanWrapper, QueryRewrite}
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -51,6 +51,7 @@ object MVHelper {
     val dmProperties = dataMapSchema.getProperties.asScala
     val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
     val logicalPlan = sparkSession.sql(updatedQuery).drop("preAgg").queryExecution.analyzed
+    val fullRebuild = isFullReload(logicalPlan)
     val fields = logicalPlan.output.map { attr =>
       val name = updateColumnName(attr)
       val rawSchema = '`' + name + '`' + ' ' + attr.dataType.typeName
@@ -113,6 +114,7 @@ object MVHelper {
       new RelationIdentifier(table.database, table.identifier.table, "")
     }
     dataMapSchema.setParentTables(new util.ArrayList[RelationIdentifier](parentIdents.asJava))
+    dataMapSchema.getProperties.put("full_refresh", fullRebuild.toString)
     DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema)
   }
 
@@ -147,6 +149,34 @@ object MVHelper {
     }.filter(_.isDefined).map(_.get)
   }
 
+
+  /**
+   * Check if we can do incremental load on the mv table. Some cases like aggregation functions
+   * which are present inside other expressions like sum(a)+sum(b) cannot be incremental loaded.
+   */
+  private def isFullReload(logicalPlan: LogicalPlan): Boolean = {
+    var isFullReload = false
+    logicalPlan.transformAllExpressions {
+      case a: Alias =>
+        a
+      case agg: AggregateExpression => agg
+      case c: Cast =>
+        isFullReload = c.child.find {
+          case agg: AggregateExpression => false
+          case _ => false
+        }.isDefined || isFullReload
+        c
+      case exp: Expression =>
+        // Check any aggregation function present inside other expression.
+        isFullReload = exp.find {
+          case agg: AggregateExpression => true
+          case _ => false
+        }.isDefined || isFullReload
+        exp
+    }
+    isFullReload
+  }
+
   def getAttributeMap(subsumer: Seq[NamedExpression],
       subsume: Seq[NamedExpression]): Map[AttributeKey, NamedExpression] = {
     if (subsumer.length == subsume.length) {
@@ -179,7 +209,8 @@ object MVHelper {
       case _ => false
     }
 
-    override def hashCode: Int = exp.hashCode
+    // Basically we want to use it as simple linked list so hashcode is hardcoded.
+    override def hashCode: Int = 1
 
   }
 
@@ -215,7 +246,7 @@ object MVHelper {
 
     expressions.map {
         case alias@Alias(agg: AggregateExpression, name) =>
-          attrMap.get(AttributeKey(alias)).map { exp =>
+          attrMap.get(AttributeKey(agg)).map { exp =>
             Alias(getAttribute(exp), name)(alias.exprId,
               alias.qualifier,
               alias.explicitMetadata,
@@ -233,9 +264,16 @@ object MVHelper {
             }
           }.getOrElse(attr)
           uattr
+        case alias@Alias(expression: Expression, name) =>
+          attrMap.get(AttributeKey(expression)).map { exp =>
+            Alias(getAttribute(exp), name)(alias.exprId,
+              alias.qualifier,
+              alias.explicitMetadata,
+              alias.isGenerated)
+          }.getOrElse(alias)
         case expression: Expression =>
-          val uattr = attrMap.getOrElse(AttributeKey(expression), expression)
-          uattr
+          val uattr = attrMap.get(AttributeKey(expression))
+          uattr.getOrElse(expression)
     }
   }
 
@@ -292,14 +330,16 @@ object MVHelper {
   def updateDataMap(subsumer: ModularPlan, rewrite: QueryRewrite): ModularPlan = {
     subsumer match {
       case s: Select if s.dataMapTableRelation.isDefined =>
-        val relation = s.dataMapTableRelation.get.asInstanceOf[Select]
+        val relation =
+          s.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
         val mappings = s.outputList zip relation.outputList
         val oList = for ((o1, o2) <- mappings) yield {
           if (o1.name != o2.name) Alias(o2, o1.name)(exprId = o1.exprId) else o2
         }
         relation.copy(outputList = oList).setRewritten()
       case g: GroupBy if g.dataMapTableRelation.isDefined =>
-        val relation = g.dataMapTableRelation.get.asInstanceOf[Select]
+        val relation =
+          g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
         val in = relation.asInstanceOf[Select].outputList
         val mappings = g.outputList zip relation.outputList
         val oList = for ((left, right) <- mappings) yield {
@@ -341,37 +381,85 @@ object MVHelper {
 
       case select: Select =>
         select.children match {
-          case Seq(s: Select) if s.dataMapTableRelation.isDefined =>
-            val relation = s.dataMapTableRelation.get.asInstanceOf[Select]
-            val child = updateDataMap(s, rewrite).asInstanceOf[Select]
-            val aliasMap = getAttributeMap(relation.outputList, s.outputList)
-            var outputSel =
-              updateOutPutList(select.outputList, relation, aliasMap, keepAlias = true)
-            val pred = updateSelectPredicates(select.predicateList, aliasMap, true)
-            select.copy(outputList = outputSel,
-              inputList = child.outputList,
-              predicateList = pred,
-              children = Seq(child)).setRewritten()
-
           case Seq(g: GroupBy) if g.dataMapTableRelation.isDefined =>
-            val relation = g.dataMapTableRelation.get.asInstanceOf[Select]
+            val relation =
+              g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
             val aliasMap = getAttributeMap(relation.outputList, g.outputList)
+            val updatedFlagSpec: Seq[Seq[ArrayBuffer[SortOrder]]] = updateSortOrder(
+              keepAlias = false,
+              select,
+              relation,
+              aliasMap)
+            if (isFullRefresh(g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper])) {
+              val mappings = g.outputList zip relation.outputList
+              val oList = for ((o1, o2) <- mappings) yield {
+                if (o1.name != o2.name) Alias(o2, o1.name)(exprId = o1.exprId) else o2
+              }
 
-            val outputSel =
-              updateOutPutList(select.outputList, relation, aliasMap, keepAlias = false)
-            val child = updateDataMap(g, rewrite).asInstanceOf[Matchable]
-            // TODO Remove the unnecessary columns from selection.
-            // Only keep columns which are required by parent.
-            val inputSel = child.outputList
-            select.copy(
-              outputList = outputSel,
-              inputList = inputSel,
-              children = Seq(child)).setRewritten()
+              val outList = select.outputList.map{ f =>
+                oList.find(_.name.equals(f.name)).get
+              }
+              // Directly keep the relation as child.
+              select.copy(
+                outputList = outList,
+                children = Seq(relation),
+                aliasMap = relation.aliasMap,
+                flagSpec = updatedFlagSpec).setRewritten()
+            } else {
+              val outputSel =
+                updateOutPutList(select.outputList, relation, aliasMap, keepAlias = false)
+              val child = updateDataMap(g, rewrite).asInstanceOf[Matchable]
+              // TODO Remove the unnecessary columns from selection.
+              // Only keep columns which are required by parent.
+              val inputSel = child.outputList
+              select.copy(
+                outputList = outputSel,
+                inputList = inputSel,
+                flagSpec = updatedFlagSpec,
+                children = Seq(child)).setRewritten()
+            }
 
           case _ => select
         }
 
       case other => other
+    }
+  }
+
+  /**
+   * Updates the flagspec of given select plan with attributes of relation select plan
+   */
+  private def updateSortOrder(keepAlias: Boolean,
+      select: Select,
+      relation: Select,
+      aliasMap: Map[AttributeKey, NamedExpression]) = {
+    val updatedFlagSpec = select.flagSpec.map { f =>
+      f.map {
+        case list: ArrayBuffer[SortOrder] =>
+          list.map { s =>
+            val expressions =
+              updateOutPutList(
+                Seq(s.child.asInstanceOf[Attribute]),
+                relation,
+                aliasMap,
+                keepAlias = false)
+            SortOrder(expressions.head, s.direction, s.sameOrderExpressions)
+          }
+      }
+    }
+    updatedFlagSpec
+  }
+
+  /**
+   * It checks whether full referesh for the table is required. It means we no need to apply
+   * aggregation function or group by functions on the mv table.
+   */
+  private def isFullRefresh(mvPlanWrapper: MVPlanWrapper): Boolean = {
+    val fullRefesh = mvPlanWrapper.dataMapSchema.getProperties.get("full_refresh")
+    if (fullRefesh != null) {
+      fullRefesh.toBoolean
+    } else {
+      false
     }
   }
 
