@@ -19,8 +19,8 @@ package org.apache.spark.sql.execution.command.management
 
 import java.util.UUID
 
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.FileUtils

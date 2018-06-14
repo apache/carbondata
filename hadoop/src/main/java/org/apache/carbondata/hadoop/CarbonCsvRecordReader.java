@@ -48,6 +48,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
+import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -72,10 +73,6 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.unsafe.types.CalendarInterval;
 import org.apache.spark.unsafe.types.UTF8String;
 
-import static org.apache.carbondata.processing.loading.csvinput.CSVInputFormat.READ_BUFFER_SIZE;
-import static org.apache.carbondata.processing.loading.csvinput.CSVInputFormat.READ_BUFFER_SIZE_DEFAULT;
-import static org.apache.carbondata.processing.loading.csvinput.CSVInputFormat.extractCsvParserSettings;
-
 /**
  * scan csv file and filter on it
  */
@@ -94,7 +91,7 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
   private CarbonColumn[] carbonColumns;
   // input
   private QueryModel queryModel;
-  FileSplit fileSplit;
+  private FileSplit fileSplit;
   private Configuration hadoopConf;
 
   // filter
@@ -230,12 +227,13 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
 
     Path file = fileSplit.getPath();
     FileSystem fs = file.getFileSystem(hadoopConf);
-    int bufferSize = Integer.parseInt(hadoopConf.get(READ_BUFFER_SIZE, READ_BUFFER_SIZE_DEFAULT));
+    int bufferSize = Integer.parseInt(
+        hadoopConf.get(CSVInputFormat.READ_BUFFER_SIZE, CSVInputFormat.READ_BUFFER_SIZE_DEFAULT));
     // note that here we read the whole file, not a split of the file
     FSDataInputStream fsStream = fs.open(file, bufferSize);
     reader = new InputStreamReader(fsStream, CarbonCommonConstants.DEFAULT_CHARSET);
     // todo: use default csv settings here, will use user specified later
-    CsvParserSettings settings = extractCsvParserSettings(hadoopConf);
+    CsvParserSettings settings = CSVInputFormat.extractCsvParserSettings(hadoopConf);
     csvParser = new CsvParser(settings);
     csvParser.beginParsing(reader);
 
