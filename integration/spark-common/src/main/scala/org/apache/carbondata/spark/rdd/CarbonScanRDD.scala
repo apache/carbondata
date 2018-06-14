@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.rdd
 
 import java.text.SimpleDateFormat
+import java.util
 import java.util.{ArrayList, Date, List}
 
 import scala.collection.JavaConverters._
@@ -133,10 +134,13 @@ class CarbonScanRDD[T: ClassTag](
       // 2. for stream splits, create partition for each split by default
       val columnarSplits = new ArrayList[InputSplit]()
       val streamSplits = new ArrayBuffer[InputSplit]()
+      val externalSplits = new ArrayBuffer[InputSplit]()
       splits.asScala.foreach { split =>
         val carbonInputSplit = split.asInstanceOf[CarbonInputSplit]
         if (FileFormat.ROW_V1 == carbonInputSplit.getFileFormat) {
           streamSplits += split
+        } else if (FileFormat.EXTERNAL == carbonInputSplit.getFileFormat) {
+          externalSplits += split
         } else {
           columnarSplits.add(split)
         }
@@ -146,31 +150,39 @@ class CarbonScanRDD[T: ClassTag](
       distributeEndTime = System.currentTimeMillis()
       // check and remove InExpression from filterExpression
       checkAndRemoveInExpressinFromFilterExpression(batchPartitions)
-      if (streamSplits.isEmpty) {
-        partitions = batchPartitions.toArray
-      } else {
-        val index = batchPartitions.length
-        val streamPartitions: mutable.Buffer[Partition] =
-          streamSplits.zipWithIndex.map { splitWithIndex =>
-            val multiBlockSplit =
-              new CarbonMultiBlockSplit(
-                Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
-                splitWithIndex._1.getLocations,
-                FileFormat.ROW_V1)
-            new CarbonSparkPartition(id, splitWithIndex._2 + index, multiBlockSplit)
-          }
-        if (batchPartitions.isEmpty) {
-          partitions = streamPartitions.toArray
-        } else {
-          logInfo(
-            s"""
-               | Identified no.of Streaming Blocks: ${ streamPartitions.size },
-          """.stripMargin)
-          // should keep the order by index of partition
-          batchPartitions.appendAll(streamPartitions)
-          partitions = batchPartitions.toArray
+
+      def generateNonBatchPartitions(index: Int, splits : ArrayBuffer[InputSplit],
+          format: FileFormat): mutable.Buffer[Partition] = {
+        splits.zipWithIndex.map { splitWithIndex =>
+          val multiBlockSplit =
+            new CarbonMultiBlockSplit(
+              Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
+              splitWithIndex._1.getLocations,
+              format)
+          new CarbonSparkPartition(id, splitWithIndex._2 + index, multiBlockSplit)
         }
       }
+
+      val allPartitions: mutable.Buffer[Partition] = mutable.Buffer()
+      val index = batchPartitions.length
+      val streamPartitions: mutable.Buffer[Partition] = generateNonBatchPartitions(
+        index, streamSplits, FileFormat.ROW_V1)
+      val externalPartitions: mutable.Buffer[Partition] = generateNonBatchPartitions(
+        index + streamPartitions.length, externalSplits, FileFormat.EXTERNAL)
+
+      if (batchPartitions.nonEmpty) {
+        LOGGER.info(s"Identified no.of batch blocks: ${batchPartitions.size}")
+        allPartitions.appendAll(batchPartitions)
+      }
+      if (streamPartitions.nonEmpty) {
+        LOGGER.info(s"Identified no.of stream blocks: ${streamPartitions.size}")
+        allPartitions.appendAll(streamPartitions)
+      }
+      if (externalPartitions.nonEmpty) {
+        LOGGER.info(s"Identified no.of external blocks: ${externalPartitions.size}")
+        allPartitions.appendAll(externalPartitions)
+      }
+      partitions = allPartitions.toArray
       partitions
     } finally {
       Profiler.invokeIfEnable {
@@ -358,7 +370,7 @@ class CarbonScanRDD[T: ClassTag](
     }
     logInfo(
       s"""
-         | Identified no.of.blocks: $noOfBlocks,
+         | Identified no.of.blocks(columnar): $noOfBlocks,
          | no.of.tasks: $noOfTasks,
          | no.of.nodes: $noOfNodes,
          | parallelism: $parallelism
@@ -426,6 +438,15 @@ class CarbonScanRDD[T: ClassTag](
             CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId))
           streamReader.setQueryModel(model)
           streamReader
+        case FileFormat.EXTERNAL =>
+          logError("XU Enter ScanRDD for " + inputSplit.getFileFormat)
+          logWarning("Currently we only support csv as external file format")
+          val carbonCsvRecordReader = format.createRecordReader(inputSplit, attemptContext)
+            .asInstanceOf[CarbonCsvRecordReader[Object]]
+          carbonCsvRecordReader.setVectorReader(vectorReader)
+          carbonCsvRecordReader.setInputMetricsStats(inputMetricsStats)
+          carbonCsvRecordReader.setQueryModel(model)
+          carbonCsvRecordReader
         case _ =>
           // create record reader for CarbonData file format
           if (vectorReader) {
