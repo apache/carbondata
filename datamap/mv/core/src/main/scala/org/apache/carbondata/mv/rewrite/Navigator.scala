@@ -102,29 +102,6 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
     }
   }
 
-  private def updateDatamap(rchild: ModularPlan, subsume: ModularPlan) = {
-    val update = rchild match {
-      case s: Select if s.dataMapTableRelation.isDefined =>
-        true
-      case g: GroupBy if g.dataMapTableRelation.isDefined =>
-        true
-      case _ => false
-    }
-
-    if (update) {
-      subsume match {
-        case s: Select =>
-          s.copy(children = Seq(rchild))
-
-        case g: GroupBy =>
-          g.copy(child = rchild)
-        case _ => subsume
-      }
-    } else {
-      subsume
-    }
-  }
-
   // add Select operator as placeholder on top of subsumee to facilitate matching
   def unifySubsumee(subsumee: ModularPlan): Option[ModularPlan] = {
     subsumee match {
@@ -144,6 +121,9 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
       dataMapRelation: ModularPlan): ModularPlan = {
     // Update datamap table relation to the subsumer modular plan
     val updatedSubsumer = subsumer match {
+        // In case of order by it adds extra select but that can be ignored while doing selection.
+      case s@ Select(_, _, _, _, _, Seq(g: GroupBy), _, _, _, _) =>
+        s.copy(children = Seq(g.copy(dataMapTableRelation = Some(dataMapRelation))))
       case s: Select => s.copy(dataMapTableRelation = Some(dataMapRelation))
       case g: GroupBy => g.copy(dataMapTableRelation = Some(dataMapRelation))
       case other => other

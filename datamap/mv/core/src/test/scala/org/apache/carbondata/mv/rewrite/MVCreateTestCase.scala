@@ -395,6 +395,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "select t1.empname as c1, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
     val analyzed = frame.queryExecution.analyzed
     assert(!verifyMVDataMap(analyzed, "datamap25"))
+    val frame1 = sql(
+      "select t1.empname as c1, t2.designation from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
+    val analyzed1 = frame1.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed1, "datamap25"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop datamap datamap25")
   }
@@ -665,6 +669,67 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap45")
   }
 
+  test("jira carbondata-2523") {
+
+    sql("drop datamap if exists mv13")
+    sql("drop table if exists test4")
+    sql("create table test4 ( name string,age int,salary int) stored by 'carbondata'")
+
+    sql(" insert into test4 select 'babu',12,12").show()
+    sql("create datamap mv13 using 'mv' as select name,sum(salary) from test4 group by name")
+    sql("rebuild datamap mv13")
+    val frame = sql(
+      "select name,sum(salary) from test4 group by name")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "mv13"))
+  }
+
+  test("jira carbondata-2528-1") {
+
+    sql("drop datamap if exists MV_order")
+    sql("create datamap MV_order using 'mv' as select empname,sum(salary) as total from fact_table1 group by empname")
+    sql("rebuild datamap MV_order")
+    val frame = sql(
+      "select empname,sum(salary) as total from fact_table1 group by empname order by empname")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "MV_order"))
+  }
+
+  test("jira carbondata-2528-2") {
+
+    sql("drop datamap if exists MV_order")
+    sql("drop datamap if exists MV_desc_order")
+    sql("create datamap MV_order using 'mv' as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname")
+    sql("rebuild datamap MV_order")
+    val frame = sql(
+      "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "MV_order"))
+  }
+
+  test("jira carbondata-2528-3") {
+
+    sql("drop datamap if exists MV_order")
+    sql("create datamap MV_order using 'mv' as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
+    sql("rebuild datamap MV_order")
+    val frame = sql(
+      "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "MV_order"))
+    sql("drop datamap if exists MV_order")
+  }
+
+  test("jira carbondata-2528-4") {
+
+    sql("drop datamap if exists MV_order")
+    sql("create datamap MV_order using 'mv' as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
+    sql("rebuild datamap MV_order")
+    val frame = sql(
+      "select empname,sum(salary)+sum(utilization) as total from fact_table1 where empname = 'ravi' group by empname order by empname DESC")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "MV_order"))
+    sql("drop datamap if exists MV_order")
+  }
 
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
