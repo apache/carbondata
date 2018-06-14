@@ -203,6 +203,7 @@ public class TableSchemaBuilder {
         }
       }
     }
+    // todo: need more information such as long_string_columns
     return newColumn;
   }
 

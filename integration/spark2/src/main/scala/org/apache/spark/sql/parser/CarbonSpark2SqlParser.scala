@@ -20,7 +20,7 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{CarbonEnv, DeleteRecords, UpdateTable}
+import org.apache.spark.sql.{DeleteRecords, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -30,7 +30,7 @@ import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableDropPartitionCommand, CarbonAlterTableSplitPartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
-import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.types.{StringType, StructField}
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.util.CarbonException
@@ -596,9 +596,14 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       }
       if (f.dataType.getOrElse("").startsWith("char")) {
         f.dataType = Some("char")
-      }
-      else if (f.dataType.getOrElse("").startsWith("float")) {
+      } else if (f.dataType.getOrElse("").startsWith("float")) {
         f.dataType = Some("double")
+      }
+      // spark internally change VarcharTypes to StringType, here in carbondata, we change it back
+      if (col.dataType == StringType &&
+          col.metadata.contains("HIVE_TYPE_STRING") &&
+          col.metadata.getString("HIVE_TYPE_STRING").toLowerCase().startsWith("varchar")) {
+        f.dataType = Some("varchar")
       }
       f.rawSchema = x
       f.columnComment = plainComment

@@ -1562,7 +1562,7 @@ public class ThriftWrapperSchemaConverterImplTest {
   }
 
   @Test public void testFromExternalToWrapperSchemaEvolutionEntry() {
-long time =1112745600000L;
+    long time =1112745600000L;
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId("1");
     wrapperColumnSchema.setColumnName("columnName");

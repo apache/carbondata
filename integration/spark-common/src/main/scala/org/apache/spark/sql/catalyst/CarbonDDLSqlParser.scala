@@ -279,7 +279,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     fields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
     }
-    val (dims, msrs, noDictionaryDims, sortKeyDims) = extractDimAndMsrFields(
+    val (dims, msrs, noDictionaryDims, sortKeyDims, varcharColumns) = extractDimAndMsrFields(
       fields, tableProperties)
 
     // column properties
@@ -310,6 +310,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)),
       Option(sortKeyDims),
+      Option(varcharColumns),
       Option(noDictionaryDims),
       Option(noInvertedIdxCols),
       groupCols,
@@ -547,12 +548,39 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @return
    */
   protected def extractDimAndMsrFields(fields: Seq[Field],
-      tableProperties: Map[String, String]): (Seq[Field], Seq[Field], Seq[String], Seq[String]) = {
+      tableProperties: Map[String, String]):
+  (Seq[Field], Seq[Field], Seq[String], Seq[String], Seq[String]) = {
     var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
     var msrFields: Seq[Field] = Seq[Field]()
     var dictExcludeCols: Array[String] = Array[String]()
     var noDictionaryDims: Seq[String] = Seq[String]()
     var dictIncludeCols: Seq[String] = Seq[String]()
+
+    var longStringPropCols: List[String] = List()
+    // explicitly specified in property long_string_columns
+    if (tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS).isDefined) {
+      longStringPropCols =
+        tableProperties(CarbonCommonConstants.LONG_STRING_COLUMNS).split(",").map(_.trim).toList
+      longStringPropCols.foreach { varcharCol =>
+        val exists = fields.exists(f =>
+          f.column.equalsIgnoreCase(varcharCol) &&
+          (DataTypes.STRING.getName.equalsIgnoreCase(f.dataType.get) ||
+           f.dataType.getOrElse("").equalsIgnoreCase("varchar")))
+        if (!exists) {
+          throw new MalformedCarbonCommandException(
+            s"""
+               |${CarbonCommonConstants.LONG_STRING_COLUMNS}: $varcharCol does not exist in table
+               | or its data type is not string/char/varchar. Please check create table statement.
+             """.stripMargin)
+        }
+      }
+    }
+    // implicitly specified by varchar datatype
+    val varcharTypeCols = fields.filter(p => p.dataType.getOrElse("").equalsIgnoreCase("varchar"))
+      .map(_.name.get).toList
+    // merge and get all varchar columns, flush back to property
+    val varcharCols = (longStringPropCols ::: varcharTypeCols).distinct
+    tableProperties.put(CarbonCommonConstants.LONG_STRING_COLUMNS, varcharCols.mkString(","))
 
     // All columns in sortkey should be there in create table cols
     val sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
@@ -582,6 +610,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           if (isDataTypeSupportedForSortColumn(dataType)) {
             val errormsg = s"sort_columns is unsupported for $dataType datatype column: " + column
             throw new MalformedCarbonCommandException(errormsg)
+          }
+          if (varcharCols.exists(x => x.equalsIgnoreCase(column))) {
+            throw new MalformedCarbonCommandException(
+              s"sort_columns is unsupported for long string datatype column $column")
           }
         }
       }
@@ -660,8 +692,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         dimFields += field
       } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
         dimFields += field
-        // consider all String cols as noDicitonaryDims by default
-        if (DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) {
+        // consider all String/varchar cols as noDicitonaryDims by default
+        if (DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get) ||
+            "varchar".equalsIgnoreCase(field.dataType.get)) {
           noDictionaryDims :+= field.column
         }
       } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column)) &&
@@ -680,9 +713,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     var sortKeyDims = sortKeyDimsTmp
     if (sortKeyOption.isEmpty) {
-      // if SORT_COLUMNS was not defined, add all dimension to SORT_COLUMNS.
+      // if SORT_COLUMNS was not defined,
+      // add all dimension(except long string columns) to SORT_COLUMNS.
       dimFields.foreach { field =>
-        if (!isComplexDimDictionaryExclude(field.dataType.get)) {
+        if (!isComplexDimDictionaryExclude(field.dataType.get) &&
+            !varcharCols.contains(field.column)) {
           sortKeyDims :+= field.column
         }
       }
@@ -693,7 +728,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     } else {
       tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, sortKeyDims.mkString(","))
     }
-    (dimFields.toSeq, msrFields, noDictionaryDims, sortKeyDims)
+    (dimFields.toSeq, msrFields, noDictionaryDims, sortKeyDims, varcharCols)
   }
 
   def isDefaultMeasure(dataType: Option[String]): Boolean = {
@@ -724,7 +759,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param dimensionDatatype
    */
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
-    val dimensionType = Array("string", "array", "struct", "timestamp", "date", "char")
+    val dimensionType = Array("string", "array", "struct", "timestamp", "date", "char", "varchar")
     dimensionType.exists(x => dimensionDatatype.toLowerCase.contains(x))
   }
 

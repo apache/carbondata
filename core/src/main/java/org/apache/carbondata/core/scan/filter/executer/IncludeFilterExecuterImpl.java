@@ -499,21 +499,11 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   @Override
   public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
     if (isDimensionPresentInCurrentBlock) {
-      int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
-          .get(dimColumnEvaluatorInfo.getColumnIndex());
-      if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex]) {
-        rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex] =
-            rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
-                rawBlockletColumnChunks.getFileReader(), chunkIndex);
-      }
+      RawColumnChunkUtil.readDimensionRawColumnChunk(rawBlockletColumnChunks,
+          dimColumnEvaluatorInfo, segmentProperties);
     } else if (isMeasurePresentInCurrentBlock) {
-      int chunkIndex = segmentProperties.getMeasuresOrdinalToChunkMapping()
-          .get(msrColumnEvaluatorInfo.getColumnIndex());
-      if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
-        rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex] =
-            rawBlockletColumnChunks.getDataBlock().readMeasureChunk(
-                rawBlockletColumnChunks.getFileReader(), chunkIndex);
-      }
+      RawColumnChunkUtil.readMeasureRawColumnChunk(rawBlockletColumnChunks,
+          msrColumnEvaluatorInfo, segmentProperties);
     }
   }
 }

@@ -2309,6 +2309,8 @@ public final class CarbonUtil {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+      case VARCHAR:
+        return DataTypes.VARCHAR;
       default:
         return DataTypes.STRING;
     }
@@ -2499,8 +2501,10 @@ public final class CarbonUtil {
       return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return (byte[]) value;
-    } else if (dataType == DataTypes.STRING || dataType == DataTypes.TIMESTAMP ||
-        dataType == DataTypes.DATE) {
+    } else if (dataType == DataTypes.STRING
+        || dataType == DataTypes.TIMESTAMP
+        || dataType == DataTypes.DATE
+        || dataType == DataTypes.VARCHAR) {
       return (byte[]) value;
     } else {
       throw new IllegalArgumentException("Invalid data type: " + dataType);
