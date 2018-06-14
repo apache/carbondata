@@ -321,9 +321,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         case scala.util.Failure(ex) =>
           LOGGER
             .debug(
-              "invalid value is configured for local_dictionary_threshold, considering the defaut" +
-              " " +
-              "value")
+              "invalid value is configured for local_dictionary_threshold, considering the " +
+              "default value")
           tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
             CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
       }
@@ -362,9 +361,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
               .distinct.length !=
             List(localDictIncludeCols, localDictExcludeCols).mkString(",").split(",")
               .length) {
+          val duplicateColumns = localDictIncludeCols.diff(localDictExcludeCols.distinct).distinct
           val errMsg =
-            "Column ambiguity as duplicate columns present in LOCAL_DICTIONARY_INCLUDE and " +
-            "LOCAL_DICTIONARY_INCLUDE.Duplicate columns are not allowed."
+            "Column ambiguity as duplicate column(s):  " +
+            duplicateColumns.mkString("(", ",", ")") + "are present in LOCAL_DICTIONARY_INCLUDE " +
+            "and LOCAL_DICTIONARY_EXCLUDE. Duplicate columns are not allowed."
           throw new MalformedCarbonCommandException(errMsg)
         }
       }
@@ -411,10 +412,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // check if the duplicate columns are specified in table schema
     if (localDictColumns.distinct.lengthCompare(localDictColumns.size) != 0) {
-      val a = localDictColumns.diff(localDictColumns.distinct).distinct
-      val errMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE contains Duplicate Columns " +
-                   a.mkString("(", ",", ")") +
-                   ". Please check create table statement."
+      val duplicateColumns = localDictColumns.diff(localDictColumns.distinct).distinct
+      val errMsg =
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE contains Duplicate Columns: " +
+        duplicateColumns.mkString("(", ",", ")") +
+        ". Please check create table statement."
       throw new MalformedCarbonCommandException(errMsg)
     }
 
@@ -436,8 +438,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
                      !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
         val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
                        dictColm.trim +
-                       " is not a String datatype column. LOCAL_DICTIONARY_COLUMN should be no " +
-                       "dictionary string datatype column.Please check create table statement."
+                       " is not a String/complex datatype column. LOCAL_DICTIONARY_COLUMN should " +
+                       "be no dictionary string/complex datatype column.Please check create table" +
+                       " statement."
         throw new MalformedCarbonCommandException(errormsg)
       }
     }
@@ -448,10 +451,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
       localDictColumns.foreach { distCol =>
         if (dictIncludeColumns.exists(x => x.equalsIgnoreCase(distCol.trim))) {
+          val duplicateColumns = dictIncludeColumns.diff(localDictColumns.distinct).distinct
           val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
-                         distCol.trim +
+                         duplicateColumns.mkString("(", ",", ")") +
                          " specified in Dictionary include. Local Dictionary will not be " +
-                         "generated for Dictionary include. Please check create table statement."
+                         "generated for Dictionary include columns. Please check create table " +
+                         "statement."
           throw new MalformedCarbonCommandException(errormsg)
         }
       }

@@ -141,7 +141,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
      */
     def getDictColumnString(localDictColumns: Array[String]): String = {
       val dictColumns: StringBuilder = new StringBuilder
-      localDictColumns.foreach(column => dictColumns.append(column).append(","))
+      localDictColumns.foreach(column => dictColumns.append(column.trim).append(","))
       dictColumns.toString().patch(dictColumns.toString().lastIndexOf(","), "", 1)
     }
 
