@@ -124,7 +124,7 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
 
   override def readRow(data: Array[Object]): Array[Object] = {
     dataTypes.zipWithIndex.foreach { case (dataType, i) =>
-      if (dataType == DataTypes.STRING) {
+      if (dataType == DataTypes.STRING && data(i) != null) {
         data(i) = data(i).toString
       }
     }
