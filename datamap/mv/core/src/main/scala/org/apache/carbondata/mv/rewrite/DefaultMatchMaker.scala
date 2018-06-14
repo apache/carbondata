@@ -19,6 +19,7 @@
 package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Expression, PredicateHelper, _}
+import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftOuter}
 
 import org.apache.carbondata.mv.plans.modular.{JoinEdge, Matchable, ModularPlan, _}
@@ -498,13 +499,31 @@ object GroupbyGroupbySelectOnlyChildDelta extends DefaultMatchPattern with Predi
             val aliasMap = AttributeMap(gb_2a.outputList.collect {
               case a: Alias => (a.toAttribute, a)
             })
+            val res =
             Utils.tryMatch(gb_2a, gb_2q, aliasMap).flatMap {
-              case g: GroupBy => Some(g.copy(child = sel_2c1));
+              case g: GroupBy =>
+
+                // Check any agg function exists on outputlist, in case of expressions like
+                // sum(a)+sum(b) , outputlist directly replaces with alias with in place of function
+                // so we should remove the groupby clause in those cases.
+                val aggFunExists = g.outputList.exists { f =>
+                  f.find {
+                    case ag: AggregateExpression => true
+                    case _ => false
+                  }.isDefined
+                }
+                if (aggFunExists) {
+                  Some(g.copy(child = sel_2c1))
+                } else {
+                  // Remove group by clause.
+                  Some(g.copy(child = sel_2c1, predicateList = Seq.empty))
+                }
               case _ => None
             }.map { wip =>
               factorOutSubsumer(wip, gb_2a, sel_1c1.aliasMap)
             }.map(Seq(_))
               .getOrElse(Nil)
+            res
           }
           // TODO: implement regrouping with 1:N rejoin (rejoin tables being the "1" side)
           // via catalog service

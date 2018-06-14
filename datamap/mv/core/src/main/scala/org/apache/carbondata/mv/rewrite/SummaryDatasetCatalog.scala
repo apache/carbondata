@@ -21,6 +21,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.FindDataSourceTable
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
@@ -38,6 +39,15 @@ private[mv] case class SummaryDataset(signature: Option[Signature],
     plan: LogicalPlan,
     dataMapSchema: DataMapSchema,
     relation: ModularPlan)
+
+/**
+ * It is wrapper on datamap relation along with schema.
+ */
+case class MVPlanWrapper(plan: ModularPlan, dataMapSchema: DataMapSchema) extends ModularPlan {
+  override def output: Seq[Attribute] = plan.output
+
+  override def children: Seq[ModularPlan] = plan.children
+}
 
 private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   extends DataMapCatalog[SummaryDataset] {
@@ -123,7 +133,11 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
         Seq.empty,
         None)
 
-      summaryDatasets += SummaryDataset(signature, planToRegister, dataMapSchema, select)
+      summaryDatasets += SummaryDataset(
+        signature,
+        planToRegister,
+        dataMapSchema,
+        MVPlanWrapper(select, dataMapSchema))
     }
   }
 
