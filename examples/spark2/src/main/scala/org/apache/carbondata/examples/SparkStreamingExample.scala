@@ -30,7 +30,6 @@ import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.streaming.CarbonSparkStreamingListener
-import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 /**
  * This example introduces how to use Spark Streaming to write data
@@ -172,8 +171,6 @@ object SparkStreamingExample {
           " at batch time: " + time.toString() +
           " the count of received data: " + df.count())
         CarbonSparkStreamingFactory.getStreamSparkStreamingWriter(spark, "default", tableName)
-          .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-            CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
           .mode(SaveMode.Append)
           .writeStreamData(df, time)
       }}
