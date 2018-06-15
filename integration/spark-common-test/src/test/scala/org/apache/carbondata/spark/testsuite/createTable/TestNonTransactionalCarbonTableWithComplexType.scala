@@ -23,6 +23,7 @@ import java.util
 import org.apache.avro
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.CharEncoding
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
@@ -63,7 +64,6 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
     val record = avroUtil.jsonToAvro(json, mySchema)
-
     try {
       val writer = CarbonWriter.builder
         .outputPath(writerPath).isTransactionalTable(false)
@@ -239,8 +239,6 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       """.stripMargin
     val pschema= org.apache.avro.Schema.parse(mySchema)
     val records = avroUtil.jsonToAvro(jsonvalue, mySchema)
-
-
     val writer=CarbonWriter.builder().outputPath(writerPath).buildWriterForAvroInput(pschema)
     writer.write(records)
     writer.close()
@@ -255,6 +253,260 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
+    cleanTestData()
+  }
+
+  // test multi level -- 4 levels [array of array of array of struct]
+  test("test ComplexDataType projection for array of array of array of struct") {
+    buildAvroTestDataMultiLevel4Type()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select BuildNum[0][0][0].street from sdkOutputTable"),
+      Seq(Row("abc"), Row("abc"), Row("abc")))
+    checkAnswer(sql("select BuildNum[1][0][0].street from sdkOutputTable"),
+      Seq(Row("abc2"), Row("abc2"), Row("abc2")))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    cleanTestData()
+  }
+
+  def buildAvroTestDataMultiLevel6Type(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildAvroTestDataMultiLevel6(1, null)
+  }
+
+  // test multi level -- 6 levels
+  def buildAvroTestDataMultiLevel6(rows: Int, options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    val mySchema =
+      """ {
+        |"type": "record",
+        |	"name": "UserInfo",
+        |	"namespace": "com.apache.schema.schemalevel6_struct",
+        |	"fields": [
+        |		{
+        |			"name": "username",
+        |			"type": "string",
+        |			"default": "NONE"
+        |		},
+        |		{
+        |			"name": "age",
+        |			"type": "int",
+        |			"default": -1
+        |		},
+        |		{
+        |			"name": "phone",
+        |			"type": "string",
+        |			"default": "NONE"
+        |		},
+        |		{
+        |			"name": "housenum",
+        |			"type": "string",
+        |			"default": "NONE"
+        |		},
+        |		{
+        |			"name": "address",
+        |			"type": {
+        |				"type": "record",
+        |				"name": "Mailing_Address",
+        |				"fields": [
+        |					{
+        |						"name": "Address_Detail",
+        |						"type": {
+        |							"type": "record",
+        |							"name": "Address_Detail",
+        |							"fields": [
+        |								{
+        |									"name": "Building_Detail",
+        |									"type": {
+        |										"type": "record",
+        |										"name": "Building_Address",
+        |										"fields": [
+        |											{
+        |												"name": "Society_name",
+        |												"type": "string"
+        |											},
+        |											{
+        |												"name": "building_no",
+        |												"type": "string"
+        |											},
+        |											{
+        |												"name": "house_no",
+        |												"type": "int"
+        |											},
+        |											{
+        |												"name": "Building_Type",
+        |												"type": {
+        |													"type": "record",
+        |													"name": "Building_Type",
+        |													"fields": [
+        |														{
+        |															"name":"Buildingname",
+        |															"type":"string"
+        |														},
+        |														{
+        |															"name":"buildingArea",
+        |															"type":"int"
+        |														},
+        |														{
+        |															"name":"Building_Criteria",
+        |															"type":{
+        |																"type":"record",
+        |																"name":"BuildDet",
+        |																"fields":[
+        |																	{
+        |																		"name":"f1",
+        |																		"type":"int"
+        |																	},
+        |																	{
+        |																		"name":"f2",
+        |																		"type":"string"
+        |																	},
+        |																	{
+        |																		"name":"BuildDetInner",
+        |																		"type":
+        |																			{
+        |																				"type":"record",
+        |																				"name":"BuildInner",
+        |																				"fields":[
+        |																						{
+        |																							"name": "duplex",
+        |																							"type": "boolean"
+        |																						},
+        |																						{
+        |																							"name": "Price",
+        |																							"type": "int"
+        |																						},
+        |																						{
+        |																							"name": "TotalCost",
+        |																							"type": "int"
+        |																						},
+        |																						{
+        |																							"name": "Floor",
+        |																							"type": "int"
+        |																						},
+        |																						{
+        |																							"name": "PhoneNo",
+        |																							"type": "long"
+        |																						},
+        |																						{
+        |																							"name": "value",
+        |																							"type": "string"
+        |																						}
+        |																				]
+        |																			}
+        |																	}
+        |																]
+        |															}
+        |														}
+        |													]
+        |												}
+        |											}
+        |										]
+        |									}
+        |								}
+        |							]
+        |						}
+        |					}
+        |				]
+        |			}
+        |		}
+        |	]
+        |} """.stripMargin
+
+    val json =
+      """ {
+        |"username": "DON",
+        |"age": 21,
+        |"phone": "9888",
+        |"housenum": "44",
+        |"address": {
+        |"Address_Detail": {
+        |"Building_Detail": {
+        |"Society_name": "TTTT",
+        |"building_no": "5",
+        |"house_no": 78,
+        |"Building_Type": {
+        |"Buildingname": "Amaranthus",
+        |"buildingArea": 34,
+        |"Building_Criteria": {
+        |"f1": 23,
+        |"f2": "RRR",
+        |"BuildDetInner": {
+        |"duplex": true,
+        |"Price": 3434,
+        |"TotalCost": 7777,
+        |"Floor": 4,
+        |"PhoneNo": 5656,
+        |"value":"Value"
+        |}
+        |}
+        |}
+        |}
+        |}
+        |}
+        |} """.stripMargin
+
+    WriteFilesWithAvroWriter(rows, mySchema, json)
+  }
+
+
+  test("test ComplexDataType projection for struct of struct -6 levels") {
+    buildAvroTestDataMultiLevel6Type()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkOutputTable"),
+      Seq(Row("DON", 21, "9888", "44", Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34,
+        Row(23, "RRR", Row(true, 3434, 7777, 4, 5656,  "Value")))))))))
+    checkAnswer(sql("select address from sdkOutputTable"),
+      Seq(Row(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))))))
+    checkAnswer(sql("select address.Address_Detail from sdkOutputTable"),
+      Seq(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))))
+    checkAnswer(sql("select address.Address_Detail.Building_Detail from sdkOutputTable"),
+      Seq(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))))
+    checkAnswer(sql("select address.Address_Detail.Building_Detail.Building_Type from sdkOutputTable"),
+      Seq(Row(Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Building_Type.Building_Criteria from " +
+      "sdkOutputTable"), Seq(Row(Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Building_Type.Building_Criteria" +
+      ".BuildDetInner.duplex from sdkOutputTable"), Seq(Row(true)))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Building_Type.Building_Criteria" +
+      ".BuildDetInner.price from sdkOutputTable"), Seq(Row(3434)))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Building_Type.Building_Criteria" +
+      ".BuildDetInner.totalcost from sdkOutputTable"), Seq(Row(7777)))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Building_Type.Building_Criteria" +
+      ".BuildDetInner.floor from sdkOutputTable"), Seq(Row(4)))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Building_Type.Building_Criteria" +
+      ".BuildDetInner.phoneNo from sdkOutputTable"), Seq(Row(5656)))
+    checkAnswer(sql(
+      "select address.Address_Detail.Building_Detail.Building_Type.Building_Criteria" +
+      ".BuildDetInner.value from sdkOutputTable"), Seq(Row("Value")))
+    checkAnswer(sql("select address,address.Address_Detail from sdkOutputTable"),
+      Seq(Row(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))
+      , Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))))))
+    checkAnswer(sql("select address.Address_Detail.Building_Detail.Building_Type,address.Address_Detail.Building_Detail.Building_Type.Building_Criteria from sdkOutputTable"), Seq(Row(Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))),Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))
+    checkAnswer(sql("select address.Address_Detail,address.Address_Detail.Building_Detail.Building_Type.Building_Criteria from sdkOutputTable"),Seq(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))),Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value")))))
+    checkAnswer(sql("select address.Address_Detail,address.Address_Detail.Building_Detail.Society_name,address.Address_Detail.Building_Detail.Building_Type.Building_Criteria.f1 from sdkOutputTable"),
+      Seq(Row(Row(Row("TTTT", "5", 78, Row("Amaranthus", 34, Row(23, "RRR", Row(true, 3434, 7777, 4, 5656, "Value"))))),"TTTT",23)))
+    checkAnswer(sql("select address.Address_Detail.Building_Detail.Society_name,address.Address_Detail.Building_Detail.building_no from sdkOutputTable"),Seq(Row("TTTT","5")))
+    sql("select address.Address_Detail.Building_Detail.Society_name,address.Address_Detail.Building_Detail.building_no from sdkOutputTable where address.Address_Detail.Building_Detail.Society_name ='TTTT'").show(false)
+    sql("DROP TABLE sdkOutputTable")
     cleanTestData()
   }
 }

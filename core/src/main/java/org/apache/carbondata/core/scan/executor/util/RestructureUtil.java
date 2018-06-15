@@ -28,6 +28,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -109,7 +110,13 @@ public class RestructureUtil {
         for (CarbonDimension tableDimension : tableComplexDimension) {
           if (isColumnMatches(isTransactionalTable, queryDimension.getDimension(),
               tableDimension)) {
-            ProjectionDimension currentBlockDimension = new ProjectionDimension(tableDimension);
+            ProjectionDimension currentBlockDimension = null;
+            // If projection dimension is child of struct field and contains Parent Ordinal
+            if (null != queryDimension.getDimension().getComplexParentDimension()) {
+              currentBlockDimension = new ProjectionDimension(queryDimension.getDimension());
+            } else {
+              currentBlockDimension = new ProjectionDimension(tableDimension);
+            }
             // TODO: for complex dimension set scale and precision by traversing
             // the child dimensions
             currentBlockDimension.setOrdinal(queryDimension.getOrdinal());
@@ -156,8 +163,51 @@ public class RestructureUtil {
     // If it is non transactional table just check the column names, no need to validate
     // column id as multiple sdk's output placed in a single folder doesn't have same
     // column ID but can have same column name
-    return (tableColumn.getColumnId().equals(queryColumn.getColumnId()) ||
-        (!isTransactionalTable && tableColumn.getColName().equals(queryColumn.getColName())));
+    if (tableColumn.getDataType().isComplexType() && !(tableColumn.getDataType().getId()
+        == DataTypes.ARRAY_TYPE_ID)) {
+      if (tableColumn.getColumnId().equals(queryColumn.getColumnId())) {
+        return true;
+      } else {
+        return isColumnMatchesStruct(tableColumn, queryColumn);
+      }
+    } else {
+      return (tableColumn.getColumnId().equals(queryColumn.getColumnId()) || (!isTransactionalTable
+          && tableColumn.getColName().equals(queryColumn.getColName())));
+    }
+  }
+
+  /**
+   * In case of Multilevel Complex column - STRUCT/STRUCTofSTRUCT, traverse all the child dimension
+   * to check column Id
+   *
+   * @param tableColumn
+   * @param queryColumn
+   * @return
+   */
+  private static boolean isColumnMatchesStruct(CarbonColumn tableColumn, CarbonColumn queryColumn) {
+    if (tableColumn instanceof CarbonDimension) {
+      List<CarbonDimension> parentDimension =
+          ((CarbonDimension) tableColumn).getListOfChildDimensions();
+      CarbonDimension carbonDimension = null;
+      String[] colSplits = queryColumn.getColName().split("\\.");
+      StringBuffer tempColName = new StringBuffer(colSplits[0]);
+      for (String colSplit : colSplits) {
+        if (!tempColName.toString().equalsIgnoreCase(colSplit)) {
+          tempColName = tempColName.append(".").append(colSplit);
+        }
+        carbonDimension = CarbonTable.getCarbonDimension(tempColName.toString(), parentDimension);
+        if (carbonDimension != null) {
+          if (carbonDimension.getColumnSchema().getColumnUniqueId()
+              .equalsIgnoreCase(queryColumn.getColumnId())) {
+            return true;
+          }
+          if (carbonDimension.getListOfChildDimensions() != null) {
+            parentDimension = carbonDimension.getListOfChildDimensions();
+          }
+        }
+      }
+    }
+    return false;
   }
 
   /**
