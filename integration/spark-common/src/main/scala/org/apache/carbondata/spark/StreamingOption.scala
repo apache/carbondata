@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark
 
+import scala.collection.mutable
+
 import org.apache.spark.sql.streaming.{ProcessingTime, Trigger}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -50,4 +52,16 @@ class StreamingOption(val userInputMap: Map[String, String]) {
   def rowParser: String =
     userInputMap.getOrElse(CarbonStreamParser.CARBON_STREAM_PARSER,
       CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
+
+  def remainingOption: Map[String, String] = {
+    // copy the user input map and remove the fix options
+    val mutableMap = mutable.Map[String, String]() ++= userInputMap
+    mutableMap.remove("checkpointLocation")
+    mutableMap.remove("timestampformat")
+    mutableMap.remove("dateformat")
+    mutableMap.remove("trigger")
+    mutableMap.remove("interval")
+    mutableMap.remove(CarbonStreamParser.CARBON_STREAM_PARSER)
+    mutableMap.toMap
+  }
 }

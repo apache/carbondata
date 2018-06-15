@@ -105,15 +105,13 @@ object StreamJobManager {
           job = streamDf.writeStream
             .format("carbondata")
             .trigger(options.trigger)
-            .options(options.userInputMap)
             .option("checkpointLocation", options.checkpointLocation(sinkTable.getTablePath))
             .option("dateformat", options.dateFormat)
             .option("timestampformat", options.timeStampFormat)
             .option("carbon.stream.parser", options.rowParser)
             .option("dbName", sinkTable.getDatabaseName)
             .option("tableName", sinkTable.getTableName)
-            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-              CarbonStreamParser.CARBON_STREAM_PARSER_CSV)
+            .options(options.remainingOption)
             .start()
           latch.countDown()
           job.awaitTermination()

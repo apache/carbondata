@@ -27,7 +27,8 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.streaming.StreamingRelation
-import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.streaming.DataStreamReader
+import org.apache.spark.sql.types.{StringType, StructType}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -55,35 +56,28 @@ case class CarbonCreateStreamCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val df = sparkSession.sql(query)
     var sourceTable: CarbonTable = null
-    // replace the LogicalRelation in the plan with StreamingRelation
-    val streamLp = df.logicalPlan transform {
-      case r@LogicalRelation(relation, output, _)
-        if relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.isStreamingSource =>
-        sourceTable = relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-        validateFormat(sourceTable)
-        val tblproperty = sourceTable.getTableInfo.getFactTable.getTableProperties
-        val cols = sourceTable.getTableInfo.getFactTable.getListOfColumns.asScala.toArray
-        val sortedCols = cols.filter(_.getSchemaOrdinal != -1)
-          .sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
-        val schema = SparkDataTypeConverterImpl.convertToSparkSchema(sortedCols)
-        val streamRelation = sparkSession.readStream
-          .schema(schema)
-          .format(tblproperty.get("format"))
-          .load(tblproperty.get("path"))
-          .logicalPlan
-          .asInstanceOf[StreamingRelation]
 
-        // Since SparkSQL analyzer will match the UUID in attribute,
-        // create a new StreamRelation and re-use the same attribute from LogicalRelation
-        StreamingRelation(streamRelation.dataSource, streamRelation.sourceName, output)
+    // find the streaming source table in the query
+    // and replace it with StreamingRelation
+    val streamLp = df.logicalPlan transform {
+      case r: LogicalRelation
+        if r.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
+           r.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.isStreamingSource =>
+        val (source, streamingRelation) = prepareStreamingRelation(sparkSession, r)
+        if (sourceTable != null && sourceTable.getTableName != source.getTableName) {
+          throw new MalformedCarbonCommandException(
+            "Stream query on two stream source tables is not supported")
+        }
+        sourceTable = source
+        streamingRelation
       case plan: LogicalPlan => plan
     }
 
     if (sourceTable == null) {
-      throw new MalformedCarbonCommandException("Must specify stream source table in select query")
+      throw new MalformedCarbonCommandException("Must specify stream source table in the query")
     }
 
+    // start the streaming job
     val jobId = StreamJobManager.startStream(
       sparkSession = sparkSession,
       streamName = streamName,
@@ -96,21 +90,43 @@ case class CarbonCreateStreamCommand(
     Seq(Row(streamName, jobId, "RUNNING"))
   }
 
-  private def validateFormat(sourceTable: CarbonTable): Unit = {
-    val format = sourceTable.getTableInfo.getFactTable.getTableProperties.get("format")
+  private def prepareStreamingRelation(
+      sparkSession: SparkSession,
+      r: LogicalRelation): (CarbonTable, StreamingRelation) = {
+    val sourceTable = r.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
+    val tblProperty = sourceTable.getTableInfo.getFactTable.getTableProperties
+    val format = tblProperty.get("format")
     if (format == null) {
       throw new MalformedCarbonCommandException("Streaming from carbon file is not supported")
     }
-    format match {
-      case "csv" =>
-      case "text" =>
-      case "json" =>
-      case "parquet" =>
-      case "kafka" =>
-      case "socket" =>
+    val streamReader = sparkSession.readStream
+      .schema(getSparkSchema(sourceTable))
+      .format(format)
+    val dataFrame = format match {
+      case "csv" | "text" | "json" | "parquet" =>
+        if (!tblProperty.containsKey("path")) {
+          throw new MalformedCarbonCommandException(
+            s"'path' tblproperty should be provided for '$format' format")
+        }
+        streamReader.load(tblProperty.get("path"))
+      case "kafka" | "socket" =>
+        streamReader.load()
       case other =>
         throw new MalformedCarbonCommandException(s"Streaming from $format is not supported")
     }
+    val streamRelation = dataFrame.logicalPlan.asInstanceOf[StreamingRelation]
+
+    // Since SparkSQL analyzer will match the UUID in attribute,
+    // create a new StreamRelation and re-use the same attribute from LogicalRelation
+    (sourceTable,
+      StreamingRelation(streamRelation.dataSource, streamRelation.sourceName, r.output))
+  }
+
+  private def getSparkSchema(sourceTable: CarbonTable): StructType = {
+    val cols = sourceTable.getTableInfo.getFactTable.getListOfColumns.asScala.toArray
+    val sortedCols = cols.filter(_.getSchemaOrdinal != -1)
+      .sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
+    SparkDataTypeConverterImpl.convertToSparkSchema(sortedCols)
   }
 
 }
