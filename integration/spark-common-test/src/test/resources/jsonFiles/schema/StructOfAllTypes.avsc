@@ -1,0 +1,85 @@
+{
+	"name": "address",
+	"type": "record",
+	"fields": [
+		{
+    	"name": "StructColumn",
+    	"type": {
+    		"type": "record",
+    		"name": "my_struct",
+    		"fields": [
+    			{
+    				"name": "stringField",
+    				"type": "string"
+    			},
+    			{
+    				"name": "intField",
+    				"type": "int"
+    			},
+    			{
+    				"name": "longField",
+    				"type": "long"
+    			},
+    			{
+    				"name": "doubleField",
+    				"type": "double"
+    			},
+    			{
+    				"name": "boolField",
+    				"type": "boolean"
+    			},
+    			{
+    				"name": "FloorNum",
+    				"type": {
+    					"type": "array",
+    					"items": {
+    						"name": "IntegerE",
+    						"type": "int"
+    					}
+    				}
+    			},
+    			{
+    				"name": "FloorString",
+    				"type": {
+    					"type": "array",
+    					"items": {
+    						"name": "StringE",
+    						"type": "string"
+    					}
+    				}
+    			},
+    			{
+    				"name": "FloorLong",
+    				"type": {
+    					"type": "array",
+    					"items": {
+    						"name": "longFieldE",
+    						"type": "long"
+    					}
+    				}
+    			},
+    			{
+    				"name": "FloorDouble",
+    				"type": {
+    					"type": "array",
+    					"items": {
+    						"name": "doubleFieldE",
+    						"type": "double"
+    					}
+    				}
+    			},
+    			{
+    				"name": "FloorBool",
+    				"type": {
+    					"type": "array",
+    					"items": {
+    						"name": "boolFieldE",
+    						"type": "boolean"
+    					}
+    				}
+    			}
+    		]
+    	}
+    }
+	]
+}

@@ -1,0 +1,11 @@
+{
+	"stringField": 123,
+	"intField": "string",
+	"shortField": 1234567,
+	"longField": 23.5,
+	"doubleField": "string",
+	"boolField": 10,
+	"dateField": 12345,
+	"timeField": 12345,
+	"decimalField" : "String"
+}

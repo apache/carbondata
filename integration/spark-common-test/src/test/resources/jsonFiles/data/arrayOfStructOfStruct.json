@@ -1,0 +1,21 @@
+{
+	"name": "bob",
+	"age": 10,
+	"doorNum": [
+		{
+			"street": "abc",
+			"city": "city1",
+			"FloorNum": {"wing" : "a", "number" : 1}
+		},
+		{
+			"street": "def",
+			"city": "city2",
+			"FloorNum": {"wing" : "b", "number" : 0}
+		},
+		{
+			"street": "ghi",
+			"city": "city3",
+			"FloorNum": {"wing" : "a", "number" : 2}
+		}
+	]
+}

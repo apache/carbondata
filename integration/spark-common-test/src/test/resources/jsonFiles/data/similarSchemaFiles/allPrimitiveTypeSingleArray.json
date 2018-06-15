@@ -1,0 +1,13 @@
+[
+	{
+		"stringField": "ZZ",
+		"intField": 100,
+		"shortField": 100,
+		"longField": 1234567,
+		"doubleField": 23.3333,
+		"boolField": false,
+		"dateField": "2020-03-02",
+		"timeField": "2020-02-12 03:03:34",
+		"decimalField": 55.35
+	}
+]

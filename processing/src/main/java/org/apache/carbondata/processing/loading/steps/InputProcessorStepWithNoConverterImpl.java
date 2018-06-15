@@ -50,6 +50,7 @@ import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingExcep
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+
 /**
  * It reads data from record reader and sends data to next step.
  */
@@ -113,8 +114,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
         // create a ComplexDataType
         dataFieldsWithComplexDataType.put(srcDataField[i].getColumn().getOrdinal(),
             fieldConverterFactory
-                .createComplexDataType(srcDataField[i], configuration.getTableIdentifier(),
-                    null, false, null, i, nullFormat, isEmptyBadRecord));
+                .createComplexDataType(srcDataField[i], configuration.getTableIdentifier(), null,
+                    false, null, i, nullFormat, isEmptyBadRecord));
       }
     }
   }
@@ -139,8 +140,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
           new InputProcessorIterator(readerIterators[i], batchSize, configuration.isPreFetch(),
-              rowCounter, orderOfData, noDictionaryMapping, dataTypes,
-              configuration, dataFieldsWithComplexDataType);
+              rowCounter, orderOfData, noDictionaryMapping, dataTypes, configuration,
+              dataFieldsWithComplexDataType);
     }
     return outIterators;
   }
@@ -274,13 +275,17 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       // Create batch and fill it.
       CarbonRowBatch carbonRowBatch = new CarbonRowBatch(batchSize);
       int count = 0;
+
       while (internalHasNext() && count < batchSize) {
         carbonRowBatch.addRow(
             new CarbonRow(convertToNoDictionaryToBytes(currentIterator.next(), dataFields)));
         count++;
       }
       rowCounter.getAndAdd(carbonRowBatch.getSize());
+
+
       return carbonRowBatch;
+
     }
 
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
@@ -328,9 +333,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
               newData[i] = dateDictionaryGenerator.generateKey((long) data[orderOfData[i]]);
             } else if (dataType == DataTypes.TIMESTAMP && data[orderOfData[i]] instanceof Long) {
               if (timestampDictionaryGenerator == null) {
-                timestampDictionaryGenerator =
-                    DirectDictionaryKeyGeneratorFactory
-                        .getDirectDictionaryGenerator(dataType, dataFields[i].getTimestampFormat());
+                timestampDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+                    .getDirectDictionaryGenerator(dataType, dataFields[i].getTimestampFormat());
               }
               newData[i] = timestampDictionaryGenerator.generateKey((long) data[orderOfData[i]]);
             } else {
