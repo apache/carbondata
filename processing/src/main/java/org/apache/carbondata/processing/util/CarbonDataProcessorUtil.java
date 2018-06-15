@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -673,6 +674,34 @@ public final class CarbonDataProcessorUtil {
       }
     }
     return isRawDataRequired;
+  }
+
+  /**
+   * Partition input iterators equally as per the number of threads.
+   *
+   * @return
+   */
+  public static List<CarbonIterator<Object[]>>[] partitionInputReaderIterators(
+      CarbonIterator<Object[]>[] inputIterators) {
+    // Get the number of cores configured in property.
+    int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    // Get the minimum of number of cores and iterators size to get the number of parallel threads
+    // to be launched.
+    int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);
+
+    if (parallelThreadNumber <= 0) {
+      parallelThreadNumber = 1;
+    }
+
+    List<CarbonIterator<Object[]>>[] iterators = new List[parallelThreadNumber];
+    for (int i = 0; i < parallelThreadNumber; i++) {
+      iterators[i] = new ArrayList<>();
+    }
+    // Equally partition the iterators as per number of threads
+    for (int i = 0; i < inputIterators.length; i++) {
+      iterators[i % parallelThreadNumber].add(inputIterators[i]);
+    }
+    return iterators;
   }
 
 }

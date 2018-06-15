@@ -1,0 +1,30 @@
+{
+	"name": "ajantha",
+	"age": 26,
+	"BuildNum": [
+		[
+			[
+				{"street":"abc", "city":"city1"},
+				{"street":"def", "city":"city2"},
+				{"street":"cfg", "city":"city3"}
+			],
+			[
+				 {"street":"abc1", "city":"city3"},
+				 {"street":"def1", "city":"city4"},
+				 {"street":"cfg1", "city":"city5"}
+			]
+		],
+		[
+			[
+				 {"street":"abc2", "city":"cityx"},
+				 {"street":"abc3", "city":"cityy"},
+				 {"street":"abc4", "city":"cityz"}
+			],
+			[
+				 {"street":"a1bc", "city":"cityA"},
+				 {"street":"a1bc", "city":"cityB"},
+				 {"street":"a1bc", "city":"cityc"}
+			]
+		]
+	]
+}
