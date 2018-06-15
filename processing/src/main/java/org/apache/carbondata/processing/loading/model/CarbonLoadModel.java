@@ -208,6 +208,11 @@ public class CarbonLoadModel implements Serializable {
   private boolean isLoadWithoutConverterStep;
 
   /**
+   * To identify the suitable input processor step for json file loading.
+   */
+  private boolean isJsonFileLoad;
+
+  /**
    * Flder path to where data should be written for this load.
    */
   private String dataWritePath;
@@ -848,6 +853,14 @@ public class CarbonLoadModel implements Serializable {
 
   public void setLoadWithoutConverterStep(boolean loadWithoutConverterStep) {
     isLoadWithoutConverterStep = loadWithoutConverterStep;
+  }
+
+  public boolean isJsonFileLoad() {
+    return isJsonFileLoad;
+  }
+
+  public void setJsonFileLoad(boolean isJsonFileLoad) {
+    this.isJsonFileLoad = isJsonFileLoad;
   }
 
   public String getDataWritePath() {
