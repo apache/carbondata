@@ -42,4 +42,12 @@ public class ProjectionDimension extends ProjectionColumn {
     return dimension;
   }
 
+  public CarbonDimension getParentDimension() {
+    if (null != dimension.getComplexParentDimension()) {
+      return dimension.getComplexParentDimension();
+    } else {
+      throw new RuntimeException("Dimension doesn't have Parent Dimension linked.");
+    }
+  }
+
 }

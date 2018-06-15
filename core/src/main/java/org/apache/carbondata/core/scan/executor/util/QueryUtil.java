@@ -708,9 +708,23 @@ public class QueryUtil {
       Set<CarbonDimension> filterDimensions) {
     Map<Integer, GenericQueryType> complexTypeMap = new HashMap<Integer, GenericQueryType>();
     for (ProjectionDimension dimension : queryDimensions) {
-      CarbonDimension actualDimension = dimension.getDimension();
+      CarbonDimension actualDimension;
+      CarbonDimension complexDimension = null;
+      if (null != dimension.getDimension().getComplexParentDimension()) {
+        // get the parent dimension column.
+        actualDimension = dimension.getParentDimension();
+        if (dimension.getDimension().isComplex()) {
+          complexDimension = dimension.getDimension();
+        }
+      } else {
+        actualDimension = dimension.getDimension();
+      }
       if (actualDimension.getNumberOfChild() == 0) {
         continue;
+      }
+      if (complexDimension != null) {
+        fillParentDetails(dimensionToBlockIndexMap, complexDimension, complexTypeMap,
+            eachComplexColumnValueSize, columnIdToDictionaryMap);
       }
       fillParentDetails(dimensionToBlockIndexMap, actualDimension, complexTypeMap,
           eachComplexColumnValueSize, columnIdToDictionaryMap);
