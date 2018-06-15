@@ -417,6 +417,18 @@ public final class DataTypeUtil {
     }
   }
 
+  /**
+   * Returns true for fixed length DataTypes.
+   * @param dataType
+   * @return
+   */
+  public static boolean isFixedSizeDataType(DataType dataType) {
+    if (dataType == DataTypes.STRING || DataTypes.isDecimal(dataType)) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 
   /**
    * Below method will be used to convert the data passed to its actual data

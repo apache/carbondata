@@ -521,7 +521,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<Integer> parentBlockIndexList = new ArrayList<Integer>();
     for (ProjectionDimension queryDimension : queryDimensions) {
       if (queryDimension.getDimension().getDataType().isComplexType()) {
-        parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
+        if (null != queryDimension.getDimension().getComplexParentDimension()) {
+          if (queryDimension.getDimension().isComplex()) {
+            parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
+          } else {
+            parentBlockIndexList.add(queryDimension.getParentDimension().getOrdinal());
+          }
+        } else {
+          parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
+        }
       }
     }
     return ArrayUtils

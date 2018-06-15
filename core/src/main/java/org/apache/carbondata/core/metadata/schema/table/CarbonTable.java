@@ -661,20 +661,62 @@ public class CarbonTable implements Serializable {
   public CarbonDimension getDimensionByName(String tableName, String columnName) {
     CarbonDimension carbonDimension = null;
     List<CarbonDimension> dimList = tableDimensionsMap.get(tableName);
-    for (CarbonDimension dim : dimList) {
-      if (dim.getColName().equalsIgnoreCase(columnName)) {
-        carbonDimension = dim;
-        break;
+    String[] colSplits = columnName.split("\\.");
+    StringBuffer tempColName = new StringBuffer(colSplits[0]);
+    for (String colSplit : colSplits) {
+      if (!tempColName.toString().equalsIgnoreCase(colSplit)) {
+        tempColName = tempColName.append(".").append(colSplit);
+      }
+      carbonDimension = getCarbonDimension(tempColName.toString(), dimList);
+      if (carbonDimension != null && carbonDimension.getListOfChildDimensions() != null) {
+        dimList = carbonDimension.getListOfChildDimensions();
       }
     }
     List<CarbonDimension> implicitDimList = tableImplicitDimensionsMap.get(tableName);
-    for (CarbonDimension dim : implicitDimList) {
+    if (carbonDimension == null) {
+      carbonDimension = getCarbonDimension(columnName, implicitDimList);
+    }
+
+    if (colSplits.length > 1) {
+      List<CarbonDimension> dimLists = tableDimensionsMap.get(tableName);
+      for (CarbonDimension dims : dimLists) {
+        if (dims.getColName().equalsIgnoreCase(colSplits[0])) {
+          // Set the parent Dimension
+          carbonDimension
+              .setComplexParentDimension(getDimensionBasedOnOrdinal(dimLists, dims.getOrdinal()));
+          break;
+        }
+      }
+    }
+    return carbonDimension;
+  }
+
+  /**
+   * Get Dimension for columnName from list of dimensions
+   *
+   * @param columnName
+   * @param dimensions
+   * @return
+   */
+  public static CarbonDimension getCarbonDimension(String columnName,
+      List<CarbonDimension> dimensions) {
+    CarbonDimension carbonDimension = null;
+    for (CarbonDimension dim : dimensions) {
       if (dim.getColName().equalsIgnoreCase(columnName)) {
         carbonDimension = dim;
         break;
       }
     }
     return carbonDimension;
+  }
+
+  private CarbonDimension getDimensionBasedOnOrdinal(List<CarbonDimension> dimList, int ordinal) {
+    for (CarbonDimension dimension : dimList) {
+      if (dimension.getOrdinal() == ordinal) {
+        return dimension;
+      }
+    }
+    throw new RuntimeException("No Dimension Matches the ordinal value");
   }
 
   /**
