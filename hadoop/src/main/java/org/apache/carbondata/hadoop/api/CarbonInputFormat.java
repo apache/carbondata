@@ -616,13 +616,24 @@ m filterExpression
     QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext);
     if (inputSplit instanceof CarbonMultiBlockSplit
         && ((CarbonMultiBlockSplit) inputSplit).getFileFormat() == FileFormat.EXTERNAL) {
-      return new CarbonCsvRecordReader<T>(queryModel);
+      return createRecordReaderForExternalFormat(queryModel,
+          configuration.get(CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY));
     } else if (inputSplit instanceof CarbonInputSplit
         && ((CarbonInputSplit) inputSplit).getFileFormat() == FileFormat.EXTERNAL) {
-      return new CarbonCsvRecordReader<T>(queryModel);
+      return createRecordReaderForExternalFormat(queryModel,
+          configuration.get(CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY));
     } else {
       CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
       return new CarbonRecordReader<T>(queryModel, readSupport);
+    }
+  }
+
+  private RecordReader<Void, T> createRecordReaderForExternalFormat(QueryModel queryModel,
+      String format) {
+    if ("csv".equals(format)) {
+      return new CarbonCsvRecordReader<T>(queryModel);
+    } else {
+      throw new RuntimeException("Unsupported external file format " + format);
     }
   }
 

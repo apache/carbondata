@@ -46,12 +46,14 @@ import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.statusmanager.FileFormatProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -93,18 +95,20 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
   private QueryModel queryModel;
   private FileSplit fileSplit;
   private Configuration hadoopConf;
+  // the index is schema ordinal, the value is the csv ordinal
+  private int[] schema2csvIdx;
 
   // filter
   private FilterExecuter filter;
-  // column idx for filter values
-  private int[] filterColumnIdx;
+  // the index is the dimension ordinal, the value is the schema ordinal
+  private int[] filterColumn2SchemaIdx;
   private Object[] internalValues;
   private RowIntf internalRow;
 
   // output
   private CarbonColumn[] projection;
-  // column idx for filter values
-  private int[] projectionColumnIdx;
+  // the index is the projection column ordinal, the value is the schema ordinal
+  private int[] projectionColumn2SchemaIdx;
   private Object[] outputValues;
   private Object[] finalOutputValues;
   private InternalRow outputRow;
@@ -159,30 +163,10 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
     }
 
     carbonTable = queryModel.getTable();
-    // todo: here we read csv use the table schema as header, will use user specified later
-    carbonColumns =
-        carbonTable.getCreateOrderColumn(carbonTable.getTableName()).toArray(new CarbonColumn[0]);
 
-    filterColumnIdx = new int[carbonColumns.length];
-    int filterIdx = 0;
-    for (CarbonDimension dimension : carbonTable.getDimensions()) {
-      filterColumnIdx[filterIdx++] = dimension.getSchemaOrdinal();
-    }
-    for (CarbonMeasure measure : carbonTable.getMeasures()) {
-      filterColumnIdx[filterIdx++] = measure.getSchemaOrdinal();
-    }
-
-    projection = queryModel.getProjectionColumns();
-    projectionColumnIdx = new int[projection.length];
-
-    for (int i = 0; i < projection.length; i++) {
-      for (int j = 0; j < carbonColumns.length; j++) {
-        if (projection[i].getColName().equals(carbonColumns[j].getColName())) {
-          projectionColumnIdx[i] = j;
-          break;
-        }
-      }
-    }
+    // since the sequence of csv header, schema, carbon internal row, projection are different,
+    // we need to init the column mappings
+    initializedIdxMapping();
 
     // init filter
     if (null != queryModel.getFilterExpressionResolverTree()) {
@@ -191,6 +175,61 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
 
     // init reading
     initializeCsvReader();
+  }
+
+  private void initializedIdxMapping() {
+    carbonColumns =
+        carbonTable.getCreateOrderColumn(carbonTable.getTableName()).toArray(new CarbonColumn[0]);
+    // for schema to csv mapping
+    schema2csvIdx = new int[carbonColumns.length];
+    if (!carbonTable.getTableInfo().getFormatProperties().containsKey(
+        FileFormatProperties.CSV.HEADER)) {
+      // if no header specified, it means that they are the same
+      LOGGER.info("no header specified, will take the schema from table as header");
+      for (int i = 0; i < carbonColumns.length; i++) {
+        schema2csvIdx[i] = i;
+      }
+    } else {
+      String[] csvHeader = carbonTable.getTableInfo().getFormatProperties().get(
+          FileFormatProperties.CSV.HEADER).split(",");
+      for (int i = 0; i < csvHeader.length; i++) {
+        boolean found = false;
+        for (int j = 0; j < carbonColumns.length; j++) {
+          if (StringUtils.strip(csvHeader[i]).equalsIgnoreCase(carbonColumns[j].getColName())) {
+            schema2csvIdx[carbonColumns[j].getSchemaOrdinal()] = i;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          throw new RuntimeException(
+              String.format("Can not find csv header '%s' in table fields", csvHeader[i]));
+        }
+      }
+    }
+
+    // for carbon internal row to schema mapping
+    filterColumn2SchemaIdx = new int[carbonColumns.length];
+    int filterIdx = 0;
+    for (CarbonDimension dimension : carbonTable.getDimensions()) {
+      filterColumn2SchemaIdx[filterIdx++] = dimension.getSchemaOrdinal();
+    }
+    for (CarbonMeasure measure : carbonTable.getMeasures()) {
+      filterColumn2SchemaIdx[filterIdx++] = measure.getSchemaOrdinal();
+    }
+
+    // for projects to schema mapping
+    projection = queryModel.getProjectionColumns();
+    projectionColumn2SchemaIdx = new int[projection.length];
+
+    for (int i = 0; i < projection.length; i++) {
+      for (int j = 0; j < carbonColumns.length; j++) {
+        if (projection[i].getColName().equals(carbonColumns[j].getColName())) {
+          projectionColumn2SchemaIdx[i] = projection[i].getSchemaOrdinal();
+          break;
+        }
+      }
+    }
   }
 
   private void initializeFilter() {
@@ -232,53 +271,53 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
     // note that here we read the whole file, not a split of the file
     FSDataInputStream fsStream = fs.open(file, bufferSize);
     reader = new InputStreamReader(fsStream, CarbonCommonConstants.DEFAULT_CHARSET);
-    // todo: use default csv settings here, will use user specified later
+    // use default csv settings first, then update it using user specified properties later
     CsvParserSettings settings = CSVInputFormat.extractCsvParserSettings(hadoopConf);
+    initCsvSettings(settings);
     csvParser = new CsvParser(settings);
     csvParser.beginParsing(reader);
 
-    outputSchema = new StructType(convertCarbonSchemaToSparkSchema(projection));
+    outputSchema = new StructType(convertCarbonColumnSpark(projection));
   }
 
-  private StructField[] convertCarbonSchemaToSparkSchema(CarbonColumn[] carbonColumns) {
-    StructField[] fields = new StructField[carbonColumns.length];
-    for (int i = 0; i < carbonColumns.length; i++) {
-      CarbonColumn carbonColumn = carbonColumns[i];
-      if (carbonColumn.isDimension()) {
-        if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
-              .getDirectDictionaryGenerator(carbonColumn.getDataType());
-          fields[i] = new StructField(carbonColumn.getColName(),
-              convertCarbonToSparkDataType(generator.getReturnType()), true, null);
-        } else if (!carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
-          fields[i] = new StructField(carbonColumn.getColName(),
-              convertCarbonToSparkDataType(carbonColumn.getDataType()), true, null);
-        } else if (carbonColumn.isComplex()) {
-          fields[i] = new StructField(carbonColumn.getColName(),
-              convertCarbonToSparkDataType(carbonColumn.getDataType()), true, null);
-        } else {
-          fields[i] = new StructField(carbonColumn.getColName(),
-              convertCarbonToSparkDataType(
-                  org.apache.carbondata.core.metadata.datatype.DataTypes.INT), true, null);
-        }
-      } else if (carbonColumn.isMeasure()) {
-        DataType dataType = carbonColumn.getDataType();
-        if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN
-            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT
-            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT
-            || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG) {
-          fields[i] = new StructField(carbonColumn.getColName(),
-              convertCarbonToSparkDataType(dataType), true, null);
-        } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(dataType)) {
-          CarbonMeasure measure = (CarbonMeasure) carbonColumn;
-          fields[i] = new StructField(carbonColumn.getColName(),
-              new DecimalType(measure.getPrecision(), measure.getScale()), true, null);
-        } else {
-          fields[i] = new StructField(carbonColumn.getColName(),
-              convertCarbonToSparkDataType(
-                  org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE), true, null);
-        }
-      }
+  /**
+   * update the settings using properties from user
+   */
+  private void initCsvSettings(CsvParserSettings settings) {
+    Map<String, String> csvProperties = carbonTable.getTableInfo().getFormatProperties();
+
+    if (csvProperties.containsKey(FileFormatProperties.CSV.DELIMITER)) {
+      settings.getFormat().setDelimiter(
+          csvProperties.get(FileFormatProperties.CSV.DELIMITER).charAt(0));
+    }
+
+    if (csvProperties.containsKey(FileFormatProperties.CSV.COMMENT)) {
+      settings.getFormat().setComment(
+          csvProperties.get(FileFormatProperties.CSV.COMMENT).charAt(0));
+    }
+
+    if (csvProperties.containsKey(FileFormatProperties.CSV.QUOTE)) {
+      settings.getFormat().setQuote(
+          csvProperties.get(FileFormatProperties.CSV.QUOTE).charAt(0));
+    }
+
+    if (csvProperties.containsKey(FileFormatProperties.CSV.ESCAPE)) {
+      settings.getFormat().setQuoteEscape(
+          csvProperties.get(FileFormatProperties.CSV.ESCAPE).charAt(0));
+    }
+
+    if (csvProperties.containsKey(FileFormatProperties.CSV.SKIP_EMPTY_LINE)) {
+      settings.setSkipEmptyLines(
+          Boolean.parseBoolean(csvProperties.get(FileFormatProperties.CSV.SKIP_EMPTY_LINE)));
+    }
+  }
+
+  private StructField[] convertCarbonColumnSpark(CarbonColumn[] columns) {
+    StructField[] fields = new StructField[columns.length];
+    for (int i = 0; i < columns.length; i++) {
+      CarbonColumn carbonColumn = columns[i];
+      fields[i] = new StructField(carbonColumn.getColName(),
+          getSparkType4CarbonColumn(carbonColumn), true, null);
     }
     return fields;
   }
@@ -313,7 +352,7 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
       return DataTypes.DateType;
     } else {
-      return null;
+      throw new RuntimeException("Unsupported carbon data type : " + carbonDataType);
     }
   }
 
@@ -404,6 +443,7 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
     }
 
     if (null == filter) {
+      putRowToSparkRow();
       return true;
     } else {
       try {
@@ -426,8 +466,8 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
   private void putRowToSparkRow() {
     for (int i = 0; i < projection.length; i++) {
       Object originValue = outputValues[i];
-      org.apache.spark.sql.types.DataType t =
-          convertCarbonToSparkDataType(projection[i].getDataType());
+      // todo: no need to parse for each row, will optimize it later
+      org.apache.spark.sql.types.DataType t = getSparkType4CarbonColumn(projection[i]);
       if (null == originValue) {
         finalOutputValues[i] = null;
       } else {
@@ -464,6 +504,37 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
     outputRow = new GenericInternalRow(finalOutputValues);
   }
 
+  private org.apache.spark.sql.types.DataType getSparkType4CarbonColumn(CarbonColumn carbonColumn) {
+    if (carbonColumn.isDimension()) {
+      if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
+            .getDirectDictionaryGenerator(carbonColumn.getDataType());
+        return convertCarbonToSparkDataType(generator.getReturnType());
+      } else if (!carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
+        return convertCarbonToSparkDataType(carbonColumn.getDataType());
+      } else if (carbonColumn.isComplex()) {
+        return convertCarbonToSparkDataType(carbonColumn.getDataType());
+      } else {
+        return convertCarbonToSparkDataType(
+            org.apache.carbondata.core.metadata.datatype.DataTypes.INT);
+      }
+    } else {
+      DataType dataType = carbonColumn.getDataType();
+      if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN
+          || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT
+          || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT
+          || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG) {
+        return convertCarbonToSparkDataType(dataType);
+      } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(dataType)) {
+        CarbonMeasure measure = (CarbonMeasure) carbonColumn;
+        return new DecimalType(measure.getPrecision(), measure.getScale());
+      } else {
+        return convertCarbonToSparkDataType(
+                org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE);
+      }
+    }
+  }
+
   /**
    * read from csv file and convert to internal row
    * todo: prune with project/filter
@@ -487,8 +558,9 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
    */
   private void convertToInternalRow(String[] csvLine) {
     for (int i = 0; i < carbonColumns.length; i++) {
-      internalValues[i] = convertOriginValue2Carbon(csvLine[filterColumnIdx[i]],
-          carbonColumns[filterColumnIdx[i]].getDataType());
+      internalValues[i] = convertOriginValue2Carbon(
+          csvLine[schema2csvIdx[filterColumn2SchemaIdx[i]]],
+          carbonColumns[filterColumn2SchemaIdx[i]].getDataType());
     }
 
     internalRow.setValues(internalValues);
@@ -499,7 +571,7 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
    */
   private void convertToOutputRow(String[] csvLine) {
     for (int i = 0; i < projection.length; i++) {
-      outputValues[i] = csvLine[projectionColumnIdx[i]];
+      outputValues[i] = csvLine[schema2csvIdx[projectionColumn2SchemaIdx[i]]];
     }
   }
 

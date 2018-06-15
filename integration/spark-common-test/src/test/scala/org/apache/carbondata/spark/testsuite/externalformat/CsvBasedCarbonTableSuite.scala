@@ -34,6 +34,7 @@ class CsvBasedCarbonTableSuite extends QueryTest
   val carbonTable = "fact_carbon_table"
   val csvCarbonTable = "fact_carbon_csv_table"
   val csvFile = s"$resourcesPath/datawithoutheader.csv"
+  val csvFile_delimiter_separator = s"$resourcesPath/datawithoutheader_delimiter_separator.csv"
 
   // prepare normal carbon table for comparison
   override protected def beforeAll(): Unit = {
@@ -62,7 +63,6 @@ class CsvBasedCarbonTableSuite extends QueryTest
 
   override protected def beforeEach(): Unit = {
     sql(s"DROP TABLE IF EXISTS $csvCarbonTable")
-
   }
 
   override protected def afterEach(): Unit = {
@@ -71,20 +71,20 @@ class CsvBasedCarbonTableSuite extends QueryTest
 
   private def checkQuery() {
     // query all the columns
-    checkAnswer(sql(s"SELECT * FROM $csvCarbonTable WHERE empno = 15"),
-      sql(s"SELECT * FROM $carbonTable WHERE empno = 15"))
+    checkAnswer(sql(s"SELECT eMPno, empname,designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, SALARY FROM $csvCarbonTable WHERE empno = 15"),
+      sql(s"SELECT eMPno, empname,designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, SALARY FROM $carbonTable WHERE empno = 15"))
     // query part of the columns
-    checkAnswer(sql(s"SELECT empno,empname FROM $csvCarbonTable WHERE empno = 15"),
-      sql(s"SELECT empno,empname FROM $carbonTable WHERE empno = 15"))
+    checkAnswer(sql(s"SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15"),
+      sql(s"SELECT empno,empname, deptname, doj FROM $carbonTable WHERE empno = 15"))
     // sequence of projection column are not same with that in DDL
-    checkAnswer(sql(s"SELECT empname, empno FROM $csvCarbonTable WHERE empno = 15"),
-      sql(s"SELECT empname, empno FROM $carbonTable WHERE empno = 15"))
+    checkAnswer(sql(s"SELECT empname, empno, deptname, doj FROM $csvCarbonTable WHERE empno = 15"),
+      sql(s"SELECT empname, empno, deptname, doj FROM $carbonTable WHERE empno = 15"))
     // query with greater
-    checkAnswer(sql(s"SELECT empname, empno FROM $csvCarbonTable WHERE empno > 15"),
-      sql(s"SELECT empname, empno FROM $carbonTable WHERE empno > 15"))
+    checkAnswer(sql(s"SELECT empname, empno, deptname, doj FROM $csvCarbonTable WHERE empno > 15"),
+      sql(s"SELECT empname, empno, deptname, doj FROM $carbonTable WHERE empno > 15"))
     // query with filter on dimension
-    checkAnswer(sql(s"SELECT empname, empno FROM $csvCarbonTable WHERE empname = 'ayushi'"),
-      sql(s"SELECT empname, empno FROM $carbonTable WHERE empname = 'ayushi'"))
+    checkAnswer(sql(s"SELECT empname, empno, deptname, doj FROM $csvCarbonTable WHERE empname = 'ayushi'"),
+      sql(s"SELECT empname, empno, deptname, doj FROM $carbonTable WHERE empname = 'ayushi'"))
     // aggreate query
     checkAnswer(sql(s"SELECT designation, sum(empno), avg(empno) FROM $csvCarbonTable GROUP BY designation"),
       sql(s"SELECT designation, sum(empno), avg(empno) FROM $carbonTable GROUP BY designation"))
@@ -101,7 +101,6 @@ class CsvBasedCarbonTableSuite extends QueryTest
          | STORED BY 'carbondata'
          | TBLPROPERTIES(
          | 'format'='csv',
-         | 'csv.delimiter'=',',
          | 'csv.header'='eMPno, empname,designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, SALARY'
          | )
        """.stripMargin
@@ -110,11 +109,10 @@ class CsvBasedCarbonTableSuite extends QueryTest
     val tblInfo =
       CarbonEnv.getCarbonTable(Option("default"), csvCarbonTable)(Spark2TestQueryExecutor.spark)
     assertResult("csv")(tblInfo.getTableInfo.getFormat)
-    assertResult(2)(tblInfo.getTableInfo.getFormatProperties.size())
+    assertResult(1)(tblInfo.getTableInfo.getFormatProperties.size())
     assertResult(
       "eMPno, empname,designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, SALARY".toLowerCase)(
       tblInfo.getTableInfo.getFormatProperties.get("csv.header"))
-    assertResult(",")(tblInfo.getTableInfo.getFormatProperties.get("csv.delimiter"))
 
     // add segment for csv based carbontable
     sql(s"ALTER TABLE $csvCarbonTable ADD SEGMENT LOCATION '$csvFile'")
@@ -127,11 +125,99 @@ class CsvBasedCarbonTableSuite extends QueryTest
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
     // check query on csv based carbontable
-    LOGGER.info("Query with vector reader on")
+    // query with vector reader on
     checkQuery()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
-    LOGGER.info("Query with vector reader off")
-    // checkQuery()
+    // query with vector reader off
+    checkQuery()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
+      CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+  }
+
+  test("test csv based carbon table: the sequence of header does not match schema") {
+    // create csv based carbon table, the sequence in schema is not the same in csv.header
+    sql(
+      s"""
+         | CREATE TABLE $csvCarbonTable(empname String, empno smallint, designation string,
+         | deptname String, projectcode int, projectjoindate String,projectenddate String,
+         | doj String, workgroupcategory int, workgroupcategoryname String,deptno int,
+         | attendance String, utilization String,salary String)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES(
+         | 'format'='csv',
+         | 'csv.header'='eMPno, empname,designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, SALARY'
+         | )
+       """.stripMargin
+    )
+    // add segment for csv based carbontable
+    sql(s"ALTER TABLE $csvCarbonTable ADD SEGMENT LOCATION '$csvFile'")
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
+    // check query on csv based carbontable
+    // query with vector reader on
+    checkQuery()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
+    // query with vector reader off
+    checkQuery()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
+      CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+  }
+
+  test("test csv based carbon table: not specify the header") {
+    // create csv based carbon table, the sequence in schema is not the same in csv.header
+    sql(
+      s"""
+         | CREATE TABLE $csvCarbonTable(empno smallint, empname String, designation string,
+         | doj String, workgroupcategory int, workgroupcategoryname String,deptno int,
+         | deptname String, projectcode int, projectjoindate String,projectenddate String,
+         | attendance String, utilization String,salary String)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES(
+         | 'format'='csv'
+         | )
+       """.stripMargin
+    )
+
+    // add segment for csv based carbontable
+    sql(s"ALTER TABLE $csvCarbonTable ADD SEGMENT LOCATION '$csvFile'")
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
+    // check query on csv based carbontable
+    // query with vector reader on
+    checkQuery()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
+    // query with vector reader off
+    checkQuery()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
+      CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+  }
+
+  test("test csv based carbon table: user specified delimiter") {
+    // create csv based carbon table, the sequence in schema is not the same in csv.header
+    sql(
+      s"""
+         | CREATE TABLE $csvCarbonTable(empno smallint, empname String, designation string,
+         | doj String, workgroupcategory int, workgroupcategoryname String,deptno int,
+         | deptname String, projectcode int, projectjoindate String,projectenddate String,
+         | attendance String, utilization String,salary String)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES(
+         | 'format'='csv',
+         | 'csv.delimiter'='|'
+         | )
+       """.stripMargin
+    )
+
+    // add segment for csv based carbontable
+    sql(s"ALTER TABLE $csvCarbonTable ADD SEGMENT LOCATION '$csvFile_delimiter_separator'")
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
+    // check query on csv based carbontable
+    // query with vector reader on
+    checkQuery()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
+    // query with vector reader off
+    checkQuery()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
       CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
   }

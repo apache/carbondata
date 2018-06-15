@@ -18,7 +18,6 @@
 package org.apache.carbondata.spark.rdd
 
 import java.text.SimpleDateFormat
-import java.util
 import java.util.{ArrayList, Date, List}
 
 import scala.collection.JavaConverters._
@@ -88,6 +87,7 @@ class CarbonScanRDD[T: ClassTag](
   private var vectorReader = false
 
   private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
+  private val storageFormat = tableInfo.getFormat
 
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
@@ -439,8 +439,10 @@ class CarbonScanRDD[T: ClassTag](
           streamReader.setQueryModel(model)
           streamReader
         case FileFormat.EXTERNAL =>
-          logError("XU Enter ScanRDD for " + inputSplit.getFileFormat)
-          logWarning("Currently we only support csv as external file format")
+          assert(storageFormat.equals("csv"),
+            "Currently we only support csv as external file format")
+          attemptContext.getConfiguration.set(
+            CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY, storageFormat)
           val carbonCsvRecordReader = format.createRecordReader(inputSplit, attemptContext)
             .asInstanceOf[CarbonCsvRecordReader[Object]]
           carbonCsvRecordReader.setVectorReader(vectorReader)

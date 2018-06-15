@@ -971,6 +971,8 @@ public final class CarbonCommonConstants {
   // Flat folder support on table. when it is true all carbondata files store directly under table
   // path instead of sub folders.
   public static final String FLAT_FOLDER = "flat_folder";
+  // this will be used in hadoop conf to pass the format type to executor
+  public static final String CARBON_EXTERNAL_FORMAT_CONF_KEY = "carbon_external_format_type";
 
   /**
    * 16 mb size
