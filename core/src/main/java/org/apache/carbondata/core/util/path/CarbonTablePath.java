@@ -228,7 +228,7 @@ public class CarbonTablePath {
   public static String getCarbonDataFilePath(String tablePath, String segmentId, Integer filePartNo,
       Long taskNo, int batchNo, int bucketNumber, String factUpdateTimeStamp) {
     return getSegmentPath(tablePath, segmentId) + File.separator + getCarbonDataFileName(
-        filePartNo, taskNo, bucketNumber, batchNo, factUpdateTimeStamp);
+        filePartNo, taskNo, bucketNumber, batchNo, factUpdateTimeStamp, segmentId);
   }
 
   /**
@@ -283,7 +283,7 @@ public class CarbonTablePath {
       default:
         String segmentDir = getSegmentPath(tablePath, segmentId);
         return segmentDir + File.separator + getCarbonIndexFileName(taskId,
-            Integer.parseInt(bucketNumber), timeStamp);
+            Integer.parseInt(bucketNumber), timeStamp, segmentId);
     }
   }
 
@@ -297,16 +297,17 @@ public class CarbonTablePath {
       default:
         String segmentDir = getSegmentPath(tablePath, segmentId);
         return segmentDir + File.separator + getCarbonIndexFileName(Long.parseLong(taskId),
-            Integer.parseInt(bucketNumber), batchNo, timeStamp);
+            Integer.parseInt(bucketNumber), batchNo, timeStamp, segmentId);
     }
   }
 
   private static String getCarbonIndexFileName(String taskNo, int bucketNumber,
-      String factUpdatedtimeStamp) {
+      String factUpdatedtimeStamp, String segmentNo) {
     if (bucketNumber == -1) {
-      return taskNo + "-" + factUpdatedtimeStamp + INDEX_FILE_EXT;
+      return taskNo + "-" + segmentNo + "-" + factUpdatedtimeStamp + INDEX_FILE_EXT;
     }
-    return taskNo + "-" + bucketNumber + "-" + factUpdatedtimeStamp + INDEX_FILE_EXT;
+    return taskNo + "-" + bucketNumber + "-" + segmentNo + "-" + factUpdatedtimeStamp
+        + INDEX_FILE_EXT;
   }
 
   /**
@@ -325,14 +326,15 @@ public class CarbonTablePath {
    * @return gets data file name only with out path
    */
   public static String getCarbonDataFileName(Integer filePartNo, Long taskNo, int bucketNumber,
-      int batchNo, String factUpdateTimeStamp) {
+      int batchNo, String factUpdateTimeStamp, String segmentNo) {
     return DATA_PART_PREFIX + filePartNo + "-" + taskNo + BATCH_PREFIX + batchNo + "-"
-        + bucketNumber + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
+        + bucketNumber + "-" + segmentNo + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
   }
 
   public static String getShardName(Long taskNo, int bucketNumber, int batchNo,
-      String factUpdateTimeStamp) {
-    return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + factUpdateTimeStamp;
+      String factUpdateTimeStamp, String segmentNo) {
+    return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + segmentNo + "-"
+        + factUpdateTimeStamp;
   }
 
   /**
@@ -343,13 +345,13 @@ public class CarbonTablePath {
    * @return filename
    */
   public static String getCarbonIndexFileName(long taskNo, int bucketNumber, int batchNo,
-      String factUpdatedTimeStamp) {
-    return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + factUpdatedTimeStamp
+      String factUpdatedTimeStamp, String segmentNo) {
+    return getShardName(taskNo, bucketNumber, batchNo, factUpdatedTimeStamp, segmentNo)
         + INDEX_FILE_EXT;
   }
 
   public static String getCarbonStreamIndexFileName() {
-    return getCarbonIndexFileName(0, 0, 0, "0");
+    return getCarbonIndexFileName(0, 0, 0, "0", "0");
   }
 
   public static String getCarbonStreamIndexFilePath(String segmentDir) {
@@ -408,11 +410,25 @@ public class CarbonTablePath {
   public static String getDataMapStorePathOnShardName(String tablePath, String segmentId,
       String dataMapName, String shardName) {
     return new StringBuilder()
-        .append(getSegmentPath(tablePath, segmentId))
+        .append(getDataMapStorePath(tablePath, segmentId, dataMapName))
+        .append(File.separator)
+        .append(shardName)
+        .toString();
+  }
+
+  /**
+   * Return store path for datamap based on the dataMapName,
+   *
+   * @return store path based on datamapname
+   */
+  public static String getDataMapStorePath(String tablePath, String segmentId,
+      String dataMapName) {
+    return new StringBuilder()
+        .append(tablePath)
         .append(File.separator)
         .append(dataMapName)
         .append(File.separator)
-        .append(shardName)
+        .append(segmentId)
         .toString();
   }
 
@@ -517,6 +533,29 @@ public class CarbonTablePath {
     }
 
     /**
+     * Return the updated timestamp information from given carbon data file name
+     */
+    public static String getSegmentNo(String carbonDataFileName) {
+      // Get the file name from path
+      String fileName = getFileName(carbonDataFileName);
+      // + 1 for size of "-"
+      int firstDashPos = fileName.indexOf("-");
+      int startIndex1 = fileName.indexOf("-", firstDashPos + 1) + 1;
+      int endIndex1 = fileName.indexOf("-", startIndex1);
+      int startIndex = fileName.indexOf("-", endIndex1 + 1);
+      if (startIndex > -1) {
+        startIndex += 1;
+        int endIndex = fileName.indexOf("-", startIndex);
+        if (endIndex == -1) {
+          return null;
+        }
+        return fileName.substring(startIndex, endIndex);
+      } else {
+        return null;
+      }
+    }
+
+    /**
      * Return the taskId part from taskNo(include taskId + batchNo)
      */
     public static long getTaskIdFromTaskNo(String taskNo) {
@@ -545,7 +584,7 @@ public class CarbonTablePath {
     /**
      * gets segement id from given absolute data file path
      */
-    public static String getSegmentId(String dataFileAbsolutePath) {
+    public static String getSegmentIdFromPath(String dataFileAbsolutePath) {
       // find segment id from last of data file path
       String tempdataFileAbsolutePath = dataFileAbsolutePath.replace(
           CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR);
@@ -647,8 +686,7 @@ public class CarbonTablePath {
    * @return shortBlockId
    */
   public static String getShortBlockIdForPartitionTable(String blockId) {
-    return blockId.replace(SEGMENT_PREFIX, "")
-        .replace(DATA_PART_PREFIX, "")
+    return blockId.replace(DATA_PART_PREFIX, "")
         .replace(CARBON_DATA_EXT, "");
   }
 
@@ -687,7 +725,8 @@ public class CarbonTablePath {
    */
   public static String getShardName(String actualBlockName) {
     return DataFileUtil.getTaskNo(actualBlockName) + "-" + DataFileUtil.getBucketNo(actualBlockName)
-        + "-" + DataFileUtil.getTimeStampFromFileName(actualBlockName);
+        + "-" + DataFileUtil.getSegmentNo(actualBlockName) + "-" + DataFileUtil
+        .getTimeStampFromFileName(actualBlockName);
   }
 
   /**

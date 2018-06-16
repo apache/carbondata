@@ -223,7 +223,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
           val segmentFilesList = loadsToMerge.asScala.map{seg =>
             val file = SegmentFileStore.writeSegmentFile(
-              carbonTable.getTablePath,
+              carbonTable,
               seg.getLoadName,
               carbonLoadModel.getFactTimeStamp.toString)
             new Segment(seg.getLoadName, file)
@@ -231,7 +231,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           segmentFilesForIUDCompact = new util.ArrayList[Segment](segmentFilesList)
         } else {
           segmentFileName = SegmentFileStore.writeSegmentFile(
-            carbonTable.getTablePath,
+            carbonTable,
             mergedLoadNumber,
             carbonLoadModel.getFactTimeStamp.toString)
         }

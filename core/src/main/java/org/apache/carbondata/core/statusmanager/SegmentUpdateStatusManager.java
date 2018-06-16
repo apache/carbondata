@@ -69,7 +69,6 @@ public class SegmentUpdateStatusManager {
   private LoadMetadataDetails[] segmentDetails;
   private SegmentUpdateDetails[] updateDetails;
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
-  private boolean isPartitionTable;
 
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails) {
@@ -77,7 +76,6 @@ public class SegmentUpdateStatusManager {
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     this.segmentDetails = segmentDetails;
-    isPartitionTable = table.isHivePartitionTable();
     updateDetails = readLoadMetadata();
     populateMap();
   }
@@ -93,7 +91,6 @@ public class SegmentUpdateStatusManager {
       segmentDetails = SegmentStatusManager.readLoadMetadata(
           CarbonTablePath.getMetadataPath(identifier.getTablePath()));
     }
-    isPartitionTable = table.isHivePartitionTable();
     if (segmentDetails.length != 0) {
       updateDetails = readLoadMetadata();
     } else {
@@ -249,27 +246,37 @@ public class SegmentUpdateStatusManager {
    * @throws Exception
    */
   public String[] getDeleteDeltaFilePath(String blockFilePath, String segmentId) throws Exception {
-    String blockId = CarbonUtil.getBlockId(identifier, blockFilePath, segmentId, true);
+    String segmentFile = null;
+    for (LoadMetadataDetails segmentDetail : segmentDetails) {
+      if (segmentDetail.getLoadName().equals(segmentId)) {
+        segmentFile = segmentDetail.getSegmentFile();
+        break;
+      }
+    }
+    String blockId =
+        CarbonUtil.getBlockId(identifier, blockFilePath, segmentId, true, segmentFile != null);
     String tupleId;
-    if (isPartitionTable) {
+    if (segmentFile != null) {
       tupleId = CarbonTablePath.getShortBlockIdForPartitionTable(blockId);
     } else {
       tupleId = CarbonTablePath.getShortBlockId(blockId);
     }
-    return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+    return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT, segmentFile)
         .toArray(new String[0]);
   }
 
   /**
    * Returns all delta file paths of specified block
    */
-  private List<String> getDeltaFiles(String tupleId, String extension) throws Exception {
+  private List<String> getDeltaFiles(String tupleId, String extension, String segmentFile)
+      throws Exception {
     String segment = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID);
     String completeBlockName = CarbonTablePath.addDataPartPrefix(
         CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.BLOCK_ID)
             + CarbonCommonConstants.FACT_FILE_EXT);
+
     String blockPath;
-    if (isPartitionTable) {
+    if (segmentFile != null) {
       blockPath = identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.PART_ID)
           .replace("#", "/") + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
@@ -283,7 +290,8 @@ public class SegmentUpdateStatusManager {
     if (!file.exists()) {
       throw new Exception("Invalid tuple id " + tupleId);
     }
-    String blockNameWithoutExtn = completeBlockName.substring(0, completeBlockName.indexOf('.'));
+    String blockNameWithoutExtn =
+        completeBlockName.substring(0, completeBlockName.lastIndexOf('.'));
     //blockName without timestamp
     final String blockNameFromTuple =
         blockNameWithoutExtn.substring(0, blockNameWithoutExtn.lastIndexOf("-"));
@@ -363,15 +371,15 @@ public class SegmentUpdateStatusManager {
         public boolean accept(CarbonFile pathName) {
           String fileName = pathName.getName();
           if (fileName.endsWith(extension) && pathName.getSize() > 0) {
-            String firstPart = fileName.substring(0, fileName.indexOf('.'));
+            String firstPart = fileName.substring(0, fileName.lastIndexOf('.'));
             String blockName =
-                    firstPart.substring(0, firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN));
+                firstPart.substring(0, firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN));
             long timestamp = Long.parseLong(firstPart
-                    .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
-                            firstPart.length()));
+                .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
+                    firstPart.length()));
             if (blockNameFromTuple.equals(blockName) && (
-                    (Long.compare(timestamp, deltaEndTimeStamp) <= 0) && (
-                            Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
+                (Long.compare(timestamp, deltaEndTimeStamp) <= 0) && (
+                    Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
               return true;
             }
           }
@@ -479,7 +487,7 @@ public class SegmentUpdateStatusManager {
 
       String fileName = eachFile.getName();
       if (fileName.endsWith(fileExtension)) {
-        String firstPart = fileName.substring(0, fileName.indexOf('.'));
+        String firstPart = fileName.substring(0, fileName.lastIndexOf('.'));
 
         long timestamp = Long.parseLong(firstPart
             .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,

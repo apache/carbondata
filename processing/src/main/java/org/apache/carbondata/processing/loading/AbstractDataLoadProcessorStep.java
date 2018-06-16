@@ -170,7 +170,8 @@ public abstract class AbstractDataLoadProcessorStep {
             carbonDataFileAttributes.getTaskId(),
             bucketId,
             0,
-            String.valueOf(carbonDataFileAttributes.getFactTimeStamp())));
+            String.valueOf(carbonDataFileAttributes.getFactTimeStamp()),
+            configuration.getSegmentId()));
     return listener;
   }
 

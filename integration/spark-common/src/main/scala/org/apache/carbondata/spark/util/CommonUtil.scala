@@ -530,6 +530,23 @@ object CommonUtil {
   }
 
   /**
+   * This method will validate the flat folder property specified by the user
+   *
+   * @param tableProperties
+   */
+  def validateFlatFolder(tableProperties: Map[String, String]): Unit = {
+    val tblPropName = CarbonCommonConstants.FLAT_FOLDER
+    if (tableProperties.get(tblPropName).isDefined) {
+      val trimStr = tableProperties(tblPropName).trim
+      if (!trimStr.equalsIgnoreCase("true") && !trimStr.equalsIgnoreCase("false")) {
+        throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+                                                  s"$trimStr, only true|false is supported.")
+      }
+      tableProperties.put(tblPropName, trimStr)
+    }
+  }
+
+  /**
    * This method will validate the compaction level threshold property specified by the user
    * the property is used while doing minor compaction
    *

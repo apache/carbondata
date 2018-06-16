@@ -84,9 +84,7 @@ object IndexDataMapRebuildRDD {
       segmentId: String): Unit = {
 
     val dataMapStorePath =
-      CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId) +
-      File.separator +
-      dataMapName
+      CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, segmentId, dataMapName)
 
     if (!FileFactory.isFileExist(dataMapStorePath)) {
       if (FileFactory.mkdirs(dataMapStorePath, FileFactory.getFileType(dataMapStorePath))) {

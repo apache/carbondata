@@ -37,15 +37,18 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.scan.executor.impl.SearchModeDetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.impl.SearchModeVectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
@@ -164,12 +167,15 @@ public class SearchRequestHandler {
     Objects.requireNonNull(datamap);
     List<Segment> segments = new LinkedList<>();
     HashMap<String, Integer> uniqueSegments = new HashMap<>();
+    LoadMetadataDetails[] loadMetadataDetails =
+        SegmentStatusManager.readLoadMetadata(
+            CarbonTablePath.getMetadataPath(table.getTablePath()));
     for (CarbonInputSplit split : mbSplit.getAllSplits()) {
-      String segmentId = split.getSegmentId();
+      String segmentId = Segment.getSegment(split.getSegmentId(), loadMetadataDetails).toString();
       if (uniqueSegments.get(segmentId) == null) {
-        segments.add(Segment.toSegment(
-                segmentId,
-                new LatestFilesReadCommittedScope(table.getTablePath(), segmentId)));
+        segments.add(Segment.toSegment(segmentId,
+            new TableStatusReadCommittedScope(table.getAbsoluteTableIdentifier(),
+                loadMetadataDetails)));
         uniqueSegments.put(segmentId, 1);
       } else {
         uniqueSegments.put(segmentId, uniqueSegments.get(segmentId) + 1);

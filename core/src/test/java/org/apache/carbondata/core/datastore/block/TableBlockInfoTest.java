@@ -169,7 +169,7 @@ public class TableBlockInfoTest {
 
   @Test public void hashCodeTest() {
     int res = tableBlockInfo.hashCode();
-    int expectedResult = 1041505621;
+    int expectedResult = 1041506582;
     assertEquals(res, expectedResult);
   }
 }

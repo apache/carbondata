@@ -2973,24 +2973,28 @@ public final class CarbonUtil {
    * @return
    */
   public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
-      String segmentId, boolean isTransactionalTable) {
+      String segmentId, boolean isTransactionalTable, boolean hasSegmentFile) {
     String blockId;
     String blockName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
     String tablePath = identifier.getTablePath();
 
     if (filePath.startsWith(tablePath)) {
-      String factDir = CarbonTablePath.getFactDir(tablePath);
-      if (filePath.startsWith(factDir) || !isTransactionalTable) {
+      if (!isTransactionalTable || !hasSegmentFile) {
         blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
             + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       } else {
         // This is the case with partition table.
-        String partitionDir =
-            filePath.substring(tablePath.length() + 1, filePath.length() - blockName.length() - 1);
-
+        String partitionDir;
+        if (tablePath.length() + 1 < filePath.length() - blockName.length() - 1) {
+          partitionDir =
+              filePath.substring(tablePath.length() + 1,
+                  filePath.length() - blockName.length() - 1);
+        } else {
+          partitionDir = "";
+        }
         // Replace / with # on partition director to support multi level partitioning. And access
         // them all as a single entity.
-        blockId = partitionDir.replace("/", "#") + CarbonCommonConstants.FILE_SEPARATOR + "Segment_"
+        blockId = partitionDir.replace("/", "#") + CarbonCommonConstants.FILE_SEPARATOR
             + segmentId + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       }
     } else {

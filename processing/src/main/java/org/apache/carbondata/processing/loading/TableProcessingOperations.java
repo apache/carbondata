@@ -64,7 +64,7 @@ public class TableProcessingOperations {
       CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
         @Override public boolean accept(CarbonFile path) {
           String segmentId =
-              CarbonTablePath.DataFileUtil.getSegmentId(path.getAbsolutePath() + "/dummy");
+              CarbonTablePath.DataFileUtil.getSegmentIdFromPath(path.getAbsolutePath() + "/dummy");
           boolean found = false;
           for (int j = 0; j < details.length; j++) {
             if (details[j].getLoadName().equals(segmentId)) {
@@ -76,8 +76,8 @@ public class TableProcessingOperations {
         }
       });
       for (int k = 0; k < listFiles.length; k++) {
-        String segmentId =
-            CarbonTablePath.DataFileUtil.getSegmentId(listFiles[k].getAbsolutePath() + "/dummy");
+        String segmentId = CarbonTablePath.DataFileUtil
+            .getSegmentIdFromPath(listFiles[k].getAbsolutePath() + "/dummy");
         if (isCompactionFlow) {
           if (segmentId.contains(".")) {
             CarbonLoaderUtil.deleteStorePath(listFiles[k].getAbsolutePath());

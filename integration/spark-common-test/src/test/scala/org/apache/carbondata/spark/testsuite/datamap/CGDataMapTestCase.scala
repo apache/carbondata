@@ -64,8 +64,9 @@ class CGDataMapFactory(
    * Get the datamap for segmentid
    */
   override def getDataMaps(segment: Segment): java.util.List[CoarseGrainDataMap] = {
-    val path = CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo)
-    val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
+    val path = identifier.getTablePath
+    val file = FileFactory.getCarbonFile(
+      path+ "/" +dataMapSchema.getDataMapName + "/" + segment.getSegmentNo)
 
     val files = file.listFiles()
     files.map {f =>
@@ -100,8 +101,9 @@ class CGDataMapFactory(
    * @return
    */
   override def toDistributable(segment: Segment): java.util.List[DataMapDistributable] = {
-    val path = CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo)
-    val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
+    val path = identifier.getTablePath
+    val file = FileFactory.getCarbonFile(
+      path+ "/" +dataMapSchema.getDataMapName + "/" + segment.getSegmentNo)
 
     val files = file.listFiles()
     files.map { f =>

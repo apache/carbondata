@@ -1008,6 +1008,19 @@ public class CarbonTable implements Serializable {
   }
 
   /**
+   * Whether this table supports flat folder structure, it means all data files directly written
+   * under table path
+   */
+  public boolean isSupportFlatFolder() {
+    boolean supportFlatFolder = Boolean.parseBoolean(CarbonCommonConstants.DEFAULT_FLAT_FOLDER);
+    Map<String, String> tblProps = getTableInfo().getFactTable().getTableProperties();
+    if (tblProps.containsKey(CarbonCommonConstants.FLAT_FOLDER)) {
+      supportFlatFolder = tblProps.get(CarbonCommonConstants.FLAT_FOLDER).equalsIgnoreCase("true");
+    }
+    return supportFlatFolder;
+  }
+
+  /**
    * update the carbon table by using the passed tableInfo
    *
    * @param table
