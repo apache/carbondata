@@ -80,7 +80,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
     // It should use the exists tableBlockInfos if tableBlockInfos of queryModel is not empty
     // otherwise the prune is no use before this method
-    if (queryModel.getTableBlockInfos().isEmpty()) {
+    if (!queryModel.isFG()) {
       List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
       queryModel.setTableBlockInfos(tableBlockInfoList);
     }

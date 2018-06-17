@@ -207,6 +207,7 @@ public class SearchRequestHandler {
     LOG.info(String.format("[SearchId:%d] pruned using FG DataMap, pruned blocks: %d", queryId,
         blockToRead.size()));
     queryModel.setTableBlockInfos(blockToRead);
+    queryModel.setFG(true);
     return queryModel;
   }
 

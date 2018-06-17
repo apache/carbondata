@@ -111,6 +111,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test lucene datamap with search mode") {
+    sql("set carbon.search.enabled = true")
     sql("DROP DATAMAP IF EXISTS dm ON TABLE main")
     sql("CREATE DATAMAP dm ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='id') ")
     checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('id:100000')"),
