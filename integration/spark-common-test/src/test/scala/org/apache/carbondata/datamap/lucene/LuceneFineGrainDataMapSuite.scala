@@ -829,6 +829,37 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       sql("select * from table_stop where text_match('suggestion:*is*')").collect().length == 1)
   }
 
+  test("test lucene data map on null values") {
+    sql("DROP TABLE IF EXISTS datamap_test4")
+    sql("DROP TABLE IF EXISTS datamap_copy")
+    sql(
+      """
+        | CREATE TABLE datamap_test4(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+      """.stripMargin)
+    sql(
+      """
+        | CREATE TABLE datamap_copy(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+      """.stripMargin)
+    sql("insert into datamap_test4 select 1,'name','city',20")
+    sql("insert into datamap_test4 select 2,'name1','city1',20")
+    sql("insert into datamap_test4 select 25,cast(null as string),'city2',NULL")
+    sql("insert into datamap_copy select * from datamap_test4")
+    sql(
+      s"""
+         | CREATE DATAMAP dm4 ON TABLE datamap_test4
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='name , city')
+      """.stripMargin)
+    checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('name:n*')"),
+      sql(s"select * from datamap_copy where name like '%n%'"))
+    sql("drop table datamap_test4")
+    sql("drop table datamap_copy")
+  }
+
   override protected def afterAll(): Unit = {
     LuceneFineGrainDataMapSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
