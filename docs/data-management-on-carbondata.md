@@ -560,6 +560,16 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   'BAD_RECORDS_ACTION'='REDIRECT','IS_EMPTY_DATA_BAD_RECORD'='false')
   ```
 
+  - **GLOBAL_SORT_PARTITIONS:** If the SORT_SCOPE is defined as GLOBAL_SORT, then user can specify the number of partitions to use while shuffling data for sort using GLOBAL_SORT_PARTITIONS. If it is not configured, or configured less than 1, then it uses the number of map task as reduce task. It is recommended that each reduce task deal with 512MB-1GB data.
+
+  ```
+  OPTIONS('GLOBAL_SORT_PARTITIONS'='2')
+  ```
+
+   NOTE:
+   * GLOBAL_SORT_PARTITIONS should be Integer type, the range is [1,Integer.MaxValue].
+   * It is only used when the SORT_SCOPE is GLOBAL_SORT.
+
 ### INSERT DATA INTO CARBONDATA TABLE
 
   This command inserts data into a CarbonData table, it is defined as a combination of two queries Insert and Select query respectively. 
