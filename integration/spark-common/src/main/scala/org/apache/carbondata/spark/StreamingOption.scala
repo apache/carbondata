@@ -27,7 +27,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 class StreamingOption(val userInputMap: Map[String, String]) {
-  def trigger: Trigger = {
+  lazy val trigger: Trigger = {
     val trigger = userInputMap.getOrElse(
       "trigger", throw new MalformedCarbonCommandException("trigger must be specified"))
     val interval = userInputMap.getOrElse(
@@ -43,17 +43,17 @@ class StreamingOption(val userInputMap: Map[String, String]) {
       "checkpointLocation",
       CarbonTablePath.getStreamingCheckpointDir(tablePath))
 
-  def timeStampFormat: String =
+  lazy val timeStampFormat: String =
     userInputMap.getOrElse("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
 
-  def dateFormat: String =
+  lazy val dateFormat: String =
     userInputMap.getOrElse("dateformat", CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
 
-  def rowParser: String =
+  lazy val rowParser: String =
     userInputMap.getOrElse(CarbonStreamParser.CARBON_STREAM_PARSER,
       CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
 
-  def remainingOption: Map[String, String] = {
+  lazy val remainingOption: Map[String, String] = {
     // copy the user input map and remove the fix options
     val mutableMap = mutable.Map[String, String]() ++= userInputMap
     mutableMap.remove("checkpointLocation")

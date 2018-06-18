@@ -26,10 +26,11 @@ import org.apache.carbondata.stream.StreamJobManager
  * Stop the stream for specified sink table
  */
 case class CarbonDropStreamCommand(
-    streamName: String
+    streamName: String,
+    ifExists: Boolean
 ) extends MetadataCommand {
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    StreamJobManager.stopStream(streamName)
+    StreamJobManager.stopStream(streamName, ifExists)
     Seq.empty
   }
 }

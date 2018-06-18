@@ -26,6 +26,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -39,6 +40,8 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.unsafe.types.UTF8String;
+import org.apache.spark.util.CarbonMetastoreTypes;
+import org.apache.spark.util.SparkTypeConverter;
 
 /**
  * Convert java data type to spark data type
@@ -177,7 +180,7 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
     return fields;
   }
 
-  public static StructType convertToSparkSchema(ColumnSchema[] carbonColumns) {
+  public static StructType convertToSparkSchema(CarbonTable table, ColumnSchema[] carbonColumns) {
     List<StructField> fields = new ArrayList<>(carbonColumns.length);
     for (int i = 0; i < carbonColumns.length; i++) {
       ColumnSchema carbonColumn = carbonColumns[i];
@@ -186,6 +189,26 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
         fields.add(new StructField(carbonColumn.getColumnName(),
             new DecimalType(carbonColumn.getPrecision(), carbonColumn.getScale()),
             true, Metadata.empty()));
+      } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isStructType(dataType)) {
+        fields.add(
+            new StructField(
+                carbonColumn.getColumnName(),
+                CarbonMetastoreTypes.toDataType(
+                    String.format("struct<%s>",
+                        SparkTypeConverter.getStructChildren(table, carbonColumn.getColumnName()))),
+                true,
+                Metadata.empty()));
+      } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isArrayType(dataType)) {
+        fields.add(
+            new StructField(
+                carbonColumn.getColumnName(),
+                CarbonMetastoreTypes.toDataType(
+                    String.format("array<%s>",
+                        SparkTypeConverter.getArrayChildren(
+                            table,
+                            carbonColumn.getColumnName()))),
+                true,
+                Metadata.empty()));
       } else {
         fields.add(new StructField(carbonColumn.getColumnName(),
             convertCarbonToSparkDataType(carbonColumn.getDataType()), true, Metadata.empty()));

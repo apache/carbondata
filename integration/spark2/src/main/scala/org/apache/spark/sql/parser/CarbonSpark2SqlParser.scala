@@ -151,27 +151,29 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * The syntax of CREATE STREAM
-   * CREATE STREAM streamName ON TABLE [dbName.]tableName
+   * CREATE STREAM [IF NOT EXISTS] streamName ON TABLE [dbName.]tableName
    * [STMPROPERTIES('KEY'='VALUE')]
    * AS SELECT COUNT(COL1) FROM tableName
    */
   protected lazy val createStream: Parser[LogicalPlan] =
-    (CREATE ~> STREAM ~> ident) ~ (ON ~> TABLE ~> (ident <~ ".").?) ~ ident ~
+    CREATE ~> STREAM ~>  opt(IF ~> NOT ~> EXISTS) ~ ident ~
+    (ON ~> TABLE ~> (ident <~ ".").?) ~ ident ~
     (STMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
     (AS ~> restInput) <~ opt(";") ^^ {
-      case streamName ~ dbName ~ tableName ~ options ~ query =>
+      case ifNotExists ~ streamName ~ dbName ~ tableName ~ options ~ query =>
         val optionMap = options.getOrElse(List[(String, String)]()).toMap[String, String]
-        CarbonCreateStreamCommand(streamName, dbName, tableName, optionMap, query)
+        CarbonCreateStreamCommand(
+          streamName, dbName, tableName, ifNotExists.isDefined, optionMap, query)
     }
 
   /**
    * The syntax of DROP STREAM
-   * DROP STREAM streamName
+   * DROP STREAM [IF EXISTS] streamName
    */
   protected lazy val dropStream: Parser[LogicalPlan] =
-    DROP ~> STREAM ~> ident <~ opt(";") ^^ {
-      case streamName =>
-        CarbonDropStreamCommand(streamName)
+    DROP ~> STREAM ~> opt(IF ~> EXISTS) ~ ident <~ opt(";") ^^ {
+      case ifExists ~ streamName =>
+        CarbonDropStreamCommand(streamName, ifExists.isDefined)
     }
 
   /**

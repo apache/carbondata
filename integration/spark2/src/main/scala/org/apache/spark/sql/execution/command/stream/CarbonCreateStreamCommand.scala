@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.execution.command.stream
 
-import java.util
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql._
@@ -27,11 +25,9 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.streaming.StreamingRelation
-import org.apache.spark.sql.streaming.DataStreamReader
 import org.apache.spark.sql.types.{StringType, StructType}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.spark.StreamingOption
 import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
@@ -44,6 +40,7 @@ case class CarbonCreateStreamCommand(
     streamName: String,
     sinkDbName: Option[String],
     sinkTableName: String,
+    ifNotExists: Boolean,
     optionMap: Map[String, String],
     query: String
 ) extends DataCommand {
@@ -66,7 +63,7 @@ case class CarbonCreateStreamCommand(
         val (source, streamingRelation) = prepareStreamingRelation(sparkSession, r)
         if (sourceTable != null && sourceTable.getTableName != source.getTableName) {
           throw new MalformedCarbonCommandException(
-            "Stream query on two stream source tables is not supported")
+            "Stream query on more than one stream source table is not supported")
         }
         sourceTable = source
         streamingRelation
@@ -80,6 +77,7 @@ case class CarbonCreateStreamCommand(
     // start the streaming job
     val jobId = StreamJobManager.startStream(
       sparkSession = sparkSession,
+      ifNotExists = ifNotExists,
       streamName = streamName,
       sourceTable = sourceTable,
       sinkTable = CarbonEnv.getCarbonTable(sinkDbName, sinkTableName)(sparkSession),
@@ -126,7 +124,7 @@ case class CarbonCreateStreamCommand(
     val cols = sourceTable.getTableInfo.getFactTable.getListOfColumns.asScala.toArray
     val sortedCols = cols.filter(_.getSchemaOrdinal != -1)
       .sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
-    SparkDataTypeConverterImpl.convertToSparkSchema(sortedCols)
+    SparkDataTypeConverterImpl.convertToSparkSchema(sourceTable, sortedCols)
   }
 
 }

@@ -32,19 +32,17 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.spark.StreamingOption
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.streaming.CarbonStreamException
-import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
+/**
+ * A manager to start and stop a stream job for StreamSQL.
+ * This stream job is only available to the driver memory and not persisted
+ * so other drivers cannot see ongoing stream jobs.
+ */
 object StreamJobManager {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   // map of stream name to job desc
   private val jobs = new ConcurrentHashMap[String, StreamJobDesc]()
-
-  private def validateStreamName(streamName: String): Unit = {
-    if (StreamJobManager.getAllJobs.exists(_.streamName.equalsIgnoreCase(streamName))) {
-      throw new MalformedCarbonCommandException(s"Stream Name $streamName already exists")
-    }
-  }
 
   private def validateSourceTable(source: CarbonTable): Unit = {
     if (!source.isStreamingSource) {
@@ -73,6 +71,7 @@ object StreamJobManager {
   /**
    * Start a spark streaming job
    * @param sparkSession session instance
+   * @param ifNotExists if not exists is set or not
    * @param streamName name of the stream
    * @param sourceTable stream source table
    * @param sinkTable sink table to insert to
@@ -83,6 +82,7 @@ object StreamJobManager {
    */
   def startStream(
       sparkSession: SparkSession,
+      ifNotExists: Boolean,
       streamName: String,
       sourceTable: CarbonTable,
       sinkTable: CarbonTable,
@@ -93,7 +93,14 @@ object StreamJobManager {
     var exception: Throwable = null
     var job: StreamingQuery = null
 
-    validateStreamName(streamName)
+    if (jobs.containsKey(streamName)) {
+      if (ifNotExists) {
+        return jobs.get(streamName).streamingQuery.id.toString
+      } else {
+        throw new MalformedCarbonCommandException(s"Stream Name $streamName already exists")
+      }
+    }
+
     validateSourceTable(sourceTable)
     validateSinkTable(streamDf.schema, sinkTable)
 
@@ -149,8 +156,9 @@ object StreamJobManager {
   /**
    * Stop a streaming job
    * @param streamName name of the stream
+   * @param ifExists if exists is set or not
    */
-  def stopStream(streamName: String): Unit = {
+  def stopStream(streamName: String, ifExists: Boolean): Unit = {
     if (jobs.containsKey(streamName)) {
       val jobDesc = jobs.get(streamName)
       jobDesc.streamingQuery.stop()
@@ -160,7 +168,9 @@ object StreamJobManager {
                    s"from ${jobDesc.sourceDb}.${jobDesc.sourceTable} " +
                    s"to ${jobDesc.sinkDb}.${jobDesc.sinkTable}")
     } else {
-      throw new NoSuchStreamException(streamName)
+      if (!ifExists) {
+        throw new NoSuchStreamException(streamName)
+      }
     }
   }
 
@@ -172,6 +182,9 @@ object StreamJobManager {
 
 }
 
+/**
+ * A job description for the StreamSQL job
+ */
 private[stream] case class StreamJobDesc(
     streamingQuery: StreamingQuery,
     streamName: String,

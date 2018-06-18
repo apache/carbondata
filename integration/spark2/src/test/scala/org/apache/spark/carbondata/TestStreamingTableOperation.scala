@@ -1693,6 +1693,17 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         |  FROM source
         |  WHERE id % 2 = 1
       """.stripMargin).show(false)
+    sql(
+      """
+        |CREATE STREAM IF NOT EXISTS stream123 ON TABLE sink
+        |STMPROPERTIES(
+        |  'trigger'='ProcessingTime',
+        |  'interval'='1 seconds')
+        |AS
+        |  SELECT *
+        |  FROM source
+        |  WHERE id % 2 = 1
+      """.stripMargin).show(false)
     Thread.sleep(2000)
     sql("select * from sink").show
 
@@ -1723,6 +1734,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     assertResult("streaming.sink")(rows.head.getString(4))
 
     sql("DROP STREAM stream123")
+    sql("DROP STREAM IF EXISTS stream123")
 
     rows = sql("SHOW STREAMS").collect()
     assertResult(0)(rows.length)
