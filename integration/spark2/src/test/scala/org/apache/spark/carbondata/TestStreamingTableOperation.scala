@@ -123,12 +123,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     createTable(tableName = "agg_table", streaming = true, withBatchLoad = false)
 
-    var csvDataDir = new File("target/csvdatanew").getCanonicalPath
+    val csvDataDir = integrationPath + "target/csvdatanew"
     generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir)
     generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir, SaveMode.Append)
-    csvDataDir = new File("target/csvdata").getCanonicalPath
-    // streaming ingest 10 rows
-    generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
   }
 
   test("validate streaming property") {
@@ -195,7 +192,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("USE default")
     sql("DROP DATABASE IF EXISTS streaming CASCADE")
     new File("target/csvdatanew").delete()
-    new File("target/csvdata").delete()
   }
 
   def dropTable(): Unit = {
@@ -1642,7 +1638,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     var rows = sql("SHOW STREAMS").collect()
     assertResult(0)(rows.length)
 
-    val csvDataDir = new File("target/csvdata").getCanonicalPath
+    val csvDataDir = integrationPath + "/target/csvdata"
+    // streaming ingest 10 rows
+    generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
     sql(
       s"""
@@ -1741,12 +1739,15 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
+    new File(csvDataDir).delete()
   }
 
   test("StreamSQL: create stream without interval ") {
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
-    val csvDataDir = new File("target/csvdata").getCanonicalPath
+    val csvDataDir = integrationPath + "/target/csvdata"
+    // streaming ingest 10 rows
+    generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
     sql(
       s"""
@@ -1942,7 +1943,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
           |  WHERE id % 2 = 1
         """.stripMargin).show(false)
     }
-    assert(ex.getMessage.contains("Must specify stream source table in select query"))
+    assert(ex.getMessage.contains("Must specify stream source table in the query"))
     sql("DROP TABLE sink")
   }
 
