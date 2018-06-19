@@ -69,6 +69,7 @@ public class SegmentUpdateStatusManager {
   private LoadMetadataDetails[] segmentDetails;
   private SegmentUpdateDetails[] updateDetails;
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
+  private boolean isPartitionTable;
 
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails) {
@@ -77,6 +78,7 @@ public class SegmentUpdateStatusManager {
     // on latest file status.
     this.segmentDetails = segmentDetails;
     updateDetails = readLoadMetadata();
+    isPartitionTable = table.isHivePartitionTable();
     populateMap();
   }
 
@@ -96,6 +98,7 @@ public class SegmentUpdateStatusManager {
     } else {
       updateDetails = new SegmentUpdateDetails[0];
     }
+    isPartitionTable = table.isHivePartitionTable();
     populateMap();
   }
 
@@ -246,29 +249,22 @@ public class SegmentUpdateStatusManager {
    * @throws Exception
    */
   public String[] getDeleteDeltaFilePath(String blockFilePath, String segmentId) throws Exception {
-    String segmentFile = null;
-    for (LoadMetadataDetails segmentDetail : segmentDetails) {
-      if (segmentDetail.getLoadName().equals(segmentId)) {
-        segmentFile = segmentDetail.getSegmentFile();
-        break;
-      }
-    }
     String blockId =
-        CarbonUtil.getBlockId(identifier, blockFilePath, segmentId, true, segmentFile != null);
+        CarbonUtil.getBlockId(identifier, blockFilePath, segmentId, true, isPartitionTable);
     String tupleId;
-    if (segmentFile != null) {
+    if (isPartitionTable) {
       tupleId = CarbonTablePath.getShortBlockIdForPartitionTable(blockId);
     } else {
       tupleId = CarbonTablePath.getShortBlockId(blockId);
     }
-    return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT, segmentFile)
+    return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
         .toArray(new String[0]);
   }
 
   /**
    * Returns all delta file paths of specified block
    */
-  private List<String> getDeltaFiles(String tupleId, String extension, String segmentFile)
+  private List<String> getDeltaFiles(String tupleId, String extension)
       throws Exception {
     String segment = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID);
     String completeBlockName = CarbonTablePath.addDataPartPrefix(
@@ -276,7 +272,7 @@ public class SegmentUpdateStatusManager {
             + CarbonCommonConstants.FACT_FILE_EXT);
 
     String blockPath;
-    if (segmentFile != null) {
+    if (isPartitionTable) {
       blockPath = identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.PART_ID)
           .replace("#", "/") + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
