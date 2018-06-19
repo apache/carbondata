@@ -2973,13 +2973,13 @@ public final class CarbonUtil {
    * @return
    */
   public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
-      String segmentId, boolean isTransactionalTable, boolean hasSegmentFile) {
+      String segmentId, boolean isTransactionalTable, boolean isPartitionTable) {
     String blockId;
     String blockName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
     String tablePath = identifier.getTablePath();
 
     if (filePath.startsWith(tablePath)) {
-      if (!isTransactionalTable || !hasSegmentFile) {
+      if (!isTransactionalTable || !isPartitionTable) {
         blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
             + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       } else {

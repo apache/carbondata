@@ -296,8 +296,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     String blockId = CarbonUtil
         .getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segment.getSegmentNo(),
             queryModel.getTable().getTableInfo().isTransactionalTable(),
-            segment.getSegmentFileName() != null);
-    if (segment.getSegmentFileName() != null) {
+            queryModel.getTable().isHivePartitionTable());
+    if (queryModel.getTable().isHivePartitionTable()) {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockIdForPartitionTable(blockId));
     } else {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockId(blockId));
