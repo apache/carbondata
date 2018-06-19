@@ -191,7 +191,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     dropTable()
     sql("USE default")
     sql("DROP DATABASE IF EXISTS streaming CASCADE")
-    new File("target/csvdatanew").delete()
+    val csvDataDir = integrationPath + "/spark2/target/csvdatanew"
+    new File(csvDataDir).delete()
   }
 
   def dropTable(): Unit = {
