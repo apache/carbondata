@@ -31,7 +31,6 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.types.StructType
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.NoSuchStreamException
@@ -123,9 +122,14 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     createTable(tableName = "agg_table", streaming = true, withBatchLoad = false)
 
-    val csvDataDir = integrationPath + "/spark2/target/csvdatanew"
+    var csvDataDir = integrationPath + "/spark2/target/csvdatanew"
     generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir)
     generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir, SaveMode.Append)
+
+    csvDataDir = integrationPath + "/spark2/target/csvdata"
+    // streaming ingest 10 rows
+    generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
+
   }
 
   test("validate streaming property") {
@@ -191,7 +195,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     dropTable()
     sql("USE default")
     sql("DROP DATABASE IF EXISTS streaming CASCADE")
-    val csvDataDir = integrationPath + "/spark2/target/csvdatanew"
+    var csvDataDir = integrationPath + "/spark2/target/csvdatanew"
+    new File(csvDataDir).delete()
+    csvDataDir = integrationPath + "/spark2/target/csvdata"
     new File(csvDataDir).delete()
   }
 
@@ -1640,8 +1646,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     assertResult(0)(rows.length)
 
     val csvDataDir = integrationPath + "/spark2/target/csvdata"
-    // streaming ingest 10 rows
-    generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
     sql(
       s"""
@@ -1740,15 +1744,12 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
-    new File(csvDataDir).delete()
   }
 
   test("StreamSQL: create stream without interval ") {
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
     val csvDataDir = integrationPath + "/spark2/target/csvdata"
-    // streaming ingest 10 rows
-    generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
     sql(
       s"""
@@ -1801,7 +1802,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     assert(ex.getMessage.contains("interval must be specified"))
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
-    new File(csvDataDir).delete()
   }
 
   test("StreamSQL: create stream on non exist stream source table") {
