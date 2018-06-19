@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.common.annotations.Since;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -94,10 +95,12 @@ public class TableInfo implements Serializable, Writable {
    * The format of the fact table.
    * By default it is carbondata, and we also support other format like CSV
    */
+  @Since("1.4.1")
   private String format = "carbondata";
   /**
    * properties for the format, such as delimiter/header for csv format
    */
+  @Since("1.4.1")
   private Map<String, String> formatProperties;
 
   // this identifier is a lazy field which will be created when it is used first time

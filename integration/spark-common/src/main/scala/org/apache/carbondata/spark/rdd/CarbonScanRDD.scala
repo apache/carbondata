@@ -57,7 +57,7 @@ import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
-import org.apache.carbondata.spark.InitInputMetrics
+import org.apache.carbondata.spark.{CsvRecordReader, InitInputMetrics}
 import org.apache.carbondata.spark.util.{SparkDataTypeConverterImpl, Util}
 import org.apache.carbondata.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
 
@@ -443,12 +443,12 @@ class CarbonScanRDD[T: ClassTag](
             "Currently we only support csv as external file format")
           attemptContext.getConfiguration.set(
             CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY, storageFormat)
-          val carbonCsvRecordReader = format.createRecordReader(inputSplit, attemptContext)
-            .asInstanceOf[CarbonCsvRecordReader[Object]]
-          carbonCsvRecordReader.setVectorReader(vectorReader)
-          carbonCsvRecordReader.setInputMetricsStats(inputMetricsStats)
-          carbonCsvRecordReader.setQueryModel(model)
-          carbonCsvRecordReader
+          val csvRecordReader = format.createRecordReader(inputSplit, attemptContext)
+            .asInstanceOf[CsvRecordReader[Object]]
+          csvRecordReader.setVectorReader(vectorReader)
+          csvRecordReader.setInputMetricsStats(inputMetricsStats)
+          csvRecordReader.setQueryModel(model)
+          csvRecordReader
         case _ =>
           // create record reader for CarbonData file format
           if (vectorReader) {

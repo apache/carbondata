@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hadoop;
+package org.apache.carbondata.spark;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -25,14 +25,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.common.annotations.Since;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -48,8 +47,13 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.statusmanager.FileFormatProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.hadoop.AbstractRecordReader;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.InputMetricsStats;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
+import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -67,7 +71,6 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
 import org.apache.spark.sql.types.CalendarIntervalType;
-import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.StructField;
@@ -78,9 +81,12 @@ import org.apache.spark.unsafe.types.UTF8String;
 /**
  * scan csv file and filter on it
  */
-public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
+@InterfaceStability.Evolving
+@InterfaceAudience.Internal
+@Since("1.4.1")
+public class CsvRecordReader<T> extends AbstractRecordReader<T> {
   private static final LogService LOGGER = LogServiceFactory.getLogService(
-      CarbonCsvRecordReader.class.getName());
+      CsvRecordReader.class.getName());
   private static final int MAX_BATCH_SIZE = 32000;
 
   // vector reader
@@ -120,11 +126,11 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
   private Reader reader;
   private CsvParser csvParser;
 
-  public CarbonCsvRecordReader(QueryModel queryModel) {
+  public CsvRecordReader(QueryModel queryModel) {
     this.queryModel = queryModel;
   }
 
-  public CarbonCsvRecordReader(QueryModel queryModel, InputMetricsStats inputMetricsStats) {
+  public CsvRecordReader(QueryModel queryModel, InputMetricsStats inputMetricsStats) {
     this(queryModel);
     this.inputMetricsStats = inputMetricsStats;
   }
@@ -313,13 +319,8 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
   }
 
   private StructField[] convertCarbonColumnSpark(CarbonColumn[] columns) {
-    StructField[] fields = new StructField[columns.length];
-    for (int i = 0; i < columns.length; i++) {
-      CarbonColumn carbonColumn = columns[i];
-      fields[i] = new StructField(carbonColumn.getColName(),
-          getSparkType4CarbonColumn(carbonColumn), true, null);
-    }
-    return fields;
+    return (StructField[]) new SparkDataTypeConverterImpl().convertCarbonSchemaToSparkSchema(
+        columns);
   }
 
   @Override
@@ -329,31 +330,6 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
     }
 
     return nextRow();
-  }
-
-  private org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(
-      DataType carbonDataType) {
-    if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.STRING) {
-      return DataTypes.StringType;
-    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT) {
-      return DataTypes.ShortType;
-    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT) {
-      return DataTypes.IntegerType;
-    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG) {
-      return DataTypes.LongType;
-    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE) {
-      return DataTypes.DoubleType;
-    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN) {
-      return DataTypes.BooleanType;
-    } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(carbonDataType)) {
-      return DataTypes.createDecimalType();
-    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.TIMESTAMP) {
-      return DataTypes.TimestampType;
-    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
-      return DataTypes.DateType;
-    } else {
-      throw new RuntimeException("Unsupported carbon data type : " + carbonDataType);
-    }
   }
 
   private boolean nextColumnarBatch() throws IOException {
@@ -466,71 +442,43 @@ public class CarbonCsvRecordReader<T> extends AbstractRecordReader<T> {
   private void putRowToSparkRow() {
     for (int i = 0; i < projection.length; i++) {
       Object originValue = outputValues[i];
-      // todo: no need to parse for each row, will optimize it later
-      org.apache.spark.sql.types.DataType t = getSparkType4CarbonColumn(projection[i]);
-      if (null == originValue) {
-        finalOutputValues[i] = null;
-      } else {
-        String value = String.valueOf(originValue);
-        if (t == org.apache.spark.sql.types.DataTypes.BooleanType) {
-          finalOutputValues[i] =  Boolean.parseBoolean(value);
-        } else if (t == org.apache.spark.sql.types.DataTypes.ByteType) {
-          finalOutputValues[i] = Byte.parseByte(value);
-        } else if (t == org.apache.spark.sql.types.DataTypes.ShortType) {
-          finalOutputValues[i] = Short.parseShort(value);
-        } else if (t == org.apache.spark.sql.types.DataTypes.IntegerType) {
-          finalOutputValues[i] = Integer.parseInt(value);
-        } else if (t == org.apache.spark.sql.types.DataTypes.LongType) {
-          finalOutputValues[i] = Long.parseLong(value);
-        } else if (t == org.apache.spark.sql.types.DataTypes.FloatType) {
-          finalOutputValues[i] = Float.parseFloat(value);
-        } else if (t == org.apache.spark.sql.types.DataTypes.DoubleType) {
-          finalOutputValues[i] = Double.parseDouble(value);
-        } else if (t == org.apache.spark.sql.types.DataTypes.StringType) {
-          finalOutputValues[i] = UTF8String.fromString(value);
-        } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
-          Decimal d = Decimal.fromDecimal(value);
-          finalOutputValues[i] = d;
-        } else if (t instanceof CalendarIntervalType) {
-          CalendarInterval c = CalendarInterval.fromString(value);
-          finalOutputValues[i] = c;
-        } else if (t instanceof org.apache.spark.sql.types.DateType) {
-          finalOutputValues[i] = Integer.parseInt(value);
-        } else if (t instanceof org.apache.spark.sql.types.TimestampType) {
-          finalOutputValues[i] = Long.parseLong(value);
-        }
-      }
+      org.apache.spark.sql.types.DataType t = outputSchema.apply(i).dataType();
+      finalOutputValues[i] = convertToSparkValue(originValue, t);
     }
     outputRow = new GenericInternalRow(finalOutputValues);
   }
 
-  private org.apache.spark.sql.types.DataType getSparkType4CarbonColumn(CarbonColumn carbonColumn) {
-    if (carbonColumn.isDimension()) {
-      if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
-            .getDirectDictionaryGenerator(carbonColumn.getDataType());
-        return convertCarbonToSparkDataType(generator.getReturnType());
-      } else if (!carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
-        return convertCarbonToSparkDataType(carbonColumn.getDataType());
-      } else if (carbonColumn.isComplex()) {
-        return convertCarbonToSparkDataType(carbonColumn.getDataType());
-      } else {
-        return convertCarbonToSparkDataType(
-            org.apache.carbondata.core.metadata.datatype.DataTypes.INT);
-      }
+  private Object convertToSparkValue(Object originValue, org.apache.spark.sql.types.DataType t) {
+    if (null == originValue) {
+      return null;
     } else {
-      DataType dataType = carbonColumn.getDataType();
-      if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN
-          || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT
-          || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT
-          || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG) {
-        return convertCarbonToSparkDataType(dataType);
-      } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(dataType)) {
-        CarbonMeasure measure = (CarbonMeasure) carbonColumn;
-        return new DecimalType(measure.getPrecision(), measure.getScale());
+      String value = String.valueOf(originValue);
+      if (t == org.apache.spark.sql.types.DataTypes.BooleanType) {
+        return Boolean.parseBoolean(value);
+      } else if (t == org.apache.spark.sql.types.DataTypes.ByteType) {
+        return Byte.parseByte(value);
+      } else if (t == org.apache.spark.sql.types.DataTypes.ShortType) {
+        return Short.parseShort(value);
+      } else if (t == org.apache.spark.sql.types.DataTypes.IntegerType) {
+        return Integer.parseInt(value);
+      } else if (t == org.apache.spark.sql.types.DataTypes.LongType) {
+        return Long.parseLong(value);
+      } else if (t == org.apache.spark.sql.types.DataTypes.FloatType) {
+        return Float.parseFloat(value);
+      } else if (t == org.apache.spark.sql.types.DataTypes.DoubleType) {
+        return Double.parseDouble(value);
+      } else if (t == org.apache.spark.sql.types.DataTypes.StringType) {
+        return UTF8String.fromString(value);
+      } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
+        return Decimal.fromDecimal(value);
+      } else if (t instanceof CalendarIntervalType) {
+        return CalendarInterval.fromString(value);
+      } else if (t instanceof org.apache.spark.sql.types.DateType) {
+        return Integer.parseInt(value);
+      } else if (t instanceof org.apache.spark.sql.types.TimestampType) {
+        return Long.parseLong(value);
       } else {
-        return convertCarbonToSparkDataType(
-                org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE);
+        return null;
       }
     }
   }

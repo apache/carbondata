@@ -63,7 +63,6 @@ import org.apache.carbondata.core.util.DataTypeConverter;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.hadoop.CarbonCsvRecordReader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonProjection;
@@ -630,10 +629,17 @@ m filterExpression
 
   private RecordReader<Void, T> createRecordReaderForExternalFormat(QueryModel queryModel,
       String format) {
-    if ("csv".equals(format)) {
-      return new CarbonCsvRecordReader<T>(queryModel);
-    } else {
-      throw new RuntimeException("Unsupported external file format " + format);
+    try {
+      if ("csv".equals(format)) {
+        RecordReader<Void, T> recordReader = (RecordReader<Void, T>) Class.forName(
+            "org.apache.carbondata.spark.CsvRecordReader").getConstructors()[0]
+            .newInstance(queryModel);
+        return recordReader;
+      } else {
+        throw new RuntimeException("Unsupported external file format " + format);
+      }
+    } catch (Throwable e) {
+      throw new RuntimeException("Failed to create recordReader for format " + format, e);
     }
   }
 
