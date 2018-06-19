@@ -15,22 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark;
+package org.apache.carbondata.hadoop;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.math.BigInteger;
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.common.annotations.Since;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -47,13 +48,10 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.statusmanager.FileFormatProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.hadoop.AbstractRecordReader;
-import org.apache.carbondata.hadoop.CarbonInputSplit;
-import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
-import org.apache.carbondata.hadoop.InputMetricsStats;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
-import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -65,40 +63,27 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.spark.memory.MemoryMode;
-import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.execution.vectorized.ColumnVector;
-import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
-import org.apache.spark.sql.types.CalendarIntervalType;
-import org.apache.spark.sql.types.Decimal;
-import org.apache.spark.sql.types.DecimalType;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
-import org.apache.spark.unsafe.types.CalendarInterval;
-import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * scan csv file and filter on it
  */
 @InterfaceStability.Evolving
 @InterfaceAudience.Internal
-@Since("1.4.1")
 public class CsvRecordReader<T> extends AbstractRecordReader<T> {
   private static final LogService LOGGER = LogServiceFactory.getLogService(
       CsvRecordReader.class.getName());
-  private static final int MAX_BATCH_SIZE = 32000;
-
+  private static final int MAX_BATCH_SIZE =
+      CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
   // vector reader
   private boolean isVectorReader;
-  private ColumnarBatch columnarBatch;
-  private StructType outputSchema;
+  private T columnarBatch;
 
   // metadata
   private CarbonTable carbonTable;
   private CarbonColumn[] carbonColumns;
   // input
   private QueryModel queryModel;
+  private CarbonReadSupport<T> readSupport;
   private FileSplit fileSplit;
   private Configuration hadoopConf;
   // the index is schema ordinal, the value is the csv ordinal
@@ -116,8 +101,8 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
   // the index is the projection column ordinal, the value is the schema ordinal
   private int[] projectionColumn2SchemaIdx;
   private Object[] outputValues;
-  private Object[] finalOutputValues;
-  private InternalRow outputRow;
+  private Object[][] batchOutputValues;
+  private T outputRow;
 
   // inputMetricsStats
   private InputMetricsStats inputMetricsStats;
@@ -126,12 +111,14 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
   private Reader reader;
   private CsvParser csvParser;
 
-  public CsvRecordReader(QueryModel queryModel) {
+  public CsvRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport) {
     this.queryModel = queryModel;
+    this.readSupport = readSupport;
   }
 
-  public CsvRecordReader(QueryModel queryModel, InputMetricsStats inputMetricsStats) {
-    this(queryModel);
+  public CsvRecordReader(QueryModel queryModel, CarbonReadSupport readSupport,
+      InputMetricsStats inputMetricsStats) {
+    this(queryModel, readSupport);
     this.inputMetricsStats = inputMetricsStats;
   }
 
@@ -149,6 +136,10 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
 
   public void setInputMetricsStats(InputMetricsStats inputMetricsStats) {
     this.inputMetricsStats = inputMetricsStats;
+  }
+
+  public void setReadSupport(CarbonReadSupport<T> readSupport) {
+    this.readSupport = readSupport;
   }
 
   @Override
@@ -181,6 +172,8 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
 
     // init reading
     initializeCsvReader();
+
+    this.readSupport.initialize(projection, carbonTable);
   }
 
   private void initializedIdxMapping() {
@@ -267,8 +260,7 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
     internalRow.setValues(internalValues);
 
     outputValues = new Object[projection.length];
-    finalOutputValues = new Object[projection.length];
-    outputRow = new GenericInternalRow(outputValues);
+    batchOutputValues = new Object[MAX_BATCH_SIZE][projection.length];
 
     Path file = fileSplit.getPath();
     FileSystem fs = file.getFileSystem(hadoopConf);
@@ -282,8 +274,6 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
     initCsvSettings(settings);
     csvParser = new CsvParser(settings);
     csvParser.beginParsing(reader);
-
-    outputSchema = new StructType(convertCarbonColumnSpark(projection));
   }
 
   /**
@@ -318,11 +308,6 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
     }
   }
 
-  private StructField[] convertCarbonColumnSpark(CarbonColumn[] columns) {
-    return (StructField[]) new SparkDataTypeConverterImpl().convertCarbonSchemaToSparkSchema(
-        columns);
-  }
-
   @Override
   public boolean nextKeyValue() throws IOException, InterruptedException {
     if (isVectorReader) {
@@ -337,76 +322,35 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
   }
 
   private boolean scanAndFillBatch() throws IOException {
-    columnarBatch = ColumnarBatch.allocate(outputSchema, MemoryMode.OFF_HEAP, MAX_BATCH_SIZE);
     int rowNum = 0;
     if (null == filter) {
       while (readRowFromFile() && rowNum < MAX_BATCH_SIZE) {
-        putRowToColumnBatch(rowNum++);
+        System.arraycopy(outputValues, 0, batchOutputValues[rowNum++], 0, outputValues.length);
       }
     } else {
       try {
         while (readRowFromFile() && rowNum < MAX_BATCH_SIZE) {
           if (filter.applyFilter(internalRow, carbonTable.getDimensionOrdinalMax())) {
-            putRowToColumnBatch(rowNum++);
+            System.arraycopy(outputValues, 0, batchOutputValues[rowNum++], 0, outputValues.length);
           }
         }
       } catch (FilterUnsupportedException e) {
         throw new IOException("Failed to filter row in CarbonCsvRecordReader", e);
       }
     }
-    columnarBatch.setNumRows(rowNum);
-    return rowNum > 0;
-  }
-
-  private void putRowToColumnBatch(int rowId) {
-    for (int i = 0; i < projection.length; i++) {
-      Object originValue = outputValues[i];
-      ColumnVector col = columnarBatch.column(i);
-      org.apache.spark.sql.types.DataType t = col.dataType();
-      if (null == originValue) {
-        col.putNull(rowId);
-      } else {
-        String value = String.valueOf(originValue);
-        if (t == org.apache.spark.sql.types.DataTypes.BooleanType) {
-          col.putBoolean(rowId, Boolean.parseBoolean(value));
-        } else if (t == org.apache.spark.sql.types.DataTypes.ByteType) {
-          col.putByte(rowId, Byte.parseByte(value));
-        } else if (t == org.apache.spark.sql.types.DataTypes.ShortType) {
-          col.putShort(rowId, Short.parseShort(value));
-        } else if (t == org.apache.spark.sql.types.DataTypes.IntegerType) {
-          col.putInt(rowId, Integer.parseInt(value));
-        } else if (t == org.apache.spark.sql.types.DataTypes.LongType) {
-          col.putLong(rowId, Long.parseLong(value));
-        } else if (t == org.apache.spark.sql.types.DataTypes.FloatType) {
-          col.putFloat(rowId, Float.parseFloat(value));
-        } else if (t == org.apache.spark.sql.types.DataTypes.DoubleType) {
-          col.putDouble(rowId, Double.parseDouble(value));
-        } else if (t == org.apache.spark.sql.types.DataTypes.StringType) {
-          UTF8String v = UTF8String.fromString(value);
-          col.putByteArray(rowId, v.getBytes());
-        } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
-          DecimalType dt = (DecimalType)t;
-          Decimal d = Decimal.fromDecimal(value);
-          if (dt.precision() <= Decimal.MAX_INT_DIGITS()) {
-            col.putInt(rowId, (int)d.toUnscaledLong());
-          } else if (dt.precision() <= Decimal.MAX_LONG_DIGITS()) {
-            col.putLong(rowId, d.toUnscaledLong());
-          } else {
-            final BigInteger integer = d.toJavaBigDecimal().unscaledValue();
-            byte[] bytes = integer.toByteArray();
-            col.putByteArray(rowId, bytes, 0, bytes.length);
-          }
-        } else if (t instanceof CalendarIntervalType) {
-          CalendarInterval c = CalendarInterval.fromString(value);
-          col.getChildColumn(0).putInt(rowId, c.months);
-          col.getChildColumn(1).putLong(rowId, c.microseconds);
-        } else if (t instanceof org.apache.spark.sql.types.DateType) {
-          col.putInt(rowId, Integer.parseInt(value));
-        } else if (t instanceof org.apache.spark.sql.types.TimestampType) {
-          col.putLong(rowId, Long.parseLong(value));
-        }
+    if (rowNum < MAX_BATCH_SIZE) {
+      Object[][] tmpBatchOutputValues = new Object[rowNum][];
+      for (int i = 0; i < rowNum; i++) {
+        tmpBatchOutputValues[i] = batchOutputValues[i];
       }
+      System.arraycopy(batchOutputValues, 0, tmpBatchOutputValues, 0, rowNum);
+      for (int i = 0; i < tmpBatchOutputValues.length; i++) {
+      }
+      columnarBatch = readSupport.readRow(tmpBatchOutputValues);
+    } else {
+      columnarBatch = readSupport.readRow(batchOutputValues);
     }
+    return rowNum > 0;
   }
 
   private boolean nextRow() throws IOException {
@@ -440,47 +384,7 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
   }
 
   private void putRowToSparkRow() {
-    for (int i = 0; i < projection.length; i++) {
-      Object originValue = outputValues[i];
-      org.apache.spark.sql.types.DataType t = outputSchema.apply(i).dataType();
-      finalOutputValues[i] = convertToSparkValue(originValue, t);
-    }
-    outputRow = new GenericInternalRow(finalOutputValues);
-  }
-
-  private Object convertToSparkValue(Object originValue, org.apache.spark.sql.types.DataType t) {
-    if (null == originValue) {
-      return null;
-    } else {
-      String value = String.valueOf(originValue);
-      if (t == org.apache.spark.sql.types.DataTypes.BooleanType) {
-        return Boolean.parseBoolean(value);
-      } else if (t == org.apache.spark.sql.types.DataTypes.ByteType) {
-        return Byte.parseByte(value);
-      } else if (t == org.apache.spark.sql.types.DataTypes.ShortType) {
-        return Short.parseShort(value);
-      } else if (t == org.apache.spark.sql.types.DataTypes.IntegerType) {
-        return Integer.parseInt(value);
-      } else if (t == org.apache.spark.sql.types.DataTypes.LongType) {
-        return Long.parseLong(value);
-      } else if (t == org.apache.spark.sql.types.DataTypes.FloatType) {
-        return Float.parseFloat(value);
-      } else if (t == org.apache.spark.sql.types.DataTypes.DoubleType) {
-        return Double.parseDouble(value);
-      } else if (t == org.apache.spark.sql.types.DataTypes.StringType) {
-        return UTF8String.fromString(value);
-      } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
-        return Decimal.fromDecimal(value);
-      } else if (t instanceof CalendarIntervalType) {
-        return CalendarInterval.fromString(value);
-      } else if (t instanceof org.apache.spark.sql.types.DateType) {
-        return Integer.parseInt(value);
-      } else if (t instanceof org.apache.spark.sql.types.TimestampType) {
-        return Long.parseLong(value);
-      } else {
-        return null;
-      }
-    }
+    outputRow = readSupport.readRow(outputValues);
   }
 
   /**
@@ -505,12 +409,16 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
    * while measures are at the end, so we need to adjust the values.
    */
   private void convertToInternalRow(String[] csvLine) {
-    for (int i = 0; i < carbonColumns.length; i++) {
-      internalValues[i] = convertOriginValue2Carbon(
-          csvLine[schema2csvIdx[filterColumn2SchemaIdx[i]]],
-          carbonColumns[filterColumn2SchemaIdx[i]].getDataType());
+    try {
+      for (int i = 0; i < carbonColumns.length; i++) {
+        internalValues[i] = convertOriginValue2Carbon(
+            csvLine[schema2csvIdx[filterColumn2SchemaIdx[i]]],
+            carbonColumns[filterColumn2SchemaIdx[i]].getDataType());
+      }
+    } catch (UnsupportedEncodingException e) {
+      LOGGER.error(e, "Error occurs while convert input to internal row");
+      throw new RuntimeException(e);
     }
-
     internalRow.setValues(internalValues);
   }
 
@@ -524,7 +432,7 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
   }
 
   private Object convertOriginValue2Carbon(String value,
-      org.apache.carbondata.core.metadata.datatype.DataType t) {
+      org.apache.carbondata.core.metadata.datatype.DataType t) throws UnsupportedEncodingException {
     if (null == value) {
       return null;
     } else {
@@ -543,18 +451,10 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
       } else if (t == org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE) {
         return Double.parseDouble(value);
       } else if (t == org.apache.carbondata.core.metadata.datatype.DataTypes.STRING) {
-        UTF8String v = UTF8String.fromString(value);
-        return v.getBytes();
+        return value.getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
       } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(t)) {
-        Decimal d = Decimal.fromDecimal(value);
-        if (d.precision() <= Decimal.MAX_INT_DIGITS()) {
-          return  (int)d.toUnscaledLong();
-        } else if (d.precision() <= Decimal.MAX_LONG_DIGITS()) {
-          return d.toUnscaledLong();
-        } else {
-          final BigInteger integer = d.toJavaBigDecimal().unscaledValue();
-          return integer.toByteArray();
-        }
+        BigDecimal javaDecimal = new BigDecimal(value);
+        return DataTypeUtil.bigDecimalToByte(javaDecimal);
       } else if (t == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
         return Integer.parseInt(value);
       } else if (t == org.apache.carbondata.core.metadata.datatype.DataTypes.TIMESTAMP) {
@@ -573,9 +473,8 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
   @Override
   public T getCurrentValue() throws IOException, InterruptedException {
     if (isVectorReader) {
-      int value = columnarBatch.numValidRows();
       if (inputMetricsStats != null) {
-        inputMetricsStats.incrementRecordRead((long) value);
+        inputMetricsStats.incrementRecordRead(1L);
       }
       return (T) columnarBatch;
     } else {
@@ -600,8 +499,8 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
       if (csvParser != null) {
         csvParser.stopParsing();
       }
-      if (columnarBatch != null) {
-        columnarBatch.close();
+      if (readSupport != null) {
+        readSupport.close();
       }
     } finally {
       reader = null;

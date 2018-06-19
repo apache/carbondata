@@ -18,7 +18,8 @@
 package org.apache.carbondata.core.statusmanager;
 
 /**
- * The data file format supported in carbondata project
+ * The data file format supported in carbondata project.
+ * The fileformat along with its property will be stored in tableinfo
  */
 public enum FileFormat {
 

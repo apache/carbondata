@@ -26,6 +26,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.carbondata.common.annotations.Since;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapChooser;
@@ -67,6 +68,7 @@ import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
+import org.apache.carbondata.hadoop.CsvRecordReader;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
 
@@ -613,28 +615,26 @@ m filterExpression
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext);
+    CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
     if (inputSplit instanceof CarbonMultiBlockSplit
         && ((CarbonMultiBlockSplit) inputSplit).getFileFormat() == FileFormat.EXTERNAL) {
-      return createRecordReaderForExternalFormat(queryModel,
+      return createRecordReaderForExternalFormat(queryModel, readSupport,
           configuration.get(CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY));
     } else if (inputSplit instanceof CarbonInputSplit
         && ((CarbonInputSplit) inputSplit).getFileFormat() == FileFormat.EXTERNAL) {
-      return createRecordReaderForExternalFormat(queryModel,
+      return createRecordReaderForExternalFormat(queryModel, readSupport,
           configuration.get(CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY));
     } else {
-      CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
       return new CarbonRecordReader<T>(queryModel, readSupport);
     }
   }
 
+  @Since("1.4.1")
   private RecordReader<Void, T> createRecordReaderForExternalFormat(QueryModel queryModel,
-      String format) {
+      CarbonReadSupport readSupport, String format) {
     try {
       if ("csv".equals(format)) {
-        RecordReader<Void, T> recordReader = (RecordReader<Void, T>) Class.forName(
-            "org.apache.carbondata.spark.CsvRecordReader").getConstructors()[0]
-            .newInstance(queryModel);
-        return recordReader;
+        return new CsvRecordReader<T>(queryModel, readSupport);
       } else {
         throw new RuntimeException("Unsupported external file format " + format);
       }
