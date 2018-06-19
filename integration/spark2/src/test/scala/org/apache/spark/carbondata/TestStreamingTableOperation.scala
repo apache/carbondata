@@ -123,7 +123,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     createTable(tableName = "agg_table", streaming = true, withBatchLoad = false)
 
-    val csvDataDir = integrationPath + "target/csvdatanew"
+    val csvDataDir = integrationPath + "/spark2/target/csvdatanew"
     generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir)
     generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir, SaveMode.Append)
   }
@@ -1638,7 +1638,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     var rows = sql("SHOW STREAMS").collect()
     assertResult(0)(rows.length)
 
-    val csvDataDir = integrationPath + "/target/csvdata"
+    val csvDataDir = integrationPath + "/spark2/target/csvdata"
     // streaming ingest 10 rows
     generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
@@ -1745,7 +1745,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   test("StreamSQL: create stream without interval ") {
     sql("DROP TABLE IF EXISTS source")
     sql("DROP TABLE IF EXISTS sink")
-    val csvDataDir = integrationPath + "/target/csvdata"
+    val csvDataDir = integrationPath + "/spark2/target/csvdata"
     // streaming ingest 10 rows
     generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
