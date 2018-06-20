@@ -31,7 +31,9 @@ import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapProvider}
+import org.apache.carbondata.events._
 
 /**
  * Below command class will be used to create datamap on table
@@ -108,8 +110,18 @@ case class CarbonCreateDataMapCommand(
               "column '%s' already has datamap created", column.getColName))
           }
         }
+        val operationContext: OperationContext = new OperationContext()
+        val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
+        val createDataMapPreExecutionEvent: CreateDataMapPreExecutionEvent =
+          new CreateDataMapPreExecutionEvent(sparkSession, systemFolderLocation)
+        OperationListenerBus.getInstance().fireEvent(createDataMapPreExecutionEvent,
+          operationContext)
         dataMapProvider.initMeta(queryString.orNull)
         DataMapStatusManager.disableDataMap(dataMapName)
+        val createDataMapPostExecutionEvent: CreateDataMapPostExecutionEvent =
+          new CreateDataMapPostExecutionEvent(sparkSession, systemFolderLocation)
+        OperationListenerBus.getInstance().fireEvent(createDataMapPostExecutionEvent,
+          operationContext)
       case _ =>
         if (deferredRebuild) {
           throw new MalformedDataMapCommandException(
@@ -128,7 +140,17 @@ case class CarbonCreateDataMapCommand(
       if (mainTable != null && !deferredRebuild) {
         dataMapProvider.rebuild()
         if (dataMapSchema.isIndexDataMap) {
+          val operationContext: OperationContext = new OperationContext()
+          val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
+          val updateDataMapPreExecutionEvent: UpdateDataMapPreExecutionEvent =
+            new UpdateDataMapPreExecutionEvent(sparkSession, systemFolderLocation)
+          OperationListenerBus.getInstance().fireEvent(updateDataMapPreExecutionEvent,
+            operationContext)
           DataMapStatusManager.enableDataMap(dataMapName)
+          val updateDataMapPostExecutionEvent: UpdateDataMapPostExecutionEvent =
+            new UpdateDataMapPostExecutionEvent(sparkSession, systemFolderLocation)
+          OperationListenerBus.getInstance().fireEvent(updateDataMapPostExecutionEvent,
+            operationContext)
         }
       }
     }
