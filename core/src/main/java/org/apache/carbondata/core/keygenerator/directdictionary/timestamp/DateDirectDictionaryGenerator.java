@@ -71,7 +71,13 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     MAX_VALUE = maxValue;
   }
   public DateDirectDictionaryGenerator(String dateFormat) {
-    this.dateFormat = dateFormat;
+    if (dateFormat.equalsIgnoreCase("yyyy/MM/dd")) {
+      this.dateFormat = "yyyy/MM/dd";
+    } else if (dateFormat.equalsIgnoreCase("yyyy-MM-dd")) {
+      this.dateFormat = "yyyy-MM-dd";
+    } else {
+      this.dateFormat = dateFormat;
+    }
     initialize();
   }
 
