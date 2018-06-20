@@ -448,11 +448,18 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
         super.readColumnChunks(rawBlockletColumnChunks);
       }
       int chunkIndex = dimensionChunkIndex[0];
-      RawColumnChunkUtil.readDimensionRawColumnChunk(rawBlockletColumnChunks,
-          dimColEvaluatorInfoList.get(0), chunkIndex);
+      if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex]) {
+        rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex] =
+            rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
+                rawBlockletColumnChunks.getFileReader(), chunkIndex);
+      }
     } else if (isMeasurePresentInCurrentBlock[0]) {
       int chunkIndex = measureChunkIndex[0];
-      RawColumnChunkUtil.readMeasureRawColumnChunk(rawBlockletColumnChunks, chunkIndex);
+      if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
+        rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex] =
+            rawBlockletColumnChunks.getDataBlock().readMeasureChunk(
+                rawBlockletColumnChunks.getFileReader(), chunkIndex);
+      }
     }
   }
 }

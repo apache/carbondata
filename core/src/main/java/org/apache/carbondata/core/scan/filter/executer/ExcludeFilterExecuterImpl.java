@@ -433,11 +433,21 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   @Override
   public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
     if (isDimensionPresentInCurrentBlock) {
-      RawColumnChunkUtil.readDimensionRawColumnChunk(rawBlockletColumnChunks, dimColEvaluatorInfo,
-          segmentProperties);
+      int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
+          .get(dimColEvaluatorInfo.getColumnIndex());
+      if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex]) {
+        rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex] =
+            rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
+                rawBlockletColumnChunks.getFileReader(), chunkIndex);
+      }
     } else if (isMeasurePresentInCurrentBlock) {
-      RawColumnChunkUtil.readMeasureRawColumnChunk(rawBlockletColumnChunks, msrColumnEvaluatorInfo,
-          segmentProperties);
+      int chunkIndex = segmentProperties.getMeasuresOrdinalToChunkMapping()
+          .get(msrColumnEvaluatorInfo.getColumnIndex());
+      if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
+        rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex] =
+            rawBlockletColumnChunks.getDataBlock().readMeasureChunk(
+                rawBlockletColumnChunks.getFileReader(), chunkIndex);
+      }
     }
   }
 }

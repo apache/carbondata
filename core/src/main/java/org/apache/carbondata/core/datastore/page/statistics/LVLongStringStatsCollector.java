@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.page.statistics;
 
+import org.apache.carbondata.core.util.ByteUtil;
+
 /**
  * This class is for the columns with varchar data type,
  * a string type which can hold more than 32000 characters
@@ -39,9 +41,8 @@ public class LVLongStringStatsCollector extends LVStringStatsCollector {
       assert (value[0] == 0 && value[1] == 0);
       actualValue = new byte[0];
     } else {
-      // todo: what does this mean?
-      // int length = (value[0] << 8) + (value[1] & 0xff);
-      // assert (length > 0);
+      int length = ByteUtil.toInt(value, 0);
+      assert (length > 0);
       actualValue = new byte[value.length - 4];
       System.arraycopy(value, 4, actualValue, 0, actualValue.length);
     }

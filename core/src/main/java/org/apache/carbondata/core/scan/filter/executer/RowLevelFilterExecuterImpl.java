@@ -635,9 +635,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
       if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
-        if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[dimensionChunkIndex[i]]) {
-          RawColumnChunkUtil.readDimensionRawColumnChunk(rawBlockletColumnChunks,
-              dimColumnEvaluatorInfo, dimensionChunkIndex[i]);
+        if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[dimensionChunkIndex[i]])
+        {
+          rawBlockletColumnChunks.getDimensionRawColumnChunks()[dimensionChunkIndex[i]] =
+              rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
+                  rawBlockletColumnChunks.getFileReader(), dimensionChunkIndex[i]);
         }
       } else {
         GenericQueryType complexType = complexDimensionInfoMap.get(dimensionChunkIndex[i]);
@@ -646,7 +648,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
 
     for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
-      RawColumnChunkUtil.readMeasureRawColumnChunk(rawBlockletColumnChunks, measureChunkIndex[0]);
+      if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]]) {
+        rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]] =
+            rawBlockletColumnChunks.getDataBlock()
+              .readMeasureChunk(rawBlockletColumnChunks.getFileReader(), measureChunkIndex[0]);
+      }
     }
   }
 }

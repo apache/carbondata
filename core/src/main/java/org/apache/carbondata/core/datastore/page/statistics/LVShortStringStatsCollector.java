@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.page.statistics;
 
+import org.apache.carbondata.core.util.ByteUtil;
+
 /**
  * This class is for the columns with string data type which hold less than 32000 characters
  */
@@ -38,7 +40,7 @@ public class LVShortStringStatsCollector extends LVStringStatsCollector {
       assert (value[0] == 0 && value[1] == 0);
       actualValue = new byte[0];
     } else {
-      int length = (value[0] << 8) + (value[1] & 0xff);
+      int length = ByteUtil.toShort(value, 0);
       assert (length > 0);
       actualValue = new byte[value.length - 2];
       System.arraycopy(value, 2, actualValue, 0, actualValue.length);

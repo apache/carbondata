@@ -670,8 +670,13 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
   @Override
   public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
     if (isDimensionPresentInCurrentBlock) {
-      RawColumnChunkUtil.readDimensionRawColumnChunk(rawBlockletColumnChunks,
-          dimColEvaluatorInfo, segmentProperties);
+      int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
+          .get(dimColEvaluatorInfo.getColumnIndex());
+      if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex]) {
+        rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex] =
+            rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
+                rawBlockletColumnChunks.getFileReader(), chunkIndex);
+      }
     }
   }
 }
