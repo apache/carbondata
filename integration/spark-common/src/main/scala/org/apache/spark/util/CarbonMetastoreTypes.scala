@@ -25,6 +25,7 @@ import org.apache.spark.sql.util.CarbonException
 object CarbonMetastoreTypes extends RegexParsers {
   protected lazy val primitiveType: Parser[DataType] =
     "string" ^^^ StringType |
+    "varchar" ^^^ StringType |
     "float" ^^^ FloatType |
     "int" ^^^ IntegerType |
     "tinyint" ^^^ ShortType |
