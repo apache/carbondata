@@ -24,8 +24,10 @@ import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.presto.server.PrestoServer
 
 
@@ -37,6 +39,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
   private val rootPath = new File(this.getClass.getResource("/").getPath
                                   + "../../../..").getCanonicalPath
   private val storePath = s"$rootPath/integration/presto/target/store"
+  private val systemPath = s"$rootPath/integration/presto/target/system"
 
 
   // Table schema:
@@ -68,6 +71,8 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     import org.apache.carbondata.presto.util.CarbonDataStoreCreator
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
+      systemPath)
     CarbonDataStoreCreator
       .createCarbonStore(storePath,
         s"$rootPath/integration/presto/src/test/resources/alldatatype.csv")
