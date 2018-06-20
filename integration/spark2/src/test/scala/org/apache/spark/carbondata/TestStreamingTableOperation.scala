@@ -1640,7 +1640,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     var rows = sql("SHOW STREAMS").collect()
     assertResult(0)(rows.length)
 
-    val csvDataDir = integrationPath + "/spark2/target/streamsql"
+    val csvDataDir = integrationPath + "/spark2/target/streamSql"
     // streaming ingest 10 rows
     generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
@@ -1704,7 +1704,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         |  FROM source
         |  WHERE id % 2 = 1
       """.stripMargin).show(false)
-    Thread.sleep(2000)
+    Thread.sleep(200)
     sql("select * from sink").show
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append)
