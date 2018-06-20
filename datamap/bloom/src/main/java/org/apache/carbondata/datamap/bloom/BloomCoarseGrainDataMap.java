@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -85,7 +86,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
       List<PartitionSpec> partitions) {
-    List<Blocklet> hitBlocklets = new ArrayList<Blocklet>();
+    Set<Blocklet> hitBlocklets = new HashSet<>();
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
       return null;
@@ -111,7 +112,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         }
       }
     }
-    return hitBlocklets;
+    return new ArrayList<>(hitBlocklets);
   }
 
   private byte[] convertValueToBytes(DataType dataType, Object value) {
