@@ -134,7 +134,7 @@ object DeleteExecution {
                        groupedRows.toIterator,
                        timestamp,
                        rowCountDetailsVO,
-                       segmentFile)
+                       carbonTable.isHivePartitionTable)
           }
           result
         }
@@ -222,7 +222,7 @@ object DeleteExecution {
         iter: Iterator[Row],
         timestamp: String,
         rowCountDetailsVO: RowCountDetailsVO,
-        segmentFile: String
+        isPartitionTable: Boolean
     ): Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))] = {
 
       val result = new DeleteDelataResultImpl()
@@ -258,7 +258,7 @@ object DeleteExecution {
             countOfRows = countOfRows + 1
           }
 
-          val blockPath = CarbonUpdateUtil.getTableBlockPath(TID, tablePath, segmentFile != null)
+          val blockPath = CarbonUpdateUtil.getTableBlockPath(TID, tablePath, isPartitionTable)
           val completeBlockName = CarbonTablePath
             .addDataPartPrefix(CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.BLOCK_ID) +
                                CarbonCommonConstants.FACT_FILE_EXT)
