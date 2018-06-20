@@ -368,12 +368,12 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("alter table agg_table2 compact 'streaming'")
     // Data should be loaded into aggregate table as hand-off is fired
     checkAnswer(sql("select name, sum(salary) from agg_table2 group by name"),
-        Seq(
-          Row("name_10", 400000.0),
-          Row("name_14", 560000.0),
-          Row("name_12", 480000.0),
-          Row("name_11", 440000.0),
-          Row("name_13", 520000.0)))
+      Seq(
+        Row("name_10", 400000.0),
+        Row("name_14", 560000.0),
+        Row("name_12", 480000.0),
+        Row("name_11", 440000.0),
+        Row("name_13", 520000.0)))
     checkAnswer(sql("select * from agg_table2_p1"),
       Seq(
         Row("name_10", 200000.0),
@@ -1640,7 +1640,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     var rows = sql("SHOW STREAMS").collect()
     assertResult(0)(rows.length)
 
-    val csvDataDir = integrationPath + "/spark2/target/streamsql"
+    val csvDataDir = integrationPath + "/spark2/target/streamSql"
     // streaming ingest 10 rows
     generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
 
@@ -1704,7 +1704,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         |  FROM source
         |  WHERE id % 2 = 1
       """.stripMargin).show(false)
-    Thread.sleep(2000)
+    Thread.sleep(200)
     sql("select * from sink").show
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append)
@@ -1824,17 +1824,17 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val ex = intercept[AnalysisException] {
-    sql(
-      """
-        |CREATE STREAM stream123 ON TABLE sink
-        |STMPROPERTIES(
-        |  'trigger'='ProcessingTime',
-        |  'interval'='1 seconds')
-        |AS
-        |  SELECT *
-        |  FROM source
-        |  WHERE id % 2 = 1
-      """.stripMargin).show(false)
+      sql(
+        """
+          |CREATE STREAM stream123 ON TABLE sink
+          |STMPROPERTIES(
+          |  'trigger'='ProcessingTime',
+          |  'interval'='1 seconds')
+          |AS
+          |  SELECT *
+          |  FROM source
+          |  WHERE id % 2 = 1
+        """.stripMargin).show(false)
     }
     sql("DROP TABLE IF EXISTS sink")
   }
