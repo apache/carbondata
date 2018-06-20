@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
@@ -42,6 +43,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.TaskMetricsMap
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
@@ -67,13 +69,20 @@ object IndexDataMapRebuildRDD {
     val validAndInvalidSegments = segmentStatusManager.getValidAndInvalidSegments()
     val validSegments = validAndInvalidSegments.getValidSegments
     val indexedCarbonColumns = carbonTable.getIndexedColumns(schema)
-
+    val operationContext = new OperationContext()
+    val buildDataMapPreExecutionEvent = new BuildDataMapPreExecutionEvent(sparkSession,
+      tableIdentifier,
+      mutable.Seq[String](schema.getDataMapName))
+    OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent, operationContext)
     // loop all segments to rebuild DataMap
     validSegments.asScala.foreach { segment =>
       // if lucene datamap folder is exists, not require to build lucene datamap again
       refreshOneSegment(sparkSession, carbonTable, schema.getDataMapName,
         indexedCarbonColumns, segment.getSegmentNo);
     }
+    val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(sparkSession,
+      tableIdentifier)
+    OperationListenerBus.getInstance().fireEvent(buildDataMapPostExecutionEvent, operationContext)
   }
 
   private def refreshOneSegment(
