@@ -120,8 +120,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
 
 
   def needToConvertToLowerCase(key: String): Boolean = {
-    val noConvertList = Array("LIST_INFO", "RANGE_INFO")
-    !noConvertList.exists(x => x.equalsIgnoreCase(key));
+    val noConvertList = Array("LIST_INFO", "RANGE_INFO", "PATH")
+    !noConvertList.exists(x => x.equalsIgnoreCase(key))
   }
 
   /**
