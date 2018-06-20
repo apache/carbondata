@@ -86,6 +86,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       "SORT_COLUMNS" -> options.sortColumns,
       "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
       "DICTIONARY_EXCLUDE" -> options.dictionaryExclude,
+      "LONG_STRING_COLUMNS" -> options.longStringColumns,
       "TABLE_BLOCKSIZE" -> options.tableBlockSize,
       "STREAMING" -> Option(options.isStreaming.toString)
     ).filter(_._2.isDefined)
