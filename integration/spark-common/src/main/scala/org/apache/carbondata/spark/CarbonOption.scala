@@ -48,6 +48,8 @@ class CarbonOption(options: Map[String, String]) {
 
   def dictionaryExclude: Option[String] = options.get("dictionary_exclude")
 
+  def longStringColumns: Option[String] = options.get("long_string_columns")
+
   def tableBlockSize: Option[String] = options.get("table_blocksize")
 
   def bucketNumber: Int = options.getOrElse("bucketnumber", "0").toInt

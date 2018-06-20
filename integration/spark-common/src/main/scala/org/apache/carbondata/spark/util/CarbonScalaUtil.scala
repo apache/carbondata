@@ -126,9 +126,10 @@ object CarbonScalaUtil {
       delimiterLevel2: String,
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
+      isVarcharType: Boolean = false,
       level: Int = 1): String = {
     FieldConverter.objectToString(value, serializationNullFormat, delimiterLevel1,
-      delimiterLevel2, timeStampFormat, dateFormat, level)
+      delimiterLevel2, timeStampFormat, dateFormat, isVarcharType = isVarcharType, level)
   }
 
   /**
