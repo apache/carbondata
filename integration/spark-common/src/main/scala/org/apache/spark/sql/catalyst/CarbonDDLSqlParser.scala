@@ -356,20 +356,23 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         // validate all the local dictionary exclude columns
         validateLocalDictionaryColumns(fields, tableProperties, localDictExcludeColumns)
       }
+
       // validate if both local dictionary include and exclude contains same column
       if (isLocalDictIncludeDefined && isLocalDictExcludeDefined) {
         val localDictIncludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+          .split(",").map(_.trim)
         val localDictExcludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
-        if (List(localDictIncludeCols, localDictExcludeCols).mkString(",").split(",")
-              .distinct.length !=
-            List(localDictIncludeCols, localDictExcludeCols).mkString(",").split(",")
-              .length) {
-          val duplicateColumns = localDictIncludeCols.diff(localDictExcludeCols.distinct).distinct
-          val errMsg =
-            "Column ambiguity as duplicate column(s):  " +
-            duplicateColumns.mkString("(", ",", ")") + "are present in LOCAL_DICTIONARY_INCLUDE " +
-            "and LOCAL_DICTIONARY_EXCLUDE. Duplicate columns are not allowed."
-          throw new MalformedCarbonCommandException(errMsg)
+          .split(",").map(_.trim)
+        localDictIncludeCols.foreach { distCol =>
+          if (localDictExcludeCols.exists(x => x.equalsIgnoreCase(distCol.trim))) {
+            val duplicateColumns = (localDictIncludeCols ++ localDictExcludeColumns)
+              .diff((localDictIncludeCols ++ localDictExcludeColumns).distinct).distinct
+            val errMsg = "Column ambiguity as duplicate column(s):" +
+                         duplicateColumns.mkString(",") +
+                         " is present in LOCAL_DICTIONARY_INCLUDE " +
+                         "and LOCAL_DICTIONARY_EXCLUDE. Duplicate columns are not allowed."
+            throw new MalformedCarbonCommandException(errMsg)
+          }
         }
       }
     }
@@ -405,6 +408,26 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
+   * This method validates all the child columns of complex column recursively to check whether
+   * any of the child column is of string dataType or not
+   *
+   * @param field
+   */
+  def validateChildColumnsRecursively(field: Field): Boolean = {
+    if (field.children.isDefined && null != field.children.get) {
+      field.children.get.exists { childColumn =>
+        if (childColumn.children.isDefined && null != childColumn.children.get) {
+          validateChildColumnsRecursively(childColumn)
+        } else {
+          childColumn.dataType.get.equalsIgnoreCase("string")
+        }
+      }
+    } else {
+      false
+    }
+  }
+
+  /**
    * This method validates the local dictionary configured columns
    *
    * @param fields
@@ -416,10 +439,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // check if the duplicate columns are specified in table schema
     if (localDictColumns.distinct.lengthCompare(localDictColumns.size) != 0) {
-      val duplicateColumns = localDictColumns.diff(localDictColumns.distinct).distinct
+      val duplicateColumns = (dictIncludeColumns ++ localDictColumns)
+        .diff((dictIncludeColumns ++ localDictColumns).distinct).distinct
       val errMsg =
         "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE contains Duplicate Columns: " +
-        duplicateColumns.mkString("(", ",", ")") +
+        duplicateColumns.mkString(",") +
         ". Please check create table statement."
       throw new MalformedCarbonCommandException(errMsg)
     }
@@ -448,6 +472,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         throw new MalformedCarbonCommandException(errormsg)
       }
     }
+
+    // Validate whether any of the child columns of complex dataType column is a string column
+    localDictColumns.foreach { dictColm =>
+      if (fields
+        .exists(x => x.column.equalsIgnoreCase(dictColm) && x.children.isDefined &&
+                     null != x.children.get &&
+                     !validateChildColumnsRecursively(x))) {
+        val errMsg = "None of the child columns specified in the complex dataType column(s) in " +
+                     "local_dictionary_include are not of string dataType."
+        throw new MalformedCarbonCommandException(errMsg)
+      }
+    }
+
     // check if the same column is present in both dictionary include and local dictionary columns
     // configuration
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
@@ -455,9 +492,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
       localDictColumns.foreach { distCol =>
         if (dictIncludeColumns.exists(x => x.equalsIgnoreCase(distCol.trim))) {
-          val duplicateColumns = dictIncludeColumns.diff(localDictColumns.distinct).distinct
+          val duplicateColumns = (dictIncludeColumns ++ localDictColumns)
+            .diff((dictIncludeColumns ++ localDictColumns).distinct).distinct
           val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
-                         duplicateColumns.mkString("(", ",", ")") +
+                         duplicateColumns.mkString(",") +
                          " specified in Dictionary include. Local Dictionary will not be " +
                          "generated for Dictionary include columns. Please check create table " +
                          "statement."
