@@ -738,6 +738,9 @@ class TableNewProcessor(cm: TableModel) {
     tableInfo.setFactTable(tableSchema)
     val format = cm.tableProperties.get(CarbonCommonConstants.FORMAT)
     if (format.isDefined) {
+      if (!format.get.equalsIgnoreCase("csv")) {
+        CarbonException.analysisException(s"Currently we only support csv as external file format")
+      }
       tableInfo.setFormat(format.get)
       val formatProperties = cm.tableProperties.filter(pair =>
         pair._1.startsWith(s"${format.get.toLowerCase}.")).asJava

@@ -134,6 +134,26 @@ class CsvBasedCarbonTableSuite extends QueryTest
       CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
   }
 
+  test("test csv based carbon table: only support csv now") {
+    val expectedException = intercept[Exception] {
+      sql(
+        s"""
+           | CREATE TABLE $csvCarbonTable(empname String, empno smallint, designation string,
+           | deptname String, projectcode int, projectjoindate String,projectenddate String,
+           | doj String, workgroupcategory int, workgroupcategoryname String,deptno int,
+           | attendance String, utilization String,salary String)
+           | STORED BY 'carbondata'
+           | TBLPROPERTIES(
+           | 'format'='parquet',
+           | 'csv.header'='eMPno, empname,designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, SALARY'
+           | )
+       """.stripMargin
+      )
+    }
+
+    assert(expectedException.getMessage.contains("Currently we only support csv as external file format"))
+  }
+
   test("test csv based carbon table: the sequence of header does not match schema") {
     // create csv based carbon table, the sequence in schema is not the same in csv.header
     sql(

@@ -175,8 +175,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment;
-    if (carbonTable.getTableInfo().getFormat().equals("")
-        || carbonTable.getTableInfo().getFormat().equals("carbondata")) {
+    if (carbonTable.getTableInfo().getFormat().equals("carbondata")) {
       dataBlocksOfSegment = getDataBlocksOfSegment(job, carbonTable, filterResolver,
           matchedPartitions, validSegments, partitionInfo, oldPartitionIdList);
     } else {

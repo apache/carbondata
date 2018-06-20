@@ -440,7 +440,7 @@ class CarbonScanRDD[T: ClassTag](
           streamReader.setQueryModel(model)
           streamReader
         case FileFormat.EXTERNAL =>
-          assert(storageFormat.equals("csv"),
+          require(storageFormat.equals("csv"),
             "Currently we only support csv as external file format")
           attemptContext.getConfiguration.set(
             CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY, storageFormat)

@@ -26,7 +26,6 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.carbondata.common.annotations.Since;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapChooser;
@@ -629,7 +628,6 @@ m filterExpression
     }
   }
 
-  @Since("1.4.1")
   private RecordReader<Void, T> createRecordReaderForExternalFormat(QueryModel queryModel,
       CarbonReadSupport readSupport, String format) {
     try {

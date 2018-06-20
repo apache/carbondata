@@ -449,8 +449,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    */
   protected lazy val addSegment: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~
-    ADD ~ SEGMENT ~ LOCATION ~ stringLit <~ opt(";") ^^ {
-      case dbName ~ tableName ~ add ~ segment ~ location ~ filePath =>
+    (ADD ~> SEGMENT ~> LOCATION ~> stringLit) <~ opt(";") ^^ {
+      case dbName ~ tableName ~ filePath =>
         CarbonAddSegmentCommand(convertDbNameToLowerCase(dbName), tableName, filePath)
     }
 

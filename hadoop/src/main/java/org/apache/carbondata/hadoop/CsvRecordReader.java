@@ -363,7 +363,7 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
     }
 
     if (null == filter) {
-      putRowToSparkRow();
+      outputRow = readSupport.readRow(outputValues);
       return true;
     } else {
       try {
@@ -371,7 +371,7 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
         do {
           scanMore = !filter.applyFilter(internalRow, carbonTable.getDimensionOrdinalMax());
           if (!scanMore) {
-            putRowToSparkRow();
+            outputRow = readSupport.readRow(outputValues);
             return true;
           }
         } while (readRowFromFile());
@@ -381,10 +381,6 @@ public class CsvRecordReader<T> extends AbstractRecordReader<T> {
         throw new IOException("Failed to filter row in CarbonCsvRecordReader", e);
       }
     }
-  }
-
-  private void putRowToSparkRow() {
-    outputRow = readSupport.readRow(outputValues);
   }
 
   /**
