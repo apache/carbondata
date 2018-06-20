@@ -21,9 +21,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.sdk.file.Field;
 import org.apache.carbondata.sdk.file.Schema;
 import org.apache.carbondata.sdk.file.TestUtil;
@@ -36,6 +38,15 @@ import org.junit.Test;
 public class LocalCarbonStoreTest {
   @Before
   public void cleanFile() {
+    String path = null;
+    try {
+      path = new File(LocalCarbonStoreTest.class.getResource("/").getPath() + "../")
+          .getCanonicalPath().replaceAll("\\\\", "/");
+    } catch (IOException e) {
+      assert (false);
+    }
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path);
     assert (TestUtil.cleanMdtFile());
   }
 
