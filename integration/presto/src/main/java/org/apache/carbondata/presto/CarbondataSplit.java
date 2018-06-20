@@ -18,6 +18,8 @@
 package org.apache.carbondata.presto;
 
 import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
+import org.apache.carbondata.presto.impl.CarbonLocalMultiBlockSplit;
+
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.HostAddress;
@@ -36,21 +38,27 @@ public class CarbondataSplit implements ConnectorSplit {
   private final String connectorId;
   private final SchemaTableName schemaTableName;
   private final TupleDomain<ColumnHandle> constraints;
-  private final CarbonLocalInputSplit localInputSplit;
+  private final CarbonLocalMultiBlockSplit localInputSplit;
   private final List<CarbondataColumnConstraint> rebuildConstraints;
   private final ImmutableList<HostAddress> addresses;
+  private final String queryId;
+  private final long index;
 
   @JsonCreator public CarbondataSplit(@JsonProperty("connectorId") String connectorId,
       @JsonProperty("schemaTableName") SchemaTableName schemaTableName,
       @JsonProperty("constraints") TupleDomain<ColumnHandle> constraints,
-      @JsonProperty("localInputSplit") CarbonLocalInputSplit localInputSplit,
-      @JsonProperty("rebuildConstraints") List<CarbondataColumnConstraint> rebuildConstraints) {
+      @JsonProperty("localInputSplit") CarbonLocalMultiBlockSplit localInputSplit,
+      @JsonProperty("rebuildConstraints") List<CarbondataColumnConstraint> rebuildConstraints,
+      @JsonProperty("queryId") String queryId,
+      @JsonProperty("index") long index) {
     this.connectorId = requireNonNull(connectorId, "connectorId is null");
     this.schemaTableName = requireNonNull(schemaTableName, "schemaTable is null");
     this.constraints = requireNonNull(constraints, "constraints is null");
     this.localInputSplit = requireNonNull(localInputSplit, "localInputSplit is null");
     this.rebuildConstraints = requireNonNull(rebuildConstraints, "rebuildConstraints is null");
     this.addresses = ImmutableList.of();
+    this.queryId = queryId;
+    this.index = index;
   }
 
   @JsonProperty public String getConnectorId() {
@@ -65,7 +73,7 @@ public class CarbondataSplit implements ConnectorSplit {
     return constraints;
   }
 
-  @JsonProperty public CarbonLocalInputSplit getLocalInputSplit() {
+  @JsonProperty public CarbonLocalMultiBlockSplit getLocalInputSplit() {
     return localInputSplit;
   }
 
@@ -83,6 +91,14 @@ public class CarbondataSplit implements ConnectorSplit {
 
   @Override public Object getInfo() {
     return this;
+  }
+
+  @JsonProperty public String getQueryId() {
+    return queryId;
+  }
+
+  @JsonProperty public long getIndex() {
+    return index;
   }
 }
 
