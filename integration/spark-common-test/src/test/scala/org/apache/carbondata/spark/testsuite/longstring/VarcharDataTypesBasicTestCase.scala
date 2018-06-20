@@ -74,6 +74,63 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     sql(s"drop table if exists $longStringTable")
   }
 
+  test("long string columns cannot be dictionary include") {
+    val exceptionCaught = intercept[Exception] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING, note STRING
+           | ) STORED BY 'carbondata'
+           | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note', 'dictionary_include'='address')
+           |""".
+          stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("DICTIONARY_INCLUDE is unsupported for long string datatype column: address"))
+  }
+
+  test("long string columns cannot be dictionay exclude") {
+    val exceptionCaught = intercept[Exception] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING, note STRING
+           | ) STORED BY 'carbondata'
+           | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note', 'dictionary_exclude'='address')
+           |""".
+          stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("DICTIONARY_EXCLUDE is unsupported for long string datatype column: address"))
+  }
+
+  test("long string columns cannot be sort_columns") {
+    val exceptionCaught = intercept[Exception] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING, note STRING
+           | ) STORED BY 'carbondata'
+           | TBLPROPERTIES('LONG_STRING_COLUMNS'='name, note', 'SORT_COLUMNS'='name, address')
+           |""".
+          stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("sort_columns is unsupported for long string datatype column: name"))
+  }
+
+  test("long string columns can only be string columns") {
+    val exceptionCaught = intercept[Exception] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING, note STRING
+           | ) STORED BY 'carbondata'
+           | TBLPROPERTIES('LONG_STRING_COLUMNS'='id, note')
+           |""".
+          stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("long_string_columns: id"))
+    assert(exceptionCaught.getMessage.contains("its data type is not string"))
+  }
+
   private def prepareTable(): Unit = {
     sql(
       s"""
