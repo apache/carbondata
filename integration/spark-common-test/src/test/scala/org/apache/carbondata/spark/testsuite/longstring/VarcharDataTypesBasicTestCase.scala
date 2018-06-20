@@ -20,8 +20,9 @@ package org.apache.carbondata.spark.testsuite.longstring
 import java.io.{File, PrintWriter}
 
 import org.apache.commons.lang3.RandomStringUtils
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{DataFrame, Row, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -36,6 +37,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   private val inputFile_2g_column_page = s"$inputDir$fileName_2g_column_page"
   private val lineNum = 1000
   private var content: Content = _
+  private var longStringDF: DataFrame = _
   private var originMemorySize = CarbonProperties.getInstance().getProperty(
     CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
     CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT)
@@ -255,6 +257,34 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
        """.stripMargin)
     }
     // since after exception wrapper, we cannot get the root cause directly
+  }
+
+  private def prepareDF(): Unit = {
+    val schema = StructType(
+      StructField("id", IntegerType, nullable = true) ::
+      StructField("name", StringType, nullable = true) ::
+      StructField("description", StringType, nullable = true) ::
+      StructField("address", StringType, nullable = true) ::
+      StructField("note", StringType, nullable = true) :: Nil
+    )
+    longStringDF = sqlContext.sparkSession.read
+      .schema(schema)
+      .csv(inputFile)
+  }
+
+  test("write from dataframe with long string datatype") {
+    prepareDF()
+    // write spark dataframe to carbondata with `long_string_columns` property
+    longStringDF.write
+      .format("carbondata")
+      .option("tableName", longStringTable)
+      .option("single_pass", "false")
+      .option("sort_columns", "name")
+      .option("long_string_columns", "description, note")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    checkQuery()
   }
 
   // will create 2 long string columns
