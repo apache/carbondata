@@ -359,16 +359,16 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     noDictionaryColMapping = new boolean[dimensions.size()];
     isVarcharDimMapping = new boolean[dimensions.size()];
     int i = 0;
-    int j = 0;
     for (CarbonDimension dimension : dimensions) {
       if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
         i++;
         continue;
       }
-      noDictionaryColMapping[i++] = true;
+      noDictionaryColMapping[i] = true;
       if (dimension.getColumnSchema().getDataType() == DataTypes.VARCHAR) {
-        isVarcharDimMapping[j++] = true;
+        isVarcharDimMapping[i] = true;
       }
+      i++;
       noDictionaryCount++;
     }
     dimensionColumnCount = dimensions.size();
