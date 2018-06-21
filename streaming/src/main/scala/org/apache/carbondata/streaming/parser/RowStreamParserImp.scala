@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.streaming.parser
 
-import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 
 import org.apache.hadoop.conf.Configuration
