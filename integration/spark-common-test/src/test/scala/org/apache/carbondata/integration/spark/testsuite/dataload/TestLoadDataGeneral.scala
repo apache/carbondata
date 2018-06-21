@@ -259,6 +259,22 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
       CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS,
       originStatus)
   }
+
+  test("test data loading with page size less than 32000") {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.BLOCKLET_SIZE, "16000")
+
+    val testData = s"$resourcesPath/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
+    checkAnswer(
+      sql("SELECT COUNT(*) FROM loadtest"),
+      Seq(Row(6))
+    )
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+      CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+  }
+
   override def afterEach {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")

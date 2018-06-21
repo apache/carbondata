@@ -371,8 +371,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.pageSize = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
+    // support less than 32000 rows in one page, because we support super long string,
+    // if it is long enough, a clomun page with 32000 rows will exceed 2GB
     if (version == ColumnarFormatVersion.V3) {
-      this.pageSize = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+      this.pageSize =
+          pageSize < CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT ?
+              pageSize :
+              CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
     }
     LOGGER.info("Number of rows per column blocklet " + pageSize);
     dataRows = new ArrayList<>(this.pageSize);
