@@ -788,7 +788,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
               val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
                              " data type column: " + dictExcludeCol
               throw new MalformedCarbonCommandException(errorMsg)
-            } else if (varcharCols.contains(dictExcludeCol)) {
+            } else if (varcharCols.exists(x => x.equalsIgnoreCase(dictExcludeCol))) {
               throw new MalformedCarbonCommandException(
                 "DICTIONARY_EXCLUDE is unsupported for long string datatype column: " +
                 dictExcludeCol)
