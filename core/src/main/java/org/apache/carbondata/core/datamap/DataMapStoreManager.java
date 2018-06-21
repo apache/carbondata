@@ -407,7 +407,7 @@ public final class DataMapStoreManager {
       try {
         carbonTable = CarbonTable
             .buildFromTablePath(identifier.getTableName(), identifier.getDatabaseName(),
-                identifier.getTablePath());
+                identifier.getTablePath(), identifier.getCarbonTableIdentifier().getTableId());
       } catch (IOException e) {
         LOGGER.error("failed to get carbon table from table Path");
         // ignoring exception

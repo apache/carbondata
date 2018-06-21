@@ -154,7 +154,8 @@ public class CarbonIndexFileMergeWriter {
     String path = CarbonTablePath.getSegmentFilesLocation(table.getTablePath())
         + CarbonCommonConstants.FILE_SEPARATOR + newSegmentFileName;
     SegmentFileStore.writeSegmentFile(sfs.getSegmentFile(), path);
-    SegmentFileStore.updateSegmentFile(table.getTablePath(), segmentId, newSegmentFileName);
+    SegmentFileStore.updateSegmentFile(table.getTablePath(), segmentId, newSegmentFileName,
+        table.getCarbonTableIdentifier().getTableId());
 
     for (CarbonFile file : indexFiles) {
       file.delete();

@@ -734,6 +734,13 @@ public final class CarbonCommonConstants {
   public static final String LOCK_TYPE = "carbon.lock.type";
 
   /**
+   * Specifies the path where the lock files have to be created.
+   * By default, lock files are created in table path.
+   */
+  @CarbonProperty
+  public static final String LOCK_PATH = "carbon.lock.path";
+
+  /**
    * ZOOKEEPER_ENABLE_DEFAULT the default value for zookeeper will be true for carbon
    */
   public static final String LOCK_TYPE_DEFAULT = "LOCALLOCK";

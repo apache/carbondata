@@ -27,6 +27,5 @@ public interface FileTypeInterface {
   FileReader getFileHolder(FileFactory.FileType fileType);
   CarbonFile getCarbonFile(String path, FileFactory.FileType fileType);
   CarbonFile getCarbonFile(String path, FileFactory.FileType fileType, Configuration configuration);
-
 }
 

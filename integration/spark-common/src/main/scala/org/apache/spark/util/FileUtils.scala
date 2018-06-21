@@ -75,8 +75,7 @@ object FileUtils {
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
         val filePath = CarbonUtil.checkAndAppendHDFSUrl(filePaths(i))
-        val fileType = FileFactory.getFileType(filePath)
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType, hadoopConf)
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i), hadoopConf)
         if (!carbonFile.exists()) {
           throw new DataLoadingException(
             s"The input file does not exist: ${CarbonUtil.removeAKSK(filePaths(i))}" )
@@ -99,8 +98,7 @@ object FileUtils {
     } else {
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
-        val fileType = FileFactory.getFileType(filePaths(i))
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType, hadoopConfiguration)
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i), hadoopConfiguration)
         size = size + carbonFile.getSize
       }
       size

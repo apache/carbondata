@@ -386,7 +386,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
     val fileType = FileFactory.getFileType(schemaMetadataPath)
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      val isDirCreated = FileFactory.mkdirs(schemaMetadataPath, fileType)
+      val isDirCreated = FileFactory
+        .mkdirs(schemaMetadataPath, SparkSession.getActiveSession.get.sessionState.newHadoopConf())
       if (!isDirCreated) {
         throw new IOException(s"Failed to create the metadata directory $schemaMetadataPath")
       }

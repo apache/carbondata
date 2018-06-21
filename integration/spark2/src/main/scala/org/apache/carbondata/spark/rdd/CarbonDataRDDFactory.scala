@@ -99,7 +99,7 @@ object CarbonDataRDDFactory {
       CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
 
     configuredMdtPath = CarbonUtil.checkAndAppendFileSystemURIScheme(configuredMdtPath)
-    val lock = CarbonLockFactory.getCarbonLockObj(
+    val lock = CarbonLockFactory.getSystemLevelCarbonLockObj(
       configuredMdtPath + CarbonCommonConstants.FILE_SEPARATOR +
         CarbonCommonConstants.SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER,
       LockUsage.SYSTEMLEVEL_COMPACTION_LOCK)
@@ -519,7 +519,8 @@ object CarbonDataRDDFactory {
       SegmentFileStore.updateSegmentFile(
         carbonTable.getTablePath,
         carbonLoadModel.getSegmentId,
-        segmentFileName)
+        segmentFileName,
+        carbonTable.getCarbonTableIdentifier.getTableId)
       operationContext.setProperty(carbonTable.getTableUniqueName + "_Segment",
         carbonLoadModel.getSegmentId)
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =

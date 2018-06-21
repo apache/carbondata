@@ -269,17 +269,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
       // append to a file only if file already exists else file not found
       // exception will be thrown by hdfs
       if (CarbonUtil.isFileExists(path)) {
-        if (FileFactory.FileType.S3 == fileType) {
-          DataInputStream dataInputStream = fileSystem.open(pt);
-          int count = dataInputStream.available();
-          // create buffer
-          byte[] byteStreamBuffer = new byte[count];
-          int bytesRead = dataInputStream.read(byteStreamBuffer);
-          stream = fileSystem.create(pt, true, bufferSize);
-          stream.write(byteStreamBuffer, 0, bytesRead);
-        } else {
-          stream = fileSystem.append(pt, bufferSize);
-        }
+        stream = fileSystem.append(pt, bufferSize);
       } else {
         stream = fileSystem.create(pt, true, bufferSize);
       }
@@ -461,7 +451,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return fs.delete(path, true);
   }
 
-  @Override public boolean mkdirs(String filePath, FileFactory.FileType fileType)
+  @Override public boolean mkdirs(String filePath)
       throws IOException {
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
@@ -549,8 +539,15 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
    */
   protected abstract CarbonFile[] getFiles(FileStatus[] listStatus);
 
-  protected abstract List<CarbonFile> getFiles(RemoteIterator<LocatedFileStatus> listStatus)
-      throws IOException;
+  protected List<CarbonFile> getFiles(RemoteIterator<LocatedFileStatus> listStatus)
+      throws IOException {
+    List<CarbonFile> carbonFiles = new ArrayList<>();
+    while (listStatus.hasNext()) {
+      Path filePath = listStatus.next().getPath();
+      carbonFiles.add(FileFactory.getCarbonFile(filePath.toString()));
+    }
+    return carbonFiles;
+  }
 
   @Override
   public String[] getLocations() throws IOException {

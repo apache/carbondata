@@ -27,7 +27,6 @@ import java.nio.file.StandardOpenOption;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -69,15 +68,6 @@ public class LocalFileLock extends AbstractCarbonLock {
   public LocalFileLock(String lockFileLocation, String lockFile) {
     this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
     this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFile);
-    initRetry();
-  }
-
-  /**
-   * @param tableIdentifier
-   * @param lockFile
-   */
-  public LocalFileLock(AbsoluteTableIdentifier tableIdentifier, String lockFile) {
-    this(tableIdentifier.getTablePath(), lockFile);
     initRetry();
   }
 
