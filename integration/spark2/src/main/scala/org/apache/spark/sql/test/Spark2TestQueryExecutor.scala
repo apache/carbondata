@@ -45,7 +45,6 @@ object Spark2TestQueryExecutor {
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
 
-
   import org.apache.spark.sql.CarbonSession._
 
   val conf = new SparkConf()
@@ -71,8 +70,8 @@ object Spark2TestQueryExecutor {
     .getOrCreateCarbonSession(null, TestQueryExecutor.metastoredb)
   if (warehouse.startsWith("hdfs://")) {
     System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, warehouse)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
-      CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
     ResourceRegisterAndCopier.
       copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark-common-test/src/test/resources",
         s"$integrationPath//spark-common-cluster-test/src/test/resources/testdatafileslist.txt")

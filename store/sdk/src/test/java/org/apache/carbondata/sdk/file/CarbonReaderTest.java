@@ -56,6 +56,9 @@ public class CarbonReaderTest extends TestCase {
       FileUtils.deleteDirectory(new File(path));
     } catch (IOException e) {
       e.printStackTrace();
+    } finally {
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.ENABLE_SDK_QUERY_EXECUTOR, "false");
     }
   }
 
