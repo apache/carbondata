@@ -32,6 +32,7 @@ object FieldConverter {
    * @param delimiterLevel2 level 2 delimiter for complex type
    * @param timeStampFormat timestamp format
    * @param dateFormat date format
+   * @param isVarcharType whether it is varchar type. A varchar type has no string length limit
    * @param level level for recursive call
    */
   def objectToString(
@@ -41,12 +42,14 @@ object FieldConverter {
       delimiterLevel2: String,
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
+      isVarcharType: Boolean = false,
       level: Int = 1): String = {
     if (value == null) {
       serializationNullFormat
     } else {
       value match {
-        case s: String => if (s.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+        case s: String => if (!isVarcharType &&
+                              s.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
           throw new Exception("Dataload failed, String length cannot exceed " +
                               CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
         } else {
@@ -71,7 +74,8 @@ object FieldConverter {
           val builder = new StringBuilder()
           s.foreach { x =>
             builder.append(objectToString(x, serializationNullFormat, delimiterLevel1,
-              delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+              delimiterLevel2, timeStampFormat, dateFormat, isVarcharType, level + 1))
+              .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())
         case m: scala.collection.Map[Any, Any] =>
@@ -85,7 +89,8 @@ object FieldConverter {
           val builder = new StringBuilder()
           for (i <- 0 until r.length) {
             builder.append(objectToString(r(i), serializationNullFormat, delimiterLevel1,
-              delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+              delimiterLevel2, timeStampFormat, dateFormat, isVarcharType, level + 1))
+              .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())
         case other => other.toString

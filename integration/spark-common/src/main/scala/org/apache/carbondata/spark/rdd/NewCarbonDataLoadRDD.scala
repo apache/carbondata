@@ -41,6 +41,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -447,6 +448,10 @@ class NewRddIterator(rddIter: Iterator[Row],
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+  import scala.collection.JavaConverters._
+  private val isVarcharTypeMapping =
+    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn(
+      carbonLoadModel.getTableName).asScala.map(_.getDataType == DataTypes.VARCHAR)
   def hasNext: Boolean = rddIter.hasNext
 
   def next: Array[AnyRef] = {
@@ -454,7 +459,8 @@ class NewRddIterator(rddIter: Iterator[Row],
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
       columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
-        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat)
+        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat,
+        isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
     }
     columns
   }
@@ -491,6 +497,10 @@ class LazyRddIterator(serializer: SerializerInstance,
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+  import scala.collection.JavaConverters._
+  private val isVarcharTypeMapping =
+    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn(
+      carbonLoadModel.getTableName).asScala.map(_.getDataType == DataTypes.VARCHAR)
 
   private var rddIter: Iterator[Row] = null
   private var uninitialized = true
@@ -514,7 +524,8 @@ class LazyRddIterator(serializer: SerializerInstance,
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
       columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
-        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat)
+        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat,
+        isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
     }
     columns
   }
