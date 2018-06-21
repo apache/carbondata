@@ -752,7 +752,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           }
           if (varcharCols.exists(x => x.equalsIgnoreCase(column))) {
             throw new MalformedCarbonCommandException(
-              s"sort_columns is unsupported for long string datatype column $column")
+              s"sort_columns is unsupported for long string datatype column: $column")
           }
         }
       }
@@ -791,6 +791,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
               val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
                              " data type column: " + dictExcludeCol
               throw new MalformedCarbonCommandException(errorMsg)
+            } else if (varcharCols.exists(x => x.equalsIgnoreCase(dictExcludeCol))) {
+              throw new MalformedCarbonCommandException(
+                "DICTIONARY_EXCLUDE is unsupported for long string datatype column: " +
+                dictExcludeCol)
             }
           }
         }
@@ -804,6 +808,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
                          " does not exist in table. Please check create table statement."
           throw new MalformedCarbonCommandException(errormsg)
+        }
+        if (varcharCols.exists(x => x.equalsIgnoreCase(distIncludeCol.trim))) {
+          throw new MalformedCarbonCommandException(
+            "DICTIONARY_INCLUDE is unsupported for long string datatype column: " +
+            distIncludeCol.trim)
         }
       }
     }
