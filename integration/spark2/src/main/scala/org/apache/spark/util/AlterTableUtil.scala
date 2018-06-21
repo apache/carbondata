@@ -309,7 +309,7 @@ object AlterTableUtil {
    */
   def modifyTableProperties(tableIdentifier: TableIdentifier, properties: Map[String, String],
       propKeys: Seq[String], set: Boolean)
-    (sparkSession: SparkSession): Unit = {
+    (sparkSession: SparkSession, catalog: CarbonSessionCatalog): Unit = {
     val tableName = tableIdentifier.table
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     LOGGER.audit(s"Alter table properties request has been received for $dbName.$tableName")
@@ -362,8 +362,7 @@ object AlterTableUtil {
       val (tableIdentifier, schemParts, cols) = updateSchemaInfo(carbonTable,
         schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
         thriftTable)(sparkSession)
-      sparkSession.asInstanceOf[CarbonSession].sessionState.catalog
-        .asInstanceOf[CarbonSessionCatalog].alterTable(tableIdentifier, schemParts, cols)
+      catalog.alterTable(tableIdentifier, schemParts, cols)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       LOGGER.info(s"Alter table properties is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table properties is successful for table $dbName.$tableName")
