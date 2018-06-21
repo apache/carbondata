@@ -248,17 +248,10 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
 test("Creation of partition table should fail if the colname in table schema and partition column is same even if both are case sensitive"){
 
   val exception = intercept[Exception]{
-    sql("CREATE TABLE uniqdata_char2(name char,id int) partitioned by (NAME char)stored by 'carbondata' ")
+    sql("CREATE TABLE uniqdata_char2(name char(10),id int) partitioned by (NAME char(10))stored by 'carbondata' ")
   }
-  if(Spark2TestQueryExecutor.spark.version.startsWith("2.1.0")){
     assert(exception.getMessage.contains("Operation not allowed: Partition columns should not be " +
                                          "specified in the schema: [\"name\"]"))
-  }
-  else{
-    //spark 2.2 allow creating char data type only with digits thats why this assert is here as it will throw this exception
-    assert(exception.getMessage.contains("DataType char is not supported"))
-
-  }
 }
 
   test("Creation of partition table should fail for both spark version with same exception when char data type is created with specified digit and colname in table schema and partition column is same even if both are case sensitive"){

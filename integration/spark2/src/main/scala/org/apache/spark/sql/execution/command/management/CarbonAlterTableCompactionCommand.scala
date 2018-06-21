@@ -26,7 +26,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand, CarbonMergerMapping, CompactionModel}
-import org.apache.spark.sql.hive.{CarbonRelation}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.AlterTableUtil
@@ -325,7 +325,8 @@ case class CarbonAlterTableCompactionCommand(
           tableIdentifier,
           Map("streaming" -> "false"),
           Seq.empty,
-          true)(sparkSession)
+          true)(sparkSession,
+          sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
         // 5. remove checkpoint
         FileFactory.deleteAllFilesOfDir(
           new File(CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath)))
