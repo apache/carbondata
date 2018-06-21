@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -71,8 +72,9 @@ public class TestBlockletDataMapFactory {
             .getDeclaredConstructors()[0];
     constructor.setAccessible(true);
     carbonTable = (CarbonTable) constructor.newInstance();
-    absoluteTableIdentifier =
-        AbsoluteTableIdentifier.from("/opt/store/default/carbon_table/", "default", "carbon_table");
+    absoluteTableIdentifier = AbsoluteTableIdentifier
+        .from("/opt/store/default/carbon_table/", "default", "carbon_table",
+            UUID.randomUUID().toString());
     Deencapsulation.setField(tableInfo, "identifier", absoluteTableIdentifier);
     Deencapsulation.setField(carbonTable, "tableInfo", tableInfo);
     blockletDataMapFactory = new BlockletDataMapFactory(carbonTable, new DataMapSchema());

@@ -824,19 +824,18 @@ object CommonUtil {
             if (tableFolder.isDirectory) {
               val tablePath = databaseLocation +
                               CarbonCommonConstants.FILE_SEPARATOR + tableFolder.getName
-              val identifier =
-                AbsoluteTableIdentifier.from(tablePath, dbName, tableFolder.getName)
+              val tableUniqueName = dbName + "_" + tableFolder.getName
               val tableStatusFile =
                 CarbonTablePath.getTableStatusFilePath(tablePath)
               if (FileFactory.isFileExist(tableStatusFile, fileType)) {
                 try {
                   val carbonTable = CarbonMetadata.getInstance
-                    .getCarbonTable(identifier.getCarbonTableIdentifier.getTableUniqueName)
+                    .getCarbonTable(tableUniqueName)
                   SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable, true, null)
                 } catch {
                   case _: Exception =>
                     LOGGER.warn(s"Error while cleaning table " +
-                                s"${ identifier.getCarbonTableIdentifier.getTableUniqueName }")
+                                s"${ tableUniqueName }")
                 }
               }
             }

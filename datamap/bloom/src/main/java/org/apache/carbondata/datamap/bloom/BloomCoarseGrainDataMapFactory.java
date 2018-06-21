@@ -337,9 +337,10 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
 
   @Override
   public void clear() {
-    List<String> segments = new ArrayList<>(segmentMap.keySet());
-    for (String segmentId : segments) {
-      clear(new Segment(segmentId, null, null));
+    if (segmentMap.size() > 0) {
+      for (String segmentId : segmentMap.keySet().toArray(new String[segmentMap.size()])) {
+        clear(new Segment(segmentId, null, null));
+      }
     }
   }
 

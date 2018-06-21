@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * ZooKeeperLocking Test cases
@@ -96,7 +97,7 @@ public class ZooKeeperLockingTest {
 
     AbsoluteTableIdentifier tableIdentifier = AbsoluteTableIdentifier
         .from(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
-            "dbName", "tableName");
+            "dbName", "tableName", UUID.randomUUID().toString());
     ZooKeeperLocking zkl =
         new ZooKeeperLocking(tableIdentifier,
             LockUsage.METADATA_LOCK);

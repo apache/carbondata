@@ -26,9 +26,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.fs.viewfs.ViewFileSystem;
 
 public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
@@ -64,17 +62,6 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
       files[i] = new ViewFSCarbonFile(listStatus[i]);
     }
     return files;
-  }
-
-  @Override
-  protected List<CarbonFile> getFiles(RemoteIterator<LocatedFileStatus> listStatus)
-      throws IOException {
-    List<CarbonFile> carbonFiles = new ArrayList<>();
-    while (listStatus.hasNext()) {
-      Path filePath = listStatus.next().getPath();
-      carbonFiles.add(new ViewFSCarbonFile(filePath));
-    }
-    return carbonFiles;
   }
 
   @Override

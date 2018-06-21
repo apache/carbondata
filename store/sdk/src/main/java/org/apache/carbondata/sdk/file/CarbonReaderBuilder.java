@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -179,7 +180,8 @@ public class CarbonReaderBuilder {
     // DB name is not applicable for SDK reader as, table will be never registered.
     CarbonTable table;
     if (isTransactionalTable) {
-      table = CarbonTable.buildFromTablePath(tableName, "default", tablePath);
+      table = CarbonTable
+          .buildFromTablePath(tableName, "default", tablePath, UUID.randomUUID().toString());
     } else {
       if (filterExpression != null) {
         table = CarbonTable.buildTable(tablePath, tableName);

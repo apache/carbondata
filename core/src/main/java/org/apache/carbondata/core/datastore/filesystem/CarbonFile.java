@@ -144,7 +144,7 @@ public interface CarbonFile {
 
   boolean deleteFile(String filePath, FileFactory.FileType fileType) throws IOException;
 
-  boolean mkdirs(String filePath, FileFactory.FileType fileType) throws IOException;
+  boolean mkdirs(String filePath) throws IOException;
 
   DataOutputStream getDataOutputStreamUsingAppend(String path, FileFactory.FileType fileType)
       throws IOException;
