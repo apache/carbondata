@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.carbon;
 
+import java.util.UUID;
+
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
@@ -93,7 +95,8 @@ public class AbsoluteTableIdentifierTest {
 
   @Test public void fromTablePathTest() {
     AbsoluteTableIdentifier absoluteTableIdentifierTest =
-        AbsoluteTableIdentifier.from("storePath/databaseName/tableName", "databaseName", "tableName");
+        AbsoluteTableIdentifier.from("storePath/databaseName/tableName", "databaseName", "tableName",
+            UUID.randomUUID().toString());
     Assert.assertTrue(absoluteTableIdentifierTest.getTablePath()
         .equals(absoluteTableIdentifier4.getTablePath()));
   }

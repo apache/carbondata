@@ -93,7 +93,7 @@ public class SegmentFileStore {
     String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath) + "/" + tempFolderLoc;
     CarbonFile carbonFile = FileFactory.getCarbonFile(writePath);
     if (!carbonFile.exists()) {
-      carbonFile.mkdirs(writePath, FileFactory.getFileType(writePath));
+      carbonFile.mkdirs(writePath);
     }
     CarbonFile tempFolder =
         FileFactory.getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + tempFolderLoc);
@@ -178,7 +178,7 @@ public class SegmentFileStore {
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
-        carbonFile.mkdirs(segmentFileFolder, FileFactory.getFileType(segmentFileFolder));
+        carbonFile.mkdirs(segmentFileFolder);
       }
       String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
       // write segment info to new file.
@@ -280,8 +280,8 @@ public class SegmentFileStore {
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
-  public static boolean updateSegmentFile(String tablePath, String segmentId, String segmentFile)
-      throws IOException {
+  public static boolean updateSegmentFile(String tablePath, String segmentId, String segmentFile,
+      String tableId) throws IOException {
     boolean status = false;
     String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
     if (!FileFactory.isFileExist(tableStatusPath)) {
@@ -289,7 +289,7 @@ public class SegmentFileStore {
     }
     String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
     AbsoluteTableIdentifier absoluteTableIdentifier =
-        AbsoluteTableIdentifier.from(tablePath, null, null);
+        AbsoluteTableIdentifier.from(tablePath, null, null, tableId);
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     int retryCount = CarbonLockUtil

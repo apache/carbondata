@@ -188,7 +188,7 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
 
   private static ICarbonLock getDataMapStatusLock() {
     return CarbonLockFactory
-        .getCarbonLockObj(CarbonProperties.getInstance().getSystemFolderLocation(),
+        .getSystemLevelCarbonLockObj(CarbonProperties.getInstance().getSystemFolderLocation(),
             LockUsage.DATAMAP_STATUS_LOCK);
   }
 }

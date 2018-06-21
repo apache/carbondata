@@ -66,8 +66,6 @@ case class CarbonDropDataMapCommand(
       val carbonEnv = CarbonEnv.getInstance(sparkSession)
       val catalog = carbonEnv.carbonMetastore
       val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName)(sparkSession)
-      val tableIdentifier =
-        AbsoluteTableIdentifier.from(tablePath, dbName.toLowerCase, tableName.toLowerCase)
       catalog.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
       if (mainTable == null) {
         mainTable = try {
@@ -79,6 +77,12 @@ case class CarbonDropDataMapCommand(
             null
         }
       }
+      val tableIdentifier =
+        AbsoluteTableIdentifier
+          .from(tablePath,
+            dbName.toLowerCase,
+            tableName.toLowerCase,
+            mainTable.getCarbonTableIdentifier.getTableId)
       // forceDrop will be true only when parent table schema updation has failed.
       // This method will forcefully drop child table instance from metastore.
       if (forceDrop) {

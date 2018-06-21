@@ -433,10 +433,10 @@ public class LocalCarbonFile implements CarbonFile {
     return FileFactory.deleteAllFilesOfDir(file);
   }
 
-  @Override public boolean mkdirs(String filePath, FileFactory.FileType fileType)
+  @Override public boolean mkdirs(String filePath)
       throws IOException {
     filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    filePath = FileFactory.getUpdatedFilePath(filePath);
     File file = new File(filePath);
     return file.mkdirs();
   }
