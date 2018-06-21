@@ -60,9 +60,6 @@ public class LoadMetadataDetails implements Serializable {
   // name of the segment
   private String loadName;
 
-  // partition count of this segment
-  private String partitionCount;
-
   private String isDeleted = CarbonCommonConstants.KEYWORD_FALSE;
   private String dataSize;
   private String indexSize;
@@ -127,15 +124,6 @@ public class LoadMetadataDetails implements Serializable {
    * Segment file name where it has the information of partition information.
    */
   private String segmentFile;
-
-  public String getPartitionCount() {
-    return partitionCount;
-  }
-
-  @Deprecated
-  public void setPartitionCount(String partitionCount) {
-    this.partitionCount = partitionCount;
-  }
 
   public long getLoadEndTime() {
     if (timestamp == null) {

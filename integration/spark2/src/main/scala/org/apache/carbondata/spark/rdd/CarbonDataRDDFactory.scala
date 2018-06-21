@@ -304,7 +304,7 @@ object CarbonDataRDDFactory {
                  s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     // Check if any load need to be deleted before loading new data
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
+    var status: Array[(String, (SegmentStatus, ExecutionErrors))] = null
     var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
 
     // create new segment folder  in carbon store
@@ -331,7 +331,7 @@ object CarbonDataRDDFactory {
             carbonTable)
           res.foreach { resultOfSeg =>
             resultOfSeg.foreach { resultOfBlock =>
-              if (resultOfBlock._2._1.getSegmentStatus == SegmentStatus.LOAD_FAILURE) {
+              if (resultOfBlock._2._1 == SegmentStatus.LOAD_FAILURE) {
                 loadStatus = SegmentStatus.LOAD_FAILURE
                 if (resultOfBlock._2._2.failureCauses == FailureCauses.NONE) {
                   updateModel.get.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
@@ -339,7 +339,7 @@ object CarbonDataRDDFactory {
                 } else {
                   updateModel.get.executorErrors = resultOfBlock._2._2
                 }
-              } else if (resultOfBlock._2._1.getSegmentStatus ==
+              } else if (resultOfBlock._2._1 ==
                          SegmentStatus.LOAD_PARTIAL_SUCCESS) {
                 loadStatus = SegmentStatus.LOAD_PARTIAL_SUCCESS
                 updateModel.get.executorErrors.failureCauses = resultOfBlock._2._2.failureCauses
@@ -364,13 +364,13 @@ object CarbonDataRDDFactory {
               val state = newStatusMap.get(eachLoadStatus._1)
               state match {
                 case Some(SegmentStatus.LOAD_FAILURE) =>
-                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1)
                 case Some(SegmentStatus.LOAD_PARTIAL_SUCCESS)
-                  if eachLoadStatus._2._1.getSegmentStatus ==
+                  if eachLoadStatus._2._1 ==
                      SegmentStatus.SUCCESS =>
-                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1)
                 case _ =>
-                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1)
               }
             }
 
@@ -727,7 +727,6 @@ object CarbonDataRDDFactory {
                              CarbonCommonConstants.UNDERSCORE +
                              (index + "_0")
 
-        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
         loadMetadataDetails.setLoadName(segId)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
         carbonLoadModel.setSegmentId(segId)
@@ -875,7 +874,7 @@ object CarbonDataRDDFactory {
    * Update table status file after data loading
    */
   private def updateTableStatus(
-      status: Array[(String, (LoadMetadataDetails, ExecutionErrors))],
+      status: Array[(String, (SegmentStatus, ExecutionErrors))],
       carbonLoadModel: CarbonLoadModel,
       loadStatus: SegmentStatus,
       newEntryLoadStatus: SegmentStatus,
@@ -883,10 +882,9 @@ object CarbonDataRDDFactory {
       segmentFileName: String,
       uuid: String = ""): Boolean = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val metadataDetails = if (status != null && status.size > 0 && status(0) != null) {
-      status(0)._2._1
-    } else {
-      new LoadMetadataDetails
+    val metadataDetails = new LoadMetadataDetails
+    if (status != null && status.size > 0 && status(0) != null) {
+      metadataDetails.setSegmentStatus(status(0)._2._1)
     }
     metadataDetails.setSegmentFile(segmentFileName)
     CarbonLoaderUtil.populateNewLoadMetaEntry(
@@ -1035,7 +1033,7 @@ object CarbonDataRDDFactory {
       dataFrame: Option[DataFrame],
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration
-  ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+  ): Array[(String, (SegmentStatus, ExecutionErrors))] = {
     try {
       val rdd = repartitionInputData(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
       new PartitionTableDataLoaderRDD(
@@ -1058,7 +1056,7 @@ object CarbonDataRDDFactory {
       sqlContext: SQLContext,
       dataFrame: Option[DataFrame],
       carbonLoadModel: CarbonLoadModel
-  ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+  ): Array[(String, (SegmentStatus, ExecutionErrors))] = {
     try {
       val rdd = dataFrame.get.rdd
 
@@ -1091,7 +1089,7 @@ object CarbonDataRDDFactory {
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration
-  ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+  ): Array[(String, (SegmentStatus, ExecutionErrors))] = {
     /*
      * when data load handle by node partition
      * 1)clone the hadoop configuration,and set the file path to the configuration

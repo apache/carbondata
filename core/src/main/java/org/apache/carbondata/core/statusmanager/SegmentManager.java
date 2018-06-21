@@ -28,7 +28,7 @@ public interface SegmentManager {
   /**
    * Create new segment for loading.
    */
-  Segment createNewSegment();
+  LoadMetadataDetails createNewSegment();
 
   /**
    * It gives the valid segments from the store at this point of time.

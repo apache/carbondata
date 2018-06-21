@@ -48,12 +48,12 @@ class RawValueImpl extends RawValue[Array[Any]] {
 }
 
 trait DataLoadResult[K, V] extends Serializable {
-  def getKey(key: String, value: (LoadMetadataDetails, ExecutionErrors)): (K, V)
+  def getKey(key: String, value: (SegmentStatus, ExecutionErrors)): (K, V)
 }
 
-class DataLoadResultImpl extends DataLoadResult[String, (LoadMetadataDetails, ExecutionErrors)] {
+class DataLoadResultImpl extends DataLoadResult[String, (SegmentStatus, ExecutionErrors)] {
   override def getKey(key: String,
-      value: (LoadMetadataDetails, ExecutionErrors)): (String, (LoadMetadataDetails,
+      value: (SegmentStatus, ExecutionErrors)): (String, (SegmentStatus,
     ExecutionErrors)) = {
     (key, value)
   }
