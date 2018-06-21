@@ -89,28 +89,34 @@ public class TablePage {
     this.pageSize = pageSize;
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
     TableSpec tableSpec = model.getTableSpec();
+
     dictDimensionPages = new ColumnPage[numDictDimension];
-    for (int i = 0; i < dictDimensionPages.length; i++) {
-      TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
-      ColumnPage page = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize);
-      page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
-      dictDimensionPages[i] = page;
-    }
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
-    for (int i = 0; i < noDictDimensionPages.length; i++) {
-      TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i + numDictDimension);
+    int tmpNumDictDimIdx = 0;
+    int tmpNumNoDictDimIdx = 0;
+    for (int i = 0; i < dictDimensionPages.length + noDictDimensionPages.length; i++) {
+      TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
+      ColumnType columnType = tableSpec.getDimensionSpec(i).getColumnType();
       ColumnPage page;
-      if (DataTypes.VARCHAR == spec.getSchemaDataType()) {
-        page = ColumnPage.newPage(spec, DataTypes.VARCHAR, pageSize);
-        page.setStatsCollector(LVLongStringStatsCollector.newInstance());
+      if (ColumnType.GLOBAL_DICTIONARY == columnType
+          || ColumnType.DIRECT_DICTIONARY == columnType) {
+        page = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize);
+        page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
+        dictDimensionPages[tmpNumDictDimIdx++] = page;
       } else {
-        // In previous implementation, other data types such as string, date and timestamp
-        // will be encoded using string page
-        page = ColumnPage.newPage(spec, DataTypes.STRING, pageSize);
-        page.setStatsCollector(LVShortStringStatsCollector.newInstance());
+        if (DataTypes.VARCHAR == spec.getSchemaDataType()) {
+          page = ColumnPage.newPage(spec, DataTypes.VARCHAR, pageSize);
+          page.setStatsCollector(LVLongStringStatsCollector.newInstance());
+        } else {
+          // In previous implementation, other data types such as string, date and timestamp
+          // will be encoded using string page
+          page = ColumnPage.newPage(spec, DataTypes.STRING, pageSize);
+          page.setStatsCollector(LVShortStringStatsCollector.newInstance());
+        }
+        noDictDimensionPages[tmpNumNoDictDimIdx++] = page;
       }
-      noDictDimensionPages[i] = page;
     }
+
     complexDimensionPages = new ComplexColumnPage[model.getComplexColumnCount()];
     for (int i = 0; i < complexDimensionPages.length; i++) {
       // here we still do not the depth of the complex column, it will be initialized when
