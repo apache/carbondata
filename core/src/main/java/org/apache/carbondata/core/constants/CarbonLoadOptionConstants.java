@@ -144,12 +144,12 @@ public final class CarbonLoadOptionConstants {
    * If the sort memory is insufficient, spill inmemory pages to disk.
    * The total amount of pages is at most the specified percentage of total sort memory. Default
    * value 0 means that no pages will be spilled and the newly incoming pages will be spilled,
-   * whereas value 1 means that all pages will be spilled and newly incoming pages will be loaded
-   * into sort memory.
+   * whereas value 100 means that all pages will be spilled and newly incoming pages will be loaded
+   * into sort memory, valid value is from 0 to 100.
    */
   @CarbonProperty
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE
-      = "carbon.load.sortMemory.spill.percentage";
+      = "carbon.load.sortmemory.spill.percentage";
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
 
   /**
