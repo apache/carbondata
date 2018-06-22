@@ -94,10 +94,12 @@ public class TablePage {
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
     int tmpNumDictDimIdx = 0;
     int tmpNumNoDictDimIdx = 0;
-    for (int i = 0; i < tableSpec.getNumDimensions(); i++) {
+    for (int i = 0; i < dictDimensionPages.length + noDictDimensionPages.length; i++) {
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
+      ColumnType columnType = tableSpec.getDimensionSpec(i).getColumnType();
       ColumnPage page;
-      if (ColumnType.GLOBAL_DICTIONARY == tableSpec.getDimensionSpec(i).getColumnType()) {
+      if (ColumnType.GLOBAL_DICTIONARY == columnType
+          || ColumnType.DIRECT_DICTIONARY == columnType) {
         page = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize);
         page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
         dictDimensionPages[tmpNumDictDimIdx++] = page;
