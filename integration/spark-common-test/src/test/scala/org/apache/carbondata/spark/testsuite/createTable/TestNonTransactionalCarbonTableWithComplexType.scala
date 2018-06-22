@@ -26,7 +26,6 @@ import org.apache.commons.lang.CharEncoding
 import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
-import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -63,9 +62,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       json: String) = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
-    val converter = new JsonAvroConverter
-    val record = converter
-      .convertToGenericDataRecord(json.getBytes(CharEncoding.UTF_8), nn)
+    val record = avroUtil.jsonToAvro(json, mySchema)
 
     try {
       val writer = CarbonWriter.builder
@@ -241,8 +238,8 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
         |}
       """.stripMargin
     val pschema= org.apache.avro.Schema.parse(mySchema)
+    val records = avroUtil.jsonToAvro(jsonvalue, mySchema)
 
-    val records=new JsonAvroConverter().convertToGenericDataRecord(jsonvalue.getBytes(CharEncoding.UTF_8),pschema)
 
     val writer=CarbonWriter.builder().outputPath(writerPath).buildWriterForAvroInput(pschema)
     writer.write(records)

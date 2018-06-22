@@ -74,12 +74,6 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>tech.allegro.schema.json2avro</groupId>
-      <artifactId>converter</artifactId>
-      <version>0.2.5</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
