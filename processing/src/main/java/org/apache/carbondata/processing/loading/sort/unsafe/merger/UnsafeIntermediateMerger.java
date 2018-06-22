@@ -84,6 +84,14 @@ public class UnsafeIntermediateMerger {
     Integer spillPercentage = CarbonProperties.getInstance().getSortMemorySpillPercentage();
     this.spillSizeInSortMemory =
         UnsafeSortMemoryManager.INSTANCE.getUsableMemory() * spillPercentage / 100;
+    // get memory chunk size
+    long inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
+    if (spillSizeInSortMemory < inMemoryChunkSizeInMB * 1024 * 1024) {
+      LOGGER.warn("the configure spill size is " + spillSizeInSortMemory +
+          " less than the page size " + inMemoryChunkSizeInMB * 1024 * 1024 +
+          ",so no merge and spill in-memory pages to disk");
+    }
+
   }
 
   public void addDataChunkToMerge(UnsafeCarbonRowPage rowPage) {
@@ -147,6 +155,7 @@ public class UnsafeIntermediateMerger {
         UnsafeCarbonRowPage page = iter.next();
         if (!spillDisk || sizeAdded + page.getDataBlock().size() < this.spillSizeInSortMemory) {
           pages2Merge.add(page);
+          sizeAdded += page.getDataBlock().size();
           totalRows2Merge += page.getBuffer().getActualSize();
           iter.remove();
         } else {
