@@ -40,7 +40,6 @@ import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.CharEncoding;
 import org.junit.*;
-import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 
 public class CarbonReaderTest extends TestCase {
 
@@ -1286,9 +1285,7 @@ public class CarbonReaderTest extends TestCase {
 
     // conversion to GenericData.Record
     org.apache.avro.Schema nn = new org.apache.avro.Schema.Parser().parse(mySchema);
-    JsonAvroConverter converter = new JsonAvroConverter();
-    GenericData.Record record = converter.convertToGenericDataRecord(
-        json.getBytes(CharEncoding.UTF_8), nn);
+    GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
 
     try {
       CarbonWriter writer = CarbonWriter.builder()

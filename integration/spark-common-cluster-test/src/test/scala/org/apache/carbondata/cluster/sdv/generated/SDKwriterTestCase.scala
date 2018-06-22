@@ -18,6 +18,7 @@
 package org.apache.carbondata.cluster.sdv.generated
 
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, InputStream}
 import java.util
 
 import org.apache.spark.sql.Row
@@ -27,9 +28,11 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.avro
+import org.apache.avro.file.DataFileWriter
+import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
+import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.commons.lang.CharEncoding
 import org.junit.Assert
-import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
@@ -535,9 +538,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
       json: String): Unit = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
-    val converter = new JsonAvroConverter
-    val record = converter
-      .convertToGenericDataRecord(json.getBytes(CharEncoding.UTF_8), nn)
+    val record = avroUtil.jsonToAvro(json, mySchema)
 
     try {
       val writer = CarbonWriter.builder
@@ -728,5 +729,30 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
     checkAnswer(sql(s"""select count(*) from sdkTable"""),
       Seq(Row(3)))
+  }
+}
+
+object avroUtil{
+  def jsonToAvro(json: String, avroSchema: String): GenericRecord = {
+    var input: InputStream = null
+    var writer: DataFileWriter[GenericRecord] = null
+    var encoder: Encoder = null
+    var output: ByteArrayOutputStream = null
+    try {
+      val schema = new org.apache.avro.Schema.Parser().parse(avroSchema)
+      val reader = new GenericDatumReader[GenericRecord](schema)
+      input = new ByteArrayInputStream(json.getBytes())
+      output = new ByteArrayOutputStream()
+      val din = new DataInputStream(input)
+      writer = new DataFileWriter[GenericRecord](new GenericDatumWriter[GenericRecord]())
+      writer.create(schema, output)
+      val decoder = DecoderFactory.get().jsonDecoder(schema, din)
+      var datum: GenericRecord = null
+      datum = reader.read(null, decoder)
+      return datum
+    } finally {
+      input.close()
+      writer.close()
+    }
   }
 }
