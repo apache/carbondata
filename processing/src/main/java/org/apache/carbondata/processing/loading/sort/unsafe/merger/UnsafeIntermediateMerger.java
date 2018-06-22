@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -82,19 +81,17 @@ public class UnsafeIntermediateMerger {
         SynchronizedList.decorate(new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN));
     this.mergerTask = new ArrayList<>();
 
-    Integer spillPercentage;
-    try {
-      String spillPercentageStr = CarbonProperties.getInstance().getProperty(
-          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
-          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
-      spillPercentage = Integer.valueOf(spillPercentageStr);
-    } catch (NumberFormatException e) {
-      spillPercentage = Integer.valueOf(
-          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
-    }
-
+    Integer spillPercentage = CarbonProperties.getInstance().getSortMemorySpillPercentage();
     this.spillSizeInSortMemory =
         UnsafeSortMemoryManager.INSTANCE.getUsableMemory() * spillPercentage / 100;
+    // get memory chunk size
+    long inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
+    if (spillSizeInSortMemory < inMemoryChunkSizeInMB * 1024 * 1024) {
+      LOGGER.warn("the configure spill size is " + spillSizeInSortMemory +
+          " less than the page size " + inMemoryChunkSizeInMB * 1024 * 1024 +
+          ",so no merge and spill in-memory pages to disk");
+    }
+
   }
 
   public void addDataChunkToMerge(UnsafeCarbonRowPage rowPage) {
@@ -158,6 +155,7 @@ public class UnsafeIntermediateMerger {
         UnsafeCarbonRowPage page = iter.next();
         if (!spillDisk || sizeAdded + page.getDataBlock().size() < this.spillSizeInSortMemory) {
           pages2Merge.add(page);
+          sizeAdded += page.getDataBlock().size();
           totalRows2Merge += page.getBuffer().getActualSize();
           iter.remove();
         } else {

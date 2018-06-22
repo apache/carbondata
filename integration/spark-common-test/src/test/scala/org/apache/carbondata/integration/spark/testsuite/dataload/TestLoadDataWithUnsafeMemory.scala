@@ -21,7 +21,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Ignore}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -44,6 +44,9 @@ class TestLoadDataWithUnsafeMemory extends QueryTest
   val originUnsafeSizeForChunk: String = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
       CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT)
+  val originSpillPercentage: String = CarbonProperties.getInstance()
+    .getProperty(CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+      CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT)
   val targetTable = "table_unsafe_memory"
 
 
@@ -64,6 +67,8 @@ class TestLoadDataWithUnsafeMemory extends QueryTest
       .addProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, "512")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB, "512")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE, "-1")
   }
 
   override def afterAll(): Unit = {
@@ -75,6 +80,9 @@ class TestLoadDataWithUnsafeMemory extends QueryTest
       .addProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, originUnsafeMemForWorking)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB, originUnsafeSizeForChunk)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+        originSpillPercentage)
   }
 
   private def testSimpleTable(): Unit = {
