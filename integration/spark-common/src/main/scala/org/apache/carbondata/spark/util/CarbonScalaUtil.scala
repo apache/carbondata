@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import scala.collection.mutable
+import scala.util.Try
 
 import com.univocity.parsers.common.TextParsingException
 import org.apache.spark.SparkException
@@ -36,7 +37,7 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.LogService
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -54,6 +55,8 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.streaming.parser.FieldConverter
 
 object CarbonScalaUtil {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   // TODO: move this to spark module
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -614,5 +617,115 @@ object CarbonScalaUtil {
       table,
       sparkSession,
       schema)._1.asInstanceOf[Object]
+  }
+
+  /**
+   * this method validates the local dictionary columns configurations
+   *
+   * @param tableProperties
+   * @param localDictColumns
+   */
+  def validateLocalDictionaryColumns(tableProperties: mutable.Map[String, String],
+      localDictColumns: Seq[String]): Unit = {
+    var dictIncludeColumns: Seq[String] = Seq[String]()
+
+    // check if the duplicate columns are specified in table schema
+    if (localDictColumns.distinct.lengthCompare(localDictColumns.size) != 0) {
+      val duplicateColumns = localDictColumns
+        .diff(localDictColumns.distinct).distinct
+      val errMsg =
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE contains Duplicate Columns: " +
+        duplicateColumns.mkString(",") +
+        ". Please check create table statement."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+
+    // check if the same column is present in both dictionary include and local dictionary columns
+    // configuration
+    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
+      dictIncludeColumns =
+        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
+      localDictColumns.foreach { distCol =>
+        if (dictIncludeColumns.exists(x => x.equalsIgnoreCase(distCol.trim))) {
+          val commonColumn = (dictIncludeColumns ++ localDictColumns)
+            .diff((dictIncludeColumns ++ localDictColumns).distinct).distinct
+          val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
+                         commonColumn.mkString(",") +
+                         " specified in Dictionary include. Local Dictionary will not be " +
+                         "generated for Dictionary include columns. Please check create table " +
+                         "statement."
+          throw new MalformedCarbonCommandException(errormsg)
+        }
+      }
+    }
+  }
+
+  /**
+   * this method validates the local dictionary enable property
+   *
+   * @param localDictionaryEnable
+   * @return
+   */
+  def validateLocalDictionaryEnable(localDictionaryEnable: String): Boolean = {
+    Try(localDictionaryEnable.toBoolean) match {
+      case scala.util.Success(value) =>
+        true
+      case scala.util.Failure(ex) =>
+        false
+    }
+  }
+
+  /**
+   * this method validates the local dictionary threshold property
+   *
+   * @param localDictionaryThreshold
+   * @return
+   */
+  def validateLocalDictionaryThreshold(localDictionaryThreshold: String): Boolean = {
+    // if any invalid value is configured for LOCAL_DICTIONARY_THRESHOLD, then default value
+    // will be
+    // considered which is 1000
+    Try(localDictionaryThreshold.toInt) match {
+      case scala.util.Success(value) =>
+        if (value < 1000 || value > 100000) {
+          false
+        } else {
+          true
+        }
+      case scala.util.Failure(ex) =>
+        false
+    }
+  }
+
+  /**
+   * This method validate if both local dictionary include and exclude contains same column
+   *
+   * @param tableProperties
+   */
+  def validateDuplicateLocalDictIncludeExcludeColmns(tableProperties: mutable.Map[String,
+    String]): Unit = {
+    val isLocalDictIncludeDefined = tableProperties
+      .get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+      .isDefined
+    val isLocalDictExcludeDefined = tableProperties
+      .get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+      .isDefined
+    if (isLocalDictIncludeDefined && isLocalDictExcludeDefined) {
+      val localDictIncludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+        .split(",").map(_.trim)
+      val localDictExcludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+        .split(",").map(_.trim)
+      localDictIncludeCols.foreach { distCol =>
+        if (localDictExcludeCols.exists(x => x.equalsIgnoreCase(distCol.trim))) {
+          val duplicateColumns = (localDictIncludeCols ++ localDictExcludeCols)
+            .diff((localDictIncludeCols ++ localDictExcludeCols).distinct).distinct
+          val errMsg = "Column ambiguity as duplicate column(s):" +
+                       duplicateColumns.mkString(",") +
+                       " is present in LOCAL_DICTIONARY_INCLUDE " +
+                       "and LOCAL_DICTIONARY_EXCLUDE. Duplicate columns are not allowed."
+          throw new MalformedCarbonCommandException(errMsg)
+        }
+      }
+    }
   }
 }

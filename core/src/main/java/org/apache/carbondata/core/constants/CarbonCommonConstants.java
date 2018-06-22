@@ -930,7 +930,7 @@ public final class CarbonCommonConstants {
   /**
    * default value for local dictionary
    */
-  public static final String LOCAL_DICTIONARY_THRESHOLD_DEFAULT = "1000";
+  public static final String LOCAL_DICTIONARY_THRESHOLD_DEFAULT = "10000";
 
   /**
    * Table property to specify the columns for which local dictionary needs to be generated.
