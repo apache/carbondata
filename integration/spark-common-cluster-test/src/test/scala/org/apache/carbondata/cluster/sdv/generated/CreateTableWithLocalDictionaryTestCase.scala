@@ -26,7 +26,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -135,7 +135,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='10000')
+        | tblproperties('local_dictionary_threshold'='20000')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -143,7 +143,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case Some(row) => assert(row.get(1).toString.contains("20000"))
     }
   }
 
@@ -159,7 +159,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -175,7 +175,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -191,7 +191,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -207,7 +207,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -219,7 +219,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='10000','local_dictionary_include'='name')
+        | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'='name')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -228,7 +228,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case Some(row) => assert(row.get(1).toString.contains("20000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
@@ -252,7 +252,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
@@ -276,7 +276,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
@@ -300,7 +300,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
@@ -316,7 +316,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='10000','local_dictionary_include'='name,name')
+          | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'='name,name')
         """.stripMargin)
     }
   }
@@ -330,7 +330,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='10000','local_dictionary_include'=' ')
+          | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'=' ')
         """.stripMargin)
     }
   }
@@ -344,7 +344,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='10000','local_dictionary_include'='hello')
+          | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'='hello')
         """.stripMargin)
     }
   }
@@ -358,7 +358,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='10000','local_dictionary_include'='name',
+          | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'='name',
           | 'dictionary_include'='name')
         """.stripMargin)
     }
@@ -422,7 +422,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -787,7 +787,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='10000')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -795,7 +795,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case Some(row) => assert(row.get(1).toString.contains("20000"))
     }
   }
 
@@ -811,7 +811,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -827,7 +827,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -843,7 +843,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -859,7 +859,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -872,7 +872,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='10000',
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000',
         | 'local_dictionary_include'='name')
       """.stripMargin)
 
@@ -882,7 +882,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case Some(row) => assert(row.get(1).toString.contains("20000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
@@ -908,7 +908,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
@@ -934,7 +934,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
@@ -960,7 +960,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
@@ -977,7 +977,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='10000',
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000',
           | 'local_dictionary_include'='name,name')
         """.stripMargin)
     }
@@ -993,7 +993,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='10000',
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000',
           | 'local_dictionary_include'=' ')
         """.stripMargin)
     }
@@ -1009,7 +1009,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='10000',
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000',
           | 'local_dictionary_include'='hello')
         """.stripMargin)
     }
@@ -1025,7 +1025,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='10000',
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000',
           | 'local_dictionary_include'='name','dictionary_include'='name')
         """.stripMargin)
     }
@@ -1193,7 +1193,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='10000')
+        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='20000')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -1275,7 +1275,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='10000',
+        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='20000',
         | 'local_dictionary_include'='name')
       """.stripMargin)
 
@@ -1352,7 +1352,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='10000',
+        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='20000',
         | 'local_dictionary_include'='name,name')
       """.stripMargin)
     val descLoc = sql("describe formatted local1").collect
@@ -1370,7 +1370,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='10000',
+        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='20000',
         | 'local_dictionary_include'=' ')
       """.stripMargin)
 
@@ -1389,7 +1389,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='10000',
+        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='20000',
         | 'local_dictionary_include'='hello')
       """.stripMargin)
 
@@ -1408,7 +1408,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='10000',
+        | tblproperties('local_dictionary_enable'='false','local_dictionary_threshold'='20000',
         | 'local_dictionary_include'='name','dictionary_include'='name')
       """.stripMargin)
 
@@ -1576,7 +1576,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -1988,7 +1988,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     sql(
       """
         | CREATE TABLE local1 STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='10000')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000')
         | as select * from local
       """.stripMargin)
 
@@ -1997,7 +1997,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case Some(row) => assert(row.get(1).toString.contains("20000"))
     }
   }
 
@@ -2019,7 +2019,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -2041,7 +2041,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
   }
 
@@ -2057,13 +2057,13 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     sql(
       """
         | CREATE TABLE local1 STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='10000','local_dictionary_include'='city')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000','local_dictionary_include'='city')
         | as select * from local
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("20000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
@@ -2081,12 +2081,12 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='true',
-        | 'local_dictionary_threshold'='10000','local_dictionary_include'='city','no_inverted_index'='name')
+        | 'local_dictionary_threshold'='20000','local_dictionary_include'='city','no_inverted_index'='name')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("1000"))
+      case Some(row) => assert(row.get(1).toString.contains("20000"))
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))

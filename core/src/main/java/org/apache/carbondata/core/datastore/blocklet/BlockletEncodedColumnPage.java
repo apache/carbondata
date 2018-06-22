@@ -137,7 +137,6 @@ public class BlockletEncodedColumnPage {
           // add the encoded column page to list
           encodedColumnPageList.set(fallbackEncodedColumnPage.getPageIndex(),
               fallbackEncodedColumnPage.getEncodedColumnPage());
-          fallbackFutureQueue.poll();
         }
       } catch (ExecutionException | InterruptedException e) {
         throw new RuntimeException("Problem while encoding the blocklet data during fallback", e);

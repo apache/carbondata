@@ -30,6 +30,7 @@ import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.CarbonUtil
 
 private[sql] case class CarbonDescribeFormattedCommand(
@@ -112,21 +113,34 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("CACHE_LEVEL", tblProps.getOrDefault("CACHE_LEVEL", "BLOCK"), ""))
     val isStreaming = tblProps.asScala.getOrElse("streaming", "false")
     results ++= Seq(("Streaming", isStreaming, ""))
-    val isLocalDictEnabled = tblProps.asScala
+    var isLocalDictEnabled = tblProps.asScala
       .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
-          CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
-    results ++= Seq(("Local Dictionary Enabled", isLocalDictEnabled, ""))
+        CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+    val localDictEnabled = isLocalDictEnabled.split(",") { 0 }
+    results ++= Seq(("Local Dictionary Enabled", localDictEnabled, ""))
     // if local dictionary is enabled, then only show other properties of local dictionary
-    if (isLocalDictEnabled.toBoolean) {
-      val localDictThreshold = tblProps.asScala
+    if (localDictEnabled.toBoolean) {
+      var localDictThreshold = tblProps.asScala
         .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
           CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
+      val localDictionaryThreshold = localDictThreshold.split(",")
+      localDictThreshold = localDictionaryThreshold { 0 }
       results ++= Seq(("Local Dictionary Threshold", localDictThreshold, ""))
+      val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
       if (tblProps.asScala
         .get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE).isDefined) {
         val allLocalDictColumns = tblProps.asScala(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
           .split(",")
         results ++= Seq(("Local Dictionary Include", getDictColumnString(allLocalDictColumns), ""))
+      } else {
+        val builder = new StringBuilder
+        columns.foreach { column =>
+          if (column.isLocalDictColumn) {
+            builder.append(column.getColumnName).append(",")
+          }
+        }
+        results ++=
+        Seq(("Local Dictionary Include", getDictColumnString(builder.toString().split(",")), ""))
       }
       if (tblProps.asScala
         .get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).isDefined) {

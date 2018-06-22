@@ -92,6 +92,7 @@ object MVHelper {
       tableProperties,
       None,
       isAlterFlow = false,
+      isPreAggFlow = false,
       None)
 
     val tablePath = if (dmProperties.contains("path")) {

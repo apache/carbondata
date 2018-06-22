@@ -299,6 +299,13 @@ class AlterTableColumnSchemaGenerator(
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
 
+    if (alterTableModel.tableProperties != null) {
+      CarbonUtil
+        .setLocalDictColumnsToWrapperSchema(newCols.asJava,
+          alterTableModel.tableProperties.asJava,
+          tableSchema.getTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE))
+    }
+
     // populate table properties map
     val tablePropertiesMap = tableSchema.getTableProperties
     alterTableModel.tableProperties.foreach {
@@ -584,7 +591,9 @@ class TableNewProcessor(cm: TableModel) {
     // check whether the column is a local dictionary column and set in column schema
     if (null != cm.tableProperties) {
       CarbonUtil
-        .setLocalDictColumnsToWrapperSchema(allColumns.asJava, cm.tableProperties.asJava)
+        .setLocalDictColumnsToWrapperSchema(allColumns.asJava,
+          cm.tableProperties.asJava,
+          cm.tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE))
     }
     cm.msrCols.foreach { field =>
       // if aggregate function is defined in case of preaggregate and agg function is sum or avg
