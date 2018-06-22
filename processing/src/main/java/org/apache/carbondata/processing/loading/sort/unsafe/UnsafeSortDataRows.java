@@ -149,7 +149,6 @@ public class UnsafeSortDataRows {
     if (isMemoryAvailable) {
       UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
     } else {
-      LOGGER.info("trigger in-memory merge and spill for table " + parameters.getTableName());
       // merge and spill in-memory pages to disk if memory is not enough
       unsafeInMemoryIntermediateFileMerger.tryTriggerInmemoryMerging(true);
     }
