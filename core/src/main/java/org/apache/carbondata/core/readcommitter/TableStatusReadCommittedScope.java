@@ -26,9 +26,10 @@ import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.mutate.UpdateVO;
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.statusmanager.SegmentsHolder;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -38,7 +39,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 @InterfaceStability.Stable
 public class TableStatusReadCommittedScope implements ReadCommittedScope {
 
-  private LoadMetadataDetails[] loadMetadataDetails;
+  private SegmentsHolder segmentsHolder;
 
   private AbsoluteTableIdentifier identifier;
 
@@ -48,17 +49,17 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   }
 
   public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
-      LoadMetadataDetails[] loadMetadataDetails) throws IOException {
+      SegmentsHolder segmentsHolder) throws IOException {
     this.identifier = identifier;
-    this.loadMetadataDetails = loadMetadataDetails;
+    this.segmentsHolder = segmentsHolder;
   }
 
-  @Override public LoadMetadataDetails[] getSegmentList() throws IOException {
+  @Override public SegmentsHolder getSegments() throws IOException {
     try {
-      if (loadMetadataDetails == null) {
+      if (segmentsHolder == null) {
         takeCarbonIndexFileSnapShot();
       }
-      return loadMetadataDetails;
+      return segmentsHolder;
 
     } catch (IOException ex) {
       throw new IOException("Problem encountered while reading the Table Status file.", ex);
@@ -93,8 +94,8 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   @Override public void takeCarbonIndexFileSnapShot() throws IOException {
     // Only Segment Information is updated.
     // File information will be fetched on the fly according to the fecthed segment info.
-    this.loadMetadataDetails = SegmentStatusManager
-        .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
+    this.segmentsHolder = new SegmentManager().getAllSegments(identifier);
+    this.segmentsHolder.setReadCommittedScope(this);
   }
 
 }

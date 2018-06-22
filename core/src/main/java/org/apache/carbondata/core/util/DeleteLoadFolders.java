@@ -38,6 +38,8 @@ import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -168,17 +170,17 @@ public final class DeleteLoadFolders {
     }
   }
 
-  private static boolean checkIfLoadCanBeDeleted(LoadMetadataDetails oneLoad,
+  private static boolean checkIfLoadCanBeDeleted(SegmentDetailVO oneLoad,
       boolean isForceDelete) {
-    if ((SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus() ||
-        SegmentStatus.COMPACTED == oneLoad.getSegmentStatus() ||
-        SegmentStatus.INSERT_IN_PROGRESS == oneLoad.getSegmentStatus() ||
-        SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneLoad.getSegmentStatus())
-        && oneLoad.getVisibility().equalsIgnoreCase("true")) {
+    if ((SegmentStatus.MARKED_FOR_DELETE.toString().equals(oneLoad.getStatus()) ||
+        SegmentStatus.COMPACTED.toString().equals(oneLoad.getStatus()) ||
+        SegmentStatus.INSERT_IN_PROGRESS.toString().equals(oneLoad.getStatus()) ||
+        SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS.toString().equals(oneLoad.getStatus()))
+        && oneLoad.getVisibility()) {
       if (isForceDelete) {
         return true;
       }
-      long deletionTime = oneLoad.getModificationOrdeletionTimesStamp();
+      long deletionTime = oneLoad.getModificationOrDeletionTimestamp();
 
       return CarbonUpdateUtil.isMaxQueryTimeoutExceeded(deletionTime);
 
@@ -203,51 +205,40 @@ public final class DeleteLoadFolders {
     return false;
   }
 
-  private static LoadMetadataDetails getCurrentLoadStatusOfSegment(String segmentId,
-      String metadataPath) {
-    LoadMetadataDetails[] currentDetails = SegmentStatusManager.readLoadMetadata(metadataPath);
-    for (LoadMetadataDetails oneLoad : currentDetails) {
-      if (oneLoad.getLoadName().equalsIgnoreCase(segmentId)) {
-        return oneLoad;
-      }
-    }
-    return null;
-  }
-
   public static boolean deleteLoadFoldersFromFileSystem(
       AbsoluteTableIdentifier absoluteTableIdentifier, boolean isForceDelete,
-      LoadMetadataDetails[] details, String metadataPath) {
+      List<SegmentDetailVO> details) {
     boolean isDeleted = false;
-    if (details != null && details.length != 0) {
-      for (LoadMetadataDetails oneLoad : details) {
+    if (details != null && details.size() != 0) {
+      for (SegmentDetailVO oneLoad : details) {
         if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
           ICarbonLock segmentLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
-              CarbonTablePath.addSegmentPrefix(oneLoad.getLoadName()) + LockUsage.LOCK);
+              CarbonTablePath.addSegmentPrefix(oneLoad.getSegmentId()) + LockUsage.LOCK);
           try {
-            if (oneLoad.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
-                || oneLoad.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS) {
+            if (oneLoad.getStatus().equals(SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS.toString())
+                || oneLoad.getStatus().equals(SegmentStatus.INSERT_IN_PROGRESS.toString())) {
               if (segmentLock.lockWithRetries(1, 5)) {
-                LOGGER.info("Info: Acquired segment lock on segment:" + oneLoad.getLoadName());
-                LoadMetadataDetails currentDetails =
-                    getCurrentLoadStatusOfSegment(oneLoad.getLoadName(), metadataPath);
+                LOGGER.info("Info: Acquired segment lock on segment:" + oneLoad.getSegmentId());
+                SegmentDetailVO currentDetails =
+                    new SegmentManager().getSegment(absoluteTableIdentifier, oneLoad.getSegmentId());
                 if (currentDetails != null && checkIfLoadCanBeDeleted(currentDetails,
                     isForceDelete)) {
-                  oneLoad.setVisibility("false");
+                  oneLoad.setVisibility(false);
                   isDeleted = true;
-                  LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());
+                  LOGGER.info("Info: Deleted the load " + oneLoad.getSegmentId());
                 }
               } else {
-                LOGGER.info("Info: Load in progress for segment" + oneLoad.getLoadName());
+                LOGGER.info("Info: Load in progress for segment" + oneLoad.getSegmentId());
                 return isDeleted;
               }
             } else {
-              oneLoad.setVisibility("false");
+              oneLoad.setVisibility(false);
               isDeleted = true;
-              LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());
+              LOGGER.info("Info: Deleted the load " + oneLoad.getSegmentId());
             }
           } finally {
             segmentLock.unlock();
-            LOGGER.info("Info: Segment lock on segment:" + oneLoad.getLoadName() + " is released");
+            LOGGER.info("Info: Segment lock on segment:" + oneLoad.getSegmentId() + " is released");
           }
         }
       }

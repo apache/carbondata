@@ -45,7 +45,9 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.statusmanager.SegmentsHolder;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -167,15 +169,15 @@ public class SearchRequestHandler {
     Objects.requireNonNull(datamap);
     List<Segment> segments = new LinkedList<>();
     HashMap<String, Integer> uniqueSegments = new HashMap<>();
-    LoadMetadataDetails[] loadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(
-            CarbonTablePath.getMetadataPath(table.getTablePath()));
+    SegmentsHolder segmentsHolder =
+        new SegmentManager().getAllSegments(table.getAbsoluteTableIdentifier());
     for (CarbonInputSplit split : mbSplit.getAllSplits()) {
-      String segmentId = Segment.getSegment(split.getSegmentId(), loadMetadataDetails).toString();
+      String segmentId =
+          Segment.getSegment(split.getSegmentId(), segmentsHolder.getValidSegments()).toString();
       if (uniqueSegments.get(segmentId) == null) {
         segments.add(Segment.toSegment(segmentId,
             new TableStatusReadCommittedScope(table.getAbsoluteTableIdentifier(),
-                loadMetadataDetails)));
+                segmentsHolder)));
         uniqueSegments.put(segmentId, 1);
       } else {
         uniqueSegments.put(segmentId, uniqueSegments.get(segmentId) + 1);

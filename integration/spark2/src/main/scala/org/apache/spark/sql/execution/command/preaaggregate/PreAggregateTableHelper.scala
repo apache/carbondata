@@ -38,7 +38,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{SegmentManager, SegmentStatus, SegmentStatusManager}
 
 /**
  * Below helper class will be used to create pre-aggregate table
@@ -263,7 +263,7 @@ case class PreAggregateTableHelper(
     // This will be used to check if the parent table has any segments or not. If not then no
     // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT
     // table.
-    SegmentStatusManager.deleteLoadsAndUpdateMetadata(
+    new SegmentManager().deleteLoadsAndUpdateMetadata(
       parentTable,
       false,
       CarbonFilters.getCurrentPartitions(
@@ -277,12 +277,9 @@ case class PreAggregateTableHelper(
         "Cannot create pre-aggregate table when insert is in progress on parent table")
     }
     // check if any segment if available for load in the parent table
-    val loadAvailable = SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath)
-      .collect {
-        case segment if segment.getSegmentStatus == SegmentStatus.SUCCESS ||
-                        segment.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS =>
-          new Segment(segment.getLoadName, segment.getSegmentFile).toString
-      }
+    val loadAvailable =
+      new SegmentManager().getValidSegments(
+        parentTable.getAbsoluteTableIdentifier).getValidSegments.asScala.map(_.toString)
     if (loadAvailable.nonEmpty) {
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.

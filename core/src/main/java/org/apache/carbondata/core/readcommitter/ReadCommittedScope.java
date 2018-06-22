@@ -24,8 +24,8 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.mutate.UpdateVO;
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
+import org.apache.carbondata.core.statusmanager.SegmentsHolder;
 
 /**
  * ReadCommitted interface that defines a read scope.
@@ -33,7 +33,7 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 @InterfaceAudience.Internal
 @InterfaceStability.Stable public interface ReadCommittedScope extends Serializable {
 
-  LoadMetadataDetails[] getSegmentList() throws IOException;
+  SegmentsHolder getSegments() throws IOException;
 
   /**
    * @param segment
@@ -42,10 +42,10 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
    * as value -- with mergeIndex
    * @throws IOException
    */
-  Map<String, String> getCommittedIndexFile(Segment segment) throws IOException;
+  Map<String, String> getCommittedIndexFile(Segment segment) throws IOException ;
 
-  SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo)
-      throws IOException;
+  SegmentRefreshInfo getCommittedSegmentRefreshInfo(
+      Segment segment, UpdateVO updateVo) throws IOException;
 
   void takeCarbonIndexFileSnapShot() throws IOException;
 }

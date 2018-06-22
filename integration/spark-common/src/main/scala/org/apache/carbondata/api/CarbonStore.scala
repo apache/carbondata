@@ -21,7 +21,6 @@ import java.lang.Long
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.fs.{LocatedFileStatus, Path, RemoteIterator}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.util.CarbonException
@@ -30,6 +29,7 @@ import org.apache.spark.unsafe.types.UTF8String
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -37,7 +37,7 @@ import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{SegmentManager, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 object CarbonStore {
@@ -45,22 +45,22 @@ object CarbonStore {
 
   def showSegments(
       limit: Option[String],
-      tableFolderPath: String,
+      identifier: AbsoluteTableIdentifier,
       showHistory: Boolean): Seq[Row] = {
     val loadMetadataDetailsArray = if (showHistory) {
-      SegmentStatusManager.readLoadMetadata(tableFolderPath) ++
-      SegmentStatusManager.readLoadHistoryMetadata(tableFolderPath)
+      new SegmentManager().getAllSegments(identifier).getAllSegments.asScala ++
+      new SegmentManager().getAllHistorySegments(identifier).getAllSegments.asScala
     } else {
-      SegmentStatusManager.readLoadMetadata(tableFolderPath)
+      new SegmentManager().getAllSegments(identifier).getAllSegments.asScala
     }
 
     if (loadMetadataDetailsArray.nonEmpty) {
       var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith { (l1, l2) =>
-        java.lang.Double.parseDouble(l1.getLoadName) > java.lang.Double.parseDouble(l2.getLoadName)
+        l1.getLoadStartTime > l2.getLoadStartTime
       }
       if (!showHistory) {
         loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray
-          .filter(_.getVisibility.equalsIgnoreCase("true"))
+          .filter(_.getVisibility)
       }
       if (limit.isDefined) {
         val limitLoads = limit.get
@@ -76,8 +76,8 @@ object CarbonStore {
       loadMetadataDetailsSortedArray
         .map { load =>
           val mergedTo =
-            if (load.getMergedLoadName != null) {
-              load.getMergedLoadName
+            if (load.getMergedSegmentIds != null) {
+              load.getMergedSegmentIds
             } else {
               "NA"
             }
@@ -98,23 +98,23 @@ object CarbonStore {
 
           if (showHistory) {
             Row(
-              load.getLoadName,
-              load.getSegmentStatus.getMessage,
+              load.getSegmentId,
+              load.getStatus,
               startTime,
               endTime,
               mergedTo,
-              load.getFileFormat.toString,
-              load.getVisibility())
+              load.getFileFormat,
+              load.getVisibility)
           } else {
             Row(
-              load.getLoadName,
-              load.getSegmentStatus.getMessage,
+              load.getSegmentId,
+              load.getStatus,
               startTime,
               endTime,
               mergedTo,
-              load.getFileFormat.toString)
+              load.getFileFormat)
           }
-        }.toSeq
+        }
     } else {
       Seq.empty
     }
@@ -160,7 +160,7 @@ object CarbonStore {
         carbonCleanFilesLock =
           CarbonLockUtil
             .getLockObject(absoluteTableIdentifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
-        SegmentStatusManager.deleteLoadsAndUpdateMetadata(
+        new SegmentManager().deleteLoadsAndUpdateMetadata(
           carbonTable, true, currentTablePartitions.map(_.asJava).orNull)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
         currentTablePartitions match {
@@ -195,8 +195,9 @@ object CarbonStore {
   def cleanUpPartitionFoldersRecurssively(carbonTable: CarbonTable,
       partitionSpecList: List[PartitionSpec]): Unit = {
     if (carbonTable != null) {
-      val loadMetadataDetails = SegmentStatusManager
-        .readLoadMetadata(carbonTable.getMetadataPath)
+      val loadMetadataDetails =
+        new SegmentManager().getInvalidSegments(
+          carbonTable.getAbsoluteTableIdentifier).getInValidSegmentDetailVOs.asScala
 
       val fileType = FileFactory.getFileType(carbonTable.getTablePath)
       val carbonFile = FileFactory.getCarbonFile(carbonTable.getTablePath, fileType)
@@ -204,8 +205,8 @@ object CarbonStore {
       // list all files from table path
       val listOfDefaultPartFilesIterator = carbonFile.listFiles(true)
       loadMetadataDetails.foreach { metadataDetail =>
-        if (metadataDetail.getSegmentStatus.equals(SegmentStatus.MARKED_FOR_DELETE) &&
-            metadataDetail.getSegmentFile == null) {
+        if (metadataDetail.getStatus.equals(SegmentStatus.MARKED_FOR_DELETE.toString) &&
+            metadataDetail.getSegmentFileName == null) {
           val loadStartTime: Long = metadataDetail.getLoadStartTime
           // delete all files of @loadStartTime from tablepath
           cleanCarbonFilesInFolder(listOfDefaultPartFilesIterator, loadStartTime)
@@ -317,11 +318,10 @@ object CarbonStore {
       tableName: String,
       storePath: String,
       segmentId: String): Boolean = {
-    val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName, tableName)
-    val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
-        SegmentStatusManager(
-          identifier).getValidAndInvalidSegments
-    validAndInvalidSegments.getValidSegments.contains(segmentId)
+    val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
+    val validSegments = new
+        SegmentManager().getValidSegments(identifier).getValidSegments
+    validSegments.contains(Segment.toSegment(segmentId))
   }
 
   private def validateTimeFormat(timestamp: String): Long = {

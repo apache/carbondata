@@ -41,7 +41,7 @@ import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchem
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.preagg.{AggregateQueryPlan, AggregateTableSelector, QueryColumn}
 import org.apache.carbondata.core.profiler.ExplainCollector
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentManager, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonUtil, ThreadLocalSessionInfo}
 
 /**
@@ -719,13 +719,14 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    */
   def setSegmentsForStreaming(parentTable: CarbonTable, dataMapSchema: DataMapSchema): Unit = {
     val mainTableKey = parentTable.getDatabaseName + '.' + parentTable.getTableName
-    val factManager = new SegmentStatusManager(parentTable.getAbsoluteTableIdentifier)
+    val factManager = new SegmentManager()
     CarbonSession
       .threadSet(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING + mainTableKey, "true")
     CarbonSession
       .threadSet(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS + mainTableKey,
-        factManager.getValidAndInvalidSegments.getValidSegments.asScala.mkString(","))
+        factManager.getValidSegments(
+          parentTable.getAbsoluteTableIdentifier).getValidSegments.asScala.mkString(","))
     CarbonSession
       .threadSet(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS + mainTableKey, "true")
     // below code is for aggregate table
@@ -735,9 +736,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val carbonRelation =
       catalog.lookupRelation(identifier)(sparkSession).asInstanceOf[CarbonRelation]
-    val segmentStatusManager = new SegmentStatusManager(carbonRelation.carbonTable
-      .getAbsoluteTableIdentifier)
-    val validSegments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala
+    val segmentStatusManager = new SegmentManager()
+    val validSegments = segmentStatusManager.getValidSegments(carbonRelation.carbonTable
+      .getAbsoluteTableIdentifier).getValidSegments.asScala
       .mkString(",")
     val childTableKey = carbonRelation.carbonTable.getDatabaseName + '.' +
                    carbonRelation.carbonTable.getTableName

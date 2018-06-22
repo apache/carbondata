@@ -16,13 +16,9 @@
  */
 package org.apache.carbondata.processing.util;
 
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -40,9 +36,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
-import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -51,6 +44,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -62,7 +56,6 @@ import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 
 import static org.apache.carbondata.core.enums.EscapeSequences.*;
 
-import com.google.gson.Gson;
 import org.apache.commons.lang3.StringUtils;
 
 public final class CarbonLoaderUtil {
@@ -145,20 +138,20 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  /**
-   * This API will write the load level metadata for the loadmanagement module inorder to
-   * manage the load and query execution management smoothly.
-   *
-   * @param newMetaEntry
-   * @param loadModel
-   * @return boolean which determines whether status update is done or not.
-   * @throws IOException
-   */
-  public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
-      throws IOException {
-    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, "");
-  }
+//  /**
+//   * This API will write the load level metadata for the loadmanagement module inorder to
+//   * manage the load and query execution management smoothly.
+//   *
+//   * @param newMetaEntry
+//   * @param loadModel
+//   * @return boolean which determines whether status update is done or not.
+//   * @throws IOException
+//   */
+//  public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
+//      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
+//      throws IOException {
+//    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, "");
+//  }
 
   /**
    * This API deletes the content of the non Transactional Tables when insert overwrite is set true.
@@ -184,189 +177,189 @@ public final class CarbonLoaderUtil {
     deleteFiles(filesToBeDeleted);
   }
 
-  /**
-   * This API will write the load level metadata for the loadmanagement module inorder to
-   * manage the load and query execution management smoothly.
-   *
-   * @param newMetaEntry
-   * @param loadModel
-   * @param uuid
-   * @return boolean which determines whether status update is done or not.
-   * @throws IOException
-   */
-  public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
-      throws IOException {
-    // For Non Transactional tables no need to update the the Table Status file.
-    if (!loadModel.isCarbonTransactionalTable()) {
-      return true;
-    }
+//  /**
+//   * This API will write the load level metadata for the loadmanagement module inorder to
+//   * manage the load and query execution management smoothly.
+//   *
+//   * @param newMetaEntry
+//   * @param loadModel
+//   * @param uuid
+//   * @return boolean which determines whether status update is done or not.
+//   * @throws IOException
+//   */
+//  public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
+//      final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
+//      throws IOException {
+//    // For Non Transactional tables no need to update the the Table Status file.
+//    if (!loadModel.isCarbonTransactionalTable()) {
+//      return true;
+//    }
+//
+//    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
+//        new ArrayList<Segment>(), new ArrayList<Segment>());
+//  }
 
-    return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
-        new ArrayList<Segment>(), new ArrayList<Segment>());
-  }
-
-  /**
-   * This API will write the load level metadata for the loadmanagement module inorder to
-   * manage the load and query execution management smoothly.
-   *
-   * @param newMetaEntry
-   * @param loadModel
-   * @param uuid
-   * @return boolean which determines whether status update is done or not.
-   * @throws IOException
-   */
-  public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid,
-      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated) throws IOException {
-    boolean status = false;
-    AbsoluteTableIdentifier identifier =
-        loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    if (loadModel.isCarbonTransactionalTable()) {
-      String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
-      FileType fileType = FileFactory.getFileType(metadataPath);
-      if (!FileFactory.isFileExist(metadataPath, fileType)) {
-        FileFactory.mkdirs(metadataPath, fileType);
-      }
-    }
-    String tableStatusPath;
-    if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !uuid.isEmpty()) {
-      tableStatusPath = CarbonTablePath.getTableStatusFilePathWithUUID(
-          identifier.getTablePath(), uuid);
-    } else {
-      tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
-    }
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
-    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
-    int retryCount = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
-            CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
-    int maxTimeout = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
-            CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
-    try {
-      if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
-        LOGGER.info(
-            "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
-                + " for table status updation");
-        LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-            SegmentStatusManager.readLoadMetadata(
-                CarbonTablePath.getMetadataPath(identifier.getTablePath()));
-        List<LoadMetadataDetails> listOfLoadFolderDetails =
-            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        List<CarbonFile> staleFolders = new ArrayList<>();
-        Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
-        // create a new segment Id if load has just begun else add the already generated Id
-        if (loadStartEntry) {
-          String segmentId =
-              String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
-          loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
-          // Segment id would be provided in case this is compaction flow for aggregate data map.
-          // If that is true then used the segment id as the load name.
-          if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadModel
-              .getSegmentId().isEmpty()) {
-            newMetaEntry.setLoadName(loadModel.getSegmentId());
-          } else {
-            newMetaEntry.setLoadName(segmentId);
-            loadModel.setSegmentId(segmentId);
-          }
-          // Exception should be thrown if:
-          // 1. If insert overwrite is in progress and any other load or insert operation
-          // is triggered
-          // 2. If load or insert into operation is in progress and insert overwrite operation
-          // is triggered
-          for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-            if (entry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
-                && SegmentStatusManager.isLoadInProgress(
-                    identifier, entry.getLoadName())) {
-              throw new RuntimeException("Already insert overwrite is in progress");
-            } else if (newMetaEntry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
-                && entry.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS
-                && SegmentStatusManager.isLoadInProgress(
-                    identifier, entry.getLoadName())) {
-              throw new RuntimeException("Already insert into or load is in progress");
-            }
-          }
-          listOfLoadFolderDetails.add(newMetaEntry);
-        } else {
-          newMetaEntry.setLoadName(String.valueOf(loadModel.getSegmentId()));
-          // existing entry needs to be overwritten as the entry will exist with some
-          // intermediate status
-          int indexToOverwriteNewMetaEntry = 0;
-          boolean found = false;
-          for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-            if (entry.getLoadName().equals(newMetaEntry.getLoadName())
-                && entry.getLoadStartTime() == newMetaEntry.getLoadStartTime()) {
-              found = true;
-              break;
-            }
-            indexToOverwriteNewMetaEntry++;
-          }
-          if (insertOverwrite) {
-            for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-              if (entry.getSegmentStatus() != SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
-                entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
-                // For insert overwrite, we will delete the old segment folder immediately
-                // So collect the old segments here
-                addToStaleFolders(identifier, staleFolders, entry);
-              }
-            }
-          }
-          if (!found) {
-            LOGGER.error("Entry not found to update " + newMetaEntry + " From list :: "
-                + listOfLoadFolderDetails);
-            throw new IOException("Entry not found to update in the table status file");
-          }
-          listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
-        }
-        // when no records are inserted then newSegmentEntry will be SegmentStatus.MARKED_FOR_DELETE
-        // so empty segment folder should be deleted
-        if (newMetaEntry.getSegmentStatus() == SegmentStatus.MARKED_FOR_DELETE) {
-          addToStaleFolders(identifier, staleFolders, newMetaEntry);
-        }
-
-        for (LoadMetadataDetails detail: listOfLoadFolderDetails) {
-          // if the segments is in the list of marked for delete then update the status.
-          if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName(), null))) {
-            detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
-          } else if (segmentFilesTobeUpdated
-              .contains(Segment.toSegment(detail.getLoadName(), null))) {
-            detail.setSegmentFile(
-                detail.getLoadName() + "_" + newMetaEntry.getUpdateStatusFileName()
-                    + CarbonTablePath.SEGMENT_EXT);
-          }
-        }
-
-        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
-            .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
-        // Delete all old stale segment folders
-        for (CarbonFile staleFolder : staleFolders) {
-          // try block is inside for loop because even if there is failure in deletion of 1 stale
-          // folder still remaining stale folders should be deleted
-          try {
-            CarbonUtil.deleteFoldersAndFiles(staleFolder);
-          } catch (IOException | InterruptedException e) {
-            LOGGER.error("Failed to delete stale folder: " + e.getMessage());
-          }
-        }
-        status = true;
-      } else {
-        LOGGER.error("Not able to acquire the lock for Table status updation for table " + loadModel
-            .getDatabaseName() + "." + loadModel.getTableName());
-      };
-    } finally {
-      if (carbonLock.unlock()) {
-        LOGGER.info(
-            "Table unlocked successfully after table status updation" + loadModel.getDatabaseName()
-                + "." + loadModel.getTableName());
-      } else {
-        LOGGER.error(
-            "Unable to unlock Table lock for table" + loadModel.getDatabaseName() + "." + loadModel
-                .getTableName() + " during table status updation");
-      }
-    }
-    return status;
-  }
+//  /**
+//   * This API will write the load level metadata for the loadmanagement module inorder to
+//   * manage the load and query execution management smoothly.
+//   *
+//   * @param newMetaEntry
+//   * @param loadModel
+//   * @param uuid
+//   * @return boolean which determines whether status update is done or not.
+//   * @throws IOException
+//   */
+//  public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
+//      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid,
+//      List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated) throws IOException {
+//    boolean status = false;
+//    AbsoluteTableIdentifier identifier =
+//        loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
+//    if (loadModel.isCarbonTransactionalTable()) {
+//      String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
+//      FileType fileType = FileFactory.getFileType(metadataPath);
+//      if (!FileFactory.isFileExist(metadataPath, fileType)) {
+//        FileFactory.mkdirs(metadataPath, fileType);
+//      }
+//    }
+//    String tableStatusPath;
+//    if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !uuid.isEmpty()) {
+//      tableStatusPath = CarbonTablePath.getTableStatusFilePathWithUUID(
+//          identifier.getTablePath(), uuid);
+//    } else {
+//      tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
+//    }
+//    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
+//    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
+//    int retryCount = CarbonLockUtil
+//        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
+//            CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
+//    int maxTimeout = CarbonLockUtil
+//        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+//            CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
+//    try {
+//      if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
+//        LOGGER.info(
+//            "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
+//                + " for table status updation");
+//        LoadMetadataDetails[] listOfLoadFolderDetailsArray =
+//            SegmentStatusManager.readLoadMetadata(
+//                CarbonTablePath.getMetadataPath(identifier.getTablePath()));
+//        List<LoadMetadataDetails> listOfLoadFolderDetails =
+//            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+//        List<CarbonFile> staleFolders = new ArrayList<>();
+//        Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
+//        // create a new segment Id if load has just begun else add the already generated Id
+//        if (loadStartEntry) {
+//          String segmentId =
+//              String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
+//          loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
+//          // Segment id would be provided in case this is compaction flow for aggregate data map.
+//          // If that is true then used the segment id as the load name.
+//          if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadModel
+//              .getSegmentId().isEmpty()) {
+//            newMetaEntry.setLoadName(loadModel.getSegmentId());
+//          } else {
+//            newMetaEntry.setLoadName(segmentId);
+//            loadModel.setSegmentId(segmentId);
+//          }
+//          // Exception should be thrown if:
+//          // 1. If insert overwrite is in progress and any other load or insert operation
+//          // is triggered
+//          // 2. If load or insert into operation is in progress and insert overwrite operation
+//          // is triggered
+//          for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
+//            if (entry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
+//                && SegmentStatusManager.isLoadInProgress(
+//                    identifier, entry.getLoadName())) {
+//              throw new RuntimeException("Already insert overwrite is in progress");
+//            } else if (newMetaEntry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
+//                && entry.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS
+//                && SegmentStatusManager.isLoadInProgress(
+//                    identifier, entry.getLoadName())) {
+//              throw new RuntimeException("Already insert into or load is in progress");
+//            }
+//          }
+//          listOfLoadFolderDetails.add(newMetaEntry);
+//        } else {
+//          newMetaEntry.setLoadName(String.valueOf(loadModel.getSegmentId()));
+//          // existing entry needs to be overwritten as the entry will exist with some
+//          // intermediate status
+//          int indexToOverwriteNewMetaEntry = 0;
+//          boolean found = false;
+//          for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
+//            if (entry.getLoadName().equals(newMetaEntry.getLoadName())
+//                && entry.getLoadStartTime() == newMetaEntry.getLoadStartTime()) {
+//              found = true;
+//              break;
+//            }
+//            indexToOverwriteNewMetaEntry++;
+//          }
+//          if (insertOverwrite) {
+//            for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
+//              if (entry.getSegmentStatus() != SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+//                entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+//                // For insert overwrite, we will delete the old segment folder immediately
+//                // So collect the old segments here
+//                addToStaleFolders(identifier, staleFolders, entry);
+//              }
+//            }
+//          }
+//          if (!found) {
+//            LOGGER.error("Entry not found to update " + newMetaEntry + " From list :: "
+//                + listOfLoadFolderDetails);
+//            throw new IOException("Entry not found to update in the table status file");
+//          }
+//          listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
+//        }
+//        // when no records are inserted then newSegmentEntry will be SegmentStatus.MARKED_FOR_DELETE
+//        // so empty segment folder should be deleted
+//        if (newMetaEntry.getSegmentStatus() == SegmentStatus.MARKED_FOR_DELETE) {
+//          addToStaleFolders(identifier, staleFolders, newMetaEntry);
+//        }
+//
+//        for (LoadMetadataDetails detail: listOfLoadFolderDetails) {
+//          // if the segments is in the list of marked for delete then update the status.
+//          if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName(), null))) {
+//            detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+//          } else if (segmentFilesTobeUpdated
+//              .contains(Segment.toSegment(detail.getLoadName(), null))) {
+//            detail.setSegmentFile(
+//                detail.getLoadName() + "_" + newMetaEntry.getUpdateStatusFileName()
+//                    + CarbonTablePath.SEGMENT_EXT);
+//          }
+//        }
+//
+//        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
+//            .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+//        // Delete all old stale segment folders
+//        for (CarbonFile staleFolder : staleFolders) {
+//          // try block is inside for loop because even if there is failure in deletion of 1 stale
+//          // folder still remaining stale folders should be deleted
+//          try {
+//            CarbonUtil.deleteFoldersAndFiles(staleFolder);
+//          } catch (IOException | InterruptedException e) {
+//            LOGGER.error("Failed to delete stale folder: " + e.getMessage());
+//          }
+//        }
+//        status = true;
+//      } else {
+//        LOGGER.error("Not able to acquire the lock for Table status updation for table " + loadModel
+//            .getDatabaseName() + "." + loadModel.getTableName());
+//      };
+//    } finally {
+//      if (carbonLock.unlock()) {
+//        LOGGER.info(
+//            "Table unlocked successfully after table status updation" + loadModel.getDatabaseName()
+//                + "." + loadModel.getTableName());
+//      } else {
+//        LOGGER.error(
+//            "Unable to unlock Table lock for table" + loadModel.getDatabaseName() + "." + loadModel
+//                .getTableName() + " during table status updation");
+//      }
+//    }
+//    return status;
+//  }
 
   private static void addToStaleFolders(AbsoluteTableIdentifier identifier,
       List<CarbonFile> staleFolders, LoadMetadataDetails entry) throws IOException {
@@ -379,23 +372,23 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  /**
-   * Method to create new entry for load in table status file
-   *
-   * @param loadMetadataDetails
-   * @param loadStatus
-   * @param loadStartTime
-   * @param addLoadEndTime
-   */
-  public static void populateNewLoadMetaEntry(LoadMetadataDetails loadMetadataDetails,
-      SegmentStatus loadStatus, long loadStartTime, boolean addLoadEndTime) {
-    if (addLoadEndTime) {
-      long loadEndDate = CarbonUpdateUtil.readCurrentTime();
-      loadMetadataDetails.setLoadEndTime(loadEndDate);
-    }
-    loadMetadataDetails.setSegmentStatus(loadStatus);
-    loadMetadataDetails.setLoadStartTime(loadStartTime);
-  }
+//  /**
+//   * Method to create new entry for load in table status file
+//   *
+//   * @param loadMetadataDetails
+//   * @param loadStatus
+//   * @param loadStartTime
+//   * @param addLoadEndTime
+//   */
+//  public static void populateNewLoadMetaEntry(LoadMetadataDetails loadMetadataDetails,
+//      SegmentStatus loadStatus, long loadStartTime, boolean addLoadEndTime) {
+//    if (addLoadEndTime) {
+//      long loadEndDate = CarbonUpdateUtil.readCurrentTime();
+//      loadMetadataDetails.setLoadEndTime(loadEndDate);
+//    }
+//    loadMetadataDetails.setSegmentStatus(loadStatus);
+//    loadMetadataDetails.setLoadStartTime(loadStartTime);
+//  }
 
   public static boolean isValidEscapeSequence(String escapeChar) {
     return escapeChar.equalsIgnoreCase(NEW_LINE.getName()) ||
@@ -418,65 +411,65 @@ public final class CarbonLoaderUtil {
   }
 
 
-  public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
-      boolean insertOverwrite, String uuid) throws IOException {
-    LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
-    SegmentStatus status = SegmentStatus.INSERT_IN_PROGRESS;
-    if (insertOverwrite) {
-      status = SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS;
-    }
+//  public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
+//      boolean insertOverwrite, String uuid) throws IOException {
+//    LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
+//    SegmentStatus status = SegmentStatus.INSERT_IN_PROGRESS;
+//    if (insertOverwrite) {
+//      status = SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS;
+//    }
+//
+//    // reading the start time of data load.
+//    if (model.getFactTimeStamp() == 0) {
+//      long loadStartTime = CarbonUpdateUtil.readCurrentTime();
+//      model.setFactTimeStamp(loadStartTime);
+//    }
+//    CarbonLoaderUtil
+//        .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
+//
+//    boolean entryAdded = CarbonLoaderUtil
+//        .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid);
+//    if (!entryAdded) {
+//      throw new IOException("Dataload failed due to failure in table status updation for "
+//          + model.getTableName());
+//    }
+//  }
+//
+//  public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
+//      boolean insertOverwrite) throws IOException {
+//    readAndUpdateLoadProgressInTableMeta(model, insertOverwrite, "");
+//  }
 
-    // reading the start time of data load.
-    if (model.getFactTimeStamp() == 0) {
-      long loadStartTime = CarbonUpdateUtil.readCurrentTime();
-      model.setFactTimeStamp(loadStartTime);
-    }
-    CarbonLoaderUtil
-        .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
-
-    boolean entryAdded = CarbonLoaderUtil
-        .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid);
-    if (!entryAdded) {
-      throw new IOException("Dataload failed due to failure in table status updation for "
-          + model.getTableName());
-    }
-  }
-
-  public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
-      boolean insertOverwrite) throws IOException {
-    readAndUpdateLoadProgressInTableMeta(model, insertOverwrite, "");
-  }
-
-  /**
-   * This method will update the load failure entry in the table status file
-   */
-  public static void updateTableStatusForFailure(CarbonLoadModel model, String uuid)
-      throws IOException {
-    // in case if failure the load status should be "Marked for delete" so that it will be taken
-    // care during clean up
-    SegmentStatus loadStatus = SegmentStatus.MARKED_FOR_DELETE;
-    // always the last entry in the load metadata details will be the current load entry
-    LoadMetadataDetails loadMetaEntry = model.getCurrentLoadMetadataDetail();
-    if (loadMetaEntry == null) {
-      return;
-    }
-    CarbonLoaderUtil
-        .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
-    boolean entryAdded = CarbonLoaderUtil.recordNewLoadMetadata(
-        loadMetaEntry, model, false, false, uuid);
-    if (!entryAdded) {
-      throw new IOException(
-          "Failed to update failure entry in table status for " + model.getTableName());
-    }
-  }
+//  /**
+//   * This method will update the load failure entry in the table status file
+//   */
+//  private static void updateTableStatusForFailure(CarbonLoadModel model, String uuid)
+//      throws IOException {
+//    // in case if failure the load status should be "Marked for delete" so that it will be taken
+//    // care during clean up
+//    SegmentStatus loadStatus = SegmentStatus.MARKED_FOR_DELETE;
+//    // always the last entry in the load metadata details will be the current load entry
+//    LoadMetadataDetails loadMetaEntry = model.getCurrentDetailVO();
+//    if (loadMetaEntry == null) {
+//      return;
+//    }
+//    CarbonLoaderUtil
+//        .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
+//    boolean entryAdded = CarbonLoaderUtil.recordNewLoadMetadata(
+//        loadMetaEntry, model, false, false, uuid);
+//    if (!entryAdded) {
+//      throw new IOException(
+//          "Failed to update failure entry in table status for " + model.getTableName());
+//    }
+//  }
 
   /**
    * This method will update the load failure entry in the table status file with empty uuid.
    */
-  public static void updateTableStatusForFailure(CarbonLoadModel model)
-      throws IOException {
-    updateTableStatusForFailure(model, "");
-  }
+//  public static void updateTableStatusForFailure(CarbonLoadModel model)
+//      throws IOException {
+//    updateTableStatusForFailure(model, "");
+//  }
 
   public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier)
       throws IOException {
@@ -544,7 +537,7 @@ public final class CarbonLoaderUtil {
    * @param noOfNodesInput -1 if number of nodes has to be decided
    *                       based on block location information
    * @param blockAssignmentStrategy strategy used to assign blocks
-   * @param loadMinSize the property load_min_size_inmb specified by the user
+   * @param expectedMinSizePerNode the property load_min_size_inmb specified by the user
    * @return a map that maps node to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(
@@ -1120,15 +1113,15 @@ public final class CarbonLoaderUtil {
    * This method will add data size and index size into tablestatus for each segment. And also
    * returns the size of the segment.
    */
-  public static Long addDataIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
+  public static Long addDataIndexSizeIntoMetaEntry(SegmentDetailVO detailVO,
       String segmentId, CarbonTable carbonTable) throws IOException {
     Map<String, Long> dataIndexSize = CarbonUtil.getDataSizeAndIndexSize(
         carbonTable.getTablePath(),
-        new Segment(segmentId, loadMetadataDetails.getSegmentFile()));
+        new Segment(segmentId, detailVO.getSegmentFileName()));
     Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
-    loadMetadataDetails.setDataSize(String.valueOf(dataSize));
+    detailVO.setDataSize(dataSize);
     Long indexSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE);
-    loadMetadataDetails.setIndexSize(String.valueOf(indexSize));
+    detailVO.setIndexSize(indexSize);
     return dataSize + indexSize;
   }
 
@@ -1143,7 +1136,7 @@ public final class CarbonLoaderUtil {
       throws IOException {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
-        .mergeCarbonIndexFilesOfSegment(segmentId, tablePath);
+        .mergeCarbonIndexFilesOfSegment(segmentId, table.getAbsoluteTableIdentifier());
   }
 
   private static void deleteFiles(List<String> filesToBeDeleted) throws IOException {

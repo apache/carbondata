@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentManager, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
@@ -74,13 +74,11 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     var noOfRetries = 0
     while (status && noOfRetries < 10) {
 
-      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-          AbsoluteTableIdentifier.from(
-            CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-            new CarbonTableIdentifier("default", "cardinalityTest", "1")
-          )
+      val identifier = AbsoluteTableIdentifier.from(
+        CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
+        new CarbonTableIdentifier("default", "cardinalityTest", "1")
       )
-      val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+      val segments = new SegmentManager().getValidSegments(identifier).getValidSegments.asScala.toList
 
       if (!segments.contains("0.1")) {
         // wait for 2 seconds for compaction to complete.

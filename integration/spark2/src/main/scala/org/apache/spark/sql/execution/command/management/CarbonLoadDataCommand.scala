@@ -59,7 +59,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{SegmentDetailVO, SegmentManager, SegmentManagerHelper, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil, ObjectSerializationUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
@@ -202,7 +202,7 @@ case class CarbonLoadDataCommand(
       carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
       carbonLoadModel.setAggLoadRequest(
         internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
-      carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
+      carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", null))
 
       val javaPartition = mutable.Map[String, String]()
       partition.foreach { case (k, v) =>
@@ -254,12 +254,18 @@ case class CarbonLoadDataCommand(
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
         // Clean up the old invalid segment data before creating a new entry for new load.
-        SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, currPartitions)
+        new SegmentManager().deleteLoadsAndUpdateMetadata(table, false, currPartitions)
         // add the start entry for the new load in the table status file
         if (updateModel.isEmpty && !table.isHivePartitionTable) {
-          CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
-            carbonLoadModel,
-            isOverwriteTable)
+          if (isOverwriteTable) {
+            carbonLoadModel.setCurrentDetailVO(
+              new SegmentManager().createNewOverwriteSegment(
+                table.getAbsoluteTableIdentifier, new SegmentDetailVO))
+          } else {
+            carbonLoadModel.setCurrentDetailVO(
+              new SegmentManager().createNewSegment(
+                table.getAbsoluteTableIdentifier, new SegmentDetailVO))
+          }
           isUpdateTableStatusRequired = true
         }
         if (isOverwriteTable) {
@@ -329,7 +335,11 @@ case class CarbonLoadDataCommand(
         case CausedBy(ex: NoRetryException) =>
           // update the load entry in table status file for changing the status to marked for delete
           if (isUpdateTableStatusRequired) {
-            CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
+            val detailVO =
+              SegmentManagerHelper.updateFailStatusAndGetSegmentVO(
+                carbonLoadModel.getSegmentId,
+                uuid)
+            new SegmentManager().commitLoadSegment(table.getAbsoluteTableIdentifier, detailVO)
           }
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
@@ -340,7 +350,11 @@ case class CarbonLoadDataCommand(
           LOGGER.error(ex)
           // update the load entry in table status file for changing the status to marked for delete
           if (isUpdateTableStatusRequired) {
-            CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
+            val detailVO =
+              SegmentManagerHelper.updateFailStatusAndGetSegmentVO(
+                carbonLoadModel.getSegmentId,
+                uuid)
+            new SegmentManager().commitLoadSegment(table.getAbsoluteTableIdentifier, detailVO)
           }
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
@@ -717,8 +731,13 @@ case class CarbonLoadDataCommand(
       if (updateModel.isDefined) {
         carbonLoadModel.setFactTimeStamp(updateModel.get.updatedTimeStamp)
       }
-      // Create and ddd the segment to the tablestatus.
-      CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
+      // Create and update the status of segment to the tablestatus.
+      if (isOverwriteTable) {
+        new SegmentManager().createNewOverwriteSegment(
+          table.getAbsoluteTableIdentifier, new SegmentDetailVO)
+      } else {
+        new SegmentManager().createNewSegment(table.getAbsoluteTableIdentifier, new SegmentDetailVO)
+      }
       val convertRelation = convertToLogicalRelation(
         catalogTable,
         sizeInBytes,
@@ -797,7 +816,9 @@ case class CarbonLoadDataCommand(
           e)
     }
     val specs =
-      SegmentFileStore.getPartitionSpecs(carbonLoadModel.getSegmentId, carbonLoadModel.getTablePath)
+      SegmentFileStore.getPartitionSpecs(
+        carbonLoadModel.getSegmentId,
+        table.getAbsoluteTableIdentifier)
     if (specs != null) {
       specs.asScala.map{ spec =>
         Row(spec.getPartitions.asScala.mkString("/"), spec.getLocation.toString, spec.getUuid)
@@ -1030,7 +1051,7 @@ case class CarbonLoadDataCommand(
     }
     if (loadModel.getSegmentId != null) {
       val currLoadEntry =
-        ObjectSerializationUtil.convertObjectToString(loadModel.getCurrentLoadMetadataDetail)
+        ObjectSerializationUtil.convertObjectToString(loadModel.getCurrentDetailVO)
       options += (("currentloadentry", currLoadEntry))
     }
     val hdfsRelation = HadoopFsRelation(

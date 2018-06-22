@@ -32,6 +32,7 @@ import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
@@ -272,7 +273,6 @@ public class CarbonLoadModelBuilder {
         optionsFinal.get("maxcolumns"));
 
     carbonLoadModel.setMaxColumns(String.valueOf(validatedMaxColumns));
-    carbonLoadModel.readAndSetLoadMetadataDetails();
     carbonLoadModel.setSortColumnsBoundsStr(optionsFinal.get("sort_column_bounds"));
     carbonLoadModel.setLoadMinSize(
         optionsFinal.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB));

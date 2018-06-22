@@ -347,6 +347,10 @@ public class LoadMetadataDetails implements Serializable {
     this.isDeleted = isDeleted;
   }
 
+  public String getIsDeleted() {
+    return isDeleted;
+  }
+
   /**
    * To get the update delta end timestamp
    *

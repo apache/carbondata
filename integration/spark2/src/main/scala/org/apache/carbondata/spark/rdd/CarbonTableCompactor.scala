@@ -31,7 +31,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.readcommitter.{ReadCommittedScope, TableStatusReadCommittedScope}
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentDetailVO, SegmentManager, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -51,17 +51,18 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
   extends Compactor(carbonLoadModel, compactionModel, executor, sqlContext, storeLocation) {
 
   override def executeCompaction(): Unit = {
-    val sortedSegments: util.List[LoadMetadataDetails] = new util.ArrayList[LoadMetadataDetails](
-      carbonLoadModel.getLoadMetadataDetails
-    )
-    CarbonDataMergerUtil.sortSegments(sortedSegments)
+    val allSegments =
+      new SegmentManager().getAllSegments(
+        carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier).
+        getAllSegments
+    CarbonDataMergerUtil.sortSegments(allSegments)
 
     var loadsToMerge = identifySegmentsToBeMerged()
 
     while (loadsToMerge.size() > 1 ||
            (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType &&
             loadsToMerge.size() > 0)) {
-      val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
+      val lastSegment = allSegments.get(allSegments.size() - 1)
       deletePartialLoadsInCompaction()
 
       try {
@@ -73,15 +74,16 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       }
 
       // scan again and determine if anything is there to merge again.
-      carbonLoadModel.readAndSetLoadMetadataDetails()
-      var segList = carbonLoadModel.getLoadMetadataDetails
+      var segList = new SegmentManager().getAllSegments(
+        carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier).
+        getAllSegments
       // in case of major compaction we will scan only once and come out as it will keep
       // on doing major for the new loads also.
       // excluding the newly added segments.
       if (CompactionType.MAJOR == compactionModel.compactionType) {
 
         segList = CarbonDataMergerUtil
-          .filterOutNewlyAddedSegments(carbonLoadModel.getLoadMetadataDetails, lastSegment)
+          .filterOutNewlyAddedSegments(segList, lastSegment)
       }
 
       if (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType ||
@@ -103,10 +105,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
   /**
    * This will submit the loads to be merged into the executor.
    */
-  def scanSegmentsAndSubmitJob(loadsToMerge: util.List[LoadMetadataDetails],
+  def scanSegmentsAndSubmitJob(loadsToMerge: util.List[SegmentDetailVO],
       compactedSegments: List[String]): Unit = {
     loadsToMerge.asScala.foreach { seg =>
-      LOGGER.info("loads identified for merge is " + seg.getLoadName)
+      LOGGER.info("loads identified for merge is " + seg.getSegmentId)
     }
     val compactionCallableModel = CompactionCallableModel(
       carbonLoadModel,
@@ -148,8 +150,6 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       maxSegmentColumnSchemaList = null,
       currentPartitions = partitions)
     carbonLoadModel.setTablePath(carbonMergerMapping.hdfsStoreLocation)
-    carbonLoadModel.setLoadMetadataDetails(
-      SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath).toList.asJava)
     // trigger event for compaction
     val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
       AlterTableCompactionPreEvent(sqlContext.sparkSession,
@@ -236,9 +236,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           val segmentFilesList = loadsToMerge.asScala.map{seg =>
             val file = SegmentFileStore.writeSegmentFile(
               carbonTable,
-              seg.getLoadName,
+              seg.getSegmentId,
               carbonLoadModel.getFactTimeStamp.toString)
-            new Segment(seg.getLoadName, file)
+            new Segment(seg.getSegmentId, file)
           }.filter(_.getSegmentFileName != null).asJava
           segmentFilesForIUDCompact = new util.ArrayList[Segment](segmentFilesList)
         } else {

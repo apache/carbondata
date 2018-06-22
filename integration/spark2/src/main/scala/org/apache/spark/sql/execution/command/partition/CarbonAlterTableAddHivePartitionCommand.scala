@@ -32,7 +32,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.SegmentStatus
+import org.apache.carbondata.core.statusmanager.{SegmentDetailVO, SegmentManager, SegmentManagerHelper, SegmentStatus}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, PostAlterTableHivePartitionCommandEvent, PreAlterTableHivePartitionCommandEvent}
@@ -126,26 +126,32 @@ case class CarbonAlterTableAddHivePartitionCommand(
         loadModel.setCarbonTransactionalTable(true)
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
         // Create new entry in tablestatus file
-        CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, false)
-        val newMetaEntry = loadModel.getCurrentLoadMetadataDetail
+        val segmentVO =
+          SegmentManagerHelper
+          .createSegmentVO(
+            loadModel.getSegmentId,
+            SegmentStatus.INSERT_IN_PROGRESS,
+            loadModel.getFactTimeStamp)
+        val newSegment = new SegmentManager()
+          .createNewSegment(loadModel.getCarbonDataLoadSchema.getCarbonTable
+            .getAbsoluteTableIdentifier, segmentVO)
+        loadModel.setCurrentDetailVO(newSegment)
+        val detailVO = new SegmentDetailVO().setSegmentId(loadModel.getSegmentId)
         val segmentFileName =
           SegmentFileStore.genSegmentFileName(
             loadModel.getSegmentId, String.valueOf(loadModel.getFactTimeStamp)) +
           CarbonTablePath.SEGMENT_EXT
-        newMetaEntry.setSegmentFile(segmentFileName)
+        detailVO.setSegmentFileName(segmentFileName)
         val segmentsLoc = CarbonTablePath.getSegmentFilesLocation(table.getTablePath)
         CarbonUtil.checkAndCreateFolderWithPermission(segmentsLoc)
         val segmentPath = segmentsLoc + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName
         SegmentFileStore.writeSegmentFile(segmentFile, segmentPath)
-        CarbonLoaderUtil.populateNewLoadMetaEntry(
-          newMetaEntry,
-          SegmentStatus.SUCCESS,
-          loadModel.getFactTimeStamp,
-          true)
+        detailVO.setStatus(
+          SegmentStatus.SUCCESS.toString).setLoadEndTime(System.currentTimeMillis())
         // Add size to the entry
-        CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId, table)
+        CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(detailVO, loadModel.getSegmentId, table)
         // Make the load as success in table status
-        CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false)
+        new SegmentManager().commitLoadSegment(table.getAbsoluteTableIdentifier, detailVO)
       }
     }
     Seq.empty[Row]

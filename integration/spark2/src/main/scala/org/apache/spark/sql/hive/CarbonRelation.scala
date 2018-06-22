@@ -33,7 +33,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentManager, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
@@ -161,24 +161,24 @@ case class CarbonRelation(
     val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
       carbonTable.getAbsoluteTableIdentifier)
     if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
-      if (new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-        .getValidAndInvalidSegments.getValidSegments.isEmpty) {
+      if (new SegmentManager().getValidSegments(
+        carbonTable.getAbsoluteTableIdentifier).getValidSegments.isEmpty) {
         sizeInBytesLocalValue = 0L
       } else {
         val tablePath = carbonTable.getTablePath
         val fileType = FileFactory.getFileType(tablePath)
         if (FileFactory.isFileExist(tablePath, fileType)) {
           // get the valid segments
-          val segments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-            .getValidAndInvalidSegments.getValidSegments.asScala
+          val segments = new SegmentManager()
+            .getValidSegments(carbonTable.getAbsoluteTableIdentifier).getValidSegments.asScala
           var size = 0L
           // for each segment calculate the size
           segments.foreach {validSeg =>
             // for older store
-            if (null != validSeg.getLoadMetadataDetails.getDataSize &&
-                null != validSeg.getLoadMetadataDetails.getIndexSize) {
-              size = size + validSeg.getLoadMetadataDetails.getDataSize.toLong +
-                     validSeg.getLoadMetadataDetails.getIndexSize.toLong
+            if (null != validSeg.getSegmentDetailVO.getDataSize &&
+                null != validSeg.getSegmentDetailVO.getIndexSize) {
+              size = size + validSeg.getSegmentDetailVO.getDataSize +
+                     validSeg.getSegmentDetailVO.getIndexSize
             } else {
               size = size + FileFactory.getDirectorySize(
                 CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))

@@ -21,6 +21,8 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.{Date, UUID}
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
@@ -36,7 +38,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager._
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
@@ -220,6 +222,8 @@ object StreamHandoffRDD {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
+  private val manager = new SegmentManager()
+
   def iterateStreamingHandoff(
       carbonLoadModel: CarbonLoadModel,
       operationContext: OperationContext,
@@ -235,34 +239,22 @@ object StreamHandoffRDD {
                     s" ${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
         // handoff streaming segment one by one
         do {
-          val segmentStatusManager = new SegmentStatusManager(identifier)
-          var loadMetadataDetails: Array[LoadMetadataDetails] = null
-          // lock table to read table status file
-          val statusLock = segmentStatusManager.getTableStatusLock
-          try {
-            if (statusLock.lockWithRetries()) {
-              loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
-                CarbonTablePath.getMetadataPath(identifier.getTablePath))
-            }
-          } finally {
-            if (null != statusLock) {
-              statusLock.unlock()
-            }
-          }
-          if (null != loadMetadataDetails) {
+          val detailVOs =
+            manager.getAllSegments(identifier).getAllSegments.asScala
+          if (null != detailVOs) {
             val streamSegments =
-              loadMetadataDetails.filter(_.getSegmentStatus == SegmentStatus.STREAMING_FINISH)
+              detailVOs.filter(_.getStatus().equals(SegmentStatus.STREAMING_FINISH.toString))
 
-            continueHandoff = streamSegments.length > 0
+            continueHandoff = streamSegments.nonEmpty
             if (continueHandoff) {
               // handoff a streaming segment
-              val loadMetadataDetail = streamSegments(0)
-              carbonLoadModel.setSegmentId(loadMetadataDetail.getLoadName)
+              val loadMetadataDetail = streamSegments.head
+              carbonLoadModel.setSegmentId(loadMetadataDetail.getSegmentId)
               executeStreamingHandoff(
                 carbonLoadModel,
                 sparkSession,
                 operationContext,
-                loadMetadataDetail.getLoadName
+                loadMetadataDetail.getSegmentId
               )
             }
           } else {
@@ -311,16 +303,12 @@ object StreamHandoffRDD {
     var errorMessage: String = "Handoff failure"
     try {
       // generate new columnar segment
-      val newMetaEntry = new LoadMetadataDetails
-      carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
-      CarbonLoaderUtil.populateNewLoadMetaEntry(
-        newMetaEntry,
-        SegmentStatus.INSERT_IN_PROGRESS,
-        carbonLoadModel.getFactTimeStamp,
-        false)
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, carbonLoadModel, true, false)
-      // convert a streaming segment to columnar segment
+      val detailVO = manager.createNewSegment(
+        carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier,
+        new SegmentDetailVO)
 
+      carbonLoadModel.setCurrentDetailVO(detailVO)
+      // convert a streaming segment to columnar segment
       val status = new StreamHandoffRDD(
         sparkSession.sparkContext,
         new HandoffResultImpl(),
@@ -341,7 +329,11 @@ object StreamHandoffRDD {
     }
 
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
-      CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
+      val detailVO =
+        SegmentManagerHelper.updateFailStatusAndGetSegmentVO(carbonLoadModel.getSegmentId)
+      manager
+        .commitLoadSegment(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+          .getAbsoluteTableIdentifier, detailVO)
       LOGGER.info("********starting clean up**********")
       CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
       LOGGER.info("********clean up done**********")
@@ -392,53 +384,11 @@ object StreamHandoffRDD {
     if (!FileFactory.isFileExist(metadataPath, fileType)) {
       FileFactory.mkdirs(metadataPath, fileType)
     }
-    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath)
-    val segmentStatusManager = new SegmentStatusManager(identifier)
-    val carbonLock = segmentStatusManager.getTableStatusLock
-    try {
-      if (carbonLock.lockWithRetries()) {
-        LOGGER.info(
-          "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
-          + " for table status updation")
-        val listOfLoadFolderDetailsArray =
-          SegmentStatusManager.readLoadMetadata(metaDataFilepath)
-
-        // update new columnar segment to success status
-        val newSegment =
-          listOfLoadFolderDetailsArray.find(_.getLoadName.equals(loadModel.getSegmentId))
-        if (newSegment.isEmpty) {
-          throw new Exception("Failed to update table status for new segment")
-        } else {
-          newSegment.get.setSegmentStatus(SegmentStatus.SUCCESS)
-          newSegment.get.setLoadEndTime(System.currentTimeMillis())
-        }
-
-        // update streaming segment to compacted status
-        val streamSegment =
-          listOfLoadFolderDetailsArray.find(_.getLoadName.equals(handoffSegmentId))
-        if (streamSegment.isEmpty) {
-          throw new Exception("Failed to update table status for streaming segment")
-        } else {
-          streamSegment.get.setSegmentStatus(SegmentStatus.COMPACTED)
-          streamSegment.get.setMergedLoadName(loadModel.getSegmentId)
-        }
-
-        // refresh table status file
-        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray)
-        status = true
-      } else {
-        LOGGER.error("Not able to acquire the lock for Table status updation for table " + loadModel
-          .getDatabaseName() + "." + loadModel.getTableName())
-      }
-    } finally {
-      if (carbonLock.unlock()) {
-        LOGGER.info("Table unlocked successfully after table status updation" +
-                    loadModel.getDatabaseName() + "." + loadModel.getTableName())
-      } else {
-        LOGGER.error("Unable to unlock Table lock for table" + loadModel.getDatabaseName() +
-                     "." + loadModel.getTableName() + " during table status updation")
-      }
-    }
-    status
+    val updateList = new util.ArrayList[SegmentDetailVO]()
+    updateList.add(new SegmentDetailVO().setSegmentId(loadModel.getSegmentId)
+        .setStatus(SegmentStatus.SUCCESS.toString).setLoadEndTime(System.currentTimeMillis()))
+    updateList.add(new SegmentDetailVO().setSegmentId(handoffSegmentId)
+        .setStatus(SegmentStatus.COMPACTED.toString).setMergedSegmentIds(loadModel.getSegmentId))
+    manager.updateSegments(identifier, updateList)
   }
 }

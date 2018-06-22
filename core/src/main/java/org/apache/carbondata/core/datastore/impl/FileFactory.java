@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
+import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -253,6 +254,17 @@ public final class FileFactory {
       deleteAllCarbonFilesOfDir(files[i]);
     }
     return path.delete();
+  }
+
+  public static boolean deleteAllCarbonFiles(List<CarbonFile> carbonFiles) {
+    boolean isFilesDeleted = true;
+    // Delete all old stale segment folders
+    for (CarbonFile carbonFile : carbonFiles) {
+      // try block is inside for loop because even if there is failure in deletion of 1 stale
+      // folder still remaining stale folders should be deleted
+      isFilesDeleted = isFilesDeleted && deleteAllCarbonFilesOfDir(carbonFile);
+    }
+    return isFilesDeleted;
   }
 
   public static boolean mkdirs(String filePath, FileType fileType) throws IOException {

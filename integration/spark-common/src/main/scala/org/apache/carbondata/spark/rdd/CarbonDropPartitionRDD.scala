@@ -26,6 +26,7 @@ import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
+import org.apache.carbondata.core.statusmanager.{SegmentDetailVO, SegmentStatus}
 
 case class CarbonDropPartition(rddId: Int, val idx: Int, segment: Segment)
   extends Partition {
@@ -61,16 +62,14 @@ class CarbonDropPartitionRDD(
     val iter = new Iterator[(String, String)] {
       val split = theSplit.asInstanceOf[CarbonDropPartition]
       logInfo("Dropping partition information from : " + split.segment)
-      val toBeDeletedSegments = new util.ArrayList[String]()
-      val toBeUpdateSegments = new util.ArrayList[String]()
+      val toBeUpdatedSegments = new util.ArrayList[SegmentDetailVO]()
       new SegmentFileStore(
         tablePath,
         split.segment.getSegmentFileName).dropPartitions(
         split.segment,
         partitions,
         uniqueId,
-        toBeDeletedSegments,
-        toBeUpdateSegments)
+        toBeUpdatedSegments)
 
       var finished = false
 
@@ -80,7 +79,10 @@ class CarbonDropPartitionRDD(
 
       override def next(): (String, String) = {
         finished = true
-        (toBeUpdateSegments.asScala.mkString(","), toBeDeletedSegments.asScala.mkString(","))
+        (toBeUpdatedSegments.asScala.filter(
+          _.getStatus.equals(SegmentStatus.MARKED_FOR_DELETE.toString)).mkString(","),
+          toBeUpdatedSegments.asScala.filterNot(
+          _.getStatus.equals(SegmentStatus.MARKED_FOR_DELETE.toString)).mkString(","))
       }
     }
     iter

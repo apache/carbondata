@@ -16,10 +16,9 @@
  */
 package org.apache.carbondata.core.statusmanager;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.Expression;
 
@@ -29,39 +28,31 @@ import org.apache.carbondata.core.scan.expression.Expression;
 public interface SegmentStore {
 
   /**
-   * Generate new segment name for data loading
-   *
-   * @param identifier
-   * @return
-   */
-  String generateSegmentForLoading(AbsoluteTableIdentifier identifier);
-
-  /**
    * Returns the segments from metastore using identifier and applied filters.
    *
    * @param identifier
    * @param filters
    * @return
    */
-  List<Segment> getSegments(AbsoluteTableIdentifier identifier, List<Expression> filters);
+  List<SegmentDetailVO> getSegments(AbsoluteTableIdentifier identifier, List<Expression> filters);
 
   /**
-   * Inserts the segment to segment store. This segment is available for reading as soon as insert
-   * success
+   * Generate new segment name for data loading
    *
    * @param identifier
-   * @param segment
+   * @return
    */
-  void insertSegment(AbsoluteTableIdentifier identifier, Segment segment);
+  String generateSegmentIdAndInsert(AbsoluteTableIdentifier identifier, SegmentDetailVO segment)
+      throws IOException;
 
   /**
    * Update the segments using table identifier.All the segments need to be committed in a single
    * transaction.
    *
    * @param identifier
-   * @param updateDetails
+   * @param detailVOS
    */
-  void updateSegments(AbsoluteTableIdentifier identifier, List<SegmentUpdateDetail> updateDetails);
+  boolean updateSegments(AbsoluteTableIdentifier identifier, List<SegmentDetailVO> detailVOS);
 
   /**
    * Delete all segments for the corresponding table. It happens during drop table.
@@ -69,22 +60,5 @@ public interface SegmentStore {
    * @param identifier
    */
   void deleteSegments(AbsoluteTableIdentifier identifier);
-
-  /**
-   * Segment update info
-   */
-  class SegmentUpdateDetail {
-
-    /**
-     * Segment id
-     */
-    String segmentId;
-
-    /**
-     * Fields to be updated in the segment.
-     */
-    Map<String, String> fieldsToBeUpdated;
-
-  }
 
 }

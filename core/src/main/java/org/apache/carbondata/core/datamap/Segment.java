@@ -25,12 +25,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.statusmanager.SegmentsHolder;
 
 /**
  * Represents one load of carbondata
@@ -58,7 +59,7 @@ public class Segment implements Serializable {
   /**
    * keeps all the details about segments
    */
-  private LoadMetadataDetails loadMetadataDetails;
+  private SegmentDetailVO segmentDetailVO;
 
   public Segment(String segmentNo) {
     this.segmentNo = segmentNo;
@@ -95,11 +96,11 @@ public class Segment implements Serializable {
    * @param readCommittedScope
    */
   public Segment(String segmentNo, String segmentFileName, ReadCommittedScope readCommittedScope,
-      LoadMetadataDetails loadMetadataDetails) {
+      SegmentDetailVO segmentDetailVO) {
     this.segmentNo = segmentNo;
     this.segmentFileName = segmentFileName;
     this.readCommittedScope = readCommittedScope;
-    this.loadMetadataDetails = loadMetadataDetails;
+    this.segmentDetailVO = segmentDetailVO;
   }
 
   /**
@@ -178,25 +179,24 @@ public class Segment implements Serializable {
   /**
    * Read the table status and get the segment corresponding to segmentNo
    * @param segmentNo
-   * @param tablePath
+   * @param tableIdentifier
    * @return
    */
-  public static Segment getSegment(String segmentNo, String tablePath) {
-    LoadMetadataDetails[] loadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath));
-    return getSegment(segmentNo, loadMetadataDetails);
+  public static Segment getSegment(String segmentNo, AbsoluteTableIdentifier tableIdentifier) {
+    SegmentsHolder validSegments = new SegmentManager().getValidSegments(tableIdentifier);
+    return getSegment(segmentNo, validSegments.getValidSegments());
   }
 
   /**
    * Get the segment object corresponding to segmentNo
    * @param segmentNo
-   * @param loadMetadataDetails
+   * @param segments
    * @return
    */
-  public static Segment getSegment(String segmentNo, LoadMetadataDetails[] loadMetadataDetails) {
-    for (LoadMetadataDetails details: loadMetadataDetails) {
-      if (details.getLoadName().equals(segmentNo)) {
-        return new Segment(details.getLoadName(), details.getSegmentFile());
+  public static Segment getSegment(String segmentNo, List<Segment> segments) {
+    for (Segment segment: segments) {
+      if (segment.getSegmentNo().equals(segmentNo)) {
+        return segment;
       }
     }
     return null;
@@ -229,7 +229,7 @@ public class Segment implements Serializable {
     }
   }
 
-  public LoadMetadataDetails getLoadMetadataDetails() {
-    return loadMetadataDetails;
+  public SegmentDetailVO getSegmentDetailVO() {
+    return segmentDetailVO;
   }
 }

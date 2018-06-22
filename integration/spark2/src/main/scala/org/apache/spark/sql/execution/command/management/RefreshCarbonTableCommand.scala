@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{SegmentManager, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, RefreshTablePostExecutionEvent, RefreshTablePreExecutionEvent}
 
@@ -222,26 +222,20 @@ case class RefreshCarbonTableCommand(
       absIdentifier: AbsoluteTableIdentifier,
       sparkSession: SparkSession): Unit = {
     val metadataDetails =
-      SegmentStatusManager.readLoadMetadata(
-        CarbonTablePath.getMetadataPath(absIdentifier.getTablePath))
+      new SegmentManager().getValidSegments(absIdentifier).getValidSegments.asScala
     // First read all partition information from each segment.
-    val allpartitions = metadataDetails.map{ metadata =>
-      if (metadata.getSegmentStatus == SegmentStatus.SUCCESS ||
-          metadata.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-        val mapper = new SegmentFileStore(absIdentifier.getTablePath, metadata.getSegmentFile)
-        val specs = mapper.getLocationMap.asScala.map { case(location, fd) =>
-          var updatedLoc =
-            if (fd.isRelative) {
-              absIdentifier.getTablePath + CarbonCommonConstants.FILE_SEPARATOR + location
-            } else {
-              location
-            }
-          new PartitionSpec(fd.getPartitions, updatedLoc)
-        }
-        Some(specs)
-      } else {
-        None
+    val allpartitions = metadataDetails.map{ seg =>
+      val mapper = new SegmentFileStore(absIdentifier.getTablePath, seg.getSegmentFileName)
+      val specs = mapper.getLocationMap.asScala.map { case(location, fd) =>
+        var updatedLoc =
+          if (fd.isRelative) {
+            absIdentifier.getTablePath + CarbonCommonConstants.FILE_SEPARATOR + location
+          } else {
+            location
+          }
+        new PartitionSpec(fd.getPartitions, updatedLoc)
       }
+      Some(specs)
     }.filter(_.isDefined).map(_.get)
     val identifier =
       TableIdentifier(absIdentifier.getTableName, Some(absIdentifier.getDatabaseName))

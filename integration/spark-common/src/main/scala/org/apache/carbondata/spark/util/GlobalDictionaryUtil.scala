@@ -247,10 +247,6 @@ object GlobalDictionaryUtil {
     val zookeeperUrl = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.ZOOKEEPER_URL)
     val serializationNullFormat =
       carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
-    // get load count
-    if (null == carbonLoadModel.getLoadMetadataDetails) {
-      carbonLoadModel.readAndSetLoadMetadataDetails()
-    }
     val absoluteTableIdentifier = AbsoluteTableIdentifier.from(carbonLoadModel.getTablePath, table)
     DictionaryLoadModel(
       absoluteTableIdentifier,
@@ -263,7 +259,6 @@ object GlobalDictionaryUtil {
       primDimensions,
       carbonLoadModel.getDelimiters,
       columnIdentifier,
-      carbonLoadModel.getLoadMetadataDetails.size() == 0,
       hdfsTempLocation,
       lockType,
       zookeeperUrl,

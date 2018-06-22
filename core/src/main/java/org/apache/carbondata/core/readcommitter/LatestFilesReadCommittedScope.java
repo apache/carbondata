@@ -26,9 +26,10 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.mutate.UpdateVO;
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.statusmanager.SegmentsHolder;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -41,7 +42,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   private String carbonFilePath;
   private String segmentId;
   private ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot;
-  private LoadMetadataDetails[] loadMetadataDetails;
+  private SegmentsHolder segmentsHolder;
 
   /**
    * a new constructor of this class
@@ -70,35 +71,34 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   }
 
   private void prepareLoadMetadata() {
-    int loadCount = 0;
     Map<String, List<String>> snapshotMap =
         this.readCommittedIndexFileSnapShot.getSegmentIndexFileMap();
-    LoadMetadataDetails[] loadMetadataDetailsArray = new LoadMetadataDetails[snapshotMap.size()];
+    List<SegmentDetailVO> segmentDetailVOS = new ArrayList<>(snapshotMap.size());
     String segmentID;
     for (Map.Entry<String, List<String>> entry : snapshotMap.entrySet()) {
       segmentID = entry.getKey();
-      LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
+      SegmentDetailVO detailVO = new SegmentDetailVO();
       long timeSet;
       try {
         timeSet = Long.parseLong(segmentID);
       } catch (NumberFormatException nu) {
         timeSet = 0;
       }
-      loadMetadataDetails.setLoadEndTime(timeSet);
-      loadMetadataDetails.setLoadStartTime(timeSet);
-      loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS);
-      loadMetadataDetails.setLoadName(segmentID);
-      loadMetadataDetailsArray[loadCount++] = loadMetadataDetails;
+      detailVO.setLoadEndTime(timeSet);
+      detailVO.setLoadStartTime(timeSet);
+      detailVO.setStatus(SegmentStatus.SUCCESS.toString());
+      detailVO.setSegmentId(segmentID);
+      segmentDetailVOS.add(detailVO);
     }
-    this.loadMetadataDetails = loadMetadataDetailsArray;
+    this.segmentsHolder = new SegmentsHolder(segmentDetailVOS, this);
   }
 
-  @Override public LoadMetadataDetails[] getSegmentList() throws IOException {
+  @Override public SegmentsHolder getSegments() throws IOException {
     try {
-      if (loadMetadataDetails == null) {
+      if (segmentsHolder == null) {
         takeCarbonIndexFileSnapShot();
       }
-      return loadMetadataDetails;
+      return segmentsHolder;
 
     } catch (IOException ex) {
       throw new IOException("Problem encountered while reading the Table Status file.", ex);
@@ -202,9 +202,8 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
           segmentRefreshInfo.setCountOfFileInSegment(indexList.size());
         }
       }
-      ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot =
+      this.readCommittedIndexFileSnapShot =
           new ReadCommittedIndexFileSnapShot(indexFileStore, segmentTimestampUpdaterMap);
-      this.readCommittedIndexFileSnapShot = readCommittedIndexFileSnapShot;
       prepareLoadMetadata();
     } else {
       throw new IOException("Path is not pointing to directory");

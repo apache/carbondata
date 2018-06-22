@@ -19,7 +19,9 @@ package org.apache.carbondata.streaming.segment;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.CarbonIterator;
@@ -36,6 +38,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -59,62 +63,27 @@ public class StreamSegment {
    * get stream segment or create new stream segment if not exists
    */
   public static String open(CarbonTable table) throws IOException {
-    SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(table.getAbsoluteTableIdentifier());
-    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
-    try {
-      if (carbonLock.lockWithRetries()) {
-        LOGGER.info(
-            "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
-                + " for stream table get or create segment");
-
-        LoadMetadataDetails[] details =
-            SegmentStatusManager.readLoadMetadata(
-                CarbonTablePath.getMetadataPath(table.getTablePath()));
-        LoadMetadataDetails streamSegment = null;
-        for (LoadMetadataDetails detail : details) {
-          if (FileFormat.ROW_V1 == detail.getFileFormat()) {
-            if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
-              streamSegment = detail;
-              break;
-            }
-          }
+    List<SegmentDetailVO> allSegments =
+        new SegmentManager().getAllSegments(table.getAbsoluteTableIdentifier())
+            .getAllSegments();
+    SegmentDetailVO streamSegment = null;
+    for (SegmentDetailVO detail : allSegments) {
+      if (FileFormat.ROW_V1.toString().equals(detail.getFileFormat())) {
+        if (SegmentStatus.STREAMING.toString().equals(detail.getStatus())) {
+          streamSegment = detail;
+          break;
         }
-        if (null == streamSegment) {
-          int segmentId = SegmentStatusManager.createNewSegmentId(details);
-          LoadMetadataDetails newDetail = new LoadMetadataDetails();
-          newDetail.setLoadName("" + segmentId);
-          newDetail.setFileFormat(FileFormat.ROW_V1);
-          newDetail.setLoadStartTime(System.currentTimeMillis());
-          newDetail.setSegmentStatus(SegmentStatus.STREAMING);
+      }
+    }
+    if (null == streamSegment) {
+      SegmentDetailVO detailVO = new SegmentDetailVO();
+      detailVO.setFileFormat(FileFormat.ROW_V1.toString());
+      detailVO.setStatus(SegmentStatus.STREAMING.toString());
 
-          LoadMetadataDetails[] newDetails = new LoadMetadataDetails[details.length + 1];
-          int i = 0;
-          for (; i < details.length; i++) {
-            newDetails[i] = details[i];
-          }
-          newDetails[i] = newDetail;
-          SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(table.getTablePath()), newDetails);
-          return newDetail.getLoadName();
-        } else {
-          return streamSegment.getLoadName();
-        }
-      } else {
-        LOGGER.error(
-            "Not able to acquire the lock for stream table get or create segment for table " + table
-                .getDatabaseName() + "." + table.getTableName());
-        throw new IOException("Failed to get stream segment");
-      }
-    } finally {
-      if (carbonLock.unlock()) {
-        LOGGER.info("Table unlocked successfully after stream table get or create segment" + table
-            .getDatabaseName() + "." + table.getTableName());
-      } else {
-        LOGGER.error(
-            "Unable to unlock table lock for stream table" + table.getDatabaseName() + "." + table
-                .getTableName() + " during stream table get or create segment");
-      }
+      new SegmentManager().createNewSegment(table.getAbsoluteTableIdentifier(), detailVO);
+      return detailVO.getSegmentId();
+    } else {
+      return streamSegment.getSegmentId();
     }
   }
 
@@ -123,99 +92,39 @@ public class StreamSegment {
    */
   public static String close(CarbonTable table, String segmentId)
       throws IOException {
-    SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(table.getAbsoluteTableIdentifier());
-    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
-    try {
-      if (carbonLock.lockWithRetries()) {
-        LOGGER.info(
-            "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
-                + " for stream table finish segment");
+    SegmentDetailVO detailVO =
+        new SegmentDetailVO().setSegmentId(segmentId).setLoadEndTime(System.currentTimeMillis())
+            .setStatus(SegmentStatus.STREAMING_FINISH.toString());
+    new SegmentManager().commitLoadSegment(table.getAbsoluteTableIdentifier(), detailVO);
 
-        LoadMetadataDetails[] details =
-            SegmentStatusManager.readLoadMetadata(
-                CarbonTablePath.getMetadataPath(table.getTablePath()));
-        for (LoadMetadataDetails detail : details) {
-          if (segmentId.equals(detail.getLoadName())) {
-            detail.setLoadEndTime(System.currentTimeMillis());
-            detail.setSegmentStatus(SegmentStatus.STREAMING_FINISH);
-            break;
-          }
-        }
-
-        int newSegmentId = SegmentStatusManager.createNewSegmentId(details);
-        LoadMetadataDetails newDetail = new LoadMetadataDetails();
-        newDetail.setLoadName("" + newSegmentId);
-        newDetail.setFileFormat(FileFormat.ROW_V1);
-        newDetail.setLoadStartTime(System.currentTimeMillis());
-        newDetail.setSegmentStatus(SegmentStatus.STREAMING);
-
-        LoadMetadataDetails[] newDetails = new LoadMetadataDetails[details.length + 1];
-        int i = 0;
-        for (; i < details.length; i++) {
-          newDetails[i] = details[i];
-        }
-        newDetails[i] = newDetail;
-        SegmentStatusManager
-            .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
-                table.getTablePath()), newDetails);
-        return newDetail.getLoadName();
-      } else {
-        LOGGER.error(
-            "Not able to acquire the lock for stream table status updation for table " + table
-                .getDatabaseName() + "." + table.getTableName());
-        throw new IOException("Failed to get stream segment");
-      }
-    } finally {
-      if (carbonLock.unlock()) {
-        LOGGER.info(
-            "Table unlocked successfully after table status updation" + table.getDatabaseName()
-                + "." + table.getTableName());
-      } else {
-        LOGGER.error("Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
-            .getTableName() + " during table status updation");
-      }
-    }
+    SegmentDetailVO newDetail =
+        new SegmentDetailVO().setFileFormat(FileFormat.ROW_V1.toString())
+            .setStatus(SegmentStatus.STREAMING.toString());
+    SegmentDetailVO newSegment =
+        new SegmentManager().createNewSegment(table.getAbsoluteTableIdentifier(), newDetail);
+    return newSegment.getSegmentId();
   }
 
   /**
    * change the status of the segment from "streaming" to "streaming finish"
    */
   public static void finishStreaming(CarbonTable carbonTable) throws IOException {
-    ICarbonLock statusLock = CarbonLockFactory.getCarbonLockObj(
-        carbonTable.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
-        LockUsage.TABLE_STATUS_LOCK);
-    try {
-      if (statusLock.lockWithRetries()) {
-        LoadMetadataDetails[] details =
-            SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
-        boolean updated = false;
-        for (LoadMetadataDetails detail : details) {
-          if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
-            detail.setLoadEndTime(System.currentTimeMillis());
-            detail.setSegmentStatus(SegmentStatus.STREAMING_FINISH);
-            updated = true;
-          }
-        }
-        if (updated) {
-          SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()),
-              details);
-        }
-      } else {
-        String msg = "Failed to acquire table status lock of " + carbonTable.getDatabaseName()
-            + "." + carbonTable.getTableName();
-        LOGGER.error(msg);
-        throw new IOException(msg);
+    List<SegmentDetailVO> allSegments =
+        new SegmentManager().getAllSegments(carbonTable.getAbsoluteTableIdentifier())
+            .getAllSegments();
+    boolean updated = false;
+    List<SegmentDetailVO> updateSegments = new ArrayList<>();
+    for (SegmentDetailVO detail : allSegments) {
+      if (SegmentStatus.STREAMING.toString().equals(detail.getStatus())) {
+        updateSegments.add(new SegmentDetailVO().setSegmentId(detail.getSegmentId())
+            .setLoadEndTime(System.currentTimeMillis())
+            .setStatus(SegmentStatus.STREAMING_FINISH.toString()));
+        updated = true;
       }
-    } finally {
-      if (statusLock.unlock()) {
-        LOGGER.info("Table unlocked successfully after table status updation"
-            + carbonTable.getDatabaseName() + "." + carbonTable.getTableName());
-      } else {
-        LOGGER.error("Unable to unlock Table lock for table " + carbonTable.getDatabaseName()
-            + "." + carbonTable.getTableName() + " during table status updation");
-      }
+    }
+    if (updated) {
+      new SegmentManager()
+          .updateSegments(carbonTable.getAbsoluteTableIdentifier(), updateSegments);
     }
   }
 

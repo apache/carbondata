@@ -44,7 +44,7 @@ import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentManager, SegmentStatusManager}
 import org.apache.carbondata.core.util.TaskMetricsMap
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
@@ -70,8 +70,8 @@ object IndexDataMapRebuildRDD {
       schema: DataMapSchema
   ): Unit = {
     val tableIdentifier = carbonTable.getAbsoluteTableIdentifier
-    val segmentStatusManager = new SegmentStatusManager(tableIdentifier)
-    val validAndInvalidSegments = segmentStatusManager.getValidAndInvalidSegments()
+    val segmentStatusManager = new SegmentManager()
+    val validAndInvalidSegments = segmentStatusManager.getAllSegments(tableIdentifier)
     val validSegments = validAndInvalidSegments.getValidSegments
     val indexedCarbonColumns = carbonTable.getIndexedColumns(schema)
     val operationContext = new OperationContext()
