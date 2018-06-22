@@ -305,6 +305,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         tableProperties,
         bucketFields,
         isAlterFlow = false,
+        false,
         tableComment)
       TableNewProcessor(tableModel)
     }

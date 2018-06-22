@@ -24,7 +24,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{CarbonEnv, CarbonSession, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
@@ -37,12 +37,14 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
+
 
 object AlterTableUtil {
 
@@ -349,6 +351,10 @@ object AlterTableUtil {
         wrapperTableInfo, dbName, tableName)
       val tblPropertiesMap: mutable.Map[String, String] =
         thriftTable.fact_table.getTableProperties.asScala
+
+      // validate the local dictionary properties
+      validateLocalDictionaryProperties(lowerCasePropertiesMap, tblPropertiesMap, carbonTable)
+
       // below map will be used for cache invalidation. As tblProperties map is getting modified
       // in the next few steps the original map need to be retained for any decision making
       val existingTablePropertiesMap = mutable.Map(tblPropertiesMap.toSeq: _*)
@@ -356,12 +362,16 @@ object AlterTableUtil {
         // This overrides old newProperties and update the comment parameter of thriftTable
         // with the newly added/modified comment since thriftTable also holds comment as its
         // direct property.
-        lowerCasePropertiesMap.foreach { property => if (validateTableProperties(property._1)) {
-          tblPropertiesMap.put(property._1, property._2)
-        } else {
-          val errorMessage = "Error: Invalid option(s): " + property._1.toString()
-          throw new MalformedCarbonCommandException(errorMessage)
-        }}
+        lowerCasePropertiesMap.foreach { property =>
+          if (validateTableProperties(property._1)) {
+            tblPropertiesMap.put(property._1, property._2)
+          } else {
+            val errorMessage = "Error: Invalid option(s): " + property._1.toString()
+            throw new MalformedCarbonCommandException(errorMessage)
+          }
+        }
+        // check if duplicate columns are present in both local dictionary include and exclude
+        CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(tblPropertiesMap)
       } else {
         // This removes the comment parameter from thriftTable
         // since thriftTable also holds comment as its property.
@@ -373,6 +383,8 @@ object AlterTableUtil {
             throw new MalformedCarbonCommandException(errorMessage)
           }
         }
+        // check if duplicate columns are present in both local dictionary include and exclude
+        CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(tblPropertiesMap)
       }
       val (tableIdentifier, schemParts, cols) = updateSchemaInfo(carbonTable,
         schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
@@ -398,8 +410,52 @@ object AlterTableUtil {
   }
 
   private def validateTableProperties(propKey: String): Boolean = {
-    val supportedOptions = Seq("STREAMING", "COMMENT", "COLUMN_META_CACHE", "CACHE_LEVEL")
+    val supportedOptions = Seq("STREAMING",
+      "COMMENT",
+      "COLUMN_META_CACHE",
+      "CACHE_LEVEL",
+      "LOCAL_DICTIONARY_ENABLE",
+      "LOCAL_DICTIONARY_THRESHOLD",
+      "LOCAL_DICTIONARY_INCLUDE",
+      "LOCAL_DICTIONARY_EXCLUDE")
     supportedOptions.contains(propKey.toUpperCase)
+  }
+
+  /**
+   * this method validates the local dictioanry properties for alter set
+   *
+   * @param lowerCasePropertiesMap
+   * @param tblPropertiesMap
+   * @param carbonTable
+   */
+  private def validateLocalDictionaryProperties(lowerCasePropertiesMap: mutable.Map[String, String],
+      tblPropertiesMap: mutable.Map[String, String],
+      carbonTable: CarbonTable): Unit = {
+    lowerCasePropertiesMap.foreach { property =>
+      if (property._1.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)) {
+        if (!CarbonScalaUtil.validateLocalDictionaryEnable(property._2)) {
+          lowerCasePropertiesMap
+            .put(property._1.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+        } else {
+          lowerCasePropertiesMap.put(property._1, property._2)
+        }
+      }
+      if (property._1.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE) ||
+          property._1.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)) {
+        ValidateSetTablePropertiesForLocalDict(tblPropertiesMap, carbonTable, property)
+      }
+
+      if (property._1
+        .equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD)) {
+        if (!CarbonScalaUtil.validateLocalDictionaryThreshold(property._2)) {
+          lowerCasePropertiesMap
+            .put(property._1,
+              CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
+        } else {
+          lowerCasePropertiesMap.put(property._1, property._2)
+        }
+      }
+    }
   }
 
   /**
@@ -607,4 +663,90 @@ object AlterTableUtil {
     allColumnsMatch
   }
 
+  /**
+   * Validate LOCAL_DICT_COLUMNS property specified in Alter command
+   * @param tblPropertiesMap
+   * @param carbonTable
+   * @param property
+   */
+  def ValidateSetTablePropertiesForLocalDict(tblPropertiesMap: mutable.Map[String, String],
+      carbonTable: CarbonTable,
+      property: (String, String)): Unit = {
+    var localDictColumns: Seq[String] = Seq[String]()
+    var dictIncludeColumns: Seq[String] = Seq[String]()
+
+    val allColumns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
+    localDictColumns = property._2.toString.split(",").map(_.trim)
+
+    CarbonScalaUtil.validateLocalDictionaryColumns(tblPropertiesMap, localDictColumns)
+
+    // check if the column specified exists in table schema
+    localDictColumns.foreach { distCol =>
+      if (!allColumns.exists(x => x.getColumnName.equalsIgnoreCase(distCol.trim))) {
+        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
+                       " does not exist in table. Please check create table statement."
+        throw new MalformedCarbonCommandException(errormsg)
+      }
+    }
+
+    /**
+     * Verify if specified column is of no-dictionary string dataType
+     */
+    localDictColumns.foreach { dictCol =>
+      if (allColumns.exists(col => col.getColumnName.equalsIgnoreCase(dictCol) &&
+                                   !col.getDataType.toString
+                                     .equalsIgnoreCase("STRING") &&
+                                   !col.getDataType.toString
+                                     .equalsIgnoreCase("STRUCT") &&
+                                   !col.getDataType.toString
+                                     .equalsIgnoreCase("ARRAY"))) {
+        val errMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + dictCol.trim +
+                     " is not a String/complex datatype column. LOCAL_DICTIONARY_INCLUDE" +
+                     "/LOCAL_DICTIONARY_EXCLUDE should be no " +
+                     "dictionary string/complex datatype column."
+        throw new MalformedCarbonCommandException(errMsg)
+      }
+    }
+
+    // Validate whether any of the child columns of complex dataType column is a string column
+    localDictColumns.foreach { dictColm =>
+      if (allColumns
+        .exists(x => x.getColumnName.equalsIgnoreCase(dictColm) && x.getNumberOfChild > 0 &&
+                     !validateChildColumns(allColumns, dictColm))) {
+        val errMsg = "None of the child columns specified in the complex dataType column(s) in " +
+                     "local_dictionary_include are not of string dataType."
+        throw new MalformedCarbonCommandException(errMsg)
+      }
+    }
+
+    /**
+     * check whether any child column present in comples type column is string type
+     *
+     * @param schemas
+     * @return
+     */
+    def validateChildColumns(schemas: mutable.Buffer[ColumnSchema],
+        complexColumn: String): Boolean = {
+      var childColumnCount = 0
+      var numberOfPrimitiveColumns = 0
+      schemas.foreach { column =>
+        if (childColumnCount > 0) {
+          if (column.getDataType.equals(DataTypes.STRING)) {
+            numberOfPrimitiveColumns += 1
+            childColumnCount -= 1
+          } else {
+            childColumnCount -= 1
+          }
+        }
+        if (localDictColumns.exists(x => x.equalsIgnoreCase(column.getColumnName)) &&
+            column.getNumberOfChild > 0) {
+          childColumnCount = column.getNumberOfChild
+        }
+      }
+      if (numberOfPrimitiveColumns > 0) {
+        return true
+      }
+      false
+    }
+  }
 }

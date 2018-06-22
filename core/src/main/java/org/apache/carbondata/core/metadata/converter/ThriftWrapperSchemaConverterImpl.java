@@ -605,7 +605,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     }
     if (null != externalTableSchema.tableProperties) {
       CarbonUtil
-          .setLocalDictColumnsToWrapperSchema(listOfColumns, externalTableSchema.tableProperties);
+          .setLocalDictColumnsToWrapperSchema(listOfColumns, externalTableSchema.tableProperties,
+              externalTableSchema.tableProperties
+                  .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE));
     }
     wrapperTableSchema.setListOfColumns(listOfColumns);
     wrapperTableSchema.setSchemaEvolution(
