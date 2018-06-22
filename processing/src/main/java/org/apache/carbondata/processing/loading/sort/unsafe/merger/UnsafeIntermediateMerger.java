@@ -88,6 +88,10 @@ public class UnsafeIntermediateMerger {
           CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
           CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
       spillPercentage = Integer.valueOf(spillPercentageStr);
+      if (spillPercentage > 100 || spillPercentage < 0) {
+        spillPercentage = Integer.valueOf(
+            CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+      }
     } catch (NumberFormatException e) {
       spillPercentage = Integer.valueOf(
           CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
