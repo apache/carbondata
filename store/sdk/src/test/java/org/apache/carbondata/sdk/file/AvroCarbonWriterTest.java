@@ -37,7 +37,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 import org.apache.avro.Schema;
 
 public class AvroCarbonWriterTest {
@@ -70,14 +69,9 @@ public class AvroCarbonWriterTest {
     String json = "{\"name\":\"bob\", \"age\":10}";
 
     // conversion to GenericData.Record
-    JsonAvroConverter converter = new JsonAvroConverter();
-    GenericData.Record record = converter.convertToGenericDataRecord(
-        json.getBytes(CharEncoding.UTF_8), new Schema.Parser().parse(avroSchema));
-
+    GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
     try {
-      CarbonWriter writer = CarbonWriter.builder()
-          .outputPath(path)
-          .isTransactionalTable(true)
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).isTransactionalTable(true)
           .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
 
       for (int i = 0; i < 100; i++) {
@@ -140,9 +134,7 @@ public class AvroCarbonWriterTest {
 
 
     // conversion to GenericData.Record
-    JsonAvroConverter converter = new JsonAvroConverter();
-    GenericData.Record record = converter.convertToGenericDataRecord(
-        json.getBytes(CharEncoding.UTF_8), new Schema.Parser().parse(avroSchema));
+    GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
@@ -234,9 +226,7 @@ public class AvroCarbonWriterTest {
 
     // conversion to GenericData.Record
     Schema nn = new Schema.Parser().parse(mySchema);
-    JsonAvroConverter converter = new JsonAvroConverter();
-    GenericData.Record record = converter.convertToGenericDataRecord(
-        json.getBytes(CharEncoding.UTF_8), nn);
+    GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
@@ -297,9 +287,7 @@ public class AvroCarbonWriterTest {
 
     // conversion to GenericData.Record
     Schema nn = new Schema.Parser().parse(mySchema);
-    JsonAvroConverter converter = new JsonAvroConverter();
-    GenericData.Record record = converter.convertToGenericDataRecord(
-        json.getBytes(CharEncoding.UTF_8), nn);
+    GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
@@ -336,10 +324,7 @@ public class AvroCarbonWriterTest {
 
     // conversion to GenericData.Record
     Schema nn = new Schema.Parser().parse(mySchema);
-    JsonAvroConverter converter = new JsonAvroConverter();
-    GenericData.Record record = converter.convertToGenericDataRecord(
-        json.getBytes(CharEncoding.UTF_8), nn);
-
+    GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)

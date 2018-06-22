@@ -17,9 +17,13 @@
 
 package org.apache.carbondata.sdk.file;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -27,9 +31,43 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.Encoder;
+import org.apache.avro.io.JsonDecoder;
 import org.junit.Assert;
 
 public class TestUtil {
+
+  public static GenericData.Record jsonToAvro(String json, String avroSchema) throws IOException {
+    InputStream input = null;
+    DataFileWriter writer = null;
+    Encoder encoder = null;
+    ByteArrayOutputStream output = null;
+    try {
+      org.apache.avro.Schema schema = new org.apache.avro.Schema.Parser().parse(avroSchema);
+      GenericDatumReader reader = new GenericDatumReader (schema);
+      input = new ByteArrayInputStream(json.getBytes());
+      output = new ByteArrayOutputStream();
+      DataInputStream din = new DataInputStream(input);
+      writer = new DataFileWriter (new GenericDatumWriter ());
+      writer.create(schema, output);
+      JsonDecoder decoder = DecoderFactory.get().jsonDecoder(schema, din);
+      GenericData.Record datum = null;
+      datum = (GenericData.Record) reader.read(null, decoder);
+      return datum;
+    } finally {
+      try {
+        input.close();
+        writer.close();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+  }
 
   static void writeFilesAndVerify(Schema schema, String path) {
     writeFilesAndVerify(schema, path, null);
