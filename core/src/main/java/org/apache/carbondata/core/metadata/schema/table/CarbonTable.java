@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.metadata.schema.table;
 
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -36,6 +34,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -236,20 +237,22 @@ public class CarbonTable implements Serializable {
       String tablePath,
       String tableName) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    File[] dataFiles = new File(tablePath).listFiles(new FilenameFilter() {
-      @Override
-      public boolean accept(File dir, String name) {
-        if (name == null) {
-          return false;
-        }
-        return name.endsWith("carbonindex");
-      }
-    });
-    if (dataFiles == null || dataFiles.length < 1) {
+    CarbonFile[] carbonFiles = FileFactory
+        .getCarbonFile(tablePath)
+        .listFiles(new CarbonFileFilter() {
+          @Override
+          public boolean accept(CarbonFile file) {
+            if (file == null) {
+              return false;
+            }
+            return file.getName().endsWith("carbonindex");
+          }
+        });
+    if (carbonFiles == null || carbonFiles.length < 1) {
       throw new RuntimeException("Carbon index file not exists.");
     }
     org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
-        .inferSchemaFromIndexFile(dataFiles[0].toString(), tableName);
+        .inferSchemaFromIndexFile(carbonFiles[0].getPath(), tableName);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
         .getFact_table().getTable_columns()) {
