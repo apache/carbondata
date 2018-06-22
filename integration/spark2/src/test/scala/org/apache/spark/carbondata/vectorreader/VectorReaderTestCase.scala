@@ -19,8 +19,8 @@ package org.apache.spark.carbondata.vectorreader
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
-import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
-import org.apache.spark.sql.execution.{BatchedDataSourceScanExec, RowDataSourceScanExec}
+import org.apache.spark.sql.execution.RowDataSourceScanExec
+import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -46,7 +46,7 @@ class VectorReaderTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       """select * from vectorreader""".stripMargin).queryExecution.executedPlan
     var batchReader = false
     plan.collect {
-      case s: BatchedDataSourceScanExec => batchReader = true
+      case s: CarbonDataSourceScan => batchReader = true
     }
     assert(batchReader, "batch reader should exist when carbon.enable.vector.reader is true")
   }

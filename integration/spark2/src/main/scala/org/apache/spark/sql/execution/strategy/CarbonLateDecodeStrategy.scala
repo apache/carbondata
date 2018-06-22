@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution._
-import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.optimizer.{CarbonDecoderRelation, CarbonFilters}
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types._
@@ -367,14 +367,14 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns) &&
         needDecoder.isEmpty) {
-      BatchedDataSourceScanExec(
+      new CarbonDataSourceScan(
         output,
         scanBuilder(updateRequestedColumns,
           candidatePredicates,
           pushedFilters,
           needDecoder,
           partitions),
-        relation.relation,
+        createHadoopFSRelation(relation),
         getPartitioning(table.carbonTable, updateRequestedColumns),
         metadata,
         relation.catalogTable.map(_.identifier), relation)
@@ -672,5 +672,27 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       sqlContext.conf.wholeStageEnabled && sqlContext.conf.wholeStageMaxNumFields >= cols.size
     supportCodegen && vectorizedReader.toBoolean &&
     cols.forall(_.dataType.isInstanceOf[AtomicType])
+  }
+
+  private def createHadoopFSRelation(relation: LogicalRelation) = {
+    val sparkSession = relation.relation.sqlContext.sparkSession
+    relation.catalogTable match {
+      case Some(catalogTable) =>
+        HadoopFsRelation(new CatalogFileIndex(
+          sparkSession,
+          catalogTable, relation.relation.sizeInBytes),
+          catalogTable.partitionSchema,
+          catalogTable.schema,
+          catalogTable.bucketSpec,
+          new SparkCarbonTableFormat,
+          catalogTable.storage.properties)(sparkSession)
+      case _ =>
+        HadoopFsRelation(new InMemoryFileIndex(sparkSession, Seq.empty, Map.empty, None),
+          new StructType(),
+          relation.relation.schema,
+          None,
+          new SparkCarbonTableFormat,
+          null)(sparkSession)
+    }
   }
 }

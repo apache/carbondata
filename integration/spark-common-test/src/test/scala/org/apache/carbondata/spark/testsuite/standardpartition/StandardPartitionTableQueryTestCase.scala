@@ -17,7 +17,7 @@
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.BatchedDataSourceScanExec
+import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row}
@@ -420,7 +420,7 @@ test("Creation of partition table should fail if the colname in table schema and
   private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String]) = {
     val plan = frame.queryExecution.sparkPlan
     val scanRDD = plan collect {
-      case b: BatchedDataSourceScanExec if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] => b.rdd
+      case b: CarbonDataSourceScan if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] => b.rdd
         .asInstanceOf[CarbonScanRDD[InternalRow]]
     }
     assert(scanRDD.nonEmpty)
