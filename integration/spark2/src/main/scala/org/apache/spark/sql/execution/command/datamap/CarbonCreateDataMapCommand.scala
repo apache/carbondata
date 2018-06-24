@@ -16,8 +16,6 @@
  */
 package org.apache.spark.sql.execution.command.datamap
 
-import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -99,17 +97,22 @@ case class CarbonCreateDataMapCommand(
     dataMapProvider match {
       case provider: IndexDataMapProvider =>
         val datamaps = DataMapStoreManager.getInstance.getAllDataMap(mainTable).asScala
-        val existingIndexColumn = mutable.Set[String]()
-        datamaps.foreach { datamap =>
-          datamap.getDataMapSchema.getIndexColumns.foreach(existingIndexColumn.add)
+        val existingIndexColumn4ThisProvider = mutable.Set[String]()
+        val thisDmProviderName =
+          dataMapProvider.asInstanceOf[IndexDataMapProvider].getDataMapSchema.getProviderName
+        datamaps.filter(datamap => thisDmProviderName.equalsIgnoreCase(
+          datamap.getDataMapSchema.getProviderName)).foreach { datamap =>
+          datamap.getDataMapSchema.getIndexColumns.foreach(existingIndexColumn4ThisProvider.add)
         }
 
         provider.getIndexedColumns.asScala.foreach { column =>
-          if (existingIndexColumn.contains(column.getColName)) {
+          if (existingIndexColumn4ThisProvider.contains(column.getColName)) {
             throw new MalformedDataMapCommandException(String.format(
-              "column '%s' already has datamap created", column.getColName))
+              "column '%s' already has %s index datamap created",
+              column.getColName, thisDmProviderName))
           }
         }
+
         val operationContext: OperationContext = new OperationContext()
         val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
         val createDataMapPreExecutionEvent: CreateDataMapPreExecutionEvent =

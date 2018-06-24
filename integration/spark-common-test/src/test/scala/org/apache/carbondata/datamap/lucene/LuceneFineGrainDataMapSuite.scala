@@ -225,32 +225,6 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test3")
   }
 
-  test("test lucene fine grain data map for create datamap with Duplicate Columns") {
-    sql("DROP TABLE IF EXISTS datamap_test_table")
-    sql(
-      """
-        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
-      """.stripMargin)
-    val exception_duplicate_column: Exception = intercept[MalformedDataMapCommandException] {
-      sql(
-        s"""
-           | CREATE DATAMAP dm ON TABLE datamap_test_table
-           | USING 'lucene'
-           | DMProperties('INDEX_COLUMNS'='name')
-      """.stripMargin)
-      sql(
-        s"""
-           | CREATE DATAMAP dm1 ON TABLE datamap_test_table
-           | USING 'lucene'
-           | DMProperties('INDEX_COLUMNS'='name')
-      """.stripMargin)
-    }
-    assertResult("column 'name' already has datamap created")(exception_duplicate_column.getMessage)
-    sql("drop datamap if exists dm on table datamap_test_table")
-  }
-
   test("test lucene fine grain data map with wildcard matching ") {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(

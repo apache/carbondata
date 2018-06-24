@@ -67,7 +67,7 @@ public abstract class DataMapProvider {
     return mainTable;
   }
 
-  protected final DataMapSchema getDataMapSchema() {
+  public final DataMapSchema getDataMapSchema() {
     return dataMapSchema;
   }
 
