@@ -36,4 +36,12 @@ public class DataMapProperty {
    * property internally
    */
   public static final String DEFERRED_REBUILD = "_internal.deferred.rebuild";
+  /**
+   * for internal property 'CHILD_SELECT_QUERY'
+   */
+  public static final String CHILD_SELECT_QUERY = "CHILD_SELECT QUERY";
+  /**
+   * for internal property 'QUERYTYPE'
+   */
+  public static final String QUERY_TYPE = "QUERYTYPE";
 }
