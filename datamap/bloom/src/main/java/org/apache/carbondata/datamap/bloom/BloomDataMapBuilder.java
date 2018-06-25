@@ -78,7 +78,13 @@ public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBu
 
   @Override
   public void finish() throws IOException {
-    super.finish();
+    if (!isWritingFinished()) {
+      if (indexBloomFilters.size() > 0) {
+        writeBloomDataMapFile();
+      }
+      releaseResouce();
+      setWritingFinished(true);
+    }
   }
 
   @Override

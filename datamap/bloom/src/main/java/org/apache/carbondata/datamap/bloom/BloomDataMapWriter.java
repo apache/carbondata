@@ -197,9 +197,6 @@ public class BloomDataMapWriter extends DataMapWriter {
   @Override
   public void finish() throws IOException {
     if (!isWritingFinished()) {
-      if (indexBloomFilters.size() > 0) {
-        writeBloomDataMapFile();
-      }
       releaseResouce();
       setWritingFinished(true);
     }
