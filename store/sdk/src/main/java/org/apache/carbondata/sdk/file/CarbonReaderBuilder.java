@@ -61,6 +61,7 @@ public class CarbonReaderBuilder {
     this.tableName = tableName;
   }
 
+
   /**
    * Configure the projection column names of carbon reader
    *
@@ -226,4 +227,5 @@ public class CarbonReaderBuilder {
       throw ex;
     }
   }
+
 }

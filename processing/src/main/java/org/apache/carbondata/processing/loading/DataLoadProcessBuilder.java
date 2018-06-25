@@ -45,8 +45,8 @@ import org.apache.carbondata.processing.loading.steps.DataConverterProcessorStep
 import org.apache.carbondata.processing.loading.steps.DataWriterBatchProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.InputProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.InputProcessorStepWithJsonConverterImpl;
 import org.apache.carbondata.processing.loading.steps.InputProcessorStepWithNoConverterImpl;
+import org.apache.carbondata.processing.loading.steps.JsonInputProcessorStepImpl;
 import org.apache.carbondata.processing.loading.steps.SortProcessorStepImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -140,25 +140,27 @@ public final class DataLoadProcessBuilder {
   private AbstractDataLoadProcessorStep buildInternalWithJsonInputProcessor(
       CarbonIterator[] inputIterators, CarbonDataLoadConfiguration configuration,
       SortScopeOptions.SortScope sortScope) {
-    // TODO: currently Wraps with dummy processor, Later integrate with
-    // JsonInputFormat to support load flow.
     // currently row by row conversion of string json to carbon row is supported.
     AbstractDataLoadProcessorStep inputProcessorStep =
-        new InputProcessorStepWithJsonConverterImpl(configuration, inputIterators);
+        new JsonInputProcessorStepImpl(configuration, inputIterators);
+    // 2. Converts the data like dictionary or non dictionary or complex objects depends on
+    // data types and configurations.
+    AbstractDataLoadProcessorStep converterProcessorStep =
+        new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
     if (sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT)) {
       AbstractDataLoadProcessorStep sortProcessorStep =
-          new SortProcessorStepImpl(configuration, inputProcessorStep);
+          new SortProcessorStepImpl(configuration, converterProcessorStep);
       //  Writes the sorted data in carbondata format.
       return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
     } else if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
       //  Sorts the data by SortColumn or not
       AbstractDataLoadProcessorStep sortProcessorStep =
-          new SortProcessorStepImpl(configuration, inputProcessorStep);
+          new SortProcessorStepImpl(configuration, converterProcessorStep);
       // Writes the sorted data in carbondata format.
       return new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
     } else {
       // In all other cases like global sort and no sort uses this step
-      return new CarbonRowDataWriterProcessorStepImpl(configuration, inputProcessorStep);
+      return new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
     }
   }
 
