@@ -112,6 +112,49 @@ public class TestSdkAvro {
 }
 ```
 
+### Example with Json format
+```java
+import java.io.IOException;
+ 
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.sdk.file.CarbonWriter;
+import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
+import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.sdk.file.Schema;
+ 
+public class TestSdkJson {
+
+   public static void main(String[] args) throws InvalidLoadOptionException {
+       testJsonSdkWriter();
+   }
+   
+   public void testJsonSdkWriter() throws InvalidLoadOptionException {
+    String path = "./target/testJsonSdkWriter";
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    Schema CarbonSchema = new Schema(fields);
+
+    CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+
+    // initialize json writer with carbon schema
+    CarbonWriter writer = builder.buildWriterForJsonInput(CarbonSchema);
+    // one row of json Data as String
+    String  JsonRow = "{\"name\":\"abcd\", \"age\":10}";
+
+    int rows = 5;
+    for (int i = 0; i < rows; i++) {
+      writer.write(JsonRow);
+    }
+    writer.close();
+  }
+} 
+```
+
 ## Datatypes Mapping
 Each of SQL data types are mapped into data types of SDK. Following are the mapping:
 
@@ -294,12 +337,25 @@ public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOpti
 public CarbonWriter buildWriterForAvroInput() throws IOException, InvalidLoadOptionException;
 ```
 
+```
+/**
+* Build a {@link CarbonWriter}, which accepts Json object
+* @param carbonSchema carbon Schema object
+* @return JsonCarbonWriter
+* @throws IOException
+* @throws InvalidLoadOptionException
+*/
+public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema);
+```
+
 ### Class org.apache.carbondata.sdk.file.CarbonWriter
 ```
 /**
 * Write an object to the file, the format of the object depends on the implementation
-* If AvroCarbonWriter, object is of type org.apache.avro.generic.GenericData.Record 
-* If CSVCarbonWriter, object is of type String[]
+* If AvroCarbonWriter, object is of type org.apache.avro.generic.GenericData.Record, 
+*                      which is one row of data.
+* If CSVCarbonWriter, object is of type String[], which is one row of data
+* If JsonCarbonWriter, object is of type String, which is one row of json
 * Note: This API is not thread safe
 * @param object
 * @throws IOException
