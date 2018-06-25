@@ -175,8 +175,10 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
         // TODO. Nested File Paths.
         if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
           // Get Segment Name from the IndexFile.
+          String indexFilePath =
+              FileFactory.getUpdatedFilePath(carbonIndexFiles[i].getAbsolutePath());
           String segId =
-              getSegmentID(carbonIndexFiles[i].getName(), carbonIndexFiles[i].getAbsolutePath());
+              getSegmentID(carbonIndexFiles[i].getName(), indexFilePath);
           // TODO. During Partition table handling, place Segment File Name.
           List<String> indexList;
           SegmentRefreshInfo segmentRefreshInfo;
@@ -190,7 +192,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
             indexList = indexFileStore.get(segId);
             segmentRefreshInfo = segmentTimestampUpdaterMap.get(segId);
           }
-          indexList.add(carbonIndexFiles[i].getAbsolutePath());
+          indexList.add(indexFilePath);
           if (segmentRefreshInfo.getSegmentUpdatedTimestamp() < carbonIndexFiles[i]
               .getLastModifiedTime()) {
             segmentRefreshInfo

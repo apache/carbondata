@@ -68,6 +68,10 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   private static final Log LOG = LogFactory.getLog(BlockletDataMapFactory.class);
   private static final String NAME = "clustered.btree.blocklet";
+  /**
+   * variable for cache level BLOCKLET
+   */
+  private static final String CACHE_LEVEL_BLOCKLET = "BLOCKLET";
 
   public static final DataMapSchema DATA_MAP_SCHEMA =
       new DataMapSchema(NAME, BlockletDataMapFactory.class.getName());
@@ -84,6 +88,25 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     this.identifier = carbonTable.getAbsoluteTableIdentifier();
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
+  }
+
+  /**
+   * create dataMap based on cache level
+   *
+   * @param carbonTable
+   * @return
+   */
+  public static DataMap createDataMap(CarbonTable carbonTable) {
+    boolean cacheLevelBlock =
+        BlockletDataMapUtil.isCacheLevelBlock(carbonTable, CACHE_LEVEL_BLOCKLET);
+    cacheLevelBlock = false;
+    if (cacheLevelBlock) {
+      // case1: when CACHE_LEVEL = BLOCK
+      return new BlockDataMap();
+    } else {
+      // case2: when CACHE_LEVEL = BLOCKLET
+      return new BlockletDataMap();
+    }
   }
 
   @Override
@@ -185,10 +208,10 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       throws IOException {
     for (TableBlockIndexUniqueIdentifierWrapper identifierWrapper : identifiersWrapper) {
       BlockletDataMapIndexWrapper wrapper = cache.get(identifierWrapper);
-      List<BlockletDataMap> dataMaps = wrapper.getDataMaps();
+      List<BlockDataMap> dataMaps = wrapper.getDataMaps();
       for (DataMap dataMap : dataMaps) {
-        if (((BlockletDataMap) dataMap).getIndexFileName().startsWith(blocklet.getFilePath())) {
-          return ((BlockletDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
+        if (((BlockDataMap) dataMap).getIndexFileName().startsWith(blocklet.getFilePath())) {
+          return ((BlockDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
         }
       }
     }
@@ -242,7 +265,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
             new TableBlockIndexUniqueIdentifierWrapper(blockIndex, this.getCarbonTable());
         BlockletDataMapIndexWrapper wrapper = cache.getIfPresent(blockIndexWrapper);
         if (null != wrapper) {
-          List<BlockletDataMap> dataMaps = wrapper.getDataMaps();
+          List<BlockDataMap> dataMaps = wrapper.getDataMaps();
           for (DataMap dataMap : dataMaps) {
             if (dataMap != null) {
               cache.invalidate(blockIndexWrapper);
@@ -312,8 +335,8 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     List<CoarseGrainDataMap> dataMaps = getDataMaps(segment);
     assert (dataMaps.size() > 0);
     CoarseGrainDataMap coarseGrainDataMap = dataMaps.get(0);
-    assert (coarseGrainDataMap instanceof BlockletDataMap);
-    BlockletDataMap dataMap = (BlockletDataMap) coarseGrainDataMap;
+    assert (coarseGrainDataMap instanceof BlockDataMap);
+    BlockDataMap dataMap = (BlockDataMap) coarseGrainDataMap;
     return dataMap.getSegmentProperties();
   }
 
