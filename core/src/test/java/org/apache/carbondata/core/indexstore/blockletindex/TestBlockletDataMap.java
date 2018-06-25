@@ -42,8 +42,8 @@ public class TestBlockletDataMap extends AbstractDictionaryCacheTest {
       }
     };
 
-    BlockletDataMap blockletDataMap = new BlockletDataMap();
-    Method method = BlockletDataMap.class
+    BlockDataMap blockletDataMap = new BlockletDataMap();
+    Method method = BlockDataMap.class
         .getDeclaredMethod("addBlockBasedOnMinMaxValue", FilterExecuter.class, byte[][].class,
             byte[][].class, String.class, int.class);
     method.setAccessible(true);

@@ -201,10 +201,12 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.blockletId = blockletId;
     info.locations = locations;
     info.version = version;
+    info.isDataBlockFromOldStore = isDataBlockFromOldStore;
     info.blockletInfos = blockletInfos;
     info.blockStorageIdMap = blockStorageIdMap;
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
+    info.dataMapWriterPath = dataMapWriterPath;
     return info;
   }
 
