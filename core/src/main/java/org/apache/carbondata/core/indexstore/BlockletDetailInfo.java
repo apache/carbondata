@@ -26,7 +26,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
@@ -68,6 +68,10 @@ public class BlockletDetailInfo implements Serializable, Writable {
   private byte[] columnSchemaBinary;
 
   private long blockSize;
+  /**
+   * flag to check for store from 1.1 or any prior version
+   */
+  private boolean isLegacyStore;
 
   public int getRowCount() {
     return rowCount;
@@ -172,6 +176,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     out.writeInt(blockletInfoBinary.length);
     out.write(blockletInfoBinary);
     out.writeLong(blockSize);
+    out.writeBoolean(isLegacyStore);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
@@ -198,6 +203,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     in.readFully(blockletInfoBinary);
     setBlockletInfoFromBinary();
     blockSize = in.readLong();
+    isLegacyStore = in.readBoolean();
   }
 
   /**
@@ -206,8 +212,8 @@ public class BlockletDetailInfo implements Serializable, Writable {
    * @throws IOException
    */
   public void readColumnSchema(byte[] schemaArray) throws IOException {
-    BlockletDataMap blockletDataMap = new BlockletDataMap();
-    columnSchemas = blockletDataMap.readColumnSchema(schemaArray);
+    BlockDataMap blockDataMap = new BlockDataMap();
+    columnSchemas = blockDataMap.readColumnSchema(schemaArray);
   }
 
   /**
@@ -222,9 +228,12 @@ public class BlockletDetailInfo implements Serializable, Writable {
     detailInfo.dimLens = dimLens;
     detailInfo.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
     detailInfo.blockletInfo = blockletInfo;
+    detailInfo.blockletInfoBinary = blockletInfoBinary;
     detailInfo.blockFooterOffset = blockFooterOffset;
     detailInfo.columnSchemas = columnSchemas;
+    detailInfo.columnSchemaBinary = columnSchemaBinary;
     detailInfo.blockSize = blockSize;
+    detailInfo.isLegacyStore = isLegacyStore;
     return detailInfo;
   }
 
@@ -263,4 +272,11 @@ public class BlockletDetailInfo implements Serializable, Writable {
     this.blockletInfoBinary = blockletInfoBinary;
   }
 
+  public boolean isLegacyStore() {
+    return isLegacyStore;
+  }
+
+  public void setLegacyStore(boolean legacyStore) {
+    isLegacyStore = legacyStore;
+  }
 }

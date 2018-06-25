@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -129,22 +130,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     Collections.sort(queryModel.getTableBlockInfos());
 
     List<AbstractIndex> indexList = new ArrayList<>();
-    Map<String, List<TableBlockInfo>> listMap = new LinkedHashMap<>();
-    for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
-      List<TableBlockInfo> tableBlockInfos = listMap.get(blockInfo.getFilePath());
-      if (tableBlockInfos == null) {
-        tableBlockInfos = new ArrayList<>();
-        listMap.put(blockInfo.getFilePath(), tableBlockInfos);
-      }
-      BlockletDetailInfo blockletDetailInfo = blockInfo.getDetailInfo();
-      // This is the case of old stores where blocklet information is not available so read
-      // the blocklet information from block file
-      if (blockletDetailInfo.getBlockletInfo() == null) {
-        readAndFillBlockletInfo(blockInfo, tableBlockInfos, blockletDetailInfo);
-      } else {
-        tableBlockInfos.add(blockInfo);
-      }
-    }
+    Map<String, List<TableBlockInfo>> listMap = getFilePathToTableBlockInfoMapping(queryModel);
     for (List<TableBlockInfo> tableBlockInfos : listMap.values()) {
       indexList.add(new IndexWrapper(tableBlockInfos));
     }
@@ -194,38 +180,101 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   /**
+   * Method to prepare file path to table block Info mapping
+   *
+   * @param queryModel
+   * @return
+   * @throws IOException
+   */
+  private Map<String, List<TableBlockInfo>> getFilePathToTableBlockInfoMapping(
+      QueryModel queryModel) throws IOException {
+    Map<String, List<TableBlockInfo>> listMap = new LinkedHashMap<>();
+    // thsi is introduced to handle the case when CACHE_LEVEL=BLOCK and there are few other dataMaps
+    // like lucene, Bloom created on the table. In that case all the dataMaps will do blocklet
+    // level pruning and blockInfo entries will be repeated with different blockletIds
+    Map<String, DataFileFooter> filePathToFileFooterMapping = new HashMap<>();
+    for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
+      List<TableBlockInfo> tableBlockInfos = listMap.get(blockInfo.getFilePath());
+      if (tableBlockInfos == null) {
+        tableBlockInfos = new ArrayList<>();
+        listMap.put(blockInfo.getFilePath(), tableBlockInfos);
+      }
+      BlockletDetailInfo blockletDetailInfo = blockInfo.getDetailInfo();
+      // This case can come in 2 scenarios:
+      // 1. old stores (1.1 or any prior version to 1.1) where blocklet information is not
+      // available so read the blocklet information from block file
+      // 2. CACHE_LEVEL is set to block
+      if (blockletDetailInfo.getBlockletInfo() == null) {
+        readAndFillBlockletInfo(filePathToFileFooterMapping, tableBlockInfos, blockInfo,
+            blockletDetailInfo);
+      } else {
+        tableBlockInfos.add(blockInfo);
+      }
+    }
+    return listMap;
+  }
+
+  /**
    * Read the file footer of block file and get the blocklets to query
    */
-  private void readAndFillBlockletInfo(TableBlockInfo blockInfo,
-      List<TableBlockInfo> tableBlockInfos, BlockletDetailInfo blockletDetailInfo)
-      throws IOException {
+  private void readAndFillBlockletInfo(Map<String, DataFileFooter> filePathToFileFooterMapping,
+      List<TableBlockInfo> tableBlockInfos, TableBlockInfo blockInfo,
+      BlockletDetailInfo blockletDetailInfo) throws IOException {
     blockInfo.setBlockOffset(blockletDetailInfo.getBlockFooterOffset());
-    blockInfo.setDetailInfo(null);
-    DataFileFooter fileFooter = CarbonUtil.readMetadatFile(blockInfo);
-    blockInfo.setDetailInfo(blockletDetailInfo);
+    DataFileFooter fileFooter = filePathToFileFooterMapping.get(blockInfo.getFilePath());
+    if (null == fileFooter) {
+      blockInfo.setDetailInfo(null);
+      fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+      filePathToFileFooterMapping.put(blockInfo.getFilePath(), fileFooter);
+      blockInfo.setDetailInfo(blockletDetailInfo);
+    }
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
-    short count = 0;
-    for (BlockletInfo blockletInfo: blockletList) {
-      TableBlockInfo info = blockInfo.copy();
-      BlockletDetailInfo detailInfo = info.getDetailInfo();
-      detailInfo.setRowCount(blockletInfo.getNumberOfRows());
+    // cases when blockletID will be -1
+    // 1. In case of legacy store
+    // 2. In case CACHE_LEVEL is block and no other dataMap apart from blockletDataMap is
+    // created for a table
+    // In all above cases entries will be according to the number of blocks and not according to
+    // number of blocklets
+    if (blockletDetailInfo.getBlockletId() != -1) {
+      // fill the info only for given blockletId in detailInfo
+      BlockletInfo blockletInfo = blockletList.get(blockletDetailInfo.getBlockletId());
+      fillBlockletInfoToTableBlock(tableBlockInfos, blockInfo, blockletDetailInfo, fileFooter,
+          blockletInfo, blockletDetailInfo.getBlockletId());
+    } else {
+      short count = 0;
+      for (BlockletInfo blockletInfo : blockletList) {
+        fillBlockletInfoToTableBlock(tableBlockInfos, blockInfo, blockletDetailInfo, fileFooter,
+            blockletInfo, count);
+        count++;
+      }
+    }
+  }
+
+  private void fillBlockletInfoToTableBlock(List<TableBlockInfo> tableBlockInfos,
+      TableBlockInfo blockInfo, BlockletDetailInfo blockletDetailInfo, DataFileFooter fileFooter,
+      BlockletInfo blockletInfo, short blockletId) {
+    TableBlockInfo info = blockInfo.copy();
+    BlockletDetailInfo detailInfo = info.getDetailInfo();
+    detailInfo.setRowCount(blockletInfo.getNumberOfRows());
+    byte[][] maxValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues();
+    byte[][] minValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues();
+    if (blockletDetailInfo.isLegacyStore()) {
       // update min and max values in case of old store for measures as min and max is written
-      // opposite for measures in old store
-      byte[][] maxValues = CarbonUtil.updateMinMaxValues(fileFooter,
+      // opposite for measures in old store ( store <= 1.1 version)
+      maxValues = CarbonUtil.updateMinMaxValues(fileFooter,
           blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues(),
           blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues(), false);
-      byte[][] minValues = CarbonUtil.updateMinMaxValues(fileFooter,
+      minValues = CarbonUtil.updateMinMaxValues(fileFooter,
           blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues(),
           blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues(), true);
-      blockletInfo.getBlockletIndex().getMinMaxIndex().setMaxValues(maxValues);
-      blockletInfo.getBlockletIndex().getMinMaxIndex().setMinValues(minValues);
-      detailInfo.setBlockletInfo(blockletInfo);
-      detailInfo.setPagesCount((short) blockletInfo.getNumberOfPages());
-      detailInfo.setBlockletId(count);
       info.setDataBlockFromOldStore(true);
-      tableBlockInfos.add(info);
-      count++;
     }
+    blockletInfo.getBlockletIndex().getMinMaxIndex().setMaxValues(maxValues);
+    blockletInfo.getBlockletIndex().getMinMaxIndex().setMinValues(minValues);
+    detailInfo.setBlockletInfo(blockletInfo);
+    detailInfo.setBlockletId(blockletId);
+    detailInfo.setPagesCount((short) blockletInfo.getNumberOfPages());
+    tableBlockInfos.add(info);
   }
 
   private List<TableBlockUniqueIdentifier> prepareTableBlockUniqueIdentifier(
