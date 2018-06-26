@@ -475,8 +475,7 @@ m filterExpression
       if (fgDataMapExprWrapper != null) {
         // Prune segments from already pruned blocklets
         pruneSegments(segmentIds, finalPrunedBlocklets);
-        List<ExtendedBlocklet> fgPrunedBlocklets = new ArrayList<>();
-        fgPrunedBlocklets = DataMapUtil
+        List<ExtendedBlocklet> fgPrunedBlocklets = DataMapUtil
             .executeDataMapJob(carbonTable, resolver, segmentIds, fgDataMapExprWrapper, dataMapJob,
                 partitionsToPrune);
         finalPrunedBlocklets = (List) CollectionUtils.intersection(
