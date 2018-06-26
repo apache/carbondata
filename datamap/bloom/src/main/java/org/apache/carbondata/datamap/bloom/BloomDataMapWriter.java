@@ -55,6 +55,8 @@ public class BloomDataMapWriter extends DataMapWriter {
   private List<String> currentDMFiles;
   private List<DataOutputStream> currentDataOutStreams;
   protected List<CarbonBloomFilter> indexBloomFilters;
+  // whether the bloom index is written from rebuild
+  protected boolean isWriteFromBuilder = false;
 
   BloomDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
@@ -190,8 +192,6 @@ public class BloomDataMapWriter extends DataMapWriter {
       }
       throw new RuntimeException(e);
     } finally {
-      // finished writing the index for this blocklet
-      setWritingFinished(true);
       resetBloomFilters();
     }
   }
@@ -199,7 +199,7 @@ public class BloomDataMapWriter extends DataMapWriter {
   @Override
   public void finish() throws IOException {
     if (!isWritingFinished()) {
-      if (indexBloomFilters.size() > 0) {
+      if (isWriteFromBuilder && indexBloomFilters.size() > 0) {
         writeBloomDataMapFile();
       }
       releaseResouce();

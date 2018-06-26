@@ -42,6 +42,7 @@ public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBu
       boolean bloomCompress) throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName, bloomFilterSize, bloomFilterFpp,
         bloomCompress);
+    this.isWriteFromBuilder = true;
   }
 
   @Override
