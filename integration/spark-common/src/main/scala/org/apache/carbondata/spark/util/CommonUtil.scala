@@ -26,11 +26,11 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 import scala.util.Random
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.sql.{Row, RowFactory}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
 import org.apache.spark.sql.types.{MetadataBuilder, StringType}
@@ -894,6 +894,95 @@ object CommonUtil {
         isCompactionFlow,
         isAltPartitionFlow)
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
+  }
+
+  /**
+   * This method will validate the cache level
+   *
+   * @param cacheLevel
+   * @param tableProperties
+   */
+  def validateCacheLevel(cacheLevel: String, tableProperties: Map[String, String]): Unit = {
+    val supportedCacheLevel = Seq("BLOCK", "BLOCKLET")
+    if (cacheLevel.trim.isEmpty) {
+      val errorMessage = "Invalid value: Empty column names for the option(s): " +
+                         CarbonCommonConstants.CACHE_LEVEL
+      throw new MalformedCarbonCommandException(errorMessage)
+    } else {
+      val trimmedCacheLevel = cacheLevel.trim.toUpperCase
+      if (!supportedCacheLevel.contains(trimmedCacheLevel)) {
+        val errorMessage = s"Invalid value: Allowed vaLues for ${
+          CarbonCommonConstants.CACHE_LEVEL} are BLOCK AND BLOCKLET"
+        throw new MalformedCarbonCommandException(errorMessage)
+      }
+      tableProperties.put(CarbonCommonConstants.CACHE_LEVEL, trimmedCacheLevel)
+    }
+  }
+
+  /**
+   * This will validate the column meta cache i.e the columns to be cached.
+   * By default all dimensions will be cached.
+   * If the property is already defined in create table DDL then validate it,
+   * else add all the dimension columns as columns to be cached to table properties.
+   * valid values for COLUMN_META_CACHE can either be empty or can have one or more comma
+   * separated values
+   */
+  def validateColumnMetaCacheFields(dbName: String,
+      tableName: String,
+      tableColumns: Seq[String],
+      cachedColumns: String,
+      tableProperties: Map[String, String]): Unit = {
+    val tableIdentifier = TableIdentifier(tableName, Some(dbName))
+    // below check is added because empty value for column_meta_cache is allowed and in that
+    // case there should not be any validation
+    if (!cachedColumns.equals("")) {
+      validateColumnMetaCacheOption(tableIdentifier, dbName, cachedColumns, tableColumns)
+      val columnsToBeCached = cachedColumns.split(",").map(x => x.trim.toLowerCase).toSeq
+      // make the columns in create table order and then add it to table properties
+      val createOrder = tableColumns.filter(col => columnsToBeCached.contains(col))
+      tableProperties.put(CarbonCommonConstants.COLUMN_META_CACHE, createOrder.mkString(","))
+    }
+  }
+
+  /**
+   * Validate the column_meta_cache option in tableproperties
+   *
+   * @param tableIdentifier
+   * @param databaseName
+   * @param columnsToBeCached
+   * @param tableColumns
+   */
+  private def validateColumnMetaCacheOption(tableIdentifier: TableIdentifier,
+      databaseName: String,
+      columnsToBeCached: String,
+      tableColumns: Seq[String]): Unit = {
+    // check if only empty spaces are given in the property value
+    if (columnsToBeCached.trim.isEmpty) {
+      val errorMessage = "Invalid value: Empty column names for the option(s): " +
+                         CarbonCommonConstants.COLUMN_META_CACHE
+      throw new MalformedCarbonCommandException(errorMessage)
+    } else {
+      val columns: Array[String] = columnsToBeCached.split(',').map(x => x.toLowerCase.trim)
+      // Check for duplicate column names
+      columns.groupBy(col => col.toLowerCase).foreach(f => if (f._2.size > 1) {
+        throw new MalformedCarbonCommandException(s"Duplicate column name found : ${ f._1 }")
+      })
+      columns.foreach(col => {
+        // check if any intermediate column is empty
+        if (null == col || col.trim.isEmpty) {
+          val errorMessage = "Invalid value: Empty column names for the option(s): " +
+                             CarbonCommonConstants.COLUMN_META_CACHE
+          throw new MalformedCarbonCommandException(errorMessage)
+        }
+        // check if the column exists in the table
+        if (!tableColumns.contains(col.toLowerCase)) {
+          val errorMessage = s"Column $col does not exists in the table ${
+            databaseName
+          }.${ tableIdentifier.table }"
+          throw new MalformedCarbonCommandException(errorMessage)
+        }
+      })
+    }
   }
 
 }

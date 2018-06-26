@@ -149,4 +149,22 @@ public class ManageDictionaryAndBTree {
     }
   }
 
+  /**
+   * This method will remove the BTree instances from LRU cache for all the segments
+   *
+   * @param carbonTable
+   */
+  public static void invalidateBTreeCache(CarbonTable carbonTable) {
+    LoadMetadataDetails[] loadMetadataDetails =
+        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+    if (loadMetadataDetails.length > 0) {
+      String[] segments = new String[loadMetadataDetails.length];
+      int loadCounter = 0;
+      for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
+        segments[loadCounter++] = loadMetadataDetail.getLoadName();
+      }
+      invalidateBTreeCache(carbonTable.getAbsoluteTableIdentifier(), segments);
+    }
+  }
+
 }

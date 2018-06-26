@@ -108,6 +108,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("SORT_SCOPE", tblProps.asScala.getOrElse("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT), tblProps.asScala.getOrElse("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT)))
+    // add Cache Level property
+    results ++= Seq(("CACHE_LEVEL", tblProps.getOrDefault("CACHE_LEVEL", "BLOCK"), ""))
     val isStreaming = tblProps.asScala.getOrElse("streaming", "false")
     results ++= Seq(("Streaming", isStreaming, ""))
     val isLocalDictEnabled = tblProps.asScala
@@ -187,6 +189,12 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns(
       relation.carbonTable.getTableName).asScala
       .map(column => column).mkString(","), ""))
+    // add columns configured in column meta cache
+    if (null != tblProps.get(CarbonCommonConstants.COLUMN_META_CACHE)) {
+      results ++=
+      Seq(("COLUMN_META_CACHE", carbonTable.getCachedColumns(carbonTable.getTableName).asScala
+        .map(col => col).mkString(","), ""))
+    }
     if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
       results ++=
       Seq(("#Partition Information", "", ""),
