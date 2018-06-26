@@ -45,6 +45,7 @@ import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCo
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -64,8 +65,8 @@ public class TablePage {
   // one vector to make it efficient for sorting
   private ColumnPage[] dictDimensionPages;
   private ColumnPage[] noDictDimensionPages;
-  private ComplexColumnPage[] complexDimensionPages;
   private ColumnPage[] measurePages;
+  private ComplexColumnPage[] complexDimensionPages;
 
   // the num of rows in this page, it must be less than short value (65536)
   private int pageSize;
@@ -104,19 +105,26 @@ public class TablePage {
         page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
         dictDimensionPages[tmpNumDictDimIdx++] = page;
       } else {
+        // will be encoded using string page
+        LocalDictionaryGenerator localDictionaryGenerator =
+            model.getColumnLocalDictGenMap().get(spec.getFieldName());
+        DataType dataType = DataTypes.STRING;
         if (DataTypes.VARCHAR == spec.getSchemaDataType()) {
-          page = ColumnPage.newPage(spec, DataTypes.VARCHAR, pageSize);
+          dataType = DataTypes.VARCHAR;
+        }
+        if (null != localDictionaryGenerator) {
+          page = ColumnPage.newLocalDictPage(spec, dataType, pageSize, localDictionaryGenerator);
+        } else {
+          page = ColumnPage.newPage(spec, dataType, pageSize);
+        }
+        if (DataTypes.VARCHAR == dataType) {
           page.setStatsCollector(LVLongStringStatsCollector.newInstance());
         } else {
-          // In previous implementation, other data types such as string, date and timestamp
-          // will be encoded using string page
-          page = ColumnPage.newPage(spec, DataTypes.STRING, pageSize);
           page.setStatsCollector(LVShortStringStatsCollector.newInstance());
         }
         noDictDimensionPages[tmpNumNoDictDimIdx++] = page;
       }
     }
-
     complexDimensionPages = new ComplexColumnPage[model.getComplexColumnCount()];
     for (int i = 0; i < complexDimensionPages.length; i++) {
       // here we still do not the depth of the complex column, it will be initialized when
@@ -137,6 +145,7 @@ public class TablePage {
           PrimitivePageStatsCollector.newInstance(dataTypes[i]));
       measurePages[i] = page;
     }
+
     boolean hasNoDictionary = noDictDimensionPages.length > 0;
     this.key = new TablePageKey(pageSize, model.getSegmentProperties(), hasNoDictionary);
 
@@ -225,8 +234,16 @@ public class TablePage {
     // initialize the page if first row
     if (rowId == 0) {
       List<ColumnType> complexColumnType = new ArrayList<>();
+      List<String> columnNames = new ArrayList<>();
       complexDataType.getChildrenType(complexColumnType);
-      complexDimensionPages[index] = new ComplexColumnPage(pageSize, complexColumnType);
+      complexDataType.getColumnNames(columnNames);
+      complexDimensionPages[index] = new ComplexColumnPage(complexColumnType);
+      try {
+        complexDimensionPages[index]
+            .initialize(model.getColumnLocalDictGenMap(), columnNames, pageSize);
+      } catch (MemoryException e) {
+        throw new RuntimeException(e);
+      }
     }
 
     int depthInComplexColumn = complexDimensionPages[index].getDepth();
@@ -253,7 +270,7 @@ public class TablePage {
     }
 
     for (int depth = 0; depth < depthInComplexColumn; depth++) {
-      complexDimensionPages[index].putComplexData(rowId, depth, encodedComplexColumnar.get(depth));
+      complexDimensionPages[index].putComplexData(depth, encodedComplexColumnar.get(depth));
     }
   }
 
@@ -266,6 +283,11 @@ public class TablePage {
     }
     for (ColumnPage page : measurePages) {
       page.freeMemory();
+    }
+    for (ComplexColumnPage page : complexDimensionPages) {
+      if (null != page) {
+        page.freeMemory();
+      }
     }
   }
 

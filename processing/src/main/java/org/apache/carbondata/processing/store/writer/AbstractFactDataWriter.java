@@ -149,6 +149,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    */
   private boolean enableDirectlyWriteData2Hdfs = false;
 
+  protected ExecutorService fallbackExecutorService;
+
   public AbstractFactDataWriter(CarbonFactDataHandlerModel model) {
     this.model = model;
     blockIndexInfoList = new ArrayList<>();
@@ -197,6 +199,14 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     blockletMetadata = new ArrayList<BlockletInfo3>();
     blockletIndex = new ArrayList<>();
     listener = this.model.getDataMapWriterlistener();
+    if (model.getColumnLocalDictGenMap().size() > 0) {
+      int numberOfCores = 1;
+      if (model.getNumberOfCores() > 1) {
+        numberOfCores = model.getNumberOfCores() / 2;
+      }
+      fallbackExecutorService = Executors.newFixedThreadPool(numberOfCores, new CarbonThreadFactory(
+          "FallbackPool:" + model.getTableName() + ", range: " + model.getBucketId()));
+    }
   }
 
   /**
@@ -414,6 +424,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       }
     } catch (InterruptedException | ExecutionException | IOException e) {
       throw new CarbonDataWriterException(e);
+    }
+    if (null != fallbackExecutorService) {
+      fallbackExecutorService.shutdownNow();
     }
   }
 

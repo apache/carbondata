@@ -30,6 +30,8 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
+import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
+import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -59,7 +61,7 @@ public abstract class ColumnPage {
   private BitSet nullBitSet;
 
   // statistics collector for this column page
-  private ColumnPageStatsCollector statsCollector;
+  protected ColumnPageStatsCollector statsCollector;
 
   protected static final boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
@@ -79,32 +81,8 @@ public abstract class ColumnPage {
     return dataType;
   }
 
-  private static final SimpleStatsResult statsForComplexType = new SimpleStatsResult() {
-    @Override public Object getMin() {
-      return new byte[0];
-    }
-
-    @Override public Object getMax() {
-      return new byte[0];
-    }
-
-    @Override public int getDecimalCount() {
-      return 0;
-    }
-
-    @Override public DataType getDataType() {
-      return BYTE_ARRAY;
-    }
-
-  };
-
   public SimpleStatsResult getStatistics() {
-    if (statsCollector != null) {
-      return statsCollector.getPageStats();
-    } else {
-      // TODO: for sub column of complex type, there no stats yet, return a dummy result
-      return statsForComplexType;
-    }
+    return statsCollector.getPageStats();
   }
 
   public int getPageSize() {
@@ -182,6 +160,19 @@ public abstract class ColumnPage {
       int pageSize)
     throws MemoryException {
     return newPage(columnSpec, dataType, pageSize);
+  }
+
+  public static ColumnPage newLocalDictPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
+      int pageSize, LocalDictionaryGenerator localDictionaryGenerator) throws MemoryException {
+    if (unsafe) {
+      return new LocalDictColumnPage(new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize),
+          new UnsafeVarLengthColumnPage(columnSpec, DataTypes.BYTE_ARRAY, pageSize),
+          localDictionaryGenerator);
+    } else {
+      return new LocalDictColumnPage(new SafeVarLengthColumnPage(columnSpec, dataType, pageSize),
+          new SafeVarLengthColumnPage(columnSpec, DataTypes.BYTE_ARRAY, pageSize),
+          localDictionaryGenerator);
+    }
   }
 
   /**
@@ -675,6 +666,9 @@ public abstract class ColumnPage {
    */
   public abstract void convertValue(ColumnPageValueConverter codec);
 
+  public PageLevelDictionary getPageDictionary() {
+    throw new UnsupportedOperationException("Operation Not Supported");
+  }
   /**
    * Compress page data using specified compressor
    */
@@ -702,7 +696,9 @@ public abstract class ColumnPage {
       return compressor.compressByte(getComplexChildrenLVFlattenedBytePage());
     } else if (dataType == DataTypes.BYTE_ARRAY && (
         columnSpec.getColumnType() == ColumnType.COMPLEX_STRUCT
-            || columnSpec.getColumnType() == ColumnType.COMPLEX_ARRAY)) {
+            || columnSpec.getColumnType() == ColumnType.COMPLEX_ARRAY
+            || columnSpec.getColumnType() == ColumnType.PLAIN_LONG_VALUE
+            || columnSpec.getColumnType() == ColumnType.PLAIN_VALUE)) {
       return compressor.compressByte(getComplexParentFlattenedBytePage());
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return compressor.compressByte(getLVFlattenedBytePage());
@@ -742,8 +738,9 @@ public abstract class ColumnPage {
     } else if (storeDataType == DataTypes.DOUBLE) {
       double[] doubleData = compressor.unCompressDouble(compressedData, offset, length);
       return newDoublePage(columnSpec, doubleData);
-    } else if (storeDataType == DataTypes.BYTE_ARRAY
-        && columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
+    } else if (storeDataType == DataTypes.BYTE_ARRAY && (
+        columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE
+            || columnSpec.getColumnType() == ColumnType.PLAIN_VALUE)) {
       byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
       return newComplexLVBytesPage(columnSpec, lvVarBytes,
           CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
@@ -756,6 +753,10 @@ public abstract class ColumnPage {
         && columnSpec.getColumnType() == ColumnType.COMPLEX_ARRAY) {
       byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
       return newFixedByteArrayPage(columnSpec, lvVarBytes, CarbonCommonConstants.LONG_SIZE_IN_BYTE);
+    } else if (storeDataType == DataTypes.BYTE_ARRAY
+        && columnSpec.getColumnType() == ColumnType.PLAIN_LONG_VALUE) {
+      byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
+      return newLVBytesPage(columnSpec, lvVarBytes, CarbonCommonConstants.INT_SIZE_IN_BYTE);
     } else if (storeDataType == DataTypes.BYTE_ARRAY) {
       byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
       return newLVBytesPage(columnSpec, lvVarBytes, CarbonCommonConstants.INT_SIZE_IN_BYTE);
@@ -815,5 +816,17 @@ public abstract class ColumnPage {
 
   public TableSpec.ColumnSpec getColumnSpec() {
     return columnSpec;
+  }
+
+  public boolean isLocalDictGeneratedPage() {
+    return false;
+  }
+
+  public void disableLocalDictEncoding() {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  public PageLevelDictionary getColumnPageDictionary() {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 }

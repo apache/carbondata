@@ -37,11 +37,15 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
   private byte[] max;
 
   public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] dataPage,
-      boolean isNoDictonary) {
+      boolean isNoDictonary, boolean isVarchar) {
     this.dataPage = dataPage;
     min = this.dataPage[0];
     max = this.dataPage[0];
     totalSize += this.dataPage[0].length;
+    int lVFormatLength = 2;
+    if (isVarchar) {
+      lVFormatLength = 4;
+    }
     int minCompare = 0;
     int maxCompare = 0;
     if (!isNoDictonary) {
@@ -60,9 +64,11 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
       for (int i = 1; i < this.dataPage.length; i++) {
         totalSize += this.dataPage[i].length;
         minCompare = ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(min, 2, min.length - 2, this.dataPage[i], 2, this.dataPage[i].length - 2);
+            .compareTo(min, lVFormatLength, min.length - lVFormatLength, this.dataPage[i],
+                lVFormatLength, this.dataPage[i].length - lVFormatLength);
         maxCompare = ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(max, 2, max.length - 2, this.dataPage[i], 2, this.dataPage[i].length - 2);
+            .compareTo(max, lVFormatLength, max.length - lVFormatLength, this.dataPage[i],
+                lVFormatLength, this.dataPage[i].length - lVFormatLength);
         if (minCompare > 0) {
           min = this.dataPage[i];
         }
