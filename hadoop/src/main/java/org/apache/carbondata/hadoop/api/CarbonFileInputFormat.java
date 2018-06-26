@@ -73,8 +73,9 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         String schemaPath = CarbonTablePath
             .getSchemaFilePath(getAbsoluteTableIdentifier(configuration).getTablePath());
         if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
-          TableInfo tableInfoInfer =
-              SchemaReader.inferSchema(getAbsoluteTableIdentifier(configuration), true);
+          boolean isCarbonFileProvider = configuration.getBoolean("isCarbonFileProvider", true);
+          TableInfo tableInfoInfer = SchemaReader
+              .inferSchema(getAbsoluteTableIdentifier(configuration), isCarbonFileProvider);
           localCarbonTable = CarbonTable.buildFromTableInfo(tableInfoInfer);
         } else {
           localCarbonTable =

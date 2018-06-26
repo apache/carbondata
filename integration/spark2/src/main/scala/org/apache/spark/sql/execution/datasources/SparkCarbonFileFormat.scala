@@ -24,6 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
+import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
@@ -32,18 +33,15 @@ import org.apache.spark.{SparkException, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.datasources._
-import org.apache.spark.sql.execution.datasources.text.TextOutputWriter
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.sources.{DataSourceRegister, Filter}
-import org.apache.spark.sql.types.{AtomicType, StructField, StructType}
+import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceStability}
-import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, Segment}
-import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, ColumnarFormatVersion}
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
@@ -52,9 +50,10 @@ import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader, InputMetricsStats}
-import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
+import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat, CarbonTableOutputFormat}
+import org.apache.carbondata.hadoop.internal.ObjectArrayWritable
+import org.apache.carbondata.sdk.file.{CarbonWriterUtil, Field, Schema}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 @InterfaceAudience.User
@@ -64,7 +63,7 @@ class SparkCarbonFileFormat extends FileFormat
   with Logging
   with Serializable {
 
-  @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+  @transient val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def inferSchema(sparkSession: SparkSession,
       options: Map[String, String],
@@ -83,7 +82,7 @@ class SparkCarbonFileFormat extends FileFormat
       }.toList.asJava
     } else {
       CarbonUtil.getFilePathExternalFilePath(
-        options.get("path").get)
+        options("path"))
     }
 
     if (filePaths.size() == 0) {
@@ -96,8 +95,8 @@ class SparkCarbonFileFormat extends FileFormat
     var colArray = ArrayBuffer[StructField]()
     for (i <- 0 to table_columns.size() - 1) {
       val col = CarbonUtil.thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i))
-      colArray += (new StructField(col.getColumnName,
-        CarbonScalaUtil.convertCarbonToSparkDataType(col.getDataType), false))
+      colArray += new StructField(col.getColumnName,
+        CarbonScalaUtil.convertCarbonToSparkDataType(col.getDataType), false)
     }
     colArray.+:(Nil)
 
@@ -109,17 +108,74 @@ class SparkCarbonFileFormat extends FileFormat
       options: Map[String, String],
       dataSchema: StructType): OutputWriterFactory = {
 
+    val conf = job.getConfiguration
+    val schema = new Schema(dataSchema.fields.map {
+      field =>
+        new Field(field.name, field.dataType.typeName)
+    })
+    try {
+      val model = CarbonWriterUtil.getInstance()
+        .createLoadModel(options("path"),
+          false,
+          System.currentTimeMillis(),
+          options.getOrElse("taskNo", null),
+          options.asJava,
+          schema)
+      model.setFactFilePath(options("path"))
+      CarbonTableOutputFormat.setLoadModel(conf, model)
+    } catch {
+      case e: Exception =>
+        throw new SparkException("Writing failed: ", e)
+    }
+
+
     new OutputWriterFactory {
       override def newInstance(
           path: String,
           dataSchema: StructType,
           context: TaskAttemptContext): OutputWriter = {
-        new TextOutputWriter(path, dataSchema, context)
+
+        context.getConfiguration.set("carbon.outputformat.writepath", options("path"))
+        new CarbonOutputWriter(path, context, dataSchema.fields.map(_.dataType))
       }
 
       override def getFileExtension(context: TaskAttemptContext): String = {
-        CarbonTablePath.CARBON_DATA_EXT
+        ""
       }
+    }
+  }
+
+  private class CarbonOutputWriter(path: String,
+      context: TaskAttemptContext,
+      fieldTypes: Seq[DataType]) extends OutputWriter {
+
+    val writable = new ObjectArrayWritable
+
+    val recordWriter: RecordWriter[NullWritable, ObjectArrayWritable] =
+      new CarbonTableOutputFormat().getRecordWriter(context)
+
+    override def write(row: InternalRow): Unit = {
+      val data = new Array[AnyRef](fieldTypes.length)
+      var i = 0
+      while (i < fieldTypes.length) {
+        if (!row.isNullAt(i)) {
+          fieldTypes(i) match {
+            case StringType =>
+              data(i) = row.getString(i)
+            case d: DecimalType =>
+              data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
+            case other =>
+              data(i) = row.get(i, other)
+          }
+        }
+        i += 1
+      }
+      writable.set(data)
+      recordWriter.write(NullWritable.get(), writable)
+    }
+
+    override def close(): Unit = {
+      recordWriter.close(context)
     }
   }
 
@@ -176,7 +232,7 @@ class SparkCarbonFileFormat extends FileFormat
       requiredSchema: StructType,
       filters: Seq[Filter],
       options: Map[String, String],
-      hadoopConf: Configuration): (PartitionedFile) => Iterator[InternalRow] = {
+      hadoopConf: Configuration): PartitionedFile => Iterator[InternalRow] = {
 
     val filter : Option[Expression] = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(dataSchema, filter)
@@ -202,20 +258,15 @@ class SparkCarbonFileFormat extends FileFormat
     CarbonMetadata.getInstance.removeTable("default_externaldummy")
     val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]
 
-    (file: PartitionedFile) => {
+    file: PartitionedFile => {
       assert(file.partitionValues.numFields == partitionSchema.size)
 
       if (file.filePath.endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
         val fileSplit =
           new FileSplit(new Path(new URI(file.filePath)), file.start, file.length, Array.empty)
 
-        val path: String = if (options.isEmpty) {
-          file.filePath
-        } else {
-          options.get("path").get
-        }
-        val endindex: Int = path.indexOf("Fact") - 1
-        val tablePath = path.substring(0, endindex)
+        val conf1 = new Configuration()
+        val tablePath = options("path")
         lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
           tablePath,
           "default",
@@ -224,7 +275,6 @@ class SparkCarbonFileFormat extends FileFormat
 
 
         val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
-        val conf1 = new Configuration()
         conf1.set("mapreduce.input.carboninputformat.tableName", "externaldummy")
         conf1.set("mapreduce.input.carboninputformat.databaseName", "default")
         conf1.set("mapreduce.input.fileinputformat.inputdir", tablePath)
@@ -237,15 +287,16 @@ class SparkCarbonFileFormat extends FileFormat
 
         val model = format.createQueryModel(split, attemptContext)
 
-        val segmentPath = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null")
         val readCommittedScope = new LatestFilesReadCommittedScope(
-          identifier.getTablePath + "/Fact/Part0/Segment_null/")
+          identifier.getTablePath)
 
-        var segments = new java.util.ArrayList[Segment]()
-        val seg = new Segment("null", null, readCommittedScope)
+        val segments = new java.util.ArrayList[Segment]()
+        val seg = new Segment(readCommittedScope.getSegmentList.head.getLoadName,
+          null,
+          readCommittedScope)
         segments.add(seg)
 
-        val indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(segmentPath)
+        val indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(tablePath)
         if (indexFiles.size() == 0) {
           throw new SparkException("Index file not present to read the carbondata file")
         }
