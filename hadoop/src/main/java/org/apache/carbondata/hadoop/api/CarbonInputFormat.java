@@ -66,6 +66,7 @@ import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -433,11 +434,13 @@ m filterExpression
     // First prune using default datamap on driver side.
     DataMapExprWrapper dataMapExprWrapper = DataMapChooser
         .getDefaultDataMap(getOrCreateCarbonTable(job.getConfiguration()), resolver);
-    List<ExtendedBlocklet> prunedBlocklets =
+    List<ExtendedBlocklet> finalPrunedBlocklets =
         dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
-
     ExplainCollector.recordDefaultDataMapPruning(
-        dataMapExprWrapper.getDataMapSchema(), prunedBlocklets.size());
+        dataMapExprWrapper.getDataMapSchema(), finalPrunedBlocklets.size());
+    if (finalPrunedBlocklets.size() == 0) {
+      return finalPrunedBlocklets;
+    }
 
     DataMapChooser chooser = new DataMapChooser(getOrCreateCarbonTable(job.getConfiguration()));
 
@@ -445,34 +448,44 @@ m filterExpression
     DataMapExprWrapper cgDataMapExprWrapper = chooser.chooseCGDataMap(resolver);
     if (cgDataMapExprWrapper != null) {
       // Prune segments from already pruned blocklets
-      pruneSegments(segmentIds, prunedBlocklets);
+      pruneSegments(segmentIds, finalPrunedBlocklets);
+      List<ExtendedBlocklet> cgPrunedBlocklets = new ArrayList<>();
       // Again prune with CG datamap.
       if (distributedCG && dataMapJob != null) {
-        prunedBlocklets = DataMapUtil
+        cgPrunedBlocklets = DataMapUtil
             .executeDataMapJob(carbonTable, resolver, segmentIds, cgDataMapExprWrapper, dataMapJob,
                 partitionsToPrune);
       } else {
-        prunedBlocklets = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+        cgPrunedBlocklets = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
       }
-
+      // since index datamap prune in segment scope,
+      // the result need to intersect with previous pruned result
+      finalPrunedBlocklets = (List) CollectionUtils.intersection(
+          finalPrunedBlocklets, cgPrunedBlocklets);
       ExplainCollector.recordCGDataMapPruning(
-          cgDataMapExprWrapper.getDataMapSchema(), prunedBlocklets.size());
+          cgDataMapExprWrapper.getDataMapSchema(), finalPrunedBlocklets.size());
+    }
+
+    if (finalPrunedBlocklets.size() == 0) {
+      return finalPrunedBlocklets;
     }
     // Now try to prune with FG DataMap.
     if (isFgDataMapPruningEnable(job.getConfiguration()) && dataMapJob != null) {
       DataMapExprWrapper fgDataMapExprWrapper = chooser.chooseFGDataMap(resolver);
       if (fgDataMapExprWrapper != null) {
         // Prune segments from already pruned blocklets
-        pruneSegments(segmentIds, prunedBlocklets);
-        prunedBlocklets = DataMapUtil
+        pruneSegments(segmentIds, finalPrunedBlocklets);
+        List<ExtendedBlocklet> fgPrunedBlocklets = new ArrayList<>();
+        fgPrunedBlocklets = DataMapUtil
             .executeDataMapJob(carbonTable, resolver, segmentIds, fgDataMapExprWrapper, dataMapJob,
                 partitionsToPrune);
-
+        finalPrunedBlocklets = (List) CollectionUtils.intersection(
+            finalPrunedBlocklets, fgPrunedBlocklets);
         ExplainCollector.recordFGDataMapPruning(
-            fgDataMapExprWrapper.getDataMapSchema(), prunedBlocklets.size());
+            fgDataMapExprWrapper.getDataMapSchema(), finalPrunedBlocklets.size());
       }
     } // TODO: add a else branch to push FGDataMap pruning to reader side
-    return prunedBlocklets;
+    return finalPrunedBlocklets;
   }
 
   /**
