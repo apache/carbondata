@@ -28,6 +28,7 @@ import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 
 /**
@@ -66,11 +67,23 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
 
   private def convertToRow(schemaList: util.List[DataMapSchema]) = {
     if (schemaList != null && schemaList.size() > 0) {
-      schemaList.asScala.map { s =>
-        val relationIdentifier = s.getRelationIdentifier
-        val table = relationIdentifier.getDatabaseName + "." + relationIdentifier.getTableName
-        val dmPropertieStr = s.getProperties.asScala.map(p => s"'${p._1}'='${p._2}'").toSeq
-          .sorted.mkString(", ")
+      schemaList.asScala
+        .map { s =>
+          val relationIdentifier = s.getRelationIdentifier
+          val table = relationIdentifier.getDatabaseName + "." + relationIdentifier.getTableName
+          // preaggregate datamap does not support user specified property, therefor we return empty
+          val dmPropertieStr = if (s.getProviderName.equalsIgnoreCase(
+              DataMapClassProvider.PREAGGREGATE.getShortName)) {
+            ""
+          } else {
+            s.getProperties.asScala
+              // ignore internal used property
+              .filter(p => !p._1.equalsIgnoreCase(DataMapProperty.DEFERRED_REBUILD) &&
+                           !p._1.equalsIgnoreCase(DataMapProperty.CHILD_SELECT_QUERY) &&
+                           !p._1.equalsIgnoreCase(DataMapProperty.QUERY_TYPE))
+              .map(p => s"'${ p._1 }'='${ p._2 }'").toSeq
+              .sorted.mkString(", ")
+          }
         Row(s.getDataMapName, s.getProviderName, table, dmPropertieStr)
       }
     } else {

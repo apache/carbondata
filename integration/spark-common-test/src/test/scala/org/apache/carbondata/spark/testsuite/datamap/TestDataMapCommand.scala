@@ -210,6 +210,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     val datamapName2 = "bloomdatamap2"
     val datamapName3 = "bloomdatamap3"
     sql(s"drop table if exists $tableName")
+    // for index datamap
     sql(s"create table $tableName (a string, b string, c string) stored by 'carbondata'")
     sql(
       s"""
@@ -227,12 +228,43 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
          | with deferred rebuild
          | DMPROPERTIES ('index_columns'='c')
        """.stripMargin)
-    val result = sql(s"show datamap on table $tableName").cache()
+    var result = sql(s"show datamap on table $tableName").cache()
     checkAnswer(sql(s"show datamap on table $tableName"),
-      Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'_internal.deferred.rebuild'='false', 'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='a'"),
-        Row(datamapName2, "bloomfilter", s"default.$tableName", "'_internal.deferred.rebuild'='false', 'index_columns'='b'"),
-        Row(datamapName3, "bloomfilter", s"default.$tableName", "'_internal.deferred.rebuild'='true', 'index_columns'='c'")))
+      Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='a'"),
+        Row(datamapName2, "bloomfilter", s"default.$tableName", "'index_columns'='b'"),
+        Row(datamapName3, "bloomfilter", s"default.$tableName", "'index_columns'='c'")))
     result.unpersist()
+    sql(s"drop table if exists $tableName")
+
+    // for timeseries datamap
+    sql(s"CREATE TABLE $tableName(mytime timestamp, name string, age int) STORED BY 'org.apache.carbondata.format'")
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_hour ON TABLE $tableName
+         | USING 'timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='mytime',
+         | 'HOUR_GRANULARITY'='1')
+         | AS SELECT mytime, SUM(age) FROM $tableName
+         | GROUP BY mytime
+       """.stripMargin)
+    checkAnswer(sql(s"show datamap on table $tableName"),
+      Seq(Row("agg0_hour", "timeSeries", s"default.${tableName}_agg0_hour", "'event_time'='mytime', 'hour_granularity'='1'")))
+    sql(s"drop table if exists $tableName")
+
+    // for preaggreate datamap, the property is empty
+    sql(s"CREATE TABLE $tableName(id int, name string, city string, age string)" +
+        s" STORED BY 'org.apache.carbondata.format'")
+    sql (
+      s"""
+         | CREATE DATAMAP agg0 ON TABLE $tableName USING 'preaggregate' AS
+         | SELECT name,
+         | count(age)
+         | FROM $tableName GROUP BY name
+         | """.stripMargin)
+    checkAnswer(sql(s"show datamap on table $tableName"),
+      Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "")))
+    sql(s"drop table if exists $tableName")
   }
 
   test("test if preaggregate load is successfull for hivemetastore") {
