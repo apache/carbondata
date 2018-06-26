@@ -17,16 +17,17 @@
 
 package org.apache.spark.sql
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, GetArrayItem, GetStructField, NamedExpression}
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation}
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{ArrayType, StructType}
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -67,14 +68,72 @@ case class CarbonDatasourceHadoopRelation(
   override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
   def buildScan(requiredColumns: Array[String],
+      projects: Seq[NamedExpression],
       filters: Array[Filter],
       partitions: Seq[PartitionSpec]): RDD[InternalRow] = {
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(schema, filter)
     }.reduceOption(new AndExpression(_, _))
 
+    // In case of Struct or StructofStruct Complex type, get the project column for given
+    // parent/child field and pushdown the corresponding project column. In case of Array,
+    // ArrayofStruct or StructofArray, pushdown parent column
+    var reqColumns = projects.map {
+      case a@Alias(s: GetStructField, name) =>
+        val arrayTypeExists = s.childSchema.map(x => x.dataType)
+          .filter(dataType => dataType.isInstanceOf[ArrayType])
+        val ifGetArrayItem = s.child.map(x => x.isInstanceOf[GetArrayItem])
+        var ifGetArrayItemExists = false
+        ifGetArrayItem.foreach(ifexists =>
+          if (ifexists.equals(true)) {
+            ifGetArrayItemExists = true
+          }
+        )
+        if (0 == arrayTypeExists.length && ifGetArrayItemExists.equals(false)) {
+          s.toString().replaceAll("#[0-9]*", "").toLowerCase
+        } else if (ifGetArrayItemExists.equals(true)) {
+          s.toString().split("\\.")(0).replaceAll("#.*", "").toLowerCase
+        } else {
+          s.toString().split("\\.")(0).replaceAll("#.*", "").toLowerCase
+        }
+      case a@Alias(s: GetArrayItem, name) =>
+        s.toString().split("\\.")(0).replaceAll("#.*", "").toLowerCase
+      case attributeReference: AttributeReference =>
+        var columnName: String = attributeReference.name
+        requiredColumns.foreach(colName =>
+          if (colName.equalsIgnoreCase(attributeReference.name)) {
+            columnName = colName
+          })
+        columnName
+      case other =>
+        None
+    }
+
+    reqColumns = reqColumns.filter(col => !col.equals(None))
+    var output = new ListBuffer[String]
+
+    if (null != requiredColumns && requiredColumns.nonEmpty) {
+      requiredColumns.foreach(col => {
+
+        if (null != reqColumns && reqColumns.nonEmpty) {
+          reqColumns.foreach(reqCol => {
+            if (!reqCol.toString.equalsIgnoreCase(col) && !reqCol.toString.startsWith(col + ".")) {
+              output += col
+            } else {
+              output += reqCol.toString
+            }
+          })
+        } else {
+          output += col
+        }
+        output = output.distinct
+      })
+    }
+
     val projection = new CarbonProjection
-    requiredColumns.foreach(projection.addColumn)
+    output.toArray.foreach(projection.addColumn)
+
+
     CarbonSession.threadUnset(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP)
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     new CarbonScanRDD(
