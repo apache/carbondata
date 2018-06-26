@@ -60,7 +60,6 @@ import com.facebook.presto.spi.type.SmallintType;
 import com.facebook.presto.spi.type.TimestampType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.VarcharType;
-import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 
 import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
@@ -171,47 +170,46 @@ public class PrestoFilterUtil {
    * @return
    */
   static Expression parseFilterExpression(TupleDomain<ColumnHandle> originalConstraint) {
-    ImmutableList.Builder<Expression> filters = ImmutableList.builder();
 
     Domain domain;
+
+    // final expression for the table, returned by the method after combining all the column filters (colValueExpression).
+    Expression finalFilters = null;
 
     for (ColumnHandle c : originalConstraint.getDomains().get().keySet()) {
 
       // Build ColumnExpression for Expression(Carbondata)
       CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
       Type type = cdch.getColumnType();
-
-
       DataType coltype = Spi2CarbondataTypeMapper(cdch);
       Expression colExpression = new ColumnExpression(cdch.getColumnName(), coltype);
 
       domain = originalConstraint.getDomains().get().get(c);
       checkArgument(domain.getType().isOrderable(), "Domain type must be orderable");
-
       List<Object> singleValues = new ArrayList<>();
-      Map<Object, List<Expression>> valueExpressionMap = new HashMap<>();
+
+      // combination of multiple rangeExpression for a single column in case of multiple range Filter
+      // on single column else this is equal to rangeExpression, combined to create finalFilters
+      Expression colValueExpression = null;
+
       for (Range range : domain.getValues().getRanges().getOrderedRanges()) {
         if (range.isSingleValue()) {
           Object value = ConvertDataByType(range.getLow().getValue(), type);
           singleValues.add(value);
         } else {
+          // generated for each range of column i.e. lessThan, greaterThan,
+          // there can be multiple ranges for a single column. combined to create colValueExpression
+          Expression rangeExpression = null;
           if (!range.getLow().isLowerUnbounded()) {
             Object value = ConvertDataByType(range.getLow().getValue(), type);
             switch (range.getLow().getBound()) {
               case ABOVE:
-                if (type == TimestampType.TIMESTAMP) {
-                  //todo not now
-                } else {
-                  GreaterThanExpression greater = new GreaterThanExpression(colExpression,
-                      new LiteralExpression(value, coltype));
-                  valueExpressionMap.computeIfAbsent(value, key -> new ArrayList<>()).add(greater);
-                }
+                rangeExpression =
+                    new GreaterThanExpression(colExpression, new LiteralExpression(value, coltype));
                 break;
               case EXACTLY:
-                GreaterThanEqualToExpression greater =
-                    new GreaterThanEqualToExpression(colExpression,
-                        new LiteralExpression(value, coltype));
-                valueExpressionMap.computeIfAbsent(value, key -> new ArrayList<>()).add(greater);
+                rangeExpression = new GreaterThanEqualToExpression(colExpression,
+                    new LiteralExpression(value, coltype));
                 break;
               case BELOW:
                 throw new IllegalArgumentException("Low marker should never use BELOW bound");
@@ -219,86 +217,49 @@ public class PrestoFilterUtil {
                 throw new AssertionError("Unhandled bound: " + range.getLow().getBound());
             }
           }
+
           if (!range.getHigh().isUpperUnbounded()) {
+            Expression lessThanExpression;
             Object value = ConvertDataByType(range.getHigh().getValue(), type);
             switch (range.getHigh().getBound()) {
               case ABOVE:
                 throw new IllegalArgumentException("High marker should never use ABOVE bound");
               case EXACTLY:
-                LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
+                lessThanExpression = new LessThanEqualToExpression(colExpression,
                     new LiteralExpression(value, coltype));
-                valueExpressionMap.computeIfAbsent(value, key -> new ArrayList<>()).add(less);
                 break;
               case BELOW:
-                LessThanExpression less2 =
+                lessThanExpression =
                     new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
-                valueExpressionMap.computeIfAbsent(value, key -> new ArrayList<>()).add(less2);
                 break;
               default:
                 throw new AssertionError("Unhandled bound: " + range.getHigh().getBound());
             }
+            rangeExpression = (rangeExpression == null ?
+                lessThanExpression :
+                new AndExpression(rangeExpression, lessThanExpression));
           }
+          colValueExpression = (colValueExpression == null ?
+              rangeExpression :
+              new OrExpression(colValueExpression, rangeExpression));
         }
       }
+
       if (singleValues.size() == 1) {
-        Expression ex;
-        if (coltype.equals(DataTypes.STRING)) {
-          ex = new EqualToExpression(colExpression,
-              new LiteralExpression(singleValues.get(0), coltype));
-        } else if (coltype.equals(DataTypes.TIMESTAMP) || coltype.equals(DataTypes.DATE)) {
-          Long value = (Long) singleValues.get(0);
-          ex = new EqualToExpression(colExpression, new LiteralExpression(value, coltype));
-        } else ex = new EqualToExpression(colExpression,
+        colValueExpression = new EqualToExpression(colExpression,
             new LiteralExpression(singleValues.get(0), coltype));
-        filters.add(ex);
       } else if (singleValues.size() > 1) {
-        ListExpression candidates = null;
-        List<Expression> exs = singleValues.stream()
-            .map((a) -> new LiteralExpression(a, coltype))
-            .collect(toList());
-        candidates = new ListExpression(exs);
-        filters.add(new InExpression(colExpression, candidates));
-      } else if (valueExpressionMap.size() > 0) {
-        List<Expression> valuefilters = new ArrayList<>();
-        Expression finalFilters = null;
-        List<Expression> expressions;
-        for (Map.Entry<Object, List<Expression>> entry : valueExpressionMap.entrySet()) {
-          expressions = valueExpressionMap.get(entry.getKey());
-          if (expressions.size() == 1) {
-            finalFilters = expressions.get(0);
-          } else if (expressions.size() >= 2) {
-            finalFilters = new OrExpression(expressions.get(0), expressions.get(1));
-            for (int i = 2; i < expressions.size(); i++) {
-              finalFilters = new OrExpression(finalFilters, expressions.get(i));
-            }
-          }
-          valuefilters.add(finalFilters);
-        }
+        List<Expression> exs =
+            singleValues.stream().map((a) -> new LiteralExpression(a, coltype)).collect(toList());
+        colValueExpression = new InExpression(colExpression, new ListExpression(exs));
+      }
 
-        if (valuefilters.size() == 1) {
-          finalFilters = valuefilters.get(0);
-        } else if (valuefilters.size() >= 2) {
-          finalFilters = new AndExpression(valuefilters.get(0), valuefilters.get(1));
-          for (int i = 2; i < valuefilters.size(); i++) {
-            finalFilters = new AndExpression(finalFilters, valuefilters.get(i));
-          }
-        }
-
-        filters.add(finalFilters);
+      if (colValueExpression != null) {
+        finalFilters = (finalFilters == null ?
+            colValueExpression :
+            new AndExpression(finalFilters, colValueExpression));
       }
     }
-
-    Expression finalFilters;
-    List<Expression> tmp = filters.build();
-    if (tmp.size() > 1) {
-      finalFilters = new AndExpression(tmp.get(0), tmp.get(1));
-      if (tmp.size() > 2) {
-        for (int i = 2; i < tmp.size(); i++) {
-          finalFilters = new AndExpression(finalFilters, tmp.get(i));
-        }
-      }
-    } else if (tmp.size() == 1) finalFilters = tmp.get(0);
-    else return null;
     return finalFilters;
   }
 
