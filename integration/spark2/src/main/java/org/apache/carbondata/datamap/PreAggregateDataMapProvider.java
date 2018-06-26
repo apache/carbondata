@@ -74,11 +74,6 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void initData() {
-    // Nothing is needed to do by default
-  }
-
-  @Override
   public void cleanMeta() {
     DataMapSchema dataMapSchema = getDataMapSchema();
     dropTableCommand = new CarbonDropTableCommand(
@@ -101,15 +96,6 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
     if (helper != null) {
       helper.initData(sparkSession);
     }
-  }
-
-  @Override public void incrementalBuild(String[] segmentIds) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override public DataMapCatalog createDataMapCatalog() {
-    // TODO manage pre-agg also with catalog.
-    return null;
   }
 
   @Override

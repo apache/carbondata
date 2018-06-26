@@ -31,7 +31,6 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
-import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
@@ -56,10 +55,6 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     super(configuration, child);
     this.localDictionaryGeneratorMap =
         CarbonUtil.getLocalDictionaryModel(configuration.getTableSpec().getCarbonTable());
-  }
-
-  @Override public DataField[] getOutput() {
-    return child.getOutput();
   }
 
   @Override public void initialize() throws IOException {
@@ -94,10 +89,10 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
           if (next.hasNext()) {
             DataMapWriterListener listener = getDataMapWriterListener(0);
             CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-                .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, k++, listener);
+                .createCarbonFactDataHandlerModel(configuration, storeLocation, i, k++, listener);
             model.setColumnLocalDictGenMap(this.localDictionaryGeneratorMap);
             CarbonFactHandler dataHandler = CarbonFactHandlerFactory
-                .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
+                .createCarbonFactHandler(model);
             dataHandler.initialise();
             processBatch(next, dataHandler);
             finish(tableName, dataHandler);
@@ -157,9 +152,4 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     batch.close();
     rowCounter.getAndAdd(batchSize);
   }
-
-  @Override protected CarbonRow processRow(CarbonRow row) {
-    return null;
-  }
-
 }

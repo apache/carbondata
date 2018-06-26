@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.scan.expression.exception;
 
-import java.util.Locale;
-
 public class FilterUnsupportedException extends Exception {
 
   /**
@@ -57,24 +55,6 @@ public class FilterUnsupportedException extends Exception {
    */
   public FilterUnsupportedException(Throwable t) {
     super(t);
-  }
-
-  /**
-   * This method is used to get the localized message.
-   *
-   * @param locale - A Locale object represents a specific geographical,
-   *               political, or cultural region.
-   * @return - Localized error message.
-   */
-  public String getLocalizedMessage(Locale locale) {
-    return "";
-  }
-
-  /**
-   * getLocalizedMessage
-   */
-  @Override public String getLocalizedMessage() {
-    return super.getLocalizedMessage();
   }
 
   /**

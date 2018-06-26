@@ -49,6 +49,9 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA local inpath '$resourcesPath/decimalBoundaryDataHive.csv' INTO table hiveBigDecimal")
     sql("create table if not exists carbonBigDecimal_2 (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(30, 10)) STORED BY 'org.apache.carbondata.format'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal_2")
+
+    sql("create table if not exists carbonBigDecimal_3 (ID Int, date Timestamp, country String,name String, phonetype String, serialname String, salary decimal(30, 2)) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='salary')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal_3")
   }
 
   test("test detail query on big decimal column") {
@@ -188,6 +191,11 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
       sql("select avg(salary)/10 from hiveBigDecimal"))
   }
 
+  test("test lower precision definiton on big decimal column with high precision value") {
+    checkAnswer(sql("select count(salary) from carbonBigDecimal_3"),
+      sql("select count(salary) from hiveBigDecimal"))
+  }
+
   test("test decimal compression where both precision and data falls in integer range") {
     sql("create table decimal_int_test(d1 decimal(9,3)) stored by 'carbondata'")
     sql(s"load data inpath '$resourcesPath/decimal_int_range.csv' into table decimal_int_test")
@@ -204,6 +212,7 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hiveBigDecimal")
     sql("drop table if exists carbonBigDecimal_2")
     sql("DROP TABLE IF EXISTS decimal_int_test")
+    sql("drop table if exists carbonBigDecimal_3")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_SIZE,

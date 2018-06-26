@@ -63,7 +63,6 @@ case class TableModel(
     varcharCols: Option[Seq[String]],
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
-    columnGroups: Seq[String],
     colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None,
     bucketFields: Option[BucketFields],
     partitionInfo: Option[PartitionInfo],
@@ -97,9 +96,6 @@ case class ColumnProperty(key: String, value: String)
 
 case class ComplexField(complexType: String, primitiveField: Option[Field],
     complexField: Option[ComplexField])
-
-case class Partitioner(partitionClass: String, partitionColumn: Array[String], partitionCount: Int,
-    nodeList: Array[String])
 
 case class PartitionerField(partitionColumn: String, dataType: Option[String],
     columnComment: String)
@@ -512,7 +508,6 @@ object TableNewProcessor {
     val columnUniqueId = colUniqueIdGenerator.generateUniqueId(columnSchema)
     columnSchema.setColumnUniqueId(columnUniqueId)
     columnSchema.setColumnReferenceId(columnUniqueId)
-    columnSchema.setColumnar(true)
     columnSchema.setDimensionColumn(isDimensionCol)
     columnSchema.setPrecision(precision)
     columnSchema.setScale(scale)
@@ -761,10 +756,6 @@ class TableNewProcessor(cm: TableModel) {
 
     val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
 
-    checkColGroupsValidity(cm.columnGroups, allColumns, highCardinalityDims)
-
-    updateColumnGroupsInFields(cm.columnGroups, allColumns)
-
     // Setting the boolean value of useInvertedIndex in column schema, if Paranet table is defined
     // Encoding is already decided above
     if (!cm.parentTable.isDefined) {
@@ -921,27 +912,6 @@ class TableNewProcessor(cm: TableModel) {
             CarbonException.analysisException(
               s"column $colForGrouping is not present in Field list")
           }
-        })
-      })
-    }
-  }
-
-  // For updating the col group details for fields.
-  private def updateColumnGroupsInFields(colGrps: Seq[String], allCols: Seq[ColumnSchema]): Unit = {
-    if (null != colGrps) {
-      var colGroupId = -1
-      colGrps.foreach(columngroup => {
-        colGroupId += 1
-        val rowCols = columngroup.split(",")
-        rowCols.foreach(row => {
-
-          allCols.foreach(eachCol => {
-
-            if (eachCol.getColumnName.equalsIgnoreCase(row.trim)) {
-              eachCol.setColumnGroup(colGroupId)
-              eachCol.setColumnar(false)
-            }
-          })
         })
       })
     }

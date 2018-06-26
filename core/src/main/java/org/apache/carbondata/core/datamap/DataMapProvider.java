@@ -84,7 +84,7 @@ public abstract class DataMapProvider {
    * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
    * Implementation should initialize data for datamap, like creating data folders
    */
-  public abstract void initData();
+  public void initData() { }
 
   /**
    * Opposite operation of {@link #initMeta(String)}.
@@ -111,13 +111,17 @@ public abstract class DataMapProvider {
   /**
    * Build the datamap incrementally by loading specified segment data
    */
-  public abstract void incrementalBuild(String[] segmentIds) throws IOException;
+  public void incrementalBuild(String[] segmentIds) {
+    throw new UnsupportedOperationException();
+  }
 
   /**
    * Provide the datamap catalog instance or null if this datamap not required to rewrite
    * the query.
    */
-  public abstract DataMapCatalog createDataMapCatalog();
+  public DataMapCatalog createDataMapCatalog() {
+    return null;
+  }
 
   public abstract DataMapFactory getDataMapFactory();
 

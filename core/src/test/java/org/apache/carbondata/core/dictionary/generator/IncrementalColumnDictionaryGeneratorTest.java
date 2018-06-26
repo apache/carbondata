@@ -62,7 +62,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
     String storePath = System.getProperty("java.io.tmpdir") + "/tmp";
     tableInfo.setTablePath(storePath + "/test" + "/TestTable");
     carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
-    carbonDimension = new CarbonDimension(columnSchema,0,0,0,0,0);
+    carbonDimension = new CarbonDimension(columnSchema,0,0,0,0);
   }
 
   @Test public void generateKeyOnce() throws Exception {
@@ -135,7 +135,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
     columnSchema.setColumnName("empNameCol");
     columnSchema.setDataType(DataTypes.STRING);
     columnSchema.setColumnUniqueId("empNameCol");
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0, 0, 0);
+    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0, 0);
 
     // Create the generator and add the keys to dictionary
     IncrementalColumnDictionaryGenerator generator =

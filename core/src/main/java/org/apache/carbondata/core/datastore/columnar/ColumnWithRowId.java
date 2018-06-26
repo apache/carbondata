@@ -39,24 +39,10 @@ public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
   }
 
   /**
-   * @param column the column to set
-   */
-  public void setColumn(byte[] column) {
-    this.column = column;
-  }
-
-  /**
    * @return the index
    */
   public T getIndex() {
     return index;
-  }
-
-  /**
-   * @param index the index to set
-   */
-  public void setIndex(T index) {
-    this.index = index;
   }
 
   @Override public int compareTo(ColumnWithRowId o) {

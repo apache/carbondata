@@ -109,8 +109,8 @@ case class CarbonAlterTableCompactionCommand(
       compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
     } catch {
       case _: Exception =>
-        val alterTableCompactionExceptionEvent: AlterTableCompactionExceptionEvent =
-          AlterTableCompactionExceptionEvent(sparkSession, table, alterTableModel)
+        val alterTableCompactionExceptionEvent: AlterTableCompactionAbortEvent =
+          AlterTableCompactionAbortEvent(sparkSession, table, alterTableModel)
         OperationListenerBus.getInstance
           .fireEvent(alterTableCompactionExceptionEvent, operationContext)
         compactionException = operationContext.getProperty("compactionException").toString

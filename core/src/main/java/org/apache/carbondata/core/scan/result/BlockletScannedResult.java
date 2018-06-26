@@ -36,7 +36,6 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.mutate.TupleIdEnum;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
@@ -105,16 +104,6 @@ public abstract class BlockletScannedResult {
   protected int[] noDictionaryColumnChunkIndexes;
 
   /**
-   * column group to is key structure info
-   * which will be used to get the key from the complete
-   * column group key
-   * For example if only one dimension of the column group is selected
-   * then from complete column group key it will be used to mask the key and
-   * get the particular column key
-   */
-  protected Map<Integer, KeyStructureInfo> columnGroupKeyStructureInfo;
-
-  /**
    *
    */
   private Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
@@ -155,7 +144,6 @@ public abstract class BlockletScannedResult {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
     this.noDictionaryColumnChunkIndexes = blockExecutionInfo.getNoDictionaryColumnChunkIndexes();
     this.dictionaryColumnChunkIndexes = blockExecutionInfo.getDictionaryColumnChunkIndex();
-    this.columnGroupKeyStructureInfo = blockExecutionInfo.getColumnGroupToKeyStructureInfo();
     this.complexParentIndexToQueryMap = blockExecutionInfo.getComlexDimensionInfoMap();
     this.complexParentBlockIndexes = blockExecutionInfo.getComplexColumnParentBlockIndexes();
     this.totalDimensionsSize = blockExecutionInfo.getProjectionDimensions().length;
@@ -213,8 +201,7 @@ public abstract class BlockletScannedResult {
     int offset = 0;
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
       offset += dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter].fillRawData(
-          rowId, offset, completeKey,
-          columnGroupKeyStructureInfo.get(dictionaryColumnChunkIndexes[i]));
+          rowId, offset, completeKey);
     }
     rowCounter++;
     return completeKey;
@@ -232,8 +219,7 @@ public abstract class BlockletScannedResult {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
       column = dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter]
-          .fillSurrogateKey(rowId, column, completeKey,
-              columnGroupKeyStructureInfo.get(dictionaryColumnChunkIndexes[i]));
+          .fillSurrogateKey(rowId, column, completeKey);
     }
     rowCounter++;
     return completeKey;
@@ -246,8 +232,7 @@ public abstract class BlockletScannedResult {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
       column = dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter]
-          .fillVector(vectorInfo, column,
-              columnGroupKeyStructureInfo.get(dictionaryColumnChunkIndexes[i]));
+          .fillVector(vectorInfo, column);
     }
   }
 
@@ -258,8 +243,7 @@ public abstract class BlockletScannedResult {
     int column = 0;
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
       column = dimensionColumnPages[noDictionaryColumnChunkIndexes[i]][pageCounter]
-          .fillVector(vectorInfo, column,
-              columnGroupKeyStructureInfo.get(noDictionaryColumnChunkIndexes[i]));
+          .fillVector(vectorInfo, column);
     }
   }
 

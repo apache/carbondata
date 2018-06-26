@@ -17,6 +17,9 @@
 
 package org.apache.carbondata.core.scan.expression.logical;
 
+import mockit.Mock;
+import mockit.MockUp;
+
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
@@ -25,54 +28,42 @@ import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedExc
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 
-import mockit.Mock;
-import mockit.MockUp;
 import org.junit.Before;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
-public class AndExpressionTest {
-
-  private AndExpression andExpression;
+public class RangeExpressionTest {
+  private RangeExpression rangeExpression;
 
   @Before public void setUp() {
     ColumnExpression leftExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
     ColumnExpression rightExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
-    andExpression = new AndExpression(leftExpression, rightExpression);
+    rangeExpression = new RangeExpression(leftExpression, rightExpression);
   }
 
-  @Test(expected = Exception.class) public void testEvaluateForDefault()
-      throws FilterUnsupportedException, FilterIllegalMemberException {
-    RowImpl rowImpl = new RowImpl();
-    rowImpl.setValues(new Boolean[] { true });
-    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.STRING, "test");
-    new MockUp<ColumnExpression>() {
-      @Mock public ExpressionResult evaluate(RowIntf value)
-          throws FilterUnsupportedException, FilterIllegalMemberException {
-        return expressionResult;
-      }
-    };
-    andExpression.evaluate(rowImpl);
+  @Test public void testGetString() {
+    String actualValue = rangeExpression.getString();
+    String expectedValue = "Range(ColumnExpression(IMEI),ColumnExpression(IMEI))";
+    assertEquals(expectedValue, actualValue);
   }
 
-  @Test public void testEvaluate() throws FilterUnsupportedException, FilterIllegalMemberException {
+  @Test public void testEvaluate() throws FilterIllegalMemberException, FilterUnsupportedException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { false });
     final ExpressionResult expressionResult = new ExpressionResult(DataTypes.BOOLEAN, "test");
     new MockUp<ColumnExpression>() {
-      @Mock public ExpressionResult evaluate(RowIntf value)
-          throws FilterUnsupportedException, FilterIllegalMemberException {
+      @Mock public ExpressionResult evaluate(RowIntf value) {
         return expressionResult;
       }
     };
-    ExpressionResult actualValue = andExpression.evaluate(rowImpl);
-    assertTrue(actualValue instanceof ExpressionResult);
+
+    assertTrue(rangeExpression.evaluate(rowImpl) instanceof ExpressionResult);
   }
 
-  @Test public void testEvaluate1() throws FilterIllegalMemberException,
-      FilterUnsupportedException {
+  @Test public void testEvaluate1()
+      throws FilterIllegalMemberException, FilterUnsupportedException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { false });
     final ExpressionResult expressionResult = new ExpressionResult(DataTypes.BOOLEAN, "true");
@@ -82,17 +73,18 @@ public class AndExpressionTest {
       }
     };
 
-    assertTrue(andExpression.evaluate(rowImpl) instanceof ExpressionResult);
+    assertTrue(rangeExpression.evaluate(rowImpl) instanceof ExpressionResult);
   }
 
-  @Test public void testEvaluate2() throws FilterIllegalMemberException,
-      FilterUnsupportedException {
+  @Test public void testEvaluate2()
+      throws FilterIllegalMemberException, FilterUnsupportedException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { false });
     final ExpressionResult expressionResultRight = new ExpressionResult(DataTypes.BOOLEAN, "false");
     final ExpressionResult expressionResultLeft = new ExpressionResult(DataTypes.BOOLEAN, "true");
     new MockUp<ColumnExpression>() {
       boolean isLeft = true;
+
       @Mock public ExpressionResult evaluate(RowIntf value) {
         if (isLeft) {
           isLeft = false;
@@ -102,17 +94,18 @@ public class AndExpressionTest {
       }
     };
 
-    assertTrue(andExpression.evaluate(rowImpl) instanceof ExpressionResult);
+    assertTrue(rangeExpression.evaluate(rowImpl) instanceof ExpressionResult);
   }
 
-  @Test public void testEvaluate3() throws FilterIllegalMemberException,
-      FilterUnsupportedException {
+  @Test public void testEvaluate3()
+      throws FilterIllegalMemberException, FilterUnsupportedException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { false });
     final ExpressionResult expressionResultRight = new ExpressionResult(DataTypes.BOOLEAN, "false");
     final ExpressionResult expressionResultLeft = new ExpressionResult(DataTypes.BOOLEAN, "false");
     new MockUp<ColumnExpression>() {
       boolean isLeft = true;
+
       @Mock public ExpressionResult evaluate(RowIntf value) {
         if (isLeft) {
           isLeft = false;
@@ -122,7 +115,7 @@ public class AndExpressionTest {
       }
     };
 
-    assertTrue(andExpression.evaluate(rowImpl) instanceof ExpressionResult);
+    assertTrue(rangeExpression.evaluate(rowImpl) instanceof ExpressionResult);
   }
 
   @Test public void testEvaluate4()
@@ -136,12 +129,20 @@ public class AndExpressionTest {
       }
     };
 
-    assertTrue(andExpression.evaluate(rowImpl) instanceof ExpressionResult);
+    assertTrue(rangeExpression.evaluate(rowImpl) instanceof ExpressionResult);
   }
 
-  @Test public void testGetString() {
-    String actualValue = andExpression.getString();
-    String expectedValue = "And(ColumnExpression(IMEI),ColumnExpression(IMEI))";
-    assertEquals(expectedValue, actualValue);
+  @Test(expected = Exception.class) public void testEvaluateForDefault()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    RowImpl rowImpl = new RowImpl();
+    rowImpl.setValues(new Boolean[] { true });
+    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.STRING, "test");
+    new MockUp<ColumnExpression>() {
+      @Mock public ExpressionResult evaluate(RowIntf value)
+          throws FilterUnsupportedException, FilterIllegalMemberException {
+        return expressionResult;
+      }
+    };
+    rangeExpression.evaluate(rowImpl);
   }
 }

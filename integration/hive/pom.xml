@@ -32,6 +32,7 @@
     <properties>
         <hive.version>1.2.1</hive.version>
         <dev.path>${basedir}/../../dev</dev.path>
+        <jacoco.append>true</jacoco.append>
     </properties>
 
     <dependencies>

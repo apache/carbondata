@@ -96,15 +96,6 @@ public class ManageDictionaryAndBTree {
    * @param carbonTable
    */
   public static void clearBTreeAndDictionaryLRUCache(CarbonTable carbonTable) {
-    // clear Btree cache from LRU cache
-    LoadMetadataDetails[] loadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
-    String[] segments = new String[loadMetadataDetails.length];
-    int i = 0;
-    for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
-      segments[i++] = loadMetadataDetail.getLoadName();
-    }
-    invalidateBTreeCache(carbonTable.getAbsoluteTableIdentifier(), segments);
     // clear dictionary cache from LRU cache
     List<CarbonDimension> dimensions =
         carbonTable.getDimensionByTableName(carbonTable.getTableName());
@@ -141,7 +132,7 @@ public class ManageDictionaryAndBTree {
   public static void invalidateBTreeCache(AbsoluteTableIdentifier absoluteTableIdentifier,
       String[] segments) {
     Cache<Object, Object> driverBTreeCache =
-        CacheProvider.getInstance().createCache(CacheType.DRIVER_BTREE);
+        CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
     for (String segmentNo : segments) {
       TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
           new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentNo);

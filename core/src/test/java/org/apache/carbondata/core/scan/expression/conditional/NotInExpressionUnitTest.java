@@ -36,6 +36,7 @@ import mockit.MockUp;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class NotInExpressionUnitTest {
@@ -141,6 +142,35 @@ public class NotInExpressionUnitTest {
 
     ExpressionResult result = notInExpression.evaluate(value);
     assertTrue(result.getBoolean());
+  }
+
+  @Test public void testEvaluateForNotInExpressionWithDoubleDataType1()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);
+    left.setColIndex(0);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);
+    right.setColIndex(1);
+    notInExpression = new NotInExpression(left, right);
+    RowImpl value = new RowImpl();
+    Double row = 44521D;
+    Double row1 = 44521.023D;
+    Object objectRow[] = { row, row1 };
+    value.setValues(objectRow);
+
+    new MockUp<ExpressionResult>() {
+      @Mock public boolean isNull() {
+        return true;
+      }
+    };
+
+    new MockUp<ExpressionResult>() {
+      @Mock public Double getDouble() {
+        return 44521.023D;
+      }
+    };
+
+    ExpressionResult result = notInExpression.evaluate(value);
+    assertFalse(result.getBoolean());
   }
 
   @Test public void testEvaluateForNotInExpressionWithLongDataType()

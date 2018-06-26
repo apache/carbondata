@@ -21,9 +21,9 @@ import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
 public interface DictionaryClient {
 
-  public void startClient(String secretKey, String address, int port, boolean encryptSecureServer);
+  void startClient(String secretKey, String address, int port, boolean encryptSecureServer);
 
-  public void shutDown();
+  void shutDown();
 
-  public DictionaryMessage getDictionary(DictionaryMessage key);
+  DictionaryMessage getDictionary(DictionaryMessage key);
 }

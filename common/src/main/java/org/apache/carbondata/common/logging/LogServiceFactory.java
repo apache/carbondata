@@ -36,9 +36,4 @@ public final class LogServiceFactory {
   public static LogService getLogService(final String className) {
     return new StandardLogService(className);
   }
-
-  public static LogService getLogService() {
-    return new StandardLogService();
-  }
-
 }

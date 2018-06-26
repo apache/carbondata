@@ -85,10 +85,6 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return outIterators;
   }
 
-  @Override protected CarbonRow processRow(CarbonRow row) {
-    return null;
-  }
-
   @Override public void close() {
     if (!closed) {
       super.close();

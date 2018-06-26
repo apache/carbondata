@@ -33,6 +33,7 @@
   <properties>
     <presto.version>0.187</presto.version>
     <dev.path>${basedir}/../../dev</dev.path>
+    <jacoco.append>true</jacoco.append>
   </properties>
 
   <dependencies>

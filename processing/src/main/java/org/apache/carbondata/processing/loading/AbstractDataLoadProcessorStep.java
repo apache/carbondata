@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -63,7 +62,9 @@ public abstract class AbstractDataLoadProcessorStep {
    * The output meta for this step. The data returns from this step is as per this meta.
    *
    */
-  public abstract DataField[] getOutput();
+  public DataField[] getOutput() {
+    return child.getOutput();
+  }
 
   /**
    * Initialization process for this step.
@@ -95,32 +96,7 @@ public abstract class AbstractDataLoadProcessorStep {
    * @return Array of Iterator with data. It can be processed parallel if implementation class wants
    * @throws CarbonDataLoadingException
    */
-  public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
-    Iterator<CarbonRowBatch>[] childIters = child.execute();
-    Iterator<CarbonRowBatch>[] iterators = new Iterator[childIters.length];
-    for (int i = 0; i < childIters.length; i++) {
-      iterators[i] = getIterator(childIters[i]);
-    }
-    return iterators;
-  }
-
-  /**
-   * Create the iterator using child iterator.
-   *
-   * @param childIter
-   * @return new iterator with step specific processing.
-   */
-  protected Iterator<CarbonRowBatch> getIterator(final Iterator<CarbonRowBatch> childIter) {
-    return new CarbonIterator<CarbonRowBatch>() {
-      @Override public boolean hasNext() {
-        return childIter.hasNext();
-      }
-
-      @Override public CarbonRowBatch next() {
-        return processRowBatch(childIter.next());
-      }
-    };
-  }
+  public abstract Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException;
 
   /**
    * Process the batch of rows as per the step logic.
@@ -131,18 +107,10 @@ public abstract class AbstractDataLoadProcessorStep {
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch) {
     CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
     while (rowBatch.hasNext()) {
-      newBatch.addRow(processRow(rowBatch.next()));
+      newBatch.addRow(null);
     }
     return newBatch;
   }
-
-  /**
-   * Process the row as per the step logic.
-   *
-   * @param row
-   * @return processed row.
-   */
-  protected abstract CarbonRow processRow(CarbonRow row);
 
   /**
    * Get the step name for logging purpose.

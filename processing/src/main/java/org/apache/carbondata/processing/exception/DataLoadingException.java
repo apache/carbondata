@@ -20,31 +20,7 @@ package org.apache.carbondata.processing.exception;
 public class DataLoadingException extends Exception {
   private static final long serialVersionUID = 1L;
 
-  private long errorCode = -1;
-
-  public DataLoadingException() {
-    super();
-  }
-
-  public DataLoadingException(long errorCode, String message) {
-    super(message);
-    this.errorCode = errorCode;
-  }
-
   public DataLoadingException(String message) {
     super(message);
   }
-
-  public DataLoadingException(Throwable cause) {
-    super(cause);
-  }
-
-  public DataLoadingException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public long getErrorCode() {
-    return errorCode;
-  }
-
 }

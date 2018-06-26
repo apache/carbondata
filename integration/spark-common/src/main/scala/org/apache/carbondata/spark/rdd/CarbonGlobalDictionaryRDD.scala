@@ -68,9 +68,6 @@ trait GenericParser {
   def parseString(input: String): Unit
 }
 
-case class DictionaryStats(distinctValues: java.util.List[String],
-    dictWriteTime: Long, sortIndexWriteTime: Long)
-
 case class PrimitiveParser(dimension: CarbonDimension,
     setOpt: Option[mutable.HashSet[String]]) extends GenericParser {
   val (hasDictEncoding, set: mutable.HashSet[String]) = setOpt match {

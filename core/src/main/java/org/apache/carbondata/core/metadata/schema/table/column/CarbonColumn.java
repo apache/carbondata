@@ -74,12 +74,6 @@ public class CarbonColumn implements Serializable {
     this.columnIdentifier =
      new ColumnIdentifier(getColumnId(), getColumnProperties(), getDataType());
   }
-  /**
-   * @return columnar or row based
-   */
-  public boolean isColumnar() {
-    return columnSchema.isColumnar();
-  }
 
   /**
    * @return column unique id
@@ -114,13 +108,6 @@ public class CarbonColumn implements Serializable {
    */
   public List<Encoding> getEncoder() {
     return columnSchema.getEncodingList();
-  }
-
-  /**
-   * @return row group id if it is row based
-   */
-  public int columnGroupId() {
-    return columnSchema.getColumnGroupId();
   }
 
   /**

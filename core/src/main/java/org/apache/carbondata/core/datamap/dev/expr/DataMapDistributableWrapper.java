@@ -42,10 +42,6 @@ public class DataMapDistributableWrapper extends InputSplit implements Serializa
     return distributable;
   }
 
-  public void setDistributable(DataMapDistributable distributable) {
-    this.distributable = distributable;
-  }
-
   @Override public long getLength() throws IOException, InterruptedException {
     return distributable.getLength();
   }

@@ -122,51 +122,6 @@ object TimeSeriesUtil {
   }
 
   /**
-   * Below method will be used to validate the hierarchy of time series and its value
-   * validation will be done whether hierarchy order is proper or not and hierarchy level
-   * value
-   * TODO: we should remove this method
-   *
-   * @param timeSeriesHierarchyDetails
-   * time series hierarchy string
-   */
-  @deprecated
-  def validateAndGetTimeSeriesHierarchyDetails(timeSeriesHierarchyDetails: String): Array[
-    (String, String)] = {
-    val updatedtimeSeriesHierarchyDetails = timeSeriesHierarchyDetails.toLowerCase
-    val timeSeriesHierarchy = updatedtimeSeriesHierarchyDetails.split(",")
-    val hierBuffer = timeSeriesHierarchy.map {
-      case f =>
-        val splits = f.split("=")
-        // checking hierarchy name is valid or not
-        if (!TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION.contains(splits(0).toLowerCase)) {
-          throw new MalformedCarbonCommandException(s"Not supported hierarchy type: ${ splits(0) }")
-        }
-        // validating hierarchy level is valid or not
-        if (!splits(1).equals("1")) {
-          throw new MalformedCarbonCommandException(
-            s"Unsupported Value for hierarchy:" +
-            s"${ splits(0) }=${ splits(1) }")
-        }
-        (splits(0), splits(1))
-    }
-    // checking whether hierarchy is in proper order or not
-    // get the index of first hierarchy
-    val indexOfFirstHierarchy = TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION
-      .indexOf(hierBuffer(0)._1.toLowerCase)
-    // now iterating through complete hierarchy to check any of the hierarchy index
-    // is less than first one
-    for (index <- 1 to hierBuffer.size - 1) {
-      val currentIndex = TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION
-        .indexOf(hierBuffer(index)._1.toLowerCase)
-      if (currentIndex < indexOfFirstHierarchy) {
-        throw new MalformedCarbonCommandException(s"$timeSeriesHierarchyDetails is in wrong order")
-      }
-    }
-    hierBuffer
-  }
-
-  /**
    * Below method will be used to validate whether timeseries column present in
    * select statement or not
    *

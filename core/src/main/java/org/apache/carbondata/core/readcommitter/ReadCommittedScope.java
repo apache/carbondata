@@ -31,22 +31,21 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
  * ReadCommitted interface that defines a read scope.
  */
 @InterfaceAudience.Internal
-@InterfaceStability.Stable
-public interface ReadCommittedScope extends Serializable {
+@InterfaceStability.Stable public interface ReadCommittedScope extends Serializable {
 
-  public LoadMetadataDetails[] getSegmentList() throws IOException;
+  LoadMetadataDetails[] getSegmentList() throws IOException;
 
   /**
    * @param segment
    * @return map of Absolute path of index file as key and null as value -- without mergeIndex
    * map of AbsolutePath with fileName of MergeIndex parent file as key and mergeIndexFileName
-   *                                                             as value -- with mergeIndex
+   * as value -- with mergeIndex
    * @throws IOException
    */
-  public Map<String, String> getCommittedIndexFile(Segment segment) throws IOException ;
+  Map<String, String> getCommittedIndexFile(Segment segment) throws IOException;
 
-  public SegmentRefreshInfo getCommittedSegmentRefreshInfo(
-      Segment segment, UpdateVO updateVo) throws IOException;
+  SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo)
+      throws IOException;
 
-  public void takeCarbonIndexFileSnapShot() throws IOException;
+  void takeCarbonIndexFileSnapShot() throws IOException;
 }

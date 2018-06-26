@@ -130,10 +130,6 @@ public class TaskMetricsMap {
     return sum;
   }
 
-  public void clear() {
-    metricMap.clear();
-  }
-
   /**
    * adds spawaned thread callback entry in metricmap using parentThreadId
    *

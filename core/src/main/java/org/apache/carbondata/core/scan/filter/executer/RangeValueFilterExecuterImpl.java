@@ -48,7 +48,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
  * for this Range. Also search the data block and set the required bitsets which falls within
  * the Range of the RANGE Expression.
  */
-public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
+public class RangeValueFilterExecuterImpl implements FilterExecuter {
 
   private DimColumnResolvedFilterInfo dimColEvaluatorInfo;
   private Expression exp;

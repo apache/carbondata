@@ -260,8 +260,6 @@ public final class CarbonUtil {
     }
     ColumnGroupModel colGroupModel = new ColumnGroupModel();
     colGroupModel.setNoOfColumnStore(noOfColumnStore);
-    colGroupModel.setColumnSplit(columnSplit);
-    colGroupModel.setColumnGroup(columnGroups);
     return colGroupModel;
   }
 
@@ -614,35 +612,6 @@ public final class CarbonUtil {
       integers.add(array[i]);
     }
     return integers;
-  }
-
-  /**
-   * Read level metadata file and return cardinality
-   *
-   * @param levelPath
-   * @return
-   * @throws IOException
-   */
-  public static int[] getCardinalityFromLevelMetadataFile(String levelPath) throws IOException {
-    DataInputStream dataInputStream = null;
-    int[] cardinality = null;
-
-    try {
-      if (FileFactory.isFileExist(levelPath, FileFactory.getFileType(levelPath))) {
-        dataInputStream =
-            FileFactory.getDataInputStream(levelPath, FileFactory.getFileType(levelPath));
-
-        cardinality = new int[dataInputStream.readInt()];
-
-        for (int i = 0; i < cardinality.length; i++) {
-          cardinality[i] = dataInputStream.readInt();
-        }
-      }
-    } finally {
-      closeStreams(dataInputStream);
-    }
-
-    return cardinality;
   }
 
   /**
@@ -1030,17 +999,11 @@ public final class CarbonUtil {
    */
   public static int getNumberOfDimensionColumns(List<ColumnSchema> columnSchemaList) {
     int numberOfDimensionColumns = 0;
-    int previousColumnGroupId = -1;
     ColumnSchema columnSchema = null;
     for (int i = 0; i < columnSchemaList.size(); i++) {
       columnSchema = columnSchemaList.get(i);
-      if (columnSchema.isDimensionColumn() && columnSchema.isColumnar()) {
+      if (columnSchema.isDimensionColumn()) {
         numberOfDimensionColumns++;
-      } else if (columnSchema.isDimensionColumn()) {
-        if (previousColumnGroupId != columnSchema.getColumnGroupId()) {
-          previousColumnGroupId = columnSchema.getColumnGroupId();
-          numberOfDimensionColumns++;
-        }
       } else {
         break;
       }
@@ -1142,20 +1105,14 @@ public final class CarbonUtil {
    */
   public static boolean[] identifyDimensionType(List<CarbonDimension> tableDimensionList) {
     List<Boolean> isDictionaryDimensions = new ArrayList<Boolean>();
-    Set<Integer> processedColumnGroup = new HashSet<Integer>();
     for (CarbonDimension carbonDimension : tableDimensionList) {
       List<CarbonDimension> childs = carbonDimension.getListOfChildDimensions();
       //assuming complex dimensions will always be atlast
       if (null != childs && childs.size() > 0) {
         break;
       }
-      if (carbonDimension.isColumnar() &&
-          hasEncoding(carbonDimension.getEncoder(), Encoding.DICTIONARY)) {
+      if (hasEncoding(carbonDimension.getEncoder(), Encoding.DICTIONARY)) {
         isDictionaryDimensions.add(true);
-      } else if (!carbonDimension.isColumnar()) {
-        if (processedColumnGroup.add(carbonDimension.columnGroupId())) {
-          isDictionaryDimensions.add(true);
-        }
       } else {
         isDictionaryDimensions.add(false);
       }
@@ -1697,7 +1654,6 @@ public final class CarbonUtil {
     return valueEncoderMeta;
   }
 
-
   /**
    * Below method will be used to convert indexes in range
    * Indexes=[0,1,2,3,4,5,6,7,8,9]
@@ -2195,7 +2151,6 @@ public final class CarbonUtil {
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
-    wrapperColumnSchema.setColumnar(externalColumnSchema.isColumnar());
     DataType dataType = thriftDataTyopeToWrapperDataType(externalColumnSchema.data_type);
     if (DataTypes.isDecimal(dataType)) {
       DecimalType decimalType = (DecimalType) dataType;
@@ -2211,7 +2166,6 @@ public final class CarbonUtil {
     wrapperColumnSchema.setEncodingList(encoders);
     wrapperColumnSchema.setNumberOfChild(externalColumnSchema.getNum_child());
     wrapperColumnSchema.setPrecision(externalColumnSchema.getPrecision());
-    wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
     wrapperColumnSchema.setSchemaOrdinal(externalColumnSchema.getSchemaOrdinal());
