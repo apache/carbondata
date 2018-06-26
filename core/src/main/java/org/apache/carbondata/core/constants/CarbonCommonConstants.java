@@ -1839,6 +1839,18 @@ public final class CarbonCommonConstants {
    *  the node minimum load data default value
    */
   public static final int CARBON_LOAD_MIN_SIZE_DEFAULT = 256;
+  /**
+   * property to be specified for caching min/max of required columns
+   */
+  public static final String COLUMN_META_CACHE = "column_meta_cache";
+  /**
+   * property to be specified for caching level (Block/Blocket)
+   */
+  public static final String CACHE_LEVEL = "cache_level";
+  /**
+   * default value for cache level
+   */
+  public static final String CACHE_LEVEL_DEFAULT_VALUE = "BLOCK";
 
   private CarbonCommonConstants() {
   }

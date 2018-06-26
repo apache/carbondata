@@ -1165,4 +1165,42 @@ public class CarbonTable implements Serializable {
       table.setLocalDictionaryEnabled(Boolean.parseBoolean("false"));
     }
   }
+
+  /**
+   * Method to get the list of cached columns of the table
+   *
+   * @param tableName
+   * @return
+   */
+  public List<String> getCachedColumns(String tableName) {
+    List<String> cachedColsList = new ArrayList<>(tableDimensionsMap.size());
+    String cacheColumns =
+        tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.COLUMN_META_CACHE);
+    if (null != cacheColumns && !cacheColumns.isEmpty()) {
+      List<CarbonDimension> carbonDimensions = tableDimensionsMap.get(tableName);
+      List<CarbonMeasure> carbonMeasures = tableMeasuresMap.get(tableName);
+      String[] cachedCols = cacheColumns.split(",");
+      for (String column : cachedCols) {
+        boolean found = false;
+        // this will avoid adding the columns which have been dropped from the table
+        for (CarbonDimension dimension : carbonDimensions) {
+          if (dimension.getColName().equals(column)) {
+            cachedColsList.add(column);
+            found = true;
+            break;
+          }
+        }
+        // if column is not a dimension then check in measures
+        if (!found) {
+          for (CarbonMeasure measure : carbonMeasures) {
+            if (measure.getColName().equals(column)) {
+              cachedColsList.add(column);
+              break;
+            }
+          }
+        }
+      }
+    }
+    return cachedColsList;
+  }
 }

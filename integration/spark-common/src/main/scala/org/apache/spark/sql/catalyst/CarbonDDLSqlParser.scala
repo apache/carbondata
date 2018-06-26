@@ -381,7 +381,36 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
     // get partitionInfo
     val partitionInfo = getPartitionInfo(partitionCols, tableProperties)
-
+    if (tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
+      // validate the column_meta_cache option
+      val tableColumns = dims.map(x => x.name.get) ++ msrs.map(x => x.name.get)
+      CommonUtil.validateColumnMetaCacheFields(tableName,
+        dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+        tableColumns,
+        tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).get,
+        tableProperties)
+      val columnsToBeCached = tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).get
+      if (columnsToBeCached.nonEmpty) {
+        columnsToBeCached.split(",").foreach { column =>
+          val dimFieldToBeCached = dims.filter(x => x.name.get.equals(column))
+          // first element is taken as each column with have a unique name
+          // check for complex type column
+          if (dimFieldToBeCached.nonEmpty &&
+              isComplexDimDictionaryExclude(dimFieldToBeCached(0).dataType.get)) {
+            val errorMessage =
+              s"$column is a complex type column and complex type is not allowed for " +
+              s"the option(s): ${ CarbonCommonConstants.COLUMN_META_CACHE }"
+            throw new MalformedCarbonCommandException(errorMessage)
+          }
+        }
+      }
+    }
+    // validate the cache level
+    if (tableProperties.get(CarbonCommonConstants.CACHE_LEVEL).isDefined) {
+      CommonUtil.validateCacheLevel(
+        tableProperties.get(CarbonCommonConstants.CACHE_LEVEL).get,
+        tableProperties)
+    }
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
     // validate table level properties for compaction
