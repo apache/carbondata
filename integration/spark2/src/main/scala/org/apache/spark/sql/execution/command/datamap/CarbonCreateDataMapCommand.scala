@@ -17,7 +17,6 @@
 package org.apache.spark.sql.execution.command.datamap
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -97,13 +96,13 @@ case class CarbonCreateDataMapCommand(
     dataMapProvider match {
       case provider: IndexDataMapProvider =>
         val datamaps = DataMapStoreManager.getInstance.getAllDataMap(mainTable).asScala
-        val existingIndexColumn4ThisProvider = mutable.Set[String]()
         val thisDmProviderName =
           dataMapProvider.asInstanceOf[IndexDataMapProvider].getDataMapSchema.getProviderName
-        datamaps.filter(datamap => thisDmProviderName.equalsIgnoreCase(
-          datamap.getDataMapSchema.getProviderName)).foreach { datamap =>
-          datamap.getDataMapSchema.getIndexColumns.foreach(existingIndexColumn4ThisProvider.add)
-        }
+        val existingIndexColumn4ThisProvider = datamaps.filter { datamap =>
+          thisDmProviderName.equalsIgnoreCase(datamap.getDataMapSchema.getProviderName)
+        }.flatMap { datamap =>
+          datamap.getDataMapSchema.getIndexColumns
+        }.distinct
 
         provider.getIndexedColumns.asScala.foreach { column =>
           if (existingIndexColumn4ThisProvider.contains(column.getColName)) {
