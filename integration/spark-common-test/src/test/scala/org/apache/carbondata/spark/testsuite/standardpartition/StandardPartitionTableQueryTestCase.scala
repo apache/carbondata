@@ -73,6 +73,27 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
 
   }
 
+  test("create partition table by dataframe") {
+    sql("select * from originTable")
+      .write
+      .format("carbondata")
+      .option("tableName", "partitionxxx")
+      .option("partitionColumns", "empno")
+      .save("Overwrite")
+
+    val frame = sql(
+      "select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno," +
+      " deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary " +
+      "from partitionxxx where empno=11 order by empno")
+    verifyPartitionInfo(frame, Seq("empno=11"))
+
+    checkAnswer(frame,
+      sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, " +
+          "deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary " +
+          "from originTable where empno=11 order by empno"))
+    sql("drop table if exists partitionxxx")
+  }
+
   test("querying on partition table for string partition column") {
     sql(
       """
