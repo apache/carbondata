@@ -23,38 +23,49 @@ package org.apache.carbondata.spark
  */
 class CarbonOption(options: Map[String, String]) {
 
-  def dbName: Option[String] = options.get("dbName")
+  lazy val dbName: Option[String] = options.get("dbName")
 
-  def tableName: String = options.getOrElse("tableName", "default_table")
+  lazy val tableName: String = options.getOrElse("tableName", "default_table")
 
-  def tablePath: Option[String] = options.get("tablePath")
+  lazy val tablePath: Option[String] = options.get("tablePath")
 
-  def partitionCount: String = options.getOrElse("partitionCount", "1")
+  lazy val partitionCount: String = options.getOrElse("partitionCount", "1")
 
-  def tempCSV: Boolean = options.getOrElse("tempCSV", "false").toBoolean
+  lazy val partitionClass: String = {
+    options.getOrElse("partitionClass",
+      "org.apache.carbondata.processing.partition.impl.SampleDataPartitionerImpl")
+  }
 
-  def compress: Boolean = options.getOrElse("compress", "false").toBoolean
+  lazy val compress: Boolean = options.getOrElse("compress", "false").toBoolean
 
-  def singlePass: Boolean = options.getOrElse("single_pass", "false").toBoolean
+  lazy val partitionColumns: Option[Seq[String]] = {
+    if (options.contains("partitionColumns")) {
+      Option(options("partitionColumns").split(",").map(_.trim))
+    } else {
+      None
+    }
+  }
 
-  def sortColumns: Option[String] = options.get("sort_columns")
+  lazy val singlePass: Boolean = options.getOrElse("single_pass", "false").toBoolean
 
-  def dictionaryInclude: Option[String] = options.get("dictionary_include")
+  lazy val sortColumns: Option[String] = options.get("sort_columns")
 
-  def dictionaryExclude: Option[String] = options.get("dictionary_exclude")
+  lazy val dictionaryInclude: Option[String] = options.get("dictionary_include")
 
-  def longStringColumns: Option[String] = options.get("long_string_columns")
+  lazy val dictionaryExclude: Option[String] = options.get("dictionary_exclude")
 
-  def tableBlockSize: Option[String] = options.get("table_blocksize")
+  lazy val longStringColumns: Option[String] = options.get("long_string_columns")
 
-  def bucketNumber: Int = options.getOrElse("bucketnumber", "0").toInt
+  lazy val tableBlockSize: Option[String] = options.get("table_blocksize")
 
-  def bucketColumns: String = options.getOrElse("bucketcolumns", "")
+  lazy val bucketNumber: Int = options.getOrElse("bucketnumber", "0").toInt
 
-  def isBucketingEnabled: Boolean = options.contains("bucketcolumns") &&
+  lazy val bucketColumns: String = options.getOrElse("bucketcolumns", "")
+
+  lazy val isBucketingEnabled: Boolean = options.contains("bucketcolumns") &&
                                     options.contains("bucketnumber")
 
-  def isStreaming: Boolean = {
+  lazy val isStreaming: Boolean = {
     var stream = options.getOrElse("streaming", "false")
     if (stream.equalsIgnoreCase("sink") || stream.equalsIgnoreCase("source")) {
       stream = "true"
@@ -62,7 +73,7 @@ class CarbonOption(options: Map[String, String]) {
     stream.toBoolean
   }
 
-  def overwriteEnabled: Boolean =
+  lazy val overwriteEnabled: Boolean =
     options.getOrElse("overwrite", "false").toBoolean
 
   def toMap: Map[String, String] = options
