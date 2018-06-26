@@ -30,11 +30,16 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.format.Encoding;
 
-public class HighCardDictDimensionIndexCodec  extends IndexStorageCodec {
+public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
+  /**
+   * whether this column is varchar data type(long string)
+   */
+  private boolean isVarcharType;
 
   public HighCardDictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex,
-      Compressor compressor) {
+      boolean isVarcharType, Compressor compressor) {
     super(isSort, isInvertedIndex, compressor);
+    this.isVarcharType = isVarcharType;
   }
 
   @Override
@@ -63,7 +68,9 @@ public class HighCardDictDimensionIndexCodec  extends IndexStorageCodec {
       @Override
       protected List<Encoding> getEncodingList() {
         List<Encoding> encodings = new ArrayList<>();
-        if (indexStorage.getRowIdPageLengthInBytes() > 0) {
+        if (isVarcharType) {
+          encodings.add(Encoding.DIRECT_COMPRESS_VARCHAR);
+        } else if (indexStorage.getRowIdPageLengthInBytes() > 0) {
           encodings.add(Encoding.INVERTED_INDEX);
         }
         return encodings;

@@ -438,6 +438,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       .contains("Unsupported alter operation on hive table"))
     sql("drop datamap if exists dm2 on table datamap_test_table")
   }
+
   test("test Clean Files and check Lucene DataMap") {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
@@ -540,37 +541,51 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test lucene fine grain data map with text-match limit") {
-
+    sql("DROP TABLE IF EXISTS datamap_test_limit")
+    sql(
+      """
+        | CREATE TABLE datamap_test_limit(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test
+         | CREATE DATAMAP dm ON TABLE datamap_test_limit
          | USING 'lucene'
          | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
 
-    checkAnswer(sql("select count(*) from datamap_test where TEXT_MATCH_WITH_LIMIT('name:n10*',10)"),Seq(Row(10)))
-    checkAnswer(sql("select count(*) from datamap_test where TEXT_MATCH_WITH_LIMIT('name:n10*',50)"),Seq(Row(50)))
-    sql("drop datamap dm on table datamap_test")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_limit OPTIONS('header'='false')")
+    checkAnswer(sql("select count(*) from datamap_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',10)"),Seq(Row(10)))
+    checkAnswer(sql("select count(*) from datamap_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',50)"),Seq(Row(50)))
+    sql("drop datamap dm on table datamap_test_limit")
   }
 
   test("test lucene fine grain data map with InsertOverwrite") {
+    sql("DROP TABLE IF EXISTS datamap_test_overwrite")
+    sql(
+      """
+        | CREATE TABLE datamap_test_overwrite(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test
+         | CREATE DATAMAP dm ON TABLE datamap_test_overwrite
          | USING 'lucene'
          | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
 
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_overwrite OPTIONS('header'='false')")
     sql(
       """
         | CREATE TABLE table1(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    sql("INSERT OVERWRITE TABLE table1 select * from datamap_test where TEXT_MATCH('name:n*')")
+    sql("INSERT OVERWRITE TABLE table1 select *from datamap_test_overwrite where TEXT_MATCH('name:n*')")
     checkAnswer(sql("select count(*) from table1"),Seq(Row(10000)))
-    sql("drop datamap dm on table datamap_test")
-    sql("drop table table1")
+    sql("drop datamap dm on table datamap_test_overwrite")
   }
 
   test("explain query with lucene datamap") {
@@ -714,7 +729,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       sql(s"SELECT * FROM datamap_test5 WHERE city='c020'"))
     sql("DROP TABLE IF EXISTS datamap_test5")
   }
-  
+
   test("test text_match on normal table") {
     sql("DROP TABLE IF EXISTS table1")
     sql(
@@ -730,7 +745,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     assert(msg.getCause.getMessage.contains("TEXT_MATCH is not supported on table"))
     sql("DROP TABLE table1")
   }
-  
+
   test("test lucene with flush_cache as true") {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
@@ -812,6 +827,37 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("insert into table_stop select 'The is one more stop word','defg'")
     assert(
       sql("select * from table_stop where text_match('suggestion:*is*')").collect().length == 1)
+  }
+
+  test("test lucene data map on null values") {
+    sql("DROP TABLE IF EXISTS datamap_test4")
+    sql("DROP TABLE IF EXISTS datamap_copy")
+    sql(
+      """
+        | CREATE TABLE datamap_test4(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+      """.stripMargin)
+    sql(
+      """
+        | CREATE TABLE datamap_copy(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+      """.stripMargin)
+    sql("insert into datamap_test4 select 1,'name','city',20")
+    sql("insert into datamap_test4 select 2,'name1','city1',20")
+    sql("insert into datamap_test4 select 25,cast(null as string),'city2',NULL")
+    sql("insert into datamap_copy select * from datamap_test4")
+    sql(
+      s"""
+         | CREATE DATAMAP dm4 ON TABLE datamap_test4
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='name , city')
+      """.stripMargin)
+    checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('name:n*')"),
+      sql(s"select * from datamap_copy where name like '%n%'"))
+    sql("drop table datamap_test4")
+    sql("drop table datamap_copy")
   }
 
   override protected def afterAll(): Unit = {

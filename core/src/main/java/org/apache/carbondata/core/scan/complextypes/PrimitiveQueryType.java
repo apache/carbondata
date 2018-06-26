@@ -20,6 +20,7 @@ package org.apache.carbondata.core.scan.complextypes;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -29,6 +30,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.mdkey.Bits;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -107,8 +109,32 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   }
 
   @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
-    Object actualData = null;
+    return getDataObject(dataBuffer, -1);
+  }
 
+  @Override public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
+      CarbonDimension child) {
+    Object actualData;
+
+    if (parent.getOrdinal() != child.getOrdinal() || null == dataBuffer || !dataBuffer
+        .hasRemaining()) {
+      return null;
+    }
+    int size;
+    if (!DataTypeUtil.isFixedSizeDataType(child.getDataType())) {
+      size = dataBuffer.array().length;
+    } else if (child.getDataType() == DataTypes.TIMESTAMP) {
+      size = DataTypes.LONG.getSizeInBytes();
+    } else {
+      size = child.getDataType().getSizeInBytes();
+    }
+    actualData = getDataObject(dataBuffer, size);
+
+    return actualData;
+  }
+
+  private Object getDataObject(ByteBuffer dataBuffer, int size) {
+    Object actualData;
     if (isDirectDictionary) {
       // Direct Dictionary Column
       byte[] data = new byte[keySize];
@@ -119,8 +145,9 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
           DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(dataType);
       actualData = directDictionaryGenerator.getValueFromSurrogate(surrgateValue);
     } else if (!isDictionary) {
-      // No Dictionary Columns
-      int size = dataBuffer.getShort();
+      if (size == -1) {
+        size = dataBuffer.getShort();
+      }
       byte[] value = new byte[size];
       dataBuffer.get(value, 0, size);
       if (dataType == DataTypes.DATE) {
@@ -142,8 +169,11 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       String dictionaryValueForKey = dictionary.getDictionaryValueForKey(surrgateValue);
       actualData = DataTypeUtil.getDataBasedOnDataType(dictionaryValueForKey, this.dataType);
     }
-
     return actualData;
   }
 
+  @Override public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
+      CarbonDimension presentColumn) {
+    return getDataBasedOnColumn(childBuffer.get(presentColumn), presentColumn, presentColumn);
+  }
 }

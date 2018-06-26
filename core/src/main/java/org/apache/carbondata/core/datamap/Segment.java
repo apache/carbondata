@@ -115,7 +115,7 @@ public class Segment implements Serializable {
 
   public SegmentRefreshInfo getSegmentRefreshInfo(UpdateVO updateVo)
       throws IOException {
-    return readCommittedScope.getCommitedSegmentRefreshInfo(this, updateVo);
+    return readCommittedScope.getCommittedSegmentRefreshInfo(this, updateVo);
   }
 
   public String getSegmentNo() {
@@ -162,6 +162,16 @@ public class Segment implements Serializable {
   }
 
   /**
+   * Converts to segment object
+   * @param segmentId
+   * @return
+   */
+  public static Segment toSegment(String segmentId) {
+    // SegmentId can be combination of segmentNo and segmentFileName.
+    return toSegment(segmentId, null);
+  }
+
+  /**
    * Read the table status and get the segment corresponding to segmentNo
    * @param segmentNo
    * @param tablePath
@@ -170,6 +180,16 @@ public class Segment implements Serializable {
   public static Segment getSegment(String segmentNo, String tablePath) {
     LoadMetadataDetails[] loadMetadataDetails =
         SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath));
+    return getSegment(segmentNo, loadMetadataDetails);
+  }
+
+  /**
+   * Get the segment object corresponding to segmentNo
+   * @param segmentNo
+   * @param loadMetadataDetails
+   * @return
+   */
+  public static Segment getSegment(String segmentNo, LoadMetadataDetails[] loadMetadataDetails) {
     for (LoadMetadataDetails details: loadMetadataDetails) {
       if (details.getLoadName().equals(segmentNo)) {
         return new Segment(details.getLoadName(), details.getSegmentFile());

@@ -18,6 +18,7 @@
 package org.apache.carbondata.store.worker;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,22 +28,27 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapChooser;
+import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.scan.executor.impl.SearchModeDetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.impl.SearchModeVectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
@@ -112,6 +118,8 @@ public class SearchRequestHandler {
     queryModel.setVectorReader(false);
 
     CarbonMultiBlockSplit mbSplit = request.split().value();
+    List<TableBlockInfo> list = CarbonInputSplit.createBlocks(mbSplit.getAllSplits());
+    queryModel.setTableBlockInfos(list);
     long limit = request.limit();
     long rowCount = 0;
 
@@ -158,28 +166,48 @@ public class SearchRequestHandler {
       CarbonMultiBlockSplit mbSplit, DataMapExprWrapper datamap) throws IOException {
     Objects.requireNonNull(datamap);
     List<Segment> segments = new LinkedList<>();
+    HashMap<String, Integer> uniqueSegments = new HashMap<>();
+    LoadMetadataDetails[] loadMetadataDetails =
+        SegmentStatusManager.readLoadMetadata(
+            CarbonTablePath.getMetadataPath(table.getTablePath()));
     for (CarbonInputSplit split : mbSplit.getAllSplits()) {
-      segments.add(
-          Segment.toSegment(split.getSegmentId(),
-              new LatestFilesReadCommittedScope(table.getTablePath())));
+      String segmentId = Segment.getSegment(split.getSegmentId(), loadMetadataDetails).toString();
+      if (uniqueSegments.get(segmentId) == null) {
+        segments.add(Segment.toSegment(segmentId,
+            new TableStatusReadCommittedScope(table.getAbsoluteTableIdentifier(),
+                loadMetadataDetails)));
+        uniqueSegments.put(segmentId, 1);
+      } else {
+        uniqueSegments.put(segmentId, uniqueSegments.get(segmentId) + 1);
+      }
     }
-    List<ExtendedBlocklet> prunnedBlocklets = datamap.prune(segments, null);
 
-    List<String> pathToRead = new LinkedList<>();
-    for (ExtendedBlocklet prunnedBlocklet : prunnedBlocklets) {
-      pathToRead.add(prunnedBlocklet.getPath());
+    List<DataMapDistributableWrapper> distributables = datamap.toDistributable(segments);
+    List<ExtendedBlocklet> prunnedBlocklets = new LinkedList<ExtendedBlocklet>();
+    for (int i = 0; i < distributables.size(); i++) {
+      DataMapDistributable dataMapDistributable = distributables.get(i).getDistributable();
+      prunnedBlocklets.addAll(datamap.prune(dataMapDistributable, null));
+    }
+
+    HashMap<String, ExtendedBlocklet> pathToRead = new HashMap<>();
+    for (ExtendedBlocklet prunedBlocklet : prunnedBlocklets) {
+      pathToRead.put(prunedBlocklet.getFilePath(), prunedBlocklet);
     }
 
     List<TableBlockInfo> blocks = queryModel.getTableBlockInfos();
     List<TableBlockInfo> blockToRead = new LinkedList<>();
     for (TableBlockInfo block : blocks) {
-      if (pathToRead.contains(block.getFilePath())) {
+      if (pathToRead.keySet().contains(block.getFilePath())) {
+        // If not set this, it will can't create FineGrainBlocklet object in
+        // org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode.getIndexedData
+        block.setDataMapWriterPath(pathToRead.get(block.getFilePath()).getDataMapWriterPath());
         blockToRead.add(block);
       }
     }
     LOG.info(String.format("[SearchId:%d] pruned using FG DataMap, pruned blocks: %d", queryId,
         blockToRead.size()));
     queryModel.setTableBlockInfos(blockToRead);
+    queryModel.setFG(true);
     return queryModel;
   }
 

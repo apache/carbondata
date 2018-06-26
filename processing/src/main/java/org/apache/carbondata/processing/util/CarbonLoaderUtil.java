@@ -53,6 +53,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
@@ -77,7 +78,8 @@ public final class CarbonLoaderUtil {
    */
   public enum BlockAssignmentStrategy {
     BLOCK_NUM_FIRST("Assign blocks to node base on number of blocks"),
-    BLOCK_SIZE_FIRST("Assign blocks to node base on data size of blocks");
+    BLOCK_SIZE_FIRST("Assign blocks to node base on data size of blocks"),
+    NODE_MIN_SIZE_FIRST("Assign blocks to node base on minumun size of inputs");
     private String name;
     BlockAssignmentStrategy(String name) {
       this.name = name;
@@ -537,7 +539,7 @@ public final class CarbonLoaderUtil {
       List<String> activeNode) {
     Map<String, List<Distributable>> mapOfNodes =
         CarbonLoaderUtil.nodeBlockMapping(blockInfos, noOfNodesInput, activeNode,
-            BlockAssignmentStrategy.BLOCK_NUM_FIRST);
+            BlockAssignmentStrategy.BLOCK_NUM_FIRST, null);
     int taskPerNode = parallelism / mapOfNodes.size();
     //assigning non zero value to noOfTasksPerNode
     int noOfTasksPerNode = taskPerNode == 0 ? 1 : taskPerNode;
@@ -554,7 +556,7 @@ public final class CarbonLoaderUtil {
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
       int noOfNodesInput) {
     return nodeBlockMapping(blockInfos, noOfNodesInput, null,
-        BlockAssignmentStrategy.BLOCK_NUM_FIRST);
+        BlockAssignmentStrategy.BLOCK_NUM_FIRST,null);
   }
 
   /**
@@ -575,11 +577,12 @@ public final class CarbonLoaderUtil {
    * @param noOfNodesInput -1 if number of nodes has to be decided
    *                       based on block location information
    * @param blockAssignmentStrategy strategy used to assign blocks
+   * @param loadMinSize the property load_min_size_inmb specified by the user
    * @return a map that maps node to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(
       List<Distributable> blockInfos, int noOfNodesInput, List<String> activeNodes,
-      BlockAssignmentStrategy blockAssignmentStrategy) {
+      BlockAssignmentStrategy blockAssignmentStrategy, String expectedMinSizePerNode) {
     ArrayList<NodeMultiBlockRelation> rtnNode2Blocks = new ArrayList<>();
 
     Set<Distributable> uniqueBlocks = new HashSet<>(blockInfos);
@@ -596,20 +599,54 @@ public final class CarbonLoaderUtil {
 
     // calculate the average expected size for each node
     long sizePerNode = 0;
+    long totalFileSize = 0;
     if (BlockAssignmentStrategy.BLOCK_NUM_FIRST == blockAssignmentStrategy) {
-      sizePerNode = blockInfos.size() / noofNodes;
+      if (blockInfos.size() > 0) {
+        sizePerNode = blockInfos.size() / noofNodes;
+      }
       sizePerNode = sizePerNode <= 0 ? 1 : sizePerNode;
-    } else if (BlockAssignmentStrategy.BLOCK_SIZE_FIRST == blockAssignmentStrategy) {
-      long totalFileSize = 0;
+    } else if (BlockAssignmentStrategy.BLOCK_SIZE_FIRST == blockAssignmentStrategy
+        || BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
       for (Distributable blockInfo : uniqueBlocks) {
         totalFileSize += ((TableBlockInfo) blockInfo).getBlockLength();
       }
       sizePerNode = totalFileSize / noofNodes;
     }
 
-    // assign blocks to each node
-    assignBlocksByDataLocality(rtnNode2Blocks, sizePerNode, uniqueBlocks, originNode2Blocks,
-        activeNodes, blockAssignmentStrategy);
+    // if enable to control the minimum amount of input data for each node
+    if (BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
+      long iexpectedMinSizePerNode = 0;
+      // validate the property load_min_size_inmb specified by the user
+      if (CarbonUtil.validateValidIntType(expectedMinSizePerNode)) {
+        iexpectedMinSizePerNode = Integer.parseInt(expectedMinSizePerNode);
+      } else {
+        LOGGER.warn("Invalid load_min_size_inmb value found: " + expectedMinSizePerNode
+            + ", only int value greater than 0 is supported.");
+        iexpectedMinSizePerNode = CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_DEFAULT;
+      }
+      // If the average expected size for each node greater than load min size,
+      // then fall back to default strategy
+      if (iexpectedMinSizePerNode * 1024 * 1024 < sizePerNode) {
+        if (CarbonProperties.getInstance().isLoadSkewedDataOptimizationEnabled()) {
+          blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_SIZE_FIRST;
+        } else {
+          blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_NUM_FIRST;
+        }
+        LOGGER.info("Specified minimum data size to load is less than the average size "
+            + "for each node, fallback to default strategy" + blockAssignmentStrategy);
+      } else {
+        sizePerNode = iexpectedMinSizePerNode;
+      }
+    }
+
+    if (BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
+      // assign blocks to each node ignore data locality
+      assignBlocksIgnoreDataLocality(rtnNode2Blocks, sizePerNode, uniqueBlocks, activeNodes);
+    } else {
+      // assign blocks to each node
+      assignBlocksByDataLocality(rtnNode2Blocks, sizePerNode, uniqueBlocks, originNode2Blocks,
+          activeNodes, blockAssignmentStrategy);
+    }
 
     // if any blocks remain then assign them to nodes in round robin.
     assignLeftOverBlocks(rtnNode2Blocks, uniqueBlocks, sizePerNode, activeNodes,
@@ -757,6 +794,7 @@ public final class CarbonLoaderUtil {
         populateBlocksByNum(remainingBlocks, expectedSizePerNode, blockLst);
         break;
       case BLOCK_SIZE_FIRST:
+      case NODE_MIN_SIZE_FIRST:
         populateBlocksBySize(remainingBlocks, expectedSizePerNode, blockLst);
         break;
       default:
@@ -836,6 +874,7 @@ public final class CarbonLoaderUtil {
         roundRobinAssignBlocksByNum(node2Blocks, remainingBlocks);
         break;
       case BLOCK_SIZE_FIRST:
+      case NODE_MIN_SIZE_FIRST:
         roundRobinAssignBlocksBySize(node2Blocks, remainingBlocks);
         break;
       default:
@@ -978,6 +1017,54 @@ public final class CarbonLoaderUtil {
           throw new IllegalArgumentException(
               "Unsupported block assignment strategy: " + blockAssignmentStrategy);
         }
+      }
+    }
+  }
+
+  /**
+   * allocate distributable blocks to nodes based on ignore data locality
+   */
+  private static void assignBlocksIgnoreDataLocality(
+          ArrayList<NodeMultiBlockRelation> outputNode2Blocks,
+          long expectedSizePerNode, Set<Distributable> remainingBlocks,
+          List<String> activeNodes) {
+    // get all blocks
+    Set<Distributable> uniqueBlocks = new HashSet<>(remainingBlocks);
+    // shuffle activeNodes ignore data locality
+    List<String> shuffleNodes  = new ArrayList<>(activeNodes);
+    Collections.shuffle(shuffleNodes);
+
+    for (String activeNode : shuffleNodes) {
+      long nodeCapacity = 0;
+      NodeMultiBlockRelation nodeBlock = new NodeMultiBlockRelation(activeNode,
+          new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
+      // loop thru blocks of each Node
+      for (Distributable block : uniqueBlocks) {
+        if (!remainingBlocks.contains(block)) {
+          // this block has been added before
+          continue;
+        }
+
+        long thisBlockSize = ((TableBlockInfo) block).getBlockLength();
+        if (nodeCapacity == 0
+            || nodeCapacity + thisBlockSize <= expectedSizePerNode * 1024 * 1024) {
+          nodeBlock.getBlocks().add(block);
+          nodeCapacity += thisBlockSize;
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
+                "First Assignment iteration: " + ((TableBlockInfo) block).getFilePath() + '-'
+                    + ((TableBlockInfo) block).getBlockLength() + "-->" + activeNode);
+          }
+          remainingBlocks.remove(block);
+          // this block is too big for current node and there are still capacity left
+          // for small files, so continue to allocate block on this node in next iteration.
+        } else {
+          // No need to continue loop as node is full
+          break;
+        }
+      }
+      if (nodeBlock.getBlocks().size() != 0) {
+        outputNode2Blocks.add(nodeBlock);
       }
     }
   }

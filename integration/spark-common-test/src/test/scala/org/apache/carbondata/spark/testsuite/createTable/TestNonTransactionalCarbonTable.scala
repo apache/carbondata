@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
-import java.sql.Timestamp
-import java.io.{File, FileFilter, IOException}
+import java.sql.{Date, Timestamp}
+import java.io._
 import java.util
 import java.util.concurrent.TimeUnit
 
@@ -41,11 +41,14 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 
 import org.apache.avro
+import org.apache.avro.file.DataFileWriter
+import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
+import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.commons.lang.CharEncoding
-import tech.allegro.schema.json2avro.converter.JsonAvroConverter
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
-import org.apache.carbondata.sdk.file.{AvroCarbonWriter, CarbonWriter, CarbonWriterBuilder, Field, Schema}
+import org.apache.carbondata.sdk.file._
 
 
 class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
@@ -55,7 +58,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
                             "../." +
                             "./target/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
-  //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+  //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/")
 
   def buildTestDataSingleFile(): Any = {
@@ -367,8 +370,9 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    checkExistence(sql("describe formatted sdkOutputTable"), true, "age")
-
+    checkExistence(sql("describe formatted sdkOutputTable"), true, "SORT_COLUMNS                        age")
+    checkExistence(sql("describe formatted sdkOutputTable"), false, "SORT_COLUMNS                        name,age")
+    checkExistence(sql("describe formatted sdkOutputTable"), false, "SORT_COLUMNS                        age,name")
     buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -378,7 +382,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    checkExistence(sql("describe formatted sdkOutputTable"), true, "name")
+    checkExistence(sql("describe formatted sdkOutputTable"), true, "SORT_COLUMNS                        name")
 
     buildTestDataWithSortColumns(List())
     assert(new File(writerPath).exists())
@@ -390,15 +394,18 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    sql("describe formatted sdkOutputTable").show(false)
+    checkExistence(sql("describe formatted sdkOutputTable"),false,"SORT_COLUMNS                        name")
     sql("select * from sdkOutputTable").show()
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
 
     intercept[RuntimeException] {
       buildTestDataWithSortColumns(List(""))
     }
 
-    sql("DROP TABLE sdkOutputTable")
-    // drop table should not delete the files
     assert(!(new File(writerPath).exists()))
     cleanTestData()
   }
@@ -989,7 +996,14 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       sql("select * from sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
-      .contains("All the files doesn't have same schema"))
+      .contains("Problem in loading segment blocks."))
+
+    val exception1 =
+      intercept[IOException] {
+        sql("select count(*) from sdkOutputTable").show(false)
+      }
+    assert(exception1.getMessage()
+      .contains("Problem in loading segment blocks."))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -1021,7 +1035,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         sql("select * from sdkOutputTable").show(false)
       }
     assert(exception.getMessage()
-      .contains("All the files doesn't have same schema"))
+      .contains("Problem in loading segment blocks."))
 
 
     sql("DROP TABLE sdkOutputTable")
@@ -1035,10 +1049,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       json: String) = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
-    val converter = new JsonAvroConverter
-    val record = converter
-      .convertToGenericDataRecord(json.getBytes(CharEncoding.UTF_8), nn)
-
+    val record = avroUtil.jsonToAvro(json, mySchema)
     try {
       val writer = CarbonWriter.builder
         .outputPath(writerPath).isTransactionalTable(false)
@@ -1448,8 +1459,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Read sdk writer Avro output Array Type with Default value") {
-    buildAvroTestDataSingleFileArrayDefaultType()
-    assert(new File(writerPath).exists())
+    // avro1.8.x Parser donot handles default value , this willbe fixed in 1.9.x. So for now this
+    // will throw exception. After upgradation of Avro we can change this test case.
+    val exception = intercept[RuntimeException] {
+      buildAvroTestDataSingleFileArrayDefaultType()
+    }
+    assert(exception.getMessage.contains("Expected array-start. Got END_OBJECT"))
+    /*assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
@@ -1465,7 +1481,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).listFiles().length > 0)
-    cleanTestData()
+    cleanTestData()*/
   }
 
 
@@ -1814,6 +1830,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
                      |						"items": {
                      |							"name": "EachdoorNums",
                      |							"type": "int",
+                     |              "logicalType": "date",
                      |							"default": -1
                      |						}
                      |					}
@@ -1838,8 +1855,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildAvroTestDataMultiLevel3_2(3, null)
   }
 
-  // test multi level -- 3 levels [array of array of array of int]
-  test("test multi level support : array of array of array of int") {
+  // test multi level -- 3 levels [array of array of array of int with logical type]
+  test("test multi level support : array of array of array of int with logical type") {
     buildAvroTestDataMultiLevel3_2Type()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -1847,22 +1864,19 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    sql("select * from sdkOutputTable").show(false)
+    sql("select * from sdkOutputTable limit 1").show(false)
 
     // TODO: Add a validation
     /*
-    +----+---+---------------------------------------------------------------------------+
-    |name|age|BuildNum
-                                               |
-    +----+---+---------------------------------------------------------------------------+
-    |bob |10 |[WrappedArray(WrappedArray(1, 2, 3), WrappedArray(4, 5, 6)), WrappedArray
-    (WrappedArray(10, 20, 30), WrappedArray(40, 50, 60))]|
-    |bob |10 |[WrappedArray(WrappedArray(1, 2, 3), WrappedArray(4, 5, 6)), WrappedArray
-    (WrappedArray(10, 20, 30), WrappedArray(40, 50, 60))]|
-    |bob |10 |[WrappedArray(WrappedArray(1, 2, 3), WrappedArray(4, 5, 6)), WrappedArray
-    (WrappedArray(10, 20, 30), WrappedArray(40, 50, 60))]|
-    +----+---+---------------------------------------------------------------------------+
-   */
+    +----+---+------------------------------------------------------------------+
+    |name|age|BuildNum                                                          |
+    +----+---+------------------------------------------------------------------+
+    |bob |10 |[WrappedArray(WrappedArray(1970-01-02, 1970-01-03, 1970-01-04),   |
+    |                    WrappedArray(1970-01-05, 1970-01-06, 1970-01-07)),     |
+    |       WrappedArray(WrappedArray(1970-01-11, 1970-01-21, 1970-01-31),      |
+    |                    WrappedArray(1970-02-10, 1970-02-20, 1970-03-02))]     |
+    +----+---+------------------------------------------------------------------+
+     */
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -2009,9 +2023,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       """{"id": 101,"course_details": { "course_struct_course_time":"2014-01-05"  }}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
-    val converter = new JsonAvroConverter
-    val record = converter
-      .convertToGenericDataRecord(json1.getBytes(CharEncoding.UTF_8), nn)
+    val record = avroUtil.jsonToAvro(json1, schema1)
 
     assert(intercept[RuntimeException] {
       val writer = CarbonWriter.builder.sortBy(Array("name", "id"))
@@ -2049,12 +2061,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         |}""".stripMargin
 
     val json1 =
-      """{"id": 101,"course_details": { "course_struct_course_time":"2014-01-05"  }}""".stripMargin
+      """{"id": null,"course_details": { "course_struct_course_time":"2014-01-05"  }}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
-    val converter = new JsonAvroConverter
-    val record = converter
-      .convertToGenericDataRecord(json1.getBytes(CharEncoding.UTF_8), nn)
+    val record = avroUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
       .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
@@ -2092,9 +2102,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val json1 =
       """{"id": 101,"course_details": { "course_struct_course_time":"2014-01-05 00:00:00"  }}""".stripMargin
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
-    val converter = new JsonAvroConverter
-    val record = converter
-      .convertToGenericDataRecord(json1.getBytes(CharEncoding.UTF_8), nn)
+    val record = avroUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder.sortBy(Array("id"))
       .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
@@ -2138,9 +2146,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       """{"id": 101, "entries": [ {"id":1234}, {"id":3212}  ]}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema)
-    val converter = new JsonAvroConverter
-    val record = converter
-      .convertToGenericDataRecord(json1.getBytes(CharEncoding.UTF_8), nn)
+    val record = avroUtil.jsonToAvro(json1, schema)
 
     val writer = CarbonWriter.builder
       .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
@@ -2148,4 +2154,167 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     writer.close()
   }
 
+  test("test logical type date") {
+    sql("drop table if exists sdkOutputTable")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
+    val schema1 =
+      """{
+        |	"namespace": "com.apache.schema",
+        |	"type": "record",
+        |	"name": "StudentActivity",
+        |	"fields": [
+        |		{
+        |			"name": "id",
+        |						"type": {"type" : "int", "logicalType": "date"}
+        |		},
+        |		{
+        |			"name": "course_details",
+        |			"type": {
+        |				"name": "course_details",
+        |				"type": "record",
+        |				"fields": [
+        |					{
+        |						"name": "course_struct_course_time",
+        |						"type": {"type" : "int", "logicalType": "date"}
+        |					}
+        |				]
+        |			}
+        |		}
+        |	]
+        |}""".stripMargin
+
+    val json1 =
+      """{"id": 101, "course_details": { "course_struct_course_time":10}}""".stripMargin
+    val nn = new org.apache.avro.Schema.Parser().parse(schema1)
+    val record = avroUtil.jsonToAvro(json1, schema1)
+
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+    writer.write(record)
+    writer.close()
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(dateType date, course_details struct<course_struct_course_time: date>) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(java.sql.Date.valueOf("1970-04-12"), Row(java.sql.Date.valueOf("1970-01-11")))))
+  }
+
+  test("test logical type timestamp-millis") {
+    sql("drop table if exists sdkOutputTable")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
+    val schema1 =
+      """{
+        |	"namespace": "com.apache.schema",
+        |	"type": "record",
+        |	"name": "StudentActivity",
+        |	"fields": [
+        |		{
+        |			"name": "id",
+        |						"type": {"type" : "long", "logicalType": "timestamp-millis"}
+        |		},
+        |		{
+        |			"name": "course_details",
+        |			"type": {
+        |				"name": "course_details",
+        |				"type": "record",
+        |				"fields": [
+        |					{
+        |						"name": "course_struct_course_time",
+        |						"type": {"type" : "long", "logicalType": "timestamp-millis"}
+        |					}
+        |				]
+        |			}
+        |		}
+        |	]
+        |}""".stripMargin
+
+    val json1 =
+      """{"id": 172800000,"course_details": { "course_struct_course_time":172800000}}""".stripMargin
+
+    val nn = new org.apache.avro.Schema.Parser().parse(schema1)
+    val record = avroUtil.jsonToAvro(json1, schema1)
+
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+    writer.write(record)
+    writer.close()
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(dateType timestamp, course_details struct<course_struct_course_time: timestamp>) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Timestamp.valueOf("1970-01-02 16:00:00"), Row(Timestamp.valueOf("1970-01-02 16:00:00")))))
+  }
+
+  test("test logical type-micros timestamp") {
+    sql("drop table if exists sdkOutputTable")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
+    val schema1 =
+      """{
+        |	"namespace": "com.apache.schema",
+        |	"type": "record",
+        |	"name": "StudentActivity",
+        |	"fields": [
+        |		{
+        |			"name": "id",
+        |						"type": {"type" : "long", "logicalType": "timestamp-micros"}
+        |		},
+        |		{
+        |			"name": "course_details",
+        |			"type": {
+        |				"name": "course_details",
+        |				"type": "record",
+        |				"fields": [
+        |					{
+        |						"name": "course_struct_course_time",
+        |						"type": {"type" : "long", "logicalType": "timestamp-micros"}
+        |					}
+        |				]
+        |			}
+        |		}
+        |	]
+        |}""".stripMargin
+
+    val json1 =
+      """{"id": 172800000000,"course_details": { "course_struct_course_time":172800000000}}""".stripMargin
+
+    val nn = new org.apache.avro.Schema.Parser().parse(schema1)
+    val record = avroUtil.jsonToAvro(json1, schema1)
+
+
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+    writer.write(record)
+    writer.close()
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable(dateType timestamp, course_details struct<course_struct_course_time: timestamp>) STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Timestamp.valueOf("1970-01-02 16:00:00"), Row(Timestamp.valueOf("1970-01-02 16:00:00")))))
+  }
+}
+
+
+object avroUtil{
+
+  def jsonToAvro(json: String, avroSchema: String): GenericRecord = {
+    var input: InputStream = null
+    var writer: DataFileWriter[GenericRecord] = null
+    var encoder: Encoder = null
+    var output: ByteArrayOutputStream = null
+    try {
+      val schema = new org.apache.avro.Schema.Parser().parse(avroSchema)
+      val reader = new GenericDatumReader[GenericRecord](schema)
+      input = new ByteArrayInputStream(json.getBytes())
+      output = new ByteArrayOutputStream()
+      val din = new DataInputStream(input)
+      writer = new DataFileWriter[GenericRecord](new GenericDatumWriter[GenericRecord]())
+      writer.create(schema, output)
+      val decoder = DecoderFactory.get().jsonDecoder(schema, din)
+      var datum: GenericRecord = reader.read(null, decoder)
+      return datum
+    } finally {
+      input.close()
+      writer.close()
+    }
+  }
 }

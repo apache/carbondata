@@ -27,7 +27,6 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.util.CarbonException
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
@@ -40,7 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationId
 import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
@@ -55,6 +54,7 @@ case class TableModel(
     dimCols: Seq[Field],
     msrCols: Seq[Field],
     sortKeyDims: Option[Seq[String]],
+    varcharCols: Option[Seq[String]],
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
     columnGroups: Seq[String],
@@ -213,9 +213,9 @@ class AlterTableColumnSchemaGenerator(
     tableIdentifier: AbsoluteTableIdentifier,
     sc: SparkContext) {
 
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
-  def isSortColumn(columnName: String): Boolean = {
+  private def isSortColumn(columnName: String): Boolean = {
     val sortColumns = alterTableModel.tableProperties.get("sort_columns")
     if(sortColumns.isDefined) {
       sortColumns.get.contains(columnName)
@@ -223,6 +223,16 @@ class AlterTableColumnSchemaGenerator(
       true
     }
   }
+
+  private def isVarcharColumn(columnName: String): Boolean = {
+    val varcharColumns = alterTableModel.tableProperties.get("long_string_columns")
+    if (varcharColumns.isDefined) {
+      varcharColumns.get.contains(columnName)
+    } else {
+      false
+    }
+  }
+
   def process: Seq[ColumnSchema] = {
     val tableSchema = tableInfo.getFactTable
     val tableCols = tableSchema.getListOfColumns.asScala
@@ -242,11 +252,11 @@ class AlterTableColumnSchemaGenerator(
         field.schemaOrdinal + existingColsSize,
         alterTableModel.highCardinalityDims,
         alterTableModel.databaseName.getOrElse(dbName),
-        isSortColumn(field.name.getOrElse(field.column)))
+        isSortColumn(field.name.getOrElse(field.column)),
+        isVarcharColumn(field.name.getOrElse(field.column)))
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
-
     allColumns ++= tableCols.filter(x => !x.isDimensionColumn)
     alterTableModel.msrCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
@@ -294,7 +304,9 @@ class AlterTableColumnSchemaGenerator(
     alterTableModel.tableProperties.foreach {
       x => val value = tablePropertiesMap.get(x._1)
         if (null != value) {
-          tablePropertiesMap.put(x._1, value + "," + x._2)
+          if (value != x._2) {
+            tablePropertiesMap.put(x._1, value + "," + x._2)
+          }
         } else {
           tablePropertiesMap.put(x._1, x._2)
         }
@@ -351,14 +363,19 @@ object TableNewProcessor {
       schemaOrdinal: Int,
       highCardinalityDims: Seq[String],
       databaseName: String,
-      isSortColumn: Boolean = false): ColumnSchema = {
+      isSortColumn: Boolean = false,
+      isVarcharColumn: Boolean = false): ColumnSchema = {
     val dataType = DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse(""))
     if (DataTypes.isDecimal(dataType)) {
       dataType.asInstanceOf[DecimalType].setPrecision(field.precision)
       dataType.asInstanceOf[DecimalType].setScale(field.scale)
     }
     val columnSchema = new ColumnSchema()
-    columnSchema.setDataType(dataType)
+    if (isVarcharColumn) {
+      columnSchema.setDataType(DataTypes.VARCHAR)
+    } else {
+      columnSchema.setDataType(dataType)
+    }
     val colName = field.name.getOrElse(field.column)
     columnSchema.setColumnName(colName)
     if (highCardinalityDims.contains(colName)) {
@@ -415,6 +432,11 @@ class TableNewProcessor(cm: TableModel) {
     allColumns
   }
 
+  // varchar column is a string column that in long_string_columns
+  private def isVarcharColumn(colName : String): Boolean = {
+    cm.varcharCols.get.contains(colName)
+  }
+
   def getColumnSchema(
       dataType: DataType,
       colName: String,
@@ -450,6 +472,9 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setScale(field.scale)
     columnSchema.setSchemaOrdinal(field.schemaOrdinal)
     columnSchema.setSortColumn(false)
+    if (isVarcharColumn(colName)) {
+      columnSchema.setDataType(DataTypes.VARCHAR)
+    }
     if(isParentColumnRelation) {
       val dataMapField = map.get.get(field).get
       columnSchema.setFunction(dataMapField.aggregateFunction)
@@ -517,7 +542,7 @@ class TableNewProcessor(cm: TableModel) {
     val dictionaryIncludeCols = cm.tableProperties
       .getOrElse(CarbonCommonConstants.DICTIONARY_INCLUDE, "")
 
-    cm.dimCols.foreach { field =>
+    def addDimensionCol(field: Field): Unit = {
       val sortField = cm.sortKeyDims.get.find(field.column equals _)
       if (sortField.isEmpty) {
         val encoders = if (getEncoderFromParent(field)) {
@@ -549,7 +574,18 @@ class TableNewProcessor(cm: TableModel) {
         }
       }
     }
+    // dimensions that are not varchar
+    cm.dimCols.filter(field => !cm.varcharCols.get.contains(field.column))
+      .foreach(addDimensionCol(_))
+    // dimensions that are varchar
+    cm.dimCols.filter(field => cm.varcharCols.get.contains(field.column))
+      .foreach(addDimensionCol(_))
 
+    // check whether the column is a local dictionary column and set in column schema
+    if (null != cm.tableProperties) {
+      CarbonUtil
+        .setLocalDictColumnsToWrapperSchema(allColumns.asJava, cm.tableProperties.asJava)
+    }
     cm.msrCols.foreach { field =>
       // if aggregate function is defined in case of preaggregate and agg function is sum or avg
       // then it can be stored as measure

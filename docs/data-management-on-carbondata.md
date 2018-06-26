@@ -35,11 +35,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name[(col_name data_type , ...)]
-  STORED BY 'carbondata'
+  STORED AS carbondata
   [TBLPROPERTIES (property_name=property_value, ...)]
   [LOCATION 'path']
   ```
-  **NOTE:** CarbonData also supports "STORED AS carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
+  **NOTE:** CarbonData also supports "STORED AS carbondata" and "USING carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
 ### Usage Guidelines
 
   Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
@@ -216,7 +216,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   This can be SDK output. Refer [SDK Writer Guide](https://github.com/apache/carbondata/blob/master/docs/sdk-writer-guide.md). 
   
   **Note:**
-  Dropping of the external table should not delete the files present in the location.
+  1. Dropping of the external table should not delete the files present in the location.
+  2. When external table is created on non-transactional table data, 
+  external table will be registered with the schema of carbondata files.
+  If multiple files with different schema is present, exception will be thrown.
+  So, If table registered with one schema and files are of different schema, 
+  suggest to drop the external table and create again to register table with new schema.  
 
 
 ## CREATE DATABASE 
@@ -554,6 +559,16 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORD_PATH'='hdfs://hacluster/tmp/carbon',
   'BAD_RECORDS_ACTION'='REDIRECT','IS_EMPTY_DATA_BAD_RECORD'='false')
   ```
+
+  - **GLOBAL_SORT_PARTITIONS:** If the SORT_SCOPE is defined as GLOBAL_SORT, then user can specify the number of partitions to use while shuffling data for sort using GLOBAL_SORT_PARTITIONS. If it is not configured, or configured less than 1, then it uses the number of map task as reduce task. It is recommended that each reduce task deal with 512MB-1GB data.
+
+  ```
+  OPTIONS('GLOBAL_SORT_PARTITIONS'='2')
+  ```
+
+   NOTE:
+   * GLOBAL_SORT_PARTITIONS should be Integer type, the range is [1,Integer.MaxValue].
+   * It is only used when the SORT_SCOPE is GLOBAL_SORT.
 
 ### INSERT DATA INTO CARBONDATA TABLE
 

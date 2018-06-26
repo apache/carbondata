@@ -206,7 +206,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     }
   }
 
-  private int generateKey(long timeValue) {
+  public int generateKey(long timeValue) {
     long time = (timeValue - cutOffTimeStamp) / granularityFactor;
     int keyValue = -1;
     if (time >= (long) Integer.MIN_VALUE && time <= (long) Integer.MAX_VALUE) {

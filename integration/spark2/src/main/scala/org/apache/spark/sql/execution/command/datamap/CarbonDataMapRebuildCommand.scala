@@ -23,7 +23,9 @@ import org.apache.spark.sql.execution.command.DataCommand
 
 import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapRebuildRDD}
+import org.apache.carbondata.events.{UpdateDataMapPostExecutionEvent, _}
 
 /**
  * Rebuild the datamaps through sync with main table data. After sync with parent table's it enables
@@ -49,7 +51,17 @@ case class CarbonDataMapRebuildCommand(
     provider.rebuild()
 
     // After rebuild successfully enable the datamap.
+    val operationContext: OperationContext = new OperationContext()
+    val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
+    val updateDataMapPreExecutionEvent: UpdateDataMapPreExecutionEvent =
+      new UpdateDataMapPreExecutionEvent(sparkSession, systemFolderLocation)
+    OperationListenerBus.getInstance().fireEvent(updateDataMapPreExecutionEvent,
+      operationContext)
     DataMapStatusManager.enableDataMap(dataMapName)
+    val updateDataMapPostExecutionEvent: UpdateDataMapPostExecutionEvent =
+      new UpdateDataMapPostExecutionEvent(sparkSession, systemFolderLocation)
+    OperationListenerBus.getInstance().fireEvent(updateDataMapPostExecutionEvent,
+      operationContext)
     Seq.empty
   }
 

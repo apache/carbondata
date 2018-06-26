@@ -128,7 +128,29 @@ Each of SQL data types are mapped into data types of SDK. Following are the mapp
 | STRING | DataTypes.STRING |
 | DECIMAL | DataTypes.createDecimalType(precision, scale) |
 
+**NOTE:**
+ Carbon Supports below logical types of AVRO.
+ a. Date
+    The date logical type represents a date within the calendar, with no reference to a particular time zone or time of day.
+    A date logical type annotates an Avro int, where the int stores the number of days from the unix epoch, 1 January 1970 (ISO calendar). 
+ b. Timestamp (millisecond precision)
+    The timestamp-millis logical type represents an instant on the global timeline, independent of a particular time zone or calendar, with a precision of one millisecond.
+    A timestamp-millis logical type annotates an Avro long, where the long stores the number of milliseconds from the unix epoch, 1 January 1970 00:00:00.000 UTC.
+ c. Timestamp (microsecond precision)
+    The timestamp-micros logical type represents an instant on the global timeline, independent of a particular time zone or calendar, with a precision of one microsecond.
+    A timestamp-micros logical type annotates an Avro long, where the long stores the number of microseconds from the unix epoch, 1 January 1970 00:00:00.000000 UTC.
+    
+    Currently the values of logical types are not validated by carbon. 
+    Expect that avro record passed by the user is already validated by avro record generator tools.   
 
+## Run SQL on files directly
+Instead of creating table and query it, you can also query that file directly with SQL.
+
+### Example
+```
+SELECT * FROM carbonfile.`$Path`
+```
+Find example code at [DirectSQLExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/DirectSQLExample.scala) in the CarbonData repo.
 ## API List
 
 ### Class org.apache.carbondata.sdk.file.CarbonWriterBuilder
@@ -343,52 +365,6 @@ public Schema(Field[] fields);
 public static Schema parseJson(String json);
 ```
 
-### Class org.apache.carbondata.core.util.CarbonProperties
-
-```
-/**
-* This method will be responsible to get the instance of CarbonProperties class
-*
-* @return carbon properties instance
-*/
-public static CarbonProperties getInstance();
-```
-
-```
-/**
-* This method will be used to add a new property
-*
-* @param key is a property name to set for carbon.
-* @param value is valid parameter corresponding to property.
-* @return CarbonProperties object
-*/
-public CarbonProperties addProperty(String key, String value);
-```
-
-```
-/**
-* This method will be used to get the property value. If property is not
-* present, then it will return the default value.
-*
-* @param key is a property name to get user specified value.
-* @return properties value for corresponding key. If not set, then returns null.
-*/
-public String getProperty(String key);
-```
-
-```
-/**
-* This method will be used to get the property value. If property is not
-* present, then it will return the default value.
-*
-* @param key is a property name to get user specified value..
-* @param defaultValue used to be returned by function if corrosponding key not set.
-* @return properties value for corresponding key. If not set, then returns specified defaultValue.
-*/
-public String getProperty(String key, String defaultValue);
-```
-Reference : [list of carbon properties](http://carbondata.apache.org/configuration-parameters.html)
-
 ### Class org.apache.carbondata.sdk.file.AvroCarbonWriter
 ```
 /**
@@ -408,17 +384,22 @@ External client can make use of this reader to read CarbonData files without Car
     String path = "./testWriteFiles";
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "age"})
+        .projection(new String[]{"stringField", "shortField", "intField", "longField", 
+                "doubleField", "boolField", "dateField", "timeField", "decimalField"})
         .build();
 
     // 2. Read data
+    long day = 24L * 3600 * 1000;
     int i = 0;
     while (reader.hasNext()) {
-      Object[] row = (Object[]) reader.readNextRow();
-      System.out.println(row[0] + "\t" + row[1]);
-      i++;
+        Object[] row = (Object[]) reader.readNextRow();
+        System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
+            i, row[0], row[1], row[2], row[3], row[4], row[5],
+            new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000), row[8]
+        ));
+        i++;
     }
-    
+
     // 3. Close this reader
     reader.close();
 ```
@@ -429,10 +410,25 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 
 ### Class org.apache.carbondata.sdk.file.CarbonReader
 ```
- /**
-  * Return a new CarbonReaderBuilder instance
-  */
+   /**
+    * Return a new {@link CarbonReaderBuilder} instance
+    *
+    * @param tablePath table store path
+    * @param tableName table name
+    * @return CarbonReaderBuilder object
+    */
   public static CarbonReaderBuilder builder(String tablePath, String tableName);
+```
+
+```
+  /**
+   * Return a new CarbonReaderBuilder instance
+   * Default value of table name is table + tablePath + time
+   *
+   * @param tablePath table path
+   * @return CarbonReaderBuilder object
+   */
+  public static CarbonReaderBuilder builder(String tablePath);
 ```
 
 ```
@@ -475,16 +471,6 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @return CarbonReaderBuilder object
    */
   public CarbonReaderBuilder projection(String[] projectionColumnNames);
-```
-
-```
-  /**
-   * Project all Columns for carbon reader
-   *
-   * @return CarbonReaderBuilder object
-   * @throws IOException
-   */
-  public CarbonReaderBuilder projectAllColumns();
 ```
 
 ```
@@ -678,3 +664,52 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ```
 
 Find S3 example code at [SDKS3Example](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/java/org/apache/carbondata/examples/sdk/SDKS3Example.java) in the CarbonData repo.
+
+
+# Common API List for CarbonReader and CarbonWriter
+
+### Class org.apache.carbondata.core.util.CarbonProperties
+
+```
+/**
+* This method will be responsible to get the instance of CarbonProperties class
+*
+* @return carbon properties instance
+*/
+public static CarbonProperties getInstance();
+```
+
+```
+/**
+* This method will be used to add a new property
+*
+* @param key is a property name to set for carbon.
+* @param value is valid parameter corresponding to property.
+* @return CarbonProperties object
+*/
+public CarbonProperties addProperty(String key, String value);
+```
+
+```
+/**
+* This method will be used to get the property value. If property is not
+* present, then it will return the default value.
+*
+* @param key is a property name to get user specified value.
+* @return properties value for corresponding key. If not set, then returns null.
+*/
+public String getProperty(String key);
+```
+
+```
+/**
+* This method will be used to get the property value. If property is not
+* present, then it will return the default value.
+*
+* @param key is a property name to get user specified value..
+* @param defaultValue used to be returned by function if corrosponding key not set.
+* @return properties value for corresponding key. If not set, then returns specified defaultValue.
+*/
+public String getProperty(String key, String defaultValue);
+```
+Reference : [list of carbon properties](http://carbondata.apache.org/configuration-parameters.html)

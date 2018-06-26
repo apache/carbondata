@@ -30,8 +30,7 @@ object CheckSPJG {
       case a: Aggregate =>
         a.child.collect {
           case Join(_, _, _, _) | Project(_, _) | Filter(_, _) |
-//               CatalogRelation(_, _, _) |
-               LogicalRelation(_, _, _) | LocalRelation(_, _) => true
+               HiveTableRelation(_, _, _) | LogicalRelation(_, _, _) | LocalRelation(_, _) => true
           case _ => false
         }.forall(identity)
       case _ => false
@@ -59,10 +58,10 @@ object LogicalPlanRule extends SignatureRule[LogicalPlan] {
       case LogicalRelation(_, _, _) =>
         // TODO: implement this (link to BaseRelation)
         None
-//      case CatalogRelation(tableMeta, _, _) =>
-//        Some(Signature(false,
-//          Set(Seq(tableMeta.database, tableMeta.identifier.table).mkString("."))))
-      case l: LocalRelation =>
+      case HiveTableRelation(tableMeta, _, _) =>
+        Some(Signature(false,
+          Set(Seq(tableMeta.database, tableMeta.identifier.table).mkString("."))))
+      case l : LocalRelation =>
         // LocalRelation is for unit test cases
         Some(Signature(groupby = false, Set(l.toString())))
       case Filter(_, _) =>

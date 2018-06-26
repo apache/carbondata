@@ -1290,11 +1290,11 @@ public final class CarbonProperties {
     String compressor = getProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
         CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT).toUpperCase();
     if (compressor.isEmpty() || "SNAPPY".equals(compressor) || "GZIP".equals(compressor)
-        || "BZIP2".equals(compressor) || "LZ4".equals(compressor)) {
+        || "BZIP2".equals(compressor) || "LZ4".equals(compressor) || "ZSTD".equals(compressor)) {
       return compressor;
     } else {
       LOGGER.warn("The ".concat(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR)
-          .concat(" configuration value is invalid. Only snappy,gzip,bip2,lz4 and")
+          .concat(" configuration value is invalid. Only snappy, gzip, bip2, lz4, zstd and")
           .concat(" empty are allowed. It will not compress the sort temp files by default"));
       return CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT;
     }
@@ -1310,6 +1310,18 @@ public final class CarbonProperties {
         CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION_DEFAULT);
     return skewedEnabled.equalsIgnoreCase("true");
   }
+
+  /**
+   * whether optimization for the node loads the minimum amount of data is enabled
+   * @return true, if enabled; false for not enabled.
+   */
+  public boolean isLoadMinSizeOptimizationEnabled() {
+    String loadMinSize = getProperty(
+            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE,
+            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE_DEFAULT);
+    return loadMinSize.equalsIgnoreCase("true");
+  }
+
   /**
    * returns true if carbon property
    * @param key
@@ -1568,5 +1580,23 @@ public final class CarbonProperties {
     } catch (NumberFormatException e) {
       return defaultValue;
     }
+  }
+
+  /**
+   * Return valid storage level for CARBON_INSERT_STORAGE_LEVEL
+   * @return String
+   */
+  public String getInsertIntoDatasetStorageLevel() {
+    String storageLevel = getProperty(CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL,
+        CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT);
+    boolean validateStorageLevel = CarbonUtil.isValidStorageLevel(storageLevel);
+    if (!validateStorageLevel) {
+      LOGGER.warn("The " + CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL
+          + " configuration value is invalid. It will use default storage level("
+          + CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT
+          + ") to persist dataset.");
+      storageLevel = CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT;
+    }
+    return storageLevel.toUpperCase();
   }
 }

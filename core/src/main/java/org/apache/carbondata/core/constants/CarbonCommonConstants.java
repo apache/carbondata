@@ -718,6 +718,11 @@ public final class CarbonCommonConstants {
   public static final String DEFAULT_ENABLE_AUTO_LOAD_MERGE = "false";
 
   /**
+   * DEFAULT_FLAT_FOLDER
+   */
+  public static final String DEFAULT_FLAT_FOLDER = "false";
+
+  /**
    * ZOOKEEPER_ENABLE_LOCK if this is set to true then zookeeper will be used to handle locking
    * mechanism of carbon
    */
@@ -866,6 +871,7 @@ public final class CarbonCommonConstants {
    * to run load and insert queries on source table concurrently then user can enable this flag
    */
   @CarbonProperty
+  @InterfaceStability.Evolving
   public static final String CARBON_INSERT_PERSIST_ENABLED = "carbon.insert.persist.enable";
 
   /**
@@ -873,6 +879,27 @@ public final class CarbonCommonConstants {
 
    */
   public static final String CARBON_INSERT_PERSIST_ENABLED_DEFAULT = "false";
+
+  /**
+   * Which storage level to persist dataset when insert into data
+   * with 'carbon.insert.persist.enable'='true'
+   */
+  @CarbonProperty
+  @InterfaceStability.Evolving
+  public static final String CARBON_INSERT_STORAGE_LEVEL =
+      "carbon.insert.storage.level";
+
+  /**
+   * The default value(MEMORY_AND_DISK) is the same as the default storage level of Dataset.
+   * Unlike `RDD.cache()`, the default storage level is set to be `MEMORY_AND_DISK` because
+   * recomputing the in-memory columnar representation of the underlying table is expensive.
+   *
+   * if user's executor has less memory, set the CARBON_INSERT_STORAGE_LEVEL
+   * to MEMORY_AND_DISK_SER or other storage level to correspond to different environment.
+   * You can get more recommendations about storage level in spark website:
+   * http://spark.apache.org/docs/latest/rdd-programming-guide.html#rdd-persistence.
+   */
+  public static final String CARBON_INSERT_STORAGE_LEVEL_DEFAULT = "MEMORY_AND_DISK";
 
   /**
    * default name of data base
@@ -883,6 +910,38 @@ public final class CarbonCommonConstants {
   public static final String COLUMN_GROUPS = "column_groups";
   public static final String DICTIONARY_EXCLUDE = "dictionary_exclude";
   public static final String DICTIONARY_INCLUDE = "dictionary_include";
+  public static final String LONG_STRING_COLUMNS = "long_string_columns";
+
+  /**
+   * Table property to enable or disable local dictionary generation
+   */
+  public static final String LOCAL_DICTIONARY_ENABLE = "local_dictionary_enable";
+
+  /**
+   * default value for local dictionary generation
+   */
+  public static final String LOCAL_DICTIONARY_ENABLE_DEFAULT = "true";
+
+  /**
+   * Threshold value for local dictionary
+   */
+  public static final String LOCAL_DICTIONARY_THRESHOLD = "local_dictionary_threshold";
+
+  /**
+   * default value for local dictionary
+   */
+  public static final String LOCAL_DICTIONARY_THRESHOLD_DEFAULT = "1000";
+
+  /**
+   * Table property to specify the columns for which local dictionary needs to be generated.
+   */
+  public static final String LOCAL_DICTIONARY_INCLUDE = "local_dictionary_include";
+
+  /**
+   * Table property to specify the columns for which local dictionary should not be to be generated.
+   */
+  public static final String LOCAL_DICTIONARY_EXCLUDE = "local_dictionary_exclude";
+
   /**
    * key for dictionary path
    */
@@ -907,6 +966,9 @@ public final class CarbonCommonConstants {
   public static final String TABLE_COMPACTION_PRESERVE_SEGMENTS = "compaction_preserve_segments";
   // table property name of allowed compaction days while compaction
   public static final String TABLE_ALLOWED_COMPACTION_DAYS = "allowed_compaction_days";
+  // Flat folder support on table. when it is true all carbondata files store directly under table
+  // path instead of sub folders.
+  public static final String FLAT_FOLDER = "flat_folder";
 
   /**
    * 16 mb size
@@ -1094,6 +1156,7 @@ public final class CarbonCommonConstants {
    * to determine to use the rdd persist or not.
    */
   @CarbonProperty
+  @InterfaceStability.Evolving
   public static final String isPersistEnabled = "carbon.update.persist.enable";
 
   /**
@@ -1117,6 +1180,7 @@ public final class CarbonCommonConstants {
    * with 'carbon.update.persist.enable'='true'
    */
   @CarbonProperty
+  @InterfaceStability.Evolving
   public static final String CARBON_UPDATE_STORAGE_LEVEL =
       "carbon.update.storage.level";
 
@@ -1346,7 +1410,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SORT_TEMP_COMPRESSOR = "carbon.sort.temp.compressor";
 
   /**
-   * The optional values are 'SNAPPY','GZIP','BZIP2','LZ4'.
+   * The optional values are 'SNAPPY','GZIP','BZIP2','LZ4','ZSTD'.
    * By default, empty means that Carbondata will not compress the sort temp files.
    */
   public static final String CARBON_SORT_TEMP_COMPRESSOR_DEFAULT = "";
@@ -1354,6 +1418,7 @@ public final class CarbonCommonConstants {
    * Which storage level to persist rdd when sort_scope=global_sort
    */
   @CarbonProperty
+  @InterfaceStability.Evolving
   public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL =
       "carbon.global.sort.rdd.storage.level";
 
@@ -1568,6 +1633,8 @@ public final class CarbonCommonConstants {
   // As Short data type is used for storing the length of a column during data processing hence
   // the maximum characters that can be supported should be less than Short max value
   public static final int MAX_CHARS_PER_COLUMN_DEFAULT = 32000;
+  // todo: use infinity first, will switch later
+  public static final int MAX_CHARS_PER_COLUMN_INFINITY = -1;
 
   /**
    * Enabling page level reader for compaction reduces the memory usage while compacting more
@@ -1656,6 +1723,18 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_MODE_ENABLE = "carbon.search.enabled";
 
   public static final String CARBON_SEARCH_MODE_ENABLE_DEFAULT = "false";
+
+  /**
+   * It's timeout threshold of carbon search query
+   */
+  @CarbonProperty
+  @InterfaceStability.Unstable
+  public static final String CARBON_SEARCH_QUERY_TIMEOUT = "carbon.search.query.timeout";
+
+  /**
+   * Default value is 10 seconds
+   */
+  public static final String CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT = "10s";
 
   /**
    * The size of thread pool used for reading files in Work for search mode. By default,
@@ -1748,6 +1827,18 @@ public final class CarbonCommonConstants {
   public static final String CARBON_LUCENE_INDEX_STOP_WORDS = "carbon.lucene.index.stop.words";
 
   public static final String CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT = "false";
+
+  /**
+   * The node loads the smallest amount of data
+   */
+  @CarbonProperty
+  public static final String CARBON_LOAD_MIN_SIZE_INMB = "load_min_size_inmb";
+  public static final String CARBON_LOAD_MIN_NODE_SIZE_INMB_DEFAULT = "256";
+
+  /**
+   *  the node minimum load data default value
+   */
+  public static final int CARBON_LOAD_MIN_SIZE_DEFAULT = 256;
 
   private CarbonCommonConstants() {
   }

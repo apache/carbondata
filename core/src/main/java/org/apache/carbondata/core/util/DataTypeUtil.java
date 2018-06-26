@@ -417,6 +417,18 @@ public final class DataTypeUtil {
     }
   }
 
+  /**
+   * Returns true for fixed length DataTypes.
+   * @param dataType
+   * @return
+   */
+  public static boolean isFixedSizeDataType(DataType dataType) {
+    if (dataType == DataTypes.STRING || DataTypes.isDecimal(dataType)) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 
   /**
    * Below method will be used to convert the data passed to its actual data
@@ -856,6 +868,8 @@ public final class DataTypeUtil {
       return DataTypes.FLOAT;
     } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(name)) {
       return DataTypes.DOUBLE;
+    } else if (DataTypes.VARCHAR.getName().equalsIgnoreCase(name)) {
+      return DataTypes.VARCHAR;
     } else if (DataTypes.NULL.getName().equalsIgnoreCase(name)) {
       return DataTypes.NULL;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
@@ -904,6 +918,8 @@ public final class DataTypeUtil {
       return DataTypes.FLOAT;
     } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.DOUBLE;
+    } else if (DataTypes.VARCHAR.getName().equalsIgnoreCase(dataType.getName())) {
+      return DataTypes.VARCHAR;
     } else if (DataTypes.NULL.getName().equalsIgnoreCase(dataType.getName())) {
       return DataTypes.NULL;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(dataType.getName())) {

@@ -68,7 +68,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop datamap datamap_tpcds3")
   }
 
-  test("test create datamap with tpcds_1_4_testCases case_4") {
+  ignore("test create datamap with tpcds_1_4_testCases case_4") {
     sql(s"drop datamap if exists datamap_tpcds4")
     sql(s"create datamap datamap_tpcds4 using 'mv' as ${tpcds_1_4_testCases(3)._2}")
     sql(s"rebuild datamap datamap_tpcds4")

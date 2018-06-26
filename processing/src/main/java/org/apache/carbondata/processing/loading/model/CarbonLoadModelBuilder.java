@@ -270,6 +270,8 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setMaxColumns(String.valueOf(validatedMaxColumns));
     carbonLoadModel.readAndSetLoadMetadataDetails();
     carbonLoadModel.setSortColumnsBoundsStr(optionsFinal.get("sort_column_bounds"));
+    carbonLoadModel.setLoadMinSize(
+        optionsFinal.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB));
   }
 
   private int validateMaxColumns(String[] csvHeaders, String maxColumns)

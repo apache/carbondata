@@ -22,12 +22,13 @@ import java.util.List
 import java.util.concurrent.ExecutorService
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.readcommitter.{ReadCommittedScope, TableStatusReadCommittedScope}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
@@ -156,7 +157,18 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         carbonMergerMapping,
         mergedLoadName)
     OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
-
+    // Add pre event listener for index datamap
+    val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable)
+    val dataMapOperationContext = new OperationContext()
+    if (null != tableDataMaps) {
+      val dataMapNames: mutable.Buffer[String] =
+        tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
+      val dataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
+        new BuildDataMapPreExecutionEvent(sqlContext.sparkSession,
+        carbonTable.getAbsoluteTableIdentifier, dataMapNames)
+      OperationListenerBus.getInstance().fireEvent(dataMapPreExecutionEvent,
+        dataMapOperationContext)
+    }
     var execInstance = "1"
     // in case of non dynamic executor allocation, number of executors are fixed.
     if (sc.sparkContext.getConf.contains("spark.executor.instances")) {
@@ -223,7 +235,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
           val segmentFilesList = loadsToMerge.asScala.map{seg =>
             val file = SegmentFileStore.writeSegmentFile(
-              carbonTable.getTablePath,
+              carbonTable,
               seg.getLoadName,
               carbonLoadModel.getFactTimeStamp.toString)
             new Segment(seg.getLoadName, file)
@@ -231,7 +243,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           segmentFilesForIUDCompact = new util.ArrayList[Segment](segmentFilesList)
         } else {
           segmentFileName = SegmentFileStore.writeSegmentFile(
-            carbonTable.getTablePath,
+            carbonTable,
             mergedLoadNumber,
             carbonLoadModel.getFactTimeStamp.toString)
         }
@@ -272,6 +284,13 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         mergedLoadName)
       OperationListenerBus.getInstance()
         .fireEvent(compactionLoadStatusPostEvent, operationContext)
+      if (null != tableDataMaps) {
+        val buildDataMapPostExecutionEvent: BuildDataMapPostExecutionEvent =
+          new BuildDataMapPostExecutionEvent(sqlContext.sparkSession,
+            carbonTable.getAbsoluteTableIdentifier)
+        OperationListenerBus.getInstance()
+          .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
+      }
       val commitDone = operationContext.getProperty("commitComplete")
       val commitComplete = if (null != commitDone) {
         commitDone.toString.toBoolean

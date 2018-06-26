@@ -63,7 +63,8 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
   public RowResultMergerProcessor(String databaseName,
       String tableName, SegmentProperties segProp, String[] tempStoreLocation,
-      CarbonLoadModel loadModel, CompactionType compactionType, PartitionSpec partitionSpec) {
+      CarbonLoadModel loadModel, CompactionType compactionType, PartitionSpec partitionSpec)
+      throws IOException {
     this.segprop = segProp;
     this.partitionSpec = partitionSpec;
     this.loadModel = loadModel;
@@ -84,6 +85,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
             tempStoreLocation, carbonStoreLocation);
     setDataFileAttributesInModel(loadModel, compactionType, carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setCompactionFlow(true);
+    carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
   }
 

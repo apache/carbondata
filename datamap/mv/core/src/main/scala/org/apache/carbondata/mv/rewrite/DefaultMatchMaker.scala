@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+
 package org.apache.carbondata.mv.rewrite
 
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Expression, PredicateHelper, _}
@@ -444,23 +445,40 @@ object GroupbyGroupbySelectOnlyChildDelta extends DefaultMatchPattern with Predi
         if (isGroupingEdR && ((!needRegrouping && isAggEmR) || needRegrouping) && canPullup) {
           // pull up
           val pullupOutputList = gb_2a.outputList.map(_.toAttribute) ++ rejoinOutputList
-          val sel_2c1 = sel_1c1.copy(
-            outputList = pullupOutputList,
-            inputList = pullupOutputList,
-            children = sel_1c1.children.map {
-              case s: Select => gb_2a
-              case other => other })
+          val myOutputList = gb_2a.outputList.filter {
+            case alias: Alias => gb_2q.outputList.filter(_.isInstanceOf[Alias])
+              .exists(_.asInstanceOf[Alias].child.semanticEquals(alias.child))
+            case attr: Attribute => gb_2q.outputList.exists(_.semanticEquals(attr))
+          }.map(_.toAttribute) ++ rejoinOutputList
+          // TODO: find out if we really need to check needRegrouping or just use myOutputList
+          val sel_2c1 = if (needRegrouping) {
+            sel_1c1
+              .copy(outputList = pullupOutputList,
+                inputList = pullupOutputList,
+                children = sel_1c1.children
+                  .map { _ match { case s: modular.Select => gb_2a; case other => other } })
+          } else {
+            sel_1c1
+              .copy(outputList = myOutputList,
+                inputList = pullupOutputList,
+                children = sel_1c1.children
+                  .map { _ match { case s: modular.Select => gb_2a; case other => other } })
+          }
+          // sel_1c1.copy(outputList = pullupOutputList, inputList = pullupOutputList, children =
+          // sel_1c1.children.map { _ match { case s: modular.Select => gb_2a; case other =>
+          // other } })
 
           if (rejoinOutputList.isEmpty) {
             val aliasMap = AttributeMap(gb_2a.outputList.collect {
-              case a: Alias => (a.toAttribute, a) })
+              case a: Alias => (a.toAttribute, a)
+            })
             Utils.tryMatch(gb_2a, gb_2q, aliasMap).flatMap {
               case g: GroupBy => Some(g.copy(child = sel_2c1));
               case _ => None
             }.map { wip =>
               factorOutSubsumer(wip, gb_2a, sel_1c1.aliasMap)
             }.map(Seq(_))
-             .getOrElse(Nil)
+              .getOrElse(Nil)
           }
           // TODO: implement regrouping with 1:N rejoin (rejoin tables being the "1" side)
           // via catalog service

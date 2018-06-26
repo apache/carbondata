@@ -53,6 +53,7 @@ import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
+import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypeAdapter;
@@ -2208,6 +2209,7 @@ public final class CarbonUtil {
       org.apache.carbondata.format.ColumnSchema externalColumnSchema) {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
+    wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
     wrapperColumnSchema.setColumnar(externalColumnSchema.isColumnar());
     DataType dataType = thriftDataTyopeToWrapperDataType(externalColumnSchema.data_type);
@@ -2307,6 +2309,8 @@ public final class CarbonUtil {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+      case VARCHAR:
+        return DataTypes.VARCHAR;
       default:
         return DataTypes.STRING;
     }
@@ -2368,6 +2372,35 @@ public final class CarbonUtil {
 
     tableInfo.setDataMapSchemas(null);
     return tableInfo;
+  }
+
+  /**
+   * This method will prepare dummy tableInfo
+   *
+   * @param carbonDataFilePath
+   * @param tableName
+   * @return
+   */
+  public static TableInfo buildDummyTableInfo(String carbonDataFilePath,
+      String tableName, String dbName) {
+    // During SDK carbon Reader, This method will be called.
+    // This API will avoid IO operation to get the columnSchema list.
+    // ColumnSchema list will be filled during blocklet loading (where actual IO happens)
+    List<ColumnSchema> columnSchemaList = new ArrayList<>();
+    TableSchema tableSchema = getDummyTableSchema(tableName,columnSchemaList);
+    ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
+        new ThriftWrapperSchemaConverterImpl();
+    org.apache.carbondata.format.TableSchema thriftFactTable =
+        thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
+    org.apache.carbondata.format.TableInfo tableInfo =
+        new org.apache.carbondata.format.TableInfo(thriftFactTable,
+            new ArrayList<org.apache.carbondata.format.TableSchema>());
+    tableInfo.setDataMapSchemas(null);
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+        tableInfo, dbName, tableName, carbonDataFilePath);
+    wrapperTableInfo.setTransactionalTable(false);
+    return wrapperTableInfo;
   }
 
   /**
@@ -2468,8 +2501,10 @@ public final class CarbonUtil {
       return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return (byte[]) value;
-    } else if (dataType == DataTypes.STRING || dataType == DataTypes.TIMESTAMP ||
-        dataType == DataTypes.DATE) {
+    } else if (dataType == DataTypes.STRING
+        || dataType == DataTypes.TIMESTAMP
+        || dataType == DataTypes.DATE
+        || dataType == DataTypes.VARCHAR) {
       return (byte[]) value;
     } else {
       throw new IllegalArgumentException("Invalid data type: " + dataType);
@@ -2688,27 +2723,30 @@ public final class CarbonUtil {
       throws IOException {
     long carbonDataSize = 0L;
     long carbonIndexSize = 0L;
-    List<String> listOfFilesRead = new ArrayList<>();
     HashMap<String, Long> dataAndIndexSize = new HashMap<String, Long>();
-    if (fileStore.getLocationMap() != null) {
+    Map<String, SegmentFileStore.FolderDetails> locationMap = fileStore.getLocationMap();
+    if (locationMap != null) {
       fileStore.readIndexFiles();
-      Map<String, String> indexFiles = fileStore.getIndexFiles();
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
-      for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
-        // get the size of carbonindex file
-        String indexFile = entry.getKey();
-        String mergeIndexFile = indexFiles.get(indexFile);
-        if (null != mergeIndexFile) {
-          String mergeIndexPath = indexFile
-              .substring(0, indexFile.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1)
-              + mergeIndexFile;
-          if (!listOfFilesRead.contains(mergeIndexPath)) {
-            carbonIndexSize += FileFactory.getCarbonFile(mergeIndexPath).getSize();
-            listOfFilesRead.add(mergeIndexPath);
-          }
-        } else {
-          carbonIndexSize += FileFactory.getCarbonFile(indexFile).getSize();
+      // get the size of carbonindex file
+      for (Map.Entry<String, SegmentFileStore.FolderDetails> entry : locationMap.entrySet()) {
+        SegmentFileStore.FolderDetails folderDetails = entry.getValue();
+        Set<String> carbonindexFiles = folderDetails.getFiles();
+        String mergeFileName = folderDetails.getMergeFileName();
+        if (null != mergeFileName) {
+          String mergeIndexPath =
+              fileStore.getTablePath() + entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR
+                  + mergeFileName;
+          carbonIndexSize += FileFactory.getCarbonFile(mergeIndexPath).getSize();
         }
+        for (String indexFile : carbonindexFiles) {
+          String indexPath =
+              fileStore.getTablePath() + entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR
+                  + indexFile;
+          carbonIndexSize += FileFactory.getCarbonFile(indexPath).getSize();
+        }
+      }
+      for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
         // get the size of carbondata files
         for (String blockFile : entry.getValue()) {
           carbonDataSize += FileFactory.getCarbonFile(blockFile).getSize();
@@ -2939,24 +2977,28 @@ public final class CarbonUtil {
    * @return
    */
   public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
-      String segmentId, boolean isTransactionalTable) {
+      String segmentId, boolean isTransactionalTable, boolean isPartitionTable) {
     String blockId;
     String blockName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
     String tablePath = identifier.getTablePath();
 
     if (filePath.startsWith(tablePath)) {
-      String factDir = CarbonTablePath.getFactDir(tablePath);
-      if (filePath.startsWith(factDir) || !isTransactionalTable) {
+      if (!isTransactionalTable || !isPartitionTable) {
         blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
             + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       } else {
         // This is the case with partition table.
-        String partitionDir =
-            filePath.substring(tablePath.length() + 1, filePath.length() - blockName.length() - 1);
-
+        String partitionDir;
+        if (tablePath.length() + 1 < filePath.length() - blockName.length() - 1) {
+          partitionDir =
+              filePath.substring(tablePath.length() + 1,
+                  filePath.length() - blockName.length() - 1);
+        } else {
+          partitionDir = "";
+        }
         // Replace / with # on partition director to support multi level partitioning. And access
         // them all as a single entity.
-        blockId = partitionDir.replace("/", "#") + CarbonCommonConstants.FILE_SEPARATOR + "Segment_"
+        blockId = partitionDir.replace("/", "#") + CarbonCommonConstants.FILE_SEPARATOR
             + segmentId + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       }
     } else {
@@ -2966,5 +3008,112 @@ public final class CarbonUtil {
     }
     return blockId;
   }
-}
 
+  /**
+   * sets the local dictionary columns to wrapper schema, if the table property
+   * local_dictionary_include is defined, then those columns will be set as local dictionary
+   * columns, if not, all the no dictionary string datatype columns are set as local dictionary
+   * columns.
+   * Handling for complexTypes::
+   *    Since the column structure will be flat
+   *    if the parent column is configured as local Dictionary column, then it gets the child column
+   *    count and then sets the primitive child column as local dictionary column if it is string
+   *    datatype column
+   * Handling for both localDictionary Include and exclude columns:
+   * There will be basically four scenarios which are
+   * -------------------------------------------------------
+   * | Local_Dictionary_include | Local_Dictionary_Exclude |
+   * -------------------------------------------------------
+   * |   Not Defined            |     Not Defined          |
+   * |   Not Defined            |      Defined             |
+   * |   Defined                |     Not Defined          |
+   * |   Defined                |      Defined             |
+   * -------------------------------------------------------
+   * 1. when the both local dictionary include and exclude is not defined, then set all the no
+   * dictionary string datatype columns as local dictionary generate columns
+   * 2. set all the no dictionary string datatype columns as local dictionary columns except the
+   * columns present in local dictionary exclude
+   * 3. & 4. when local dictionary include is defined, no need to check dictionary exclude columns
+   * configured or not, we just need to set only the columns present in local dictionary include as
+   * local dictionary columns
+   *
+   * @param columns
+   * @param mainTableProperties
+   */
+  public static void setLocalDictColumnsToWrapperSchema(List<ColumnSchema> columns,
+      Map<String, String> mainTableProperties) {
+    String isLocalDictEnabledForMainTable =
+        mainTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
+    String localDictIncludeColumnsOfMainTable =
+        mainTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE);
+    String localDictExcludeColumnsOfMainTable =
+        mainTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE);
+    String[] listOfDictionaryIncludeColumns = null;
+    String[] listOfDictionaryExcludeColumns = null;
+    if (null != isLocalDictEnabledForMainTable && Boolean
+        .parseBoolean(isLocalDictEnabledForMainTable)) {
+      int childColumnCount = 0;
+      for (ColumnSchema column : columns) {
+        // for complex type columns, user gives the parent column as local dictionary column and
+        // only the string primitive type child column will be set as local dictionary column in the
+        // schema
+        if (childColumnCount > 0) {
+          if (column.getDataType().equals(DataTypes.STRING)) {
+            column.setLocalDictColumn(true);
+            childColumnCount -= 1;
+          } else {
+            childColumnCount -= 1;
+          }
+        }
+        // if complex column is defined in local dictionary include column, then get the child
+        // columns and set the string datatype child type as local dictionary column
+        if (column.getNumberOfChild() > 0 && null != localDictIncludeColumnsOfMainTable) {
+          listOfDictionaryIncludeColumns = localDictIncludeColumnsOfMainTable.split(",");
+          for (String dictColumn : listOfDictionaryIncludeColumns) {
+            if (dictColumn.trim().equalsIgnoreCase(column.getColumnName())) {
+              childColumnCount = column.getNumberOfChild();
+            }
+          }
+        }
+        if (null == localDictIncludeColumnsOfMainTable) {
+          // if local dictionary exclude columns is not defined, then set all the no dictionary
+          // string datatype column
+          if (null == localDictExcludeColumnsOfMainTable) {
+            // column should be no dictionary string datatype column
+            if (column.isDimensionColumn() && column.getDataType().equals(DataTypes.STRING)
+                && !column.hasEncoding(Encoding.DICTIONARY)) {
+              column.setLocalDictColumn(true);
+            }
+            // if local dictionary exclude columns is defined, then set for all no dictionary string
+            // datatype columns except excluded columns
+          } else {
+            if (column.isDimensionColumn() && column.getDataType().equals(DataTypes.STRING)
+                && !column.hasEncoding(Encoding.DICTIONARY)) {
+              listOfDictionaryExcludeColumns = localDictExcludeColumnsOfMainTable.split(",");
+              for (String excludeDictColumn : listOfDictionaryExcludeColumns) {
+                if (!excludeDictColumn.trim().equalsIgnoreCase(column.getColumnName())) {
+                  column.setLocalDictColumn(true);
+                }
+              }
+            }
+          }
+        } else {
+          // if local dict columns alre not configured, set for all no dictionary string datatype
+          // column
+          if (column.isDimensionColumn() && column.getDataType().equals(DataTypes.STRING) && !column
+              .hasEncoding(Encoding.DICTIONARY) && localDictIncludeColumnsOfMainTable.toLowerCase()
+              .contains(column.getColumnName().toLowerCase())) {
+            if (null == listOfDictionaryIncludeColumns) {
+              listOfDictionaryIncludeColumns = localDictIncludeColumnsOfMainTable.split(",");
+            }
+            for (String dictColumn : listOfDictionaryIncludeColumns) {
+              if (dictColumn.trim().equalsIgnoreCase(column.getColumnName())) {
+                column.setLocalDictColumn(true);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -53,8 +53,9 @@ case class CarbonInsertIntoCommand(
     val df =
       if (isPersistRequired) {
         LOGGER.info("Persist enabled for Insert operation")
-        Dataset.ofRows(sparkSession, child)
-          .persist(StorageLevel.MEMORY_AND_DISK)
+        Dataset.ofRows(sparkSession, child).persist(
+          StorageLevel.fromString(
+            CarbonProperties.getInstance.getInsertIntoDatasetStorageLevel))
       } else {
         Dataset.ofRows(sparkSession, child)
       }

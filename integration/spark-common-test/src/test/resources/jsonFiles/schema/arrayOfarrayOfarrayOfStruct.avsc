@@ -1,0 +1,42 @@
+{
+"name": "address",
+"type": "record",
+"fields": [
+	{
+		"name": "name",
+		"type": "string"
+	},
+	{
+		"name": "age",
+		"type": "int"
+	},
+	{
+		"name": "BuildNum",
+		"type": {
+			"type": "array",
+			"items": {
+				"name": "FloorNum",
+				"type": "array",
+				"items": {
+					"name": "doorNum",
+					"type": "array",
+					"items": {
+						"name": "my_address",
+						"type": "record",
+						"fields": [
+							{
+								"name": "street",
+								"type": "string"
+							},
+							{
+								"name": "city",
+								"type": "string"
+							}
+						]
+					}
+				}
+			}
+		}
+	}
+]
+} 

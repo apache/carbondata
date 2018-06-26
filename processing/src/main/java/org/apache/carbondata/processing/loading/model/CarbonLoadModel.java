@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -83,7 +84,7 @@ public class CarbonLoadModel implements Serializable {
   /**
    * load Id
    */
-  private String segmentId;
+  private Segment segment;
 
   private String allDictPath;
 
@@ -207,9 +208,19 @@ public class CarbonLoadModel implements Serializable {
   private boolean isLoadWithoutConverterStep;
 
   /**
+   * To identify the suitable input processor step for json file loading.
+   */
+  private boolean isJsonFileLoad;
+
+  /**
    * Flder path to where data should be written for this load.
    */
   private String dataWritePath;
+
+  /**
+   * sort columns bounds
+   */
+  private String loadMinSize;
 
   private List<String> mergedSegmentIds;
 
@@ -388,6 +399,14 @@ public class CarbonLoadModel implements Serializable {
     this.sortColumnsBoundsStr = sortColumnsBoundsStr;
   }
 
+  public String getLoadMinSize() {
+    return loadMinSize;
+  }
+
+  public void setLoadMinSize(String loadMinSize) {
+    this.loadMinSize = loadMinSize;
+  }
+
   /**
    * Get copy with taskNo.
    * Broadcast value is shared in process, so we need to copy it to make sure the value in each
@@ -411,7 +430,7 @@ public class CarbonLoadModel implements Serializable {
     copy.blocksID = blocksID;
     copy.taskNo = taskNo;
     copy.factTimeStamp = factTimeStamp;
-    copy.segmentId = segmentId;
+    copy.segment = segment;
     copy.serializationNullFormat = serializationNullFormat;
     copy.badRecordsLoggerEnable = badRecordsLoggerEnable;
     copy.badRecordsAction = badRecordsAction;
@@ -439,6 +458,7 @@ public class CarbonLoadModel implements Serializable {
     copy.badRecordsLocation = badRecordsLocation;
     copy.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
     copy.sortColumnsBoundsStr = sortColumnsBoundsStr;
+    copy.loadMinSize = loadMinSize;
     return copy;
   }
 
@@ -465,7 +485,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.blocksID = blocksID;
     copyObj.taskNo = taskNo;
     copyObj.factTimeStamp = factTimeStamp;
-    copyObj.segmentId = segmentId;
+    copyObj.segment = segment;
     copyObj.serializationNullFormat = serializationNullFormat;
     copyObj.badRecordsLoggerEnable = badRecordsLoggerEnable;
     copyObj.badRecordsAction = badRecordsAction;
@@ -492,6 +512,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.badRecordsLocation = badRecordsLocation;
     copyObj.isAggLoadRequest = isAggLoadRequest;
     copyObj.sortColumnsBoundsStr = sortColumnsBoundsStr;
+    copyObj.loadMinSize = loadMinSize;
     return copyObj;
   }
 
@@ -594,14 +615,24 @@ public class CarbonLoadModel implements Serializable {
    * @return load Id
    */
   public String getSegmentId() {
-    return segmentId;
+    if (segment != null) {
+      return segment.getSegmentNo();
+    } else {
+      return null;
+    }
   }
 
   /**
    * @param segmentId
    */
   public void setSegmentId(String segmentId) {
-    this.segmentId = segmentId;
+    if (segmentId != null) {
+      this.segment = Segment.toSegment(segmentId);
+    }
+  }
+
+  public Segment getSegment() {
+    return segment;
   }
 
   /**
@@ -822,6 +853,14 @@ public class CarbonLoadModel implements Serializable {
 
   public void setLoadWithoutConverterStep(boolean loadWithoutConverterStep) {
     isLoadWithoutConverterStep = loadWithoutConverterStep;
+  }
+
+  public boolean isJsonFileLoad() {
+    return isJsonFileLoad;
+  }
+
+  public void setJsonFileLoad(boolean isJsonFileLoad) {
+    this.isJsonFileLoad = isJsonFileLoad;
   }
 
   public String getDataWritePath() {

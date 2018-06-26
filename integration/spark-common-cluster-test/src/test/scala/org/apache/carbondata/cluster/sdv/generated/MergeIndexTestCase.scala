@@ -18,12 +18,16 @@
 
 package org.apache.carbondata.cluster.sdv.generated
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -93,35 +97,36 @@ class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
     val table = CarbonMetadata.getInstance().getCarbonTable("default","carbon_automation_nonmerge")
     new CarbonIndexFileMergeWriter(table).mergeCarbonIndexFilesOfSegment("0.1", table.getTablePath, false)
     assert(getIndexFileCount("default", "carbon_automation_nonmerge", "0.1") == 0)
-    assert(getMergedIndexFileCount("default", "carbon_automation_nonmerge", "0.1") == 1)
+    assert(getIndexFileCount("default", "carbon_automation_nonmerge", "0.1", true) >= 1)
     checkAnswer(sql("""Select count(*) from carbon_automation_nonmerge"""), rows)
   }
 
-  private def getIndexFileCount(dbName: String, tableName: String, segment: String): Int = {
-    getFileCount(dbName, tableName, segment, CarbonTablePath.INDEX_FILE_EXT)
-  }
-
-  private def getMergedIndexFileCount(dbName: String, tableName: String, segment: String): Int = {
-    getFileCount(dbName, tableName, segment, CarbonTablePath.MERGE_INDEX_FILE_EXT)
-  }
-
-  private def getFileCount(dbName: String,
-      tableName: String,
-      segment: String,
-      suffix: String): Int = {
+  private def getIndexFileCount(dbName: String, tableName: String, segmentNo: String, mergeIndexCount: Boolean = false): Int = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName, tableName)
-    val identifier = carbonTable.getAbsoluteTableIdentifier
-    val path = CarbonTablePath
-      .getSegmentPath(identifier.getTablePath, segment)
-    val carbonFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = {
-        file.getName.endsWith(suffix)
-      }
-    })
-    if (carbonFiles != null) {
-      carbonFiles.length
+    val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentNo)
+    if (FileFactory.isFileExist(segmentDir)) {
+      val map = new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir)
+      map.asScala.map { f =>
+        if (f._2 == null) {
+          1
+        } else {
+          if (mergeIndexCount) 1 else 0
+        }
+      }.sum
     } else {
-      0
+      val segment = Segment.getSegment(segmentNo, carbonTable.getTablePath)
+      if (segment != null) {
+        val store = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
+        store.getSegmentFile.getLocationMap.values().asScala.map { f =>
+          if (f.getMergeFileName == null) {
+            f.getFiles.size()
+          } else {
+            if (mergeIndexCount) 1 else 0
+          }
+        }.sum
+      } else {
+        0
+      }
     }
   }
 }

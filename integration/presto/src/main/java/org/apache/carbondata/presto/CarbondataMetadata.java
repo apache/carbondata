@@ -17,26 +17,51 @@
 
 package org.apache.carbondata.presto;
 
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.presto.impl.CarbonTableReader;
-import com.facebook.presto.spi.*;
-import com.facebook.presto.spi.connector.ConnectorMetadata;
-import com.facebook.presto.spi.type.*;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import javax.inject.Inject;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.presto.impl.CarbonTableReader;
 
-import javax.inject.Inject;
-import java.util.*;
+import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.ColumnMetadata;
+import com.facebook.presto.spi.ConnectorSession;
+import com.facebook.presto.spi.ConnectorTableHandle;
+import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorTableLayoutHandle;
+import com.facebook.presto.spi.ConnectorTableLayoutResult;
+import com.facebook.presto.spi.ConnectorTableMetadata;
+import com.facebook.presto.spi.Constraint;
+import com.facebook.presto.spi.SchemaNotFoundException;
+import com.facebook.presto.spi.SchemaTableName;
+import com.facebook.presto.spi.SchemaTablePrefix;
+import com.facebook.presto.spi.connector.ConnectorMetadata;
+import com.facebook.presto.spi.type.BigintType;
+import com.facebook.presto.spi.type.BooleanType;
+import com.facebook.presto.spi.type.DateType;
+import com.facebook.presto.spi.type.DecimalType;
+import com.facebook.presto.spi.type.DoubleType;
+import com.facebook.presto.spi.type.IntegerType;
+import com.facebook.presto.spi.type.SmallintType;
+import com.facebook.presto.spi.type.TimestampType;
+import com.facebook.presto.spi.type.Type;
+import com.facebook.presto.spi.type.VarcharType;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
-import static org.apache.carbondata.presto.Types.checkType;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
+import static org.apache.carbondata.presto.Types.checkType;
 
 public class CarbondataMetadata implements ConnectorMetadata {
   private final String connectorId;
@@ -113,8 +138,13 @@ public class CarbondataMetadata implements ConnectorMetadata {
     List<CarbonColumn> carbonColumns = carbonTable.getCreateOrderColumn(schemaTableName.getTableName());
     for (CarbonColumn col : carbonColumns) {
       //show columns command will return these data
-      Type columnType = carbonDataType2SpiMapper(col.getColumnSchema());
-      ColumnMetadata columnMeta = new ColumnMetadata(col.getColumnSchema().getColumnName(), columnType);
+      ColumnSchema columnSchema = col.getColumnSchema();
+      Type columnType = carbonDataType2SpiMapper(columnSchema);
+      String extraValues =
+          columnSchema.getEncodingList().stream().map(encoding -> encoding.toString() + " ")
+              .reduce("", String::concat);
+      ColumnMetadata columnMeta =
+          new ColumnMetadata(columnSchema.getColumnName(), columnType, "", extraValues, false);
       columnsMetaList.add(columnMeta);
     }
 
@@ -146,22 +176,22 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
       Type spiType = carbonDataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
-          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, column.getSchemaOrdinal(),
-              column.getKeyOrdinal(), column.getColumnGroupOrdinal(), false, cs.getColumnGroupId(),
-              cs.getColumnUniqueId(), cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
+          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType,
+              column.getSchemaOrdinal(), column.getKeyOrdinal(), column.getColumnGroupOrdinal(),
+              false, cs.getColumnGroupId(), cs.getColumnUniqueId(), cs.isUseInvertedIndex(),
+              cs.getPrecision(), cs.getScale()));
     }
 
     for (CarbonMeasure measure : cb.getMeasureByTableName(tableName)) {
       ColumnSchema cs = measure.getColumnSchema();
-
       Type spiType = carbonDataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
-          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, cs.getSchemaOrdinal(),
-              measure.getOrdinal(), cs.getColumnGroupId(), true, cs.getColumnGroupId(),
-              cs.getColumnUniqueId(), cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
+          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType,
+              cs.getSchemaOrdinal(), measure.getOrdinal(), cs.getColumnGroupId(), true,
+              cs.getColumnGroupId(), cs.getColumnUniqueId(), cs.isUseInvertedIndex(),
+              cs.getPrecision(), cs.getScale()));
     }
 
-    //should i cache it?
     columnHandleMap = columnHandles.build();
 
     return columnHandleMap;
@@ -177,12 +207,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
   @Override
   public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
-    //check tablename is valid
-    //schema is exist
-    //tables is exist
-
-    //CarbondataTable  get from jar
-    return new CarbondataTableHandle(connectorId, tableName);
+      return new CarbondataTableHandle(connectorId, tableName);
   }
 
   @Override public List<ConnectorTableLayoutResult> getTableLayouts(ConnectorSession session,
@@ -190,7 +215,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
       Optional<Set<ColumnHandle>> desiredColumns) {
     CarbondataTableHandle handle = checkType(table, CarbondataTableHandle.class, "table");
     ConnectorTableLayout layout = new ConnectorTableLayout(
-        new CarbondataTableLayoutHandle(handle, constraint.getSummary()/*, constraint.getPredicateMap(),constraint.getFilterTuples()*/));
+        new CarbondataTableLayoutHandle(handle, constraint.getSummary()));
     return ImmutableList.of(new ConnectorTableLayoutResult(layout, constraint.getSummary()));
   }
 

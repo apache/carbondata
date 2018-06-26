@@ -35,6 +35,7 @@ import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapProvider}
 import org.apache.carbondata.events._
 
@@ -197,7 +198,17 @@ case class CarbonDropDataMapCommand(
       if (dataMapSchema != null) {
         dataMapProvider =
           DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
+        val operationContext: OperationContext = new OperationContext()
+        val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
+        val updateDataMapPreExecutionEvent: UpdateDataMapPreExecutionEvent =
+          UpdateDataMapPreExecutionEvent(sparkSession, systemFolderLocation)
+        OperationListenerBus.getInstance().fireEvent(updateDataMapPreExecutionEvent,
+          operationContext)
         DataMapStatusManager.dropDataMap(dataMapSchema.getDataMapName)
+        val updateDataMapPostExecutionEvent: UpdateDataMapPostExecutionEvent =
+          UpdateDataMapPostExecutionEvent(sparkSession, systemFolderLocation)
+        OperationListenerBus.getInstance().fireEvent(updateDataMapPostExecutionEvent,
+          operationContext)
         // if it is indexDataMap provider like lucene, then call cleanData, which will launch a job
         // to clear datamap from memory(clears from segmentMap and cache), This is called before
         // deleting the datamap schemas from _System folder

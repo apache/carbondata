@@ -20,13 +20,15 @@ package org.apache.carbondata.spark.testsuite.partition
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -855,15 +857,24 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     validatePartitionTableFiles(partitions, dataFiles)
   }
 
-  def getDataFiles(carbonTable: CarbonTable, segmentId: String): Array[CarbonFile] = {
-    val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
-    val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
-    val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      override def accept(file: CarbonFile): Boolean = {
-        return file.getName.endsWith(".carbondata")
-      }
-    })
-    dataFiles
+  def getDataFiles(carbonTable: CarbonTable, segmentId: String): Array[String] = {
+    val segment = Segment.getSegment(segmentId, carbonTable.getTablePath)
+    if (segment.getSegmentFileName != null) {
+      val sfs = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
+      sfs.readIndexFiles()
+      val indexFilesMap = sfs.getIndexFilesMap
+      val dataFiles = indexFilesMap.asScala.flatMap(_._2.asScala).map(f => new Path(f).getName)
+      dataFiles.toArray
+    } else {
+      val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
+      val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
+      val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
+        override def accept(file: CarbonFile): Boolean = {
+          return file.getName.endsWith(".carbondata")
+        }
+      })
+      dataFiles.map(_.getName)
+    }
   }
 
   /**
@@ -871,10 +882,10 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
    * @param partitions
    * @param dataFiles
    */
-  def validatePartitionTableFiles(partitions: Seq[Int], dataFiles: Array[CarbonFile]): Unit = {
+  def validatePartitionTableFiles(partitions: Seq[Int], dataFiles: Array[String]): Unit = {
     val partitionIds: ListBuffer[Int] = new ListBuffer[Int]()
     dataFiles.foreach { dataFile =>
-      val partitionId = CarbonTablePath.DataFileUtil.getTaskNo(dataFile.getName).split("_")(0).toInt
+      val partitionId = CarbonTablePath.DataFileUtil.getTaskNo(dataFile).split("_")(0).toInt
       partitionIds += partitionId
       assert(partitions.contains(partitionId))
     }

@@ -96,13 +96,19 @@ public final class DataMapStoreManager {
       String dbName = carbonTable.getDatabaseName();
       String tableName = carbonTable.getTableName();
       String dmName = dataMap.getDataMapSchema().getDataMapName();
-      boolean isDmVisible = sessionInfo.getSessionParams().getProperty(
-          String.format("%s%s.%s.%s", CarbonCommonConstants.CARBON_DATAMAP_VISIBLE,
-              dbName, tableName, dmName), "true").trim().equalsIgnoreCase("true");
-      if (!isDmVisible) {
-        LOGGER.warn(String.format("Ignore invisible datamap %s on table %s.%s",
-            dmName, dbName, tableName));
-        dataMapIterator.remove();
+      // TODO: need support get the visible status of datamap without sessionInfo in the future
+      if (sessionInfo != null) {
+        boolean isDmVisible = sessionInfo.getSessionParams().getProperty(
+            String.format("%s%s.%s.%s", CarbonCommonConstants.CARBON_DATAMAP_VISIBLE,
+                dbName, tableName, dmName), "true").trim().equalsIgnoreCase("true");
+        if (!isDmVisible) {
+          LOGGER.warn(String.format("Ignore invisible datamap %s on table %s.%s",
+              dmName, dbName, tableName));
+          dataMapIterator.remove();
+        }
+      } else {
+        String message = "Carbon session info is null";
+        LOGGER.info(message);
       }
     }
     return allDataMaps;

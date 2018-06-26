@@ -38,8 +38,7 @@ import org.apache.spark.util.ThreadUtils
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DataMapChooser
-import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -232,10 +231,14 @@ class Master(sparkConf: SparkConf) {
 
       // if we have enough data already, we do not need to collect more result
       if (rowCount < globalLimit) {
-        // wait for worker for 10s
-        ThreadUtils.awaitResult(future, Duration.apply("10s"))
+        // wait for worker
+        val timeout = CarbonProperties
+          .getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT,
+            CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT)
+        ThreadUtils.awaitResult(future, Duration.apply(timeout))
         LOG.info(s"[SearchId:$queryId] receive search response from worker " +
-                 s"${worker.address}:${worker.port}")
+          s"${worker.address}:${worker.port}")
         try {
           future.value match {
             case Some(response: Try[SearchResult]) =>
@@ -276,7 +279,8 @@ class Master(sparkConf: SparkConf) {
       distributables.asJava,
       -1,
       getWorkers.asJava,
-      CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST)
+      CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST,
+      null)
   }
 
   /** return hostname of all workers */

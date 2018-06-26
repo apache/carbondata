@@ -327,13 +327,29 @@ public class CarbonWriterBuilder {
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
     CarbonLoadModel loadModel = createLoadModel();
-
     // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
     // handle multi level complex type support. As there are no conversion converter step is
     // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
     // which will skip Conversion Step.
     loadModel.setLoadWithoutConverterStep(true);
     return new AvroCarbonWriter(loadModel);
+  }
+
+  /**
+   * Build a {@link CarbonWriter}, which accepts Json object
+   * @param carbonSchema carbon Schema object
+   * @return JsonCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
+   */
+  public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema)
+      throws IOException, InvalidLoadOptionException {
+    Objects.requireNonNull(carbonSchema, "schema should not be null");
+    Objects.requireNonNull(path, "path should not be null");
+    this.schema = carbonSchema;
+    CarbonLoadModel loadModel = createLoadModel();
+    loadModel.setJsonFileLoad(true);
+    return new JsonCarbonWriter(loadModel);
   }
 
   private void setCsvHeader(CarbonLoadModel model) {
@@ -379,7 +395,7 @@ public class CarbonWriterBuilder {
     }
 
     List<String> sortColumnsList = new ArrayList<>();
-    if (sortColumns == null || sortColumns.length == 0) {
+    if (sortColumns == null) {
       // If sort columns are not specified, default set all dimensions to sort column.
       // When dimensions are default set to sort column,
       // Inverted index will be supported by default for sort columns.
@@ -484,11 +500,6 @@ public class CarbonWriterBuilder {
           if (isSortColumn > -1) {
             columnSchema.setSortColumn(true);
             sortColumnsSchemaList[isSortColumn] = columnSchema;
-          } else if (sortColumnsList.isEmpty() && columnSchema.isDimensionColumn()
-              && columnSchema.getNumberOfChild() < 1) {
-            columnSchema.setSortColumn(true);
-            sortColumnsSchemaList[i] = columnSchema;
-            i++;
           }
         }
       }

@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.5.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -25,12 +25,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>tech.allegro.schema.json2avro</groupId>
-      <artifactId>converter</artifactId>
-      <version>0.2.5</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
@@ -39,6 +33,11 @@
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_${scala.binary.version}</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>1.8.1</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>

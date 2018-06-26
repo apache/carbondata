@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.datamap.bloom;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -259,8 +258,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     if (dataMaps.size() > 0) {
       for (TableDataMap dataMap : dataMaps) {
         List<CarbonFile> indexFiles;
-        String dmPath = CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator
-            + dataMap.getDataMapSchema().getDataMapName();
+        String dmPath = CarbonTablePath
+            .getDataMapStorePath(tablePath, segmentId, dataMap.getDataMapSchema().getDataMapName());
         FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
         final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
         indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
@@ -323,9 +322,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
       for (Segment segment : validSegments) {
         String segmentId = segment.getSegmentNo();
-        String datamapPath = CarbonTablePath.getSegmentPath(
-            getCarbonTable().getAbsoluteTableIdentifier().getTablePath(), segmentId)
-            + File.separator + dataMapName;
+        String datamapPath = CarbonTablePath
+            .getDataMapStorePath(getCarbonTable().getTablePath(), segmentId, dataMapName);
         if (FileFactory.isFileExist(datamapPath)) {
           CarbonFile file = FileFactory.getCarbonFile(datamapPath,
               FileFactory.getFileType(datamapPath));

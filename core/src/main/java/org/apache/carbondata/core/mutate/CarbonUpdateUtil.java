@@ -47,6 +47,8 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.fs.Path;
+
 /**
  * This class contains all update utility methods
  */
@@ -78,20 +80,17 @@ public class CarbonUpdateUtil {
 
   /**
    * Returns block path from tuple id
-   *
-   * @param tid
-   * @param factPath
-   * @return
    */
-  public static String getTableBlockPath(String tid, String factPath, boolean isPartitionTable) {
+  public static String getTableBlockPath(String tid, String tablePath, boolean isPartitionTable) {
     String partField = getRequiredFieldFromTID(tid, TupleIdEnum.PART_ID);
+    // If it has segment file then partfield can be appended directly to table path
     if (isPartitionTable) {
-      return factPath + CarbonCommonConstants.FILE_SEPARATOR + partField;
+      return tablePath + CarbonCommonConstants.FILE_SEPARATOR + partField.replace("#", "/");
     }
     String part = CarbonTablePath.addPartPrefix(partField);
     String segment =
             CarbonTablePath.addSegmentPrefix(getRequiredFieldFromTID(tid, TupleIdEnum.SEGMENT_ID));
-    return factPath + CarbonCommonConstants.FILE_SEPARATOR + part
+    return CarbonTablePath.getFactDir(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + part
             + CarbonCommonConstants.FILE_SEPARATOR + segment;
   }
 
@@ -386,29 +385,45 @@ public class CarbonUpdateUtil {
     return segmentName.split(CarbonCommonConstants.UNDERSCORE)[1];
   }
 
-  public static long getLatestTaskIdForSegment(String segmentId, String tablePath) {
-    String segmentDirPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
-
-    // scan all the carbondata files and get the latest task ID.
-    CarbonFile segment =
-            FileFactory.getCarbonFile(segmentDirPath, FileFactory.getFileType(segmentDirPath));
-    CarbonFile[] dataFiles = segment.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-
-        if (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-          return true;
-        }
-        return false;
-      }
-    });
+  public static long getLatestTaskIdForSegment(Segment segment, String tablePath)
+      throws IOException {
     long max = 0;
-    if (null != dataFiles) {
-      for (CarbonFile file : dataFiles) {
-        long taskNumber =
-            Long.parseLong(CarbonTablePath.DataFileUtil.getTaskNo(file.getName()).split("_")[0]);
-        if (taskNumber > max) {
-          max = taskNumber;
+    List<String> dataFiles = new ArrayList<>();
+    if (segment.getSegmentFileName() != null) {
+      SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
+      fileStore.readIndexFiles();
+      Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
+      List<String> dataFilePaths = new ArrayList<>();
+      for (List<String> paths : indexFilesMap.values()) {
+        dataFilePaths.addAll(paths);
+      }
+      for (String dataFilePath : dataFilePaths) {
+        dataFiles.add(new Path(dataFilePath).getName());
+      }
+
+    } else {
+      String segmentDirPath = CarbonTablePath.getSegmentPath(tablePath, segment.getSegmentNo());
+      // scan all the carbondata files and get the latest task ID.
+      CarbonFile segmentDir =
+          FileFactory.getCarbonFile(segmentDirPath, FileFactory.getFileType(segmentDirPath));
+      CarbonFile[] carbonDataFiles = segmentDir.listFiles(new CarbonFileFilter() {
+        @Override public boolean accept(CarbonFile file) {
+
+          if (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
+            return true;
+          }
+          return false;
         }
+      });
+      for (CarbonFile carbonDataFile : carbonDataFiles) {
+        dataFiles.add(carbonDataFile.getName());
+      }
+    }
+    for (String name : dataFiles) {
+      long taskNumber =
+          Long.parseLong(CarbonTablePath.DataFileUtil.getTaskNo(name).split("_")[0]);
+      if (taskNumber > max) {
+        max = taskNumber;
       }
     }
     // return max task No
@@ -562,7 +577,7 @@ public class CarbonUpdateUtil {
     List<Segment> segmentFilesToBeUpdatedLatest = new ArrayList<>();
     for (Segment segment : segmentFilesToBeUpdated) {
       String file =
-          SegmentFileStore.writeSegmentFile(table.getTablePath(), segment.getSegmentNo(), UUID);
+          SegmentFileStore.writeSegmentFile(table, segment.getSegmentNo(), UUID);
       segmentFilesToBeUpdatedLatest.add(new Segment(segment.getSegmentNo(), file));
     }
     if (segmentFilesToBeUpdated.size() > 0) {

@@ -35,6 +35,7 @@ enum DataType {
 	BOOLEAN = 8,
 	ARRAY = 20,
 	STRUCT = 21,
+	VARCHAR = 22,
 }
 
 /**
@@ -56,6 +57,7 @@ enum Encoding{
 	ADAPTIVE_FLOATING = 11; // Identifies that a column is encoded using AdaptiveFloatingCodec
 	BOOL_BYTE = 12;   // Identifies that a column is encoded using BooleanPageCodec
 	ADAPTIVE_DELTA_FLOATING = 13; // Identifies that a column is encoded using AdaptiveDeltaFloatingCodec
+	DIRECT_COMPRESS_VARCHAR = 14;  // Identifies that a columm is encoded using DirectCompressCodec, it is used for long string columns
 }
 
 enum PartitionType{
@@ -173,6 +175,7 @@ struct TableSchema{
   4: optional map<string,string> tableProperties; // Table properties configured by the user
   5: optional BucketingInfo bucketingInfo; // Bucketing information
   6: optional PartitionInfo partitionInfo; // Partition information
+  7: optional list<string> long_string_columns // long string columns in the table
 }
 
 struct RelationIdentifier {

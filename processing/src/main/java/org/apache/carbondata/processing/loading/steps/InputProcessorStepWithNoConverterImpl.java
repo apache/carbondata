@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -47,6 +49,7 @@ import org.apache.carbondata.processing.loading.exception.BadRecordFoundExceptio
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+
 
 /**
  * It reads data from record reader and sends data to next step.
@@ -111,8 +114,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
         // create a ComplexDataType
         dataFieldsWithComplexDataType.put(srcDataField[i].getColumn().getOrdinal(),
             fieldConverterFactory
-                .createComplexDataType(srcDataField[i], configuration.getTableIdentifier(),
-                    null, false, null, i, nullFormat, isEmptyBadRecord));
+                .createComplexDataType(srcDataField[i], configuration.getTableIdentifier(), null,
+                    false, null, i, nullFormat, isEmptyBadRecord));
       }
     }
   }
@@ -137,8 +140,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
           new InputProcessorIterator(readerIterators[i], batchSize, configuration.isPreFetch(),
-              rowCounter, orderOfData, noDictionaryMapping, dataTypes,
-              configuration, dataFieldsWithComplexDataType);
+              rowCounter, orderOfData, noDictionaryMapping, dataTypes, configuration,
+              dataFieldsWithComplexDataType);
     }
     return outIterators;
   }
@@ -215,6 +218,10 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private Map<Integer, GenericDataType> dataFieldsWithComplexDataType;
 
+    private DirectDictionaryGenerator dateDictionaryGenerator;
+
+    private DirectDictionaryGenerator timestampDictionaryGenerator;
+
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
         boolean preFetch, AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
         DataType[] dataTypes, CarbonDataLoadConfiguration configuration,
@@ -268,13 +275,17 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       // Create batch and fill it.
       CarbonRowBatch carbonRowBatch = new CarbonRowBatch(batchSize);
       int count = 0;
+
       while (internalHasNext() && count < batchSize) {
         carbonRowBatch.addRow(
             new CarbonRow(convertToNoDictionaryToBytes(currentIterator.next(), dataFields)));
         count++;
       }
       rowCounter.getAndAdd(carbonRowBatch.getSize());
+
+
       return carbonRowBatch;
+
     }
 
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
@@ -313,7 +324,22 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
               throw new CarbonDataLoadingException("Loading Exception", e);
             }
           } else {
-            newData[i] = data[orderOfData[i]];
+            DataType dataType = dataFields[i].getColumn().getDataType();
+            if (dataType == DataTypes.DATE && data[orderOfData[i]] instanceof Long) {
+              if (dateDictionaryGenerator == null) {
+                dateDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+                    .getDirectDictionaryGenerator(dataType, dataFields[i].getDateFormat());
+              }
+              newData[i] = dateDictionaryGenerator.generateKey((long) data[orderOfData[i]]);
+            } else if (dataType == DataTypes.TIMESTAMP && data[orderOfData[i]] instanceof Long) {
+              if (timestampDictionaryGenerator == null) {
+                timestampDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+                    .getDirectDictionaryGenerator(dataType, dataFields[i].getTimestampFormat());
+              }
+              newData[i] = timestampDictionaryGenerator.generateKey((long) data[orderOfData[i]]);
+            } else {
+              newData[i] = data[orderOfData[i]];
+            }
           }
         }
       }

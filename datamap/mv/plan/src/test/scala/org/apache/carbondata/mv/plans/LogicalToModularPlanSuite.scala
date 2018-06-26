@@ -23,8 +23,7 @@ import org.apache.spark.sql.catalyst.dsl.plans._
 import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans.{LeftOuter, RightOuter, _}
-
-import org.apache.carbondata.mv.dsl._
+import org.apache.carbondata.mv.dsl.Plans._
 import org.apache.carbondata.mv.plans.modular.Flags._
 import org.apache.carbondata.mv.plans.modular.{JoinEdge, ModularRelation}
 import org.apache.carbondata.mv.testutil.ModularPlanTest

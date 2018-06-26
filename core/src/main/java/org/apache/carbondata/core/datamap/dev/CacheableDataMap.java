@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
-import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
+import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 import org.apache.carbondata.core.memory.MemoryException;
 
 /**
@@ -33,10 +33,10 @@ public interface CacheableDataMap {
   /**
    * Add the blockletDataMapIndexWrapper to cache for key tableBlockIndexUniqueIdentifier
    *
-   * @param tableBlockIndexUniqueIdentifier
+   * @param tableBlockIndexUniqueIdentifierWrapper
    * @param blockletDataMapIndexWrapper
    */
-  void cache(TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier,
+  void cache(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
       BlockletDataMapIndexWrapper blockletDataMapIndexWrapper) throws IOException, MemoryException;
 
   /**

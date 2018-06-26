@@ -78,8 +78,10 @@ public abstract class DataMapRow implements Serializable {
     switch (schemas[ordinal].getSchemaType()) {
       case FIXED:
         return schemas[ordinal].getLength();
-      case VARIABLE:
+      case VARIABLE_SHORT:
         return getLengthInBytes(ordinal) + 2;
+      case VARIABLE_INT:
+        return getLengthInBytes(ordinal) + 4;
       case STRUCT:
         return getRow(ordinal).getTotalSizeInBytes();
       default:

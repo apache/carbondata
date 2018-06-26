@@ -109,4 +109,45 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("set carbon.search.enabled = false")
     assert(!sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
   }
+
+  test("test lucene datamap with search mode") {
+    sql("set carbon.search.enabled = true")
+    sql("DROP DATAMAP IF EXISTS dm ON TABLE main")
+    sql("CREATE DATAMAP dm ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='id') ")
+    checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('id:100000')"),
+      sql(s"SELECT * FROM main WHERE id='100000'"))
+    sql("DROP DATAMAP if exists dm ON TABLE main")
+  }
+
+  test("test lucene datamap with search mode 2") {
+    sql("drop datamap if exists dm3 ON TABLE main")
+    sql("CREATE DATAMAP dm3 ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='city') ")
+    checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('city:city6')"),
+      sql("SELECT * FROM main WHERE city='city6'"))
+    sql("DROP DATAMAP if exists dm3 ON TABLE main")
+  }
+
+  test("test lucene datamap with search mode, two column") {
+    sql("drop datamap if exists dm3 ON TABLE main")
+    sql("CREATE DATAMAP dm3 ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='city , id') ")
+    checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('city:city6')"),
+      sql("SELECT * FROM main WHERE city='city6'"))
+    checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('id:100000')"),
+      sql(s"SELECT * FROM main WHERE id='100000'"))
+    sql("DROP DATAMAP if exists dm3 ON TABLE main")
+  }
+
+  test("start search mode twice") {
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+    checkSearchAnswer("select id from main where id = '3' limit 10")
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
+    assert(!sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+
+    // start twice
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+    checkSearchAnswer("select id from main where id = '3' limit 10")
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
+  }
 }

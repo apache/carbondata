@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Expression, PredicateHelper}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, Expression, Multiply, PredicateHelper}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 
 import org.apache.carbondata.mv.plans.modular
@@ -26,7 +26,7 @@ import org.apache.carbondata.mv.plans.modular.ModularPlan
 /**
  * Utility functions used by mqo matcher to convert our plan to new aggregation code path
  */
-private[rewrite] object Utils extends PredicateHelper {
+object Utils extends PredicateHelper {
 
   // use for match qb_2a, qb_2q and sel_3a, sel_3q
   private def doMatch(
@@ -159,7 +159,7 @@ private[rewrite] object Utils extends PredicateHelper {
                                   alias_m(attr).child.asInstanceOf[AggregateExpression]
                                     .aggregateFunction.isInstanceOf[Min] => {
             val min_a = alias_m(attr).child.asInstanceOf[AggregateExpression]
-            val expr_a = min_a.aggregateFunction.asInstanceOf[Max].child
+            val expr_a = min_a.aggregateFunction.asInstanceOf[Min].child
             if (min_a.isDistinct != min_q.isDistinct) {
               false
             } else {
@@ -173,6 +173,108 @@ private[rewrite] object Utils extends PredicateHelper {
             isDistinct = false,
             min_q.resultId)
         }.getOrElse { matchable = false; min_q }
+
+
+      case avg_q@AggregateExpression(Average(expr_q), _, false, _) =>
+        val cnt_q = operator_a.outputList.find {
+          case alias: Alias if alias_m.contains(alias.toAttribute) &&
+                               alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
+                               alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
+                                 .aggregateFunction.isInstanceOf[Count] => { // case for groupby
+            val cnt_a = alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
+            val exprs_a = cnt_a.aggregateFunction.asInstanceOf[Count].children
+            if (!cnt_a.isDistinct && exprs_a.sameElements(Set(expr_q))) {
+              true
+            } else {
+              false
+            }
+          }
+          case attr: Attribute if alias_m.contains(attr) &&
+                                  alias_m(attr).child.isInstanceOf[AggregateExpression] &&
+                                  alias_m(attr).child.asInstanceOf[AggregateExpression]
+                                    .aggregateFunction.isInstanceOf[Count] => {
+            val cnt_a = alias_m(attr).child.asInstanceOf[AggregateExpression]
+            val exprs_a = cnt_a.aggregateFunction.asInstanceOf[Count].children
+            if (!cnt_a.isDistinct && exprs_a.sameElements(Set(expr_q))) {
+              true
+            } else {
+              false
+            }
+          }
+          case _ => false
+        }.map { cnt => Sum(cnt.toAttribute) }
+          .getOrElse { matchable = false; NoOp }
+
+        val derivative = if (matchable) {
+          operator_a.outputList.find {
+            case alias: Alias if alias_m.contains(alias.toAttribute) &&
+                                 alias_m(alias.toAttribute).child
+                                   .isInstanceOf[AggregateExpression] &&
+                                 alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
+                                   .aggregateFunction.isInstanceOf[Sum] => {
+              val sum_a = alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
+              val expr_a = sum_a.aggregateFunction.asInstanceOf[Sum].child
+              if (sum_a.isDistinct != avg_q.isDistinct) {
+                false
+              } else {
+                expr_a.semanticEquals(expr_q)
+              }
+            }
+            case attr: Attribute if alias_m.contains(attr) &&
+                                    alias_m(attr).child.isInstanceOf[AggregateExpression] &&
+                                    alias_m(attr).child.asInstanceOf[AggregateExpression]
+                                      .aggregateFunction.isInstanceOf[Sum] => {
+              val sum_a = alias_m(attr).child.asInstanceOf[AggregateExpression]
+              val expr_a = sum_a.aggregateFunction.asInstanceOf[Sum].child
+              if (sum_a.isDistinct != avg_q.isDistinct) {
+                false
+              } else {
+                expr_a.semanticEquals(expr_q)
+              }
+            }
+            case alias: Alias if alias_m.contains(alias.toAttribute) &&
+                                 alias_m(alias.toAttribute).child
+                                   .isInstanceOf[AggregateExpression] &&
+                                 alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
+                                   .aggregateFunction.isInstanceOf[Average] => {
+              val avg_a = alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
+              val expr_a = avg_a.aggregateFunction.asInstanceOf[Average].child
+              if (avg_a.isDistinct != avg_q.isDistinct) {
+                false
+              } else {
+                expr_a.semanticEquals(expr_q)
+              }
+            }
+            case attr: Attribute if alias_m.contains(attr) &&
+                                    alias_m(attr).child.isInstanceOf[AggregateExpression] &&
+                                    alias_m(attr).child.asInstanceOf[AggregateExpression]
+                                      .aggregateFunction.isInstanceOf[Average] => {
+              val avg_a = alias_m(attr).child.asInstanceOf[AggregateExpression]
+              val expr_a = avg_a.aggregateFunction.asInstanceOf[Average].child
+              if (avg_a.isDistinct != avg_q.isDistinct) {
+                false
+              } else {
+                expr_a.semanticEquals(expr_q)
+              }
+            }
+            case _ => false
+          }.map { sum_or_avg =>
+            val fun = alias_m(sum_or_avg.toAttribute).child.asInstanceOf[AggregateExpression]
+              .aggregateFunction
+            if (fun.isInstanceOf[Sum]) {
+              val accu = Sum(sum_or_avg.toAttribute)
+              Divide(accu, Cast(cnt_q, accu.dataType))
+            } else {
+              val accu = Sum(Multiply(sum_or_avg.toAttribute, Cast(cnt_q, sum_or_avg.dataType)))
+              Divide(accu, Cast(cnt_q, accu.dataType))
+            }
+          }
+        } else {
+          matchable = false
+          None
+        }
+
+        derivative.getOrElse { matchable = false; avg_q }
 
       case other: AggregateExpression =>
         matchable = false

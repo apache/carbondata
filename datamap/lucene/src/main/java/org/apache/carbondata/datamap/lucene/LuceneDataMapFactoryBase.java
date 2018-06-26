@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.datamap.lucene;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +28,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandExcept
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
@@ -181,9 +181,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
       List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
       for (Segment segment : validSegments) {
         String segmentId = segment.getSegmentNo();
-        String datamapPath =
-            CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segmentId)
-                + File.separator + dataMapName;
+        String datamapPath = CarbonTablePath
+            .getDataMapStorePath(tableIdentifier.getTablePath(), segmentId, dataMapName);
         if (FileFactory.isFileExist(datamapPath)) {
           CarbonFile file =
               FileFactory.getCarbonFile(datamapPath, FileFactory.getFileType(datamapPath));
@@ -226,16 +225,17 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
         getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo());
     if (segment.getFilteredIndexShardNames().size() == 0) {
       for (CarbonFile indexDir : indexDirs) {
-        DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
-            CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()),
-            indexDir.getAbsolutePath());
+        DataMapDistributable luceneDataMapDistributable =
+            new LuceneDataMapDistributable(tableIdentifier.getTablePath(),
+                indexDir.getAbsolutePath());
         lstDataMapDistribute.add(luceneDataMapDistributable);
       }
       return lstDataMapDistribute;
     }
     for (CarbonFile indexDir : indexDirs) {
       // Filter out the tasks which are filtered through CG datamap.
-      if (!segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
+      if (getDataMapLevel() != DataMapLevel.FG &&
+          !segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
         continue;
       }
       DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
@@ -301,9 +301,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     if (dataMaps.size() > 0) {
       for (TableDataMap dataMap : dataMaps) {
         List<CarbonFile> indexFiles;
-        String dmPath =
-            CarbonTablePath.getSegmentPath(tablePath, segmentId) + File.separator + dataMap
-                .getDataMapSchema().getDataMapName();
+        String dmPath = CarbonTablePath
+            .getDataMapStorePath(tablePath, segmentId, dataMap.getDataMapSchema().getDataMapName());
         FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
         final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
         indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {

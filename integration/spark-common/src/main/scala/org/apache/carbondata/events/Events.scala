@@ -21,7 +21,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel, CarbonMergerMapping}
 
-import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -167,4 +166,21 @@ trait DeleteFromTableEventInfo {
  */
 trait SessionEventInfo {
   val sparkSession: SparkSession
+}
+
+/**
+ * Event info for create datamap
+ */
+trait CreateDataMapEventsInfo {
+  val sparkSession: SparkSession
+  val storePath: String
+}
+
+/**
+ * Event info for build datamap
+ */
+trait BuildDataMapEventsInfo {
+  val sparkSession: SparkSession
+  val identifier: AbsoluteTableIdentifier
+  val dataMapNames: scala.collection.mutable.Seq[String]
 }

@@ -30,8 +30,7 @@ import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonUtil
 
 private[sql] case class CarbonDescribeFormattedCommand(
     child: SparkPlan,
@@ -111,6 +110,41 @@ private[sql] case class CarbonDescribeFormattedCommand(
       .LOAD_SORT_SCOPE_DEFAULT)))
     val isStreaming = tblProps.asScala.getOrElse("streaming", "false")
     results ++= Seq(("Streaming", isStreaming, ""))
+    val isLocalDictEnabled = tblProps.asScala
+      .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+          CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+    results ++= Seq(("Local Dictionary Enabled", isLocalDictEnabled, ""))
+    // if local dictionary is enabled, then only show other properties of local dictionary
+    if (isLocalDictEnabled.toBoolean) {
+      val localDictThreshold = tblProps.asScala
+        .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+          CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
+      results ++= Seq(("Local Dictionary Threshold", localDictThreshold, ""))
+      if (tblProps.asScala
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE).isDefined) {
+        val allLocalDictColumns = tblProps.asScala(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+          .split(",")
+        results ++= Seq(("Local Dictionary Include", getDictColumnString(allLocalDictColumns), ""))
+      }
+      if (tblProps.asScala
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).isDefined) {
+        val allLocalDictColumns = tblProps.asScala(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+          .split(",")
+        results ++= Seq(("Local Dictionary Exclude", getDictColumnString(allLocalDictColumns), ""))
+      }
+    }
+
+    /**
+     * return the string which has all comma separated columns
+     * @param localDictColumns
+     * @return
+     */
+    def getDictColumnString(localDictColumns: Array[String]): String = {
+      val dictColumns: StringBuilder = new StringBuilder
+      localDictColumns.foreach(column => dictColumns.append(column.trim).append(","))
+      dictColumns.toString().patch(dictColumns.toString().lastIndexOf(","), "", 1)
+    }
+
 
     // show table level compaction options
     if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
@@ -137,6 +171,11 @@ private[sql] case class CarbonDescribeFormattedCommand(
       results ++= Seq((CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS.toUpperCase,
         tblProps.get(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS),
         CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT))
+    }
+    if (tblProps.containsKey(CarbonCommonConstants.FLAT_FOLDER)) {
+      results ++= Seq((CarbonCommonConstants.FLAT_FOLDER.toUpperCase,
+        tblProps.get(CarbonCommonConstants.FLAT_FOLDER),
+        CarbonCommonConstants.DEFAULT_FLAT_FOLDER))
     }
 
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))

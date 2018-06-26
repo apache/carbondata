@@ -323,6 +323,21 @@ public class SegmentIndexFileStore {
   /**
    * List all the index files of the segment.
    *
+   * @param carbonFile directory
+   * @return
+   */
+  public static CarbonFile[] getCarbonIndexFiles(CarbonFile carbonFile) {
+    return carbonFile.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return ((file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) && file.getSize() > 0);
+      }
+    });
+  }
+
+  /**
+   * List all the index files of the segment.
+   *
    * @param segmentPath
    * @return
    */

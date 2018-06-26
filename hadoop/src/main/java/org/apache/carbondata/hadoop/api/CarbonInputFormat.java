@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -372,7 +373,7 @@ m filterExpression
     List<ExtendedBlocklet> prunedBlocklets =
         getPrunedBlocklets(job, carbonTable, resolver, segmentIds);
 
-    List<CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();
+    List<CarbonInputSplit> resultFilteredBlocks = new ArrayList<>();
     int partitionIndex = 0;
     List<Integer> partitionIdList = new ArrayList<>();
     if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
@@ -401,7 +402,7 @@ m filterExpression
         if (matchedPartitions == null || matchedPartitions.get(partitionIndex)) {
           CarbonInputSplit inputSplit = convertToCarbonInputSplit(blocklet);
           if (inputSplit != null) {
-            resultFilterredBlocks.add(inputSplit);
+            resultFilteredBlocks.add(inputSplit);
           }
         }
       }
@@ -409,7 +410,7 @@ m filterExpression
     statistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
     recorder.recordStatisticsForDriver(statistic, job.getConfiguration().get("query.id"));
-    return resultFilterredBlocks;
+    return resultFilteredBlocks;
   }
 
   /**
@@ -487,7 +488,7 @@ m filterExpression
       segment.getFilteredIndexShardNames().clear();
       // Check the segment exist in any of the pruned blocklets.
       for (ExtendedBlocklet blocklet : prunedBlocklets) {
-        if (blocklet.getSegmentId().equals(segment.getSegmentNo())) {
+        if (blocklet.getSegmentId().equals(segment.toString())) {
           found = true;
           // Set the pruned index file to the segment for further pruning.
           String shardName = CarbonTablePath.getShardName(blocklet.getFilePath());
@@ -674,5 +675,28 @@ m filterExpression
     } catch (InvalidConfigurationException e) {
       return false;
     }
+  }
+
+  /**
+   * Project all Columns for carbon reader
+   *
+   * @return String araay of columnNames
+   * @param carbonTable
+   */
+  public String[] projectAllColumns(CarbonTable carbonTable) {
+    List<ColumnSchema> colList = carbonTable.getTableInfo().getFactTable().getListOfColumns();
+    List<String> projectColumn = new ArrayList<>();
+    for (ColumnSchema cols : colList) {
+      if (cols.getSchemaOrdinal() != -1) {
+        projectColumn.add(cols.getColumnUniqueId());
+      }
+    }
+    String[] projectionColumns = new String[projectColumn.size()];
+    int i = 0;
+    for (String columnName : projectColumn) {
+      projectionColumns[i] = columnName;
+      i++;
+    }
+    return projectionColumns;
   }
 }

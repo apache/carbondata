@@ -64,7 +64,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           projects,
           filters,
           (a, f, needDecoder, p) => toCatalystRDD(l, a, relation.buildScan(
-            a.map(_.name).toArray, f, p), needDecoder)) :: Nil
+            a.map(_.name).toArray, projects, f, p), needDecoder)) :: Nil
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -100,7 +100,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val updateDeltaMetadata = segmentUpdateStatusManager.readLoadMetadata()
     if (updateDeltaMetadata != null && updateDeltaMetadata.nonEmpty) {
       false
-    } else if (relation.carbonTable.isStreamingTable) {
+    } else if (relation.carbonTable.isStreamingSink) {
       false
     } else {
       true

@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.common.logging.impl.StandardLogService;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -68,6 +69,7 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -256,7 +258,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
               dataRefNode.numberOfNodes(),
               dataRefNode.getBlockInfos().get(0).getFilePath(),
               dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
-              dataRefNode.getBlockInfos().get(0).getSegmentId()));
+              dataRefNode.getBlockInfos().get(0).getSegment()));
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
@@ -278,7 +280,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   private BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
       AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath,
-      String[] deleteDeltaFiles, String segmentId)
+      String[] deleteDeltaFiles, Segment segment)
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
@@ -291,9 +293,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             queryModel.getProjectionDimensions(), tableBlockDimensions,
             segmentProperties.getComplexDimensions(), queryModel.getProjectionMeasures().size(),
             queryModel.getTable().getTableInfo().isTransactionalTable());
-    blockExecutionInfo.setBlockId(
-        CarbonUtil.getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segmentId,
-            queryModel.getTable().getTableInfo().isTransactionalTable()));
+    String blockId = CarbonUtil
+        .getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segment.getSegmentNo(),
+            queryModel.getTable().getTableInfo().isTransactionalTable(),
+            queryModel.getTable().isHivePartitionTable());
+    if (queryModel.getTable().isHivePartitionTable()) {
+      blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockIdForPartitionTable(blockId));
+    } else {
+      blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockId(blockId));
+    }
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
     blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
@@ -513,7 +521,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<Integer> parentBlockIndexList = new ArrayList<Integer>();
     for (ProjectionDimension queryDimension : queryDimensions) {
       if (queryDimension.getDimension().getDataType().isComplexType()) {
-        parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
+        if (null != queryDimension.getDimension().getComplexParentDimension()) {
+          if (queryDimension.getDimension().isComplex()) {
+            parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
+          } else {
+            parentBlockIndexList.add(queryDimension.getParentDimension().getOrdinal());
+          }
+        } else {
+          parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
+        }
       }
     }
     return ArrayUtils

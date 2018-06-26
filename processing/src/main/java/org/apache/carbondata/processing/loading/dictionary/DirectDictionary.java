@@ -46,6 +46,10 @@ public class DirectDictionary implements BiDictionary<Integer, Object> {
     return dictionaryGenerator.generateDirectSurrogateKey(value.toString());
   }
 
+  public Integer generateKey(long value) {
+    return dictionaryGenerator.generateKey(value);
+  }
+
   @Override
   public Object getValue(Integer key) {
     return dictionaryGenerator.getValueFromSurrogate(key);

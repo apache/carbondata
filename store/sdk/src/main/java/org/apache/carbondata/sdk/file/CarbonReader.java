@@ -18,10 +18,14 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.util.CarbonTaskInfo;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 import org.apache.hadoop.mapreduce.RecordReader;
 
@@ -52,6 +56,9 @@ public class CarbonReader<T> {
     this.readers = readers;
     this.index = 0;
     this.currentReader = readers.get(0);
+    CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
+    carbonTaskInfo.setTaskId(System.nanoTime());
+    ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
   }
 
   /**
@@ -67,6 +74,8 @@ public class CarbonReader<T> {
         return false;
       } else {
         index++;
+        // current reader is closed
+        currentReader.close();
         currentReader = readers.get(index);
         return currentReader.nextKeyValue();
       }
@@ -83,9 +92,26 @@ public class CarbonReader<T> {
 
   /**
    * Return a new {@link CarbonReaderBuilder} instance
+   *
+   * @param tablePath table store path
+   * @param tableName table name
+   * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder(String tablePath, String tableName) {
     return new CarbonReaderBuilder(tablePath, tableName);
+  }
+
+  /**
+   * Return a new {@link CarbonReaderBuilder} instance
+   * Default value of table name is table + tablePath + time
+   *
+   * @param tablePath table path
+   * @return CarbonReaderBuilder object
+   */
+  public static CarbonReaderBuilder builder(String tablePath) {
+    String time = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
+    String tableName = "UnknownTable" + time;
+    return builder(tablePath, tableName);
   }
 
   /**

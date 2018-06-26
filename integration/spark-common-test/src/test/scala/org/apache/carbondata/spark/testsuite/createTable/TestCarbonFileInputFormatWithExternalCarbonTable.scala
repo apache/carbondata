@@ -38,7 +38,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
                             "../." +
                             "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
-  //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+  //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/");
 
 
@@ -184,7 +184,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
     {
       sql("select * from sdkOutputTable").show(false)
     }
-    assert(exception.getMessage().contains("Index file not present to read the carbondata file"))
+    assert(exception.getMessage().contains("Error while taking index snapshot"))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files

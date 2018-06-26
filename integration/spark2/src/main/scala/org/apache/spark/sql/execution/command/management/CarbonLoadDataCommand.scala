@@ -62,7 +62,7 @@ import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil, ObjectSerializationUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.events.exception.PreEventException
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.TableProcessingOperations
@@ -76,7 +76,7 @@ import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServicePr
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.spark.load.{CsvRDDHelper, DataLoadProcessorStepOnSpark}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil, SparkDataTypeConverterImpl}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, GlobalDictionaryUtil, SparkDataTypeConverterImpl}
 
 case class CarbonLoadDataCommand(
     databaseNameOp: Option[String],
@@ -233,6 +233,18 @@ case class CarbonLoadDataCommand(
             isOverwriteTable)
         operationContext.setProperty("isOverwrite", isOverwriteTable)
         OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
+        // Add pre event listener for index datamap
+        val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(table)
+        val dataMapOperationContext = new OperationContext()
+        if (null != tableDataMaps) {
+          val dataMapNames: mutable.Buffer[String] =
+            tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
+          val buildDataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
+            new BuildDataMapPreExecutionEvent(sparkSession,
+              table.getAbsoluteTableIdentifier, dataMapNames)
+          OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent,
+            dataMapOperationContext)
+        }
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
         // Clean up the old invalid segment data before creating a new entry for new load.
@@ -300,6 +312,13 @@ case class CarbonLoadDataCommand(
             table.getCarbonTableIdentifier,
             carbonLoadModel)
         OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
+        if (null != tableDataMaps) {
+          val buildDataMapPostExecutionEvent: BuildDataMapPostExecutionEvent =
+            BuildDataMapPostExecutionEvent(sparkSession, table.getAbsoluteTableIdentifier)
+          OperationListenerBus.getInstance()
+            .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
+        }
+
       } catch {
         case CausedBy(ex: NoRetryException) =>
           // update the load entry in table status file for changing the status to marked for delete
