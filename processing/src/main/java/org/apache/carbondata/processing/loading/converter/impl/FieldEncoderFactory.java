@@ -32,7 +32,6 @@ import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
@@ -67,7 +66,7 @@ public class FieldEncoderFactory {
   public FieldConverter createFieldEncoder(DataField dataField,
       AbsoluteTableIdentifier absoluteTableIdentifier, int index, String nullFormat,
       DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
-      boolean isEmptyBadRecord) throws IOException {
+      boolean isEmptyBadRecord, String parentTablePath) throws IOException {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
       if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
@@ -100,10 +99,7 @@ public class FieldEncoderFactory {
               new ColumnIdentifier(parentColumnTableRelation.getColumnId(), null,
                   dataField.getColumn().getDataType());
           AbsoluteTableIdentifier parentAbsoluteTableIdentifier =
-              AbsoluteTableIdentifier.from(
-                  CarbonTablePath.getNewTablePath(
-                      absoluteTableIdentifier.getTablePath(), parentTableIdentifier.getTableName()),
-                  parentTableIdentifier);
+              AbsoluteTableIdentifier.from(parentTablePath, parentTableIdentifier);
           identifier = new DictionaryColumnUniqueIdentifier(parentAbsoluteTableIdentifier,
               parentColumnIdentifier, dataField.getColumn().getDataType());
           return new DictionaryFieldConverterImpl(dataField.getColumn(),

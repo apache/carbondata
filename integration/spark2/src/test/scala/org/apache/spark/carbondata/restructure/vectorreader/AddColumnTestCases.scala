@@ -21,13 +21,14 @@ import java.io.{File, FileOutputStream, FileWriter}
 import java.math.{BigDecimal, RoundingMode}
 import java.sql.{Date, Timestamp}
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
@@ -679,6 +680,9 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("alter table t5 rename to t6")
     sql("create table t5 (c1 string, c2 int,c3 string) stored by 'carbondata'")
     sql("insert into t5 select 'asd',1,'sdf'")
+    val t5: CarbonTable = CarbonEnv.getCarbonTable(None, "t5")(sqlContext.sparkSession)
+    assert(t5.getTablePath
+      .contains(t5.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId))
     checkAnswer(sql("select * from t5"),Seq(Row("asd",1,"sdf")))
   }
 

@@ -159,17 +159,6 @@ public class LoadOption {
                     CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
                     CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))));
 
-    optionsFinal.put(
-        "bad_record_path",
-        Maps.getOrDefault(
-            options,
-            "bad_record_path",
-            CarbonProperties.getInstance().getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
-                CarbonProperties.getInstance().getProperty(
-                    CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-                    CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))));
-
     String useOnePass = Maps.getOrDefault(
         options,
         "single_pass",

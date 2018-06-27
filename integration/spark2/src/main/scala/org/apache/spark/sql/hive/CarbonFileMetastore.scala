@@ -286,15 +286,13 @@ class CarbonFileMetastore extends CarbonMetaStore {
     if (schemaEvolutionEntry != null) {
       thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
     }
-    val newTablePath = CarbonTablePath.getNewTablePath(
-      identifier.getTablePath, newTableIdentifier.getTableName)
     val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
       thriftTableInfo,
       newTableIdentifier.getDatabaseName,
       newTableIdentifier.getTableName,
-      newTablePath)
+      identifier.getTablePath)
     val newAbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
-      newTablePath,
+      identifier.getTablePath,
       newTableIdentifier.getDatabaseName,
       newTableIdentifier.getTableName,
       oldTableIdentifier.getTableId)

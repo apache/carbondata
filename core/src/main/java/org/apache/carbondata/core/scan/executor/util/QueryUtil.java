@@ -61,7 +61,6 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnRes
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -378,8 +377,8 @@ public class QueryUtil {
         ColumnIdentifier columnIdentifier;
         if (null != dimension.getColumnSchema().getParentColumnTableRelations() && !dimension
             .getColumnSchema().getParentColumnTableRelations().isEmpty()) {
-          dictionarySourceAbsoluteTableIdentifier = getTableIdentifierForColumn(dimension,
-              carbonTable.getAbsoluteTableIdentifier());
+          dictionarySourceAbsoluteTableIdentifier =
+              getTableIdentifierForColumn(dimension);
           columnIdentifier = new ColumnIdentifier(
               dimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
               dimension.getColumnProperties(), dimension.getDataType());
@@ -397,8 +396,14 @@ public class QueryUtil {
     return dictionaryColumnUniqueIdentifiers;
   }
 
-  public static AbsoluteTableIdentifier getTableIdentifierForColumn(CarbonDimension carbonDimension,
-      AbsoluteTableIdentifier identifier) {
+  public static AbsoluteTableIdentifier getTableIdentifierForColumn(
+      CarbonDimension carbonDimension) {
+    RelationIdentifier parentRelationIdentifier =
+        carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
+            .getRelationIdentifier();
+    String parentTablePath = CarbonMetadata.getInstance()
+        .getCarbonTable(parentRelationIdentifier.getDatabaseName(),
+            parentRelationIdentifier.getTableName()).getTablePath();
     RelationIdentifier relation = carbonDimension.getColumnSchema()
         .getParentColumnTableRelations()
         .get(0)
@@ -406,9 +411,7 @@ public class QueryUtil {
     String parentTableName = relation.getTableName();
     String parentDatabaseName = relation.getDatabaseName();
     String parentTableId = relation.getTableId();
-    String newTablePath =
-        CarbonTablePath.getNewTablePath(identifier.getTablePath(), parentTableName);
-    return AbsoluteTableIdentifier.from(newTablePath, parentDatabaseName, parentTableName,
+    return AbsoluteTableIdentifier.from(parentTablePath, parentDatabaseName, parentTableName,
         parentTableId);
   }
 

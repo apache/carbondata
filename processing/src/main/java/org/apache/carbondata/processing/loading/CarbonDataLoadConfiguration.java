@@ -119,7 +119,17 @@ public class CarbonDataLoadConfiguration {
    */
   private String dataWritePath;
 
+  private String parentTablePath;
+
   public CarbonDataLoadConfiguration() {
+  }
+
+  public String getParentTablePath() {
+    return parentTablePath;
+  }
+
+  public void setParentTablePath(String parentTablePath) {
+    this.parentTablePath = parentTablePath;
   }
 
   public void setDataFields(DataField[] dataFields) {
