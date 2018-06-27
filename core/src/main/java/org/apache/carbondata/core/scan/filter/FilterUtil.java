@@ -940,7 +940,7 @@ public final class FilterUtil {
   /**
    * Algorithm for getting the start key for a filter
    * step 1: Iterate through each dimension and verify whether its not an exclude filter.
-   * step 2: Intialize start key with the first filter member value present in each filter model
+   * step 2: Initialize start key with the first filter member value present in each filter model
    * for the respective dimensions.
    * step 3: since its a no dictionary start key there will only actual value so compare
    * the first filter model value with respect to the dimension data type.
