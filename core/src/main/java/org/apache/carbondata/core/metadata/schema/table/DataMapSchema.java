@@ -198,8 +198,8 @@ public class DataMapSchema implements Serializable, Writable {
   public void readFields(DataInput in) throws IOException {
     this.dataMapName = in.readUTF();
     this.providerName = in.readUTF();
-    boolean isRelationIdnentifierExists = in.readBoolean();
-    if (isRelationIdnentifierExists) {
+    boolean isRelationIdentifierExists = in.readBoolean();
+    if (isRelationIdentifierExists) {
       this.relationIdentifier = new RelationIdentifier(null, null, null);
       this.relationIdentifier.readFields(in);
     }

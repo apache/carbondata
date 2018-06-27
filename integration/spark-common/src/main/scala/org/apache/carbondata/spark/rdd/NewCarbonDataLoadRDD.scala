@@ -229,7 +229,7 @@ class NewCarbonDataLoadRDD[K, V](
           theSplit.index,
           null,
           loadMetadataDetails)
-        // Intialize to set carbon properties
+        // Initialize to set carbon properties
         loader.initialize()
         val executor = new DataLoadExecutor()
         // in case of success, failure or cancelation clear memory and stop execution
@@ -383,7 +383,7 @@ class NewDataFrameLoaderRDD[K, V](
           theSplit.index,
           null,
           loadMetadataDetails)
-        // Intialize to set carbon properties
+        // Initialize to set carbon properties
         loader.initialize()
         val executor = new DataLoadExecutor
         // in case of success, failure or cancelation clear memory and stop execution
@@ -575,7 +575,7 @@ class PartitionTableDataLoaderRDD[K, V](
           theSplit.index,
           null,
           loadMetadataDetails)
-        // Intialize to set carbon properties
+        // Initialize to set carbon properties
         loader.initialize()
         val executor = new DataLoadExecutor
         // in case of success, failure or cancelation clear memory and stop execution
