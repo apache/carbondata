@@ -452,7 +452,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     localDictColumns.foreach { distCol =>
       if (!fields.exists(x => x.column.equalsIgnoreCase(distCol.trim))) {
         val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
-                       " does not exist in table. Please check create table statement."
+                       " does not exist in table. Please check the DDL."
         throw new MalformedCarbonCommandException(errormsg)
       }
     }
@@ -467,8 +467,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
                        dictColm.trim +
                        " is not a String/complex datatype column. LOCAL_DICTIONARY_COLUMN should " +
-                       "be no dictionary string/complex datatype column.Please check create table" +
-                       " statement."
+                       "be no dictionary string/complex datatype column.Please check the DDL."
         throw new MalformedCarbonCommandException(errormsg)
       }
     }

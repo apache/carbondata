@@ -636,7 +636,7 @@ object CarbonScalaUtil {
       val errMsg =
         "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE contains Duplicate Columns: " +
         duplicateColumns.mkString(",") +
-        ". Please check create table statement."
+        ". Please check the DDL."
       throw new MalformedCarbonCommandException(errMsg)
     }
 
@@ -652,8 +652,7 @@ object CarbonScalaUtil {
           val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
                          commonColumn.mkString(",") +
                          " specified in Dictionary include. Local Dictionary will not be " +
-                         "generated for Dictionary include columns. Please check create table " +
-                         "statement."
+                         "generated for Dictionary include columns. Please check the DDL."
           throw new MalformedCarbonCommandException(errormsg)
         }
       }

@@ -21,6 +21,8 @@ import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
@@ -35,8 +37,10 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier,
+  TableInfo, TableSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema,
+  ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
@@ -278,14 +282,14 @@ class AlterTableColumnSchemaGenerator(
     // Its based on the dimension name and measure name
     allColumns.filter(x => !x.isInvisible).groupBy(_.getColumnName)
       .foreach(f => if (f._2.size > 1) {
-      val name = f._1
-      LOGGER.error(s"Duplicate column found with name: $name")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${ dbName }.${ alterTableModel.tableName }. " +
-        s"Duplicate column found with name: $name")
-      sys.error(s"Duplicate column found with name: $name")
-    })
+        val name = f._1
+        LOGGER.error(s"Duplicate column found with name: $name")
+        LOGGER.audit(
+          s"Validation failed for Create/Alter Table Operation " +
+          s"for ${ dbName }.${ alterTableModel.tableName }. " +
+          s"Duplicate column found with name: $name")
+        sys.error(s"Duplicate column found with name: $name")
+      })
 
     if (newCols.exists(_.getDataType.isComplexType)) {
       LOGGER.error(s"Complex column cannot be added")
@@ -299,6 +303,81 @@ class AlterTableColumnSchemaGenerator(
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
 
+
+    def getLocalDictColumnList(tableProperties: scala.collection.mutable.Map[String, String],
+        columns: scala.collection.mutable.ListBuffer[ColumnSchema]): (scala.collection.mutable
+    .ListBuffer[ColumnSchema], scala.collection.mutable.ListBuffer[ColumnSchema]) = {
+      val includeColumns = new scala.collection.mutable.ListBuffer[ColumnSchema]
+      val excludeColumns = new scala.collection.mutable.ListBuffer[ColumnSchema]
+      val localDictIncludeColumns = if (tableProperties
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE).isDefined) {
+        tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+      } else {
+        null
+      }
+      val localDictExcludeColumns = if (tableProperties
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).isDefined) {
+        tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+      } else {
+        null
+      }
+      if (null != localDictIncludeColumns) {
+        if (null == localDictExcludeColumns) {
+          columns.foreach { column =>
+            if (localDictIncludeColumns.contains(column.getColumnName)) {
+              includeColumns.append(column)
+            } else {
+              if (column.getDataType.equals(DataTypes.STRING) ||
+                  column.getDataType.toString.equals("ARRAY") ||
+                  column.getDataType.toString.equals("STRUCT")) {
+                excludeColumns.append(column)
+              }
+            }
+          }
+        } else {
+          columns.foreach { column =>
+            if (localDictIncludeColumns.contains(column.getColumnName) &&
+                !localDictExcludeColumns.contains(column.getColumnName)) {
+              includeColumns.append(column)
+            } else if (localDictExcludeColumns.contains(column.getColumnName)) {
+              excludeColumns.append(column)
+            }
+          }
+        }
+      } else {
+        if (null == localDictExcludeColumns) {
+          columns.foreach { column =>
+            if (column.getDataType.equals(DataTypes.STRING) ||
+                column.getDataType.toString.equals("ARRAY") ||
+                column.getDataType.toString.equals("STRUCT")) {
+              includeColumns.append(column)
+            }
+          }
+        } else {
+          columns.foreach { column =>
+            if (!localDictExcludeColumns.contains(column.getColumnName) &&
+                (column.getDataType.equals(DataTypes.STRING) ||
+                 column.getDataType.toString.equals("ARRAY") ||
+                 column.getDataType.toString.equals("STRUCT"))) {
+              includeColumns.append(column)
+            } else if (localDictExcludeColumns.contains(column.getColumnName)) {
+              excludeColumns.append(column)
+            }
+          }
+        }
+      }
+
+      (includeColumns, excludeColumns)
+    }
+
+    val columnsWithoutNewCols = new scala.collection.mutable.ListBuffer[ColumnSchema]
+    allColumns.foreach { column =>
+      if (!newCols.exists(x => x.getColumnName.equalsIgnoreCase(column.getColumnName))) {
+        columnsWithoutNewCols += column
+      }
+    }
+
+
     if (alterTableModel.tableProperties != null) {
       CarbonUtil
         .setLocalDictColumnsToWrapperSchema(newCols.asJava,
@@ -306,18 +385,47 @@ class AlterTableColumnSchemaGenerator(
           tableSchema.getTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE))
     }
 
+    val includeExcludeColOfMainTable = getLocalDictColumnList(tableSchema.getTableProperties
+      .asScala,
+      columnsWithoutNewCols)
+    val alterMutableTblProperties: scala.collection.mutable.Map[String, String] = mutable
+      .Map(alterTableModel.tableProperties.toSeq: _*)
+    val includeExcludeColOfAlterTable = getLocalDictColumnList(alterMutableTblProperties,
+      newCols.to[mutable.ListBuffer])
+
+    // Append all Local Dictionary Include and Exclude columns of Alter Table to that of Main Table
+    includeExcludeColOfMainTable._1.appendAll(includeExcludeColOfAlterTable._1)
+    includeExcludeColOfMainTable._2.appendAll(includeExcludeColOfAlterTable._2)
+
+    val localDictionaryIncludeColumn = new StringBuilder
+    val localDictionaryExcludeColumn = new StringBuilder
+    includeExcludeColOfMainTable._1.foreach { column =>
+      localDictionaryIncludeColumn.append(column.getColumnName).append(",")
+    }
+    includeExcludeColOfMainTable._2.foreach { column =>
+      localDictionaryExcludeColumn.append(column.getColumnName).append(",")
+    }
+
     // populate table properties map
     val tablePropertiesMap = tableSchema.getTableProperties
     alterTableModel.tableProperties.foreach {
-      x => val value = tablePropertiesMap.get(x._1)
+      case (key, mapValue) =>
+        val value = tablePropertiesMap.get(key)
         if (null != value) {
-          if (value != x._2) {
-            tablePropertiesMap.put(x._1, value + "," + x._2)
+          if (value != mapValue) {
+            tablePropertiesMap.put(key, value + "," + mapValue)
           }
         } else {
-          tablePropertiesMap.put(x._1, x._2)
+          tablePropertiesMap.put(key, mapValue)
         }
     }
+
+    // The Final Map should contain the combined Local Dictionary Include and
+    // Local Dictionary Exclude Columns from both Main table and Alter table
+    tablePropertiesMap
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE, localDictionaryIncludeColumn.toString())
+    tablePropertiesMap
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, localDictionaryExcludeColumn.toString())
     // This part will create dictionary file for all newly added dictionary columns
     // if valid default value is provided,
     // then that value will be included while creating dictionary file
@@ -341,7 +449,7 @@ class AlterTableColumnSchemaGenerator(
           }
         }
         else if (elem._1.equalsIgnoreCase("no_inverted_index") &&
-          (elem._2.split(",").contains(col.getColumnName))) {
+                 (elem._2.split(",").contains(col.getColumnName))) {
           col.getEncodingList.remove(Encoding.INVERTED_INDEX)
         }
       }
@@ -391,7 +499,7 @@ object TableNewProcessor {
     if (dataType == DataTypes.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
-    if (dataType == DataTypes.TIMESTAMP && ! highCardinalityDims.contains(colName)) {
+    if (dataType == DataTypes.TIMESTAMP && !highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     columnSchema.setEncodingList(encoders)
@@ -456,7 +564,7 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
     val isParentColumnRelation = map.isDefined && map.get.get(field).isDefined
-    if(!isParentColumnRelation) {
+    if (!isParentColumnRelation) {
       val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
       if (highCardinalityDims.contains(colName)) {
         encoders.remove(Encoding.DICTIONARY)
@@ -482,7 +590,7 @@ class TableNewProcessor(cm: TableModel) {
     if (isVarcharColumn(colName)) {
       columnSchema.setDataType(DataTypes.VARCHAR)
     }
-    if(isParentColumnRelation) {
+    if (isParentColumnRelation) {
       val dataMapField = map.get.get(field).get
       columnSchema.setFunction(dataMapField.aggregateFunction)
       val columnRelationList = dataMapField.columnTableRelationList.get
@@ -606,7 +714,7 @@ class TableNewProcessor(cm: TableModel) {
           cm.dataMapRelation.get.get(field).get.aggregateFunction.equalsIgnoreCase("sum") ||
           cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg") ||
           cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("count")
-        if(!isAggFunPresent) {
+        if (!isAggFunPresent) {
           cm.parentTable.get.getColumnByName(
             cm.parentTable.get.getTableName,
             cm.dataMapRelation.get.get(field).get.columnTableRelationList.get(0).parentColumnName)
@@ -713,9 +821,12 @@ class TableNewProcessor(cm: TableModel) {
               colSchema
             } else {
               LOGGER.error(s"Bucket field must be dimension column and " +
-                           s"should not be measure or complex column: ${colSchema.getColumnName}")
+                           s"should not be measure or complex column: ${ colSchema.getColumnName }")
               CarbonException.analysisException(s"Bucket field must be dimension column and " +
-                        s"should not be measure or complex column: ${colSchema.getColumnName}")
+                                                s"should not be measure or complex column: ${
+                                                  colSchema
+                                                    .getColumnName
+                                                }")
             }
           case _ =>
             LOGGER.error(s"Bucket field is not present in table columns")
@@ -750,13 +861,14 @@ class TableNewProcessor(cm: TableModel) {
 
   /**
    * Method to check to get the encoder from parent or not
+   *
    * @param field column field
    * @return get encoder from parent
    */
-  private def getEncoderFromParent(field: Field) : Boolean = {
-     cm.parentTable.isDefined &&
-        cm.dataMapRelation.get.get(field).isDefined &&
-        cm.dataMapRelation.get.get(field).get.columnTableRelationList.size==1
+  private def getEncoderFromParent(field: Field): Boolean = {
+    cm.parentTable.isDefined &&
+    cm.dataMapRelation.get.get(field).isDefined &&
+    cm.dataMapRelation.get.get(field).get.columnTableRelationList.size == 1
   }
 
   //  For checking if the specified col group columns are specified in fields list.

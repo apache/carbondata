@@ -112,6 +112,15 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists preaggMain_preagg1")
   }
 
+  test("test dropping of complex column should throw exception") {
+    sql("drop table if exists maintbl")
+    sql("create table maintbl (a string, b string, c struct<si:int>) stored by 'carbondata'")
+    assert(intercept[ProcessMetaDataException] {
+      sql("alter table maintbl drop columns(b,c)").show
+    }.getMessage.contains("Complex column cannot be dropped"))
+    sql("drop table if exists maintbl")
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS dropcolumntest")
     sql("DROP TABLE IF EXISTS hivetable")
