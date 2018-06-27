@@ -143,7 +143,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
     }
     LOGGER.info(
-        "Time taken to intialize lucene searcher: " + (System.currentTimeMillis() - startTime));
+        "Time taken to initialize lucene searcher: " + (System.currentTimeMillis() - startTime));
   }
 
   private IndexSearcher createIndexSearcher(Path indexPath) throws IOException {

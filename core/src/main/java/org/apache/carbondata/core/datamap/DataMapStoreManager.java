@@ -179,7 +179,7 @@ public final class DataMapStoreManager {
    */
   public synchronized void registerDataMapCatalog(DataMapProvider dataMapProvider,
       DataMapSchema dataMapSchema) throws IOException {
-    intializeDataMapCatalogs(dataMapProvider);
+    initializeDataMapCatalogs(dataMapProvider);
     String name = dataMapSchema.getProviderName();
     DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
     if (dataMapCatalog == null) {
@@ -215,7 +215,7 @@ public final class DataMapStoreManager {
    */
   public synchronized DataMapCatalog getDataMapCatalog(DataMapProvider dataMapProvider,
       String providerName) throws IOException {
-    intializeDataMapCatalogs(dataMapProvider);
+    initializeDataMapCatalogs(dataMapProvider);
     return dataMapCatalogs.get(providerName);
   }
 
@@ -223,7 +223,7 @@ public final class DataMapStoreManager {
    * Initialize by reading all datamaps from store and re register it
    * @param dataMapProvider
    */
-  private void intializeDataMapCatalogs(DataMapProvider dataMapProvider) throws IOException {
+  private void initializeDataMapCatalogs(DataMapProvider dataMapProvider) throws IOException {
     if (dataMapCatalogs == null) {
       dataMapCatalogs = new ConcurrentHashMap<>();
       List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();

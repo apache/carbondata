@@ -26,7 +26,7 @@ import org.apache.spark.{SparkConf, TaskContextImpl}
  */
 object SparkUtil4Test {
 
-  private var intializedMock = false
+  private var initializedMock = false
 
   def getConfiguredLocalDirs(conf: SparkConf): Array[String] = {
     Utils.getConfiguredLocalDirs(conf)
@@ -41,13 +41,13 @@ object SparkUtil4Test {
    * @param sqlContext
    */
   def createTaskMockUp(sqlContext: SQLContext): Unit = {
-    if (!intializedMock) {
+    if (!initializedMock) {
       if (sqlContext.sparkContext.version.startsWith("2.1")) {
         createTaskMockUp2_1
       } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
         createTaskMockUp2_2()
       }
-      intializedMock = true
+      initializedMock = true
     }
   }
 
