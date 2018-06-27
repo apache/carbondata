@@ -82,13 +82,15 @@ public class QueryModelBuilder {
       }
     }
     projection = optimizeProjectionForComplexColumns(projection, projectionColumns, factTableName);
+    List<String> projectionDimensionAndMeasures = new ArrayList<>();
     this.projection = projection;
     for (ProjectionDimension projectionDimension : projection.getDimensions()) {
-      LOGGER.info("Project Columns: " + projectionDimension.getColumnName());
+      projectionDimensionAndMeasures.add(projectionDimension.getColumnName());
     }
     for (ProjectionMeasure projectionMeasure : projection.getMeasures()) {
-      LOGGER.info("Project Columns: " + projectionMeasure.getColumnName());
+      projectionDimensionAndMeasures.add(projectionMeasure.getColumnName());
     }
+    LOGGER.info("Projection Columns: " + projectionDimensionAndMeasures);
     return this;
   }
 

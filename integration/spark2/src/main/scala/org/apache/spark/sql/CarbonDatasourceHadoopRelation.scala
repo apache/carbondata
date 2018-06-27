@@ -18,6 +18,7 @@
 package org.apache.spark.sql
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.util.control.Breaks._
 
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
@@ -75,24 +76,34 @@ case class CarbonDatasourceHadoopRelation(
       CarbonFilters.createCarbonFilter(schema, filter)
     }.reduceOption(new AndExpression(_, _))
 
+    var parentColumn = new ListBuffer[String]
     // In case of Struct or StructofStruct Complex type, get the project column for given
     // parent/child field and pushdown the corresponding project column. In case of Array,
     // ArrayofStruct or StructofArray, pushdown parent column
     var reqColumns = projects.map {
       case a@Alias(s: GetStructField, name) =>
-        val arrayTypeExists = s.childSchema.map(x => x.dataType)
-          .filter(dataType => dataType.isInstanceOf[ArrayType])
-        val ifGetArrayItem = s.child.map(x => x.isInstanceOf[GetArrayItem])
-        var ifGetArrayItemExists = false
-        ifGetArrayItem.foreach(ifexists =>
-          if (ifexists.equals(true)) {
-            ifGetArrayItemExists = true
+        var arrayTypeExists = false
+        var ifGetArrayItemExists = s
+        breakable({
+          while (ifGetArrayItemExists.containsChild != null) {
+            if (ifGetArrayItemExists.child.isInstanceOf[AttributeReference]) {
+              arrayTypeExists = s.childSchema.toString().contains("ArrayType")
+              break
+            } else {
+              if (ifGetArrayItemExists.child.isInstanceOf[GetArrayItem]) {
+                arrayTypeExists = true
+                break
+              }
+              else {
+                ifGetArrayItemExists = ifGetArrayItemExists.child.asInstanceOf[GetStructField]
+              }
+            }
           }
-        )
-        if (0 == arrayTypeExists.length && ifGetArrayItemExists.equals(false)) {
+        })
+        if (!arrayTypeExists) {
+          parentColumn += s.toString().split("\\.")(0).replaceAll("#.*", "").toLowerCase
+          parentColumn = parentColumn.distinct
           s.toString().replaceAll("#[0-9]*", "").toLowerCase
-        } else if (ifGetArrayItemExists.equals(true)) {
-          s.toString().split("\\.")(0).replaceAll("#.*", "").toLowerCase
         } else {
           s.toString().split("\\.")(0).replaceAll("#.*", "").toLowerCase
         }
@@ -117,7 +128,9 @@ case class CarbonDatasourceHadoopRelation(
 
         if (null != reqColumns && reqColumns.nonEmpty) {
           reqColumns.foreach(reqCol => {
-            if (!reqCol.toString.equalsIgnoreCase(col) && !reqCol.toString.startsWith(col + ".")) {
+            if (!reqCol.toString.equalsIgnoreCase(col) &&
+                !reqCol.toString.startsWith(col.toLowerCase + ".") &&
+                !parentColumn.contains(col.toLowerCase)) {
               output += col
             } else {
               output += reqCol.toString
