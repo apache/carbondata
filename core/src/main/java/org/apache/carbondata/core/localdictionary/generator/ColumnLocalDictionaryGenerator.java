@@ -39,7 +39,12 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
     this.dictionaryHolder = new MapBasedDictionaryStore(newThreshold);
     ByteBuffer byteBuffer = ByteBuffer.allocate(
         lvLength + CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
-    byteBuffer.putShort((short)CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+
+    if (lvLength == CarbonCommonConstants.SHORT_SIZE_IN_BYTE) {
+      byteBuffer.putShort((short) CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+    } else {
+      byteBuffer.putInt(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+    }
     byteBuffer.put(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
     // for handling null values
     try {

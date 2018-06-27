@@ -672,11 +672,12 @@ object AlterTableUtil {
   def ValidateSetTablePropertiesForLocalDict(tblPropertiesMap: mutable.Map[String, String],
       carbonTable: CarbonTable,
       property: (String, String)): Unit = {
+    var primitiveComplexChildColumns = new mutable.HashSet[String]
     var localDictColumns: Seq[String] = Seq[String]()
     var dictIncludeColumns: Seq[String] = Seq[String]()
 
     val allColumns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
-    localDictColumns = property._2.toString.split(",").map(_.trim)
+    localDictColumns = property._2.toString.toLowerCase.split(",").map(_.trim)
 
     CarbonScalaUtil.validateLocalDictionaryColumns(tblPropertiesMap, localDictColumns)
 
@@ -684,7 +685,7 @@ object AlterTableUtil {
     localDictColumns.foreach { distCol =>
       if (!allColumns.exists(x => x.getColumnName.equalsIgnoreCase(distCol.trim))) {
         val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
-                       " does not exist in table. Please check create table statement."
+                       " does not exist in table. Please check the DDL."
         throw new MalformedCarbonCommandException(errormsg)
       }
     }
@@ -720,7 +721,7 @@ object AlterTableUtil {
     }
 
     /**
-     * check whether any child column present in comples type column is string type
+     * check whether any child column present in complex type column is string type
      *
      * @param schemas
      * @return
@@ -732,13 +733,15 @@ object AlterTableUtil {
       schemas.foreach { column =>
         if (childColumnCount > 0) {
           if (column.getDataType.equals(DataTypes.STRING)) {
+            primitiveComplexChildColumns.add(column.getColumnName)
             numberOfPrimitiveColumns += 1
             childColumnCount -= 1
           } else {
             childColumnCount -= 1
           }
         }
-        if (localDictColumns.exists(x => x.equalsIgnoreCase(column.getColumnName)) &&
+        if ((localDictColumns.exists(x => x.equalsIgnoreCase(column.getColumnName)) ||
+             primitiveComplexChildColumns.contains(column.getColumnName)) &&
             column.getNumberOfChild > 0) {
           childColumnCount = column.getNumberOfChild
         }
