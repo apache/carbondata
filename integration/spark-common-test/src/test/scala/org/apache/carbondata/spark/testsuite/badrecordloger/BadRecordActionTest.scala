@@ -125,19 +125,6 @@ class BadRecordActionTest extends QueryTest {
       Seq(Row(2)))
   }
 
-  test("test bad record REDIRECT but not having location should throw exception") {
-    sql("drop table if exists sales")
-    sql(
-      """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
-    val exMessage = intercept[Exception] {
-      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +
-          "('bad_records_action'='REDIRECT', 'DELIMITER'=" +
-          " ',', 'QUOTECHAR'= '\"', 'BAD_RECORD_PATH'='','timestampformat'='yyyy/MM/dd')")
-    }
-    assert(exMessage.getMessage.contains("Invalid bad records location."))
-  }
-
   test("test bad record REDIRECT but not having empty location in option should throw exception") {
     sql("drop table if exists sales")
     sql(
@@ -153,7 +140,8 @@ class BadRecordActionTest extends QueryTest {
             "('bad_records_action'='REDIRECT', 'DELIMITER'=" +
             " ',', 'QUOTECHAR'= '\"','timestampformat'='yyyy/MM/dd')")
       }
-      assert(exMessage.getMessage.contains("Invalid bad records location."))
+      assert(exMessage.getMessage
+        .contains("Cannot redirect bad records as bad record location is not provided."))
     }
     finally {
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,

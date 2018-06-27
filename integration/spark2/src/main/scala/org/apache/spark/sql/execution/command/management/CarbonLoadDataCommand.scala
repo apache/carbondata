@@ -71,7 +71,7 @@ import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
-import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
+import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.spark.load.{CsvRDDHelper, DataLoadProcessorStepOnSpark}
@@ -102,6 +102,8 @@ case class CarbonLoadDataCommand(
 
   var currPartitions: util.List[PartitionSpec] = _
 
+  var parentTablePath: String = _
+
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
@@ -128,6 +130,12 @@ case class CarbonLoadDataCommand(
           case l: LogicalRelation => l
         }.head
       sizeInBytes = logicalPartitionRelation.relation.sizeInBytes
+    }
+    if (table.isChildDataMap) {
+      val parentTableIdentifier = table.getTableInfo.getParentRelationIdentifiers.get(0)
+      parentTablePath = CarbonEnv
+        .getCarbonTable(Some(parentTableIdentifier.getDatabaseName),
+          parentTableIdentifier.getTableName)(sparkSession).getTablePath
     }
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     if(CarbonUtil.hasAggregationDataMap(table)) {
@@ -182,11 +190,14 @@ case class CarbonLoadDataCommand(
           carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
             CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
 
+      optionsFinal
+        .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
       val factPath = if (dataFrame.isDefined) {
         ""
       } else {
         FileUtils.getPaths(factPathFromUser, hadoopConf)
       }
+      carbonLoadModel.setParentTablePath(parentTablePath)
       carbonLoadModel.setFactFilePath(factPath)
       carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
       carbonLoadModel.setAggLoadRequest(

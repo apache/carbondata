@@ -251,7 +251,7 @@ class TestTimeSeriesUnsupportedSuite extends QueryTest with BeforeAndAfterAll wi
       sql("alter table maintable_agg1_minute rename to maintable_agg1_minute_new")
     }
     assert(e.getMessage.contains(
-      "Rename operation for pre-aggregate table is not supported."))
+      "Rename operation for datamaps is not supported."))
 
     // check datamap after alter
     checkExistence(sql("SHOW DATAMAP ON TABLE mainTable"), true, "maintable_agg1_minute")

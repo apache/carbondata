@@ -31,7 +31,7 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable}
@@ -783,7 +783,7 @@ object PreAggregateDropColumnPreListener extends OperationEventListener {
   }
 }
 
-object PreAggregateRenameTablePreListener extends OperationEventListener {
+object RenameTablePreListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *
@@ -796,11 +796,16 @@ object PreAggregateRenameTablePreListener extends OperationEventListener {
     val carbonTable = renameTablePostListener.carbonTable
     if (carbonTable.isChildDataMap) {
       throw new UnsupportedOperationException(
-        "Rename operation for pre-aggregate table is not supported.")
+        "Rename operation for datamaps is not supported.")
     }
-    if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
+    if (carbonTable.hasAggregationDataMap) {
       throw new UnsupportedOperationException(
         "Rename operation is not supported for table with pre-aggregate tables")
+    }
+    val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+    if (!indexSchemas.isEmpty) {
+      throw new UnsupportedOperationException(
+        "Rename operation is not supported for table with datamaps")
     }
   }
 }

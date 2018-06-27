@@ -102,32 +102,6 @@ object AlterTableUtil {
   }
 
   /**
-   * This method will release the locks by manually forming a lock path. Specific usage for
-   * rename table
-   *
-   * @param locks
-   * @param locksAcquired
-   * @param dbName
-   * @param tableName
-   * @param tablePath
-   */
-  def releaseLocksManually(locks: List[ICarbonLock],
-      locksAcquired: List[String],
-      dbName: String,
-      tableName: String,
-      tablePath: String): Unit = {
-    val lockLocation = tablePath
-    locks.zip(locksAcquired).foreach { case (carbonLock, lockType) =>
-      val lockFilePath = CarbonTablePath.getLockFilePath(lockLocation, lockType)
-      if (carbonLock.releaseLockManually(lockFilePath)) {
-        LOGGER.info(s"Alter table lock released successfully: ${ lockType }")
-      } else {
-        LOGGER.error("Unable to release lock during alter table operation")
-      }
-    }
-  }
-
-  /**
    * @param carbonTable
    * @param schemaEvolutionEntry
    * @param thriftTable
@@ -195,7 +169,6 @@ object AlterTableUtil {
     val oldCarbonTableIdentifier = oldCarbonTable.getCarbonTableIdentifier
     val database = oldCarbonTable.getDatabaseName
     val newCarbonTableIdentifier = new CarbonTableIdentifier(database, newTableName, tableId)
-    val newTablePath = CarbonTablePath.getNewTablePath(tablePath, newTableName)
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val fileType = FileFactory.getFileType(tablePath)
     if (FileFactory.isFileExist(tablePath, fileType)) {
@@ -204,10 +177,8 @@ object AlterTableUtil {
       val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
       if (updatedTime == timeStamp) {
         LOGGER.error(s"Reverting changes for $database.${oldCarbonTable.getTableName}")
-        FileFactory.getCarbonFile(tablePath, fileType)
-          .renameForce(CarbonTablePath.getNewTablePath(tablePath, oldCarbonTable.getTableName))
         val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
-          newTablePath,
+          tablePath,
           newCarbonTableIdentifier)
         metastore.revertTableSchemaInAlterFailure(oldCarbonTableIdentifier,
           tableInfo, absoluteTableIdentifier)(sparkSession)

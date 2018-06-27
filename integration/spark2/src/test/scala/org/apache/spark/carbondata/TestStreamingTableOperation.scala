@@ -53,6 +53,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   val badRecordFilePath: File =new File(currentPath + "/target/test/badRecords")
 
   override def beforeAll {
+    badRecordFilePath.delete()
     badRecordFilePath.mkdirs()
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -191,6 +192,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("USE default")
     sql("DROP DATABASE IF EXISTS streaming CASCADE")
     var csvDataDir = integrationPath + "/spark2/target/csvdatanew"
+    badRecordFilePath.delete()
     new File(csvDataDir).delete()
     csvDataDir = integrationPath + "/spark2/target/csvdata"
     new File(csvDataDir).delete()
@@ -1627,8 +1629,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       generateBadRecords = true,
       badRecordAction = "redirect",
       autoHandoff = false,
-      badRecordsPath = badRecordFilePath.getCanonicalPath
-    )
+      badRecordsPath = badRecordFilePath.getCanonicalPath)
     assert(new File(badRecordFilePath.getCanonicalFile + "/streaming/bad_record_redirect").isDirectory)
     checkAnswer(sql("select count(*) from streaming.bad_record_redirect"), Seq(Row(19)))
   }
@@ -2199,7 +2200,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
-         | 'sort_columns'='name', 'dictionary_include'='city,register')
+         | 'sort_columns'='name', 'dictionary_include'='city,register', 'BAD_RECORDS_PATH'='$badRecordFilePath')
          | """.stripMargin)
 
     if (withBatchLoad) {
@@ -2228,7 +2229,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
-         | 'sort_columns'='name', 'dictionary_include'='id,name,salary,tax,percent,updated')
+         | 'sort_columns'='name', 'dictionary_include'='id,name,salary,tax,percent,updated', 'BAD_RECORDS_PATH'='$badRecordFilePath')
          | """.stripMargin)
 
     if (withBatchLoad) {
