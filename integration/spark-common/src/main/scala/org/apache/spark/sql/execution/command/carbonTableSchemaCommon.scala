@@ -32,6 +32,8 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
@@ -43,7 +45,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema,
   ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
@@ -814,6 +816,11 @@ class TableNewProcessor(cm: TableModel) {
     }
     // Add table comment to table properties
     tablePropertiesMap.put("comment", cm.tableComment.getOrElse(""))
+    val badRecordsPath = getBadRecordsPath(tablePropertiesMap,
+      cm.tableName,
+      tableSchema.getTableId,
+      cm.databaseNameOp.getOrElse("default"))
+    tablePropertiesMap.put("bad_records_path", badRecordsPath)
     tableSchema.setTableProperties(tablePropertiesMap)
     if (cm.bucketFields.isDefined) {
       val bucketCols = cm.bucketFields.get.bucketColumns.map { b =>
@@ -860,6 +867,20 @@ class TableNewProcessor(cm: TableModel) {
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     tableInfo
+  }
+
+  private def getBadRecordsPath(tablePropertiesMap: util.HashMap[String, String],
+      tableName: String,
+      tableId: String,
+      databaseName: String): String = {
+    val badRecordsPath = tablePropertiesMap.asScala
+      .getOrElse("bad_records_path", CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
+    if (badRecordsPath == null || badRecordsPath.isEmpty) {
+      CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL
+    } else {
+      badRecordsPath + CarbonCommonConstants.FILE_SEPARATOR + databaseName +
+      CarbonCommonConstants.FILE_SEPARATOR + s"${tableName}_$tableId"
+    }
   }
 
   /**

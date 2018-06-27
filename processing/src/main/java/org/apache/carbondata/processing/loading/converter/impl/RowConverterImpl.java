@@ -93,8 +93,9 @@ public class RowConverterImpl implements RowConverter {
     for (int i = 0; i < fields.length; i++) {
       localCaches[i] = new ConcurrentHashMap<>();
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
-          .createFieldEncoder(fields[i], configuration.getTableIdentifier(), i, nullFormat,
-              client, configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord);
+          .createFieldEncoder(fields[i], configuration.getTableIdentifier(), i, nullFormat, client,
+              configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord,
+              configuration.getParentTablePath());
       fieldConverterList.add(fieldConverter);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
@@ -213,7 +214,8 @@ public class RowConverterImpl implements RowConverter {
       try {
         fieldConverter = FieldEncoderFactory.getInstance()
             .createFieldEncoder(fields[i], configuration.getTableIdentifier(), i, nullFormat,
-                client, configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord);
+                client, configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord,
+                configuration.getParentTablePath());
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

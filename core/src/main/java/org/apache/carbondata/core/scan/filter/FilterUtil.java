@@ -1237,7 +1237,7 @@ public final class FilterUtil {
       if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations()
           && carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
         dictionarySourceAbsoluteTableIdentifier = QueryUtil
-            .getTableIdentifierForColumn(carbonDimension, carbonTable.getAbsoluteTableIdentifier());
+            .getTableIdentifierForColumn(carbonDimension);
         columnIdentifier = new ColumnIdentifier(
             carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
             carbonDimension.getColumnProperties(), carbonDimension.getDataType());

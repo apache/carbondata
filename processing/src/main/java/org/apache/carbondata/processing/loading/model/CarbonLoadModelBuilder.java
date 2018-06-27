@@ -37,6 +37,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 import org.apache.carbondata.processing.util.TableOptionConstant;
 
 import org.apache.commons.lang.StringUtils;
@@ -60,7 +61,7 @@ public class CarbonLoadModelBuilder {
    * @param taskNo
    * @return a new CarbonLoadModel instance
    */
-  public CarbonLoadModel build(Map<String, String> options, long UUID, String taskNo)
+  public CarbonLoadModel build(Map<String, String>  options, long UUID, String taskNo)
       throws InvalidLoadOptionException, IOException {
     Map<String, String> optionsFinal = LoadOption.fillOptionWithDefaultValue(options);
 
@@ -72,6 +73,7 @@ public class CarbonLoadModelBuilder {
       }
       optionsFinal.put("fileheader", Strings.mkString(columns, ","));
     }
+    optionsFinal.put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options, table));
     CarbonLoadModel model = new CarbonLoadModel();
     model.setCarbonTransactionalTable(table.isTransactionalTable());
     model.setFactTimeStamp(UUID);
@@ -163,10 +165,12 @@ public class CarbonLoadModelBuilder {
 
     if (Boolean.parseBoolean(bad_records_logger_enable) ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
-      if (!CarbonUtil.isValidBadStorePath(bad_record_path)) {
-        throw new InvalidLoadOptionException("Invalid bad records location.");
+      if (!StringUtils.isEmpty(bad_record_path)) {
+        bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path);
+      } else {
+        throw new InvalidLoadOptionException(
+            "Cannot redirect bad records as bad record location is not provided.");
       }
-      bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path);
     }
 
     carbonLoadModel.setBadRecordsLocation(bad_record_path);

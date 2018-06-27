@@ -41,6 +41,7 @@ import org.apache.carbondata.processing.loading.iterator.CarbonOutputIteratorWra
 import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -279,9 +280,9 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     model.setDatabaseName(CarbonTableOutputFormat.getDatabaseName(conf));
     model.setTableName(CarbonTableOutputFormat.getTableName(conf));
     model.setCarbonTransactionalTable(true);
-    model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(getCarbonTable(conf)));
+    CarbonTable carbonTable = getCarbonTable(conf);
+    model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable));
     model.setTablePath(getTablePath(conf));
-
     setFileHeader(conf, model);
     model.setSerializationNullFormat(conf.get(SERIALIZATION_NULL_FORMAT, "\\N"));
     model.setBadRecordsLoggerEnable(
@@ -345,14 +346,18 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
                     CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
                     CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))));
 
-    model.setBadRecordsLocation(
-        conf.get(BAD_RECORD_PATH,
-            carbonProperty.getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
-                carbonProperty.getProperty(
-                    CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-                    CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))));
-
+    String badRecordsPath = conf.get(BAD_RECORD_PATH);
+    if (StringUtils.isEmpty(badRecordsPath)) {
+      badRecordsPath =
+          carbonTable.getTableInfo().getFactTable().getTableProperties().get("bad_records_path");
+      if (StringUtils.isEmpty(badRecordsPath)) {
+        badRecordsPath = carbonProperty
+            .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH, carbonProperty
+                .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+                    CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL));
+      }
+    }
+    model.setBadRecordsLocation(badRecordsPath);
     model.setUseOnePass(
         conf.getBoolean(IS_ONE_PASS_LOAD,
             Boolean.parseBoolean(

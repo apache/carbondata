@@ -206,16 +206,6 @@ public class CarbonUtilTest {
     assertTrue(!testDir.exists());
   }
 
-  @Test public void testToGetBadLogPath() throws InterruptedException {
-    new MockUp<CarbonProperties>() {
-      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
-        return "../unibi-solutions/system/carbon/badRecords";
-      }
-    };
-    String badLogStoreLocation = CarbonUtil.getBadLogPath("badLogPath");
-    assertEquals(badLogStoreLocation.replace("\\", "/"), "../unibi-solutions/system/carbon/badRecords/badLogPath");
-  }
-
   @Test public void testToDeleteFoldersAndFilesForCarbonFileSilently()
       throws IOException, InterruptedException {
     LocalCarbonFile testDir = new LocalCarbonFile("../core/src/test/resources/testDir");

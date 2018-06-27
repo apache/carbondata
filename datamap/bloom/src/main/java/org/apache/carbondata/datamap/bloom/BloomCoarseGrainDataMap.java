@@ -124,9 +124,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
             CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
             CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
         dataField.setTimestampFormat(tsFormat);
-        FieldConverter fieldConverter =
-            FieldEncoderFactory.getInstance().createFieldEncoder(dataField, absoluteTableIdentifier,
-                i, nullFormat, null, false, localCaches[i], false);
+        FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
+            .createFieldEncoder(dataField, absoluteTableIdentifier, i, nullFormat, null, false,
+                localCaches[i], false, carbonTable.getTablePath());
         this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
       }
     } catch (IOException e) {

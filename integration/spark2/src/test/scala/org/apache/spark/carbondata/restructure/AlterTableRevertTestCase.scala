@@ -98,18 +98,6 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test to check if exception during rename table does not throws table not found exception") {
-    val locks = AlterTableUtil
-      .validateTableAndAcquireLock("default", "reverttest", List("meta.lock"))(sqlContext
-        .sparkSession)
-    val exception = intercept[ProcessMetaDataException] {
-      sql("alter table reverttest rename to revert")
-    }
-    AlterTableUtil.releaseLocks(locks)
-    assert(exception.getMessage.contains(
-      "Alter table rename table operation failed: Acquire table lock failed after retry, please try after some time"))
-  }
-
   override def afterAll() {
     hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
     sql("drop table if exists reverttest")
