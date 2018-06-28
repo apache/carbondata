@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
 
 /**
  * An information collector used for EXPLAIN command, to print out
@@ -94,24 +94,27 @@ public class ExplainCollector {
     }
   }
 
-  public static void recordDefaultDataMapPruning(DataMapSchema dataMapSchema, int numBlocklets) {
+  public static void recordDefaultDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+      int numBlocklets) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterDefaultPruning(dataMapSchema, numBlocklets);
+      scan.setNumBlockletsAfterDefaultPruning(dataMapWrapperSimpleInfo, numBlocklets);
     }
   }
 
-  public static void recordCGDataMapPruning(DataMapSchema dataMapSchema, int numBlocklets) {
+  public static void recordCGDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+      int numBlocklets) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterCGPruning(dataMapSchema, numBlocklets);
+      scan.setNumBlockletsAfterCGPruning(dataMapWrapperSimpleInfo, numBlocklets);
     }
   }
 
-  public static void recordFGDataMapPruning(DataMapSchema dataMapSchema, int numBlocklets) {
+  public static void recordFGDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+      int numBlocklets) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterFGPruning(dataMapSchema, numBlocklets);
+      scan.setNumBlockletsAfterFGPruning(dataMapWrapperSimpleInfo, numBlocklets);
     }
   }
 

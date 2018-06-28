@@ -38,7 +38,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
 
   override protected def beforeAll(): Unit = {
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
-    createFile(bigFile, line = 500000)
+    createFile(bigFile, line = 50000)
     createFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
@@ -298,6 +298,83 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     checkQuery(dataMapName, shouldHit = false)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
+
+  test("test bloom datamap: multiple datamaps with each on one column vs one datamap on multiple columns") {
+    val iterations = 1
+    // 500000 lines will result to 3 blocklets and bloomfilter datamap will prune 2 blocklets.
+    val datamap11 = "datamap11"
+    val datamap12 = "datamap12"
+    val datamap13 = "datamap13"
+    val datamap2 = "datamap2"
+
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+    // create a table and 3 bloom datamaps on it, each datamap contains one index column
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128', 'SORT_COLUMNS'='s1')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $datamap11 ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='id', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $datamap12 ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='name', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $datamap13 ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+      """.stripMargin)
+
+    // create a table and 1 bloom datamap on it, this datamap contains 3 index columns
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128', 'SORT_COLUMNS'='s1')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $datamap2 ON TABLE $normalTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='id, name, city', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+      """.stripMargin)
+
+    (0 until iterations).foreach { p =>
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '${bigFile}' INTO TABLE $bloomDMSampleTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '${bigFile}' INTO TABLE $normalTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+    }
+
+    var res = sql(s"explain select * from $bloomDMSampleTable where id = 1 and city = 'city_1' and name='n1'")
+    checkExistence(res, true, datamap11, datamap12, datamap13)
+    res = sql(s"explain select * from $normalTable where id = 1 and city = 'city_1' and name='n1'")
+    checkExistence(res, true, datamap2)
+    // in the following cases, default blocklet datamap will prune all the blocklets
+    // and bloomfilter datamap will not take effects
+    res = sql(s"explain select * from $bloomDMSampleTable where id < 0")
+    checkExistence(res, false, datamap11, datamap12, datamap13)
+    res = sql(s"explain select * from $normalTable where id < 0")
+    checkExistence(res, false, datamap2)
+
+    // we do not care about the datamap name here, only to validate the query results are them same
+    checkQuery("fakeDm", shouldHit = false)
   }
 
   override protected def afterAll(): Unit = {
