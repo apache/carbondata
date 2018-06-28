@@ -69,7 +69,7 @@ public class CacheType<K, V> {
   /**
    * @param cacheName
    */
-  private CacheType(String cacheName) {
+  public CacheType(String cacheName) {
     this.cacheName = cacheName;
   }
 
