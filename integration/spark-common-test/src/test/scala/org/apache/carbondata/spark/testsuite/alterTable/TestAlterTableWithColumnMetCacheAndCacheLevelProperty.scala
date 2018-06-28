@@ -160,6 +160,25 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
     checkExistence(descResult, true, "CACHE_LEVEL")
   }
 
+  test("validate column_meta_cache and cache_level on child dataMap- ALTER_CACHE_LEVEL_07") {
+    intercept [Exception] {
+      sql("CREATE DATAMAP agg1 ON TABLE alter_column_meta_cache USING 'preaggregate' DMPROPERTIES('column_meta_cache'='c2') AS SELECT c2,sum(c3) FROM alter_column_meta_cache GROUP BY c2")
+    }
+
+    intercept [Exception] {
+      sql("CREATE DATAMAP agg1 ON TABLE alter_column_meta_cache USING 'preaggregate' DMPROPERTIES('cache_level'='blocklet') AS SELECT c2,sum(c3) FROM alter_column_meta_cache GROUP BY c2")
+    }
+
+    // create datamap
+    sql("CREATE DATAMAP agg1 ON TABLE alter_column_meta_cache USING 'preaggregate' AS SELECT c2,sum(c3) FROM alter_column_meta_cache GROUP BY c2")
+    intercept [Exception] {
+      sql("Alter table alter_column_meta_cache_agg1 SET TBLPROPERTIES('column_meta_cache'='c2')")
+    }
+    intercept [Exception] {
+      sql("Alter table alter_column_meta_cache_agg1 SET TBLPROPERTIES('cache_level'='BLOCKLET')")
+    }
+  }
+
   override def afterAll: Unit = {
     // drop table
     dropTable

@@ -384,8 +384,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       // validate the column_meta_cache option
       val tableColumns = dims.map(x => x.name.get) ++ msrs.map(x => x.name.get)
-      CommonUtil.validateColumnMetaCacheFields(tableName,
+      CommonUtil.validateColumnMetaCacheFields(
         dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+        tableName,
         tableColumns,
         tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).get,
         tableProperties)
