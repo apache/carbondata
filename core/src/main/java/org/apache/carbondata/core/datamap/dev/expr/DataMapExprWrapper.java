@@ -25,7 +25,6 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -90,8 +89,12 @@ public interface DataMapExprWrapper extends Serializable {
   DataMapLevel getDataMapLevel();
 
   /**
-   * Get the datamap schema
+   * get the left datamap wrapper
    */
-  DataMapSchema getDataMapSchema();
+  DataMapExprWrapper getLeftDataMapWrapper();
 
+  /**
+   * get the right datamap wrapper
+   */
+  DataMapExprWrapper getRightDataMapWrapprt();
 }
