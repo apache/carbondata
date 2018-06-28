@@ -18,7 +18,7 @@
 package org.apache.carbondata.core.profiler;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSchema;
 
 /**
  * Used for EXPLAIN command
@@ -29,13 +29,13 @@ public class TablePruningInfo {
   private int totalBlocklets;
   private String filterStatement;
 
-  private DataMapSchema defaultDataMap;
+  private DataMapWrapperSchema defaultDataMap;
   private int numBlockletsAfterDefaultPruning;
 
-  private DataMapSchema cgDataMap;
+  private DataMapWrapperSchema cgDataMap;
   private int numBlockletsAfterCGPruning;
 
-  private DataMapSchema fgDataMap;
+  private DataMapWrapperSchema fgDataMap;
   private int numBlockletsAfterFGPruning;
 
   void addTotalBlocklets(int numBlocklets) {
@@ -46,18 +46,19 @@ public class TablePruningInfo {
     this.filterStatement = filterStatement;
   }
 
-  void setNumBlockletsAfterDefaultPruning(DataMapSchema dataMapSchema, int numBlocklets) {
-    this.defaultDataMap = dataMapSchema;
+  void setNumBlockletsAfterDefaultPruning(DataMapWrapperSchema dataMapWrapperSchema,
+      int numBlocklets) {
+    this.defaultDataMap = dataMapWrapperSchema;
     this.numBlockletsAfterDefaultPruning = numBlocklets;
   }
 
-  void setNumBlockletsAfterCGPruning(DataMapSchema dataMapSchema, int numBlocklets) {
-    this.cgDataMap = dataMapSchema;
+  void setNumBlockletsAfterCGPruning(DataMapWrapperSchema dataMapWrapperSchema, int numBlocklets) {
+    this.cgDataMap = dataMapWrapperSchema;
     this.numBlockletsAfterCGPruning = numBlocklets;
   }
 
-  void setNumBlockletsAfterFGPruning(DataMapSchema dataMapSchema, int numBlocklets) {
-    this.fgDataMap = dataMapSchema;
+  void setNumBlockletsAfterFGPruning(DataMapWrapperSchema dataMapWrapperSchema, int numBlocklets) {
+    this.fgDataMap = dataMapWrapperSchema;
     this.numBlockletsAfterFGPruning = numBlocklets;
   }
 
@@ -77,8 +78,8 @@ public class TablePruningInfo {
       int skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterCGPruning;
       builder
           .append(" - pruned by CG DataMap").append("\n")
-          .append("    - name: ").append(cgDataMap.getDataMapName()).append("\n")
-          .append("    - provider: ").append(cgDataMap.getProviderName()).append("\n")
+          .append("    - name: ").append(cgDataMap.getDataMapWrapperName()).append("\n")
+          .append("    - provider: ").append(cgDataMap.getDataMapWrapperProvider()).append("\n")
           .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
     }
     if (fgDataMap != null) {
@@ -90,8 +91,8 @@ public class TablePruningInfo {
       }
       builder
           .append(" - pruned by FG DataMap").append("\n")
-          .append("    - name: ").append(fgDataMap.getDataMapName()).append("\n")
-          .append("    - provider: ").append(fgDataMap.getProviderName()).append("\n")
+          .append("    - name: ").append(fgDataMap.getDataMapWrapperName()).append("\n")
+          .append("    - provider: ").append(fgDataMap.getDataMapWrapperProvider()).append("\n")
           .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
     }
     return builder.toString();

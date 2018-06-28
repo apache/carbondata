@@ -425,10 +425,7 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     assert(df1(0).getString(0).contains("CG DataMap"))
     assert(df1(0).getString(0).contains(dataMapName1))
-    val e11 = intercept[Exception] {
-      assert(df1(0).getString(0).contains(dataMapName2))
-    }
-    assert(e11.getMessage.contains("did not contain \"" + dataMapName2))
+    assert(df1(0).getString(0).contains(dataMapName2))
 
     // make datamap1 invisible
     sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = false")
