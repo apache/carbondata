@@ -109,7 +109,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
       .LOAD_SORT_SCOPE_DEFAULT), tblProps.asScala.getOrElse("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT)))
     // add Cache Level property
-    results ++= Seq(("CACHE_LEVEL", tblProps.getOrDefault("CACHE_LEVEL", "BLOCK"), ""))
+    results ++= Seq(("CACHE_LEVEL", tblProps.asScala.getOrElse(CarbonCommonConstants.CACHE_LEVEL,
+      CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE), ""))
     val isStreaming = tblProps.asScala.getOrElse("streaming", "false")
     results ++= Seq(("Streaming", isStreaming, ""))
     val isLocalDictEnabled = tblProps.asScala
