@@ -81,7 +81,7 @@ public class PageLevelDictionary {
    * @param pageLevelDictionary other page level dictionary
    */
   public void mergerDictionaryValues(PageLevelDictionary pageLevelDictionary) {
-    usedDictionaryValues.and(pageLevelDictionary.usedDictionaryValues);
+    usedDictionaryValues.or(pageLevelDictionary.usedDictionaryValues);
   }
 
   /**

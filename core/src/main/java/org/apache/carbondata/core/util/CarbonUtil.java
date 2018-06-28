@@ -46,6 +46,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
+import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
+import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -3115,5 +3117,52 @@ public final class CarbonUtil {
         }
       }
     }
+  }
+
+  /**
+   * This method prepares a map which will have column and local dictionary generator mapping for
+   * all the local dictionary columns.
+   *
+   * @param carbonTable
+   * carbon Table
+   */
+  public static Map<String, LocalDictionaryGenerator> getLocalDictionaryModel(
+      CarbonTable carbonTable) {
+    List<ColumnSchema> wrapperColumnSchema = CarbonUtil
+        .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getTableName()),
+            carbonTable.getMeasureByTableName(carbonTable.getTableName()));
+    boolean islocalDictEnabled = carbonTable.isLocalDictionaryEnabled();
+    // creates a map only if local dictionary is enabled, else map will be null
+    Map<String, LocalDictionaryGenerator> columnLocalDictGenMap = new HashMap<>();
+    if (islocalDictEnabled) {
+      int localDictionaryThreshold = carbonTable.getLocalDictionaryThreshold();
+      for (ColumnSchema columnSchema : wrapperColumnSchema) {
+        // check whether the column is local dictionary column or not
+        if (columnSchema.isLocalDictColumn()) {
+          columnLocalDictGenMap.put(columnSchema.getColumnName(),
+              new ColumnLocalDictionaryGenerator(localDictionaryThreshold,
+                  columnSchema.getDataType() == DataTypes.VARCHAR ?
+                      CarbonCommonConstants.INT_SIZE_IN_BYTE :
+                      CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
+        }
+      }
+    }
+    if (islocalDictEnabled) {
+      LOGGER.info("Local dictionary is enabled for table: " + carbonTable.getTableUniqueName());
+      LOGGER.info(
+          "Local dictionary threshold for table: " + carbonTable.getTableUniqueName() + " is: "
+              + carbonTable.getLocalDictionaryThreshold());
+      Iterator<Map.Entry<String, LocalDictionaryGenerator>> iterator =
+          columnLocalDictGenMap.entrySet().iterator();
+      StringBuilder stringBuilder = new StringBuilder();
+      while (iterator.hasNext()) {
+        Map.Entry<String, LocalDictionaryGenerator> next = iterator.next();
+        stringBuilder.append(next.getKey());
+        stringBuilder.append(',');
+      }
+      LOGGER.info("Local dictionary will be generated for the columns:" + stringBuilder.toString()
+          + " for table: " + carbonTable.getTableUniqueName());
+    }
+    return columnLocalDictGenMap;
   }
 }

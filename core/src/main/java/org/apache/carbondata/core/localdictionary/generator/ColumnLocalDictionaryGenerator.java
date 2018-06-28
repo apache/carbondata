@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.localdictionary.generator;
 
+import java.nio.ByteBuffer;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.localdictionary.dictionaryholder.DictionaryStore;
 import org.apache.carbondata.core.localdictionary.dictionaryholder.MapBasedDictionaryStore;
@@ -31,13 +33,17 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
    */
   private DictionaryStore dictionaryHolder;
 
-  public ColumnLocalDictionaryGenerator(int threshold) {
+  public ColumnLocalDictionaryGenerator(int threshold, int lvLength) {
     // adding 1 to threshold for null value
     int newThreshold = threshold + 1;
     this.dictionaryHolder = new MapBasedDictionaryStore(newThreshold);
+    ByteBuffer byteBuffer = ByteBuffer.allocate(
+        lvLength + CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+    byteBuffer.putShort((short)CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+    byteBuffer.put(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
     // for handling null values
     try {
-      dictionaryHolder.putIfAbsent(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+      dictionaryHolder.putIfAbsent(byteBuffer.array());
     } catch (DictionaryThresholdReachedException e) {
       // do nothing
     }
