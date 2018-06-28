@@ -976,9 +976,7 @@ object CommonUtil {
         }
         // check if the column exists in the table
         if (!tableColumns.contains(col.toLowerCase)) {
-          val errorMessage = s"Column $col does not exists in the table ${
-            databaseName
-          }.${ tableIdentifier.table }"
+          val errorMessage = s"Column $col does not exists in the table ${ tableIdentifier.table }"
           throw new MalformedCarbonCommandException(errorMessage)
         }
       })
