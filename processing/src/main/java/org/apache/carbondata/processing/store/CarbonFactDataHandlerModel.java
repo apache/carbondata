@@ -29,7 +29,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
@@ -287,7 +286,6 @@ public class CarbonFactDataHandlerModel {
     }
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
-    setLocalDictToModel(carbonTable, wrapperColumnSchema, carbonFactDataHandlerModel);
     setNumberOfCores(carbonFactDataHandlerModel);
     return carbonFactDataHandlerModel;
   }
@@ -356,9 +354,10 @@ public class CarbonFactDataHandlerModel {
             carbonFactDataHandlerModel.getTaskExtension(),
             String.valueOf(loadModel.getFactTimeStamp()),
             loadModel.getSegmentId()));
-    setLocalDictToModel(carbonTable, wrapperColumnSchema, carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     setNumberOfCores(carbonFactDataHandlerModel);
+    carbonFactDataHandlerModel
+        .setColumnLocalDictGenMap(CarbonUtil.getLocalDictionaryModel(carbonTable));
     return carbonFactDataHandlerModel;
   }
 
@@ -642,48 +641,6 @@ public class CarbonFactDataHandlerModel {
 
   public Map<String, LocalDictionaryGenerator> getColumnLocalDictGenMap() {
     return columnLocalDictGenMap;
-  }
-
-  /**
-   * This method prepares a map which will have column and local dictionary generator mapping for
-   * all the local dictionary columns.
-   * @param carbonTable
-   * @param wrapperColumnSchema
-   * @param carbonFactDataHandlerModel
-   */
-  private static void setLocalDictToModel(CarbonTable carbonTable,
-      List<ColumnSchema> wrapperColumnSchema,
-      CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
-    boolean islocalDictEnabled = carbonTable.isLocalDictionaryEnabled();
-    // creates a map only if local dictionary is enabled, else map will be null
-    Map<String, LocalDictionaryGenerator> columnLocalDictGenMap = new HashMap<>();
-    if (islocalDictEnabled) {
-      int localDictionaryThreshold = carbonTable.getLocalDictionaryThreshold();
-      for (ColumnSchema columnSchema : wrapperColumnSchema) {
-        // check whether the column is local dictionary column or not
-        if (columnSchema.isLocalDictColumn()) {
-          columnLocalDictGenMap.put(columnSchema.getColumnName(),
-              new ColumnLocalDictionaryGenerator(localDictionaryThreshold));
-        }
-      }
-    }
-    if (islocalDictEnabled) {
-      LOGGER.info("Local dictionary is enabled for table: " + carbonTable.getTableUniqueName());
-      LOGGER.info(
-          "Local dictionary threshold for table: " + carbonTable.getTableUniqueName() + " is: "
-              + carbonTable.getLocalDictionaryThreshold());
-      Iterator<Map.Entry<String, LocalDictionaryGenerator>> iterator =
-          columnLocalDictGenMap.entrySet().iterator();
-      StringBuilder stringBuilder = new StringBuilder();
-      while (iterator.hasNext()) {
-        Map.Entry<String, LocalDictionaryGenerator> next = iterator.next();
-        stringBuilder.append(next.getKey());
-        stringBuilder.append(',');
-      }
-      LOGGER.info("Local dictionary will be generated for the columns:" + stringBuilder.toString()
-          + " for table: " + carbonTable.getTableUniqueName());
-    }
-    carbonFactDataHandlerModel.setColumnLocalDictGenMap(columnLocalDictGenMap);
   }
 
   public void setColumnLocalDictGenMap(
