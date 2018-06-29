@@ -35,8 +35,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
 
   private short[] dataRlePage;
 
-  private int totalSize;
-
   public BlockIndexerStorageForShort(byte[][] dataPage, boolean rleOnData,
       boolean isNoDictionary, boolean isSortRequired) {
     ColumnWithRowId<Short>[] dataWithRowId = createColumnWithRowId(dataPage, isNoDictionary);
@@ -224,7 +222,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     byte[][] shortArray = new byte[indexes.length][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = indexes[i].getColumn();
-      totalSize += shortArray[i].length;
     }
     return shortArray;
   }
@@ -233,7 +230,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     byte[][] shortArray = new byte[list.size()][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i).getColumn();
-      totalSize += shortArray[i].length;
     }
     return shortArray;
   }
@@ -250,17 +246,4 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
       return 0;
     }
   }
-
-  @Override public int getTotalSize() {
-    return totalSize;
-  }
-
-  @Override public byte[] getMin() {
-    return dataPage[0];
-  }
-
-  @Override public byte[] getMax() {
-    return dataPage[dataPage.length - 1];
-  }
-
 }
