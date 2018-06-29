@@ -26,7 +26,7 @@ import org.junit.Test;
 public class TestPageLevelDictionary {
 
   @Test public void testPageLevelDictionaryGenerateDataIsGenertingProperDictionaryValues() {
-    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
+    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
     PageLevelDictionary pageLevelDictionary = new PageLevelDictionary(generator, columnName,
         DataTypes.STRING);
@@ -41,7 +41,7 @@ public class TestPageLevelDictionary {
   }
 
   @Test public void testPageLevelDictionaryContainsOnlyUsedDictionaryValues() {
-    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
+    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
     PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(generator, columnName, DataTypes.STRING);
     byte[][] validateData = new byte[500][];
@@ -93,7 +93,7 @@ public class TestPageLevelDictionary {
 
   @Test
   public void testPageLevelDictionaryContainsOnlyUsedDictionaryValuesWhenMultiplePagesUseSameDictionary() {
-    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
+    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
     PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(generator, columnName, DataTypes.STRING);
     byte[][] validateData = new byte[10][];
