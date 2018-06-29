@@ -31,10 +31,10 @@ import java.util.Map;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
@@ -341,20 +341,18 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
       long maxSize = getMaxSplitSize(job);
       for (Segment segment : streamSegments) {
-        String segmentDir = CarbonTablePath.getSegmentPath(
-            identifier.getTablePath(), segment.getSegmentNo());
+        String segmentDir =
+            CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo());
         FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
         if (FileFactory.isFileExist(segmentDir, fileType)) {
-          String indexName = CarbonTablePath.getCarbonStreamIndexFileName();
-          String indexPath = segmentDir + File.separator + indexName;
-          CarbonFile index = FileFactory.getCarbonFile(indexPath, fileType);
-          // index file exists
-          if (index.exists()) {
-            // data file exists
-            CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
+          SegmentIndexFileStore segmentIndexFileStore = new SegmentIndexFileStore();
+          segmentIndexFileStore.readAllIIndexOfSegment(segmentDir);
+          Map<String, byte[]> carbonIndexMap = segmentIndexFileStore.getCarbonIndexMap();
+          CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
+          for (byte[] fileData : carbonIndexMap.values()) {
+            indexReader.openThriftReader(fileData);
             try {
               // map block index
-              indexReader.openThriftReader(indexPath);
               while (indexReader.hasNext()) {
                 BlockIndex blockIndex = indexReader.readBlockIndexInfo();
                 String filePath = segmentDir + File.separator + blockIndex.getFile_name();
