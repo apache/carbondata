@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -57,17 +58,15 @@ public abstract class DataMapFactory<T extends DataMap> {
   /**
    * Create a new write for this datamap, to write new data into the specified segment and shard
    */
-  public abstract DataMapWriter createWriter(Segment segment, String shardName)
-      throws IOException;
-
+  public abstract DataMapWriter createWriter(Segment segment, String shardName,
+      SegmentProperties segmentProperties) throws IOException;
   /**
    * Create a new DataMapBuilder for this datamap, to rebuild the specified
    * segment and shard data in the main table.
    * TODO: refactor to unify with DataMapWriter
    */
-  public abstract DataMapBuilder createBuilder(Segment segment, String shardName)
-      throws IOException;
-
+  public abstract DataMapBuilder createBuilder(Segment segment, String shardName,
+      SegmentProperties segmentProperties) throws IOException;
   /**
    * Get the datamap for segmentid
    */

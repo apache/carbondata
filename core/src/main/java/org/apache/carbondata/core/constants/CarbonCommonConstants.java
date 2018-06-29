@@ -28,6 +28,10 @@ public final class CarbonCommonConstants {
    */
   public static final int DICT_VALUE_NULL = 1;
   /**
+   * surrogate value of null for direct dictionary
+   */
+  public static final int DIRECT_DICT_VALUE_NULL = 1;
+  /**
    * integer size in bytes
    */
   public static final int INT_SIZE_IN_BYTE = 4;

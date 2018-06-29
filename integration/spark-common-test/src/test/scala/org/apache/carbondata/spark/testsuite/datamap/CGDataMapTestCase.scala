@@ -56,7 +56,7 @@ class CGDataMapFactory(
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segment: Segment, shardName: String): DataMapWriter = {
+  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter = {
     new CGDataMapWriter(carbonTable, segment, shardName, dataMapSchema)
   }
 
@@ -149,7 +149,7 @@ class CGDataMapFactory(
   }
 
   override def createBuilder(segment: Segment,
-      shardName: String): DataMapBuilder = {
+      shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
     ???
   }
 }

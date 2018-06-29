@@ -43,7 +43,7 @@ public abstract class DataMapWriter {
 
   protected String dataMapPath;
 
-  private List<CarbonColumn> indexColumns;
+  protected List<CarbonColumn> indexColumns;
 
   private boolean isWritingFinished;
 
