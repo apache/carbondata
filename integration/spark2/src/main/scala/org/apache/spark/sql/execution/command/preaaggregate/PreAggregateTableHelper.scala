@@ -106,6 +106,24 @@ case class PreAggregateTableHelper(
     tableProperties.put(CarbonCommonConstants.FLAT_FOLDER,
       parentTable.getTableInfo.getFactTable.getTableProperties.asScala.getOrElse(
         CarbonCommonConstants.FLAT_FOLDER, CarbonCommonConstants.DEFAULT_FLAT_FOLDER))
+    // inherit the local dictionary properties of main parent table
+    tableProperties
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE, "false"))
+    tableProperties
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+            CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT))
+    tableProperties
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE,
+        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE, ""))
+    tableProperties
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE,
+        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, ""))
     val tableIdentifier =
       TableIdentifier(parentTable.getTableName + "_" + dataMapName,
         Some(parentTable.getDatabaseName))
@@ -119,6 +137,7 @@ case class PreAggregateTableHelper(
       tableProperties,
       None,
       isAlterFlow = false,
+      true,
       None)
 
     // updating the relation identifier, this will be stored in child table
