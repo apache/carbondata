@@ -65,6 +65,7 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_COR
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES_BLOCK_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_SIZE;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO;
 
@@ -197,6 +198,9 @@ public final class CarbonProperties {
       case CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT:
         validatePositiveInteger(CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT);
         break;
+      case CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE:
+        validateSortMemorySpillPercentage();
+        break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
       default:
         // none
@@ -262,6 +266,7 @@ public final class CarbonProperties {
     validateWorkingMemory();
     validateSortStorageMemory();
     validateEnableQueryStatistics();
+    validateSortMemorySpillPercentage();
   }
 
   /**
@@ -1598,5 +1603,50 @@ public final class CarbonProperties {
       storageLevel = CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT;
     }
     return storageLevel.toUpperCase();
+  }
+
+  /**
+   * Return valid storage level for CARBON_INSERT_STORAGE_LEVEL
+   * @return String
+   */
+  public int getSortMemorySpillPercentage() {
+    int spillPercentage = 0;
+    try {
+      String spillPercentageStr = getProperty(
+          CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+      spillPercentage = Integer.parseInt(spillPercentageStr);
+    } catch (NumberFormatException e) {
+      spillPercentage = Integer.parseInt(
+          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+    }
+    return spillPercentage;
+  }
+
+  private void validateSortMemorySpillPercentage() {
+    String spillPercentageStr = carbonProperties.getProperty(
+        CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+        CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+
+    try {
+      int spillPercentage = Integer.parseInt(spillPercentageStr);
+      if (spillPercentage > 100 || spillPercentage < 0) {
+        LOGGER.info(
+            "The sort memory spill percentage value \"" + spillPercentageStr +
+                "\" is invalid. Using the default value \""
+                + CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+        carbonProperties.setProperty(
+            CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+            CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info(
+          "The sort memory spill percentage value \"" + spillPercentageStr +
+              "\" is invalid. Using the default value \""
+              + CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+      carbonProperties.setProperty(
+          CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+    }
   }
 }

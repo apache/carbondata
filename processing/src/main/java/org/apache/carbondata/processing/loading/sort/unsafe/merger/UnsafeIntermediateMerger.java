@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -82,21 +81,7 @@ public class UnsafeIntermediateMerger {
         SynchronizedList.decorate(new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN));
     this.mergerTask = new ArrayList<>();
 
-    Integer spillPercentage;
-    try {
-      String spillPercentageStr = CarbonProperties.getInstance().getProperty(
-          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
-          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
-      spillPercentage = Integer.valueOf(spillPercentageStr);
-      if (spillPercentage > 100 || spillPercentage < 0) {
-        spillPercentage = Integer.valueOf(
-            CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
-      }
-    } catch (NumberFormatException e) {
-      spillPercentage = Integer.valueOf(
-          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
-    }
-
+    Integer spillPercentage = CarbonProperties.getInstance().getSortMemorySpillPercentage();
     this.spillSizeInSortMemory =
         UnsafeSortMemoryManager.INSTANCE.getUsableMemory() * spillPercentage / 100;
   }

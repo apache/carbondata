@@ -149,7 +149,7 @@ public final class CarbonLoadOptionConstants {
    */
   @CarbonProperty
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE
-      = "carbon.load.sortMemory.spill.percentage";
+      = "carbon.load.sortmemory.spill.percentage";
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
 
   /**
