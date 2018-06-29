@@ -285,6 +285,13 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     private String columnName;
     private byte[] filterValue;
 
+    /**
+     * represent an query model will be applyied on bloom index
+     *
+     * @param columnName bloom index column
+     * @param filterValue key for the bloom index,
+     *                   this value is converted from user specified filter value in query
+     */
     private BloomQueryModel(String columnName, byte[] filterValue) {
       this.columnName = columnName;
       this.filterValue = filterValue;

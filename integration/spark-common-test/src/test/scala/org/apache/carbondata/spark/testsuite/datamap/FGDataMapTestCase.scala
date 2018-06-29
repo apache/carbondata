@@ -55,7 +55,7 @@ class FGDataMapFactory(carbonTable: CarbonTable,
    * Return a new write for this datamap
    */
   override def createWriter(segment: Segment, dataWritePath: String, segmentProperties: SegmentProperties): DataMapWriter = {
-    new FGDataMapWriter(carbonTable, segment, dataWritePath, dataMapSchema, segmentProperties)
+    new FGDataMapWriter(carbonTable, segment, dataWritePath, dataMapSchema)
   }
 
   /**
