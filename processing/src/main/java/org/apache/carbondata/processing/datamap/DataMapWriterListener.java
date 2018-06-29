@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -51,7 +52,8 @@ public class DataMapWriterListener {
   /**
    * register all datamap writer for specified table and segment
    */
-  public void registerAllWriter(CarbonTable carbonTable, String segmentId, String taskNo) {
+  public void registerAllWriter(CarbonTable carbonTable, String segmentId,
+      String taskNo, SegmentProperties segmentProperties) {
     List<TableDataMap> tableIndices;
     try {
       tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
@@ -65,7 +67,7 @@ public class DataMapWriterListener {
         // will rebuild the datamap manually
         if (!tableDataMap.getDataMapSchema().isLazy()) {
           DataMapFactory factory = tableDataMap.getDataMapFactory();
-          register(factory, segmentId, taskNo);
+          register(factory, segmentId, taskNo, segmentProperties);
         }
       }
     }
@@ -74,7 +76,8 @@ public class DataMapWriterListener {
   /**
    * Register a DataMapWriter
    */
-  private void register(DataMapFactory factory, String segmentId, String taskNo) {
+  private void register(DataMapFactory factory, String segmentId,
+      String taskNo, SegmentProperties segmentProperties) {
     assert (factory != null);
     assert (segmentId != null);
     DataMapMeta meta = factory.getMeta();
@@ -86,7 +89,7 @@ public class DataMapWriterListener {
     List<DataMapWriter> writers = registry.get(columns);
     DataMapWriter writer = null;
     try {
-      writer = factory.createWriter(new Segment(segmentId), taskNo);
+      writer = factory.createWriter(new Segment(segmentId), taskNo, segmentProperties);
     } catch (IOException e) {
       LOG.error("Failed to create DataMapWriter: " + e.getMessage());
       throw new DataMapWriterException(e);

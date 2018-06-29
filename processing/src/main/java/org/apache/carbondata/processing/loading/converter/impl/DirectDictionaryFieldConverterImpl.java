@@ -65,16 +65,22 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
   @Override
   public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     String value = row.getString(index);
-    if (value == null) {
+    row.update(convert(value, logHolder), index);
+  }
+
+  @Override public Object convert(Object value, BadRecordLogHolder logHolder)
+      throws RuntimeException {
+    String literalValue = (String) value;
+    if (literalValue == null) {
       logHolder.setReason(
           CarbonDataProcessorUtil.prepareFailureReason(column.getColName(), column.getDataType()));
-      row.update(1, index);
-    } else if (value.equals(nullFormat)) {
-      row.update(1, index);
+      return 1;
+    } else if (literalValue.equals(nullFormat)) {
+      return 1;
     } else {
-      int key = directDictionaryGenerator.generateDirectSurrogateKey(value);
+      int key = directDictionaryGenerator.generateDirectSurrogateKey(literalValue);
       if (key == 1) {
-        if ((value.length() > 0) || (value.length() == 0 && isEmptyBadRecord)) {
+        if ((literalValue.length() > 0) || (literalValue.length() == 0 && isEmptyBadRecord)) {
           String message = logHolder.getColumnMessageMap().get(column.getColName());
           if (null == message) {
             message = CarbonDataProcessorUtil.prepareFailureReason(
@@ -84,7 +90,7 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
           logHolder.setReason(message);
         }
       }
-      row.update(key, index);
+      return key;
     }
   }
 

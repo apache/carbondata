@@ -54,8 +54,8 @@ class FGDataMapFactory(carbonTable: CarbonTable,
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segment: Segment, dataWritePath: String): DataMapWriter = {
-    new FGDataMapWriter(carbonTable, segment, dataWritePath, dataMapSchema)
+  override def createWriter(segment: Segment, dataWritePath: String, segmentProperties: SegmentProperties): DataMapWriter = {
+    new FGDataMapWriter(carbonTable, segment, dataWritePath, dataMapSchema, segmentProperties)
   }
 
   /**
@@ -143,7 +143,7 @@ class FGDataMapFactory(carbonTable: CarbonTable,
   }
 
   override def createBuilder(segment: Segment,
-      shardName: String): DataMapBuilder = {
+      shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
     ???
   }
 }

@@ -19,20 +19,30 @@ package org.apache.carbondata.datamap.bloom;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Predicate;
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 import org.apache.hadoop.util.bloom.Key;
 import org.apache.hadoop.util.hash.Hash;
@@ -55,10 +65,17 @@ public class BloomDataMapWriter extends DataMapWriter {
   private List<String> currentDMFiles;
   private List<DataOutputStream> currentDataOutStreams;
   protected List<CarbonBloomFilter> indexBloomFilters;
+  private KeyGenerator keyGenerator;
+  private ColumnarSplitter columnarSplitter;
+  // for the dict/sort/date column, they are encoded in MDK,
+  // this maps the index column name to the index in MDK
+  private Map<String, Integer> indexCol2MdkIdx;
+  // this gives the reverse map to indexCol2MdkIdx
+  private Map<Integer, String> mdkIdx2IndexCol;
 
   BloomDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
-      boolean compressBloom)
+      Segment segment, String shardName, SegmentProperties segmentProperties,
+      int bloomFilterSize, double bloomFilterFpp, boolean compressBloom)
       throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName);
     this.bloomFilterSize = bloomFilterSize;
@@ -69,6 +86,27 @@ public class BloomDataMapWriter extends DataMapWriter {
     indexBloomFilters = new ArrayList<>(indexColumns.size());
     initDataMapFile();
     resetBloomFilters();
+
+    keyGenerator = segmentProperties.getDimensionKeyGenerator();
+    columnarSplitter = segmentProperties.getFixedLengthKeySplitter();
+    this.indexCol2MdkIdx = new HashMap<>();
+    this.mdkIdx2IndexCol = new HashMap<>();
+    int idx = 0;
+    for (final CarbonDimension dimension : segmentProperties.getDimensions()) {
+      if (!dimension.isGlobalDictionaryEncoding() && !dimension.isDirectDictionaryEncoding()) {
+        continue;
+      }
+      boolean isExistInIndex = CollectionUtils.exists(indexColumns, new Predicate() {
+        @Override public boolean evaluate(Object object) {
+          return ((CarbonColumn) object).getColName().equalsIgnoreCase(dimension.getColName());
+        }
+      });
+      if (isExistInIndex) {
+        this.indexCol2MdkIdx.put(dimension.getColName(), idx);
+        this.mdkIdx2IndexCol.put(idx, dimension.getColName());
+      }
+      idx++;
+    }
   }
 
   @Override
@@ -119,22 +157,56 @@ public class BloomDataMapWriter extends DataMapWriter {
 
   @Override
   public void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages) {
-    List<CarbonColumn> indexColumns = getIndexColumns();
     for (int rowId = 0; rowId < pageSize; rowId++) {
       // for each indexed column, add the data to bloom filter
       for (int i = 0; i < indexColumns.size(); i++) {
         Object data = pages[i].getData(rowId);
         DataType dataType = indexColumns.get(i).getDataType();
         byte[] indexValue;
-        if (DataTypes.STRING == dataType) {
-          indexValue = getStringData(data);
-        } else if (DataTypes.BYTE_ARRAY == dataType) {
-          byte[] originValue = (byte[]) data;
-          // String and byte array is LV encoded, L is short type
-          indexValue = new byte[originValue.length - 2];
-          System.arraycopy(originValue, 2, indexValue, 0, originValue.length - 2);
-        } else {
+        // convert measure to bytes
+        // convert non-dict dimensions to simple bytes without length
+        // convert internal-dict dimensions to simple bytes without any encode
+        if (indexColumns.get(i).isMeasure()) {
           indexValue = CarbonUtil.getValueAsBytes(dataType, data);
+        } else {
+          if (indexColumns.get(i).hasEncoding(Encoding.DICTIONARY)
+              || indexColumns.get(i).hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            byte[] mdkBytes;
+            // this means that we need to pad some fake bytes
+            // to get the whole MDK in corresponding position
+            if (columnarSplitter.getBlockKeySize().length > indexCol2MdkIdx.size()) {
+              int totalSize = 0;
+              for (int size : columnarSplitter.getBlockKeySize()) {
+                totalSize += size;
+              }
+              mdkBytes = new byte[totalSize];
+              int startPos = 0;
+              int destPos = 0;
+              for (int keyIdx = 0; keyIdx < columnarSplitter.getBlockKeySize().length; keyIdx++) {
+                if (mdkIdx2IndexCol.containsKey(keyIdx)) {
+                  int size = columnarSplitter.getBlockKeySize()[keyIdx];
+                  System.arraycopy(data, startPos, mdkBytes, destPos, size);
+                  startPos += size;
+                }
+                destPos += columnarSplitter.getBlockKeySize()[keyIdx];
+              }
+            } else {
+              mdkBytes = (byte[]) data;
+            }
+            // for dict columns including dictionary and date columns
+            // decode value to get the surrogate key
+            int surrogateKey = (int) keyGenerator.getKey(mdkBytes,
+                indexCol2MdkIdx.get(indexColumns.get(i).getColName()));
+            // store the dictionary key in bloom
+            indexValue = CarbonUtil.getValueAsBytes(DataTypes.INT, surrogateKey);
+          } else if (DataTypes.VARCHAR == dataType) {
+            indexValue = DataConvertUtil.getRawBytesForVarchar((byte[]) data);
+          } else {
+            indexValue = DataConvertUtil.getRawBytes((byte[]) data);
+          }
+        }
+        if (indexValue.length == 0) {
+          indexValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
         }
         indexBloomFilters.get(i).add(new Key(indexValue));
       }
