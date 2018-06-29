@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.datamap.bloom;
 
-import java.util.Set;
-
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 
@@ -25,21 +23,13 @@ public class BloomDataMapModel extends DataMapModel {
 
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
 
-  private Set<String> indexedColumnNames;
-
   public BloomDataMapModel(String filePath,
-      Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache,
-      Set<String> indexedColumnNames) {
+      Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache) {
     super(filePath);
     this.cache = cache;
-    this.indexedColumnNames = indexedColumnNames;
   }
 
   public Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> getCache() {
     return cache;
-  }
-
-  public Set<String> getIndexedColumnNames() {
-    return indexedColumnNames;
   }
 }

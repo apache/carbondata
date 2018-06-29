@@ -192,7 +192,7 @@ class IndexDataMapRebuildRDD[K, V](
 
       // we use task name as shard name to create the folder for this datamap
       val shardName = CarbonTablePath.getShardName(inputSplit.getAllSplits.get(0).getBlockPath)
-      refresher = dataMapFactory.createBuilder(new Segment(segmentId), shardName)
+      refresher = dataMapFactory.createBuilder(new Segment(segmentId), shardName, null)
       refresher.initialize()
 
       var blockletId = 0

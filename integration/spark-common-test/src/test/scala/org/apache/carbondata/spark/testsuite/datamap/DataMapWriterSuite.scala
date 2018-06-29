@@ -29,6 +29,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -54,7 +55,7 @@ class C2DataMapFactory(
 
   override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = ???
 
-  override def createWriter(segment: Segment, shardName: String): DataMapWriter =
+  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter =
     DataMapWriterSuite.dataMapWriterC2Mock(identifier, "testdm", segment, shardName)
 
   override def getMeta: DataMapMeta =
@@ -84,7 +85,7 @@ class C2DataMapFactory(
   }
 
   override def createBuilder(segment: Segment,
-      shardName: String): DataMapBuilder = {
+      shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
     ???
   }
 }

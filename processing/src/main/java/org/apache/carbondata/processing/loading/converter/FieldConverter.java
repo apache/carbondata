@@ -35,6 +35,11 @@ public interface FieldConverter {
   void convert(CarbonRow row, BadRecordLogHolder logHolder) throws CarbonDataLoadingException;
 
   /**
+   * It convert the literal value to carbon internal value
+   */
+  Object convert(Object value, BadRecordLogHolder logHolder) throws RuntimeException;
+
+  /**
    * This method clears all the dictionary caches being acquired.
    */
   void clear();

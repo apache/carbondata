@@ -24,6 +24,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -38,10 +39,12 @@ import org.apache.hadoop.util.bloom.Key;
 public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBuilder {
 
   BloomDataMapBuilder(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
-      boolean bloomCompress) throws IOException {
-    super(tablePath, dataMapName, indexColumns, segment, shardName, bloomFilterSize, bloomFilterFpp,
-        bloomCompress);
+      Segment segment, String shardName, SegmentProperties segmentProperties,
+      int bloomFilterSize, double bloomFilterFpp, boolean bloomCompress) throws IOException {
+    super(tablePath, dataMapName, indexColumns, segment, shardName, segmentProperties,
+        bloomFilterSize, bloomFilterFpp, bloomCompress);
+    throw new RuntimeException(
+        "Deferred rebuild for bloomfilter datamap is currently not supported");
   }
 
   @Override

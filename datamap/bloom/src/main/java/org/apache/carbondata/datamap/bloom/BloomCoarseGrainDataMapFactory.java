@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -199,19 +200,21 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override
-  public DataMapWriter createWriter(Segment segment, String shardName) throws IOException {
+  public DataMapWriter createWriter(Segment segment, String shardName,
+      SegmentProperties segmentProperties) throws IOException {
     LOGGER.info(
         String.format("Data of BloomCoarseGranDataMap %s for table %s will be written to %s",
             this.dataMapName, getCarbonTable().getTableName() , shardName));
     return new BloomDataMapWriter(getCarbonTable().getTablePath(), this.dataMapName,
-        this.dataMapMeta.getIndexedColumns(), segment, shardName,
+        this.dataMapMeta.getIndexedColumns(), segment, shardName, segmentProperties,
         this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
   }
 
   @Override
-  public DataMapBuilder createBuilder(Segment segment, String shardName) throws IOException {
+  public DataMapBuilder createBuilder(Segment segment, String shardName,
+      SegmentProperties segmentProperties) throws IOException {
     return new BloomDataMapBuilder(getCarbonTable().getTablePath(), this.dataMapName,
-        this.dataMapMeta.getIndexedColumns(), segment, shardName,
+        this.dataMapMeta.getIndexedColumns(), segment, shardName, segmentProperties,
         this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
   }
 
@@ -232,8 +235,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       }
       for (String shard : shardPaths) {
         BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
-        bloomDM.init(new BloomDataMapModel(shard, cache,
-            new HashSet<>(dataMapMeta.getIndexedColumnNames())));
+        bloomDM.init(new BloomDataMapModel(shard, cache));
+        bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapMeta.getIndexedColumns());
         dataMaps.add(bloomDM);
       }
     } catch (Exception e) {
@@ -248,8 +251,9 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<CoarseGrainDataMap> coarseGrainDataMaps = new ArrayList<>();
     BloomCoarseGrainDataMap bloomCoarseGrainDataMap = new BloomCoarseGrainDataMap();
     String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
-    bloomCoarseGrainDataMap.init(new BloomDataMapModel(indexPath, cache,
-        new HashSet<>(dataMapMeta.getIndexedColumnNames())));
+    bloomCoarseGrainDataMap.init(new BloomDataMapModel(indexPath, cache));
+    bloomCoarseGrainDataMap.initIndexColumnConverters(getCarbonTable(),
+        dataMapMeta.getIndexedColumns());
     coarseGrainDataMaps.add(bloomCoarseGrainDataMap);
     return coarseGrainDataMaps;
   }

@@ -282,7 +282,8 @@ public class CarbonFactDataHandlerModel {
               bucketId,
               0,
               String.valueOf(carbonDataFileAttributes.getFactTimeStamp()),
-              configuration.getSegmentId()));
+              configuration.getSegmentId()),
+          segmentProperties);
     }
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
@@ -353,7 +354,8 @@ public class CarbonFactDataHandlerModel {
             carbonFactDataHandlerModel.getBucketId(),
             carbonFactDataHandlerModel.getTaskExtension(),
             String.valueOf(loadModel.getFactTimeStamp()),
-            loadModel.getSegmentId()));
+            loadModel.getSegmentId()),
+        segmentProperties);
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     setNumberOfCores(carbonFactDataHandlerModel);
     carbonFactDataHandlerModel

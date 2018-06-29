@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -202,7 +203,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
    * Return a new write for this datamap
    */
   @Override
-  public DataMapWriter createWriter(Segment segment, String shardName) {
+  public DataMapWriter createWriter(Segment segment, String shardName,
+      SegmentProperties segmentProperties) {
     LOGGER.info("lucene data write to " + shardName);
     return new LuceneDataMapWriter(getCarbonTable().getTablePath(), dataMapName,
         dataMapMeta.getIndexedColumns(), segment, shardName, flushCacheSize,
@@ -210,7 +212,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   }
 
   @Override
-  public DataMapBuilder createBuilder(Segment segment, String shardName) {
+  public DataMapBuilder createBuilder(Segment segment, String shardName,
+      SegmentProperties segmentProperties) {
     return new LuceneDataMapBuilder(getCarbonTable().getTablePath(), dataMapName,
         segment, shardName, dataMapMeta.getIndexedColumns(), flushCacheSize, storeBlockletWise);
   }
