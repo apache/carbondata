@@ -40,6 +40,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.CarbonUtil
@@ -869,7 +870,7 @@ object PreAggregateUtil {
   def getChildQuery(aggDataMapSchema: AggregationDataMapSchema): String = {
     new String(
       CarbonUtil.decodeStringToBytes(
-        aggDataMapSchema.getProperties.get("CHILD_SELECT QUERY").replace("&", "=")),
+        aggDataMapSchema.getProperties.get(DataMapProperty.CHILD_SELECT_QUERY).replace("&", "=")),
       CarbonCommonConstants.DEFAULT_CHARSET)
   }
 
