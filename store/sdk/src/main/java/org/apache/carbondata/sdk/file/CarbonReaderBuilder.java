@@ -27,10 +27,9 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
@@ -178,8 +177,7 @@ public class CarbonReaderBuilder {
    * @throws IOException
    * @throws InterruptedException
    */
-  public <T> CarbonReader<T> build() throws IOException, InterruptedException,
-      InvalidConfigurationException {
+  public <T> CarbonReader<T> build() throws IOException, InterruptedException {
     // DB name is not applicable for SDK reader as, table will be never registered.
     CarbonTable table;
     if (isTransactionalTable) {
@@ -211,7 +209,7 @@ public class CarbonReaderBuilder {
           format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
 
       List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
-      ThreadLocalSessionInfo.getCarbonSessionInfo().getSessionParams()
+      CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.ENABLE_SDK_QUERY_EXECUTOR, "true");
       for (InputSplit split : splits) {
         TaskAttemptContextImpl attempt =

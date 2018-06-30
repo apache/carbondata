@@ -40,7 +40,7 @@ public class QueryExecutorFactory {
         return new SearchModeDetailQueryExecutor();
       }
     } else {
-      String carbonReaderSupport = ThreadLocalSessionInfo.getCarbonSessionInfo().getSessionParams()
+      String carbonReaderSupport = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.ENABLE_SDK_QUERY_EXECUTOR,
               CarbonCommonConstants.ENABLE_SDK_QUERY_EXECUTOR_DEFAULT);
       if (carbonReaderSupport.equalsIgnoreCase("true")) {
