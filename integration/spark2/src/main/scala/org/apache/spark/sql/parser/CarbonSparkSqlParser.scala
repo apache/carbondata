@@ -16,6 +16,7 @@
  */
 package org.apache.spark.sql.parser
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.antlr.v4.runtime.tree.TerminalNode
@@ -33,8 +34,10 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonOption
@@ -293,6 +296,29 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         table.getFactTable.getTableProperties.put("_external", "true")
         table.getFactTable.getTableProperties.put("_filelevelformat", "false")
       }
+      // setting local dictionary for all string coloumn for external table
+      var isLocalDic_enabled = table.getFactTable.getTableProperties
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
+      if (null == isLocalDic_enabled) {
+        table.getFactTable.getTableProperties
+          .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+            CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+      }
+      isLocalDic_enabled = table.getFactTable.getTableProperties
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
+      if (CarbonScalaUtil.validateLocalDictionaryEnable(isLocalDic_enabled) &&
+          isLocalDic_enabled.toBoolean) {
+        val allcolumns = table.getFactTable.getListOfColumns
+        for (i <- 0 until allcolumns.size()) {
+          val cols = allcolumns.get(i)
+          if (cols.getDataType == DataTypes.STRING || cols.getDataType == DataTypes.VARCHAR) {
+            cols.setLocalDictColumn(true)
+          }
+          allcolumns.set(i, cols)
+        }
+        table.getFactTable.setListOfColumns(allcolumns)
+      }
+
       table
     } else {
       // prepare table model of the collected tokens
