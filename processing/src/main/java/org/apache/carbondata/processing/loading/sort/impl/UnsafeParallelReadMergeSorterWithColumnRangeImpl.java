@@ -195,7 +195,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
             false, false);
     String[] tmpLoc = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
-    LOGGER.error("set temp location: " + StringUtils.join(tmpLoc, ", "));
+    LOGGER.warn("set temp location: " + StringUtils.join(tmpLoc, ", "));
     parameters.setTempFileLocation(tmpLoc);
   }
 
