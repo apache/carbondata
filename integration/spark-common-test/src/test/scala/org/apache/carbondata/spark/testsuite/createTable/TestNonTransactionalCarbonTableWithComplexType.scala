@@ -29,6 +29,7 @@ import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.sdk.file.CarbonWriter
 
@@ -58,16 +59,21 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
-  private def WriteFilesWithAvroWriter(rows: Int,
-      mySchema: String,
-      json: String) = {
+  private def WriteFilesWithAvroWriter(rows: Int, mySchema: String, json: String, isLocalDictionary: Boolean): Unit = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
     val record = avroUtil.jsonToAvro(json, mySchema)
     try {
-      val writer = CarbonWriter.builder
-        .outputPath(writerPath).isTransactionalTable(false)
-        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
+      val writer = if (isLocalDictionary) {
+        CarbonWriter.builder
+          .outputPath(writerPath).isTransactionalTable(false).enableLocalDictionary(true)
+          .localDictionaryThreshold(2000)
+          .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
+      } else {
+        CarbonWriter.builder
+          .outputPath(writerPath).isTransactionalTable(false)
+          .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
+      }
       var i = 0
       while (i < rows) {
         writer.write(record)
@@ -84,7 +90,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
   }
 
   // test multi level -- 4 levels [array of array of array of struct]
-  def buildAvroTestDataMultiLevel4(rows: Int, options: util.Map[String, String]): Any = {
+  def buildAvroTestDataMultiLevel4(rows: Int, options: util.Map[String, String], isLocalDictionary: Boolean): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
 
     val mySchema =  """ {
@@ -174,17 +180,17 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
         |	]
         |} """.stripMargin
 
-    WriteFilesWithAvroWriter(rows, mySchema, json)
+    WriteFilesWithAvroWriter(rows, mySchema, json, isLocalDictionary)
   }
 
-  def buildAvroTestDataMultiLevel4Type(): Any = {
+  def buildAvroTestDataMultiLevel4Type(isLocalDictionary: Boolean): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildAvroTestDataMultiLevel4(3, null)
+    buildAvroTestDataMultiLevel4(3, null, isLocalDictionary)
   }
 
   // test multi level -- 4 levels [array of array of array of struct]
   test("test multi level support : array of array of array of struct") {
-    buildAvroTestDataMultiLevel4Type()
+    buildAvroTestDataMultiLevel4Type(false)
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
@@ -196,6 +202,34 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     // TODO: Add a validation
 
     sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    cleanTestData()
+  }
+
+  test("test local dictionary for complex datatype") {
+    buildAvroTestDataMultiLevel4Type(true)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS localComplex")
+    sql(
+      s"""CREATE EXTERNAL TABLE localComplex STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    assert(FileFactory.getCarbonFile(writerPath).exists())
+    assert(avroUtil.checkForLocalDictionary(avroUtil.getDimRawChunk(0,writerPath)))
+    sql("describe formatted localComplex").show(30, false)
+    val descLoc = sql("describe formatted localComplex").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+      case Some(row) => assert(row.get(1).toString.contains("name,val1.val2.street,val1.val2.city,val1.val2.WindSpeed,val1.val2.year"))
+    }
+
+    // TODO: Add a validation
+
+    sql("DROP TABLE localComplex")
     // drop table should not delete the files
     cleanTestData()
   }
@@ -258,7 +292,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
 
   // test multi level -- 4 levels [array of array of array of struct]
   test("test ComplexDataType projection for array of array of array of struct") {
-    buildAvroTestDataMultiLevel4Type()
+    buildAvroTestDataMultiLevel4Type(false)
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
@@ -275,13 +309,13 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     cleanTestData()
   }
 
-  def buildAvroTestDataMultiLevel6Type(): Any = {
+  def buildAvroTestDataMultiLevel6Type(isLocalDictionary: Boolean): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildAvroTestDataMultiLevel6(1, null)
+    buildAvroTestDataMultiLevel6(1, null, isLocalDictionary)
   }
 
   // test multi level -- 6 levels
-  def buildAvroTestDataMultiLevel6(rows: Int, options: util.Map[String, String]): Any = {
+  def buildAvroTestDataMultiLevel6(rows: Int, options: util.Map[String, String], isLocalDictionary: Boolean): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
 
     val mySchema =
@@ -453,12 +487,12 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
         |}
         |} """.stripMargin
 
-    WriteFilesWithAvroWriter(rows, mySchema, json)
+    WriteFilesWithAvroWriter(rows, mySchema, json, isLocalDictionary)
   }
 
 
   test("test ComplexDataType projection for struct of struct -6 levels") {
-    buildAvroTestDataMultiLevel6Type()
+    buildAvroTestDataMultiLevel6Type(false)
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(

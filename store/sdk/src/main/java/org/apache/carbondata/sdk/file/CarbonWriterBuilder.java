@@ -67,6 +67,8 @@ public class CarbonWriterBuilder {
   private long UUID;
   private Map<String, String> options;
   private String taskNo;
+  private int localDictionaryThreshold;
+  private boolean isLocalDictionaryEnabled;
 
   /**
    * Sets the output path of the writer builder
@@ -285,6 +287,29 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * @param localDictionaryThreshold is localDictionaryThreshold,default is 1000
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold) {
+    if (localDictionaryThreshold <= 0) {
+      throw new IllegalArgumentException(
+          "Local Dictionary Threshold should be between greater than 0");
+    }
+    this.localDictionaryThreshold = localDictionaryThreshold;
+    return this;
+  }
+
+  /**
+   * @param enableLocalDictionary enable local dictionary  , default is false
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder enableLocalDictionary(boolean enableLocalDictionary) {
+    this.isLocalDictionaryEnabled = enableLocalDictionary;
+    return this;
+  }
+
+
+  /**
    * To set the blocklet size of CarbonData file
    * @param blockletSize is blocklet size in MB
    * default value is 64 MB
@@ -393,7 +418,8 @@ public class CarbonWriterBuilder {
     if (blockletSize > 0) {
       tableSchemaBuilder = tableSchemaBuilder.blockletSize(blockletSize);
     }
-
+    tableSchemaBuilder.enableLocalDictionary(isLocalDictionaryEnabled);
+    tableSchemaBuilder.localDictionaryThreshold(localDictionaryThreshold);
     List<String> sortColumnsList = new ArrayList<>();
     if (sortColumns == null) {
       // If sort columns are not specified, default set all dimensions to sort column.

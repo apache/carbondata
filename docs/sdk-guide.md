@@ -253,6 +253,23 @@ public CarbonWriterBuilder withBlockletSize(int blockletSize);
 
 ```
 /**
+   * @param enableLocalDictionary enable local dictionary  , default is false
+   * @return updated CarbonWriterBuilder
+   */
+public CarbonWriterBuilder enableLocalDictionary(boolean enableLocalDictionary);
+```
+
+```
+/**
+   * @param localDictionaryThreshold is localDictionaryThreshold,default is 1000
+   * @return updated CarbonWriterBuilder
+   */
+public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold) ;
+```
+
+
+```
+/**
 * sets the list of columns that needs to be in sorted order
 * @param sortColumns is a string array of columns that needs to be sorted.
 *                    If it is null or by default all dimensions are selected for sorting
