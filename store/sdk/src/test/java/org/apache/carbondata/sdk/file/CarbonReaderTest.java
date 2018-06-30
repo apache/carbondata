@@ -30,7 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
-import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.*;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -328,7 +328,50 @@ public class CarbonReaderTest extends TestCase {
     EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
         new LiteralExpression("robot7", DataTypes.STRING));
 
-    OrExpression andExpression = new OrExpression(equalToExpression, equalToExpression2);
+    OrExpression orExpression = new OrExpression(equalToExpression, equalToExpression2);
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(orExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert (((String) row[0]).contains("robot7"));
+      assert (7 == ((int) (row[1]) % 10));
+      assert (0.5 == ((double) (row[2]) % 1));
+      i++;
+    }
+    Assert.assertEquals(i, 20);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfNonTransactionalGreaterThan() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+
+    ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
+    GreaterThanExpression greaterThanExpression = new GreaterThanExpression(columnExpression,
+        new LiteralExpression("13.5", DataTypes.DOUBLE));
+
+    ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
+    EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
+        new LiteralExpression("robot7", DataTypes.STRING));
+
+    AndExpression andExpression = new AndExpression(greaterThanExpression, equalToExpression2);
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .isTransactionalTable(false)
@@ -341,10 +384,182 @@ public class CarbonReaderTest extends TestCase {
       Object[] row = (Object[]) reader.readNextRow();
       assert (((String) row[0]).contains("robot7"));
       assert (7 == ((int) (row[1]) % 10));
-      assert (0.5 == ((double) (row[2]) % 1));
+      assert ((double) row[2] > 13.5);
       i++;
     }
-    Assert.assertEquals(i, 20);
+    Assert.assertEquals(i, 17);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfNonTransactionalLessThan() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+
+    ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
+    LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
+        new LiteralExpression("13.5", DataTypes.DOUBLE));
+
+    ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
+    EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
+        new LiteralExpression("robot7", DataTypes.STRING));
+
+    AndExpression andExpression = new AndExpression(lessThanExpression, equalToExpression2);
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(andExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert (((String) row[0]).contains("robot7"));
+      assert (7 == ((int) (row[1]) % 10));
+      assert ((double) row[2] < 13.5);
+      i++;
+    }
+    Assert.assertEquals(i, 2);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfNonTransactionalNotEqual() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+
+    ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
+    LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
+        new LiteralExpression("13.5", DataTypes.DOUBLE));
+
+    ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
+    NotEqualsExpression notEqualsExpression = new NotEqualsExpression(columnExpression2,
+        new LiteralExpression("robot7", DataTypes.STRING));
+
+    AndExpression andExpression = new AndExpression(lessThanExpression, notEqualsExpression);
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(andExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert (!((String) row[0]).contains("robot7"));
+      assert (7 != ((int) (row[1]) % 10));
+      assert ((double) row[2] < 13.5);
+      i++;
+    }
+    Assert.assertEquals(i, 25);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfNonTransactionalIn() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+
+    ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
+    LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
+        new LiteralExpression("13.5", DataTypes.DOUBLE));
+
+    ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
+    InExpression inExpression = new InExpression(columnExpression2,
+        new LiteralExpression("robot7", DataTypes.STRING));
+
+    AndExpression andExpression = new AndExpression(lessThanExpression, inExpression);
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(andExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert (((String) row[0]).contains("robot7"));
+      assert (7 == ((int) (row[1]) % 10));
+      assert ((double) row[2] < 13.5);
+      i++;
+    }
+    Assert.assertEquals(i, 2);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterOfNonTransactionalNotIn() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+
+    ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
+    LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
+        new LiteralExpression("13.5", DataTypes.DOUBLE));
+
+    ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
+    NotInExpression notInExpression = new NotInExpression(columnExpression2,
+        new LiteralExpression("robot7", DataTypes.STRING));
+
+    AndExpression andExpression = new AndExpression(lessThanExpression, notInExpression);
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(andExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      assert (!((String) row[0]).contains("robot7"));
+      assert (7 != ((int) (row[1]) % 10));
+      assert ((double) row[2] < 13.5);
+      i++;
+    }
+    Assert.assertEquals(i, 25);
 
     reader.close();
 

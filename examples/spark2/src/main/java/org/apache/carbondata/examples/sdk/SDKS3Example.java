@@ -20,6 +20,9 @@ package org.apache.carbondata.examples.sdk;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.sdk.file.*;
 
 /**
@@ -60,13 +63,19 @@ public class SDKS3Example {
         }
         writer.close();
         // Read data
+
+        EqualToExpression equalToExpression = new EqualToExpression(
+            new ColumnExpression("name", DataTypes.STRING),
+            new LiteralExpression("robot1", DataTypes.STRING));
+
         CarbonReader reader = CarbonReader
-                .builder(path, "_temp")
-                .projection(new String[]{"name", "age"})
-                .setAccessKey(args[0])
-                .setSecretKey(args[1])
-                .setEndPoint(args[2])
-                .build();
+            .builder(path, "_temp")
+            .projection(new String[]{"name", "age"})
+            .filter(equalToExpression)
+            .setAccessKey(args[0])
+            .setSecretKey(args[1])
+            .setEndPoint(args[2])
+            .build();
 
         System.out.println("\nData:");
         int i = 0;
