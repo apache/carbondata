@@ -24,7 +24,6 @@ import org.apache.carbondata.core.scan.executor.impl.SearchModeVectorDetailQuery
 import org.apache.carbondata.core.scan.executor.impl.VectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
 /**
  * Factory class to get the query executor from RDD
