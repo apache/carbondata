@@ -42,7 +42,6 @@ public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBu
       boolean bloomCompress) throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName, bloomFilterSize, bloomFilterFpp,
         bloomCompress);
-    this.isWriteFromBuilder = true;
   }
 
   @Override
@@ -79,7 +78,13 @@ public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBu
 
   @Override
   public void finish() throws IOException {
-    super.finish();
+    if (!isWritingFinished()) {
+      if (indexBloomFilters.size() > 0) {
+        writeBloomDataMapFile();
+      }
+      releaseResouce();
+      setWritingFinished(true);
+    }
   }
 
   @Override
