@@ -26,6 +26,8 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructT
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.CarbonProperties
 
 class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -233,7 +235,36 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
       CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
   }
 
-  // ignore this test in CI, because it will need at least 4GB memory to run successfully
+  test("Create datamap with long string column selected") {
+    val datamapName = "pre_agg_dm"
+    prepareTable()
+    sql(
+      s"""
+         | CREATE DATAMAP $datamapName ON TABLE $longStringTable
+         | USING 'preaggregate'
+         | DMPROPERTIES('LONG_STRING_COLUMNS'='description, note')
+         | AS SELECT id,description,note,count(*) FROM $longStringTable
+         | GROUP BY id,description,note
+         |""".
+        stripMargin)
+
+    val parentTable = CarbonMetadata.getInstance().getCarbonTable("default", longStringTable)
+    assert(null != parentTable)
+    val dmSchemaList = parentTable.getTableInfo.getDataMapSchemaList
+    assert(dmSchemaList.size() == 1)
+    assert(dmSchemaList.get(0).getDataMapName.equalsIgnoreCase(datamapName))
+
+    val dmTableName = longStringTable + "_" + datamapName
+    val dmTable = CarbonMetadata.getInstance().getCarbonTable("default", dmTableName)
+    assert(null != dmTable)
+    assert(dmTable.getColumnByName(dmTableName.toLowerCase(), longStringTable + "_description").getDataType
+      == DataTypes.VARCHAR)
+    assert(dmTable.getColumnByName(dmTableName.toLowerCase(), longStringTable + "_note").getDataType
+      == DataTypes.VARCHAR)
+    sql(s"DROP DATAMAP IF EXISTS $datamapName ON TABLE $longStringTable")
+  }
+
+    // ignore this test in CI, because it will need at least 4GB memory to run successfully
   ignore("Exceed 2GB per column page for varchar datatype") {
     deleteFile(inputFile_2g_column_page)
     if (!new File(inputDir).exists()) {
