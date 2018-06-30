@@ -106,6 +106,24 @@ case class PreAggregateTableHelper(
     tableProperties.put(CarbonCommonConstants.FLAT_FOLDER,
       parentTable.getTableInfo.getFactTable.getTableProperties.asScala.getOrElse(
         CarbonCommonConstants.FLAT_FOLDER, CarbonCommonConstants.DEFAULT_FLAT_FOLDER))
+
+    // update column name with prefix for long_string_column
+    val longStringColumn = tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS)
+    if (longStringColumn != None) {
+      val fieldNames = fields.map(_.column)
+      val newLongStringColumn = longStringColumn.get.split(",").map(_.trim).map(colName => {
+        val newColName = parentTable.getTableName.toLowerCase() + "_" + colName
+        if (!fieldNames.contains(newColName)) {
+          throw new MalformedDataMapCommandException(
+            CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase() + ":" + colName
+              + " does not in datamap")
+        }
+        newColName
+      })
+      tableProperties.put(CarbonCommonConstants.LONG_STRING_COLUMNS,
+        newLongStringColumn.mkString(","))
+    }
+
     // inherit the local dictionary properties of main parent table
     tableProperties
       .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
