@@ -78,7 +78,7 @@ public class TableDictionaryGenerator
   }
 
   @Override public void writeDictionaryData() {
-    int numOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    int numOfCores = CarbonProperties.getInstance().getNumberOfLoadingCores();
     long start = System.currentTimeMillis();
     ExecutorService executorService = Executors.newFixedThreadPool(numOfCores);
     for (final DictionaryGenerator generator : columnMap.values()) {

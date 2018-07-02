@@ -688,18 +688,9 @@ public class CarbonFactDataHandlerModel {
     // in compaction flow the measure with decimal type will come as spark decimal.
     // need to convert it to byte array.
     if (this.isCompactionFlow()) {
-      try {
-        this.numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.NUM_CORES_COMPACTING,
-                CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-      } catch (NumberFormatException exc) {
-        LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_COMPACTING
-            + "is wrong.Falling back to the default value "
-            + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-        this.numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-      }
+      this.numberOfCores = CarbonProperties.getInstance().getNumberOfCompactingCores();
     } else {
-      this.numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+      this.numberOfCores = CarbonProperties.getInstance().getNumberOfLoadingCores();
     }
 
     if (this.sortScope != null && this.sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {

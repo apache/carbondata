@@ -951,25 +951,44 @@ public final class CarbonProperties {
     return compactionSize;
   }
 
-  /**
-   * Number of cores should be used while loading data.
-   *
-   * @return
-   */
-  public int getNumberOfCores() {
+  private int getNumberOfCores(String key) {
     int numberOfCores;
     try {
       numberOfCores = Integer.parseInt(
           CarbonProperties.getInstance().getProperty(
-              CarbonCommonConstants.NUM_CORES_LOADING,
+              key,
               CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
     } catch (NumberFormatException exc) {
-      LOGGER.warn("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
+      LOGGER.warn("Configured value for property " + key
           + " is wrong. Falling back to the default value "
           + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
     return numberOfCores;
+  }
+
+  /**
+   * Number of cores should be used while loading data.
+   * @return the number of cores to be used while loading data
+   */
+  public int getNumberOfLoadingCores() {
+    return getNumberOfCores(CarbonCommonConstants.NUM_CORES_LOADING);
+  }
+
+  /**
+   * Number of cores to be used while compacting.
+   * @return the number of cores to be used while compacting
+   */
+  public int getNumberOfCompactingCores() {
+    return getNumberOfCores(CarbonCommonConstants.NUM_CORES_COMPACTING);
+  }
+
+  /**
+   * Number of cores to be used while alter partition.
+   * @return the number of cores to be used while alter partition
+   */
+  public int getNumberOfAltPartitionCores() {
+    return getNumberOfCores(CarbonCommonConstants.NUM_CORES_ALT_PARTITION);
   }
 
   /**

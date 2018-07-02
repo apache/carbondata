@@ -127,6 +127,8 @@ public class CarbonDataLoadConfiguration {
    */
   private String columnCompressor;
 
+  private int numberOfLoadingCores;
+
   public CarbonDataLoadConfiguration() {
   }
 
@@ -459,5 +461,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setColumnCompressor(String columnCompressor) {
     this.columnCompressor = columnCompressor;
+  }
+
+  public int getNumberOfLoadingCores() {
+    return numberOfLoadingCores;
+  }
+
+  public void setNumberOfLoadingCores(int numberOfLoadingCores) {
+    this.numberOfLoadingCores = numberOfLoadingCores;
   }
 }

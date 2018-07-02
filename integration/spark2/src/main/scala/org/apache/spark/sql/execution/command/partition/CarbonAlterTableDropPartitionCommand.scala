@@ -199,9 +199,7 @@ case class CarbonAlterTableDropPartitionCommand(
       partitionId: String,
       dropWithData: Boolean,
       oldPartitionIds: List[Int]): Unit = {
-    val numberOfCores = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.NUM_CORES_ALT_PARTITION,
-        CarbonCommonConstants.DEFAULT_NUMBER_CORES)
+    val numberOfCores = CarbonProperties.getInstance().getNumberOfAltPartitionCores
     val executor : ExecutorService = Executors.newFixedThreadPool(numberOfCores.toInt)
     try {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable

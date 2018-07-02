@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -450,11 +451,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private SortParameters createSortParameters() {
+    int numberOfCompactingCores = CarbonProperties.getInstance().getNumberOfCompactingCores();
     return SortParameters
         .createSortParameters(carbonTable, carbonLoadModel.getDatabaseName(), tableName,
             dimensionColumnCount, segmentProperties.getComplexDimensions().size(), measureCount,
             noDictionaryCount, segmentId, carbonLoadModel.getTaskNo(), noDictionaryColMapping,
-            sortColumnMapping, isVarcharDimMapping, true);
+            sortColumnMapping, isVarcharDimMapping, true, numberOfCompactingCores / 2);
   }
 
   /**

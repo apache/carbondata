@@ -687,7 +687,7 @@ public final class CarbonDataProcessorUtil {
     if (sdkWriterCores > 0) {
       numberOfCores = sdkWriterCores;
     } else {
-      numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+      numberOfCores = CarbonProperties.getInstance().getNumberOfLoadingCores();
     }
     // Get the minimum of number of cores and iterators size to get the number of parallel threads
     // to be launched.
