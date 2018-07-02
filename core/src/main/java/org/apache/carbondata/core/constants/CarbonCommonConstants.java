@@ -92,16 +92,11 @@ public final class CarbonCommonConstants {
   /**
    * blocklet size in carbon file
    */
-  @CarbonProperty
   public static final String BLOCKLET_SIZE = "carbon.blocklet.size";
-  /**
-   * Number of cores to be used
-   */
-  @CarbonProperty
-  public static final String NUM_CORES = "carbon.number.of.cores";
   /**
    * carbon sort size
    */
+  @Deprecated
   @CarbonProperty
   public static final String SORT_SIZE = "carbon.sort.size";
   /**
@@ -136,14 +131,6 @@ public final class CarbonCommonConstants {
    * default value of number of cores to be used
    */
   public static final String NUM_CORES_DEFAULT_VAL = "2";
-  /**
-   * min value of number of cores to be used
-   */
-  public static final int NUM_CORES_MIN_VAL = 1;
-  /**
-   * max value of number of cores to be used
-   */
-  public static final int NUM_CORES_MAX_VAL = 32;
   /**
    * default carbon sort size
    */
@@ -329,11 +316,6 @@ public final class CarbonCommonConstants {
    */
   public static final String MERGERD_EXTENSION = ".merge";
   /**
-   * SORT_FILE_BUFFER_SIZE
-   */
-  @CarbonProperty
-  public static final String SORT_FILE_BUFFER_SIZE = "carbon.sort.file.buffer.size";
-  /**
    * SORT_FILE_WRITE_BUFFER_SIZE
    */
   @CarbonProperty
@@ -359,11 +341,6 @@ public final class CarbonCommonConstants {
    * Number of cores to be used while alter partition
    */
   public static final String NUM_CORES_ALT_PARTITION = "carbon.number.of.cores.while.altPartition";
-  /**
-   * Number of cores to be used for block sort
-   */
-  @CarbonProperty
-  public static final String NUM_CORES_BLOCK_SORT = "carbon.number.of.cores.block.sort";
   /**
    * Default value of number of cores to be used for block sort
    */
@@ -471,15 +448,6 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_DATE_FORMAT = "carbon.date.format";
   /**
-   * STORE_LOCATION_HDFS
-   */
-  @CarbonProperty
-  public static final String STORE_LOCATION_HDFS = "carbon.storelocation.hdfs";
-  /**
-   * IS_COLUMNAR_STORAGE_DEFAULTVALUE
-   */
-  public static final String IS_COLUMNAR_STORAGE_DEFAULTVALUE = "true";
-  /**
    * DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE
    */
   public static final String DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE = "1";
@@ -487,15 +455,6 @@ public final class CarbonCommonConstants {
    * IS_FULLY_FILLED_BITS_DEFAULT_VALUE
    */
   public static final String IS_FULLY_FILLED_BITS_DEFAULT_VALUE = "true";
-  /**
-   * IS_INT_BASED_INDEXER
-   */
-  @CarbonProperty
-  public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK = "aggregate.columnar.keyblock";
-  /**
-   * IS_INT_BASED_INDEXER_DEFAULTVALUE
-   */
-  public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE = "true";
   /**
    * ENABLE_QUERY_STATISTICS
    */
@@ -613,7 +572,6 @@ public final class CarbonCommonConstants {
   /**
    * compressor for writing/reading carbondata file
    */
-  @CarbonProperty
   public static final String COMPRESSOR = "carbon.column.compressor";
 
   /**
@@ -621,22 +579,9 @@ public final class CarbonCommonConstants {
    */
   public static final String DEFAULT_COMPRESSOR = "snappy";
 
-  public static final String STRING_TYPE = "StringType";
-  public static final String INTEGER_TYPE = "IntegerType";
-  public static final String LONG_TYPE = "LongType";
-  public static final String DOUBLE_TYPE = "DoubleType";
-  public static final String FLOAT_TYPE = "FloatType";
-  public static final String DATE_TYPE = "DateType";
-  public static final String BOOLEAN_TYPE = "BooleanType";
-  public static final String TIMESTAMP_TYPE = "TimestampType";
-  public static final String BYTE_TYPE = "ByteType";
-  public static final String SHORT_TYPE = "ShortType";
-  public static final String DECIMAL_TYPE = "DecimalType";
   public static final String STRING = "String";
 
-  public static final String INTEGER = "Integer";
   public static final String SHORT = "Short";
-  public static final String NUMERIC = "Numeric";
   public static final String TIMESTAMP = "Timestamp";
   public static final String ARRAY = "array";
   public static final String STRUCT = "struct";
@@ -777,7 +722,6 @@ public final class CarbonCommonConstants {
   /**
    * xxhash algorithm property for hashmap
    */
-  @CarbonProperty
   public static final String ENABLE_XXHASH = "carbon.enableXXHash";
 
   /**
@@ -845,7 +789,6 @@ public final class CarbonCommonConstants {
   /**
    * space reserved for writing block meta data in carbon data file
    */
-  @CarbonProperty
   public static final String CARBON_BLOCK_META_RESERVED_SPACE =
       "carbon.block.meta.size.reserved.percentage";
 
@@ -1076,7 +1019,6 @@ public final class CarbonCommonConstants {
   /**
    * hive connection url
    */
-  @CarbonProperty
   public static final String HIVE_CONNECTION_URL = "javax.jdo.option.ConnectionURL";
 
   /**
@@ -1097,13 +1039,11 @@ public final class CarbonCommonConstants {
   /**
    * hdfs temporary directory key
    */
-  @CarbonProperty
   public static final String HDFS_TEMP_LOCATION = "hadoop.tmp.dir";
 
   /**
    * zookeeper url key
    */
-  @CarbonProperty
   public static final String ZOOKEEPER_URL = "spark.deploy.zookeeper.url";
 
   /**
@@ -1146,7 +1086,6 @@ public final class CarbonCommonConstants {
   /**
    * carbon data file version property
    */
-  @CarbonProperty
   public static final String CARBON_DATA_FILE_VERSION = "carbon.data.file.version";
 
   /**
@@ -1273,11 +1212,9 @@ public final class CarbonCommonConstants {
   public static final String ENABLE_INMEMORY_MERGE_SORT = "enable.inmemory.merge.sort";
 
   public static final String ENABLE_INMEMORY_MERGE_SORT_DEFAULT = "false";
-  @CarbonProperty
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB = "offheap.sort.chunk.size.inmb";
 
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "64";
-  @CarbonProperty
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB = "sort.inmemory.size.inmb";
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT = "1024";
 
@@ -1523,7 +1460,6 @@ public final class CarbonCommonConstants {
    * this will be used to pass bitset value in filter to another filter for
    * faster execution of filter query
    */
-  @CarbonProperty
   public static final String BITSET_PIPE_LINE = "carbon.use.bitset.pipe.line";
 
   /**
@@ -1556,7 +1492,7 @@ public final class CarbonCommonConstants {
   /**
    * DEFAULT_ENABLE_CALCULATE_DATA_INDEX_SIZE
    */
-  @CarbonProperty public static final String DEFAULT_ENABLE_CALCULATE_SIZE = "true";
+  public static final String DEFAULT_ENABLE_CALCULATE_SIZE = "true";
 
   public static final String TABLE_DATA_SIZE = "Table Data Size";
 
@@ -1582,11 +1518,13 @@ public final class CarbonCommonConstants {
    * if the byte size of streaming segment reach this value,
    * the system will create a new stream segment
    */
+  @CarbonProperty
   public static final String HANDOFF_SIZE = "carbon.streaming.segment.max.size";
 
   /**
    * enable auto handoff streaming segment
    */
+  @CarbonProperty
   public static final String ENABLE_AUTO_HANDOFF = "carbon.streaming.auto.handoff.enabled";
 
   public static final String ENABLE_AUTO_HANDOFF_DEFAULT = "true";
@@ -1653,7 +1591,6 @@ public final class CarbonCommonConstants {
    * It allows queries on hive metastore directly along with filter information, otherwise first
    * fetches all partitions from hive and apply filters on it.
    */
-  @CarbonProperty
   public static final String CARBON_READ_PARTITION_HIVE_DIRECT =
       "carbon.read.partition.hive.direct";
   public static final String CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT = "true";
@@ -1835,14 +1772,6 @@ public final class CarbonCommonConstants {
 
   // Property to enable parallel datamap loading for a table
   public static final String CARBON_LOAD_DATAMAPS_PARALLEL = "carbon.load.datamaps.parallel.";
-
-  /**
-   * Cache size in MB for bloom filter datamap. It is an integer and should be greater than 0
-   * and it will be used during query.
-   */
-  @CarbonProperty
-  public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE =
-      "carbon.query.datamap.bloom.cache.size";
 
   /**
    * default value in size for cache size of bloom filter datamap.

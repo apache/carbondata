@@ -67,29 +67,6 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * Below method will be used to get the buffer size
-   *
-   * @param numberOfFiles
-   * @return buffer size
-   */
-  public static int getFileBufferSize(int numberOfFiles, CarbonProperties instance,
-      int deafultvalue) {
-    int configuredBufferSize = 0;
-    try {
-      configuredBufferSize =
-          Integer.parseInt(instance.getProperty(CarbonCommonConstants.SORT_FILE_BUFFER_SIZE));
-    } catch (NumberFormatException e) {
-      configuredBufferSize = deafultvalue;
-    }
-    int fileBufferSize = (configuredBufferSize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) / numberOfFiles;
-    if (fileBufferSize < CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) {
-      fileBufferSize = CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
-    }
-    return fileBufferSize;
-  }
-
-  /**
    * This method will be used to delete sort temp location is it is exites
    */
   public static void deleteSortLocationIfExists(String[] locations) {
@@ -419,7 +396,6 @@ public final class CarbonDataProcessorUtil {
    * This method update the column Name
    *
    * @param schema
-   * @param tableName
    */
   public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema) {
     Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

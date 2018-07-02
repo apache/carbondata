@@ -35,8 +35,6 @@ carbon.number.of.cores.while.loading=2
 carbon.sort.size=100000
 #Algorithm for hashmap for hashkey calculation
 carbon.enableXXHash=true
-#Number of cores to be used for block sort while dataloading
-#carbon.number.of.cores.block.sort=7
 #enable prefetch of data during merge sort while reading data from sort temp files in data loading
 #carbon.merge.sort.prefetch=true
 ######## Alter Partition Configuration ########
@@ -50,12 +48,8 @@ carbon.compaction.level.threshold=4,3
 #default size (in MB) for major compaction to be triggered
 carbon.major.compaction.size=1024
 ######## Query Configuration ########
-#Number of cores to be used for loading index into memory
-carbon.number.of.cores=4
 #Number of records to be in memory while querying :MIN=100000:MAX=240000
 carbon.inmemory.record.size=120000
-#Improves the performance of filter query
-carbon.enable.quick.filter=false
 ##number of core to load the blocks in driver
 #no.of.cores.to.load.blocks.in.driver=10
 

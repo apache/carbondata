@@ -176,8 +176,6 @@ public class StoreCreator {
         new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
     File storeDir = new File(storePath);
     CarbonUtil.deleteFoldersAndFiles(storeDir);
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS,
-        storePath);
 
     CarbonTable table = createTable(absoluteTableIdentifier);
     writeDictionary(factFilePath, table);

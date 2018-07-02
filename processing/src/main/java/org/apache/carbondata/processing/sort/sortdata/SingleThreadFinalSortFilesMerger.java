@@ -41,7 +41,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
@@ -59,11 +58,6 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * fileCounter
    */
   private int fileCounter;
-
-  /**
-   * fileBufferSize
-   */
-  private int fileBufferSize;
 
   /**
    * recordHolderHeap
@@ -153,15 +147,10 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
       LOGGER.info("No files to merge sort");
       return;
     }
-    this.fileBufferSize = CarbonDataProcessorUtil
-        .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
-            CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
     LOGGER.info("Started Final Merge");
 
     LOGGER.info("Number of temp file: " + this.fileCounter);
-
-    LOGGER.info("File Buffer Size: " + this.fileBufferSize);
 
     // create record holder heap
     createRecordHolderQueue();
