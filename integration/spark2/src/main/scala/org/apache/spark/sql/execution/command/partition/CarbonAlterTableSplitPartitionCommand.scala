@@ -215,10 +215,8 @@ case class CarbonAlterTableSplitPartitionCommand(
       carbonLoadModel: CarbonLoadModel,
       partitionId: String,
       oldPartitionIdList: List[Int]): Unit = {
-    val numberOfCores = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.NUM_CORES_ALT_PARTITION,
-        CarbonCommonConstants.DEFAULT_NUMBER_CORES)
-    val executor : ExecutorService = Executors.newFixedThreadPool(numberOfCores.toInt)
+    val numberOfCores = CarbonProperties.getInstance().getNumberOfAltPartitionCores
+    val executor : ExecutorService = Executors.newFixedThreadPool(numberOfCores)
     try {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier

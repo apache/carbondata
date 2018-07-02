@@ -442,10 +442,12 @@ public class SortParameters implements Serializable {
     parameters.setTempFileLocation(sortTempDirs);
     LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
 
-    int numberOfCores = carbonProperties.getNumberOfCores() / 2;
+    int numberOfCores = 1;
     // In case of loading from partition we should use the cores specified by it
     if (configuration.getWritingCoresCount() > 0) {
       numberOfCores = configuration.getWritingCoresCount();
+    } else {
+      numberOfCores = configuration.getNumberOfLoadingCores() / 2;
     }
     parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
@@ -486,7 +488,8 @@ public class SortParameters implements Serializable {
   public static SortParameters createSortParameters(CarbonTable carbonTable, String databaseName,
       String tableName, int dimColCount, int complexDimColCount, int measureColCount,
       int noDictionaryCount, String segmentId, String taskNo, boolean[] noDictionaryColMaping,
-      boolean[] sortColumnMapping, boolean[] isVarcharDimensionColumn, boolean isCompactionFlow) {
+      boolean[] sortColumnMapping, boolean[] isVarcharDimensionColumn, boolean isCompactionFlow,
+      int numberOfCores) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setCarbonTable(carbonTable);
@@ -526,7 +529,6 @@ public class SortParameters implements Serializable {
     parameters.setTempFileLocation(sortTempDirs);
     LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
 
-    int numberOfCores = carbonProperties.getNumberOfCores() / 2;
     parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
     parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties

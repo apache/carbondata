@@ -60,12 +60,16 @@ public class CarbonDeleteFilesDataReader {
     initThreadPoolSize();
   }
 
+  public CarbonDeleteFilesDataReader(int thread_pool_size) {
+    this.thread_pool_size = thread_pool_size;
+  }
+
   /**
    * This method will initialize the thread pool size to be used for creating the
    * max number of threads for a job
    */
   private void initThreadPoolSize() {
-    thread_pool_size = CarbonProperties.getInstance().getNumberOfCores();
+    thread_pool_size = CarbonProperties.getInstance().getNumberOfLoadingCores();
   }
 
   /**
