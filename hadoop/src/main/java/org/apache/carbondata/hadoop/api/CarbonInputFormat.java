@@ -461,7 +461,7 @@ m filterExpression
       // since index datamap prune in segment scope,
       // the result need to intersect with previous pruned result
       prunedBlocklets = (List) CollectionUtils.intersection(
-          prunedBlocklets, cgPrunedBlocklets);
+          cgPrunedBlocklets, prunedBlocklets);
       ExplainCollector.recordCGDataMapPruning(
           cgDataMapExprWrapper.getDataMapSchema(), prunedBlocklets.size());
     }
@@ -477,8 +477,10 @@ m filterExpression
         pruneSegments(segmentIds, prunedBlocklets);
         List<ExtendedBlocklet> fgPrunedBlocklets = DataMapUtil.executeDataMapJob(carbonTable,
             resolver, segmentIds, fgDataMapExprWrapper, dataMapJob, partitionsToPrune);
-        prunedBlocklets = (List) CollectionUtils.intersection(prunedBlocklets,
-            fgPrunedBlocklets);
+        // note that the 'fgPrunedBlocklets' has extra datamap related info compared with
+        // 'prunedBlocklets', so the intersection should keep the elements in 'fgPrunedBlocklets'
+        prunedBlocklets = (List) CollectionUtils.intersection(fgPrunedBlocklets,
+            prunedBlocklets);
         ExplainCollector.recordFGDataMapPruning(fgDataMapExprWrapper.getDataMapSchema(),
             prunedBlocklets.size());
       }
