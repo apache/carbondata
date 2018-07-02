@@ -197,14 +197,6 @@ public class SortParameters implements Serializable {
     this.complexDimColCount = complexDimColCount;
   }
 
-  public int getFileBufferSize() {
-    return fileBufferSize;
-  }
-
-  public void setFileBufferSize(int fileBufferSize) {
-    this.fileBufferSize = fileBufferSize;
-  }
-
   public int getNumberOfIntermediateFileToBeMerged() {
     return numberOfIntermediateFileToBeMerged;
   }
@@ -405,12 +397,6 @@ public class SortParameters implements Serializable {
     LOGGER.info("Number of intermediate file to be merged: " + parameters
         .getNumberOfIntermediateFileToBeMerged());
 
-    // get file buffer size
-    parameters.setFileBufferSize(CarbonDataProcessorUtil
-        .getFileBufferSize(parameters.getNumberOfIntermediateFileToBeMerged(), carbonProperties,
-            CarbonCommonConstants.CONSTANT_SIZE_TEN));
-
-    LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil.getLocalDataFolderLocation(
         tableIdentifier.getDatabaseName(), tableIdentifier.getTableName(),
@@ -506,13 +492,6 @@ public class SortParameters implements Serializable {
 
     LOGGER.info("Number of intermediate file to be merged: " + parameters
         .getNumberOfIntermediateFileToBeMerged());
-
-    // get file buffer size
-    parameters.setFileBufferSize(CarbonDataProcessorUtil
-        .getFileBufferSize(parameters.getNumberOfIntermediateFileToBeMerged(), carbonProperties,
-            CarbonCommonConstants.CONSTANT_SIZE_TEN));
-
-    LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(databaseName, tableName, taskNo, segmentId,

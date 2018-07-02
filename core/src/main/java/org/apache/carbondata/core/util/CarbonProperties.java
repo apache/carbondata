@@ -62,8 +62,6 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_VECTOR_READER;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.HANDOFF_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.LOCK_TYPE;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES_BLOCK_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_SIZE;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE;
@@ -124,12 +122,6 @@ public final class CarbonProperties {
     switch (key) {
       case BLOCKLET_SIZE:
         validateBlockletSize();
-        break;
-      case NUM_CORES:
-        validateNumCores();
-        break;
-      case NUM_CORES_BLOCK_SORT:
-        validateNumCoresBlockSort();
         break;
       case SORT_SIZE:
         validateSortSize();
@@ -235,8 +227,6 @@ public final class CarbonProperties {
    */
   private void validateAndLoadDefaultProperties() {
     validateBlockletSize();
-    validateNumCores();
-    validateNumCoresBlockSort();
     validateSortSize();
     validateCarbonDataFileVersion();
     validateDynamicSchedulerTimeOut();
@@ -650,58 +640,6 @@ public final class CarbonProperties {
           + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
       carbonProperties.setProperty(BLOCKLET_SIZE,
           CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
-    }
-  }
-
-  /**
-   * This method validates the number cores specified
-   */
-  private void validateNumCores() {
-    String numCoresStr = carbonProperties
-        .getProperty(NUM_CORES, CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-    try {
-      int numCores = Integer.parseInt(numCoresStr);
-
-      if (numCores < CarbonCommonConstants.NUM_CORES_MIN_VAL
-          || numCores > CarbonCommonConstants.NUM_CORES_MAX_VAL) {
-        LOGGER.info(
-            "The num Cores  value \"" + numCoresStr + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-        carbonProperties.setProperty(NUM_CORES,
-            CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info(
-          "The num Cores  value \"" + numCoresStr + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-      carbonProperties.setProperty(NUM_CORES,
-          CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-    }
-  }
-
-  /**
-   * This method validates the number cores specified for mdk block sort
-   */
-  private void validateNumCoresBlockSort() {
-    String numCoresStr = carbonProperties.getProperty(NUM_CORES_BLOCK_SORT,
-        CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
-    try {
-      int numCores = Integer.parseInt(numCoresStr);
-
-      if (numCores < CarbonCommonConstants.NUM_CORES_BLOCK_SORT_MIN_VAL
-          || numCores > CarbonCommonConstants.NUM_CORES_BLOCK_SORT_MAX_VAL) {
-        LOGGER.info("The num cores value \"" + numCoresStr
-            + "\" for block sort is invalid. Using the default value \""
-            + CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
-        carbonProperties.setProperty(NUM_CORES_BLOCK_SORT,
-            CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The num cores value \"" + numCoresStr
-          + "\" for block sort is invalid. Using the default value \""
-          + CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
-      carbonProperties.setProperty(NUM_CORES_BLOCK_SORT,
-          CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
     }
   }
 

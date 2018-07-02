@@ -207,8 +207,6 @@ public final class DataLoadProcessBuilder {
             loadModel.getTaskNo(), false, false);
     CarbonProperties.getInstance().addProperty(tempLocationKey,
         StringUtils.join(storeLocation, File.pathSeparator));
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getTablePath());
 
     return createConfiguration(loadModel);
   }
