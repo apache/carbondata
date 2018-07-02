@@ -34,6 +34,8 @@ import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * Persisting the table information
  */
@@ -62,6 +64,9 @@ public class TableSchema implements Serializable, Writable {
   /**
    * History of schema evolution of this table
    */
+  // the old version the field name for schemaEvolution was schemaEvalution, so to de-serialization
+  // old schema provided the old field name in the alternate filed using annotation
+  @SerializedName(value = "schemaEvolution", alternate = "schemaEvalution")
   private SchemaEvolution schemaEvolution;
 
   /**
