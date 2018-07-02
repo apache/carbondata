@@ -33,6 +33,7 @@ import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -49,6 +50,9 @@ public class DataMapSchema implements Serializable, Writable {
    * 1. Index DataMap: provider name is class name of implementation class of DataMapFactory
    * 2. OLAP DataMap: provider name is one of the {@link DataMapClassProvider#shortName}
    */
+  // the old version the field name for providerName was className, so to de-serialization
+  // old schema provided the old field name in the alternate filed using annotation
+  @SerializedName(value = "providerName", alternate = "className")
   protected String providerName;
 
   /**
