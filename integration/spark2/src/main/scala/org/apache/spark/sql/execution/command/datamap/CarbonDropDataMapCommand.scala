@@ -113,13 +113,18 @@ case class CarbonDropDataMapCommand(
         }
         LOGGER.audit(s"Deleting datamap [$dataMapName] under table [$tableName]")
 
-        // drop index datamap on the main table
+        // drop index,mv datamap on the main table.
         if (mainTable != null &&
             DataMapStoreManager.getInstance().getAllDataMap(mainTable).size() > 0) {
-          dropDataMapFromSystemFolder(sparkSession)
-          return Seq.empty
+          val isDMSchemaExists = DataMapStoreManager.getInstance().getAllDataMap(mainTable).asScala.
+            exists(_.getDataMapSchema.getDataMapName.equalsIgnoreCase(dataMapName))
+          if (isDMSchemaExists) {
+            dropDataMapFromSystemFolder(sparkSession)
+            return Seq.empty
+          }
         }
 
+        // drop preaggregate datamap.
         // If datamap to be dropped in parent table then drop the datamap from metastore and remove
         // entry from parent table.
         // If force drop is true then remove the datamap from hivemetastore. No need to remove from
@@ -160,9 +165,8 @@ case class CarbonDropDataMapCommand(
           } else if (!ifExistsSet) {
             throw new NoSuchDataMapException(dataMapName, tableName)
           }
-        } else if (mainTable != null &&
-                   mainTable.getTableInfo.getDataMapSchemaList.size() == 0) {
-          dropDataMapFromSystemFolder(sparkSession)
+        } else if (!ifExistsSet) {
+          throw new NoSuchDataMapException(dataMapName)
         }
       } catch {
         case e: NoSuchDataMapException =>
@@ -191,7 +195,7 @@ case class CarbonDropDataMapCommand(
       }
     }
 
-      Seq.empty
+    Seq.empty
   }
 
   private def dropDataMapFromSystemFolder(sparkSession: SparkSession): Unit = {
