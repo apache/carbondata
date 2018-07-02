@@ -28,8 +28,6 @@
       <artifactId>carbondata-processing</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!--note: guava 14.0.1 is omitted during assembly.
-    The compile scope here is for building and running test-->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>

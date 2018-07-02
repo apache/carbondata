@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.loading.converter.impl;
 
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -68,18 +69,19 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
     row.update(convert(value, logHolder), index);
   }
 
-  @Override public Object convert(Object value, BadRecordLogHolder logHolder)
+  @Override
+  public Object convert(Object value, BadRecordLogHolder logHolder)
       throws RuntimeException {
     String literalValue = (String) value;
     if (literalValue == null) {
       logHolder.setReason(
           CarbonDataProcessorUtil.prepareFailureReason(column.getColName(), column.getDataType()));
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else if (literalValue.equals(nullFormat)) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       int key = directDictionaryGenerator.generateDirectSurrogateKey(literalValue);
-      if (key == 1) {
+      if (key == CarbonCommonConstants.DIRECT_DICT_VALUE_NULL) {
         if ((literalValue.length() > 0) || (literalValue.length() == 0 && isEmptyBadRecord)) {
           String message = logHolder.getColumnMessageMap().get(column.getColName());
           if (null == message) {
