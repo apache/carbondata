@@ -45,7 +45,6 @@ class QueryTest extends PlanTest with Suite {
   Locale.setDefault(Locale.US)
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "false")
-    .addProperty(CarbonCommonConstants.CARBON_READER_SUPPORT, "false");
 
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the

@@ -75,7 +75,6 @@ class DataLoadingIUDTestCase extends QueryTest with BeforeAndAfterAll with Befor
   override def beforeEach(): Unit = {
     sql(s"""drop table if exists t_carbn01""").collect
     sql(s"""drop table if exists default.t_carbn01""").collect
-    CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_READER_SUPPORT, "false")
   }
 
 

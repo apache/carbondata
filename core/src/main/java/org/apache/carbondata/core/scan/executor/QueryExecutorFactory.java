@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.core.scan.executor;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.executor.impl.DetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.impl.SDKDetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.impl.SearchModeDetailQueryExecutor;
@@ -39,10 +38,7 @@ public class QueryExecutorFactory {
         return new SearchModeDetailQueryExecutor();
       }
     } else {
-      String carbonReaderSupport = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.ENABLE_SDK_QUERY_EXECUTOR,
-              CarbonCommonConstants.ENABLE_SDK_QUERY_EXECUTOR_DEFAULT);
-      if (carbonReaderSupport.equalsIgnoreCase("true")) {
+      if (queryModel.isSdkQueryExecutorEnabled()) {
         return new SDKDetailQueryExecutor();
       } else if (queryModel.isVectorReader()) {
         return new VectorDetailQueryExecutor();

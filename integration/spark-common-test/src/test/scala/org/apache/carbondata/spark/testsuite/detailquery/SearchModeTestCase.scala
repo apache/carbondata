@@ -49,8 +49,6 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll = {
     sql("DROP TABLE IF EXISTS main")
     sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
-    CarbonProperties.getInstance
-      .addProperty(CarbonCommonConstants.ENABLE_SDK_QUERY_EXECUTOR, "false")
   }
 
   private def sparkSql(sql: String): Seq[Row] = {

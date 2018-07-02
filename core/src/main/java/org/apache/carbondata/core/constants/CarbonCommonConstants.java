@@ -1753,20 +1753,6 @@ public final class CarbonCommonConstants {
   public static final String CARBON_READER_THREAD = "carbon.reader.thread";
 
   /**
-   * Whether it support CarbonReader, default value is false
-   */
-  @CarbonProperty
-  @InterfaceStability.Unstable
-  public static final String ENABLE_SDK_QUERY_EXECUTOR = "enable.sdk.query.executor";
-
-  /**
-   * Default value is false
-   */
-  @CarbonProperty
-  @InterfaceStability.Unstable
-  public static final String ENABLE_SDK_QUERY_EXECUTOR_DEFAULT = "false";
-
-  /**
    * In search mode, Master will listen on this port for worker registration.
    * If Master failed to start service with this port, it will try to increment the port number
    * and try to bind again, until it is success

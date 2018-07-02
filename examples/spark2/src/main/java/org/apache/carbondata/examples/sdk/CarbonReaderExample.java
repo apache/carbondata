@@ -136,9 +136,6 @@ public class CarbonReaderExample {
         } catch (Throwable e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
-        } finally {
-            CarbonProperties.getInstance()
-                .addProperty(CarbonCommonConstants.ENABLE_SDK_QUERY_EXECUTOR, "false");
         }
     }
 }
