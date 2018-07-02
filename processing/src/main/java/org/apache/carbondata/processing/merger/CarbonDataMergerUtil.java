@@ -1265,7 +1265,8 @@ public final class CarbonDataMergerUtil {
       String blockName, String fullBlockFilePath) throws IOException {
 
     DeleteDeltaBlockDetails deleteDeltaBlockDetails = null;
-    CarbonDeleteFilesDataReader dataReader = new CarbonDeleteFilesDataReader();
+    int numberOfcores = CarbonProperties.getInstance().getNumberOfCompactingCores();
+    CarbonDeleteFilesDataReader dataReader = new CarbonDeleteFilesDataReader(numberOfcores);
     try {
       deleteDeltaBlockDetails =
               dataReader.getCompactedDeleteDeltaFileFromBlock(deleteDeltaFiles, blockName);
