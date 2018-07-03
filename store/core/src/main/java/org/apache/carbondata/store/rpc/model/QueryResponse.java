@@ -29,19 +29,17 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
 @InterfaceAudience.Internal
-public class QueryResponse implements Serializable, Writable {
+public class QueryResponse extends BaseResponse implements Serializable, Writable {
   private int queryId;
-  private int status;
-  private String message;
   private Object[][] rows;
 
   public QueryResponse() {
+    super();
   }
 
   public QueryResponse(int queryId, int status, String message, Object[][] rows) {
+    super(status, message);
     this.queryId = queryId;
-    this.status = status;
-    this.message = message;
     this.rows = rows;
   }
 
@@ -49,13 +47,6 @@ public class QueryResponse implements Serializable, Writable {
     return queryId;
   }
 
-  public int getStatus() {
-    return status;
-  }
-
-  public String getMessage() {
-    return message;
-  }
 
   public Object[][] getRows() {
     return rows;
@@ -63,17 +54,15 @@ public class QueryResponse implements Serializable, Writable {
 
   @Override
   public void write(DataOutput out) throws IOException {
+    super.write(out);
     out.writeInt(queryId);
-    out.writeInt(status);
-    out.writeUTF(message);
     WritableUtils.writeCompressedByteArray(out, ObjectSerializationUtil.serialize(rows));
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
+    super.readFields(in);
     queryId = in.readInt();
-    status = in.readInt();
-    message = in.readUTF();
     try {
       rows = (Object[][])ObjectSerializationUtil.deserialize(
           WritableUtils.readCompressedByteArray(in));

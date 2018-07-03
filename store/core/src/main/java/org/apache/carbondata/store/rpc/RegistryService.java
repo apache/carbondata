@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.store.rpc;
 
+import java.io.IOException;
+
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.store.rpc.model.RegisterWorkerRequest;
 import org.apache.carbondata.store.rpc.model.RegisterWorkerResponse;
@@ -26,5 +28,5 @@ import org.apache.hadoop.ipc.VersionedProtocol;
 @InterfaceAudience.Internal
 public interface RegistryService extends VersionedProtocol {
   long versionID = 1L;
-  RegisterWorkerResponse registerWorker(RegisterWorkerRequest request);
+  RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException;
 }

@@ -54,6 +54,8 @@ public class TableSchemaBuilder {
 
   private List<ColumnSchema> measures = new LinkedList<>();
 
+  private Map<String, String> tableProperties;
+
   private int blockSize;
 
   private int blockletSize;
@@ -61,6 +63,14 @@ public class TableSchemaBuilder {
   private String tableName;
   private boolean isLocalDictionaryEnabled;
   private String localDictionaryThreshold;
+
+  public TableSchemaBuilder properties(Map<String, String> tableProperties) {
+    if (tableProperties == null) {
+      throw new IllegalArgumentException("blockSize should not be null");
+    }
+    this.tableProperties = tableProperties;
+    return this;
+  }
 
   public TableSchemaBuilder blockSize(int blockSize) {
     if (blockSize <= 0) {
@@ -111,22 +121,25 @@ public class TableSchemaBuilder {
     allColumns.addAll(measures);
     schema.setListOfColumns(allColumns);
 
-    Map<String, String> property = new HashMap<>();
+    if (tableProperties == null) {
+      tableProperties = new HashMap<>();
+    }
     if (blockSize > 0) {
-      property.put(CarbonCommonConstants.TABLE_BLOCKSIZE, String.valueOf(blockSize));
+      tableProperties.put(CarbonCommonConstants.TABLE_BLOCKSIZE, String.valueOf(blockSize));
     }
     if (blockletSize > 0) {
-      property.put(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, String.valueOf(blockletSize));
+      tableProperties.put(
+          CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, String.valueOf(blockletSize));
     }
 
     // Adding local dictionary, applicable only for String(dictionary exclude)
     if (isLocalDictionaryEnabled) {
-      property.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+      tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
           String.valueOf(isLocalDictionaryEnabled));
       String localdictionaryThreshold = localDictionaryThreshold.equalsIgnoreCase("0") ?
           CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT :
           localDictionaryThreshold;
-      property.put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD, localdictionaryThreshold);
+      tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD, localdictionaryThreshold);
       for (int index = 0; index < allColumns.size(); index++) {
         ColumnSchema colSchema = allColumns.get(index);
         if (colSchema.getDataType() == DataTypes.STRING
@@ -136,8 +149,8 @@ public class TableSchemaBuilder {
         }
       }
     }
-    if (property.size() != 0) {
-      schema.setTableProperties(property);
+    if (tableProperties.size() != 0) {
+      schema.setTableProperties(tableProperties);
     }
     return schema;
   }

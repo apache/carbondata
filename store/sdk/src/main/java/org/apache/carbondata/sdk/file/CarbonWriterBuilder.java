@@ -463,7 +463,7 @@ public class CarbonWriterBuilder {
     return table;
   }
 
-  private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
+  public static void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
       List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList) {
     Set<String> uniqueFields = new HashSet<>();
     // a counter which will be used in case of complex array type. This valIndex will be assigned

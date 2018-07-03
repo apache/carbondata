@@ -22,7 +22,7 @@ import java.net.InetAddress
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.{CarbonInputMetrics, SparkConf}
+import org.apache.spark.{CarbonInputMetrics, SparkConf, SparkEnv}
 import org.apache.spark.sql.CarbonSession._
 import org.apache.spark.sql.SparkSession
 
@@ -34,6 +34,10 @@ import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
+import org.apache.carbondata.spark.util.Util
+import org.apache.carbondata.store.conf.StoreConf
+import org.apache.carbondata.store.master.Master
+import org.apache.carbondata.store.worker.Worker
 
 /**
  * A CarbonStore implementation that uses Spark as underlying compute engine
@@ -110,7 +114,11 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
 
   def startSearchMode(): Unit = {
     LOG.info("Starting search mode master")
-    master = new Master()
+    val conf = new StoreConf()
+    conf.conf(StoreConf.MASTER_HOST, InetAddress.getLocalHost.getHostAddress)
+    conf.conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort)
+    conf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath)
+    master = Master.getInstance(conf)
     master.startService()
     startAllWorkers()
   }
@@ -154,7 +162,33 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
     val rows = session.sparkContext.parallelize(1 to numExecutors * 10, numExecutors)
       .mapPartitions { f =>
         // start worker
-        Worker.init(masterIp, CarbonProperties.getSearchMasterPort)
+        val conf = new StoreConf()
+        conf.conf(StoreConf.WORKER_HOST, InetAddress.getLocalHost.getHostAddress)
+        conf.conf(StoreConf.WORKER_PORT, CarbonProperties.getSearchWorkerPort)
+        conf.conf(StoreConf.WORKER_CORE_NUM, 2)
+        conf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath)
+        conf.conf(StoreConf.MASTER_HOST, masterIp)
+        conf.conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort)
+
+        var storeLocation: String = null
+        val carbonUseLocalDir = CarbonProperties.getInstance()
+          .getProperty("carbon.use.local.dir", "false")
+        if (carbonUseLocalDir.equalsIgnoreCase("true")) {
+
+          val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
+          if (null != storeLocations && storeLocations.nonEmpty) {
+            storeLocation = storeLocations.mkString(",")
+          }
+          if (storeLocation == null) {
+            storeLocation = System.getProperty("java.io.tmpdir")
+          }
+        } else {
+          storeLocation = System.getProperty("java.io.tmpdir")
+        }
+        conf.conf(StoreConf.STORE_TEMP_LOCATION, storeLocation)
+
+        val worker = new Worker(conf)
+        worker.start()
         new Iterator[Int] {
           override def hasNext: Boolean = false
 
