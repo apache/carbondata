@@ -323,8 +323,6 @@ public final class DataTypeUtil {
       DataType actualDataType, String dateFormat) {
     if (actualDataType == DataTypes.BOOLEAN) {
       return ByteUtil.toBytes(BooleanConvert.parseBoolean(dimensionValue));
-    } else if (actualDataType == DataTypes.STRING) {
-      return ByteUtil.toBytes(dimensionValue);
     } else if (actualDataType == DataTypes.SHORT) {
       return ByteUtil.toBytes(Short.parseShort(dimensionValue));
     } else if (actualDataType == DataTypes.INT) {
@@ -351,6 +349,7 @@ public final class DataTypeUtil {
         throw new NumberFormatException(e.getMessage());
       }
     } else {
+      // Default action for String/Varchar
       return ByteUtil.toBytes(dimensionValue);
     }
   }
@@ -359,8 +358,6 @@ public final class DataTypeUtil {
       DataType actualDataType, String dateFormat) {
     if (actualDataType == DataTypes.BOOLEAN) {
       return BooleanConvert.parseBoolean(dimensionValue);
-    } else if (actualDataType == DataTypes.STRING) {
-      return converter.convertFromStringToUTF8String(dimensionValue);
     } else if (actualDataType == DataTypes.SHORT) {
       return Short.parseShort(dimensionValue);
     } else if (actualDataType == DataTypes.INT) {
@@ -387,6 +384,7 @@ public final class DataTypeUtil {
         throw new NumberFormatException(e.getMessage());
       }
     } else {
+      // Default action for String/Varchar
       return converter.convertFromStringToUTF8String(dimensionValue);
     }
   }
@@ -402,8 +400,6 @@ public final class DataTypeUtil {
     }
     if (actualDataType == DataTypes.BOOLEAN) {
       return ByteUtil.toBytes((Boolean) dimensionValue);
-    } else if (actualDataType == DataTypes.STRING) {
-      return ByteUtil.toBytes(dimensionValue.toString());
     } else if (actualDataType == DataTypes.SHORT) {
       return ByteUtil.toBytes((Short) dimensionValue);
     } else if (actualDataType == DataTypes.INT) {
@@ -413,6 +409,7 @@ public final class DataTypeUtil {
     } else if (actualDataType == DataTypes.TIMESTAMP) {
       return ByteUtil.toBytes((Long)dimensionValue);
     } else {
+      // Default action for String/Varchar
       return ByteUtil.toBytes(dimensionValue.toString());
     }
   }
@@ -423,7 +420,9 @@ public final class DataTypeUtil {
    * @return
    */
   public static boolean isFixedSizeDataType(DataType dataType) {
-    if (dataType == DataTypes.STRING || DataTypes.isDecimal(dataType)) {
+    if (dataType == DataTypes.STRING ||
+        dataType == DataTypes.VARCHAR ||
+        DataTypes.isDecimal(dataType)) {
       return false;
     } else {
       return true;
@@ -447,8 +446,6 @@ public final class DataTypeUtil {
     try {
       if (actualDataType == DataTypes.BOOLEAN) {
         return ByteUtil.toBoolean(dataInBytes);
-      } else if (actualDataType == DataTypes.STRING) {
-        return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       } else if (actualDataType == DataTypes.SHORT) {
         // for non string type no dictionary column empty byte array is empty value
         // so no need to parse
@@ -480,9 +477,10 @@ public final class DataTypeUtil {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
-        return converter.convertFromBigDecimalToDecimal(byteToBigDecimal(dataInBytes));
+        return getDataTypeConverter().convertFromBigDecimalToDecimal(byteToBigDecimal(dataInBytes));
       } else {
-        return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
+        // Default action for String/Varchar
+        return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       }
     } catch (Throwable ex) {
       String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
