@@ -24,6 +24,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -40,7 +44,16 @@ import org.apache.carbondata.format.LocalDictionaryChunk;
 import org.apache.carbondata.format.LocalDictionaryChunkMeta;
 import org.apache.carbondata.format.PresenceMeta;
 
+import static org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory.selectCodecByAlgorithmForFloating;
+import static org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory.selectCodecByAlgorithmForIntegral;
+
 public abstract class ColumnPageEncoder {
+
+  /**
+   * logger
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(ColumnPageEncoder.class.getName());
 
   protected abstract byte[] encodeData(ColumnPage input) throws MemoryException, IOException;
 
@@ -135,9 +148,9 @@ public abstract class ColumnPageEncoder {
    */
   public static EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input)
       throws IOException, MemoryException {
-    EncodedColumnPage[] encodedPages = new EncodedColumnPage[input.getDepth()];
+    EncodedColumnPage[] encodedPages = new EncodedColumnPage[input.getComplexColumnIndex()];
     int index = 0;
-    while (index < input.getDepth()) {
+    while (index < input.getComplexColumnIndex()) {
       ColumnPage subColumnPage = input.getColumnPage(index);
       encodedPages[index] = encodedColumn(subColumnPage);
       index++;
@@ -147,9 +160,42 @@ public abstract class ColumnPageEncoder {
 
   public static EncodedColumnPage encodedColumn(ColumnPage page)
       throws IOException, MemoryException {
-    ColumnPageEncoder encoder = new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);
-    return encoder.encode(page);
+    ColumnPageEncoder pageEncoder = createCodecForDimension(page);
+    if (pageEncoder == null) {
+      ColumnPageEncoder encoder = new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);
+      return encoder.encode(page);
+    } else {
+      LOGGER.debug("Encoder result ---> Source data type: " + pageEncoder.getEncoderMeta(page)
+          .getColumnSpec().getSchemaDataType() + " Destination data type: " + pageEncoder
+          .getEncoderMeta(page).getStoreDataType() + " for the column: " + pageEncoder
+          .getEncoderMeta(page).getColumnSpec().getFieldName());
+
+      return pageEncoder.encode(page);
+    }
   }
+
+  private static ColumnPageEncoder createCodecForDimension(ColumnPage inputPage) {
+    TableSpec.ColumnSpec columnSpec = inputPage.getColumnSpec();
+    if (columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
+      if (inputPage.getDataType() == DataTypes.BYTE_ARRAY
+          || inputPage.getDataType() == DataTypes.STRING) {
+        // use legacy encoder
+        return null;
+      } else if ((inputPage.getDataType() == DataTypes.BYTE) || (inputPage.getDataType()
+          == DataTypes.SHORT) || (inputPage.getDataType() == DataTypes.INT) || (
+          inputPage.getDataType() == DataTypes.LONG)) {
+        return selectCodecByAlgorithmForIntegral(inputPage.getStatistics(), true)
+            .createEncoder(null);
+      } else if ((inputPage.getDataType() == DataTypes.FLOAT) || (inputPage.getDataType()
+          == DataTypes.DOUBLE)) {
+        return selectCodecByAlgorithmForFloating(inputPage.getStatistics(), true)
+            .createEncoder(null);
+      }
+    }
+    // use legacy encoder
+    return null;
+  }
+
 
   /**
    * Below method to encode the dictionary page

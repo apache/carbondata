@@ -132,7 +132,8 @@ public abstract class EncodingFactory {
         dataType == DataTypes.INT ||
         dataType == DataTypes.LONG) {
       // create the codec based on algorithm and create decoder by recovering the metadata
-      ColumnPageCodec codec = DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(stats);
+      ColumnPageCodec codec =
+          DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(stats, false);
       if (codec instanceof AdaptiveIntegralCodec) {
         AdaptiveIntegralCodec adaptiveCodec = (AdaptiveIntegralCodec) codec;
         ColumnPageEncoderMeta meta =
@@ -153,7 +154,8 @@ public abstract class EncodingFactory {
       }
     } else if (dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
       // create the codec based on algorithm and create decoder by recovering the metadata
-      ColumnPageCodec codec = DefaultEncodingFactory.selectCodecByAlgorithmForFloating(stats);
+      ColumnPageCodec codec =
+          DefaultEncodingFactory.selectCodecByAlgorithmForFloating(stats, false);
       if (codec instanceof AdaptiveFloatingCodec) {
         AdaptiveFloatingCodec adaptiveCodec = (AdaptiveFloatingCodec) codec;
         ColumnPageEncoderMeta meta =

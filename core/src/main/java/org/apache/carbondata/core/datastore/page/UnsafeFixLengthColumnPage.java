@@ -46,6 +46,12 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   private int eachRowSize;
 
+  // the length of the bytes added in the page
+  private int totalLength;
+
+  // size of the allocated memory, in bytes
+  private int capacity;
+
   private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   private static final int byteBits = DataTypes.BYTE.getSizeBits();
@@ -69,14 +75,17 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
       baseAddress = memoryBlock.getBaseObject();
       baseOffset = memoryBlock.getBaseOffset();
+      capacity = size;
     } else if (dataType == DataTypes.SHORT_INT) {
       int size = pageSize * 3;
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
       baseAddress = memoryBlock.getBaseObject();
       baseOffset = memoryBlock.getBaseOffset();
+      capacity = size;
     } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.STRING) {
       throw new UnsupportedOperationException("invalid data type: " + dataType);
     }
+    totalLength = 0;
   }
 
   UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
@@ -84,6 +93,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       throws MemoryException {
     this(columnSpec, dataType, pageSize);
     this.eachRowSize = eachRowSize;
+    totalLength = 0;
     if (dataType == DataTypes.BYTE_ARRAY) {
       memoryBlock =
           UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) pageSize * eachRowSize);
@@ -92,43 +102,89 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     }
   }
 
-  @Override
-  public void putByte(int rowId, byte value) {
-    long offset = ((long)rowId) << byteBits;
-    CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, value);
+  private void checkDataFileSize() {
+    // 16 is a Watermark in order to stop from overflowing.
+    if (totalLength > (Integer.MAX_VALUE - 16)) {
+      // since we later store a column page in a byte array, so its maximum size is 2GB
+      throw new RuntimeException("Carbondata only support maximum 2GB size for one column page");
+    }
   }
 
   @Override
+  public void putByte(int rowId, byte value) {
+    try {
+      ensureMemory(ByteUtil.SIZEOF_BYTE);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
+    long offset = ((long)rowId) << byteBits;
+    CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, value);
+    totalLength += ByteUtil.SIZEOF_BYTE;
+  }
+
+
+
+  @Override
   public void putShort(int rowId, short value) {
+    try {
+      ensureMemory(shortBits);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
     long offset = ((long)rowId) << shortBits;
     CarbonUnsafe.getUnsafe().putShort(baseAddress, baseOffset + offset, value);
+    totalLength += ByteUtil.SIZEOF_SHORT;
   }
 
   @Override
   public void putShortInt(int rowId, int value) {
+    try {
+      ensureMemory(ByteUtil.SIZEOF_SHORT_INT);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
     byte[] data = ByteUtil.to3Bytes(value);
     long offset = rowId * 3L;
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, data[0]);
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset + 1, data[1]);
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset + 2, data[2]);
+    totalLength += ByteUtil.SIZEOF_SHORT_INT;
   }
 
   @Override
   public void putInt(int rowId, int value) {
+    try {
+      ensureMemory(ByteUtil.SIZEOF_INT);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
     long offset = ((long)rowId) << intBits;
     CarbonUnsafe.getUnsafe().putInt(baseAddress, baseOffset + offset, value);
+    totalLength += ByteUtil.SIZEOF_INT;
   }
 
   @Override
   public void putLong(int rowId, long value) {
+    try {
+      ensureMemory(ByteUtil.SIZEOF_LONG);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
     long offset = ((long)rowId) << longBits;
     CarbonUnsafe.getUnsafe().putLong(baseAddress, baseOffset + offset, value);
+    totalLength += ByteUtil.SIZEOF_LONG;
   }
 
   @Override
   public void putDouble(int rowId, double value) {
+    try {
+      ensureMemory(ByteUtil.SIZEOF_DOUBLE);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
     long offset = ((long)rowId) << doubleBits;
     CarbonUnsafe.getUnsafe().putDouble(baseAddress, baseOffset + offset, value);
+    totalLength += ByteUtil.SIZEOF_DOUBLE;
   }
 
   @Override
@@ -307,42 +363,49 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   public void setBytePage(byte[] byteData) {
     CarbonUnsafe.getUnsafe().copyMemory(byteData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
         baseAddress, baseOffset, byteData.length << byteBits);
+    capacity = byteData.length;
   }
 
   @Override
   public void setShortPage(short[] shortData) {
     CarbonUnsafe.getUnsafe().copyMemory(shortData, CarbonUnsafe.SHORT_ARRAY_OFFSET,
         baseAddress, baseOffset, shortData.length << shortBits);
+    capacity = shortData.length;
   }
 
   @Override
   public void setShortIntPage(byte[] shortIntData) {
     CarbonUnsafe.getUnsafe().copyMemory(shortIntData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
         baseAddress, baseOffset, shortIntData.length);
+    capacity = shortIntData.length;
   }
 
   @Override
   public void setIntPage(int[] intData) {
     CarbonUnsafe.getUnsafe().copyMemory(intData, CarbonUnsafe.INT_ARRAY_OFFSET,
         baseAddress, baseOffset, intData.length << intBits);
+    capacity = intData.length;
   }
 
   @Override
   public void setLongPage(long[] longData) {
     CarbonUnsafe.getUnsafe().copyMemory(longData, CarbonUnsafe.LONG_ARRAY_OFFSET,
         baseAddress, baseOffset, longData.length << longBits);
+    capacity = longData.length;
   }
 
   @Override
   public void setFloatPage(float[] floatData) {
     CarbonUnsafe.getUnsafe().copyMemory(floatData, CarbonUnsafe.FLOAT_ARRAY_OFFSET,
         baseAddress, baseOffset, floatData.length << floatBits);
+    capacity = floatData.length;
   }
 
   @Override
   public void setDoublePage(double[] doubleData) {
     CarbonUnsafe.getUnsafe().copyMemory(doubleData, CarbonUnsafe.DOUBLE_ARRAY_OFFSET,
         baseAddress, baseOffset, doubleData.length << doubleBits);
+    capacity = doubleData.length;
   }
 
   @Override
@@ -359,39 +422,56 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     }
   }
 
-  @Override
-  public void convertValue(ColumnPageValueConverter codec) {
-    int pageSize = getPageSize();
+  @Override public void convertValue(ColumnPageValueConverter codec) {
+    int endLoop = getEndLoop();
     if (dataType == DataTypes.BYTE) {
-      for (long i = 0; i < pageSize; i++) {
+      for (long i = 0; i < endLoop; i++) {
         long offset = i << byteBits;
-        codec.encode((int)i, CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset));
+        codec.encode((int) i, CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset));
       }
     } else if (dataType == DataTypes.SHORT) {
-      for (long i = 0; i < pageSize; i++) {
+      for (long i = 0; i < endLoop; i++) {
         long offset = i << shortBits;
-        codec.encode((int)i, CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset));
+        codec.encode((int) i, CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset));
       }
     } else if (dataType == DataTypes.INT) {
-      for (long i = 0; i < pageSize; i++) {
+      for (long i = 0; i < endLoop; i++) {
         long offset = i << intBits;
-        codec.encode((int)i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
+        codec.encode((int) i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
       }
     } else if (dataType == DataTypes.LONG) {
-      for (long i = 0; i < pageSize; i++) {
+      for (long i = 0; i < endLoop; i++) {
         long offset = i << longBits;
-        codec.encode((int)i, CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset));
+        codec.encode((int) i, CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset));
       }
     } else if (dataType == DataTypes.FLOAT) {
-      for (long i = 0; i < pageSize; i++) {
+      for (long i = 0; i < endLoop; i++) {
         long offset = i << floatBits;
-        codec.encode((int)i, CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset));
+        codec.encode((int) i, CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset));
       }
     } else if (dataType == DataTypes.DOUBLE) {
-      for (long i = 0; i < pageSize; i++) {
+      for (long i = 0; i < endLoop; i++) {
         long offset = i << doubleBits;
-        codec.encode((int)i, CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset));
+        codec.encode((int) i, CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset));
       }
+    } else {
+      throw new UnsupportedOperationException("invalid data type: " + dataType);
+    }
+  }
+
+  private int getEndLoop() {
+    if (dataType == DataTypes.BYTE) {
+      return totalLength / ByteUtil.SIZEOF_BYTE;
+    } else if (dataType == DataTypes.SHORT) {
+      return totalLength / ByteUtil.SIZEOF_SHORT;
+    } else if (dataType == DataTypes.INT) {
+      return totalLength / ByteUtil.SIZEOF_INT;
+    } else if (dataType == DataTypes.LONG) {
+      return totalLength / ByteUtil.SIZEOF_LONG;
+    } else if (dataType == DataTypes.FLOAT) {
+      return totalLength / DataTypes.FLOAT.getSizeInBytes();
+    } else if (dataType == DataTypes.DOUBLE) {
+      return totalLength / DataTypes.DOUBLE.getSizeInBytes();
     } else {
       throw new UnsupportedOperationException("invalid data type: " + dataType);
     }
@@ -400,7 +480,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override public byte[] compress(Compressor compressor) throws MemoryException, IOException {
     if (UnsafeMemoryManager.isOffHeap()) {
       // use raw compression and copy to byte[]
-      int inputSize = pageSize * dataType.getSizeInBytes();
+      int inputSize = totalLength;
       int compressedMaxSize = compressor.maxCompressedLength(inputSize);
       MemoryBlock compressed =
           UnsafeMemoryManager.allocateMemoryWithRetry(taskId, compressedMaxSize);
@@ -414,6 +494,24 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       return output;
     } else {
       return super.compress(compressor);
+    }
+  }
+
+  /**
+   * reallocate memory if capacity length than current size + request size
+   */
+  protected void ensureMemory(int requestSize) throws MemoryException {
+    checkDataFileSize();
+    if (totalLength + requestSize > capacity) {
+      int newSize = Math.max(2 * capacity, totalLength + requestSize);
+      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
+          newBlock.getBaseObject(), newBlock.getBaseOffset(), totalLength);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
+      memoryBlock = newBlock;
+      baseAddress = newBlock.getBaseObject();
+      baseOffset = newBlock.getBaseOffset();
+      capacity = newSize;
     }
   }
 }

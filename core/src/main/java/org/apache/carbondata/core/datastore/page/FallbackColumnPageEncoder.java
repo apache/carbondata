@@ -59,9 +59,11 @@ public class FallbackColumnPageEncoder implements Callable<FallbackEncodedColumn
     TableSpec.ColumnSpec columnSpec = encodedColumnPage.getActualPage().getColumnSpec();
     switch (columnSpec.getColumnType()) {
       case COMPLEX_ARRAY:
-      case COMPLEX_PRIMITIVE:
       case COMPLEX_STRUCT:
       case COMPLEX:
+        throw new RuntimeException("Unsupported DataType. Only COMPLEX_PRIMITIVE should come");
+
+      case COMPLEX_PRIMITIVE:
         // for complex type column
         newEncodedColumnPage = ColumnPageEncoder.encodedColumn(
             encodedColumnPage.getActualPage());

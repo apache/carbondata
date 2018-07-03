@@ -24,9 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 
@@ -292,14 +294,10 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   @Override
-  public void getChildrenType(List<ColumnType> type) {
-    type.add(ColumnType.COMPLEX_ARRAY);
-    children.getChildrenType(type);
+  public void getComplexColumnInfo(List<ComplexColumnInfo> columnInfoList) {
+    columnInfoList.add(
+        new ComplexColumnInfo(ColumnType.COMPLEX_ARRAY, DataTypeUtil.valueOf("array"),
+            name, false));
+    children.getComplexColumnInfo(columnInfoList);
   }
-
-  @Override public void getColumnNames(List<String> columnNameList) {
-    columnNameList.add(name);
-    children.getColumnNames(columnNameList);
-  }
-
 }

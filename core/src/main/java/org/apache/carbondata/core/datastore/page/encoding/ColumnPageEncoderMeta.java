@@ -118,7 +118,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       out.writeInt((int) getMaxValue());
       out.writeInt((int) getMinValue());
       out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       out.writeLong((Long) getMaxValue());
       out.writeLong((Long) getMinValue());
       out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
@@ -167,7 +167,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       this.setMaxValue(in.readInt());
       this.setMinValue(in.readInt());
       in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       this.setMaxValue(in.readLong());
       this.setMinValue(in.readLong());
       in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
