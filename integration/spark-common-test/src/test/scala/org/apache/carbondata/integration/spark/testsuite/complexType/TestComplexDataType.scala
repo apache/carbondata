@@ -620,16 +620,14 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
           Row(1, "abc", 2, "efg", Row(3, "mno", 4), 5))))
   }
 
-  test("ArrayofArray PushDown")
-  {
+  test("ArrayofArray PushDown") {
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(a array<array<int>>) stored by 'carbondata'")
     sql("insert into test values(1) ")
     sql("select a[0][0] from test").show(false)
   }
 
-  test("Struct and ArrayofArray PushDown")
-  {
+  test("Struct and ArrayofArray PushDown") {
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(a array<array<int>>,b struct<c:array<int>>) stored by 'carbondata'")
     sql("insert into test values(1,1) ")
@@ -645,7 +643,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "sno:array<int>,sal:array<double>,state:array<string>,date1:array<timestamp>>) stored by " +
       "'carbondata'")
     sql("insert into test values('cus_01','1$2017/01/01$1:2$2.0:3.0$ab:ac$2018/01/01')")
-//    sql("select *from test").show(false)
+    //    sql("select *from test").show(false)
     sql(
       "select struct_of_array.state[0],count(distinct struct_of_array.id) as count_int,count" +
       "(distinct struct_of_array.state[0]) as count_string from test group by struct_of_array" +
@@ -654,6 +652,19 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  }
+
+  test("test struct complex type with filter") {
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(id int,a struct<b:int,c:int>) stored by 'carbondata'")
+    sql("insert into test values(1,'2$3')")
+    sql("insert into test values(3,'5$3')")
+    sql("insert into test values(2,'4$5')")
+    checkAnswer(sql("select a.b from test where id=3"),Seq(Row(5)))
+    checkAnswer(sql("select a.b from test where a.c!=3"),Seq(Row(4)))
+    checkAnswer(sql("select a.b from test where a.c=3"),Seq(Row(5),Row(2)))
+    checkAnswer(sql("select a.b from test where id=1 or !a.c=3"),Seq(Row(4),Row(2)))
+    checkAnswer(sql("select a.b from test where id=3 or a.c=3"),Seq(Row(5),Row(2)))
   }
 
 }
