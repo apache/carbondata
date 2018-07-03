@@ -636,4 +636,24 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     sql("select b.c[0],a[0][0] from test").show(false)
   }
 
+  test("test structofarray with count(distinct)") {
+    sql("DROP TABLE IF EXISTS test")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    sql(
+      "create table test(cus_id string, struct_of_array struct<id:int,date:timestamp," +
+      "sno:array<int>,sal:array<double>,state:array<string>,date1:array<timestamp>>) stored by " +
+      "'carbondata'")
+    sql("insert into test values('cus_01','1$2017/01/01$1:2$2.0:3.0$ab:ac$2018/01/01')")
+    sql("select *from test").show(false)
+    sql(
+      "select struct_of_array.state[0],count(distinct struct_of_array.id) as count_int,count" +
+      "(distinct struct_of_array.state[0]) as count_string from test group by struct_of_array" +
+      ".state[0]")
+      .show(false)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  }
+
 }

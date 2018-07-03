@@ -90,7 +90,12 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         LOGGER.info("skip CarbonOptimizer for scalar/predicate sub query")
         return false
       }
-      true
+      if(relations.exists(_.dictionaryMap.dictionaryMap.exists(_._2))) {
+        true
+      } else {
+        false
+      }
+
     } else {
       LOGGER.info("skip CarbonOptimizer")
       false
