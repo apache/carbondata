@@ -15,18 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.rpc;
+package org.apache.carbondata.store.exception;
 
-import java.io.IOException;
+public class WorkerTooBusyException extends RuntimeException {
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.rpc.model.RegisterWorkerRequest;
-import org.apache.carbondata.store.rpc.model.RegisterWorkerResponse;
+  public WorkerTooBusyException(String message) {
+    super(message);
+  }
 
-import org.apache.hadoop.ipc.VersionedProtocol;
-
-@InterfaceAudience.Internal
-public interface RegistryService extends VersionedProtocol {
-  long versionID = 1L;
-  RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException;
 }

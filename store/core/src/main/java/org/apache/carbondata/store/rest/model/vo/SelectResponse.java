@@ -15,18 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.rpc;
+package org.apache.carbondata.store.rest.model.vo;
 
-import java.io.IOException;
+public class SelectResponse {
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.rpc.model.RegisterWorkerRequest;
-import org.apache.carbondata.store.rpc.model.RegisterWorkerResponse;
+  private String selectId;
+  private Object[][] rows;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+  public SelectResponse() {
 
-@InterfaceAudience.Internal
-public interface RegistryService extends VersionedProtocol {
-  long versionID = 1L;
-  RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException;
+  }
+
+  public SelectResponse(String selectId, Object[][] rows) {
+    this.selectId = selectId;
+    this.rows = rows;
+  }
+
+  public String getSelectId() {
+    return selectId;
+  }
+
+  public void setSelectId(String selectId) {
+    this.selectId = selectId;
+  }
+
+  public Object[][] getRows() {
+    return rows;
+  }
+
+  public void setRows(Object[][] rows) {
+    this.rows = rows;
+  }
 }

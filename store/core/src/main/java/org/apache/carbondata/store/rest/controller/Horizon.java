@@ -15,19 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.rpc;
+package org.apache.carbondata.store.rest.controller;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.rpc.model.QueryRequest;
-import org.apache.carbondata.store.rpc.model.QueryResponse;
-import org.apache.carbondata.store.rpc.model.ShutdownRequest;
-import org.apache.carbondata.store.rpc.model.ShutdownResponse;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+@SpringBootApplication
+public class Horizon {
 
-@InterfaceAudience.Internal
-public interface QueryService extends VersionedProtocol {
-  long versionID = 1L;
-  QueryResponse query(QueryRequest request);
-  ShutdownResponse shutdown(ShutdownRequest request);
+  private static ConfigurableApplicationContext context;
+
+  public static void main(String[] args) {
+    context = SpringApplication.run(Horizon.class, args);
+  }
+
+  public static void close() {
+    SpringApplication.exit(context);
+  }
 }

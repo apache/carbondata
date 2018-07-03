@@ -66,6 +66,7 @@ public class IndexedRecordReader extends CarbonRecordReader<CarbonRow> {
     super(queryModel, new CarbonRowReadSupport());
     this.queryId = queryId;
     this.table = table;
+    this.isSearchMode = true;
   }
 
   @Override

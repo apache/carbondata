@@ -15,40 +15,55 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.rpc.impl;
+package org.apache.carbondata.store.rpc.model;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.master.Master;
-import org.apache.carbondata.store.rpc.RegistryService;
-import org.apache.carbondata.store.rpc.model.RegisterWorkerRequest;
-import org.apache.carbondata.store.rpc.model.RegisterWorkerResponse;
 
-import org.apache.hadoop.ipc.ProtocolSignature;
+import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.Internal
-public class RegistryServiceImpl implements RegistryService {
+public class BaseResponse implements Serializable, Writable {
+  private int status;
+  private String message;
 
-  private Master master;
+  public BaseResponse() {
+  }
 
-  public RegistryServiceImpl(Master master) {
-    this.master = master;
+  public BaseResponse(int status, String message) {
+    this.status = status;
+    this.message = message;
+  }
+
+  public int getStatus() {
+    return status;
+  }
+
+  public void setStatus(int status) {
+    this.status = status;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
   }
 
   @Override
-  public RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException {
-    return master.addWorker(request);
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(status);
+    out.writeUTF(message);
   }
 
   @Override
-  public long getProtocolVersion(String protocol, long clientVersion) throws IOException {
-    return versionID;
-  }
-
-  @Override
-  public ProtocolSignature getProtocolSignature(String protocol, long clientVersion,
-      int clientMethodsHash) throws IOException {
-    return null;
+  public void readFields(DataInput in) throws IOException {
+    status = in.readInt();
+    message = in.readUTF();
   }
 }

@@ -50,8 +50,18 @@ public class CarbonLoadModelBuilder {
 
   private CarbonTable table;
 
+  private String inputPath;
+
   public CarbonLoadModelBuilder(CarbonTable table) {
     this.table = table;
+  }
+
+  public String getInputPath() {
+    return inputPath;
+  }
+
+  public void setInputPath(String inputPath) {
+    this.inputPath = inputPath;
   }
 
   /**
@@ -64,7 +74,9 @@ public class CarbonLoadModelBuilder {
       throws InvalidLoadOptionException, IOException {
     Map<String, String> optionsFinal = LoadOption.fillOptionWithDefaultValue(options);
 
-    if (!options.containsKey("fileheader")) {
+    if (inputPath == null &&
+        !options.containsKey("header") &&
+        !options.containsKey("fileheader")) {
       List<CarbonColumn> csvHeader = table.getCreateOrderColumn(table.getTableName());
       String[] columns = new String[csvHeader.size()];
       for (int i = 0; i < columns.length; i++) {
@@ -72,10 +84,12 @@ public class CarbonLoadModelBuilder {
       }
       optionsFinal.put("fileheader", Strings.mkString(columns, ","));
     }
+
     CarbonLoadModel model = new CarbonLoadModel();
     model.setCarbonTransactionalTable(table.isTransactionalTable());
     model.setFactTimeStamp(UUID);
     model.setTaskNo(taskNo);
+    model.setFactFilePath(inputPath);
 
     // we have provided 'fileheader', so it hadoopConf can be null
     build(options, optionsFinal, model, null);

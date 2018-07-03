@@ -20,25 +20,41 @@ package org.apache.carbondata.store.rpc.impl;
 import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.master.Master;
-import org.apache.carbondata.store.rpc.RegistryService;
-import org.apache.carbondata.store.rpc.model.RegisterWorkerRequest;
-import org.apache.carbondata.store.rpc.model.RegisterWorkerResponse;
+import org.apache.carbondata.store.rpc.StoreService;
+import org.apache.carbondata.store.rpc.model.BaseResponse;
+import org.apache.carbondata.store.rpc.model.LoadDataRequest;
+import org.apache.carbondata.store.rpc.model.QueryRequest;
+import org.apache.carbondata.store.rpc.model.QueryResponse;
+import org.apache.carbondata.store.rpc.model.ShutdownRequest;
+import org.apache.carbondata.store.rpc.model.ShutdownResponse;
+import org.apache.carbondata.store.worker.Worker;
 
 import org.apache.hadoop.ipc.ProtocolSignature;
 
 @InterfaceAudience.Internal
-public class RegistryServiceImpl implements RegistryService {
+public class StoreServiceImpl implements StoreService {
 
-  private Master master;
+  private Worker worker;
+  RequestHandler handler;
 
-  public RegistryServiceImpl(Master master) {
-    this.master = master;
+  public StoreServiceImpl(Worker worker) {
+    this.worker = worker;
+    this.handler = new RequestHandler(worker.getConf(), worker.getHadoopConf());
   }
 
   @Override
-  public RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException {
-    return master.addWorker(request);
+  public BaseResponse loadData(LoadDataRequest request) {
+    return handler.handleLoadData(request);
+  }
+
+  @Override
+  public QueryResponse query(QueryRequest request) {
+    return handler.handleSearch(request);
+  }
+
+  @Override
+  public ShutdownResponse shutdown(ShutdownRequest request) {
+    return handler.handleShutdown(request);
   }
 
   @Override
@@ -50,5 +66,13 @@ public class RegistryServiceImpl implements RegistryService {
   public ProtocolSignature getProtocolSignature(String protocol, long clientVersion,
       int clientMethodsHash) throws IOException {
     return null;
+  }
+
+  public Worker getWorker() {
+    return worker;
+  }
+
+  public void setWorker(Worker worker) {
+    this.worker = worker;
   }
 }

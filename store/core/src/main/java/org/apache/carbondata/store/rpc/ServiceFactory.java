@@ -29,10 +29,10 @@ import org.apache.hadoop.ipc.RPC;
 @InterfaceAudience.Internal
 public class ServiceFactory {
 
-  public static QueryService createSearchService(String host, int port) throws IOException {
+  public static StoreService createStoreService(String host, int port) throws IOException {
     InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
     return RPC.getProxy(
-        QueryService.class, QueryService.versionID, address, new Configuration());
+        StoreService.class, StoreService.versionID, address, new Configuration());
   }
 
   public static RegistryService createRegistryService(String host, int port) throws IOException {

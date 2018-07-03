@@ -15,42 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.rpc.impl;
-
-import java.io.IOException;
+package org.apache.carbondata.store.rpc;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.rpc.QueryService;
+import org.apache.carbondata.store.rpc.model.BaseResponse;
+import org.apache.carbondata.store.rpc.model.LoadDataRequest;
 import org.apache.carbondata.store.rpc.model.QueryRequest;
 import org.apache.carbondata.store.rpc.model.QueryResponse;
 import org.apache.carbondata.store.rpc.model.ShutdownRequest;
 import org.apache.carbondata.store.rpc.model.ShutdownResponse;
 
-import org.apache.hadoop.ipc.ProtocolSignature;
+import org.apache.hadoop.ipc.VersionedProtocol;
 
 @InterfaceAudience.Internal
-public class QueryServiceImpl implements QueryService {
+public interface StoreService extends VersionedProtocol {
 
-  @Override
-  public QueryResponse query(QueryRequest request) {
-    RequestHandler handler = new RequestHandler();
-    return handler.handleSearch(request);
-  }
+  long versionID = 1L;
 
-  @Override
-  public ShutdownResponse shutdown(ShutdownRequest request) {
-    RequestHandler handler = new RequestHandler();
-    return handler.handleShutdown(request);
-  }
+  BaseResponse loadData(LoadDataRequest request);
 
-  @Override
-  public long getProtocolVersion(String protocol, long clientVersion) throws IOException {
-    return versionID;
-  }
+  QueryResponse query(QueryRequest request);
 
-  @Override
-  public ProtocolSignature getProtocolSignature(String protocol, long clientVersion,
-      int clientMethodsHash) throws IOException {
-    return null;
-  }
+  ShutdownResponse shutdown(ShutdownRequest request);
 }
