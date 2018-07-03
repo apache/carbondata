@@ -18,10 +18,12 @@
 package org.apache.carbondata.store.rpc.impl;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -37,10 +39,29 @@ import org.apache.carbondata.core.util.CarbonTaskInfo;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
+import org.apache.carbondata.processing.loading.DataLoadExecutor;
+import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
+import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.store.conf.StoreConf;
+import org.apache.carbondata.store.rpc.model.BaseResponse;
+import org.apache.carbondata.store.rpc.model.LoadDataRequest;
 import org.apache.carbondata.store.rpc.model.QueryRequest;
 import org.apache.carbondata.store.rpc.model.QueryResponse;
 import org.apache.carbondata.store.rpc.model.ShutdownRequest;
 import org.apache.carbondata.store.rpc.model.ShutdownResponse;
+import org.apache.carbondata.store.util.StoreUtil;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobID;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.TaskID;
+import org.apache.hadoop.mapreduce.TaskType;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 
 /**
  * It handles request from master.
@@ -48,27 +69,35 @@ import org.apache.carbondata.store.rpc.model.ShutdownResponse;
 @InterfaceAudience.Internal
 class RequestHandler {
 
-  private static final LogService LOG =
+  private StoreConf conf;
+  private Configuration hadoopConf;
+
+  public RequestHandler(StoreConf conf, Configuration hadoopConf) {
+    this.conf = conf;
+    this.hadoopConf = hadoopConf;
+  }
+
+  private static final LogService LOGGER =
       LogServiceFactory.getLogService(RequestHandler.class.getName());
 
   QueryResponse handleSearch(QueryRequest request) {
     try {
-      LOG.info(String.format("[QueryId:%d] receive search request", request.getRequestId()));
+      LOGGER.info(String.format("[QueryId:%d] receive search request", request.getRequestId()));
       List<CarbonRow> rows = handleRequest(request);
-      LOG.info(String.format("[QueryId:%d] sending success response", request.getRequestId()));
+      LOGGER.info(String.format("[QueryId:%d] sending success response", request.getRequestId()));
       return createSuccessResponse(request, rows);
     } catch (IOException e) {
-      LOG.error(e);
-      LOG.info(String.format("[QueryId:%d] sending failure response", request.getRequestId()));
+      LOGGER.error(e);
+      LOGGER.info(String.format("[QueryId:%d] sending failure response", request.getRequestId()));
       return createFailureResponse(request, e);
     }
   }
 
   ShutdownResponse handleShutdown(ShutdownRequest request) {
-    LOG.info("Shutting down worker...");
+    LOGGER.info("Shutting down worker...");
     SearchModeDetailQueryExecutor.shutdownThreadPool();
     SearchModeVectorDetailQueryExecutor.shutdownThreadPool();
-    LOG.info("Worker shut down");
+    LOGGER.info("Worker shut down");
     return new ShutdownResponse(Status.SUCCESS.ordinal(), "");
   }
 
@@ -85,13 +114,13 @@ class RequestHandler {
     CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo);
     QueryModel queryModel = createQueryModel(table, request);
 
-    LOG.info(String.format("[QueryId:%d] %s, number of block: %d",
-        request.getRequestId(), queryModel.toString(), mbSplit.getAllSplits().size()));
+    LOGGER.info(String.format("[QueryId:%d] %s, number of block: %d", request.getRequestId(),
+        queryModel.toString(), mbSplit.getAllSplits().size()));
 
     // read all rows by the reader
     List<CarbonRow> rows = new LinkedList<>();
-    try (CarbonRecordReader<CarbonRow> reader =
-        new IndexedRecordReader(request.getRequestId(), table, queryModel)) {
+    try (CarbonRecordReader<CarbonRow> reader = new IndexedRecordReader(request.getRequestId(),
+        table, queryModel)) {
       reader.initialize(mbSplit, null);
 
       // loop to read required number of rows.
@@ -104,12 +133,10 @@ class RequestHandler {
     } catch (InterruptedException e) {
       throw new IOException(e);
     }
-    LOG.info(String.format("[QueryId:%d] scan completed, return %d rows",
+    LOGGER.info(String.format("[QueryId:%d] scan completed, return %d rows",
         request.getRequestId(), rows.size()));
     return rows;
   }
-
-
 
   private QueryModel createQueryModel(CarbonTable table, QueryRequest request) {
     String[] projectColumns = request.getProjectColumns();
@@ -117,9 +144,7 @@ class RequestHandler {
     if (request.getFilterExpression() != null) {
       filter = request.getFilterExpression();
     }
-    return new QueryModelBuilder(table)
-        .projectColumns(projectColumns)
-        .filterExpression(filter)
+    return new QueryModelBuilder(table).projectColumns(projectColumns).filterExpression(filter)
         .build();
   }
 
@@ -144,4 +169,50 @@ class RequestHandler {
     return new QueryResponse(request.getRequestId(), Status.SUCCESS.ordinal(), "", output);
   }
 
+  public BaseResponse handleLoadData(LoadDataRequest request) {
+    DataLoadExecutor executor = null;
+    try {
+      CarbonLoadModel model = request.getModel();
+
+      JobID jobId = CarbonInputFormatUtil.getJobId(new Date(), 0);
+      CarbonInputFormatUtil.createJobTrackerID(new Date());
+      TaskID taskId = new TaskID(jobId, TaskType.MAP, 0);
+      TaskAttemptID taskAttemptId = new TaskAttemptID(taskId, 0);
+      Configuration configuration = new Configuration(hadoopConf);
+      StoreUtil.configureCSVInputFormat(configuration, model);
+      configuration.set(FileInputFormat.INPUT_DIR, model.getFactFilePath());
+      // Set up the attempt context required to use in the output committer.
+      TaskAttemptContext hadoopAttemptContext =
+          new TaskAttemptContextImpl(configuration, taskAttemptId);
+
+      CSVInputFormat format = new CSVInputFormat();
+      List<InputSplit> splits = format.getSplits(hadoopAttemptContext);
+
+      CarbonIterator<Object[]>[] readerIterators = new CSVRecordReaderIterator[splits.size()];
+      for (int index = 0; index < splits.size(); index++) {
+        readerIterators[index] = new CSVRecordReaderIterator(
+            format.createRecordReader(splits.get(index), hadoopAttemptContext), splits.get(index),
+            hadoopAttemptContext);
+      }
+
+      executor = new DataLoadExecutor();
+      executor.execute(model, conf.storeTempLocation(), readerIterators);
+
+      return new BaseResponse(Status.SUCCESS.ordinal(), "");
+    } catch (IOException e) {
+      LOGGER.error(e, "Failed to handle load data");
+      return new BaseResponse(Status.FAILURE.ordinal(), e.getMessage());
+    } catch (InterruptedException e) {
+      LOGGER.error(e, "Interrupted handle load data ");
+      return new BaseResponse(Status.FAILURE.ordinal(), e.getMessage());
+    } catch (Exception e) {
+      LOGGER.error(e, "Failed to execute load data ");
+      return new BaseResponse(Status.FAILURE.ordinal(), e.getMessage());
+    } finally {
+      if (executor != null) {
+        executor.close();
+        StoreUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
+      }
+    }
+  }
 }

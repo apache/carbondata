@@ -131,6 +131,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
       DataMapStoreManager.getInstance().clearDataMaps(
           queryModel.getTable().getAbsoluteTableIdentifier());
     }
+
     // close read support
     readSupport.close();
     try {

@@ -66,4 +66,8 @@ public class RegisterWorkerRequest implements Serializable, Writable {
     port = in.readInt();
     cores = in.readInt();
   }
+
+  @Override public String toString() {
+    return "RegisterWorkerRequest{" + "hostAddress='" + hostAddress + '\'' + ", port=" + port + '}';
+  }
 }

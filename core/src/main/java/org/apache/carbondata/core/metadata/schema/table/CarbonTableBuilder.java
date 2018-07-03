@@ -59,11 +59,10 @@ public class CarbonTableBuilder {
     return this;
   }
 
-  public CarbonTable build() {
+  public TableInfo buildTableInfo() {
     Objects.requireNonNull(tablePath, "tablePath should not be null");
     Objects.requireNonNull(tableSchema, "tableSchema should not be null");
     Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
-
 
     TableInfo tableInfo = new TableInfo();
     tableInfo.setDatabaseName(databaseName);
@@ -73,6 +72,10 @@ public class CarbonTableBuilder {
     tableInfo.setTransactionalTable(isTransactionalTable);
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setDataMapSchemaList(new ArrayList<DataMapSchema>(0));
-    return CarbonTable.buildFromTableInfo(tableInfo);
+    return tableInfo;
+  }
+
+  public CarbonTable build() {
+    return CarbonTable.buildFromTableInfo(buildTableInfo());
   }
 }

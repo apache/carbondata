@@ -384,7 +384,8 @@ public class QueryModel {
     return String.format("scan on table %s.%s, %d projection columns with filter (%s)",
         table.getDatabaseName(), table.getTableName(),
         projection.getDimensions().size() + projection.getMeasures().size(),
-        filterExpressionResolverTree.getFilterExpression().toString());
+        filterExpressionResolverTree == null ? "" :
+            filterExpressionResolverTree.getFilterExpression().toString());
   }
 
   public boolean isFreeUnsafeMemory() {

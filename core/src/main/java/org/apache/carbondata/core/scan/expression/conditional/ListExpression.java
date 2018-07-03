@@ -69,8 +69,14 @@ public class ListExpression extends Expression {
   public String getStatement() {
     StringBuffer value = new StringBuffer();
     value.append("(");
+    boolean start = false;
     for (Expression expr : children) {
-      value.append(expr.getString()).append(";");
+      if (start) {
+        value.append(", ");
+      } else {
+        start = true;
+      }
+      value.append(expr.getStatement());
     }
     value.append(')');
 
