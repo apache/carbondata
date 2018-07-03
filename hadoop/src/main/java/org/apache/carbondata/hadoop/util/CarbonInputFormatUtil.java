@@ -92,6 +92,19 @@ public class CarbonInputFormatUtil {
       Expression filterExpression,
       List<PartitionSpec> partitionNames,
       DataMapJob dataMapJob) throws IOException, InvalidConfigurationException {
+    return createCarbonTableInputFormat(job, carbonTable, projectionColumns, filterExpression,
+        partitionNames, dataMapJob, false);
+  }
+
+
+  public static <V> CarbonTableInputFormat<V> createCarbonTableInputFormat(
+      Job job,
+      CarbonTable carbonTable,
+      String[] projectionColumns,
+      Expression filterExpression,
+      List<PartitionSpec> partitionNames,
+      DataMapJob dataMapJob,
+      boolean isSearchMode) throws IOException, InvalidConfigurationException {
     Configuration conf = job.getConfiguration();
     CarbonInputFormat.setTableInfo(conf, carbonTable.getTableInfo());
     CarbonInputFormat.setDatabaseName(conf, carbonTable.getTableInfo().getDatabaseName());
@@ -103,7 +116,7 @@ public class CarbonInputFormatUtil {
         .setTransactionalTable(conf, carbonTable.getTableInfo().isTransactionalTable());
     CarbonProjection columnProjection = new CarbonProjection(projectionColumns);
     return createInputFormat(conf, carbonTable.getAbsoluteTableIdentifier(),
-        filterExpression, columnProjection, dataMapJob);
+        filterExpression, columnProjection, dataMapJob, isSearchMode);
   }
 
   private static <V> CarbonTableInputFormat<V> createInputFormat(
@@ -111,7 +124,8 @@ public class CarbonInputFormatUtil {
       AbsoluteTableIdentifier identifier,
       Expression filterExpression,
       CarbonProjection columnProjection,
-      DataMapJob dataMapJob) throws InvalidConfigurationException, IOException {
+      DataMapJob dataMapJob,
+      boolean isSearchMode) throws InvalidConfigurationException, IOException {
     CarbonTableInputFormat<V> format = new CarbonTableInputFormat<>();
     CarbonInputFormat.setTablePath(
         conf,
@@ -121,7 +135,7 @@ public class CarbonInputFormatUtil {
     CarbonInputFormat.setColumnProjection(conf, columnProjection);
     if (dataMapJob != null) {
       DataMapUtil.setDataMapJob(conf, dataMapJob);
-    } else {
+    } else if (!isSearchMode) {
       setDataMapJobIfConfigured(conf);
     }
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat

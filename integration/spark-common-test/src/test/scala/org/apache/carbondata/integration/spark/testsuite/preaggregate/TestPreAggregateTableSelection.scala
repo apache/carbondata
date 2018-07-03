@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
-import java.io.File
-
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
@@ -416,7 +414,7 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
         | - agg1 (preaggregate)
         |Table Scan on maintable_agg1
         | - total blocklets: 1
-        | - filter: (maintable_name <> null and maintable_name = a)
+        | - filter: (maintable_name is not null and maintable_name = a)
         | - pruned by Main DataMap
         |    - skipped blocklets: 1
         |""".stripMargin)(rows(0).getString(0))
@@ -432,14 +430,14 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
       """
         |Table Scan on maintable
         | - total blocklets: 1
-        | - filter: ((id <> null and id < 3) and name <> null)
+        | - filter: ((id is not null and id < 3) and name is not null)
         | - pruned by Main DataMap
         |    - skipped blocklets: 0""".stripMargin))
     assert(rows(0).getString(0).contains(
       """
         |Table Scan on maintableavg
         | - total blocklets: 1
-        | - filter: name <> null
+        | - filter: name is not null
         | - pruned by Main DataMap
         |    - skipped blocklets: 0""".stripMargin))
 

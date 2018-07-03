@@ -20,7 +20,7 @@ package org.apache.carbondata.store.rpc.impl;
 import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.Master;
+import org.apache.carbondata.store.master.Master;
 import org.apache.carbondata.store.rpc.RegistryService;
 import org.apache.carbondata.store.rpc.model.RegisterWorkerRequest;
 import org.apache.carbondata.store.rpc.model.RegisterWorkerResponse;
@@ -37,7 +37,7 @@ public class RegistryServiceImpl implements RegistryService {
   }
 
   @Override
-  public RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) {
+  public RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException {
     return master.addWorker(request);
   }
 

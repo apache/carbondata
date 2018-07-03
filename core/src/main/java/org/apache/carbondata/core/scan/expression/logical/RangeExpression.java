@@ -66,7 +66,7 @@ public class RangeExpression extends BinaryConditionalExpression {
 
   @Override
   public String getStatement() {
-    return left.getStatement() + " between " + right.getStatement();
+    return left.getStatement() + " and " + right.getStatement();
   }
 
   @Override
