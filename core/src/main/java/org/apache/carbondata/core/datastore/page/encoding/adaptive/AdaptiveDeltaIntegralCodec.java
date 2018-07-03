@@ -57,7 +57,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       this.max = (short) stats.getMax();
     } else if (srcDataType == DataTypes.INT) {
       this.max = (int) stats.getMax();
-    } else if (srcDataType == DataTypes.LONG) {
+    } else if (srcDataType == DataTypes.LONG || srcDataType == DataTypes.TIMESTAMP) {
       this.max = (long) stats.getMax();
     } else if (srcDataType == DataTypes.DOUBLE) {
       this.max = (long) (double) stats.getMax();

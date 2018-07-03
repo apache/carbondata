@@ -430,15 +430,28 @@ public final class DataTypeUtil {
   }
 
   /**
-   * Below method will be used to convert the data passed to its actual data
-   * type
+   * Wrapper for actual getDataBasedOnDataTypeForNoDictionaryColumn.
    *
-   * @param dataInBytes    data
-   * @param actualDataType actual data type
-   * @return actual data after conversion
+   * @param dataInBytes
+   * @param actualDataType
+   * @return
    */
   public static Object getDataBasedOnDataTypeForNoDictionaryColumn(byte[] dataInBytes,
       DataType actualDataType) {
+    return getDataBasedOnDataTypeForNoDictionaryColumn(dataInBytes, actualDataType, true);
+  }
+
+  /**
+   * Below method will be used to convert the data passed to its actual data
+   * type
+   *
+   * @param dataInBytes           data
+   * @param actualDataType        actual data type
+   * @param isTimeStampConversion
+   * @return actual data after conversion
+   */
+  public static Object getDataBasedOnDataTypeForNoDictionaryColumn(byte[] dataInBytes,
+      DataType actualDataType, boolean isTimeStampConversion) {
     if (null == dataInBytes || Arrays
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, dataInBytes)) {
       return null;
@@ -467,7 +480,11 @@ public final class DataTypeUtil {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
-        return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length) * 1000L;
+        if (isTimeStampConversion) {
+          return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length) * 1000L;
+        } else {
+          return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
+        }
       } else if (actualDataType == DataTypes.DOUBLE) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;

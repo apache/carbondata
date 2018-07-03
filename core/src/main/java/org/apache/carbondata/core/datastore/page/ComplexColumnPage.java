@@ -20,12 +20,15 @@ package org.apache.carbondata.core.datastore.page;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.statistics.DummyStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
+import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * holds the complex columndata and its children data
@@ -35,12 +38,12 @@ public class ComplexColumnPage {
   /**
    * number of columns
    */
-  private int depth;
+  private int complexColumnIndex;
 
   /**
    * type of each column
    */
-  private List<ColumnType> complexColumnType;
+  private List<ComplexColumnInfo> complexColumnInfoList;
 
   /**
    * column page for each type
@@ -52,36 +55,41 @@ public class ComplexColumnPage {
    */
   private int[] currentRowIdList;
 
-  public ComplexColumnPage(List<ColumnType> complexColumnType) {
-    this.depth = complexColumnType.size();
-    this.complexColumnType = complexColumnType;
-    this.columnPages = new ColumnPage[this.depth];
-    this.currentRowIdList = new int[depth];
+  public ComplexColumnPage(List<ComplexColumnInfo> complexColumnInfoList) {
+    this.complexColumnIndex = complexColumnInfoList.size();
+    this.complexColumnInfoList = complexColumnInfoList;
+    this.columnPages = new ColumnPage[this.complexColumnIndex];
+    this.currentRowIdList = new int[complexColumnIndex];
   }
 
   /**
    * below method will be used to initlize the column page of complex type
    * @param columnToDictMap
    * dictionary map
-   * @param columnNames
-   * list of columns
    * @param pageSize
    * number of records
    * @throws MemoryException
    * if memory is not sufficient
    */
-  public void initialize(Map<String, LocalDictionaryGenerator> columnToDictMap,
-      List<String> columnNames, int pageSize) throws MemoryException {
+  public void initialize(Map<String, LocalDictionaryGenerator> columnToDictMap, int pageSize)
+      throws MemoryException {
+    DataType dataType;
     for (int i = 0; i < this.columnPages.length; i++) {
-      LocalDictionaryGenerator localDictionaryGenerator = columnToDictMap.get(columnNames.get(i));
+      LocalDictionaryGenerator localDictionaryGenerator =
+          columnToDictMap.get(complexColumnInfoList.get(i).getColumnNames());
+      TableSpec.ColumnSpec spec = getColumnSpec(i, localDictionaryGenerator);
       if (null == localDictionaryGenerator) {
-        TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
-            .newInstance(columnNames.get(i), DataTypes.BYTE_ARRAY, complexColumnType.get(i));
-        this.columnPages[i] = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize);
-        this.columnPages[i].setStatsCollector(new DummyStatsCollector());
+        dataType = complexColumnInfoList.get(i).getColumnDataTypes();
+        if (isColumnPageBasedOnDataType(i)) {
+          // no dictionary primitive types need adaptive encoding,
+          // hence store as actual value instead of byte array
+          this.columnPages[i] = ColumnPage.newPage(spec, dataType, pageSize);
+          this.columnPages[i].setStatsCollector(PrimitivePageStatsCollector.newInstance(dataType));
+        } else {
+          this.columnPages[i] = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize);
+          this.columnPages[i].setStatsCollector(new DummyStatsCollector());
+        }
       } else {
-        TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
-            .newInstance(columnNames.get(i), DataTypes.BYTE_ARRAY, complexColumnType.get(i));
         this.columnPages[i] = ColumnPage
             .newLocalDictPage(spec, DataTypes.BYTE_ARRAY, pageSize, localDictionaryGenerator, true);
         this.columnPages[i].setStatsCollector(new DummyStatsCollector());
@@ -89,57 +97,92 @@ public class ComplexColumnPage {
     }
   }
 
-  /**
-   *
-   * @return depth
-   */
-  public int getDepth() {
-    return depth;
+  private TableSpec.ColumnSpec getColumnSpec(int columnPageIndex,
+      LocalDictionaryGenerator localDictionaryGenerator) {
+    if ((localDictionaryGenerator == null) && isColumnPageBasedOnDataType(columnPageIndex)) {
+      return TableSpec.ColumnSpec
+          .newInstance(complexColumnInfoList.get(columnPageIndex).getColumnNames(),
+              complexColumnInfoList.get(columnPageIndex).getColumnDataTypes(),
+              complexColumnInfoList.get(columnPageIndex).getComplexColumnType());
+    } else {
+      return TableSpec.ColumnSpec
+          .newInstance(complexColumnInfoList.get(columnPageIndex).getColumnNames(),
+              DataTypes.BYTE_ARRAY,
+              complexColumnInfoList.get(columnPageIndex).getComplexColumnType());
+    }
+  }
+
+  private boolean isColumnPageBasedOnDataType(int columnPageIndex) {
+    DataType dataType = complexColumnInfoList.get(columnPageIndex).getColumnDataTypes();
+    if ((complexColumnInfoList.get(columnPageIndex).isNoDictionary() &&
+        !((DataTypes.isStructType(dataType) ||
+            DataTypes.isArrayType(dataType) ||
+            (dataType == DataTypes.STRING) ||
+            (dataType == DataTypes.VARCHAR) ||
+            (dataType == DataTypes.DATE) ||
+            DataTypes.isDecimal(dataType))))) {
+      // For all these above condition the ColumnPage should be Taken as BYTE_ARRAY
+      // for all other cases make Column Page Based on each DataType.
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**
-   * return the type of complex column
-   * @param isDepth
-   * @return co plex column type
+   *
+   * @return complexColumnIndex
    */
-  public ColumnType getComplexColumnType(int isDepth) {
-    return complexColumnType.get(isDepth);
+  public int getComplexColumnIndex() {
+    return complexColumnIndex;
   }
 
   /**
    * method to add complex column data
    * @param depth
-   * depth of column
+   * complexColumnIndex of column
    * @param dataList
    * dataList
    */
   public void putComplexData(int depth, List<byte[]> dataList) {
-    assert (depth <= this.depth);
-    int currentNumber = currentRowIdList[depth];
-    for (int i = 0; i < dataList.size(); i++) {
-      columnPages[depth].putData(currentNumber, dataList.get(i));
-      currentNumber++;
+    assert (depth <= this.complexColumnIndex);
+    int positionNumber = currentRowIdList[depth];
+    for (byte[] value : dataList) {
+      if (columnPages[depth].getDataType() != DataTypes.BYTE_ARRAY) {
+        if ((value == null) || (value.length == 0)) {
+          columnPages[depth].putNull(positionNumber);
+          columnPages[depth].statsCollector.updateNull(positionNumber);
+          columnPages[depth].nullBitSet.set(positionNumber);
+        } else {
+          columnPages[depth].putData(positionNumber, DataTypeUtil
+              .getDataBasedOnDataTypeForNoDictionaryColumn(value,
+                  columnPages[depth].getColumnSpec().getSchemaDataType(), false));
+        }
+      } else {
+        columnPages[depth].putData(positionNumber, value);
+      }
+      positionNumber++;
     }
-    currentRowIdList[depth] = currentNumber;
+    currentRowIdList[depth] = positionNumber;
   }
 
   /**
    * to free the used memory
    */
   public void freeMemory() {
-    for (int i = 0; i < depth; i++) {
+    for (int i = 0; i < complexColumnIndex; i++) {
       columnPages[i].freeMemory();
     }
   }
 
   /**
    * return the column page
-   * @param depth
-   * depth of column
+   * @param complexColumnIndex
+   * complexColumnIndex of column
    * @return colum page
    */
-  public ColumnPage getColumnPage(int depth) {
-    assert (depth <= this.depth);
-    return columnPages[depth];
+  public ColumnPage getColumnPage(int complexColumnIndex) {
+    assert (complexColumnIndex <= this.complexColumnIndex);
+    return columnPages[complexColumnIndex];
   }
 }

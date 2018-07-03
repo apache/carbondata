@@ -44,6 +44,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -383,9 +384,10 @@ public final class CarbonDataProcessorUtil {
         } else if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.STRUCT)) {
           g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
         } else {
-          g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[4],
-              Integer.parseInt(levelInfo[5]), levelInfo[3].contains("true"), nullFormat,
-              isEmptyBadRecord));
+          g.addChildren(
+              new PrimitiveDataType(levelInfo[0], DataTypeUtil.valueOf(levelInfo[1]),
+                  levelInfo[2], levelInfo[4], levelInfo[3].contains("true"), nullFormat,
+                  isEmptyBadRecord));
         }
       }
     }

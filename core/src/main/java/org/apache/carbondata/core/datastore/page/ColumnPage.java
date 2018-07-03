@@ -58,7 +58,7 @@ public abstract class ColumnPage {
   private final TableSpec.ColumnSpec columnSpec;
 
   // The index of the rowId whose value is null, will be set to 1
-  private BitSet nullBitSet;
+  protected BitSet nullBitSet;
 
   // statistics collector for this column page
   protected ColumnPageStatsCollector statsCollector;
@@ -193,6 +193,8 @@ public abstract class ColumnPage {
           dataType == DataTypes.FLOAT ||
           dataType == DataTypes.DOUBLE) {
         instance = new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        instance = new UnsafeFixLengthColumnPage(columnSpec, DataTypes.LONG, pageSize);
       } else if (DataTypes.isDecimal(dataType)) {
         instance = new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);
       } else if (dataType == DataTypes.STRING
@@ -211,7 +213,7 @@ public abstract class ColumnPage {
         instance = newShortIntPage(columnSpec, new byte[pageSize * 3]);
       } else if (dataType == DataTypes.INT) {
         instance = newIntPage(columnSpec, new int[pageSize]);
-      } else if (dataType == DataTypes.LONG) {
+      } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
         instance = newLongPage(columnSpec, new long[pageSize]);
       } else if (dataType == DataTypes.FLOAT) {
         instance = newFloatPage(columnSpec, new float[pageSize]);
@@ -494,7 +496,7 @@ public abstract class ColumnPage {
   /**
    * Set null at rowId
    */
-  private void putNull(int rowId) {
+  protected void putNull(int rowId) {
     if (dataType == DataTypes.BOOLEAN) {
       putBoolean(rowId, false);
     } else if (dataType == DataTypes.BYTE) {

@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.executor.util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -37,6 +38,8 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -871,6 +874,25 @@ public class QueryUtil {
       } else if (!CarbonUtil.hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
         filterDimensionsOrdinal.add(queryDimensions.getListOfChildDimensions().get(j).getOrdinal());
       }
+    }
+  }
+
+  /**
+   * Below method will be used to convert the thrift presence meta to wrapper
+   * presence meta
+   *
+   * @param presentMetadataThrift
+   * @return wrapper presence meta
+   */
+  public static BitSet getNullBitSet(
+      org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
+    Compressor compressor = CompressorFactory.getInstance().getCompressor();
+    final byte[] present_bit_stream = presentMetadataThrift.getPresent_bit_stream();
+    if (null != present_bit_stream) {
+      return BitSet
+          .valueOf(compressor.unCompressByte(present_bit_stream));
+    } else {
+      return new BitSet(1);
     }
   }
 }

@@ -24,9 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.complexobjects.StructObject;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 
@@ -323,17 +325,13 @@ public class StructDataType implements GenericDataType<StructObject> {
     return new StructDataType(childrenClone, this.outputArrayIndex, this.dataCounter, this.name);
   }
 
-  public void getChildrenType(List<ColumnType> type) {
-    type.add(ColumnType.COMPLEX_STRUCT);
+  @Override
+  public void getComplexColumnInfo(List<ComplexColumnInfo> columnInfoList) {
+    columnInfoList.add(
+        new ComplexColumnInfo(ColumnType.COMPLEX_STRUCT, DataTypeUtil.valueOf("struct"),
+            name, false));
     for (int i = 0; i < children.size(); i++) {
-      children.get(i).getChildrenType(type);
-    }
-  }
-
-  @Override public void getColumnNames(List<String> columnNameList) {
-    columnNameList.add(name);
-    for (int i = 0; i < children.size(); i++) {
-      children.get(i).getColumnNames(columnNameList);
+      children.get(i).getComplexColumnInfo(columnInfoList);
     }
   }
 }

@@ -43,6 +43,7 @@ import org.apache.carbondata.core.datastore.page.statistics.LVLongStringStatsCol
 import org.apache.carbondata.core.datastore.page.statistics.LVShortStringStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
@@ -234,20 +235,18 @@ public class TablePage {
 
     // initialize the page if first row
     if (rowId == 0) {
-      List<ColumnType> complexColumnType = new ArrayList<>();
-      List<String> columnNames = new ArrayList<>();
-      complexDataType.getChildrenType(complexColumnType);
-      complexDataType.getColumnNames(columnNames);
-      complexDimensionPages[index] = new ComplexColumnPage(complexColumnType);
+      List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
+      complexDataType.getComplexColumnInfo(complexColumnInfoList);
+      complexDimensionPages[index] = new ComplexColumnPage(complexColumnInfoList);
       try {
         complexDimensionPages[index]
-            .initialize(model.getColumnLocalDictGenMap(), columnNames, pageSize);
+            .initialize(model.getColumnLocalDictGenMap(), pageSize);
       } catch (MemoryException e) {
         throw new RuntimeException(e);
       }
     }
 
-    int depthInComplexColumn = complexDimensionPages[index].getDepth();
+    int depthInComplexColumn = complexDimensionPages[index].getComplexColumnIndex();
     // this is the result columnar data which will be added to page,
     // size of this list is the depth of complex column, we will fill it by input data
     List<ArrayList<byte[]>> encodedComplexColumnar = new ArrayList<>(depthInComplexColumn);

@@ -41,6 +41,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   // scale of the double value, apply adaptive encoding if this is positive
   private int decimal;
 
+  // scale of the double value, only for complex primitive.
+  private int decimalCountForComplexPrimitive;
+
   private boolean isFirst = true;
   private BigDecimal zeroDecimal;
 
@@ -64,7 +67,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     } else if (dataType == DataTypes.INT) {
       instance.minInt = (int) meta.getMinValue();
       instance.maxInt = (int) meta.getMaxValue();
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       instance.minLong = (long) meta.getMinValue();
       instance.maxLong = (long) meta.getMaxValue();
     } else if (dataType == DataTypes.DOUBLE) {
@@ -96,7 +99,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     } else if (dataType == DataTypes.INT) {
       instance.minInt = (int) meta.getMinValue();
       instance.maxInt = (int) meta.getMaxValue();
-    } else if (dataType == DataTypes.LEGACY_LONG || dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LEGACY_LONG || dataType == DataTypes.LONG
+        || dataType == DataTypes.TIMESTAMP) {
       instance.minLong = (long) meta.getMinValue();
       instance.maxLong = (long) meta.getMaxValue();
     } else if (dataType == DataTypes.DOUBLE) {
@@ -128,7 +132,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     } else if (dataType == DataTypes.INT) {
       minInt = Integer.MAX_VALUE;
       maxInt = Integer.MIN_VALUE;
-    } else if (dataType == DataTypes.LEGACY_LONG || dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LEGACY_LONG || dataType == DataTypes.LONG
+        || dataType == DataTypes.TIMESTAMP) {
       minLong = Long.MAX_VALUE;
       maxLong = Long.MIN_VALUE;
     } else if (dataType == DataTypes.DOUBLE) {
@@ -153,7 +158,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       update((short) value);
     } else if (dataType == DataTypes.INT) {
       update((int) value);
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       update(value);
     } else if (dataType == DataTypes.DOUBLE) {
       update(0d);
@@ -236,6 +241,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     }
     if (decimal >= 0) {
       int decimalCount = getDecimalCount(value);
+      decimalCountForComplexPrimitive = decimalCount;
       if (decimalCount > 5) {
         // If deciaml count is too big, we do not do adaptive encoding.
         // So set decimal to negative value
@@ -244,6 +250,11 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         this.decimal = decimalCount;
       }
     }
+  }
+
+  public int getDecimalForComplexPrimitive() {
+    decimal = decimalCountForComplexPrimitive;
+    return decimalCountForComplexPrimitive;
   }
 
   @Override
@@ -294,7 +305,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       return minShort;
     } else if (dataType == DataTypes.INT) {
       return minInt;
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return minLong;
     } else if (dataType == DataTypes.DOUBLE) {
       return minDouble;
@@ -312,7 +323,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       return maxShort;
     } else if (dataType == DataTypes.INT) {
       return maxInt;
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return maxLong;
     } else if (dataType == DataTypes.DOUBLE) {
       return maxDouble;
