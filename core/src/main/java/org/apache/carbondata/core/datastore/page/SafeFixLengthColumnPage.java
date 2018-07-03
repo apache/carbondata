@@ -40,9 +40,12 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private byte[] shortIntData;
   private byte[][] fixedLengthdata;
 
+  // total number of entries in array
+  private int arrayElementCount = 0;
 
   SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
     super(columnSpec, dataType, pageSize);
+    this.fixedLengthdata = new byte[pageSize][];
   }
 
   SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
@@ -50,13 +53,14 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     super(columnSpec, dataType, pageSize);
     this.fixedLengthdata = new byte[pageSize][];
   }
-
   /**
    * Set byte value at rowId
    */
   @Override
   public void putByte(int rowId, byte value) {
+    ensureArraySize(rowId, DataTypes.BYTE);
     byteData[rowId] = value;
+    arrayElementCount++;
   }
 
   /**
@@ -64,7 +68,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putShort(int rowId, short value) {
+    ensureArraySize(rowId, DataTypes.SHORT);
     shortData[rowId] = value;
+    arrayElementCount++;
   }
 
   /**
@@ -72,7 +78,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putInt(int rowId, int value) {
+    ensureArraySize(rowId, DataTypes.INT);
     intData[rowId] = value;
+    arrayElementCount++;
   }
 
   /**
@@ -80,7 +88,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putLong(int rowId, long value) {
+    ensureArraySize(rowId, DataTypes.LONG);
     longData[rowId] = value;
+    arrayElementCount++;
   }
 
   /**
@@ -88,7 +98,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putDouble(int rowId, double value) {
+    ensureArraySize(rowId, DataTypes.DOUBLE);
     doubleData[rowId] = value;
+    arrayElementCount++;
   }
 
   /**
@@ -101,8 +113,10 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putShortInt(int rowId, int value) {
+    ensureArraySize(rowId, DataTypes.SHORT_INT);
     byte[] converted = ByteUtil.to3Bytes(value);
     System.arraycopy(converted, 0, shortIntData, rowId * 3, 3);
+    arrayElementCount++;
   }
 
   @Override
@@ -291,8 +305,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   /**
    * Set int values to page
    */
-  @Override
-  public void setIntPage(int[] intData) {
+  @Override public void setIntPage(int[] intData) {
     this.intData = intData;
   }
 
@@ -346,27 +359,27 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
     if (dataType == DataTypes.BYTE) {
-      for (int i = 0; i < pageSize; i++) {
+      for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, byteData[i]);
       }
     } else if (dataType == DataTypes.SHORT) {
-      for (int i = 0; i < pageSize; i++) {
+      for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, shortData[i]);
       }
     } else if (dataType == DataTypes.INT) {
-      for (int i = 0; i < pageSize; i++) {
+      for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, intData[i]);
       }
     } else if (dataType == DataTypes.LONG) {
-      for (int i = 0; i < pageSize; i++) {
+      for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, longData[i]);
       }
     } else if (dataType == DataTypes.FLOAT) {
-      for (int i = 0; i < pageSize; i++) {
+      for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, floatData[i]);
       }
     } else if (dataType == DataTypes.DOUBLE) {
-      for (int i = 0; i < pageSize; i++) {
+      for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, doubleData[i]);
       }
     } else {
@@ -375,4 +388,52 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     }
   }
 
+  protected void ensureArraySize(int requestSize, DataType dataType) {
+    if (dataType == DataTypes.BYTE) {
+      if (requestSize >= byteData.length) {
+        byte[] newArray = new byte[arrayElementCount + 16];
+        System.arraycopy(byteData, 0, newArray, 0, arrayElementCount);
+        byteData = newArray;
+      }
+    } else if (dataType == DataTypes.SHORT) {
+      if (requestSize >= shortData.length) {
+        short[] newArray = new short[arrayElementCount + 16];
+        System.arraycopy(shortData, 0, newArray, 0, arrayElementCount);
+        shortData = newArray;
+      }
+    } else if (dataType == DataTypes.SHORT_INT) {
+      if (requestSize >= shortIntData.length / 3) {
+        byte[] newArray = new byte[(arrayElementCount * 3) + (16 * 3)];
+        System.arraycopy(shortIntData, 0, newArray, 0, arrayElementCount * 3);
+        shortIntData = newArray;
+      }
+    } else if (dataType == DataTypes.INT) {
+      if (requestSize >= intData.length) {
+        int[] newArray = new int[arrayElementCount + 16];
+        System.arraycopy(intData, 0, newArray, 0, arrayElementCount);
+        intData = newArray;
+      }
+    } else if (dataType == DataTypes.LONG) {
+      if (requestSize >= longData.length) {
+        long[] newArray = new long[arrayElementCount + 16];
+        System.arraycopy(longData, 0, newArray, 0, arrayElementCount);
+        longData = newArray;
+      }
+    } else if (dataType == DataTypes.FLOAT) {
+      if (requestSize >= floatData.length) {
+        float[] newArray = new float[arrayElementCount + 16];
+        System.arraycopy(floatData, 0, newArray, 0, arrayElementCount);
+        floatData = newArray;
+      }
+    } else if (dataType == DataTypes.DOUBLE) {
+      if (requestSize >= doubleData.length) {
+        double[] newArray = new double[arrayElementCount + 16];
+        System.arraycopy(doubleData, 0, newArray, 0, arrayElementCount);
+        doubleData = newArray;
+      }
+    } else {
+      throw new UnsupportedOperationException(
+          "not support value conversion on " + dataType + " page");
+    }
+  }
 }

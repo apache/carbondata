@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 
@@ -125,7 +126,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     copyPoint += measureColumnChunkLength.get(blockIndex);
 
     ColumnPage page = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
-    page.setNullBits(getNullBitSet(measureColumnChunk.presence));
+    page.setNullBits(QueryUtil.getNullBitSet(measureColumnChunk.presence));
     return page;
   }
 

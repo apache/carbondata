@@ -34,6 +34,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
@@ -43,6 +44,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -112,6 +114,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private boolean isDirectDictionary;
 
+  private DataType dataType;
+
   private PrimitiveDataType(int outputArrayIndex, int dataCounter) {
     this.outputArrayIndex = outputArrayIndex;
     this.dataCounter = dataCounter;
@@ -121,25 +125,25 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * constructor
    *
    * @param name
-   * @param parentname
+   * @param parentName
    * @param columnId
-   * @param dimensionOrdinal
    * @param isDictionary
    */
-  public PrimitiveDataType(String name, String parentname, String columnId, int dimensionOrdinal,
-      boolean isDictionary, String nullformat, boolean isEmptyBadRecord) {
+  public PrimitiveDataType(String name, DataType dataType, String parentName, String columnId,
+      boolean isDictionary, String nullFormat, boolean isEmptyBadRecord) {
     this.name = name;
-    this.parentname = parentname;
+    this.parentname = parentName;
     this.columnId = columnId;
     this.isDictionary = isDictionary;
-    this.nullformat = nullformat;
+    this.nullformat = nullFormat;
     this.isEmptyBadRecord = isEmptyBadRecord;
+    this.dataType = dataType;
   }
 
   /**
    * Constructor
    * @param carbonColumn
-   * @param parentname
+   * @param parentName
    * @param columnId
    * @param carbonDimension
    * @param absoluteTableIdentifier
@@ -149,17 +153,18 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param nullFormat
    * @param isEmptyBadRecords
    */
-  public PrimitiveDataType(CarbonColumn carbonColumn, String parentname, String columnId,
+  public PrimitiveDataType(CarbonColumn carbonColumn, String parentName, String columnId,
       CarbonDimension carbonDimension, AbsoluteTableIdentifier absoluteTableIdentifier,
       DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
       String nullFormat, Boolean isEmptyBadRecords) {
     this.name = carbonColumn.getColName();
-    this.parentname = parentname;
+    this.parentname = parentName;
     this.columnId = columnId;
     this.carbonDimension = carbonDimension;
     this.isDictionary = isDictionaryDimension(carbonDimension);
     this.nullformat = nullFormat;
     this.isEmptyBadRecord = isEmptyBadRecords;
+    this.dataType = carbonColumn.getDataType();
 
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
@@ -537,14 +542,15 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     dataType.setKeySize(this.keySize);
     dataType.setSurrogateIndex(this.index);
     dataType.name = this.name;
+    dataType.dataType = this.dataType;
     return dataType;
   }
 
-  public void getChildrenType(List<ColumnType> type) {
-    type.add(ColumnType.COMPLEX_PRIMITIVE);
+  @Override
+  public void getComplexColumnInfo(List<ComplexColumnInfo> columnInfoList) {
+    columnInfoList.add(
+        new ComplexColumnInfo(ColumnType.COMPLEX_PRIMITIVE, dataType,
+            name, !isDictionary));
   }
 
-  @Override public void getColumnNames(List<String> columnNameList) {
-    columnNameList.add(name);
-  }
 }

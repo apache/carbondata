@@ -2471,7 +2471,7 @@ public final class CarbonUtil {
       b.putLong((int) value);
       b.flip();
       return b.array();
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       b = ByteBuffer.allocate(8);
       b.putLong((long) value);
       b.flip();
@@ -2486,7 +2486,6 @@ public final class CarbonUtil {
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return (byte[]) value;
     } else if (dataType == DataTypes.STRING
-        || dataType == DataTypes.TIMESTAMP
         || dataType == DataTypes.DATE
         || dataType == DataTypes.VARCHAR) {
       return (byte[]) value;
