@@ -100,23 +100,22 @@ public class SchemaGenerator {
    * @throws MemoryException
    */
   public static CarbonRowSchema[] createTaskSummarySchema(SegmentProperties segmentProperties,
-      byte[] schemaBinary, byte[] filePath, byte[] fileName, byte[] segmentId,
-      boolean storeBlockletCount) throws MemoryException {
+      boolean storeBlockletCount, boolean filePathToBeStored) throws MemoryException {
     List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>();
     // get MinMax Schema
     getMinMaxSchema(segmentProperties, taskMinMaxSchemas);
-    // for storing column schema
-    taskMinMaxSchemas
-        .add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, schemaBinary.length));
-    // for storing file path
-    taskMinMaxSchemas
-        .add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, filePath.length));
     // for storing file name
     taskMinMaxSchemas
-        .add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, fileName.length));
+        .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for storing segmentid
     taskMinMaxSchemas
-        .add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, segmentId.length));
+        .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
+    // store path only in case of partition table or non transactional table
+    if (filePathToBeStored) {
+      // for storing file path
+      taskMinMaxSchemas
+          .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
+    }
     // flag to check whether it is required to store blocklet count of each carbondata file as
     // binary in summary schema. This will be true when it is not a legacy store (>1.1 version)
     // and CACHE_LEVEL=BLOCK

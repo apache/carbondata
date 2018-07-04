@@ -20,6 +20,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
 /**
  * It is the model object to keep the information to build or initialize BlockletDataMap.
@@ -30,21 +31,25 @@ public class BlockletDataMapModel extends DataMapModel {
 
   private Map<String, BlockMetaInfo> blockMetaInfoMap;
 
+  private CarbonTable carbonTable;
+
   private String segmentId;
 
   private boolean addToUnsafe = true;
 
-  public BlockletDataMapModel(String filePath, byte[] fileData,
-      Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId) {
+  public BlockletDataMapModel(CarbonTable carbonTable, String filePath,
+      byte[] fileData, Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId) {
     super(filePath);
     this.fileData = fileData;
     this.blockMetaInfoMap = blockMetaInfoMap;
     this.segmentId = segmentId;
+    this.carbonTable = carbonTable;
   }
 
-  public BlockletDataMapModel(String filePath, byte[] fileData,
-      Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId, boolean addToUnsafe) {
-    this(filePath, fileData, blockMetaInfoMap, segmentId);
+  public BlockletDataMapModel(CarbonTable carbonTable, String filePath,
+      byte[] fileData, Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId,
+      boolean addToUnsafe) {
+    this(carbonTable, filePath, fileData, blockMetaInfoMap, segmentId);
     this.addToUnsafe = addToUnsafe;
   }
 
@@ -62,5 +67,9 @@ public class BlockletDataMapModel extends DataMapModel {
 
   public boolean isAddToUnsafe() {
     return addToUnsafe;
+  }
+
+  public CarbonTable getCarbonTable() {
+    return carbonTable;
   }
 }
