@@ -83,7 +83,8 @@ public class FieldEncoderFactory {
             || dataField.getColumn().getColumnSchema().getParentColumnTableRelations().isEmpty()) {
           identifier = new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
               dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
-          return new DictionaryFieldConverterImpl(dataField, absoluteTableIdentifier,
+          return new DictionaryFieldConverterImpl(dataField.getColumn(),
+              absoluteTableIdentifier.getCarbonTableIdentifier().getTableId(),
               nullFormat, index, client, useOnePass, localCache, isEmptyBadRecord,
               identifier);
         } else {
@@ -105,7 +106,8 @@ public class FieldEncoderFactory {
                   parentTableIdentifier);
           identifier = new DictionaryColumnUniqueIdentifier(parentAbsoluteTableIdentifier,
               parentColumnIdentifier, dataField.getColumn().getDataType());
-          return new DictionaryFieldConverterImpl(dataField, parentAbsoluteTableIdentifier,
+          return new DictionaryFieldConverterImpl(dataField.getColumn(),
+              parentAbsoluteTableIdentifier.getCarbonTableIdentifier().getTableId(),
               nullFormat, index, null, false, null, isEmptyBadRecord, identifier);
         }
       } else if (dataField.getColumn().isComplex()) {

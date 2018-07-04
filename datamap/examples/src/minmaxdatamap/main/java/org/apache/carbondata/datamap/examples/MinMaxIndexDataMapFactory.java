@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -82,14 +83,15 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * @return
    */
   @Override
-  public DataMapWriter createWriter(Segment segment, String shardName) {
+  public DataMapWriter createWriter(Segment segment, String shardName,
+      SegmentProperties segmentProperties) {
     return new MinMaxDataWriter(getCarbonTable(), getDataMapSchema(), segment, shardName,
         dataMapMeta.getIndexedColumns());
   }
 
   @Override
-  public DataMapBuilder createBuilder(Segment segment, String shardName)
-      throws IOException {
+  public DataMapBuilder createBuilder(Segment segment, String shardName,
+      SegmentProperties segmentProperties) throws IOException {
     return null;
   }
 

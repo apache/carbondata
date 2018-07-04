@@ -87,12 +87,14 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   @Override
-  public DataMapWriter createWriter(Segment segment, String shardName) {
+  public DataMapWriter createWriter(Segment segment, String shardName,
+      SegmentProperties segmentProperties) throws IOException {
     throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
-  public DataMapBuilder createBuilder(Segment segment, String shardName) {
+  public DataMapBuilder createBuilder(Segment segment, String shardName,
+      SegmentProperties segmentProperties) throws IOException {
     throw new UnsupportedOperationException("not implemented");
   }
 
