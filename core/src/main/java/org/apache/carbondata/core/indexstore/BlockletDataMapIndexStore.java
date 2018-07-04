@@ -30,6 +30,7 @@ import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapModel;
@@ -184,6 +185,23 @@ public class BlockletDataMapIndexStore
    */
   @Override public void invalidate(
       TableBlockIndexUniqueIdentifierWrapper tableSegmentUniqueIdentifierWrapper) {
+    BlockletDataMapIndexWrapper blockletDataMapIndexWrapper =
+        getIfPresent(tableSegmentUniqueIdentifierWrapper);
+    if (null != blockletDataMapIndexWrapper) {
+      // clear the segmentProperties cache
+      List<BlockDataMap> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
+      if (null != dataMaps) {
+        String segmentId =
+            tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier().getSegmentId();
+        for (BlockDataMap dataMap : dataMaps) {
+          // as segmentId will be same for all the dataMaps and segmentProperties cache is
+          // maintained at segment level so it need to be called only once for clearing
+          SegmentPropertiesAndSchemaHolder.getInstance()
+              .invalidate(segmentId, dataMap.getSegmentPropertiesIndex());
+          break;
+        }
+      }
+    }
     lruCache.remove(tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
         .getUniqueTableSegmentIdentifier());
   }
@@ -247,7 +265,7 @@ public class BlockletDataMapIndexStore
     BlockDataMap dataMap;
     synchronized (lock) {
       dataMap = (BlockDataMap) BlockletDataMapFactory.createDataMap(carbonTable);
-      dataMap.init(new BlockletDataMapModel(
+      dataMap.init(new BlockletDataMapModel(carbonTable,
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
           blockMetaInfoMap, identifier.getSegmentId()));

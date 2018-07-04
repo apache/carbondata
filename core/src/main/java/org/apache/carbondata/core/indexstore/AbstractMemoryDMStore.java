@@ -31,25 +31,16 @@ public abstract class AbstractMemoryDMStore implements Serializable {
 
   protected boolean isMemoryFreed;
 
-  protected CarbonRowSchema[] schema;
-
   protected final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
-  public AbstractMemoryDMStore(CarbonRowSchema[] schema) {
-    this.schema = schema;
-  }
+  public abstract void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow)
+      throws MemoryException;
 
-  public abstract void addIndexRow(DataMapRow indexRow) throws MemoryException;
-
-  public abstract DataMapRow getDataMapRow(int index);
+  public abstract DataMapRow getDataMapRow(CarbonRowSchema[] schema, int index);
 
   public abstract void freeMemory();
 
   public abstract int getMemoryUsed();
-
-  public CarbonRowSchema[] getSchema() {
-    return schema;
-  }
 
   public abstract int getRowCount();
 
@@ -57,7 +48,8 @@ public abstract class AbstractMemoryDMStore implements Serializable {
     // do nothing in default implementation
   }
 
-  public UnsafeMemoryDMStore convertToUnsafeDMStore() throws MemoryException {
+  public UnsafeMemoryDMStore convertToUnsafeDMStore(CarbonRowSchema[] schema)
+      throws MemoryException {
     throw new UnsupportedOperationException("Operation not allowed");
   }
 }

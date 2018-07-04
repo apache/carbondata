@@ -26,7 +26,10 @@ import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
  */
 public abstract class DataMapRow implements Serializable {
 
-  protected CarbonRowSchema[] schemas;
+  /**
+   * This is made transient as it is temporary and should not be serialized
+   */
+  protected transient CarbonRowSchema[] schemas;
 
   public DataMapRow(CarbonRowSchema[] schemas) {
     this.schemas = schemas;
@@ -100,5 +103,11 @@ public abstract class DataMapRow implements Serializable {
    */
   public DataMapRow convertToSafeRow() {
     return this;
+  }
+
+  public void setSchemas(CarbonRowSchema[] schemas) {
+    if (null == this.schemas) {
+      this.schemas = schemas;
+    }
   }
 }

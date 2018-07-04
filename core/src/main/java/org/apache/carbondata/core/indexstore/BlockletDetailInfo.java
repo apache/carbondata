@@ -26,9 +26,9 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.BlockletDataMapUtil;
 
 import org.apache.hadoop.io.Writable;
 
@@ -171,8 +171,16 @@ public class BlockletDetailInfo implements Serializable, Writable {
       blockletInfo.write(out);
     }
     out.writeLong(blockFooterOffset);
-    out.writeInt(columnSchemaBinary.length);
-    out.write(columnSchemaBinary);
+    // convert column schema list to binary format for serializing
+    convertColumnSchemaToBinary();
+    if (null != columnSchemaBinary) {
+      out.writeInt(columnSchemaBinary.length);
+      out.write(columnSchemaBinary);
+    } else {
+      // write -1 if columnSchemaBinary is null so that at the time of reading it can distinguish
+      // whether schema is written or not
+      out.writeInt(-1);
+    }
     out.writeInt(blockletInfoBinary.length);
     out.write(blockletInfoBinary);
     out.writeLong(blockSize);
@@ -195,9 +203,12 @@ public class BlockletDetailInfo implements Serializable, Writable {
     }
     blockFooterOffset = in.readLong();
     int bytesSize = in.readInt();
-    byte[] schemaArray = new byte[bytesSize];
-    in.readFully(schemaArray);
-    readColumnSchema(schemaArray);
+    // if byteSize is -1 that means schema binary is not written
+    if (bytesSize != -1) {
+      byte[] schemaArray = new byte[bytesSize];
+      in.readFully(schemaArray);
+      readColumnSchema(schemaArray);
+    }
     int byteSize = in.readInt();
     blockletInfoBinary = new byte[byteSize];
     in.readFully(blockletInfoBinary);
@@ -212,8 +223,15 @@ public class BlockletDetailInfo implements Serializable, Writable {
    * @throws IOException
    */
   public void readColumnSchema(byte[] schemaArray) throws IOException {
-    BlockDataMap blockDataMap = new BlockDataMap();
-    columnSchemas = blockDataMap.readColumnSchema(schemaArray);
+    if (null != columnSchemaBinary) {
+      columnSchemas = BlockletDataMapUtil.readColumnSchema(schemaArray);
+    }
+  }
+
+  private void convertColumnSchemaToBinary() throws IOException {
+    if (null != columnSchemas) {
+      columnSchemaBinary = BlockletDataMapUtil.convertSchemaToBinary(columnSchemas);
+    }
   }
 
   /**
@@ -260,10 +278,6 @@ public class BlockletDetailInfo implements Serializable, Writable {
     return columnSchemas;
   }
 
-  public void setColumnSchemaBinary(byte[] columnSchemaBinary) {
-    this.columnSchemaBinary = columnSchemaBinary;
-  }
-
   public byte[] getColumnSchemaBinary() {
     return columnSchemaBinary;
   }
@@ -278,5 +292,9 @@ public class BlockletDetailInfo implements Serializable, Writable {
 
   public void setLegacyStore(boolean legacyStore) {
     isLegacyStore = legacyStore;
+  }
+
+  public void setColumnSchemas(List<ColumnSchema> columnSchemas) {
+    this.columnSchemas = columnSchemas;
   }
 }
