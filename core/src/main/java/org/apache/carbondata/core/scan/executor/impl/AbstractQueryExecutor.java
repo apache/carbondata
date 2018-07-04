@@ -255,6 +255,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       BlockletInfo blockletInfo, short blockletId) {
     TableBlockInfo info = blockInfo.copy();
     BlockletDetailInfo detailInfo = info.getDetailInfo();
+    // set column schema details
+    detailInfo.setColumnSchemas(fileFooter.getColumnInTable());
     detailInfo.setRowCount(blockletInfo.getNumberOfRows());
     byte[][] maxValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues();
     byte[][] minValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues();

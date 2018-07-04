@@ -99,7 +99,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public static DataMap createDataMap(CarbonTable carbonTable) {
     boolean cacheLevelBlock =
         BlockletDataMapUtil.isCacheLevelBlock(carbonTable, CACHE_LEVEL_BLOCKLET);
-    cacheLevelBlock = false;
     if (cacheLevelBlock) {
       // case1: when CACHE_LEVEL = BLOCK
       return new BlockDataMap();
@@ -212,7 +211,9 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       BlockletDataMapIndexWrapper wrapper = cache.get(identifierWrapper);
       List<BlockDataMap> dataMaps = wrapper.getDataMaps();
       for (DataMap dataMap : dataMaps) {
-        if (((BlockDataMap) dataMap).getIndexFileName().startsWith(blocklet.getFilePath())) {
+        if (((BlockDataMap) dataMap)
+            .getTableTaskInfo(BlockletDataMapRowIndexes.SUMMARY_INDEX_FILE_NAME)
+            .startsWith(blocklet.getFilePath())) {
           return ((BlockDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
         }
       }

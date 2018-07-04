@@ -260,7 +260,6 @@ class SparkCarbonFileFormat extends FileFormat
         val prunedBlocklets = dataMapExprWrapper.prune(segments, null)
 
         val detailInfo = prunedBlocklets.get(0).getDetailInfo
-        detailInfo.readColumnSchema(detailInfo.getColumnSchemaBinary)
         split.setDetailInfo(detailInfo)
 
         val carbonReader = if (readVector) {

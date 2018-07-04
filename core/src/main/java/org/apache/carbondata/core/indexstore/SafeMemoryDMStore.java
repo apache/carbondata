@@ -39,10 +39,6 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
 
   private int runningLength;
 
-  public SafeMemoryDMStore(CarbonRowSchema[] schema) {
-    super(schema);
-  }
-
   /**
    * Add the index row to dataMapRows, basically to in memory.
    *
@@ -50,13 +46,13 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
    * @return
    */
   @Override
-  public void addIndexRow(DataMapRow indexRow) throws MemoryException {
+  public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) throws MemoryException {
     dataMapRows.add(indexRow);
     runningLength += indexRow.getTotalSizeInBytes();
   }
 
   @Override
-  public DataMapRow getDataMapRow(int index) {
+  public DataMapRow getDataMapRow(CarbonRowSchema[] schema, int index) {
     assert (index < dataMapRows.size());
     return dataMapRows.get(index);
   }
@@ -83,11 +79,13 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
   }
 
   @Override
-  public UnsafeMemoryDMStore convertToUnsafeDMStore() throws MemoryException {
-    setSchemaDataType();
-    UnsafeMemoryDMStore unsafeMemoryDMStore = new UnsafeMemoryDMStore(schema);
+  public UnsafeMemoryDMStore convertToUnsafeDMStore(CarbonRowSchema[] schema)
+      throws MemoryException {
+    setSchemaDataType(schema);
+    UnsafeMemoryDMStore unsafeMemoryDMStore = new UnsafeMemoryDMStore();
     for (DataMapRow dataMapRow : dataMapRows) {
-      unsafeMemoryDMStore.addIndexRow(dataMapRow);
+      dataMapRow.setSchemas(schema);
+      unsafeMemoryDMStore.addIndexRow(schema, dataMapRow);
     }
     unsafeMemoryDMStore.finishWriting();
     return unsafeMemoryDMStore;
@@ -96,7 +94,7 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
   /**
    * Set the dataType to the schema. Needed in case of serialization / deserialization
    */
-  private void setSchemaDataType() {
+  private void setSchemaDataType(CarbonRowSchema[] schema) {
     for (CarbonRowSchema carbonRowSchema : schema) {
       carbonRowSchema.setDataType(DataTypeUtil.valueOf(carbonRowSchema.getDataType(), 0, 0));
     }

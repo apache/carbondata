@@ -52,14 +52,9 @@ public interface BlockletDataMapRowIndexes {
 
   int TASK_MAX_VALUES_INDEX = 1;
 
-  int SUMMARY_SCHEMA = 2;
+  int SUMMARY_INDEX_FILE_NAME = 2;
 
-  int SUMMARY_INDEX_PATH = 3;
+  int SUMMARY_SEGMENTID = 3;
 
-  int SUMMARY_INDEX_FILE_NAME = 4;
-
-  int SUMMARY_SEGMENTID = 5;
-
-  int SUMMARY_BLOCKLET_COUNT = 6;
-
+  int SUMMARY_INDEX_PATH = 4;
 }

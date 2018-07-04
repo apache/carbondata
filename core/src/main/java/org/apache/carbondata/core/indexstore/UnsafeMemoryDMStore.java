@@ -47,8 +47,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
   private int rowCount;
 
-  public UnsafeMemoryDMStore(CarbonRowSchema[] schema) throws MemoryException {
-    super(schema);
+  public UnsafeMemoryDMStore() throws MemoryException {
     this.allocatedSize = capacity;
     this.memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, allocatedSize);
     this.pointers = new int[1000];
@@ -87,7 +86,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
    * @param indexRow
    * @return
    */
-  public void addIndexRow(DataMapRow indexRow) throws MemoryException {
+  public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) throws MemoryException {
     // First calculate the required memory to keep the row in unsafe
     int rowSize = indexRow.getTotalSizeInBytes();
     // Check whether allocated memory is sufficient or not.
@@ -176,7 +175,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     }
   }
 
-  public DataMapRow getDataMapRow(int index) {
+  public DataMapRow getDataMapRow(CarbonRowSchema[] schema, int index) {
     assert (index < rowCount);
     return new UnsafeDataMapRow(schema, memoryBlock, pointers[index]);
   }

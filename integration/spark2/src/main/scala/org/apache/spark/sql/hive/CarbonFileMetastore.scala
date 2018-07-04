@@ -37,6 +37,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.FileWriteOperation
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
@@ -491,6 +492,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       val tableIdentifier = TableIdentifier(tableName, Option(dbName))
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
       DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
+      SegmentPropertiesAndSchemaHolder.getInstance().invalidate(absoluteTableIdentifier)
     } else {
       if (!isTransactionalCarbonTable(absoluteTableIdentifier)) {
         removeTableFromMetadata(dbName, tableName)
@@ -499,6 +501,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         val tableIdentifier = TableIdentifier(tableName, Option(dbName))
         sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
         DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
+        SegmentPropertiesAndSchemaHolder.getInstance().invalidate(absoluteTableIdentifier)
       }
     }
   }
