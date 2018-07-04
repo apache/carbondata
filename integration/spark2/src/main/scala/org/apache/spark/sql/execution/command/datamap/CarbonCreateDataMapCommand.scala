@@ -115,13 +115,15 @@ case class CarbonCreateDataMapCommand(
         val operationContext: OperationContext = new OperationContext()
         val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
         val createDataMapPreExecutionEvent: CreateDataMapPreExecutionEvent =
-          new CreateDataMapPreExecutionEvent(sparkSession, systemFolderLocation)
+          new CreateDataMapPreExecutionEvent(sparkSession,
+            systemFolderLocation, tableIdentifier.get)
         OperationListenerBus.getInstance().fireEvent(createDataMapPreExecutionEvent,
           operationContext)
         dataMapProvider.initMeta(queryString.orNull)
         DataMapStatusManager.disableDataMap(dataMapName)
         val createDataMapPostExecutionEvent: CreateDataMapPostExecutionEvent =
-          new CreateDataMapPostExecutionEvent(sparkSession, systemFolderLocation)
+          new CreateDataMapPostExecutionEvent(sparkSession,
+            systemFolderLocation, tableIdentifier.get)
         OperationListenerBus.getInstance().fireEvent(createDataMapPostExecutionEvent,
           operationContext)
       case _ =>
@@ -145,12 +147,14 @@ case class CarbonCreateDataMapCommand(
           val operationContext: OperationContext = new OperationContext()
           val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
           val updateDataMapPreExecutionEvent: UpdateDataMapPreExecutionEvent =
-            new UpdateDataMapPreExecutionEvent(sparkSession, systemFolderLocation)
+            new UpdateDataMapPreExecutionEvent(sparkSession,
+              systemFolderLocation, tableIdentifier.get)
           OperationListenerBus.getInstance().fireEvent(updateDataMapPreExecutionEvent,
             operationContext)
           DataMapStatusManager.enableDataMap(dataMapName)
           val updateDataMapPostExecutionEvent: UpdateDataMapPostExecutionEvent =
-            new UpdateDataMapPostExecutionEvent(sparkSession, systemFolderLocation)
+            new UpdateDataMapPostExecutionEvent(sparkSession,
+              systemFolderLocation, tableIdentifier.get)
           OperationListenerBus.getInstance().fireEvent(updateDataMapPostExecutionEvent,
             operationContext)
         }

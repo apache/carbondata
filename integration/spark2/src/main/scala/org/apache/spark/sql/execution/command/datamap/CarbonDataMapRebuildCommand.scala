@@ -54,12 +54,16 @@ case class CarbonDataMapRebuildCommand(
     val operationContext: OperationContext = new OperationContext()
     val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
     val updateDataMapPreExecutionEvent: UpdateDataMapPreExecutionEvent =
-      new UpdateDataMapPreExecutionEvent(sparkSession, systemFolderLocation)
+      new UpdateDataMapPreExecutionEvent(sparkSession,
+        systemFolderLocation,
+        new TableIdentifier(table.getTableName, Some(table.getDatabaseName)))
     OperationListenerBus.getInstance().fireEvent(updateDataMapPreExecutionEvent,
       operationContext)
     DataMapStatusManager.enableDataMap(dataMapName)
     val updateDataMapPostExecutionEvent: UpdateDataMapPostExecutionEvent =
-      new UpdateDataMapPostExecutionEvent(sparkSession, systemFolderLocation)
+      new UpdateDataMapPostExecutionEvent(sparkSession,
+        systemFolderLocation,
+        new TableIdentifier(table.getTableName, Some(table.getDatabaseName)))
     OperationListenerBus.getInstance().fireEvent(updateDataMapPostExecutionEvent,
       operationContext)
     Seq.empty
