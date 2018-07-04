@@ -120,6 +120,40 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     throw new UnsupportedOperationException("not implemented");
   }
 
+  /**
+   * Get the datamap for all segments
+   */
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
+      throws IOException {
+    List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
+        new ArrayList<>();
+    Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
+    Map<String, Segment> segmentMap = new HashMap<>();
+    for (Segment segment : segments) {
+      segmentMap.put(segment.getSegmentNo(), segment);
+      Set<TableBlockIndexUniqueIdentifier> identifiers =
+          getTableBlockIndexUniqueIdentifiers(segment);
+
+      for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
+        tableBlockIndexUniqueIdentifierWrappers.add(
+            new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
+                this.getCarbonTable()));
+      }
+    }
+    List<BlockletDataMapIndexWrapper> blockletDataMapIndexWrappers =
+        cache.getAll(tableBlockIndexUniqueIdentifierWrappers);
+    for (BlockletDataMapIndexWrapper wrapper : blockletDataMapIndexWrappers) {
+      Segment segment = segmentMap.get(wrapper.getSegmentId());
+      List<CoarseGrainDataMap> datamapList = dataMaps.get(segment);
+      if (null == datamapList) {
+        datamapList = new ArrayList<CoarseGrainDataMap>();
+      }
+      datamapList.addAll(wrapper.getDataMaps());
+      dataMaps.put(segment, datamapList);
+    }
+    return dataMaps;
+  }
+
   @Override public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
     Set<TableBlockIndexUniqueIdentifier> identifiers =
