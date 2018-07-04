@@ -404,6 +404,35 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       sql(s"SELECT * FROM $normalTable WHERE starttime='2016-07-25 01:03:31.0'"))
   }
 
+  test("test bloom datamap: loading and querying with empty values on index column") {
+    sql(s"CREATE TABLE $normalTable(c1 string, c2 int, c3 string) STORED BY 'carbondata'")
+    sql(s"CREATE TABLE $bloomDMSampleTable(c1 string, c2 int, c3 string) STORED BY 'carbondata'")
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName on table $bloomDMSampleTable
+         | using 'bloomfilter'
+         | DMPROPERTIES('index_columns'='c1, c2')
+       """.stripMargin)
+
+    // load data with empty value
+    sql(s"INSERT INTO $normalTable SELECT '', 1, 'xxx'")
+    sql(s"INSERT INTO $bloomDMSampleTable SELECT '', 1, 'xxx'")
+    sql(s"INSERT INTO $normalTable SELECT '', null, 'xxx'")
+    sql(s"INSERT INTO $bloomDMSampleTable SELECT '', null, 'xxx'")
+
+    // query on null fields
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable"),
+      sql(s"SELECT * FROM $normalTable"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE c1 = null"),
+      sql(s"SELECT * FROM $normalTable WHERE c1 = null"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE c1 = ''"),
+      sql(s"SELECT * FROM $normalTable WHERE c1 = ''"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE isNull(c1)"),
+      sql(s"SELECT * FROM $normalTable WHERE isNull(c1)"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE isNull(c2)"),
+      sql(s"SELECT * FROM $normalTable WHERE isNull(c2)"))
+  }
+
   override def afterAll(): Unit = {
     deleteFile(bigFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
