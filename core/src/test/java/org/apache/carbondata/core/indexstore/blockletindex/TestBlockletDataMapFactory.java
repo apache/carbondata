@@ -103,7 +103,7 @@ public class TestBlockletDataMapFactory {
             BlockletDataMapIndexWrapper.class);
     method.setAccessible(true);
     method.invoke(blockletDataMapFactory, tableBlockIndexUniqueIdentifierWrapper,
-        new BlockletDataMapIndexWrapper(dataMaps));
+        new BlockletDataMapIndexWrapper(tableBlockIndexUniqueIdentifier.getSegmentId(), dataMaps));
     BlockletDataMapIndexWrapper result = cache.getIfPresent(tableBlockIndexUniqueIdentifierWrapper);
     assert null != result;
   }
