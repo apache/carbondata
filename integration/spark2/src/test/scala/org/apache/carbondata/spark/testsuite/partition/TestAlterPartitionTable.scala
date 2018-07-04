@@ -43,6 +43,9 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      // deactivating the merge-index for old partition implimentation because we are not supporting
+      // merge-index for the same currently.
+        .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,"false")
     /**
      * list_table_area_origin
      * list_table_area
@@ -891,6 +894,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
   }
 
   def dropTable {
