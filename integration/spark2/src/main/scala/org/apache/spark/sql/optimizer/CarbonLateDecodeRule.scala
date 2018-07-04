@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.profiler.{Optimizer, Profiler}
-import org.apache.spark.sql.types.{IntegerType, StringType}
+import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -90,12 +90,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         LOGGER.info("skip CarbonOptimizer for scalar/predicate sub query")
         return false
       }
-      if(relations.exists(_.dictionaryMap.dictionaryMap.exists(_._2))) {
-        true
-      } else {
-        false
-      }
-
+      true
     } else {
       LOGGER.info("skip CarbonOptimizer")
       false
@@ -678,7 +673,9 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         val updatedProj = ex.projections.map { projs =>
           projs.zipWithIndex.map { case(p, index) =>
             p.transform {
-              case l: Literal if l.dataType != ex.output(index).dataType =>
+              case l: Literal
+                if l.dataType != ex.output(index).dataType &&
+                   !isComplexColumn(ex.output(index), ex.child.output) =>
                 Literal(l.value, ex.output(index).dataType)
             }
           }
@@ -731,6 +728,24 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         allAttrsNotDecode = marker.revokeJoin()
         l
       case others => others
+    }
+  }
+
+  /**
+   * Check whether given column is derived from complex column.
+   */
+  def isComplexColumn(attribute: Attribute, output: Seq[Attribute]): Boolean = {
+    val attrName = attribute.name.replace("`", "")
+    output.exists { a =>
+      a.dataType match {
+        case s: StructType =>
+          s.fields.map(sf => a.name + "." + sf.name).exists(n => {
+            attrName.contains(n)
+          })
+        case ar : ArrayType =>
+          attrName.contains(a.name + "[")
+        case _ => false
+      }
     }
   }
 
