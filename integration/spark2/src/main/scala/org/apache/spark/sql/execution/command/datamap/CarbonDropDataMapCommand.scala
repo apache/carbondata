@@ -205,12 +205,12 @@ case class CarbonDropDataMapCommand(
         val operationContext: OperationContext = new OperationContext()
         val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
         val updateDataMapPreExecutionEvent: UpdateDataMapPreExecutionEvent =
-          UpdateDataMapPreExecutionEvent(sparkSession, systemFolderLocation)
+          UpdateDataMapPreExecutionEvent(sparkSession, systemFolderLocation, null)
         OperationListenerBus.getInstance().fireEvent(updateDataMapPreExecutionEvent,
           operationContext)
         DataMapStatusManager.dropDataMap(dataMapSchema.getDataMapName)
         val updateDataMapPostExecutionEvent: UpdateDataMapPostExecutionEvent =
-          UpdateDataMapPostExecutionEvent(sparkSession, systemFolderLocation)
+          UpdateDataMapPostExecutionEvent(sparkSession, systemFolderLocation, null)
         OperationListenerBus.getInstance().fireEvent(updateDataMapPostExecutionEvent,
           operationContext)
         // if it is indexDataMap provider like lucene, then call cleanData, which will launch a job

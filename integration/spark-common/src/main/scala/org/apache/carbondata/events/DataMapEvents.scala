@@ -18,6 +18,7 @@
 package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 
@@ -26,14 +27,16 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
  * example: bloom datamap, Lucene datamap
  */
 case class CreateDataMapPostExecutionEvent(sparkSession: SparkSession,
-    storePath: String) extends Event with CreateDataMapEventsInfo
+    storePath: String, tableIdentifier: TableIdentifier)
+  extends Event with CreateDataMapEventsInfo
 
 /**
  * For handling operation's before start of update index datmap status over table with index datamap
  * example: bloom datamap, Lucene datamap
  */
 case class UpdateDataMapPreExecutionEvent(sparkSession: SparkSession,
-    storePath: String) extends Event with CreateDataMapEventsInfo
+    storePath: String, tableIdentifier: TableIdentifier)
+  extends Event with CreateDataMapEventsInfo
 
 /**
  * For handling operation's after finish of  update index datmap status over table with index
@@ -41,7 +44,8 @@ case class UpdateDataMapPreExecutionEvent(sparkSession: SparkSession,
  * example: bloom datamap, Lucene datamap
  */
 case class UpdateDataMapPostExecutionEvent(sparkSession: SparkSession,
-    storePath: String) extends Event with CreateDataMapEventsInfo
+    storePath: String, tableIdentifier: TableIdentifier)
+  extends Event with CreateDataMapEventsInfo
 
 /**
  * For handling operation's before start of index build over table with index datamap
@@ -64,5 +68,6 @@ case class BuildDataMapPostExecutionEvent(sparkSession: SparkSession,
  * example: bloom datamap, Lucene datamap
  */
 case class CreateDataMapPreExecutionEvent(sparkSession: SparkSession,
-    storePath: String) extends Event with CreateDataMapEventsInfo
+    storePath: String, tableIdentifier: TableIdentifier)
+  extends Event with CreateDataMapEventsInfo
 
