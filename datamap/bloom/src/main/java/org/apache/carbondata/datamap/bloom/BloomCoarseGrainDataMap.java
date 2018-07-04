@@ -249,6 +249,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     byte[] internalFilterValue;
     if (carbonColumn.isMeasure()) {
       // for measures, the value is already the type, just convert it to bytes.
+      if (convertedValue == null) {
+        convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType());
+      }
       internalFilterValue = CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
     } else if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY) ||
         carbonColumn.hasEncoding(Encoding.DICTIONARY)) {

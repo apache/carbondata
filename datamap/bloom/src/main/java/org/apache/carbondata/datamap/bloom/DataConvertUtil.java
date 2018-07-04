@@ -17,7 +17,11 @@
 
 package org.apache.carbondata.datamap.bloom;
 
+import java.math.BigDecimal;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 public class DataConvertUtil {
   /**
@@ -38,5 +42,18 @@ public class DataConvertUtil {
     System.arraycopy(lvData, CarbonCommonConstants.INT_SIZE_IN_BYTE,
         indexValue, 0, lvData.length - CarbonCommonConstants.INT_SIZE_IN_BYTE);
     return indexValue;
+  }
+
+  /**
+   * return default null value based on datatype. This method refers to ColumnPage.putNull
+   */
+  public static Object getNullValueForMeasure(DataType dataType) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return false;
+    } else if (DataTypes.isDecimal(dataType)) {
+      return BigDecimal.ZERO;
+    } else {
+      return 0;
+    }
   }
 }

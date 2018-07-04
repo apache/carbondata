@@ -33,11 +33,8 @@ object BloomCoarseGrainDataMapTestUtil extends QueryTest {
   }
 
   private def checkSqlHitDataMap(sqlText: String, dataMapName: String, shouldHit: Boolean): DataFrame = {
-    if (shouldHit) {
-      assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isDataMapHit(sqlText, dataMapName))
-    } else {
-      assert(!sqlContext.sparkSession.asInstanceOf[CarbonSession].isDataMapHit(sqlText, dataMapName))
-    }
+    // we will not check whether the query will hit the datamap because datamap may be skipped
+    // if the former datamap pruned all the blocklets
     sql(sqlText)
   }
 
