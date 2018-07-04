@@ -20,9 +20,12 @@ package org.apache.carbondata.core.datamap.dev.expr;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
- * schema for datamap wrapper
+ * schema for datamap wrapper.
+ * Currently a DataMapWrapper contains more than one datamap, this class is used to describe its
+ * schema. For example a AndDataMapExprWrapper contains BloomFilter in its left and Lucene in
+ * its right, then its schema would be AND(BloomFilter, Lucene)
  */
-public class DataMapWrapperSchema {
+public class DataMapWrapperSimpleInfo {
   enum WrapperType {
     PRIMITIVE,
     AND,
@@ -30,32 +33,32 @@ public class DataMapWrapperSchema {
   }
 
   private WrapperType wrapperType;
-  private DataMapWrapperSchema left;
-  private DataMapWrapperSchema right;
+  private DataMapWrapperSimpleInfo left;
+  private DataMapWrapperSimpleInfo right;
   private DataMapSchema schema;
 
-  private DataMapWrapperSchema(WrapperType wrapperType, DataMapWrapperSchema left,
-      DataMapWrapperSchema right) {
+  private DataMapWrapperSimpleInfo(WrapperType wrapperType, DataMapWrapperSimpleInfo left,
+      DataMapWrapperSimpleInfo right) {
     this.wrapperType = wrapperType;
     this.left = left;
     this.right = right;
   }
 
-  private DataMapWrapperSchema(DataMapSchema schema) {
+  private DataMapWrapperSimpleInfo(DataMapSchema schema) {
     this.wrapperType = WrapperType.PRIMITIVE;
     this.schema = schema;
   }
 
-  public static DataMapWrapperSchema fromDataMapWrapper(DataMapExprWrapper dataMapExprWrapper) {
+  public static DataMapWrapperSimpleInfo fromDataMapWrapper(DataMapExprWrapper dataMapExprWrapper) {
     if (dataMapExprWrapper instanceof DataMapExprWrapperImpl) {
-      return new DataMapWrapperSchema(
+      return new DataMapWrapperSimpleInfo(
           ((DataMapExprWrapperImpl) dataMapExprWrapper).getDataMapSchema());
     } else if (dataMapExprWrapper instanceof AndDataMapExprWrapper) {
-      return new DataMapWrapperSchema(WrapperType.AND,
+      return new DataMapWrapperSimpleInfo(WrapperType.AND,
           fromDataMapWrapper(dataMapExprWrapper.getLeftDataMapWrapper()),
           fromDataMapWrapper(dataMapExprWrapper.getRightDataMapWrapprt()));
     } else {
-      return new DataMapWrapperSchema(WrapperType.OR,
+      return new DataMapWrapperSimpleInfo(WrapperType.OR,
           fromDataMapWrapper(dataMapExprWrapper.getLeftDataMapWrapper()),
           fromDataMapWrapper(dataMapExprWrapper.getRightDataMapWrapprt()));
     }

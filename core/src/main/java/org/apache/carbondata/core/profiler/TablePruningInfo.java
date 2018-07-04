@@ -18,7 +18,7 @@
 package org.apache.carbondata.core.profiler;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSchema;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
 
 /**
  * Used for EXPLAIN command
@@ -29,13 +29,13 @@ public class TablePruningInfo {
   private int totalBlocklets;
   private String filterStatement;
 
-  private DataMapWrapperSchema defaultDataMap;
+  private DataMapWrapperSimpleInfo defaultDataMap;
   private int numBlockletsAfterDefaultPruning;
 
-  private DataMapWrapperSchema cgDataMap;
+  private DataMapWrapperSimpleInfo cgDataMap;
   private int numBlockletsAfterCGPruning;
 
-  private DataMapWrapperSchema fgDataMap;
+  private DataMapWrapperSimpleInfo fgDataMap;
   private int numBlockletsAfterFGPruning;
 
   void addTotalBlocklets(int numBlocklets) {
@@ -46,19 +46,21 @@ public class TablePruningInfo {
     this.filterStatement = filterStatement;
   }
 
-  void setNumBlockletsAfterDefaultPruning(DataMapWrapperSchema dataMapWrapperSchema,
+  void setNumBlockletsAfterDefaultPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
       int numBlocklets) {
-    this.defaultDataMap = dataMapWrapperSchema;
+    this.defaultDataMap = dataMapWrapperSimpleInfo;
     this.numBlockletsAfterDefaultPruning = numBlocklets;
   }
 
-  void setNumBlockletsAfterCGPruning(DataMapWrapperSchema dataMapWrapperSchema, int numBlocklets) {
-    this.cgDataMap = dataMapWrapperSchema;
+  void setNumBlockletsAfterCGPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+      int numBlocklets) {
+    this.cgDataMap = dataMapWrapperSimpleInfo;
     this.numBlockletsAfterCGPruning = numBlocklets;
   }
 
-  void setNumBlockletsAfterFGPruning(DataMapWrapperSchema dataMapWrapperSchema, int numBlocklets) {
-    this.fgDataMap = dataMapWrapperSchema;
+  void setNumBlockletsAfterFGPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+      int numBlocklets) {
+    this.fgDataMap = dataMapWrapperSimpleInfo;
     this.numBlockletsAfterFGPruning = numBlocklets;
   }
 

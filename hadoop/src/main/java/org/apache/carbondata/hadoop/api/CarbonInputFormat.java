@@ -33,7 +33,7 @@ import org.apache.carbondata.core.datamap.DataMapJob;
 import org.apache.carbondata.core.datamap.DataMapUtil;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
-import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSchema;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -434,12 +434,13 @@ m filterExpression
     DataMapJob dataMapJob = DataMapUtil.getDataMapJob(job.getConfiguration());
     List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     // First prune using default datamap on driver side.
-    DataMapExprWrapper dataMapExprWrapper = DataMapChooser.getDefaultDataMap(
-        getOrCreateCarbonTable(job.getConfiguration()), resolver);
-    List<ExtendedBlocklet> prunedBlocklets = dataMapExprWrapper.prune(segmentIds,
-        partitionsToPrune);
-    ExplainCollector.recordDefaultDataMapPruning(dataMapExprWrapper.getDataMapSchema(),
-        prunedBlocklets.size());
+    DataMapExprWrapper dataMapExprWrapper = DataMapChooser
+        .getDefaultDataMap(getOrCreateCarbonTable(job.getConfiguration()), resolver);
+    List<ExtendedBlocklet> prunedBlocklets =
+        dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+
+    ExplainCollector.recordDefaultDataMapPruning(
+        DataMapWrapperSimpleInfo.fromDataMapWrapper(dataMapExprWrapper), prunedBlocklets.size());
     if (prunedBlocklets.size() == 0) {
       return prunedBlocklets;
     }
@@ -464,6 +465,8 @@ m filterExpression
       prunedBlocklets = (List) CollectionUtils.intersection(
           cgPrunedBlocklets, prunedBlocklets);
       ExplainCollector.recordCGDataMapPruning(
+          DataMapWrapperSimpleInfo.fromDataMapWrapper(cgDataMapExprWrapper),
+          prunedBlocklets.size());
           cgDataMapExprWrapper.getDataMapSchema(), prunedBlocklets.size());
     }
 
@@ -482,7 +485,7 @@ m filterExpression
         // 'prunedBlocklets', so the intersection should keep the elements in 'fgPrunedBlocklets'
         prunedBlocklets = (List) CollectionUtils.intersection(fgPrunedBlocklets,
             prunedBlocklets);
-        ExplainCollector.recordFGDataMapPruning(fgDataMapExprWrapper.getDataMapSchema(),
+        ExplainCollector.recordFGDataMapPruning(DataMapWrapperSimpleInfo.fromDataMapWrapper(),
             prunedBlocklets.size());
       }
     }
