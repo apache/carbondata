@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.command.schema
 
+import java.util
+
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
@@ -32,7 +34,7 @@ import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{AlterTableRenamePostEvent, AlterTableRenamePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.SchemaEvolutionEntry
@@ -81,6 +83,10 @@ private[sql] case class CarbonAlterTableRenameCommand(
     if (!oldCarbonTable.canAllow(oldCarbonTable, TableOperation.ALTER_RENAME)) {
       throw new MalformedCarbonCommandException("alter rename is not supported for index datamap")
     }
+    // if table have create mv datamap, not support table rename
+    if (CarbonTable.hasMVDataMap(oldCarbonTable)) {
+      throw new MalformedCarbonCommandException("alter rename is not supported for mv datamap")
+    }
 
     var timeStamp = 0L
     var carbonTable: CarbonTable = null
@@ -93,6 +99,15 @@ private[sql] case class CarbonAlterTableRenameCommand(
       // if any load is in progress for table, do not allow rename table
       if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
         throw new ConcurrentOperationException(carbonTable, "loading", "alter table rename")
+      }
+      // get the old table all data map schema
+      val dataMapSchemaList: util.List[DataMapSchema] = new util.ArrayList[DataMapSchema]()
+      if (carbonTable.hasDataMapSchema) {
+        dataMapSchemaList.addAll(carbonTable.getTableInfo.getDataMapSchemaList)
+      }
+      val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+      if (!indexSchemas.isEmpty) {
+        dataMapSchemaList.addAll(indexSchemas)
       }
       // invalid data map for the old table, see CARBON-1690
       val oldTableIdentifier = carbonTable.getAbsoluteTableIdentifier
@@ -135,6 +150,11 @@ private[sql] case class CarbonAlterTableRenameCommand(
         schemaEvolutionEntry,
         carbonTable.getTablePath)(sparkSession)
 
+      // Update the storage location with datamap schema
+      if (!dataMapSchemaList.isEmpty) {
+        DataMapStoreManager.getInstance().
+          updateDataMapSchema(dataMapSchemaList, newTableName)
+      }
       val alterTableRenamePostEvent: AlterTableRenamePostEvent = AlterTableRenamePostEvent(
         carbonTable,
         alterTableRenameModel,

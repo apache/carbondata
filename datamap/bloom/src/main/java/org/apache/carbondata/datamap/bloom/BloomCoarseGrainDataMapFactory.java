@@ -378,7 +378,26 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override public boolean willBecomeStale(TableOperation operation) {
-    return false;
+    switch (operation) {
+      case ALTER_RENAME:
+        return false;
+      case ALTER_DROP:
+        return true;
+      case ALTER_ADD_COLUMN:
+        return true;
+      case ALTER_CHANGE_DATATYPE:
+        return true;
+      case STREAMING:
+        return true;
+      case DELETE:
+        return true;
+      case UPDATE:
+        return true;
+      case PARTITION:
+        return true;
+      default:
+        return false;
+    }
   }
 
   @Override
