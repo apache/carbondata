@@ -467,7 +467,6 @@ m filterExpression
       ExplainCollector.recordCGDataMapPruning(
           DataMapWrapperSimpleInfo.fromDataMapWrapper(cgDataMapExprWrapper),
           prunedBlocklets.size());
-          cgDataMapExprWrapper.getDataMapSchema(), prunedBlocklets.size());
     }
 
     if (prunedBlocklets.size() == 0) {
@@ -485,7 +484,8 @@ m filterExpression
         // 'prunedBlocklets', so the intersection should keep the elements in 'fgPrunedBlocklets'
         prunedBlocklets = (List) CollectionUtils.intersection(fgPrunedBlocklets,
             prunedBlocklets);
-        ExplainCollector.recordFGDataMapPruning(DataMapWrapperSimpleInfo.fromDataMapWrapper(),
+        ExplainCollector.recordFGDataMapPruning(
+            DataMapWrapperSimpleInfo.fromDataMapWrapper(fgDataMapExprWrapper),
             prunedBlocklets.size());
       }
     }
