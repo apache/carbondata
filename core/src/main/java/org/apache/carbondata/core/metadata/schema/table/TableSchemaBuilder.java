@@ -54,7 +54,7 @@ public class TableSchemaBuilder {
 
   private List<ColumnSchema> measures = new LinkedList<>();
 
-  private Map<String, String> properties;
+  private Map<String, String> tableProperties;
 
   private int blockSize;
 
@@ -62,11 +62,11 @@ public class TableSchemaBuilder {
 
   private String tableName;
 
-  public TableSchemaBuilder properties(Map<String, String> properties) {
-    if (properties == null) {
+  public TableSchemaBuilder properties(Map<String, String> tableProperties) {
+    if (tableProperties == null) {
       throw new IllegalArgumentException("blockSize should not be null");
     }
-    this.properties = properties;
+    this.tableProperties = tableProperties;
     return this;
   }
 
@@ -107,17 +107,18 @@ public class TableSchemaBuilder {
     allColumns.addAll(measures);
     schema.setListOfColumns(allColumns);
 
-    if (properties == null) {
-      properties = new HashMap<>();
+    if (tableProperties == null) {
+      tableProperties = new HashMap<>();
     }
     if (blockSize > 0) {
-      properties.put(CarbonCommonConstants.TABLE_BLOCKSIZE, String.valueOf(blockSize));
+      tableProperties.put(CarbonCommonConstants.TABLE_BLOCKSIZE, String.valueOf(blockSize));
     }
     if (blockletSize > 0) {
-      properties.put(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, String.valueOf(blockletSize));
+      tableProperties.put(
+          CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, String.valueOf(blockletSize));
     }
-    if (properties.size() != 0) {
-      schema.setTableProperties(properties);
+    if (tableProperties.size() != 0) {
+      schema.setTableProperties(tableProperties);
     }
 
     return schema;

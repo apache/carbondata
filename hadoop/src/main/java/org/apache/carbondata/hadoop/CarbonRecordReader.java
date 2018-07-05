@@ -50,8 +50,6 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   protected QueryExecutor queryExecutor;
   private InputMetricsStats inputMetricsStats;
 
-  protected boolean isSearchMode = false;
-
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport,
       InputMetricsStats inputMetricsStats) {
     this(queryModel, readSupport);
@@ -122,10 +120,9 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
 
     // Clear the datamap cache
-    if (!isSearchMode) {
-      DataMapStoreManager.getInstance()
-          .clearDataMaps(queryModel.getTable().getAbsoluteTableIdentifier());
-    }
+    DataMapStoreManager.getInstance()
+        .clearDataMaps(queryModel.getTable().getAbsoluteTableIdentifier());
+
     // close read support
     readSupport.close();
     try {

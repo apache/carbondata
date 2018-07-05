@@ -68,7 +68,6 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 import org.apache.carbondata.store.conf.StoreConf;
 import org.apache.carbondata.store.exception.ExecutionTimeoutException;
 import org.apache.carbondata.store.exception.StoreException;
-import org.apache.carbondata.store.rest.controller.Horizon;
 import org.apache.carbondata.store.rpc.RegistryService;
 import org.apache.carbondata.store.rpc.ServiceFactory;
 import org.apache.carbondata.store.rpc.StoreService;
@@ -116,14 +115,6 @@ public class Master {
     cacheTables = new HashMap<>();
     this.conf = conf;
     this.hadoopConf = this.conf.newHadoopConf();
-  }
-
-  public void start() {
-    try {
-      startService();
-    } catch (IOException e) {
-      LOGGER.error(e, "master failed to start");
-    }
   }
 
   /**
@@ -259,7 +250,7 @@ public class Master {
       TableInfo tableInfo1 = schemaConverter.fromExternalToWrapperTableInfo(tableInfo, "", "", "");
       tableInfo1.setTablePath(tablePath);
       carbonTable = CarbonTable.buildFromTableInfo(tableInfo1);
-      cacheTables.put(tablePath, new SoftReference<CarbonTable>(carbonTable));
+      cacheTables.put(tablePath, new SoftReference<>(carbonTable));
       return carbonTable;
     } catch (IOException e) {
       String message = "Failed to get table from " + tablePath;
@@ -308,7 +299,7 @@ public class Master {
     }
   }
 
-  public void openSegment(CarbonLoadModel loadModel, boolean isOverwriteTable) throws IOException {
+  private void openSegment(CarbonLoadModel loadModel, boolean isOverwriteTable) throws IOException {
     try {
       CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, isOverwriteTable);
     } catch (IOException e) {
@@ -317,7 +308,7 @@ public class Master {
     }
   }
 
-  public void closeSegment(CarbonLoadModel loadModel) throws IOException {
+  private void closeSegment(CarbonLoadModel loadModel) throws IOException {
     try {
       CarbonLoaderUtil.updateTableStatusForFailure(loadModel, "");
     } catch (IOException e) {
@@ -326,7 +317,7 @@ public class Master {
     }
   }
 
-  public void commitSegment(CarbonLoadModel loadModel) throws IOException {
+  private void commitSegment(CarbonLoadModel loadModel) throws IOException {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String segmentId = loadModel.getSegmentId();
     String segmentFileName = SegmentFileStore
@@ -359,6 +350,9 @@ public class Master {
             break;
           }
         }
+        if (loadMetadataDetails == null) {
+          throw new IOException("can not find segment: " + segmentId);
+        }
 
         CarbonLoaderUtil.populateNewLoadMetaEntry(loadMetadataDetails, SegmentStatus.SUCCESS,
             loadModel.getFactTimeStamp(), true);
@@ -371,7 +365,6 @@ public class Master {
         LOGGER.error(
             "Not able to acquire the lock for Table status updation for table path " + tablePath);
       }
-      ;
     } finally {
       if (carbonLock.unlock()) {
         LOGGER.info("Table unlocked successfully after table status updation" + tablePath);
@@ -514,7 +507,7 @@ public class Master {
     return instance;
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
     if (args.length != 2) {
       System.err.println("Usage: Master <log4j file> <properties file>");
       return;
@@ -523,8 +516,7 @@ public class Master {
     StoreUtil.initLog4j(args[0]);
     StoreConf conf = new StoreConf(args[1]);
     Master master = getInstance(conf);
-    master.start();
-    Horizon.main(args);
+    master.stopService();
   }
 
 }

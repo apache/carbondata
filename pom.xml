@@ -583,6 +583,12 @@
       </build>
     </profile>
     <profile>
+      <id>horizon</id>
+      <modules>
+        <module>store/horizon</module>
+      </modules>
+    </profile>
+    <profile>
       <id>include-all</id>
     </profile>
     <profile>

@@ -59,6 +59,6 @@ public class OrExpression extends BinaryLogicalExpression {
 
   @Override
   public String getStatement() {
-    return "(" + left.getString() + " or " + right.getString() + ")";
+    return "(" + left.getStatement() + " or " + right.getStatement() + ")";
   }
 }

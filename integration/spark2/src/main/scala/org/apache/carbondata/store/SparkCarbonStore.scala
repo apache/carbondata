@@ -119,7 +119,7 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
     conf.conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort)
     conf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath)
     master = Master.getInstance(conf)
-    master.start()
+    master.startService()
     startAllWorkers()
   }
 
