@@ -516,10 +516,7 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     assert(df1(0).getString(0).contains("FG DataMap"))
     assert(df1(0).getString(0).contains(dataMapName1))
-    val e11 = intercept[Exception] {
-      assert(df1(0).getString(0).contains(dataMapName2))
-    }
-    assert(e11.getMessage.contains("did not contain \"" + dataMapName2))
+    assert(df1(0).getString(0).contains(dataMapName2))
 
     // make datamap1 invisible
     sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = false")
@@ -548,15 +545,12 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
 
     // make datamap1,datamap2 visible
     sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = true")
-    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = true")
+    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName2 = true")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
     val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     assert(df4(0).getString(0).contains(dataMapName1))
-    val e41 = intercept[Exception] {
-      assert(df3(0).getString(0).contains(dataMapName2))
-    }
-    assert(e41.getMessage.contains("did not contain \"" + dataMapName2))
+    assert(df4(0).getString(0).contains(dataMapName2))
   }
 
   override protected def afterAll(): Unit = {

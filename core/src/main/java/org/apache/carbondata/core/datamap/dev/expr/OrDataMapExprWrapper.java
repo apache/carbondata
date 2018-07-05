@@ -27,7 +27,6 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -109,7 +108,13 @@ public class OrDataMapExprWrapper implements DataMapExprWrapper {
     return left.getDataMapLevel();
   }
 
-  @Override public DataMapSchema getDataMapSchema() {
-    return left.getDataMapSchema();
+  @Override
+  public DataMapExprWrapper getLeftDataMapWrapper() {
+    return left;
+  }
+
+  @Override
+  public DataMapExprWrapper getRightDataMapWrapprt() {
+    return right;
   }
 }
