@@ -517,25 +517,19 @@ public final class CarbonUtil {
    * @param filterValues
    * @param low
    * @param high
-   * @param compareValue
    * @return the compareValue's index in the filterValues
    */
   public static int binarySearch(byte[][] filterValues, int low, int high,
-      byte[] compareValue) {
-
+      DimensionColumnPage dimensionColumnPage, int rowId) {
     rangeCheck(low, high);
-
     while (low <= high) {
       int mid = (low + high) >>> 1;
-
-      int result = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[mid], compareValue);
-
+      int result = dimensionColumnPage.compareTo(rowId, filterValues[mid]);
       if (result < 0) {
-        low = mid + 1;
-      } else if (result > 0) {
         high = mid - 1;
+      } else if (result > 0) {
+        low = mid + 1;
       } else {
-
         return mid; // key found
       }
 

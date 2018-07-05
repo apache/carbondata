@@ -132,7 +132,7 @@ class TableLevelCompactionOptionTest extends QueryTest
         |(id INT, name STRING, city STRING, age INT)
         |STORED BY 'org.apache.carbondata.format'
         |TBLPROPERTIES('SORT_COLUMNS'='city,name',
-        |'MAJOR_COMPACTION_SIZE'='1')
+        |'MAJOR_COMPACTION_SIZE'='1', 'LOCAL_DICTIONARY_ENABLE'='false')
       """.stripMargin)
 
     for (i <- 0 until 2) {

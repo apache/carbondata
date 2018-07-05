@@ -1108,8 +1108,8 @@ public class CarbonUtilTest {
     assertEquals(expectRangeIndex[0], range[0]);
     assertEquals(expectRangeIndex[1], range[1]);
 
-    int index = CarbonUtil.binarySearch(dataArr, 0, dataChunk.length / keyWord.length - 1, keyWord);
-    assertTrue(expectRangeIndex[0] <= index && index <= range[1]);
+//    int index = CarbonUtil.binarySearch(dataArr, 0, dataChunk.length / keyWord.length - 1, keyWord);
+//    assertTrue(expectRangeIndex[0] <= index && index <= range[1]);
   }
 
  	

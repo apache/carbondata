@@ -31,7 +31,7 @@ public class ExcludeFilterExecuterImplTest extends IncludeFilterExecuterImplTest
    if (filterValues.length > 1) {
      for (int j = 0; j < numerOfRows; j++) {
        int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
-           dimColumnDataChunk.getChunkData(j));
+           dimColumnDataChunk, j);
        if (index >= 0) {
          bitSet.flip(j);
        }

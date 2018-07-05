@@ -207,7 +207,7 @@ object DataMapWriterSuite {
           pages: Array[ColumnPage]): Unit = {
         assert(pages.length == 1)
         assert(pages(0).getDataType == DataTypes.STRING)
-        val bytes: Array[Byte] = pages(0).getByteArrayPage()(0)
+        val bytes: Array[Byte] = pages(0).getBytes(0)
         assert(bytes.sameElements(Seq(0, 1, 'b'.toByte)))
         callbackSeq :+= s"add page data: blocklet $blockletId, page $pageId"
       }
