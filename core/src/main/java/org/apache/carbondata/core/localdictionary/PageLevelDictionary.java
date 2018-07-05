@@ -17,8 +17,10 @@
 package org.apache.carbondata.core.localdictionary;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -54,12 +56,15 @@ public class PageLevelDictionary {
 
   private DataType dataType;
 
+  private  boolean isComplexTypePrimitive;
+
   public PageLevelDictionary(LocalDictionaryGenerator localDictionaryGenerator, String columnName,
-      DataType dataType) {
+      DataType dataType, boolean isComplexTypePrimitive) {
     this.localDictionaryGenerator = localDictionaryGenerator;
     this.usedDictionaryValues = new BitSet();
     this.columnName = columnName;
     this.dataType = dataType;
+    this.isComplexTypePrimitive = isComplexTypePrimitive;
   }
 
   /**
@@ -97,8 +102,12 @@ public class PageLevelDictionary {
       throws MemoryException, IOException {
     // TODO support for actual data type dictionary ColumnSPEC
     ColumnType columnType = ColumnType.PLAIN_VALUE;
+    boolean isVarcharType = false;
+    int lvSize = CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
     if (DataTypes.VARCHAR == dataType) {
       columnType = ColumnType.PLAIN_LONG_VALUE;
+      lvSize = CarbonCommonConstants.INT_SIZE_IN_BYTE;
+      isVarcharType = true;
     }
     TableSpec.ColumnSpec spec =
         TableSpec.ColumnSpec.newInstance(columnName, DataTypes.BYTE_ARRAY, columnType);
@@ -107,10 +116,23 @@ public class PageLevelDictionary {
     // TODO support data type specific stats collector for numeric data types
     dictionaryColumnPage.setStatsCollector(new DummyStatsCollector());
     int rowId = 0;
+    ByteBuffer byteBuffer = null;
     for (int i = usedDictionaryValues.nextSetBit(0);
          i >= 0; i = usedDictionaryValues.nextSetBit(i + 1)) {
-      dictionaryColumnPage
-          .putData(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(i));
+      if (!isComplexTypePrimitive) {
+        dictionaryColumnPage
+            .putData(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(i));
+      } else {
+        byte[] dictionaryKeyBasedOnValue = localDictionaryGenerator.getDictionaryKeyBasedOnValue(i);
+        byteBuffer = ByteBuffer.allocate(lvSize + dictionaryKeyBasedOnValue.length);
+        if (!isVarcharType) {
+          byteBuffer.putShort((short) dictionaryKeyBasedOnValue.length);
+        } else {
+          byteBuffer.putInt(dictionaryKeyBasedOnValue.length);
+        }
+        byteBuffer.put(dictionaryKeyBasedOnValue);
+        dictionaryColumnPage.putData(rowId++, byteBuffer.array());
+      }
     }
     // creating a encoder
     ColumnPageEncoder encoder = new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);

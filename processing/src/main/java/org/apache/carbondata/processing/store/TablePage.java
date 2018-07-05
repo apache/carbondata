@@ -113,7 +113,8 @@ public class TablePage {
           dataType = DataTypes.VARCHAR;
         }
         if (null != localDictionaryGenerator) {
-          page = ColumnPage.newLocalDictPage(spec, dataType, pageSize, localDictionaryGenerator);
+          page = ColumnPage
+              .newLocalDictPage(spec, dataType, pageSize, localDictionaryGenerator, false);
         } else {
           page = ColumnPage.newPage(spec, dataType, pageSize);
         }

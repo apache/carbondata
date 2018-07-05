@@ -1845,22 +1845,36 @@ public final class FilterUtil {
     }
   }
 
+  /**
+   * Below method will be called from include and exclude filter to convert filter values
+   * based on dictionary when local dictionary is present in blocklet.
+   * @param dictionary
+   * Dictionary
+   * @param actualFilterValues
+   * actual filter values
+   * @return encoded filter values
+   */
   public static byte[][] getEncodedFilterValues(CarbonDictionary dictionary,
       byte[][] actualFilterValues) {
     if (null == dictionary) {
       return actualFilterValues;
     }
-    KeyGenerator keyGenerator = KeyGeneratorFactory.getKeyGenerator(new int[] { 100000 });
+    KeyGenerator keyGenerator = KeyGeneratorFactory
+        .getKeyGenerator(new int[] { CarbonCommonConstants.LOCAL_DICTIONARY_MAX });
+    int[] dummy = new int[1];
     List<byte[]> encodedFilters = new ArrayList<>();
     for (byte[] actualFilter : actualFilterValues) {
-      for (int i = 1; i < dictionary.getDictionaryValues().length; i++) {
+      for (int i = 1; i < dictionary.getDictionarySize(); i++) {
+        if (dictionary.getDictionaryValue(i) == null) {
+          continue;
+        }
         if (ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(actualFilter, dictionary.getDictionaryValues()[i])
-            == 0) {
+            .compareTo(actualFilter, dictionary.getDictionaryValue(i)) == 0) {
           try {
-            encodedFilters.add(keyGenerator.generateKey(new int[] { i }));
+            dummy[0] = i;
+            encodedFilters.add(keyGenerator.generateKey(dummy));
           } catch (KeyGenException e) {
-            //do nothing
+            LOGGER.error(e);
           }
           break;
         }
@@ -1869,6 +1883,13 @@ public final class FilterUtil {
     return getSortedEncodedFilters(encodedFilters);
   }
 
+  /**
+   * Below method will be used to sort the filter values a filter are applied using incremental
+   * binary search
+   * @param encodedFilters
+   * encoded filter values
+   * @return sorted encoded filter values
+   */
   private static byte[][] getSortedEncodedFilters(List<byte[]> encodedFilters) {
     java.util.Comparator<byte[]> filterNoDictValueComaparator = new java.util.Comparator<byte[]>() {
       @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
@@ -1879,15 +1900,28 @@ public final class FilterUtil {
     return encodedFilters.toArray(new byte[encodedFilters.size()][]);
   }
 
-  private static BitSet getIncludeDictionaryValues(Expression expression,
+  /**
+   * Below method will be used to get all the include filter values in case of range filters when
+   * blocklet is encoded with local dictionary
+   * @param expression
+   * filter expression
+   * @param dictionary
+   * dictionary
+   * @return include filter bitset
+   * @throws FilterUnsupportedException
+   */
+  private static BitSet getIncludeDictFilterValuesForRange(Expression expression,
       CarbonDictionary dictionary) throws FilterUnsupportedException {
     ConditionalExpression conExp = (ConditionalExpression) expression;
     ColumnExpression columnExpression = conExp.getColumnList().get(0);
     BitSet includeFilterBitSet = new BitSet();
-    for (int i = 2; i < dictionary.getDictionaryValues().length; i++) {
+    for (int i = 2; i < dictionary.getDictionarySize(); i++) {
+      if (null == dictionary.getDictionaryValue(i)) {
+        continue;
+      }
       try {
         RowIntf row = new RowImpl();
-        String stringValue = new String(dictionary.getDictionaryValues()[i],
+        String stringValue = new String(dictionary.getDictionaryValue(i),
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
             columnExpression.getCarbonColumn().getDataType()) });
@@ -1904,8 +1938,21 @@ public final class FilterUtil {
     return includeFilterBitSet;
   }
 
-  public static byte[][] getEncodedFilterValues(BitSet includeDictValues, int dictSize,
-      boolean useExclude) {
+  /**
+   * Below method will used to get encoded filter values for range filter values
+   * when local dictionary is present in blocklet for columns
+   * If number of include filter is more than 60% of total dictionary size it will
+   * convert include to exclude
+   * @param includeDictValues
+   * include filter values
+   * @param carbonDictionary
+   * dictionary
+   * @param useExclude
+   * to check if using exclude will be more optimized
+   * @return encoded filter values
+   */
+  private static byte[][] getEncodedFilterValuesForRange(BitSet includeDictValues,
+      CarbonDictionary carbonDictionary, boolean useExclude) {
     KeyGenerator keyGenerator = KeyGeneratorFactory
         .getKeyGenerator(new int[] { CarbonCommonConstants.LOCAL_DICTIONARY_MAX });
     List<byte[]> encodedFilterValues = new ArrayList<>();
@@ -1918,38 +1965,50 @@ public final class FilterUtil {
           encodedFilterValues.add(keyGenerator.generateKey(dummy));
         }
       } catch (KeyGenException e) {
-        // do nothing
+        LOGGER.error(e);
       }
       return encodedFilterValues.toArray(new byte[encodedFilterValues.size()][]);
     } else {
       try {
-        for (int i = 1; i < dictSize; i++) {
-          if (!includeDictValues.get(i)) {
+        for (int i = 1; i < carbonDictionary.getDictionarySize(); i++) {
+          if (!includeDictValues.get(i) && null != carbonDictionary.getDictionaryValue(i)) {
             dummy[0] = i;
             encodedFilterValues.add(keyGenerator.generateKey(dummy));
           }
         }
       } catch (KeyGenException e) {
-        // do nothing
+        LOGGER.error(e);
       }
     }
     return getSortedEncodedFilters(encodedFilterValues);
   }
 
-  public static FilterExecuter getFilterExecutorForLocalDictionary(
+  /**
+   * Below method will be used to get filter executor instance for range filters
+   * when local dictonary is present for in blocklet
+   * @param rawColumnChunk
+   * raw column chunk
+   * @param exp
+   * filter expression
+   * @param isNaturalSorted
+   * is data was already sorted
+   * @return
+   */
+  public static FilterExecuter getFilterExecutorForRangeFilters(
       DimensionRawColumnChunk rawColumnChunk, Expression exp, boolean isNaturalSorted) {
     BitSet includeDictionaryValues;
     try {
       includeDictionaryValues =
-          FilterUtil.getIncludeDictionaryValues(exp, rawColumnChunk.getLocalDictionary());
+          FilterUtil.getIncludeDictFilterValuesForRange(exp, rawColumnChunk.getLocalDictionary());
     } catch (FilterUnsupportedException e) {
       throw new RuntimeException(e);
     }
     boolean isExclude = includeDictionaryValues.cardinality() > 1 && FilterUtil
-        .isExcludeFilterNeedsToApply(rawColumnChunk.getLocalDictionary().getDictionarySize(),
+        .isExcludeFilterNeedsToApply(rawColumnChunk.getLocalDictionary().getDictionaryActualSize(),
             includeDictionaryValues.cardinality());
-    byte[][] encodedFilterValues = FilterUtil.getEncodedFilterValues(includeDictionaryValues,
-        rawColumnChunk.getLocalDictionary().getDictionaryValues().length, isExclude);
+    byte[][] encodedFilterValues = FilterUtil
+        .getEncodedFilterValuesForRange(includeDictionaryValues,
+            rawColumnChunk.getLocalDictionary(), isExclude);
     FilterExecuter filterExecuter;
     if (!isExclude) {
       filterExecuter = new IncludeFilterExecuterImpl(encodedFilterValues, isNaturalSorted);

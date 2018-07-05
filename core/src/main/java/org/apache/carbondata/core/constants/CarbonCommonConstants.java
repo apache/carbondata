@@ -944,6 +944,16 @@ public final class CarbonCommonConstants {
   public static final String LOCAL_DICTIONARY_THRESHOLD_DEFAULT = "10000";
 
   /**
+   * max dictionary threshold
+   */
+  public static final int LOCAL_DICTIONARY_MAX = 100000;
+
+  /**
+   * min dictionary threshold
+   */
+  public static final int LOCAL_DICTIONARY_MIN = 1000;
+
+  /**
    * Table property to specify the columns for which local dictionary needs to be generated.
    */
   public static final String LOCAL_DICTIONARY_INCLUDE = "local_dictionary_include";

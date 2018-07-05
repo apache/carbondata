@@ -90,7 +90,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
     isRangeFullyCoverBlock = false;
     initDimensionChunkIndexes();
     ifDefaultValueMatchesFilter();
-    if (isDimensionPresentInCurrentBlock == true) {
+    if (isDimensionPresentInCurrentBlock) {
       isNaturalSorted = dimColEvaluatorInfo.getDimension().isUseInvertedIndex()
           && dimColEvaluatorInfo.getDimension().isSortColumn();
     }
@@ -373,7 +373,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
             if (null != rawColumnChunk.getLocalDictionary()) {
               if (null == filterExecuter) {
                 filterExecuter = FilterUtil
-                    .getFilterExecutorForLocalDictionary(rawColumnChunk, exp, isNaturalSorted);
+                    .getFilterExecutorForRangeFilters(rawColumnChunk, exp, isNaturalSorted);
                 if (filterExecuter instanceof ExcludeFilterExecuterImpl) {
                   isExclude = true;
                 }

@@ -234,7 +234,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       throws IOException, MemoryException {
     if (isEncodedWithMeta(pageMetadata)) {
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset);
-      return new ColumnPageWrapper(decodedPage);
+      return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary());
     } else {
       // following code is for backward compatibility
       return decodeDimensionLegacy(rawColumnPage, pageData, pageMetadata, offset);
@@ -265,21 +265,25 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
           CarbonUtil.getIntArray(pageData, offset, pageMetadata.rle_page_length);
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage,
-          eachColumnValueSize[rawColumnPage.getColumnIndex()]);
+          null == rawColumnPage.getLocalDictionary() ?
+              eachColumnValueSize[rawColumnPage.getColumnIndex()] :
+              3);
     }
 
     DimensionColumnPage columnDataChunk = null;
-
     // if no dictionary column then first create a no dictionary column chunk
     // and set to data chunk instance
     if (!hasEncoding(pageMetadata.encoders, Encoding.DICTIONARY)) {
       DimensionChunkStoreFactory.DimensionStoreType dimStoreType =
-          hasEncoding(pageMetadata.encoders, Encoding.DIRECT_COMPRESS_VARCHAR) ?
-              DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_INT_LENGTH :
-              DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_SHORT_LENGTH;
+          null != rawColumnPage.getLocalDictionary() ?
+              DimensionChunkStoreFactory.DimensionStoreType.LOCAL_DICT :
+              (hasEncoding(pageMetadata.encoders, Encoding.DIRECT_COMPRESS_VARCHAR) ?
+                  DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_INT_LENGTH :
+                  DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_SHORT_LENGTH);
       columnDataChunk =
           new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
-              pageMetadata.getNumberOfRowsInpage(), dimStoreType);
+              pageMetadata.getNumberOfRowsInpage(), dimStoreType,
+              rawColumnPage.getLocalDictionary());
     } else {
       // to store fixed length column chunk values
       columnDataChunk =
