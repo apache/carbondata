@@ -246,6 +246,7 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
     }
   }
 
+
   /**
    * Close the resources
    */

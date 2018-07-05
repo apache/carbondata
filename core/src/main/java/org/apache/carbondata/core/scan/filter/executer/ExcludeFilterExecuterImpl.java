@@ -297,8 +297,9 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   protected BitSet getFilteredIndexes(DimensionColumnPage dimensionColumnPage,
       int numberOfRows, boolean useBitsetPipeLine, BitSetGroup prvBitSetGroup, int pageNumber) {
     // check whether applying filtered based on previous bitset will be optimal
-    if (CarbonUtil.usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
-        filterValues.length)) {
+    if (filterValues.length > 0 && CarbonUtil
+        .usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
+            filterValues.length)) {
       return getFilteredIndexesUisngPrvBitset(dimensionColumnPage, prvBitSetGroup, pageNumber);
     } else {
       return getFilteredIndexes(dimensionColumnPage, numberOfRows);
@@ -366,6 +367,9 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       DimensionColumnPage dimensionColumnPage, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
+    if (filterValues.length == 0) {
+      return bitSet;
+    }
     int startIndex = 0;
     for (int i = 0; i < filterValues.length; i++) {
       if (startIndex >= numerOfRows) {

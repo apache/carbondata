@@ -233,7 +233,8 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
         fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
             CarbonScalaUtil.convertCarbonToSparkDataType(generator.getReturnType()), true, null);
       } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        if (dim.getDimension().getDataType() == DataTypes.STRING) {
+        if (dim.getDimension().getDataType() == DataTypes.STRING
+            || dim.getDimension().getDataType() == DataTypes.VARCHAR) {
           this.isNoDictStringField[dim.getOrdinal()] = true;
         }
         fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),

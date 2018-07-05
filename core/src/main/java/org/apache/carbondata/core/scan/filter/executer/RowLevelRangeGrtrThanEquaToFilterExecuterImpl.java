@@ -208,7 +208,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
               if (null != rawColumnChunk.getLocalDictionary()) {
                 if (null == filterExecuter) {
                   filterExecuter = FilterUtil
-                      .getFilterExecutorForLocalDictionary(rawColumnChunk, exp, isNaturalSorted);
+                      .getFilterExecutorForRangeFilters(rawColumnChunk, exp, isNaturalSorted);
                   if (filterExecuter instanceof ExcludeFilterExecuterImpl) {
                     isExclude = true;
                   }

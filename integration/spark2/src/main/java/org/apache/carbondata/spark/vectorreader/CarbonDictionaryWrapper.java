@@ -28,14 +28,9 @@ public class CarbonDictionaryWrapper extends Dictionary {
 
   public CarbonDictionaryWrapper(Encoding encoding, CarbonDictionary dictionary) {
     super(encoding);
-    byte[][] rleData = dictionary.getDictionaryValues();
-    if (rleData != null) {
-      binaries = new Binary[rleData.length];
-      binaries[0] =  Binary.fromReusedByteArray(new byte[0]);
-      binaries[1] =  Binary.fromReusedByteArray(new byte[0]);
-      for (int i = 2; i < rleData.length; i++) {
-        binaries[i] = Binary.fromReusedByteArray(rleData[i]);
-      }
+    binaries = new Binary[dictionary.getDictionarySize()];
+    for (int i = 0; i < binaries.length; i++) {
+      binaries[i] = Binary.fromReusedByteArray(dictionary.getDictionaryValue(i));
     }
   }
 

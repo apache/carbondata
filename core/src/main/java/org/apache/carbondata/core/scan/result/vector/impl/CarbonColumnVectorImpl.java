@@ -215,7 +215,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
       if (null != carbonDictionary) {
         int dictKey = (Integer) dictionaryVector.getData(rowId);
-        return carbonDictionary.getDictionaryValues()[dictKey];
+        return carbonDictionary.getDictionaryValue(dictKey);
       }
       return bytes[rowId];
     } else {

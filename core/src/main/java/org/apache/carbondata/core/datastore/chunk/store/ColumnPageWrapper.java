@@ -61,8 +61,8 @@ public class ColumnPageWrapper implements DimensionColumnPage {
   @Override
   public byte[] getChunkData(int rowId) {
     if (null != localDictionary) {
-      return localDictionary.getDictionaryValues()[CarbonUtil
-          .getSurrogateInternal(columnPage.getBytes(rowId), 0, 3)];
+      return localDictionary.getDictionaryValue(CarbonUtil
+          .getSurrogateInternal(columnPage.getBytes(rowId), 0, 3));
     }
     return columnPage.getBytes(rowId);
   }

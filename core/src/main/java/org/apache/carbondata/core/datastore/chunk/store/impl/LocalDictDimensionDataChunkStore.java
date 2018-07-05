@@ -50,7 +50,7 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
   }
 
   @Override public byte[] getRow(int rowId) {
-    return dictionary.getDictionaryValues()[dimensionDataChunkStore.getSurrogate(rowId)];
+    return dictionary.getDictionaryValue(dimensionDataChunkStore.getSurrogate(rowId));
   }
 
   @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {

@@ -18,11 +18,13 @@ package org.apache.carbondata.core.scan.result.vector;
 
 public interface CarbonDictionary  {
 
-  byte[][] getDictionaryValues();
+  int getDictionaryActualSize();
 
   int getDictionarySize();
 
   boolean isDictionaryUsed();
 
   void setDictionaryUsed();
+
+  byte[] getDictionaryValue(int index);
 }

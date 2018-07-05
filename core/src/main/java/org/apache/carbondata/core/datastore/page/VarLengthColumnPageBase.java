@@ -424,7 +424,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int offset = 0;
     byte[] data = new byte[totalLength];
     for (int rowId = 0; rowId < rowOffset.size() - 1; rowId++) {
-      short length = (short) (rowOffset.get(rowId + 1) - rowOffset.get(rowId));
+      int length =  (rowOffset.get(rowId + 1) - rowOffset.get(rowId));
       copyBytes(rowId, data, offset, length);
       offset += length;
     }
