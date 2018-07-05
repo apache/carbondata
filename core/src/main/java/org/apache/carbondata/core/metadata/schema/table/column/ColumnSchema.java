@@ -553,6 +553,7 @@ public class ColumnSchema implements Serializable, Writable {
         parentColumnTableRelations.get(i).write(out);
       }
     }
+    out.writeBoolean(isLocalDictColumn);
   }
 
   @Override
@@ -601,5 +602,6 @@ public class ColumnSchema implements Serializable, Writable {
         parentColumnTableRelations.add(parentColumnTableRelation);
       }
     }
+    this.isLocalDictColumn = in.readBoolean();
   }
 }

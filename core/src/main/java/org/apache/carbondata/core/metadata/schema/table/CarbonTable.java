@@ -378,7 +378,9 @@ public class CarbonTable implements Serializable {
     fillVisibleDimensions(tableSchema.getTableName());
     fillVisibleMeasures(tableSchema.getTableName());
     addImplicitDimension(dimensionOrdinal, implicitDimensions);
-
+    CarbonUtil.setLocalDictColumnsToWrapperSchema(tableSchema.getListOfColumns(),
+        tableSchema.getTableProperties(), tableSchema.getTableProperties()
+            .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE));
     dimensionOrdinalMax = dimensionOrdinal;
   }
 
