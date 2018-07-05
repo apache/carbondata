@@ -136,14 +136,36 @@ case class PreAggregateTableHelper(
         parentTable.getTableInfo.getFactTable.getTableProperties.asScala
           .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
             CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT))
-    tableProperties
-      .put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE,
-        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
-          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE, ""))
-    tableProperties
-      .put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE,
-        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
-          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, ""))
+    val parentDictInclude = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE, "").split(",")
+
+    val parentDictExclude = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, "").split(",")
+
+    val newDictInclude =
+      parentDictInclude.flatMap(parentcol =>
+        fields.collect {
+          case col if fieldRelationMap(col).aggregateFunction.isEmpty &&
+                      parentcol.equals(fieldRelationMap(col).
+                        columnTableRelationList.get.head.parentColumnName) =>
+            col.column
+        })
+
+    val newDictExclude = parentDictExclude.flatMap(parentcol =>
+      fields.collect {
+        case col if fieldRelationMap(col).aggregateFunction.isEmpty &&
+                    parentcol.equals(fieldRelationMap(col).
+                      columnTableRelationList.get.head.parentColumnName) =>
+          col.column
+      })
+    if (newDictInclude.nonEmpty) {
+      tableProperties
+        .put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE, newDictInclude.mkString(","))
+    }
+    if (newDictExclude.nonEmpty) {
+      tableProperties
+        .put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, newDictExclude.mkString(","))
+    }
     val tableIdentifier =
       TableIdentifier(parentTable.getTableName + "_" + dataMapName,
         Some(parentTable.getDatabaseName))
