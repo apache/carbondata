@@ -110,7 +110,7 @@ public class HorizonTest {
         .databaseName("default")
         .tableName("table_1")
         .overwrite(false)
-        .inputPath(projectFolder + "/store/horizon/src/main/resources/data1.csv")
+        .inputPath(projectFolder + "/store/horizon/src/test/resources/data1.csv")
         .options("header", "true")
         .create();
     String loadData =

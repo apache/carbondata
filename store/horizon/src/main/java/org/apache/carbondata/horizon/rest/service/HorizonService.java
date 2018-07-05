@@ -35,8 +35,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.horizon.antlr.ANTLRNoCaseStringStream;
 import org.apache.carbondata.horizon.antlr.FilterVisitor;
-import org.apache.carbondata.horizon.antlr.gen.SelectLexer;
-import org.apache.carbondata.horizon.antlr.gen.SelectParser;
+import org.apache.carbondata.horizon.antlr.gen.ExpressionLexer;
+import org.apache.carbondata.horizon.antlr.gen.ExpressionParser;
 import org.apache.carbondata.horizon.rest.model.descriptor.LoadDescriptor;
 import org.apache.carbondata.horizon.rest.model.descriptor.SelectDescriptor;
 import org.apache.carbondata.horizon.rest.model.descriptor.TableDescriptor;
@@ -145,10 +145,10 @@ public class HorizonService {
       return null;
     }
     CharStream input = new ANTLRNoCaseStringStream(filter);
-    SelectLexer lexer = new SelectLexer(input);
+    ExpressionLexer lexer = new ExpressionLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
-    SelectParser parser = new SelectParser(tokens);
-    SelectParser.ParseFilterContext tree = parser.parseFilter();
+    ExpressionParser parser = new ExpressionParser(tokens);
+    ExpressionParser.ParseFilterContext tree = parser.parseFilter();
     FilterVisitor visitor = new FilterVisitor(carbonTable);
     return visitor.visitParseFilter(tree);
   }

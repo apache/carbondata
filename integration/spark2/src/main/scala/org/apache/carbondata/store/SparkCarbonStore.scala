@@ -184,7 +184,7 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
         }
         conf.conf(StoreConf.STORE_TEMP_LOCATION, storeLocation)
 
-        val worker = new Worker(new StoreConf());
+        val worker = new Worker(conf)
         worker.start()
         new Iterator[Int] {
           override def hasNext: Boolean = false

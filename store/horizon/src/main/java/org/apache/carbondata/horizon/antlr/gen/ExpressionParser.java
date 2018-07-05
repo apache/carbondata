@@ -1,4 +1,4 @@
-// Generated from /home/david/Documents/code/carbondata/store/core/src/main/anltr/Select.g4 by ANTLR 4.7
+// Generated from /home/david/Documents/code/carbondata/store/horizon/src/main/anltr/Expression.g4 by ANTLR 4.7
 package org.apache.carbondata.horizon.antlr.gen;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
@@ -6,9 +6,11 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.*;
 import org.antlr.v4.runtime.tree.*;
 import java.util.List;
+import java.util.Iterator;
+import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
-public class SelectParser extends Parser {
+public class ExpressionParser extends Parser {
 	static { RuntimeMetaData.checkVersion("4.7", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
@@ -75,7 +77,7 @@ public class SelectParser extends Parser {
 	}
 
 	@Override
-	public String getGrammarFileName() { return "Select.g4"; }
+	public String getGrammarFileName() { return "Expression.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
@@ -86,7 +88,7 @@ public class SelectParser extends Parser {
 	@Override
 	public ATN getATN() { return _ATN; }
 
-	public SelectParser(TokenStream input) {
+	public ExpressionParser(TokenStream input) {
 		super(input);
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
@@ -94,14 +96,14 @@ public class SelectParser extends Parser {
 		public BooleanExpressionContext booleanExpression() {
 			return getRuleContext(BooleanExpressionContext.class,0);
 		}
-		public TerminalNode EOF() { return getToken(SelectParser.EOF, 0); }
+		public TerminalNode EOF() { return getToken(ExpressionParser.EOF, 0); }
 		public ParseFilterContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_parseFilter; }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitParseFilter(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitParseFilter(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -142,15 +144,15 @@ public class SelectParser extends Parser {
 		public BooleanExpressionContext booleanExpression(int i) {
 			return getRuleContext(BooleanExpressionContext.class,i);
 		}
-		public TerminalNode AND() { return getToken(SelectParser.AND, 0); }
-		public TerminalNode OR() { return getToken(SelectParser.OR, 0); }
+		public TerminalNode AND() { return getToken(ExpressionParser.AND, 0); }
+		public TerminalNode OR() { return getToken(ExpressionParser.OR, 0); }
 		public BooleanExpressionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_booleanExpression; }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitBooleanExpression(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitBooleanExpression(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -264,19 +266,19 @@ public class SelectParser extends Parser {
 		public PrimaryExpressionContext primaryExpression(int i) {
 			return getRuleContext(PrimaryExpressionContext.class,i);
 		}
-		public TerminalNode BETWEEN() { return getToken(SelectParser.BETWEEN, 0); }
-		public TerminalNode AND() { return getToken(SelectParser.AND, 0); }
-		public TerminalNode NOT() { return getToken(SelectParser.NOT, 0); }
-		public TerminalNode IN() { return getToken(SelectParser.IN, 0); }
-		public TerminalNode IS() { return getToken(SelectParser.IS, 0); }
-		public TerminalNode NULL() { return getToken(SelectParser.NULL, 0); }
+		public TerminalNode BETWEEN() { return getToken(ExpressionParser.BETWEEN, 0); }
+		public TerminalNode AND() { return getToken(ExpressionParser.AND, 0); }
+		public TerminalNode NOT() { return getToken(ExpressionParser.NOT, 0); }
+		public TerminalNode IN() { return getToken(ExpressionParser.IN, 0); }
+		public TerminalNode IS() { return getToken(ExpressionParser.IS, 0); }
+		public TerminalNode NULL() { return getToken(ExpressionParser.NULL, 0); }
 		public PredicateContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_predicate; }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitPredicate(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitPredicate(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -423,7 +425,7 @@ public class SelectParser extends Parser {
 		public DereferenceContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitDereference(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitDereference(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -434,7 +436,7 @@ public class SelectParser extends Parser {
 		public ConstantDefaultContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitConstantDefault(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitConstantDefault(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -445,7 +447,7 @@ public class SelectParser extends Parser {
 		public ColumnReferenceContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitColumnReference(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitColumnReference(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -456,7 +458,7 @@ public class SelectParser extends Parser {
 		public ParenthesizedExpressionContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitParenthesizedExpression(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitParenthesizedExpression(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -533,23 +535,23 @@ public class SelectParser extends Parser {
 		}
 	}
 	public static class NullLiteralContext extends ConstantContext {
-		public TerminalNode NULL() { return getToken(SelectParser.NULL, 0); }
+		public TerminalNode NULL() { return getToken(ExpressionParser.NULL, 0); }
 		public NullLiteralContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitNullLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitNullLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class StringLiteralContext extends ConstantContext {
-		public List<TerminalNode> STRING() { return getTokens(SelectParser.STRING); }
+		public List<TerminalNode> STRING() { return getTokens(ExpressionParser.STRING); }
 		public TerminalNode STRING(int i) {
-			return getToken(SelectParser.STRING, i);
+			return getToken(ExpressionParser.STRING, i);
 		}
 		public StringLiteralContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitStringLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitStringLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -560,7 +562,7 @@ public class SelectParser extends Parser {
 		public NumericLiteralContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitNumericLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitNumericLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -571,7 +573,7 @@ public class SelectParser extends Parser {
 		public BooleanLiteralContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitBooleanLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitBooleanLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -669,20 +671,20 @@ public class SelectParser extends Parser {
 		}
 	}
 	public static class BackQuotedIdentifierContext extends IdentifierContext {
-		public TerminalNode BACKQUOTED_IDENTIFIER() { return getToken(SelectParser.BACKQUOTED_IDENTIFIER, 0); }
+		public TerminalNode BACKQUOTED_IDENTIFIER() { return getToken(ExpressionParser.BACKQUOTED_IDENTIFIER, 0); }
 		public BackQuotedIdentifierContext(IdentifierContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitBackQuotedIdentifier(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitBackQuotedIdentifier(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class UnquotedIdentifierContext extends IdentifierContext {
-		public TerminalNode IDENTIFIER() { return getToken(SelectParser.IDENTIFIER, 0); }
+		public TerminalNode IDENTIFIER() { return getToken(ExpressionParser.IDENTIFIER, 0); }
 		public UnquotedIdentifierContext(IdentifierContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitUnquotedIdentifier(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitUnquotedIdentifier(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -726,19 +728,19 @@ public class SelectParser extends Parser {
 	}
 
 	public static class ComparisonOperatorContext extends ParserRuleContext {
-		public TerminalNode EQ() { return getToken(SelectParser.EQ, 0); }
-		public TerminalNode NEQ() { return getToken(SelectParser.NEQ, 0); }
-		public TerminalNode LT() { return getToken(SelectParser.LT, 0); }
-		public TerminalNode LTE() { return getToken(SelectParser.LTE, 0); }
-		public TerminalNode GT() { return getToken(SelectParser.GT, 0); }
-		public TerminalNode GTE() { return getToken(SelectParser.GTE, 0); }
+		public TerminalNode EQ() { return getToken(ExpressionParser.EQ, 0); }
+		public TerminalNode NEQ() { return getToken(ExpressionParser.NEQ, 0); }
+		public TerminalNode LT() { return getToken(ExpressionParser.LT, 0); }
+		public TerminalNode LTE() { return getToken(ExpressionParser.LTE, 0); }
+		public TerminalNode GT() { return getToken(ExpressionParser.GT, 0); }
+		public TerminalNode GTE() { return getToken(ExpressionParser.GTE, 0); }
 		public ComparisonOperatorContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_comparisonOperator; }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitComparisonOperator(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitComparisonOperator(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -774,15 +776,15 @@ public class SelectParser extends Parser {
 	}
 
 	public static class BooleanValueContext extends ParserRuleContext {
-		public TerminalNode TRUE() { return getToken(SelectParser.TRUE, 0); }
-		public TerminalNode FALSE() { return getToken(SelectParser.FALSE, 0); }
+		public TerminalNode TRUE() { return getToken(ExpressionParser.TRUE, 0); }
+		public TerminalNode FALSE() { return getToken(ExpressionParser.FALSE, 0); }
 		public BooleanValueContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_booleanValue; }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitBooleanValue(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitBooleanValue(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -829,72 +831,72 @@ public class SelectParser extends Parser {
 		}
 	}
 	public static class DecimalLiteralContext extends NumberContext {
-		public TerminalNode DECIMAL_VALUE() { return getToken(SelectParser.DECIMAL_VALUE, 0); }
-		public TerminalNode MINUS() { return getToken(SelectParser.MINUS, 0); }
+		public TerminalNode DECIMAL_VALUE() { return getToken(ExpressionParser.DECIMAL_VALUE, 0); }
+		public TerminalNode MINUS() { return getToken(ExpressionParser.MINUS, 0); }
 		public DecimalLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitDecimalLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitDecimalLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class BigIntLiteralContext extends NumberContext {
-		public TerminalNode BIGINT_LITERAL() { return getToken(SelectParser.BIGINT_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(SelectParser.MINUS, 0); }
+		public TerminalNode BIGINT_LITERAL() { return getToken(ExpressionParser.BIGINT_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(ExpressionParser.MINUS, 0); }
 		public BigIntLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitBigIntLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitBigIntLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class TinyIntLiteralContext extends NumberContext {
-		public TerminalNode TINYINT_LITERAL() { return getToken(SelectParser.TINYINT_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(SelectParser.MINUS, 0); }
+		public TerminalNode TINYINT_LITERAL() { return getToken(ExpressionParser.TINYINT_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(ExpressionParser.MINUS, 0); }
 		public TinyIntLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitTinyIntLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitTinyIntLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class BigDecimalLiteralContext extends NumberContext {
-		public TerminalNode BIGDECIMAL_LITERAL() { return getToken(SelectParser.BIGDECIMAL_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(SelectParser.MINUS, 0); }
+		public TerminalNode BIGDECIMAL_LITERAL() { return getToken(ExpressionParser.BIGDECIMAL_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(ExpressionParser.MINUS, 0); }
 		public BigDecimalLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitBigDecimalLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitBigDecimalLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class DoubleLiteralContext extends NumberContext {
-		public TerminalNode DOUBLE_LITERAL() { return getToken(SelectParser.DOUBLE_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(SelectParser.MINUS, 0); }
+		public TerminalNode DOUBLE_LITERAL() { return getToken(ExpressionParser.DOUBLE_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(ExpressionParser.MINUS, 0); }
 		public DoubleLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitDoubleLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitDoubleLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class IntegerLiteralContext extends NumberContext {
-		public TerminalNode INTEGER_VALUE() { return getToken(SelectParser.INTEGER_VALUE, 0); }
-		public TerminalNode MINUS() { return getToken(SelectParser.MINUS, 0); }
+		public TerminalNode INTEGER_VALUE() { return getToken(ExpressionParser.INTEGER_VALUE, 0); }
+		public TerminalNode MINUS() { return getToken(ExpressionParser.MINUS, 0); }
 		public IntegerLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitIntegerLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitIntegerLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class SmallIntLiteralContext extends NumberContext {
-		public TerminalNode SMALLINT_LITERAL() { return getToken(SelectParser.SMALLINT_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(SelectParser.MINUS, 0); }
+		public TerminalNode SMALLINT_LITERAL() { return getToken(ExpressionParser.SMALLINT_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(ExpressionParser.MINUS, 0); }
 		public SmallIntLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SelectVisitor ) return ((SelectVisitor<? extends T>)visitor).visitSmallIntLiteral(this);
+			if ( visitor instanceof ExpressionVisitor ) return ((ExpressionVisitor<? extends T>)visitor).visitSmallIntLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}

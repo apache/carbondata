@@ -39,10 +39,10 @@ import org.apache.carbondata.core.scan.expression.conditional.NotInExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.scan.expression.logical.RangeExpression;
-import org.apache.carbondata.horizon.antlr.gen.SelectBaseVisitor;
-import org.apache.carbondata.horizon.antlr.gen.SelectParser;
+import org.apache.carbondata.horizon.antlr.gen.ExpressionBaseVisitor;
+import org.apache.carbondata.horizon.antlr.gen.ExpressionParser;
 
-public class FilterVisitor extends SelectBaseVisitor<Expression> {
+public class FilterVisitor extends ExpressionBaseVisitor<Expression> {
 
   private CarbonTable carbonTable;
 
@@ -62,11 +62,13 @@ public class FilterVisitor extends SelectBaseVisitor<Expression> {
     return new ColumnExpression(column.getColName(), column.getDataType());
   }
 
-  @Override public Expression visitParseFilter(SelectParser.ParseFilterContext ctx) {
+  @Override
+  public Expression visitParseFilter(ExpressionParser.ParseFilterContext ctx) {
     return visitBooleanExpression(ctx.booleanExpression());
   }
 
-  @Override public Expression visitBooleanExpression(SelectParser.BooleanExpressionContext ctx) {
+  @Override
+  public Expression visitBooleanExpression(ExpressionParser.BooleanExpressionContext ctx) {
     if (ctx.AND() != null) {
       return new AndExpression(visitBooleanExpression(ctx.left), visitBooleanExpression(ctx.right));
     } else if (ctx.OR() != null) {
@@ -80,8 +82,9 @@ public class FilterVisitor extends SelectBaseVisitor<Expression> {
     return super.visitBooleanExpression(ctx);
   }
 
-  @Override public Expression visitPredicate(SelectParser.PredicateContext ctx) {
-    SelectParser.ComparisonOperatorContext comparision = ctx.comparisonOperator();
+  @Override
+  public Expression visitPredicate(ExpressionParser.PredicateContext ctx) {
+    ExpressionParser.ComparisonOperatorContext comparision = ctx.comparisonOperator();
     if (comparision != null) {
       if (comparision.EQ() != null) {
         return new EqualToExpression(visit(ctx.left), visit(ctx.right));
@@ -107,9 +110,9 @@ public class FilterVisitor extends SelectBaseVisitor<Expression> {
       }
     } else if (ctx.IN() != null) {
       List<Expression> listExpression = new ArrayList<Expression>();
-      List<SelectParser.PrimaryExpressionContext> primaryExpressionContexts =
+      List<ExpressionParser.PrimaryExpressionContext> primaryExpressionContexts =
           ctx.primaryExpression();
-      for (SelectParser.PrimaryExpressionContext primary : primaryExpressionContexts) {
+      for (ExpressionParser.PrimaryExpressionContext primary : primaryExpressionContexts) {
         if (ctx.left != primary) {
           listExpression.add(visit(primary));
         }
@@ -124,49 +127,58 @@ public class FilterVisitor extends SelectBaseVisitor<Expression> {
         return new EqualToExpression(
             visit(ctx.left), new LiteralExpression(null, DataTypes.STRING), true);
       } else {
-        return new NotEqualsExpression(
-            visit(ctx.left), new LiteralExpression(null, DataTypes.STRING), true);
+        return new NotEqualsExpression(visit(ctx.left),
+            new LiteralExpression(null, DataTypes.STRING), true);
       }
     }
     return super.visitPredicate(ctx);
   }
 
-  @Override public Expression visitNullLiteral(SelectParser.NullLiteralContext ctx) {
+  @Override
+  public Expression visitNullLiteral(ExpressionParser.NullLiteralContext ctx) {
     return null;
   }
 
-  @Override public Expression visitDecimalLiteral(SelectParser.DecimalLiteralContext ctx) {
+  @Override
+  public Expression visitDecimalLiteral(ExpressionParser.DecimalLiteralContext ctx) {
     return new LiteralExpression(new BigDecimal(ctx.getText()),
         DataTypes.createDefaultDecimalType());
   }
 
-  @Override public Expression visitIntegerLiteral(SelectParser.IntegerLiteralContext ctx) {
+  @Override
+  public Expression visitIntegerLiteral(ExpressionParser.IntegerLiteralContext ctx) {
     return new LiteralExpression(Integer.parseInt(ctx.getText()), DataTypes.INT);
   }
 
-  @Override public Expression visitBigIntLiteral(SelectParser.BigIntLiteralContext ctx) {
+  @Override
+  public Expression visitBigIntLiteral(ExpressionParser.BigIntLiteralContext ctx) {
     return new LiteralExpression(Long.parseLong(ctx.getText()), DataTypes.LONG);
   }
 
-  @Override public Expression visitSmallIntLiteral(SelectParser.SmallIntLiteralContext ctx) {
+  @Override
+  public Expression visitSmallIntLiteral(ExpressionParser.SmallIntLiteralContext ctx) {
     return new LiteralExpression(Short.parseShort(ctx.getText()), DataTypes.SHORT);
   }
 
-  @Override public Expression visitTinyIntLiteral(SelectParser.TinyIntLiteralContext ctx) {
+  @Override
+  public Expression visitTinyIntLiteral(ExpressionParser.TinyIntLiteralContext ctx) {
     return new LiteralExpression(Short.parseShort(ctx.getText()), DataTypes.SHORT);
   }
 
-  @Override public Expression visitDoubleLiteral(SelectParser.DoubleLiteralContext ctx) {
+  @Override
+  public Expression visitDoubleLiteral(ExpressionParser.DoubleLiteralContext ctx) {
     return new LiteralExpression(Double.parseDouble(ctx.getText()), DataTypes.DOUBLE);
   }
 
-  @Override public Expression visitBigDecimalLiteral(SelectParser.BigDecimalLiteralContext ctx) {
+  @Override
+  public Expression visitBigDecimalLiteral(ExpressionParser.BigDecimalLiteralContext ctx) {
     return new LiteralExpression(new BigDecimal(ctx.getText()),
         DataTypes.createDefaultDecimalType());
   }
 
-  @Override public Expression visitBooleanLiteral(SelectParser.BooleanLiteralContext ctx) {
-    SelectParser.BooleanValueContext booleanValueContext = ctx.booleanValue();
+  @Override
+  public Expression visitBooleanLiteral(ExpressionParser.BooleanLiteralContext ctx) {
+    ExpressionParser.BooleanValueContext booleanValueContext = ctx.booleanValue();
     if (booleanValueContext.FALSE() != null) {
       return new LiteralExpression(false, DataTypes.BOOLEAN);
     } else {
@@ -174,11 +186,13 @@ public class FilterVisitor extends SelectBaseVisitor<Expression> {
     }
   }
 
-  @Override public Expression visitStringLiteral(SelectParser.StringLiteralContext ctx) {
+  @Override
+  public Expression visitStringLiteral(ExpressionParser.StringLiteralContext ctx) {
     return new LiteralExpression(ctx.getText(), DataTypes.STRING);
   }
 
-  @Override public Expression visitUnquotedIdentifier(SelectParser.UnquotedIdentifierContext ctx) {
+  @Override
+  public Expression visitUnquotedIdentifier(ExpressionParser.UnquotedIdentifierContext ctx) {
     return getColumnExpression(ctx.getText());
   }
 
@@ -187,11 +201,12 @@ public class FilterVisitor extends SelectBaseVisitor<Expression> {
   }
 
   @Override
-  public Expression visitBackQuotedIdentifier(SelectParser.BackQuotedIdentifierContext ctx) {
+  public Expression visitBackQuotedIdentifier(ExpressionParser.BackQuotedIdentifierContext ctx) {
     return getColumnExpression(identifier(ctx.getText()));
   }
 
-  @Override public Expression visitDereference(SelectParser.DereferenceContext ctx) {
+  @Override
+  public Expression visitDereference(ExpressionParser.DereferenceContext ctx) {
     String tableName = identifier(ctx.base.getText());
     String columnName = identifier(ctx.fieldName.getText());
     return getColumnExpression(tableName, columnName);

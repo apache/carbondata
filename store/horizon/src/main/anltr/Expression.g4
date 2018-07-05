@@ -14,8 +14,7 @@
  * copy from SqlBase.g4 of Presto and Spark.
  */
 
-
-grammar Select;
+grammar Expression;
 
 parseFilter
  : booleanExpression EOF
