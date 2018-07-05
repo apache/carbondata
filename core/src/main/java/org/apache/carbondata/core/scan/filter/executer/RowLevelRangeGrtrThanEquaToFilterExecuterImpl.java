@@ -191,6 +191,8 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       DimensionRawColumnChunk rawColumnChunk =
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
       BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
+      FilterExecuter filterExecuter = null;
+      boolean isExclude = false;
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMaxValues() != null) {
           if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues)) {
@@ -201,8 +203,31 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
               bitSet.flip(0, rawColumnChunk.getRowCount()[i]);
               bitSetGroup.setBitSet(bitSet, i);
             } else {
-              BitSet bitSet = getFilteredIndexes(rawColumnChunk.decodeColumnPage(i),
-                  rawColumnChunk.getRowCount()[i]);
+              DimensionColumnPage dimensionColumnPage = rawColumnChunk.decodeColumnPage(i);
+              BitSet bitSet = null;
+              if (null != rawColumnChunk.getLocalDictionary()) {
+                if (null == filterExecuter) {
+                  filterExecuter = FilterUtil
+                      .getFilterExecutorForLocalDictionary(rawColumnChunk, exp, isNaturalSorted);
+                  if (filterExecuter instanceof ExcludeFilterExecuterImpl) {
+                    isExclude = true;
+                  }
+                }
+                if (!isExclude) {
+                  bitSet = ((IncludeFilterExecuterImpl) filterExecuter)
+                      .getFilteredIndexes(dimensionColumnPage,
+                          rawColumnChunk.getRowCount()[i], useBitsetPipeLine,
+                          rawBlockletColumnChunks.getBitSetGroup(), i);
+                } else {
+                  bitSet = ((ExcludeFilterExecuterImpl) filterExecuter)
+                      .getFilteredIndexes(dimensionColumnPage,
+                          rawColumnChunk.getRowCount()[i], useBitsetPipeLine,
+                          rawBlockletColumnChunks.getBitSetGroup(), i);
+                }
+              } else {
+                bitSet = getFilteredIndexes(dimensionColumnPage,
+                    rawColumnChunk.getRowCount()[i]);
+              }
               bitSetGroup.setBitSet(bitSet, i);
             }
           }

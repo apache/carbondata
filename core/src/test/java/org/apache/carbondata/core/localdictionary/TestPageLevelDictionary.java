@@ -29,7 +29,7 @@ public class TestPageLevelDictionary {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
     PageLevelDictionary pageLevelDictionary = new PageLevelDictionary(generator, columnName,
-        DataTypes.STRING);
+        DataTypes.STRING, false);
     try {
       for (int i = 1; i <= 1000; i++) {
         Assert.assertTrue((i + 1) == pageLevelDictionary.getDictionaryValue(("" + i).getBytes()));
@@ -43,7 +43,7 @@ public class TestPageLevelDictionary {
   @Test public void testPageLevelDictionaryContainsOnlyUsedDictionaryValues() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
-    PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(generator, columnName, DataTypes.STRING);
+    PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(generator, columnName, DataTypes.STRING, false);
     byte[][] validateData = new byte[500][];
     try {
       for (int i = 1; i <= 500; i++) {
@@ -58,7 +58,7 @@ public class TestPageLevelDictionary {
     } catch (DictionaryThresholdReachedException e) {
       Assert.assertTrue(false);
     }
-    PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(generator, columnName, DataTypes.STRING);
+    PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(generator, columnName, DataTypes.STRING, false);
     try {
       for (int i = 1; i <= 500; i++) {
         byte[] data = ("vikas" + i).getBytes();
@@ -95,7 +95,7 @@ public class TestPageLevelDictionary {
   public void testPageLevelDictionaryContainsOnlyUsedDictionaryValuesWhenMultiplePagesUseSameDictionary() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
-    PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(generator, columnName, DataTypes.STRING);
+    PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(generator, columnName, DataTypes.STRING, false);
     byte[][] validateData = new byte[10][];
     int index = 0;
     try {
@@ -112,7 +112,7 @@ public class TestPageLevelDictionary {
     } catch (DictionaryThresholdReachedException e) {
       Assert.assertTrue(false);
     }
-    PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(generator, columnName, DataTypes.STRING);
+    PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(generator, columnName, DataTypes.STRING, false);
     try {
       for (int i = 1; i <= 5; i++) {
         byte[] data = ("vikas" + i).getBytes();
