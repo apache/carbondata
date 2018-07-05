@@ -802,11 +802,6 @@ object RenameTablePreListener extends OperationEventListener {
       throw new UnsupportedOperationException(
         "Rename operation is not supported for table with pre-aggregate tables")
     }
-    val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-    if (!indexSchemas.isEmpty) {
-      throw new UnsupportedOperationException(
-        "Rename operation is not supported for table with datamaps")
-    }
   }
 }
 

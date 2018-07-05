@@ -108,8 +108,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     for (DataMapSchema dataMapSchema : this.dataMapSchemas) {
       List<RelationIdentifier> parentTables = dataMapSchema.getParentTables();
       for (RelationIdentifier identifier : parentTables) {
-        if (identifier.getTableName().equalsIgnoreCase(carbonTable.getTableName()) &&
-            identifier.getDatabaseName().equalsIgnoreCase(carbonTable.getDatabaseName())) {
+        if (identifier.getTableId().equalsIgnoreCase(carbonTable.getTableId())) {
           dataMapSchemas.add(dataMapSchema);
           break;
         }

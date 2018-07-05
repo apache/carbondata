@@ -60,6 +60,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
 /**
@@ -472,6 +473,13 @@ public class CarbonTable implements Serializable {
    */
   public String getTableName() {
     return tableInfo.getFactTable().getTableName();
+  }
+
+  /**
+   * @return the tabelId
+   */
+  public String getTableId() {
+    return tableInfo.getFactTable().getTableId();
   }
 
   /**
@@ -1206,5 +1214,21 @@ public class CarbonTable implements Serializable {
       }
     }
     return cachedColsList;
+  }
+
+  /**
+   * Return true if MV datamap present in the specified table
+   * @param carbonTable
+   * @return timeseries data map present
+   */
+  public static boolean hasMVDataMap(CarbonTable carbonTable) throws IOException {
+    List<DataMapSchema> dataMapSchemaList = DataMapStoreManager.getInstance()
+        .getDataMapSchemasOfTable(carbonTable);
+    for (DataMapSchema dataMapSchema : dataMapSchemaList) {
+      if (dataMapSchema.getProviderName().equalsIgnoreCase(MV.toString())) {
+        return true;
+      }
+    }
+    return false;
   }
 }

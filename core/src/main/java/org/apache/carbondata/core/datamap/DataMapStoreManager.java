@@ -50,6 +50,9 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
+import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
+import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
+
 /**
  * It maintains all the DataMaps in it.
  */
@@ -125,9 +128,8 @@ public final class DataMapStoreManager {
     if (dataMapSchemas != null) {
       for (DataMapSchema dataMapSchema : dataMapSchemas) {
         RelationIdentifier identifier = dataMapSchema.getParentTables().get(0);
-        if (dataMapSchema.isIndexDataMap() && identifier.getTableName()
-            .equals(carbonTable.getTableName()) && identifier.getDatabaseName()
-            .equals(carbonTable.getDatabaseName())) {
+        if (dataMapSchema.isIndexDataMap() && identifier.getTableId()
+            .equals(carbonTable.getTableId())) {
           dataMaps.add(getDataMap(carbonTable, dataMapSchema));
         }
       }
@@ -170,6 +172,49 @@ public final class DataMapStoreManager {
    */
   public void dropDataMapSchema(String dataMapName) throws IOException {
     provider.dropSchema(dataMapName);
+  }
+
+  /**
+   * Update the datamap schema after table rename
+   * This should be invoked after changing table name
+   * @param dataMapSchemaList
+   * @param newTableName
+   */
+  public void updateDataMapSchema(List<DataMapSchema> dataMapSchemaList,
+      String newTableName) throws IOException {
+    List<DataMapSchema> newDataMapSchemas = new ArrayList<>();
+    for (DataMapSchema dataMapSchema : dataMapSchemaList) {
+      RelationIdentifier relationIdentifier = dataMapSchema.getRelationIdentifier();
+      String dataBaseName =  relationIdentifier.getDatabaseName();
+      String tableId = relationIdentifier.getTableId();
+      String providerName = dataMapSchema.getProviderName();
+      // if the preaggregate datamap,not be modified the schema
+      if (providerName.equalsIgnoreCase(PREAGGREGATE.toString())) {
+        continue;
+      }
+      // if the mv datamap,not be modified the relationIdentifier
+      if (!providerName.equalsIgnoreCase(MV.toString())) {
+        RelationIdentifier newRelationIdentifier = new RelationIdentifier(dataBaseName,
+            newTableName, tableId);
+        dataMapSchema.setRelationIdentifier(newRelationIdentifier);
+      }
+      List<RelationIdentifier> newParentTables = new ArrayList<>();
+      List<RelationIdentifier> parentTables = dataMapSchema.getParentTables();
+      for (RelationIdentifier identifier : parentTables) {
+        RelationIdentifier newParentTableIdentifier = new RelationIdentifier(
+            identifier.getDatabaseName(), newTableName, identifier.getTableId());
+        newParentTables.add(newParentTableIdentifier);
+      }
+      dataMapSchema.setParentTables(newParentTables);
+      newDataMapSchemas.add(dataMapSchema);
+      // frist drop old schema
+      String dataMapName = dataMapSchema.getDataMapName();
+      dropDataMapSchema(dataMapName);
+    }
+    // save new datamap schema to storage
+    for (DataMapSchema newDataMapSchema : newDataMapSchemas) {
+      saveDataMapSchema(newDataMapSchema);
+    }
   }
 
   /**
