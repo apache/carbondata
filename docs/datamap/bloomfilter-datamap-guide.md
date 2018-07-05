@@ -87,8 +87,6 @@ inside each segment folders.
 
 
 ## Querying Data
-A system level configuration `carbon.query.datamap.bloom.cache.size` can used to enhance query performance with BloomFilter datamap by providing a cache for the bloomfilter index files.
-The default value is `512` and its unit is `MB`. Internally the cache will be expired after it's idle for 2 hours.
 
 User can verify whether a query can leverage BloomFilter datamap by executing `EXPLAIN` command,
 which will show the transformed logical plan, and thus user can check whether the BloomFilter datamap can skip blocklets during the scan.
