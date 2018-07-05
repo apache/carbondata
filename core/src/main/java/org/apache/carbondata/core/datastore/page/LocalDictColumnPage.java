@@ -22,10 +22,13 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
-import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * Column page implementation for Local dictionary generated columns
@@ -61,19 +64,26 @@ public class LocalDictColumnPage extends ColumnPage {
    */
   private boolean isActualPageMemoryFreed;
 
+  private KeyGenerator keyGenerator;
+
+  private int[] dummyKey;
   /**
    * Create a new column page with input data type and page size.
    */
   protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnpage,
-      LocalDictionaryGenerator localDictionaryGenerator) {
+      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive) {
     super(actualDataColumnPage.getColumnSpec(), actualDataColumnPage.getDataType(),
         actualDataColumnPage.getPageSize());
     // if threshold is not reached then create page level dictionary
     // for encoding with local dictionary
     if (!localDictionaryGenerator.isThresholdReached()) {
       pageLevelDictionary = new PageLevelDictionary(localDictionaryGenerator,
-          actualDataColumnPage.getColumnSpec().getFieldName(), actualDataColumnPage.getDataType());
+          actualDataColumnPage.getColumnSpec().getFieldName(), actualDataColumnPage.getDataType(),
+          isComplexTypePrimitive);
       this.encodedDataColumnPage = encodedColumnpage;
+      this.keyGenerator = KeyGeneratorFactory
+          .getKeyGenerator(new int[] { CarbonCommonConstants.LOCAL_DICTIONARY_MAX + 1 });
+      this.dummyKey = new int[1];
     } else {
       // else free the encoded column page memory as its of no use
       encodedColumnpage.freeMemory();
@@ -109,14 +119,18 @@ public class LocalDictColumnPage extends ColumnPage {
     if (null != pageLevelDictionary) {
       try {
         actualDataColumnPage.putBytes(rowId, bytes);
-        int dictionaryValue = pageLevelDictionary.getDictionaryValue(bytes);
-        encodedDataColumnPage.putBytes(rowId, ByteUtil.toBytes(dictionaryValue));
+        dummyKey[0] = pageLevelDictionary.getDictionaryValue(bytes);
+        encodedDataColumnPage.putBytes(rowId, keyGenerator.generateKey(dummyKey));
       } catch (DictionaryThresholdReachedException e) {
         LOGGER.error(e, "Local Dictionary threshold reached for the column: " + actualDataColumnPage
             .getColumnSpec().getFieldName());
         pageLevelDictionary = null;
         encodedDataColumnPage.freeMemory();
         encodedDataColumnPage = null;
+      } catch (KeyGenException e) {
+        LOGGER.error(e, "Unable to generate key for: " + actualDataColumnPage
+            .getColumnSpec().getFieldName());
+        throw new RuntimeException(e);
       }
     } else {
       actualDataColumnPage.putBytes(rowId, bytes);

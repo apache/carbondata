@@ -318,8 +318,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   protected BitSet getFilteredIndexes(DimensionColumnPage dimensionColumnPage,
       int numberOfRows, boolean useBitsetPipeLine, BitSetGroup prvBitSetGroup, int pageNumber) {
     // check whether previous indexes can be optimal to apply filter on dimension column
-    if (CarbonUtil.usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
-        filterValues.length)) {
+    if (filterValues.length > 0 && CarbonUtil
+        .usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
+            filterValues.length)) {
       return getFilteredIndexesUisngPrvBitset(dimensionColumnPage, prvBitSetGroup, pageNumber,
           numberOfRows);
     } else {
@@ -379,6 +380,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
       DimensionColumnPage dimensionColumnPage, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
+    if (filterValues.length == 0) {
+      return bitSet;
+    }
     int startIndex = 0;
     for (int i = 0; i < filterValues.length; i++) {
       if (startIndex >= numerOfRows) {
@@ -400,6 +404,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   private BitSet setFilterdIndexToBitSet(DimensionColumnPage dimensionColumnPage,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
+    if (filterValues.length == 0) {
+      return bitSet;
+    }
     // binary search can only be applied if column is sorted and
     // inverted index exists for that column
     if (isNaturalSorted) {

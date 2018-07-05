@@ -83,7 +83,7 @@ public class ComplexColumnPage {
         TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
             .newInstance(columnNames.get(i), DataTypes.BYTE_ARRAY, complexColumnType.get(i));
         this.columnPages[i] = ColumnPage
-            .newLocalDictPage(spec, DataTypes.BYTE_ARRAY, pageSize, localDictionaryGenerator);
+            .newLocalDictPage(spec, DataTypes.BYTE_ARRAY, pageSize, localDictionaryGenerator, true);
         this.columnPages[i].setStatsCollector(new DummyStatsCollector());
       }
     }

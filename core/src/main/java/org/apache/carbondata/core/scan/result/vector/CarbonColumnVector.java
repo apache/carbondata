@@ -57,6 +57,10 @@ public interface CarbonColumnVector {
 
   void putNulls(int rowId, int count);
 
+  void putNotNull(int rowId);
+
+  void putNotNull(int rowId, int count);
+
   boolean isNull(int rowId);
 
   void putObject(int rowId, Object obj);
@@ -82,5 +86,12 @@ public interface CarbonColumnVector {
   void setBlockDataType(DataType blockDataType);
 
   void setFilteredRowsExist(boolean filteredRowsExist);
+
+
+  void setDictionary(CarbonDictionary dictionary);
+
+  boolean hasDictionary();
+
+  CarbonColumnVector getDictionaryVector();
 
 }

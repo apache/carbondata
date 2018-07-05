@@ -163,15 +163,16 @@ public abstract class ColumnPage {
   }
 
   public static ColumnPage newLocalDictPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
-      int pageSize, LocalDictionaryGenerator localDictionaryGenerator) throws MemoryException {
+      int pageSize, LocalDictionaryGenerator localDictionaryGenerator,
+      boolean isComplexTypePrimitive) throws MemoryException {
     if (unsafe) {
       return new LocalDictColumnPage(new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize),
           new UnsafeVarLengthColumnPage(columnSpec, DataTypes.BYTE_ARRAY, pageSize),
-          localDictionaryGenerator);
+          localDictionaryGenerator, isComplexTypePrimitive);
     } else {
       return new LocalDictColumnPage(new SafeVarLengthColumnPage(columnSpec, dataType, pageSize),
           new SafeVarLengthColumnPage(columnSpec, DataTypes.BYTE_ARRAY, pageSize),
-          localDictionaryGenerator);
+          localDictionaryGenerator, isComplexTypePrimitive);
     }
   }
 

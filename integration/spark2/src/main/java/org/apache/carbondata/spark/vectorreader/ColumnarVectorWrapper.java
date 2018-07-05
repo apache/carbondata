@@ -21,8 +21,10 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
+import org.apache.parquet.column.Encoding;
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.types.Decimal;
 
@@ -38,9 +40,15 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private DataType blockDataType;
 
+  private CarbonColumnVector dictionaryVector;
+
   ColumnarVectorWrapper(ColumnVector columnVector, boolean[] filteredRows) {
     this.columnVector = columnVector;
     this.filteredRows = filteredRows;
+    if (columnVector.getDictionaryIds() != null) {
+      this.dictionaryVector =
+          new ColumnarVectorWrapper(columnVector.getDictionaryIds(), filteredRows);
+    }
   }
 
   @Override public void putBoolean(int rowId, boolean value) {
@@ -188,6 +196,25 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
+  @Override public void putNotNull(int rowId) {
+    if (!filteredRows[rowId]) {
+      columnVector.putNotNull(counter++);
+    }
+  }
+
+  @Override public void putNotNull(int rowId, int count) {
+    if (filteredRowsExist) {
+      for (int i = 0; i < count; i++) {
+        if (!filteredRows[rowId]) {
+          columnVector.putNotNull(counter++);
+        }
+        rowId++;
+      }
+    } else {
+      columnVector.putNotNulls(rowId, count);
+    }
+  }
+
   @Override public boolean isNull(int rowId) {
     return columnVector.isNullAt(rowId);
   }
@@ -204,6 +231,9 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   @Override public void reset() {
     counter = 0;
     filteredRowsExist = false;
+    if (null != dictionaryVector) {
+      dictionaryVector.reset();
+    }
   }
 
   @Override public DataType getType() {
@@ -222,5 +252,21 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
     this.filteredRowsExist = filteredRowsExist;
+  }
+
+  @Override public void setDictionary(CarbonDictionary dictionary) {
+    if (dictionary == null) {
+      columnVector.setDictionary(null);
+    } else {
+      columnVector.setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary));
+    }
+  }
+
+  @Override public boolean hasDictionary() {
+    return columnVector.hasDictionary();
+  }
+
+  @Override public CarbonColumnVector getDictionaryVector() {
+    return dictionaryVector;
   }
 }
