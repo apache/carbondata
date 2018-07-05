@@ -26,8 +26,10 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
@@ -213,6 +215,7 @@ public class CarbonReaderBuilder {
         RecordReader reader = format.createRecordReader(split, attempt);
         try {
           reader.initialize(split, attempt);
+          ((CarbonRecordReader)reader).setSdkQueryExecutor(true);
           readers.add(reader);
         } catch (Exception e) {
           reader.close();

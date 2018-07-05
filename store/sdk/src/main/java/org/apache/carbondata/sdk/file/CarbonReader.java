@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.scan.executor.impl.SDKDetailQueryExecutor;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
@@ -121,6 +122,7 @@ public class CarbonReader<T> {
    */
   public void close() throws IOException {
     validateReader();
+    SDKDetailQueryExecutor.shutdownThreadPool();
     this.currentReader.close();
     this.initialise = false;
   }

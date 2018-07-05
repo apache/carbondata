@@ -1749,6 +1749,14 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_MODE_SCAN_THREAD = "carbon.search.scan.thread";
 
   /**
+   * The size of thread pool used for reading files in Work for CarbonReader. By default,
+   * it is number of cores in Worker
+   */
+  @CarbonProperty
+  @InterfaceStability.Unstable
+  public static final String CARBON_READER_THREAD = "carbon.reader.thread";
+
+  /**
    * In search mode, Master will listen on this port for worker registration.
    * If Master failed to start service with this port, it will try to increment the port number
    * and try to bind again, until it is success

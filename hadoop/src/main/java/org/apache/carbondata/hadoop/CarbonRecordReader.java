@@ -92,6 +92,10 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
   }
 
+  public void setSdkQueryExecutor(boolean enableSdkQueryExecutor) {
+    queryModel.enableSdkQueryExecutor(enableSdkQueryExecutor);
+  }
+
   @Override public boolean nextKeyValue() {
     return carbonIterator.hasNext();
   }

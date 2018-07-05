@@ -18,6 +18,7 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ public class BlockletDataMapIndexStore
    */
   protected CarbonLRUCache lruCache;
 
+  Map<String, Map<String, BlockMetaInfo>> segInfoCache;
   /**
    * map of block info to lock object map, while loading the btree this will be filled
    * and removed after loading the tree for that particular block info, this will be useful
@@ -81,8 +83,16 @@ public class BlockletDataMapIndexStore
         SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
         Set<String> filesRead = new HashSet<>();
         String segmentFilePath = identifier.getIndexFilePath();
-        Map<String, BlockMetaInfo> carbonDataFileBlockMetaInfoMapping = BlockletDataMapUtil
-            .createCarbonDataFileBlockMetaInfoMapping(segmentFilePath);
+        if (segInfoCache == null) {
+          segInfoCache = new HashMap<String, Map<String, BlockMetaInfo>>();
+        }
+        Map<String, BlockMetaInfo> carbonDataFileBlockMetaInfoMapping =
+            segInfoCache.get(segmentFilePath);
+        if (carbonDataFileBlockMetaInfoMapping == null) {
+          carbonDataFileBlockMetaInfoMapping = BlockletDataMapUtil
+              .createCarbonDataFileBlockMetaInfoMapping(segmentFilePath);
+          segInfoCache.put(segmentFilePath, carbonDataFileBlockMetaInfoMapping);
+        }
         // if the identifier is not a merge file we can directly load the datamaps
         if (identifier.getMergeIndexFileName() == null) {
           Map<String, BlockMetaInfo> blockMetaInfoMap = BlockletDataMapUtil

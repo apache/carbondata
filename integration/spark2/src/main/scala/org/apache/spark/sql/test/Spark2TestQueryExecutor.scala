@@ -45,7 +45,6 @@ object Spark2TestQueryExecutor {
   CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
 
-
   import org.apache.spark.sql.CarbonSession._
 
   val conf = new SparkConf()

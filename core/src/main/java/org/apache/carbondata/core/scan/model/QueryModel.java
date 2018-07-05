@@ -87,6 +87,8 @@ public class QueryModel {
 
   private DataTypeConverter converter;
 
+  private boolean ENABLE_SDK_QUERY_EXECUTOR;
+
   /**
    * Invalid table blocks, which need to be removed from
    * memory, invalid blocks can be segment which are deleted
@@ -381,6 +383,14 @@ public class QueryModel {
 
   public void setFG(boolean FG) {
     isFG = FG;
+  }
+
+  public boolean isSdkQueryExecutorEnabled() {
+    return ENABLE_SDK_QUERY_EXECUTOR;
+  }
+
+  public void enableSdkQueryExecutor(boolean ENABLE_SDK_QUERY_EXECUTOR) {
+    this.ENABLE_SDK_QUERY_EXECUTOR = ENABLE_SDK_QUERY_EXECUTOR;
   }
 
   @Override

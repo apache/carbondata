@@ -1470,5 +1470,5 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     sql(s"""drop table if exists uniqdata""").collect
-     }
+  }
 }
