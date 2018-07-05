@@ -150,8 +150,6 @@ public abstract class BlockletScannedResult {
 
   protected QueryStatisticsModel queryStatisticsModel;
 
-  private boolean isNewScanResult = true;
-
   public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
@@ -747,13 +745,5 @@ public abstract class BlockletScannedResult {
 
   public String getBlockletNumber() {
     return blockletNumber;
-  }
-
-  public boolean isNewScanResult() {
-    return isNewScanResult;
-  }
-
-  public void setNewScanResultFalse() {
-    isNewScanResult = false;
   }
 }

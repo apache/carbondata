@@ -86,11 +86,4 @@ public class CarbonColumnarBatch {
       }
     }
   }
-
-  public void resetDictionary() {
-    for (CarbonColumnVector columnVector : columnVectors) {
-      columnVector.setDictionary(null);
-    }
-  }
-
 }

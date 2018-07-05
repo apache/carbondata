@@ -21,4 +21,8 @@ public interface CarbonDictionary  {
   byte[][] getDictionaryValues();
 
   int getDictionarySize();
+
+  boolean isDictionaryUsed();
+
+  void setDictionaryUsed();
 }

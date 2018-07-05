@@ -54,8 +54,9 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
   }
 
   @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
-    if (!vector.hasDictionary()) {
+    if (!dictionary.isDictionaryUsed()) {
       vector.setDictionary(dictionary);
+      dictionary.setDictionaryUsed();
     }
     int surrogate = dimensionDataChunkStore.getSurrogate(rowId);
     if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {

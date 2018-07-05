@@ -24,6 +24,8 @@ public class CarbonDictionaryImpl implements CarbonDictionary {
 
   private int actualSize;
 
+  private boolean isDictUsed;
+
   public CarbonDictionaryImpl(byte[][] dictionary, int actualSize) {
     this.dictionary = dictionary;
     this.actualSize = actualSize;
@@ -35,6 +37,14 @@ public class CarbonDictionaryImpl implements CarbonDictionary {
 
   @Override public int getDictionarySize() {
     return actualSize;
+  }
+
+  @Override public boolean isDictionaryUsed() {
+    return this.isDictUsed;
+  }
+
+  @Override public void setDictionaryUsed() {
+    this.isDictUsed = true;
   }
 
 }
